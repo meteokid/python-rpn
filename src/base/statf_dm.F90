@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -14,7 +14,6 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 module stat_mpi
-  use gem_options
   implicit none
 #include <arch_specific.hf>
   private
@@ -26,7 +25,7 @@ module stat_mpi
   end interface
 
 !object
-!        calcule la moyenne, la variance, le minimum et 
+!        calcule la moyenne, la variance, le minimum et
 !        le maximum d un champs et imprime le resultat SANS GLBCOLC
 !        Le calcule peut changer dependement le topologie
 
@@ -45,15 +44,16 @@ module stat_mpi
 !----------------------------------------------------------------
 !
 
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "ptopo.cdk"
-
 contains
 
       subroutine statf_r4 ( F_field, F_nv_S, F_no, F_from_S, &
                             Minx,Maxx,Miny,Maxy,Mink,Maxk  , &
                             F_i0,F_j0,F_k0,F_in,F_jn,F_kn,F_rx)
+
+      use gem_options
+      use glb_ld
+      use lun
+      use ptopo
       implicit none
 
       character*(*) F_nv_S , F_from_S
@@ -71,6 +71,11 @@ contains
       subroutine statf_r8 ( F_field, F_nv_S, F_no, F_from_S, &
                             Minx,Maxx,Miny,Maxy,Mink,Maxk  , &
                             F_i0,F_j0,F_k0,F_in,F_jn,F_kn,F_rx)
+
+      use gem_options
+      use glb_ld
+      use lun
+      use ptopo
       implicit none
 
       character*(*) F_nv_S , F_from_S

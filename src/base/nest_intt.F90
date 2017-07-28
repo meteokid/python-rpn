@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -19,6 +19,11 @@
       use step_options
       use gmm_nest
       use gem_options
+      use glb_ld
+      use cstv
+      use lun
+      use tr3d
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 
@@ -27,30 +32,25 @@
 !revision
 ! v3_01 - Desgagne M.               - initial version (after MC2 v_4.9.3)
 ! v3_03 - Tanguay M.                - Adjoint Lam configuration
-! v3_20 - Pellerin P. and Y. Delage - Special interpolations for MEC 
+! v3_20 - Pellerin P. and Y. Delage - Special interpolations for MEC
 ! v4    - Girard-Plante-Lee         - Staggered version
 ! v4_04 - Plante A.                 - Remove offline
 ! v4_05 - Lepine M.                 - VMM replacement with GMM
 ! v4_10 - Tanguay M.                - Adjust digital filter when LAM
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "tr3d.cdk"
-#include "cstv.cdk"
-#include "lun.cdk"
 
       integer,external ::  newdate
 !
-      character*16 datev
+      character(len=16) :: datev
       character(len=GMM_MAXNAMELENGTH) :: tr_name
-      integer yy,mo,dd,hh,mm,ss,dum,i,j,k,dat,np,ip,id,err,n,istat
+      integer :: yy,mo,dd,hh,mm,ss,dum,n,istat
       real, pointer, dimension(:,:,:) :: tr_deb,tr_fin,tr
-      real*8  one,sid,rsid,dayfrac,tx,dtf,a,b
-      parameter(one=1.0d0, sid=86400.0d0, rsid=one/sid )
+      real*8 :: dayfrac,tx,dtf,a,b
+      real*8, parameter :: one=1.0d0, sid=86400.0d0, rsid=one/sid
 !
 !     ---------------------------------------------------------------
 !
-      dayfrac = dble (Step_kount)*Cstv_dt_8*rsid
+      dayfrac = dble(Step_kount) * Cstv_dt_8 * rsid
       call incdatsd  (datev, Step_runstrt_S, dayfrac)
       call prsdate   (yy,mo,dd,hh,mm,ss,dum,datev)
       call pdfjdate2 (tx, yy,mo,dd,hh,mm,ss)
@@ -127,9 +127,9 @@
          nest_fullme_deb = nest_fullme_fin
          do n=1,Tr3d_ntr
             tr_name = 'NEST/'//trim(Tr3d_name_S(n))//':F'
-      	    istat = gmm_get(tr_name,tr_fin)
+            istat = gmm_get(tr_name,tr_fin)
             tr_name = 'NEST/'//trim(Tr3d_name_S(n))//':A'
-      	    istat = gmm_get(tr_name,tr_deb)
+            istat = gmm_get(tr_name,tr_deb)
             tr_deb = tr_fin
          end do
 
@@ -138,7 +138,7 @@
       endif
 !
 !     Temporal linear interpolation
-!      
+!
       call timing_start2 ( 70, 'NESTINTT', 10)
 
       b = (tx - Lam_tdeb) / (Lam_tfin - Lam_tdeb)

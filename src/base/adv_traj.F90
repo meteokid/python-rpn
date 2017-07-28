@@ -16,7 +16,7 @@
       subroutine adv_traj ( F_nb_iter, pxm , pym , pzm, &
                                F_u, F_v, F_w, F_ua, F_va, F_wa, F_wat,&
                                F_xth ,F_yth, F_zth, &
-                               i0,in,j0 ,jn,i0u,inu,j0v,jnv,&
+                               i0,in,j0 ,jn,&
                                k0, k0m,k0t, F_aminx, F_amaxx,&
                                F_aminy, F_amaxy, F_ni,F_nj,F_nk )
       use step_options
@@ -24,41 +24,39 @@
       use adv_options
       use grid_options
       use gem_options
+      use glb_ld
+      use cstv
+      use ver
+      use adv_grid
+      use tracers
+      use adv_interp
+      use outgrid
       implicit none
 #include <arch_specific.hf>
       integer  F_nb_iter                                                                  ! total number of iterations for traj
       integer, intent(in) :: k0 , k0m,  k0t                                               ! scope of the operation F_k0 to F_nk
       integer, intent(in) :: i0, j0 , in, jn                                              !0 , scope of advection operations
-      integer, intent(in) :: i0u, inu, j0v, jnv
       integer, intent(in) :: F_ni,F_nj,F_nk                                               ! dims of position fields
       integer, intent(in) :: F_aminx,F_amaxx,F_aminy, F_amaxy                             ! wind fields array bounds
       real, dimension(F_ni,F_nj,F_nk), intent(out) :: pxm  , pym  , pzm                   ! upstream positions valid at t1
       real, dimension(F_ni,F_nj,F_nk) :: F_xth  , F_yth  , F_zth                          ! upwind longitudes at time t1
-      real, dimension(F_aminx:F_amaxx,F_aminy:F_amaxy,F_nk), intent(in), target :: F_u, F_v, F_w      ! destag winds
-      real, dimension(F_ni,F_nj,F_nk), intent(in) :: F_ua,   F_va,   F_wa                      ! Arival winds
+      real, dimension(F_aminx:F_amaxx,F_aminy:F_amaxy,F_nk), intent(in) :: F_u, F_v, F_w  ! destag winds
+      real, dimension(F_ni,F_nj,F_nk), intent(in) :: F_ua,   F_va,   F_wa                 ! Arival winds
       real, dimension(F_ni,F_nj,F_nk) :: wdm
       real, dimension(F_ni,F_nj,F_nk),intent(in) :: F_wat
 
 !@Objectives computes trajectories using trapezoidal rule
 !@ Author RPN-A Model Infrastructure Group (base on adx_pos_angular_m, adx_pos_angular_t, adx_pos_muv) june 2015
 
-#include "adv_grid.cdk"
-#include "adv_gmm.cdk"
-#include "adv_interp.cdk"
-#include "ver.cdk"
-#include "tracers.cdk"
-#include "cstv.cdk"
-#include "glb_ld.cdk"
-
       integer :: i , j , k, i0u_e, inu_e, j0v_e, jnv_e
       integer ,  dimension(:), allocatable :: ii
       real, dimension(F_ni, F_nj, F_nk) :: ud , vd ,wd
       integer ::  iter,  num , nind
-      integer :: BCS_BASE ,n,cnt,nc, sum_cnt,totaln,err  ! BCS points for Yin-Yang, normal LAM
+      integer :: BCS_BASE,cnt,nc ! BCS points for Yin-Yang, normal LAM
       real :: zmin_bound, zmax_bound
       real*8 :: inv_cy_8
       real, dimension(1,1,1), target :: no_conserv, no_slice, no_flux
-      real,   dimension(:,:,:), pointer :: dummy3d
+      real,   dimension(F_aminx:F_amaxx,F_aminy:F_amaxy,F_nk) :: dummy3d ! TODO : enlever
       real,   parameter :: DTH_1     = 1.  , EPS_8 = 1.D-5
       real :: xpos,ypos,minposx,maxposx,minposy,maxposy
  !
@@ -177,7 +175,7 @@
                                   num, nind, ii, k0m ,F_nk , &
                                   .false. , .false. , 'm')
      else
-            dummy3d => F_w
+            dummy3d = 0.
             call adv_trilin(wd,vd,F_w,dummy3d, F_xth, F_yth,F_zth, &
                            DTH_1, .false., i0, in, j0, jn, &
                            F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,k0m,F_nk)

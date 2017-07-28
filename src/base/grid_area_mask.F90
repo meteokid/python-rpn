@@ -17,6 +17,8 @@
       subroutine grid_area_mask (F_area_8,F_mask_8,Ni,Nj)
       use grid_options
       use geomh
+      use glb_ld
+      use glb_pil
       implicit none
 #include <arch_specific.hf>
 
@@ -31,9 +33,6 @@
 ! v4_70 - Qaddouri/Tanguay     - initial version
 ! v4_73 - Lee V.  - optimization for MPI
 
-#include "glb_ld.cdk"
-#include "glb_pil.cdk"
-#include "ptopo.cdk"
 
       real*8, external :: yyg_weight
       integer i,j,np_subd,ierr

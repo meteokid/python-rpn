@@ -17,6 +17,9 @@
 !
       subroutine itf_fft_set ( F_dim, F_type_S, F_pri_8 )
       use tdpack
+      use glb_ld
+      use glb_pil
+      use fft
       implicit none
 #include <arch_specific.hf>
 !
@@ -30,9 +33,6 @@
 !revision
 ! v4_50 - Desgagne M.       - initial version
 
-#include "fft.cdk"
-#include "glb_ld.cdk"
-#include "glb_pil.cdk"
 
       integer, save :: same = -1
       integer i, npts, istat

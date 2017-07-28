@@ -1,4 +1,4 @@
-module matvec_mod
+module matvec
    ! Matrix-vector product subroutines
    !
    ! Author
@@ -7,36 +7,31 @@ module matvec_mod
    ! Revision
    !     v4_70 - Gaudreault/Qaddouri      - initial version
    !
-   use gem_options
-   use tdpack
+
+   use cstv
+   use geomh
+   use glb_ld
+   use ldnh
+   use opr
+   use sol
    implicit none
    private
 
 #include <arch_specific.hf>
-
-#include "glb_ld.cdk"
-#include "ldnh.cdk"
-#include "opr.cdk"
-#include "sol.cdk"
-#include "ver.cdk"
 
    integer, parameter :: IDX_POINT=1, IDX_WEST=2, IDX_EAST=3, IDX_NORTH=4, IDX_SOUTH=5, IDX_TOP=6, IDX_BOTTOM=7
    real*8, dimension(:,:,:,:), allocatable :: matrix
 
    public :: matvec_init, matvec_3d
 
-
 contains
 
    subroutine matvec_init()
-
-      use geomh
       implicit none
 
       real*8  :: di_8
       real*8  :: xxx, yyy
       integer :: i, j, k, jj, ii
-#include "cstv.cdk"
 
       allocate (matrix(7,ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk))
 
@@ -83,6 +78,7 @@ contains
 
 
    subroutine matvec_3d(vec, prod)
+      implicit none
       real*8, dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk), intent(in) :: vec
       real*8, dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk), intent(out) :: prod
 
@@ -128,4 +124,4 @@ contains
 !$omp end parallel
    end subroutine matvec_3d
 
-end module matvec_mod
+end module matvec

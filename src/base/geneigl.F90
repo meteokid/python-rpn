@@ -17,6 +17,7 @@
 
       subroutine geneigl4 ( F_eval_8, F_evec_8, F_b_8, NN, NMAX, NWORK,&
                             F_eigen_filename_S )
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 
@@ -45,7 +46,6 @@
 !      Only upper triangular parts of A and B need to be specified
 !      A and  B are overwritten
 
-#include "ptopo.cdk"
 
       integer i,j,k,info,errop,unf,err
       real*8 faz_8, sav_8, one_8, wk1(NWORK)

@@ -16,12 +16,14 @@
 !**s/r dcmip_set -  Setup for parameters DCMIP 2012/2016
 
       subroutine dcmip_set (F_adv_L,F_unout)
-
+      use dcst
       use step_options
       use dcmip_options
-      use tdpack, only : rayt_8, omega_8 
+      use tdpack, only : rayt_8, omega_8
       use gem_options
 
+      use glb_ld
+      use lun
       implicit none
 
       logical F_adv_L
@@ -32,9 +34,6 @@
       !   Setup for parameters DCMIP 2012/2016
       !=======================================================================
 
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "dcst.cdk"
 
       !---------------------------------------------------------------
 
@@ -70,7 +69,8 @@
 
         !Reset Earth's radius
         !--------------------
-        Dcst_rayt_8 = rayt_8/Dcmip_X ! rayt_8 = Reference Earth's Radius (m)
+        Dcst_rayt_8     = rayt_8/Dcmip_X ! rayt_8 = Reference Earth's Radius (m)
+        Dcst_inv_rayt_8 = Dcmip_X/rayt_8
 
         !Reset time step
         !---------------

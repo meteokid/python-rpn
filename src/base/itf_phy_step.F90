@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -19,6 +19,12 @@
       use iso_c_binding
       use phy_itf, only: phy_input,phy_step,phy_snapshot
       use gem_options
+      use lun
+      use tr3d
+      use rstr
+      use path
+      use wb_itf_mod
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 
@@ -31,12 +37,6 @@
 ! F_lctl_step   I          step number
 !----------------------------------------------------------------
 
-#include <WhiteBoard.hf>
-#include "lun.cdk"
-#include "ptopo.cdk"
-#include "path.cdk"
-#include "rstr.cdk"
-#include "tr3d.cdk"
       include "rpn_comm.inc"
 
       integer,external :: itf_phy_prefold_opr
@@ -67,7 +67,7 @@
       err_input = phy_input ( itf_phy_prefold_opr, F_step_kount, &
             Path_phyincfg_S, Path_phy_S, 'GEOPHY/Gem_geophy.fst' )
 
-      call gem_error (err_input,'itf_phy_step','Problem with phy_input') 
+      call gem_error (err_input,'itf_phy_step','Problem with phy_input')
       call timing_stop  ( 45 )
 
       call set_num_threads ( Ptopo_nthreads_phy, F_step_kount )
@@ -77,7 +77,7 @@
       call rpn_comm_barrier (RPN_COMM_ALLGRIDS, err)
       call timing_stop  ( 46 )
 
-!      call gem_error (err_step,'itf_phy_step','Problem with phy_step') 
+!      call gem_error (err_step,'itf_phy_step','Problem with phy_step')
 
       call set_num_threads ( Ptopo_nthreads_dyn, F_step_kount )
 

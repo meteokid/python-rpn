@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -20,10 +20,12 @@
       use gmm_vt1
       use gmm_vt0
       use gem_options
+      use tr3d
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 
-!author 
+!author
 !     Michel Roch - rpn - nov 1993
 !
 !revision
@@ -31,10 +33,7 @@
 ! v3_21 - Tanguay M.        - Revision Openmp
 ! v4_05 - Lepine M.         - VMM replacement with GMM
 
-#include "gmm.hf"
-#include "tr3d.cdk"
       integer :: istat, k
-      character(len=GMM_MAXNAMELENGTH) :: tr_name
       real, pointer, dimension(:,:,:) :: plus,minus
 !
 !     ---------------------------------------------------------------
@@ -51,7 +50,7 @@
       istat = gmm_get(gmmk_vt0_s , vt0)
       istat = gmm_get(gmmk_vt1_s , vt1)
       istat = gmm_get(gmmk_tt0_s , tt0)
-      istat = gmm_get(gmmk_tt1_s , tt1)     
+      istat = gmm_get(gmmk_tt1_s , tt1)
       istat = gmm_get(gmmk_st0_s , st0)
       istat = gmm_get(gmmk_st1_s , st1)
       istat = gmm_get(gmmk_wt0_s , wt0)

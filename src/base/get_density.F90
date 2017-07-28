@@ -22,6 +22,9 @@
       use gem_options
       use geomh
       use tdpack
+      use glb_ld
+      use ver
+      use gmm_itf_mod
       implicit none
 
       !Arguments
@@ -39,9 +42,6 @@
       !     Evaluate Fluid's density and mass
       !======================================
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "ver.cdk"
 
       !-----------------------------------------------------------------------------
 

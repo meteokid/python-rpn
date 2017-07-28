@@ -18,6 +18,7 @@
       subroutine hwnd_stag ( F_du,F_dv, F_su,F_sv, Minx,Maxx,Miny,Maxy, &
                              NK, F_stag_L )
       use gem_options
+      use glb_ld
       implicit none
 #include <arch_specific.hf>
 
@@ -26,7 +27,6 @@
       real, dimension(Minx:Maxx,Miny:Maxy,NK),intent(IN) :: F_su, F_sv
       real, dimension(Minx:Maxx,Miny:Maxy,NK),intent(OUT):: F_du, F_dv
 
-#include "glb_ld.cdk"
 
       integer i,j,k, i0u,j0u,inu,jnu, i0v,j0v,inv,jnv
       real*8, parameter :: half=0.5d0 , hpo=1.5d0 , &

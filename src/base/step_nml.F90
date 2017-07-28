@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -16,18 +16,20 @@
 !**s/r step_nml - Read namelist time
 
       integer function step_nml (F_namelistf_S)
-      use step_options
       use timestr_mod
       use step_options
       use grid_options
       use gem_options
+      use lun
+      use rstr
+      use clib_itf_mod
       implicit none
 #include <arch_specific.hf>
 
       character* (*) F_namelistf_S
 
 !authors    Michel Desgagne - Spring 2011
-! 
+!
 !revision
 ! v4_40 - Desgagne M.       - initial MPI version
 !
@@ -35,12 +37,8 @@
 !  Default configuration and reading namelist 'step'
 
 #include <rmnlib_basics.hf>
-#include <clib_interface_mu.hf>
-#include "lun.cdk"
-#include "rstr.cdk"
 
       integer unf,err
-      real :: sec
       real*8 nesdt,nsteps
 !
 !-------------------------------------------------------------------

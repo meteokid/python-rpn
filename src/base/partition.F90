@@ -16,6 +16,7 @@
 !
       integer function partition ( F_npts, F_alongxy, F_halo, &
                                    F_min, F_max, F_ni, F_i0 )
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 !
@@ -27,7 +28,6 @@
 !revision
 ! v4_40 - Desgagne M.       - Initial version
 !
-#include "ptopo.cdk"
 
       character*24 Part_type_S
       integer npe,val1,val2,err,irest,mpx,lstp

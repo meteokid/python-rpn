@@ -21,6 +21,7 @@
       subroutine  sol_pre_diago ( wk22, wk11, Minx,Maxx,Miny,Maxy, &
                                   nil,njl, minx1,maxx1,minx2,maxx2 )
       use gem_options
+      use sol
       implicit none
 #include <arch_specific.hf>
 !
@@ -32,7 +33,6 @@
 !revision
 ! v3_30 - Qaddouri A.       - initial version
 !
-#include "sol.cdk"
 
       real*8 wint_8 (Minx:Maxx,Miny:Maxy,Schm_nith)
 !

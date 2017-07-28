@@ -1,10 +1,13 @@
-!**s/p ILMC_LAM - Ensures monotonicity of interpolated field while preserving mass (Sorenson et al.,2013) - Yin-Yang/LAM 
+!**s/p ILMC_LAM - Ensures monotonicity of interpolated field while preserving mass (Sorenson et al.,2013) - Yin-Yang/LAM
 
       subroutine ILMC_LAM (F_name_S,F_out,F_high,F_min,F_max,Minx,Maxx,Miny,Maxy,F_nk,k0,F_ILMC_min_max_L,F_ILMC_sweep_max)
 
       use array_ILMC
       use gem_options
       use grid_options
+      use glb_ld
+      use lun
+      use tracers
       implicit none
 
       !Arguments
@@ -13,13 +16,13 @@
       integer,           intent(in) :: Minx,Maxx,Miny,Maxy                !I, Dimension H
       integer,           intent(in) :: k0                                 !I, Scope of operator
       integer,           intent(in) :: F_nk                               !I, Number of vertical levels
-      logical,           intent(in) :: F_ILMC_min_max_L                   !I, T IF MONO(CLIPPING) after ILMC 
-      integer,           intent(in) :: F_ILMC_sweep_max                   !I, T Number of neighborhood zones in ILMC 
-      real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(out)    :: F_out  !I: Corrected ILMC solution 
-      real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in)     :: F_high !I: High-order SL solution 
+      logical,           intent(in) :: F_ILMC_min_max_L                   !I, T IF MONO(CLIPPING) after ILMC
+      integer,           intent(in) :: F_ILMC_sweep_max                   !I, T Number of neighborhood zones in ILMC
+      real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(out)    :: F_out  !I: Corrected ILMC solution
+      real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in)     :: F_high !I: High-order SL solution
       real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in)     :: F_min  !I: MIN over cell
       real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in)     :: F_max  !I: MAX over cell
- 
+
       !Author Qaddouri/Tanguay
       !
       !Revision
@@ -29,16 +32,13 @@
       !Object
       !     Based on Sorenson et al.,2013: A mass conserving and multi-tracer
       !     efficient transport scheme in the online integrated Enviro-HIRLAM model.
-      !     Geosci. Model Dev., 6, 1029-1042, 2013   
+      !     Geosci. Model Dev., 6, 1029-1042, 2013
       !
 !**/
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "tracers.cdk"
 
       !----------------------------------------------------------
       integer SIDE_max_0,i,j,k,err,sweep,i_rd,j_rd,k_rd,ii,ix,jx,kx,kx_m,kx_p,iprod, &
-              istat,shift,j1,j2,reset(k0:F_nk,3),l_reset(3),g_reset(3),time_m,w1,w2,size,n,il,ir,jl,jr,il_c,ir_c,jl_c,jr_c
+              shift,j1,j2,reset(k0:F_nk,3),l_reset(3),g_reset(3),time_m,w1,w2,size,n,il,ir,jl,jr,il_c,ir_c,jl_c,jr_c
 
       real F_new(Minx:Maxx,Miny:Maxy,F_nk),bidon(Minx:Maxx,Miny:Maxy,F_nk),mass_m(Minx:Maxx,Miny:Maxy,F_nk), &
            dif_p(400),dif_m(400),ok_p,s_dif_p,ok_m,s_dif_m,o_shoot,u_shoot,ratio_p,ratio_m
@@ -52,7 +52,7 @@
 
       !----------------------------------------------------------
 
-      verbose_L = Tr_verbose/=0 
+      verbose_L = Tr_verbose/=0
 
       time_m = 0
 
@@ -89,7 +89,7 @@
 
       !Default values if no Mass correction
       !------------------------------------
-      F_out = F_high 
+      F_out = F_high
 
       call mass_tr (mass_new_8,F_name_S(4:7),F_new,mass_m,Minx,Maxx,Miny,Maxy,F_nk-k0+1,k0)
 
@@ -193,7 +193,7 @@
 
       done_L = .TRUE.
 
-      endif 
+      endif
 
       !---------------------------------------------------------------------------
       !Compute ILMC solution F_out while preserving mass: USE ELEMENTS INSIDE CORE
@@ -215,10 +215,10 @@
       !------------------------------------------------------------------------------------
       !Set LAM NEST boundary of F_new to ZERO since Adjoint is done after OUTSIDE CORE loop
       !------------------------------------------------------------------------------------
-      if (l_west)  F_new(Minx:il-1,Miny:Maxy,k0:F_nk) = 0. 
-      if (l_east)  F_new(ir+1:Maxx,Miny:Maxy,k0:F_nk) = 0. 
-      if (l_south) F_new(Minx:Maxx,Miny:jl-1,k0:F_nk) = 0. 
-      if (l_north) F_new(Minx:Maxx,jr+1:Maxy,k0:F_nk) = 0. 
+      if (l_west)  F_new(Minx:il-1,Miny:Maxy,k0:F_nk) = 0.
+      if (l_east)  F_new(ir+1:Maxx,Miny:Maxy,k0:F_nk) = 0.
+      if (l_south) F_new(Minx:Maxx,Miny:jl-1,k0:F_nk) = 0.
+      if (l_north) F_new(Minx:Maxx,jr+1:Maxy,k0:F_nk) = 0.
 
       !----------------------------------------------------------------------------
       !Compute ILMC solution F_out while preserving mass: USE ELEMENTS OUTSIDE CORE
@@ -311,7 +311,7 @@
          iprod = 2
       else
          call RPN_COMM_allreduce (l_reset,g_reset,3,"MPI_INTEGER","MPI_SUM","GRID",err)
-         iprod = 1 
+         iprod = 1
       endif
 
       if (verbose_L) then

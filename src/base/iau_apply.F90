@@ -18,12 +18,18 @@ subroutine iau_apply2 (F_kount)
    use vGrid_Descriptors
    use vgrid_wb
    use input_mod
-      use step_options
-      use gmm_vt1
-      use gmm_pw
-      use grid_options
-      use gem_options
-      use tdpack
+   use step_options
+   use gmm_vt1
+   use gmm_pw
+   use grid_options
+   use gem_options
+   use tdpack
+   use glb_ld
+   use cstv
+   use gmm_itf_mod
+   use var_gmm
+   use path
+      use clib_itf_mod
    implicit none
    !@params
    integer, intent(in) :: F_kount !step_kound
@@ -37,13 +43,7 @@ subroutine iau_apply2 (F_kount)
 #include <arch_specific.hf>
 #include "rpn_comm.inc"
 #include <rmnlib_basics.hf>
-#include <clib_interface_mu.hf>
-#include <gmm.hf>
 #include <msg.h>
-#include "glb_ld.cdk"
-#include "path.cdk"
-#include "var_gmm.cdk"
-#include "cstv.cdk"
 
    character(len=2),parameter :: IAU_PREFIX='I_'
    character(len=6),parameter :: IAU_FILE = 'IAUREP'
@@ -116,7 +116,7 @@ subroutine iau_apply2 (F_kount)
             call msg(MSG_INFO,'(iau_apply) add input: in='//trim(Iau_tracers_S(ivar))//'; levels=-1;'//trim(incfg_S))
             istat = min(input_add(inputid,'in='//trim(Iau_tracers_S(ivar))//'; levels=-1;'//trim(incfg_S)),istat)
          endif
-         ivar = ivar+1 
+         ivar = ivar+1
          if (ivar > size(Iau_tracers_S)) exit
       enddo
       nbvar = input_nbvar(inputid)
@@ -266,19 +266,28 @@ subroutine iau_apply2 (F_kount)
          endif
          if (iname0_S == 'p0') data0 = 100.*data0
 
-         IF_YY: if (Grd_yinyang_L .and. &
-              (iname0_S == 'hu' .or. .not.any(iname0_S == Iau_tracers_S))) then
-            if (.not.(iname1_S /= ' ' .and. associated(data1))) then
+         IF_YY: if (Grd_yinyang_L .and. (iname0_S == 'hu' .or. .not.any(iname0_S == Iau_tracers_S))) then
+
+            if (iname1_S /= ' ' .and. associated(data1)) then
+               call yyg_scaluv(data0, data1, l_minx, l_maxx, l_miny, l_maxy, G_nk)
+               call rpn_comm_xch_halo(data0,lijk(1),uijk(1),lijk(2),uijk(2), &
+                    l_ni,l_nj,uijk(3),G_halox,G_haloy,G_periodx,G_periody, &
+                    l_ni,0 )
+               call rpn_comm_xch_halo(data1,lijk(1),uijk(1),lijk(2),uijk(2), &
+                    l_ni,l_nj,uijk(3),G_halox,G_haloy,G_periodx,G_periody, &
+                    l_ni,0 )
+            else
                call yyg_xchng (data0 ,lijk(1),uijk(1),lijk(2),uijk(2),uijk(3), &
                     .false., 'CUBIC')
                call rpn_comm_xch_halo(data0,lijk(1),uijk(1),lijk(2),uijk(2), &
                     l_ni,l_nj,uijk(3),G_halox,G_haloy,G_periodx,G_periody, &
                     l_ni,0 )
             endif
+
          endif IF_YY
 
       endif IF_READ
-      
+
       IF_KOUNT0: if (F_kount > 0 .and. weight(max(1,F_kount)) > 0.) then
 
          !# Add increments to model and tracer states

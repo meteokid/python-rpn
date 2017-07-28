@@ -20,14 +20,14 @@
       use gmm_geof
       use gem_options
       use tdpack
+      use glb_ld
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 
       integer Minx,Maxx,Miny,Maxy
       real F_topo (Minx:Maxx,Miny:Maxy), F_step
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
 
       integer i,j, gmmstat
       real*8, parameter :: one = 1.0d0

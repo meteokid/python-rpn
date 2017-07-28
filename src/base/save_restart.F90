@@ -20,15 +20,15 @@
       use step_options
       use grid_options
       use gem_options
+      use cstv
+      use lun
+      use out_mod
+      use path
+      use clib_itf_mod
+      use ptopo
       implicit none
 
 #include <arch_specific.hf>
-#include <clib_interface_mu.hf>
-#include "out.cdk"
-#include "path.cdk"
-#include "ptopo.cdk"
-#include "cstv.cdk"
-#include "lun.cdk"
 
       character*2048 dirname_S,cmd
       character*16   datev

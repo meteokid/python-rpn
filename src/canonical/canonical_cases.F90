@@ -26,6 +26,13 @@
       use gem_options
       use tdpack, only : rgasd_8, cpd_8  
 
+      use glb_ld
+      use cstv
+      use lun
+      use tr3d
+      use ver
+      use gmm_itf_mod
+      use var_gmm
       implicit none
 
       !arguments
@@ -42,15 +49,8 @@
       !     F_action_S ='XCHNG'   : Exchange staggered U-V
       !================================================================================
 
-#include "glb_ld.cdk"
-#include "gmm.hf"
 #include "gmm_gem_flags.hf"
-#include "var_gmm.cdk"
 #include <msg.h>
-#include "lun.cdk"
-#include "ver.cdk"
-#include "cstv.cdk"
-#include "tr3d.cdk"
 
 #define SET_GMMUSR_FLAG(MYMETA,MYFLAG) gmm_metadata(MYMETA%l,gmm_attributes(MYMETA%a%key,ior(MYMETA%a%uuid1,MYFLAG),MYMETA%a%uuid2,MYMETA%a%initmode,MYMETA%a%flags))
 

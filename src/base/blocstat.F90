@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -18,19 +18,19 @@
       subroutine blocstat (F_forceit_L)
       use step_options
       use gem_options
+      use glb_ld
+      use gmm_itf_mod
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 
       logical F_forceit_L
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "ptopo.cdk"
 
       logical,save :: done = .false.
       logical :: flag
       type(gmm_metadata) :: tmp_meta,mymeta
-      integer i0,in,j0,jn,inn,jnn,n,trunc(4),err,indx,istat
+      integer i0,in,j0,jn,inn,jnn,n,indx,istat
       real, pointer, dimension(:,:  ) :: wk2d
       real, pointer, dimension(:,:,:) :: wk3d
       character(len=GMM_MAXNAMELENGTH) :: stat_varname
@@ -107,6 +107,8 @@
 !
       subroutine set_statliste
       use gem_options
+      use tr3d
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 !
@@ -116,8 +118,6 @@
 !revision
 ! v4_10 - Desgagne M.       - initial version
 !
-#include "gmm.hf"
-#include "tr3d.cdk"
 
       character(len=GMM_MAXNAMELENGTH) :: tmp_liste (1000), dumc_S
       integer k,n,cnt
@@ -133,7 +133,7 @@
          if (stat_liste(k) == '') exit
          call low2up  (stat_liste(k),dumc_S)
          stat_liste(k) = dumc_S
-         
+
          if ((stat_liste(k) == 'ALL_DYN_T1') .or. (stat_liste(k) == 'ALL')) then
             cnt = cnt + 1
             tmp_liste(cnt  ) = 'URT1'

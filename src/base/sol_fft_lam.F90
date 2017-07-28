@@ -23,6 +23,9 @@
                                F_ai, F_bi, F_ci  , F_dg2,F_dwfft )
       use grid_options
       use gem_options
+      use glb_ld
+      use glb_pil
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 !
@@ -72,9 +75,6 @@
 ! F_dg2        I    - work field
 ! F_dwfft      I    - work field
 
-#include "ptopo.cdk"
-#include "glb_ld.cdk"
-#include "glb_pil.cdk"
 
       character*4 type_fft
       integer i, j, k, jr, l_pil_w, l_pil_e

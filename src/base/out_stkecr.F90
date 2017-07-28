@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -21,10 +21,13 @@
       use out_collector, only: block_collect_fullp, Bloc_me
       use grid_options
       use gem_options
+      use glb_ld
+      use out_mod
+      use out_meta
+      use out3
+      use ptopo
       implicit none
 #include <arch_specific.hf>
-
-      include "out_meta.cdk"
 
       integer lminx,lmaxx,lminy,lmaxy,nplans
       integer g_id,g_if,g_jd,g_jf
@@ -37,10 +40,6 @@
 ! v4_50 - Desgagne M. - Initial version
 ! v4_80 - Desgagne M. - switch to RPN_COMM_shuf_ezcoll
 
-#include "glb_ld.cdk"
-#include "out.cdk"
-#include "out3.cdk"
-#include "ptopo.cdk"
 #include <rmnlib_basics.hf>
       include "rpn_comm.inc"
 
@@ -79,7 +78,7 @@
          call block_collect_fullp ( fa, l_minx,l_maxx,l_miny,l_maxy, &
                                     nplans, wk_glb, nz, zlist )
       endif
-     
+
       if ( (iope_L) .and. (nz>0) ) then
          if ((Grd_yinyang_L) .and. (Ptopo_couleur.eq.0)) then
             allocate (wk(nis,njs*2,nz))

@@ -27,6 +27,12 @@
       use geomh
       use tdpack, only : rgasd_8, rgasv_8, cpd_8, grav_8
 
+      use glb_ld
+      use cstv
+      use lun
+      use ver
+      use gmm_itf_mod
+      use ptopo
       implicit none
 
       !object
@@ -46,12 +52,6 @@
       !                    | -1: NONE                                        |
       !----------------------------------------------------------------------|
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "cstv.cdk"
-#include "ptopo.cdk"
-#include "ver.cdk"
 
       !------------------------------------------------------------------------------
 

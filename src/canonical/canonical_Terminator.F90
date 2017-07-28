@@ -18,13 +18,12 @@
       subroutine canonical_terminator_0 (F_cnt)
 
       use canonical
-
+      use gmm_itf_mod
       implicit none
 
 #include <arch_specific.hf>
 
       integer F_cnt
-#include "gmm.hf"
 
       logical,external :: wil_check_Terminator,dcmip_check_Terminator
       logical Terminator_L
@@ -53,7 +52,7 @@
       subroutine canonical_terminator_1 (F_src,F_name_S,F_cnt,minx,maxx,miny,maxy,F_ni,F_nj,F_nk)
 
       use canonical
-
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 
@@ -61,7 +60,6 @@
       integer F_cnt,minx,maxx,miny,maxy,F_ni,F_nj,F_nk
       real F_src(minx:maxx,miny:maxy,F_nk)
 
-#include "gmm.hf"
 
       logical,external :: wil_check_Terminator,dcmip_check_Terminator
       logical Terminator_L
@@ -92,7 +90,7 @@
       subroutine canonical_terminator_2 (F_airmass,F_tracer_8,F_cnt,minx,maxx,miny,maxy,F_nk,F_k0,F_unout,F_couleur,F_type_S,F_time_S,F_comment_S)
 
       use canonical
-
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 
@@ -101,7 +99,6 @@
       real*8 F_tracer_8
       real F_airmass(minx:maxx,miny:maxy,F_nk)
 
-#include "gmm.hf"
 
       logical,external :: wil_check_Terminator,dcmip_check_Terminator
       logical,save :: done_L=.false.
@@ -145,8 +142,12 @@
       use dcmip_options
       use Terminator
 
+      use cstv
       use geomh
-
+      use glb_ld
+      use gmm_itf_mod
+      use lun
+      use ptopo
       implicit none
 
       !object
@@ -155,11 +156,6 @@
       !  Lauritzen et al.,2015,GMD,8,1299-1313
       !===================================================
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "cstv.cdk"
-#include "ptopo.cdk"
 
       !-------------------------------------------------------------------------------
 

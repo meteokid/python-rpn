@@ -18,6 +18,9 @@
       subroutine estimate_tmean (F_tmean,F_t,Minx,Maxx,Miny,Maxy,F_nk)
       use grid_options
       use geomh
+      use glb_ld
+      use cstv
+      use ver
       implicit none
 
       !Arguments
@@ -32,9 +35,6 @@
       ! v4_XX - Tanguay,M.        - Initial Version
 
 !*@/
-#include "glb_ld.cdk"
-#include "cstv.cdk"
-#include "ver.cdk"
 
       !----------------------------------------------------------
       integer i,j,k,err

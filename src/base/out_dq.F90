@@ -20,6 +20,13 @@
       use gmm_vt1
       use gmm_pw
       use gem_options
+      use glb_ld
+      use out3
+      use levels
+      use outd
+      use ver
+      use gmm_itf_mod
+      use outgrid
       implicit none
 #include <arch_specific.hf>
 
@@ -31,13 +38,6 @@
 !revision
 ! v4_80 - Desgagne M.       - initial version
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "grid.cdk"
-#include "out3.cdk"
-#include "outd.cdk"
-#include "level.cdk"
-#include "ver.cdk"
 
       logical write_diag_lev
       integer i,istat,kind,nko,pndd,pnqq,pnqr,gridset
@@ -80,8 +80,8 @@
                            l_minx,l_maxx,l_miny,l_maxy, G_nk )
             gridset = Outd_grid(set)
             call out_href3 ( 'Mass_point', &
-                    Grid_x0 (gridset), Grid_x1 (gridset), 1, &
-                    Grid_y0 (gridset), Grid_y1 (gridset), 1 )
+                    OutGrid_x0 (gridset), OutGrid_x1 (gridset), 1, &
+                    OutGrid_y0 (gridset), OutGrid_y1 (gridset), 1 )
             call out_fstecr3( div, l_minx,l_maxx,l_miny,l_maxy        ,&
                               Ver_hyb%m,'DD  ',Outd_convmult(pndd,set),&
                               Outd_convadd(pndd,set),kind,-1          ,&
@@ -98,8 +98,8 @@
                            l_minx,l_maxx,l_miny,l_maxy, G_nk )
             gridset = Outd_grid(set)
             call out_href3 ( 'F_point', &
-                    Grid_x0 (gridset), Grid_x1 (gridset), 1, &
-                    Grid_y0 (gridset), Grid_y1 (gridset), 1 )
+                    OutGrid_x0 (gridset), OutGrid_x1 (gridset), 1, &
+                    OutGrid_y0 (gridset), OutGrid_y1 (gridset), 1 )
 
             if (pnqq.gt.0) &
             call out_fstecr3( vor, l_minx,l_maxx,l_miny,l_maxy        ,&
@@ -150,8 +150,8 @@
                            l_minx,l_maxx,l_miny,l_maxy, nko )
             gridset = Outd_grid(set)
             call out_href3 ( 'Mass_point', &
-                    Grid_x0 (gridset), Grid_x1 (gridset), 1, &
-                    Grid_y0 (gridset), Grid_y1 (gridset), 1 )
+                    OutGrid_x0 (gridset), OutGrid_x1 (gridset), 1, &
+                    OutGrid_y0 (gridset), OutGrid_y1 (gridset), 1 )
             call out_fstecr3( div, l_minx,l_maxx,l_miny,l_maxy, &
                               rf,'DD  ',Outd_convmult(pndd,set),&
                               Outd_convadd(pndd,set), kind,-1  ,&
@@ -169,8 +169,8 @@
                            l_minx,l_maxx,l_miny,l_maxy, nko )
             gridset = Outd_grid(set)
             call out_href3 ( 'F_point', &
-                    Grid_x0 (gridset), Grid_x1 (gridset), 1, &
-                    Grid_y0 (gridset), Grid_y1 (gridset), 1 )
+                    OutGrid_x0 (gridset), OutGrid_x1 (gridset), 1, &
+                    OutGrid_y0 (gridset), OutGrid_y1 (gridset), 1 )
 
             if (pnqq.gt.0) &
             call out_fstecr3( vor, l_minx,l_maxx,l_miny,l_maxy, &

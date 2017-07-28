@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -18,6 +18,10 @@
       subroutine tracers ()
       use phy_itf, only: PHY_MAXNAMELENGTH,phymeta,phy_getmeta
       use gem_options
+      use glb_ld
+      use lun
+      use tr3d
+      use clib_itf_mod
       implicit none
 #include <arch_specific.hf>
 
@@ -39,15 +43,11 @@
 !        Tracers requested under auto cascade requires only the first
 !        2 letters
 
-#include <clib_interface_mu.hf>
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "tr3d.cdk"
 
       character*512 varname,attributes
       character(len=PHY_MAXNAMELENGTH) :: varname_S,prefix_S, &
                                           basename_S,time_S,ext_S
-      integer i,j,ind,wload,hzd,monot,massc,dejala,istat,nmeta,err
+      integer i,j,ind,wload,hzd,monot,massc,dejala,istat,nmeta
       real vmin
       type(phymeta), dimension(:), pointer :: pmeta
 !
@@ -123,7 +123,7 @@
          end do
       endif
 
-      call ac_posi (G_xg_8(1),G_yg_8(1),G_ni,G_nj,Lun_out.gt.0)
+      call ac_posi (G_xg_8,G_yg_8,G_ni,G_nj,Lun_out.gt.0)
 
  1001 format (/' Final list of tracers:'/3x,' Name   Wload  Hzd   Mono  Mass    Min')
  1002 format (4x,a4,2l6,2i6,3x,e9.3)

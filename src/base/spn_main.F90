@@ -18,6 +18,13 @@
       subroutine spn_main
       use step_options
       use gem_options
+      use glb_ld
+      use cstv
+      use lun
+      use ldnh
+      use sol
+      use trp
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 
@@ -28,13 +35,6 @@
 ! v4_80 - Qian, Dugas, Hussain            - initial version
 ! v4_80 - Baek - correction in calls to spn_fld for FFT transpose
 
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "ldnh.cdk"
-#include "trp.cdk"
-#include "ptopo.cdk"
-#include "cstv.cdk"
-#include "sol.cdk"
 
       integer offseti, no_steps, tmdt, Nkl
 !

@@ -16,10 +16,16 @@
 !**s/r init_component
 
       subroutine init_component
+      use dcst
       use iso_c_binding
       use step_options
       use grid_options
       use tdpack
+      use glb_ld
+      use path
+      use clib_itf_mod
+      use ptopo
+      use version
       implicit none
 #include <arch_specific.hf>
 
@@ -30,19 +36,11 @@
 ! v4_80 - M. Desgagne       - remove *bloc*, introduce RPN_COMM_*_io_*
 !
 #include "component.cdk"
-#include "glb_ld.cdk"
-#include "cst_lis.cdk"
-#include "dcst.cdk"
-#include "path.cdk"
-#include "ptopo.cdk"
-#include "version.cdk"
-#include <clib_interface_mu.hf>
       include "rpn_comm.inc"
 
       external init_ndoms, pe_zero_topo
       integer, external :: model_timeout_alarm
 
-      character(len=50 ) :: DSTP,dummy,name_S,arch_S,compil_S
       character(len=256) :: my_dir
       integer :: ierr,mydomain,ngrids
 !
@@ -97,8 +95,9 @@
 
       call msg_set_can_write (Ptopo_myproc == 0)
 
-      Dcst_rayt_8  = rayt_8
-      Dcst_omega_8 = omega_8
+      Dcst_rayt_8      = rayt_8
+      Dcst_inv_rayt_8  = 1.d0 / rayt_8
+      Dcst_omega_8     = omega_8
 
       call pe_all_topo
 

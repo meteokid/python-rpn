@@ -21,6 +21,10 @@
       use gem_options
       use tdpack
 
+      use glb_ld
+      use cstv
+      use lun
+      use ptopo
       implicit none
 
       integer F_minx,F_maxx,F_miny,F_maxy,F_nk,F_istep
@@ -45,10 +49,6 @@
       !                    |   Nair and Machenhauer,2002,MWR,130,649-667     |
       !----------------------------------------------------------------------|
 
-#include "glb_ld.cdk"
-#include "ptopo.cdk"
-#include "cstv.cdk"
-#include "lun.cdk"
 
       !---------------------------------------------------------------
 

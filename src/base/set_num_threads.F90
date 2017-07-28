@@ -14,13 +14,13 @@
 !---------------------------------- LICENCE END ---------------------------------
 
       subroutine set_num_threads ( F_nthreads, kount )
+      use lun
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 
       integer F_nthreads, kount
 
-#include "lun.cdk"
-#include "ptopo.cdk"
 !
 !-------------------------------------------------------------------
 !

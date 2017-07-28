@@ -20,6 +20,10 @@
       use adv_options
       use grid_options
       use gem_options
+      use glb_ld
+      use lun
+      use tr3d
+      use tracers
       implicit none
 
 #include <arch_specific.hf>
@@ -30,10 +34,6 @@
       ! v4_80 - Tanguay M.        - GEM4 Mass-Conservation
       ! v5_00 - Tanguay M.        - Add Tr_scaling and Schm_dry_mixing_ratio
 
-#include "tr3d.cdk"
-#include "tracers.cdk"
-#include "glb_ld.cdk"
-#include "lun.cdk"
 
       !---------------------------------------------------------------------
       integer n

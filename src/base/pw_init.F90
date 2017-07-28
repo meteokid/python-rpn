@@ -17,10 +17,10 @@
 
       subroutine pw_init
       use gmm_pw
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 
-#include "gmm.hf"
 
       integer istat
 

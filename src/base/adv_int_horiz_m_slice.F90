@@ -12,12 +12,14 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-! 
+!
 
       subroutine adv_int_horiz_m_slice ( F_xmu, F_ymu, F_zmu, &
                                          F_xmv, F_ymv, F_zmv, &
                                          F_xm , F_ym , F_zm , &
                                          F_ni,F_nj, F_nk,F_k0,i0,in,j0,jn,i0u,inu,j0v,jnv)
+      use glb_ld
+      use adv_interp
       implicit none
 #include <arch_specific.hf>
 
@@ -33,7 +35,7 @@
 !revision
 ! v4_XX - Tanguay M.        - GEM4 Mass-Conservation
 !
-!object horizontal interpolation of upstream momentum positions for SLICE Zerroukat et al.(2002) 
+!object horizontal interpolation of upstream momentum positions for SLICE Zerroukat et al.(2002)
 !
 !arguments
 !______________________________________________________________________
@@ -51,16 +53,14 @@
 !                      |
 !----------------------------------------------------------------------
 
-#include "glb_ld.cdk"
-#include "adv_interp.cdk"
 
       integer i,j,k
-      real*8 aa, bb, cc, dd
+      real*8 aa, bb, cc
 	   real, pointer, dimension(:,:,:) :: pxh,pyh,pzh
 	   logical,save :: done = .false.
-!     
+!
 !---------------------------------------------------------------------
-!   
+!
       nullify (pxh,pyh,pzh)
 
       allocate(pxh(-1:F_ni+2,-1:F_nj+2,F_nk))
@@ -147,7 +147,7 @@
 
       end do
       end do
-    
+
       do j=j0v,jnv
       do i=i0,in
 
@@ -198,8 +198,8 @@
       enddo
 
       deallocate(pxh,pyh,pzh)
-!     
+!
 !---------------------------------------------------------------------
-!     
+!
       return
       end subroutine adv_int_horiz_m_slice

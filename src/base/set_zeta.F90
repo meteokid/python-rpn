@@ -23,6 +23,14 @@
       use gmm_pw
       use grid_options
       use gem_options
+      use glb_ld
+      use cstv
+      use lun
+      use dimout
+      use out_mod
+      use levels
+      use ver
+      use wb_itf_mod
       implicit none
 #include <arch_specific.hf>
 
@@ -110,13 +118,6 @@
 ! arguments
 ! none
 !
-#include <WhiteBoard.hf>
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "ver.cdk"
-#include "dimout.cdk"
-#include "cstv.cdk"
-#include "level.cdk"
 
       character(len=32), parameter  :: VGRID_M_S  = 'ref-m'
       character(len=32), parameter  :: VGRID_T_S  = 'ref-t'

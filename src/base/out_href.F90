@@ -20,33 +20,37 @@
       use grid_options
       use gem_options
       use geomh
+      use glb_ld
+      use lun
+      use out_mod
+      use out3
+      use hgc
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 
       character* (*), intent(in ) :: F_arakawa_S
       integer,        intent(in ) :: F_x0,F_x1,F_stridex,&
                                      F_y0,F_y1,F_stridey
-#include "glb_ld.cdk"
-#include "hgc.cdk"
-#include "out.cdk"
-#include "out3.cdk"
-#include "lun.cdk"
-#include "ptopo.cdk"
 #include <rmnlib_basics.hf>
 
 !!$      integer, external :: out_samegrd
       character*1 familly_uencode_S
-      logical old_grid_L
-      integer i,err,ni,nis,njs,niyy,indx,ix1,ix2,ix3,ix4, &
+      integer err,ni,nis,njs,niyy,ix1,ix2,ix3,ix4, &
               sindx,i0,in,j0,jn,vesion_uencode
       real wk
       real, dimension(:), pointer     :: posx,posy
       real, dimension(:), allocatable :: yy
+
+      character(len=1) nomvar
+      integer nbit,knd,lstep
+      integer ind_o(1)
+      real fa(1,1,1), rf(1)
+
 !
 !----------------------------------------------------------------------
 !
-      call out_fstecr3 ( wk,wk,wk,wk,wk,wk,wk,wk,wk,wk,wk,wk,&
-                         wk,wk,wk, .true. )
+      call out_fstecr3 ( fa,1,1,1,1,rf,nomvar,wk,wk,knd,lstep,1,ind_o,1,nbit,.true. )
 
 ! to be completed if at all usefull
 !      old_grid_L= out_samegrd ( F_arakawa_S ,F_x0, F_x1, F_stridex,&
@@ -190,50 +194,3 @@
 !
       return
       end
-
-!!$      logical function out_samegrd ( F_arakawa_S ,F_x0, F_x1, F_stridex,&
-!!$                                     F_y0, F_y1, F_stridey, F_init_L )
-!!$      implicit none
-!!$#include <arch_specific.hf>
-!!$
-!!$      character* (*), intent(in ) :: F_arakawa_S
-!!$      logical,        intent(in ) :: F_init_L
-!!$      integer,        intent(in ) :: F_x0,F_x1,F_stridex,&
-!!$                                     F_y0,F_y1,F_stridey
-!!$
-!!$      integer, external  :: f_crc32
-!!$      integer, parameter :: max_grid= 50
-!!$      character*20, save :: id_ara_S(max_grid)
-!!$      integer crc
-!!$      integer     , save :: id_crc(max_grid), cnt
-!!$      real, dimension(6) :: identity_vec
-!!$!
-!!$!----------------------------------------------------------------------
-!!$!
-!!$      if ( F_init_L ) then
-!!$         id_ara_S= '' ; id_crc= 0 ; cnt= 0 ; out_samegrd= .false.
-!!$      else
-!!$         identity_vec(1)= F_x0
-!!$         identity_vec(2)= F_x1
-!!$         identity_vec(3)= F_stridex
-!!$         identity_vec(4)= F_y0
-!!$         identity_vec(5)= F_y1
-!!$         identity_vec(6)= F_stridey
-!!$
-!!$         crc= f_crc32 (0., identity_vec(1:6), 24)
-!!$
-!!$         if ( any (id_ara_S == trim(F_arakawa_S)) .and. &
-!!$              any (id_crc == crc) ) then
-!!$            out_samegrd= .true.
-!!$         else
-!!$            cnt=cnt+1
-!!$            id_ara_S(cnt) = F_arakawa_S
-!!$            id_crc  (cnt) = crc
-!!$            out_samegrd   = .false.
-!!$         endif
-!!$      endif
-!!$!
-!!$!----------------------------------------------------------------------
-!!$!
-!!$      return
-!!$      end

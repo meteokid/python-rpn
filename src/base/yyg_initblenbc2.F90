@@ -17,6 +17,9 @@
 !
       Subroutine yyg_initblenbc2()
        use tdpack
+      use glb_ld
+      use glb_pil
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 !
@@ -24,9 +27,6 @@
 !           Abdessamad Qaddouri/ V.lee - September 2011
 !  PLEASE consult Abdessamad or Vivian before modifying this routine.
 !
-#include "ptopo.cdk"
-#include "glb_ld.cdk"
-#include "glb_pil.cdk"
 #include "yyg_bln.cdk"
 
       integer err,Ndim,i,j,k,imx,imy,kk,ii,jj,ki,ksend,krecv

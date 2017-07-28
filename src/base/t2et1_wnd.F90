@@ -19,13 +19,13 @@
       use gmm_vt1
       use gmm_vt2
       use geomh
+      use glb_ld
+      use gmm_itf_mod
       implicit none
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
 
    type(gmm_metadata) :: dummy_gmm_meta
-   integer :: istat,j
+   integer :: istat
 !
 !  __________________________________________________________________
 !

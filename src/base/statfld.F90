@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -14,7 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 
-!**s/r statfld2 - APRES glbcolc, calcule la moyenne, la variance, minimum et 
+!**s/r statfld2 - APRES glbcolc, calcule la moyenne, la variance, minimum et
 !                 le maximum d un champs et imprime le resultat.
 !
 
@@ -22,9 +22,10 @@
                            minx,maxx,miny,maxy,mink,maxk, &
                            F_i0,F_j0,F_k0,F_in,F_jn,F_kn,F_rx)
 !
+      use lun
       implicit none
 #include <arch_specific.hf>
-! 
+!
       character*(*) F_nv_S , F_from_S
       integer minx,maxx,miny,maxy,mink,maxk, &
               F_i0,F_j0,F_k0,F_in,F_jn,F_kn,F_no,F_rx
@@ -36,14 +37,14 @@
 !revision
 ! v2_00 - Desgagne M.       - initial MPI version (from MC2)
 ! v3_00 - Desgagne & Lee    - Lam configuration
-! v3_30 - Tanguay M.        - Ask if Lun_out.gt.0 
+! v3_30 - Tanguay M.        - Ask if Lun_out.gt.0
 ! v3_?  - Lee V.            - acid test
 !
 !object
 !     calcule et imprime: la moyenne    (moy)
 !                         la variance   (var)
-!                         le minimum et le maximum du champ f   
-! 
+!                         le minimum et le maximum du champ f
+!
 !arguments
 !  Name        I/O                 Description
 !----------------------------------------------------------------
@@ -59,11 +60,10 @@
 !----------------------------------------------------------------
 !
 
-!#include "lun.cdk"
 
       integer i,j,k,imin,jmin,kmin,imax,jmax,kmax
       real*8 sum,sumd2,moy,var,mind,maxd,fijk,npt_8
-      integer i0,in,j0,jn,no
+      integer no
 !
 !--------------------------------------------------------------------
 !
@@ -101,8 +101,8 @@
       end do
       end do
       end do
-!      
-      moy = sum / npt_8 
+!
+      moy = sum / npt_8
       var = max(0.d0,1.0d0*(sumd2 + moy*moy*npt_8 - 2*moy*sum) / npt_8)
       var = sqrt(var)
       no  = F_no
@@ -111,16 +111,16 @@
       imax = imax
       jmin = jmin
       jmax = jmax
-!       
+!
 ! ** On imprime
 !
 !      if(Lun_out.gt.0) then
          if (F_rx.lt.8) then
             write(6,98) no,F_nv_S,moy,var,imin,jmin,kmin,mind, &
-                                       imax,jmax,kmax,maxd,F_from_S 
+                                       imax,jmax,kmax,maxd,F_from_S
          else
             write(6,99) no,F_nv_S,moy,var,imin,jmin,kmin,mind, &
-                                       imax,jmax,kmax,maxd,F_from_S 
+                                       imax,jmax,kmax,maxd,F_from_S
          endif
 !      endif
 !
@@ -136,4 +136,4 @@
 !----------------------------------------------------------------
 !
       return
-      end 
+      end

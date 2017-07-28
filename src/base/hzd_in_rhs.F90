@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -22,6 +22,9 @@
       use grid_options
       use gem_options
       use tdpack
+      use glb_ld
+      use cstv
+      use ver
       implicit none
 #include <arch_specific.hf>
 
@@ -33,11 +36,8 @@
 !author
 !   Claude Girard
 !
-#include "glb_ld.cdk"
-#include "ver.cdk"
-#include "cstv.cdk"
 
-      integer mm,dpwr,iter,niter,i,j,k, itercnt
+      integer mm,dpwr,niter,i,j,k
       real u0(Minx:Maxx,Miny:Maxy,Nk),v0(Minx:Maxx,Miny:Maxy,Nk)
       real u1(Minx:Maxx,Miny:Maxy,Nk),v1(Minx:Maxx,Miny:Maxy,Nk)
       real ppinv(Minx:Maxx,Miny:Maxy,Nk)

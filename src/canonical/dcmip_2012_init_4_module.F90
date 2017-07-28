@@ -52,11 +52,10 @@ MODULE dcmip_initial_conditions_test_4
   !  v4_XX - Tanguay M.        - DCMIP 2012
   !=======================================================================
 
+  use dcst
   use tdpack, only : rayt_8, rgasd_8, grav_8, cpd_8, pi_8, cappa_8, omega_8
 
   IMPLICIT NONE
-
-#include "dcst.cdk"
 
 !=======================================================================
 ! use physical constants
@@ -78,8 +77,8 @@ MODULE dcmip_initial_conditions_test_4
       grav  = grav_8,                                 & ! acc. de gravite     [m s-2]
       cp_   = cpd_8,                                  & ! chal. spec. air sec [J kg-1 K-1]
       pi    = pi_8,                                   & ! cte pi:acos(-1)
-      kappa = cappa_8,                                & ! rgasd/cpd 
-  omega_ref = omega_8                                   ! rotation terre      [s-1] 
+      kappa = cappa_8,                                & ! rgasd/cpd
+  omega_ref = omega_8                                   ! rotation terre      [s-1]
 
 !=======================================================================
 ! additional constants
@@ -455,8 +454,8 @@ CONTAINS
     REAL(8) :: dthetadphi1, dthetadphi2, dthetadphi
     REAL(8) :: epsilon
 
-    REAL(8) :: a 
-    REAL(8) :: omega 
+    REAL(8) :: a
+    REAL(8) :: omega
 
     !Reference Earth's Radius/X
     !--------------------------

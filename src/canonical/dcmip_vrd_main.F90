@@ -19,7 +19,9 @@
       subroutine dcmip_vrd_main
 
       use gmm_vt1
-
+      use glb_ld
+      use lun
+      use gmm_itf_mod
       implicit none
 
       !object
@@ -28,9 +30,6 @@
       !     on Winds, Potential temperature and Tracers
       !============================================================
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "lun.cdk"
 
       !---------------------------------------------------------------
 
@@ -72,8 +71,12 @@
 
       use canonical
       use dcmip_options
-      use tdpack, only : cappa_8 
+      use tdpack, only : cappa_8
 
+      use glb_ld
+      use tr3d
+      use ver
+      use gmm_itf_mod
       implicit none
 
       integer Minx,Maxx,Miny,Maxy,Nk
@@ -134,12 +137,7 @@
       !_____________________________________________________________________
       !
 
-#include "lun.cdk"
-#include "gmm.hf"
-#include "glb_ld.cdk"
 #include "dcmip_vrd_coef.cdk"
-#include "tr3d.cdk"
-#include "ver.cdk"
 
       !---------------------------------------------------------------
 
@@ -248,6 +246,7 @@
 
       subroutine dcmip_vrd_fld (F_fld,F_ref_fld,F_ref_on,F_cp,F_cm,Minx,Maxx,Miny,Maxy,Nk)
 
+      use glb_ld
       implicit none
 
       integer Minx,Maxx,Miny,Maxy,Nk
@@ -260,7 +259,6 @@
       !     Apply vertical diffusion over column on a given fld (Based on eqspng_drv)
       !==============================================================================
 
-#include "glb_ld.cdk"
 
       !---------------------------------------------------------------
 

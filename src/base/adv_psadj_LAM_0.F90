@@ -12,7 +12,7 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
- 
+
 !**s/p adv_psadj_LAM_0 - Estimate FLUX_out/FLUX_in when LAM using Flux calculations based on Aranami et al. (2015) and
 !                        call psadj_LAM to adjust surface pressure (NO LEGACY)
 
@@ -20,6 +20,9 @@
 
       use adv_pos
       use gem_options
+      use glb_ld
+      use adv_grid
+      use outgrid
       implicit none
 
 #include <arch_specific.hf>
@@ -30,16 +33,14 @@
 ! v4_80 - Tanguay M.        - initial MPI version
 !
 !**/
-#include "glb_ld.cdk"
-#include "adv_grid.cdk"
 
-      integer :: i, j, k, k0, nbpts, i0_e, in_e, j0_e, jn_e, i_bidon, j_bidon
+      integer :: k, k0, nbpts, i0_e, in_e, j0_e, jn_e
       real, pointer, dimension(:,:,:) :: cub_o,cub_i,w_cub_o_c,w_cub_i_c,adw_o,adw_i
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,l_nk) :: in_o,in_i,mixing
-      real,                   target :: no_conserv, no_slice, no_flux, no_advection
-      integer,                target :: no_indices_1 
-      integer,  dimension(1), target :: no_indices_2 
-!     
+      real,                   dimension(l_ni*l_nj*l_nk) :: no_conserv, no_slice, no_advection ! TODO : wasting mem
+      integer,                parameter :: no_indices_1=1
+      integer,  dimension(1) :: no_indices_2
+!
 !--------------------------------------------------------------------------------
 !
       k0 = Lam_gbpil_t+1
@@ -53,13 +54,13 @@
       allocate (cub_o(l_minx:l_maxx,l_miny:l_maxy,l_nk), &
                 cub_i(l_minx:l_maxx,l_miny:l_maxy,l_nk))
 
-      !Initialize F_in_i/F_in_o/F_cub_i/F_cub_o using MIXING=1 
+      !Initialize F_in_i/F_in_o/F_cub_i/F_cub_o using MIXING=1
       !-------------------------------------------------------
       cub_o = 0.0 ; cub_i = 0.0
 
       mixing = 1.0
 
-      call adv_set_flux_in (in_o,in_i,mixing,l_minx,l_maxx,l_miny,l_maxy,l_nk,k0)
+      call adv_set_flux_in (in_o,in_i,mixing,l_minx,l_maxx,l_miny,l_maxy,l_nk)
 
       allocate (adw_o(adv_lminx:adv_lmaxx,adv_lminy:adv_lmaxy,l_nk), &
                 adw_i(adv_lminx:adv_lmaxx,adv_lminy:adv_lmaxy,l_nk))

@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -126,13 +126,13 @@
       end
 
       subroutine sol_diag (F_dg2,F_ai,F_bi,F_ci,F_n1s,F_n1,F_nj,F_npey)
+      use ptopo
       implicit none
 
       integer F_n1s,F_n1,F_nj,F_npey
       Real*8  F_ai( F_n1s,F_nj), F_bi(F_n1s,F_nj), F_ci(F_n1s,F_nj)
       real*8  F_dg2(F_n1s,F_nj+F_npey)
 
-#include "ptopo.cdk"
 
       integer kitotal,kilon,kkii,ki0,kin,ki,j
 
@@ -144,7 +144,7 @@
 
           ki0 = 1 + kilon*(kkii-1)
           kin = min(kitotal, kilon*kkii)
-         
+
           do ki= ki0, kin
              F_dg2(ki,1) = F_bi(ki,1)*F_dg2(ki,1)
           enddo

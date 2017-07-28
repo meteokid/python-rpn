@@ -26,23 +26,20 @@
       use grid_options
       use gem_options
       use tdpack
+      use glb_ld
+      use cstv
+      use out_mod
+      use out3
+      use levels
+      use outp
+      use outd
+      use ver
+      use type_mod
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 
       integer levset,set
-
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "out.cdk"
-#include "out3.cdk"
-#include "level.cdk"
-#include "outd.cdk"
-#include "ptopo.cdk"
-#include "type.cdk"
-#include "ver.cdk"
-#include "vinterpo.cdk"
-#include "cstv.cdk"
-#include "outp.cdk"
 
       type :: stg_i
          integer :: t,m,p
@@ -55,8 +52,7 @@
       logical      :: satues_L= .false.
 
       integer,save :: lastdt= -1
-      integer i,j,k,ii,l_ninj,nko,nko_t,nko_m,istat,nk_under,nk_src,&
-              n,kind
+      integer i,j,k,ii,l_ninj,nko,istat,nk_under,nk_src,knd
       integer pngz,pnvt,pntt,pnes,pntd, pnhr,pnpx,pntw,pnwe,pnww,&
               pnzz,pnth,pnpn,pnp0,psum,pnpt,pnla,pnlo,pnme,pnmx
       integer, dimension(:), allocatable :: indo
@@ -180,30 +176,30 @@
 !     2.0    Output 2D variables
 !_________________________________________________________________
 !     output 2D fields on 0mb (pressure)
-      kind=2
+      knd=2
 
       if (pnme.ne.0)then
             call out_fstecr3(fis0,l_minx,l_maxx,l_miny,l_maxy,0.0, &
               'ME  ',Outd_convmult(pnme,set),Outd_convadd(pnme,set),&
-              kind,-1,1,1, 1, Outd_nbit(pnme,set),.false. )
+              knd,-1,1,1, 1, Outd_nbit(pnme,set),.false. )
          endif
       if (pnmx.ne.0)then
             call out_fstecr3(fis0,l_minx,l_maxx,l_miny,l_maxy,0.0, &
               'MX  ',Outd_convmult(pnmx,set),Outd_convadd(pnmx,set),&
-              kind,-1,1,1, 1, Outd_nbit(pnmx,set),.false. )
+              knd,-1,1,1, 1, Outd_nbit(pnmx,set),.false. )
          endif
       if (pnpt.ne.0) &
           call out_fstecr3(ptop,l_minx,l_maxx,l_miny,l_maxy,0.0, &
               'PT  ',Outd_convmult(pnpt,set),Outd_convadd(pnpt,set),&
-              kind,-1,1, 1, 1, Outd_nbit(pnpt,set),.false. )
+              knd,-1,1, 1, 1, Outd_nbit(pnpt,set),.false. )
       if (pnla.ne.0) &
           call out_fstecr3(geomh_latrx,1,l_ni,1,l_nj,0.0, &
               'LA  ',Outd_convmult(pnla,set),Outd_convadd(pnla,set),&
-              kind,-1,1, 1, 1, Outd_nbit(pnla,set),.false. )
+              knd,-1,1, 1, 1, Outd_nbit(pnla,set),.false. )
       if (pnlo.ne.0) &
           call out_fstecr3(geomh_lonrx,1,l_ni,1,l_nj,0.0, &
               'LO  ',Outd_convmult(pnlo,set),Outd_convadd(pnlo,set),&
-              kind,-1,1, 1, 1, Outd_nbit(pnlo,set),.false. )
+              knd,-1,1, 1, 1, Outd_nbit(pnlo,set),.false. )
 !_______________________________________________________________________
 !
 !     3.0    Precomputations for output over pressure levels or PN or
@@ -264,7 +260,7 @@
                            l_minx,l_maxx,l_miny,l_maxy,1)
          call out_fstecr3( w1,l_minx,l_maxx,l_miny,l_maxy,0.0, &
               'PN  ',Outd_convmult(pnpn,set),Outd_convadd(pnpn,set), &
-              kind,-1,1, 1, 1, Outd_nbit(pnpn,set),.false. )
+              knd,-1,1, 1, 1, Outd_nbit(pnpn,set),.false. )
       endif
 
 !     Calculate P0
@@ -279,7 +275,7 @@
                        l_minx,l_maxx,l_miny,l_maxy,1)
          call out_fstecr3 (w1,l_minx,l_maxx,l_miny,l_maxy,0.0,&
               'P0  ',Outd_convmult(pnp0,set),Outd_convadd(pnp0,set), &
-              kind,-1,1, 1, 1, Outd_nbit(pnp0,set),.false.)
+              knd,-1,1, 1, 1, Outd_nbit(pnp0,set),.false.)
          if(Schm_sleve_L)then
             ! This is constant during the integration. This could be done just once and saved, is it worthwile??
             istat = gmm_get (gmmk_sls_s ,sls )
@@ -293,7 +289,7 @@
             end do
             call out_fstecr3 (w1,l_minx,l_maxx,l_miny,l_maxy,0.0,&
               'P0LS',Outd_convmult(pnp0,set),Outd_convadd(pnp0,set), &
-              kind,-1,1, 1, 1,32,.false.)
+              knd,-1,1, 1, 1,32,.false.)
          endif
       endif
 
@@ -314,7 +310,7 @@
       if (Level_typ_S(levset) .eq. 'M') then  ! Output on model levels
 
 !       Setup the indexing for output
-         kind= Level_kind_ip1
+         knd= Level_kind_ip1
          allocate ( indo(G_nk+1) )
          call out_slev2 ( Level(1,levset), Level_max(levset), &
                           Level_momentum,indo,nko,near_sfc_L)
@@ -335,22 +331,22 @@
          if (pngz.ne.0)then
             call out_fstecr3(gzm,l_minx,l_maxx,l_miny,l_maxy,hybm, &
                'GZ  ',Outd_convmult(pngz,set),Outd_convadd(pngz,set),&
-               kind,-1,G_nk+1,indo,nko,Outd_nbit(pngz,set),.false. )
+               knd,-1,G_nk+1,indo,nko,Outd_nbit(pngz,set),.false. )
             call out_fstecr3(gzt,l_minx,l_maxx,l_miny,l_maxy,hybt, &
                'GZ  ',Outd_convmult(pngz,set),Outd_convadd(pngz,set),&
-               kind,-1,G_nk+1,indo,nko,Outd_nbit(pngz,set),.false. )
+               knd,-1,G_nk+1,indo,nko,Outd_nbit(pngz,set),.false. )
             if (near_sfc_L) then
                call out_fstecr3(gzt(l_minx,l_miny,G_nk+1)    , &
                     l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+1), &
                'GZ  ',Outd_convmult(pngz,set),Outd_convadd(pngz,set),&
-               kind,-1,1,1,1,Outd_nbit(pngz,set),.false.)
+               knd,-1,1,1,1,Outd_nbit(pngz,set),.false.)
             endif
          endif
 
          if (pnvt.ne.0)then
             call out_fstecr3(vt,l_minx,l_maxx,l_miny,l_maxy,hybt, &
                  'VT  ',Outd_convmult(pnvt,set),Outd_convadd(pnvt,set),&
-                 kind,-1,G_nk+1,indo,nko,Outd_nbit(pnvt,set),.false. )
+                 knd,-1,G_nk+1,indo,nko,Outd_nbit(pnvt,set),.false. )
             if (write_diag_lev) then
                call out_fstecr3(vt(l_minx,l_miny,G_nk+1),&
                                l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+2), &
@@ -361,7 +357,7 @@
          if (pnth.ne.0) then
                call out_fstecr3(th,l_minx,l_maxx,l_miny,l_maxy,hybt, &
                     'TH  ',Outd_convmult(pnth,set),Outd_convadd(pnth,set),&
-                    kind,-1,G_nk+1,indo,nko,Outd_nbit(pnth,set),.false. )
+                    knd,-1,G_nk+1,indo,nko,Outd_nbit(pnth,set),.false. )
                if (write_diag_lev) then
                   call out_fstecr3(th(l_minx,l_miny,G_nk+1),&
                                   l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+2), &
@@ -373,7 +369,7 @@
          if (pntt.ne.0)then
             call out_fstecr3(tt,l_minx,l_maxx,l_miny,l_maxy,hybt, &
                  'TT  ' ,Outd_convmult(pntt,set),Outd_convadd(pntt,set), &
-                 kind,-1, G_nk+1,indo,nko,Outd_nbit(pntt,set),.false. )
+                 knd,-1, G_nk+1,indo,nko,Outd_nbit(pntt,set),.false. )
             if (write_diag_lev) then
                call out_fstecr3(tt(l_minx,l_miny,G_nk+1),&
                                l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+2), &
@@ -401,15 +397,15 @@
          if (pnpx.ne.0)then
              call out_fstecr3(px_m,l_minx,l_maxx,l_miny,l_maxy,hybm, &
                   'PX  ',Outd_convmult(pnpx,set),Outd_convadd(pnpx,set), &
-                  kind,-1,G_nk+1,indo,nko,Outd_nbit(pnpx,set),.false. )
+                  knd,-1,G_nk+1,indo,nko,Outd_nbit(pnpx,set),.false. )
              call out_fstecr3(px_ta,l_minx,l_maxx,l_miny,l_maxy,hybt, &
                   'PX  ',Outd_convmult(pnpx,set),Outd_convadd(pnpx,set),&
-                  kind,-1,G_nk+1,indo,nko,Outd_nbit(pnpx,set),.false. )
+                  knd,-1,G_nk+1,indo,nko,Outd_nbit(pnpx,set),.false. )
              if (near_sfc_L) then
                 call out_fstecr3(px_ta(l_minx,l_miny,G_nk+1), &
                                 l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+1), &
                      'PX  ',Outd_convmult(pnpx,set),Outd_convadd(pnpx,set),&
-                     kind,-1,1,1,1,Outd_nbit(pnpx,set),.false. )
+                     knd,-1,1,1,1,Outd_nbit(pnpx,set),.false. )
              endif
          endif
 
@@ -422,7 +418,7 @@
                            .true.,trpl_8,l_ninj,nk_src,l_ninj)
              call out_fstecr3(t8,l_minx,l_maxx,l_miny,l_maxy,hybt, &
                   'TW  ',Outd_convmult(pntw,set),Outd_convadd(pntw,set), &
-                  kind,-1,G_nk+1, indo, nko, Outd_nbit(pntw,set),.false. )
+                  knd,-1,G_nk+1, indo, nko, Outd_nbit(pntw,set),.false. )
              if (write_diag_lev) then
                 call out_fstecr3(t8(l_minx,l_miny,G_nk+1),&
                      l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+2), &
@@ -449,7 +445,7 @@
             if (pnes.ne.0) then
                call out_fstecr3(t8,l_minx,l_maxx,l_miny,l_maxy,hybt, &
                     'ES  ',Outd_convmult(pnes,set),Outd_convadd(pnes,set),&
-                    kind,-1,G_nk+1,indo,nko,Outd_nbit(pnes,set),.false. )
+                    knd,-1,G_nk+1,indo,nko,Outd_nbit(pnes,set),.false. )
                if (write_diag_lev) then
                   call out_fstecr3(t8(l_minx,l_miny,G_nk+1), &
                                   l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+2), &
@@ -469,7 +465,7 @@
                enddo
                call out_fstecr3(t8,l_minx,l_maxx,l_miny,l_maxy,hybt, &
                     'TD  ',Outd_convmult(pntd,set),Outd_convadd(pntd,set),&
-                    kind,-1,G_nk+1,indo,nko,Outd_nbit(pntd,set),.false. )
+                    knd,-1,G_nk+1,indo,nko,Outd_nbit(pntd,set),.false. )
                if (write_diag_lev) then
                   call out_fstecr3(t8(l_minx,l_miny,G_nk+1), &
                        l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+2), &
@@ -493,7 +489,7 @@
             endif
             call out_fstecr3(t8,l_minx,l_maxx,l_miny,l_maxy,hybt, &
                  'HR  ',Outd_convmult(pnhr,set),Outd_convadd(pnhr,set),&
-                 kind,-1,G_nk+1,indo,nko,Outd_nbit(pnhr,set),.false. )
+                 knd,-1,G_nk+1,indo,nko,Outd_nbit(pnhr,set),.false. )
             if (write_diag_lev) then
                call out_fstecr3(t8(l_minx,l_miny,G_nk+1), &
                     l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+2), &
@@ -505,7 +501,7 @@
          if (pnww.ne.0) then
             call out_fstecr3(myomega,l_minx,l_maxx,l_miny,l_maxy,hybt_w, &
                  'WW  ',Outd_convmult(pnww,set),Outd_convadd(pnww,set),&
-                 kind,-1,G_nk,indo,nko,Outd_nbit(pnww,set),.false. )
+                 knd,-1,G_nk,indo,nko,Outd_nbit(pnww,set),.false. )
          endif
 
          if (pnwe.ne.0) then
@@ -541,14 +537,14 @@
             end do
             call out_fstecr3(  ffwe,l_minx,l_maxx,l_miny,l_maxy,hybt_w,&
                  'WE  ',Outd_convmult(pnwe,set),Outd_convadd(pnwe,set),&
-                 kind,-1,G_nk,indo,min(nko,G_nk),Outd_nbit(pnwe,set),.false.)
+                 knd,-1,G_nk,indo,min(nko,G_nk),Outd_nbit(pnwe,set),.false.)
             deallocate (ffwe)
          endif
 
          if (pnzz.ne.0) then
             call out_fstecr3(wt1,l_minx,l_maxx,l_miny,l_maxy,hybt_w, &
                  'ZZ  ',Outd_convmult(pnzz,set),Outd_convadd(pnzz,set),&
-                 kind,-1,G_nk,indo,nko,Outd_nbit(pnzz,set),.false. )
+                 knd,-1,G_nk,indo,nko,Outd_nbit(pnzz,set),.false. )
          endif
 
          deallocate (indo)
@@ -571,7 +567,7 @@
                     cible  (l_minx:l_maxx,l_miny:l_maxy,nko), &
                     indo(nko), rf(nko) , prprlvl(nko) )
 
-         kind=2 !for pressure output
+         knd=2 !for pressure output
 
          do i = 1, nko !Setup the indexing for output
             indo     (i)= i
@@ -612,7 +608,7 @@
            endif
            call out_fstecr3(w5,l_minx,l_maxx,l_miny,l_maxy,rf, &
               'GZ  ',Outd_convmult(pngz,set),Outd_convadd(pngz,set), &
-              kind,-1,nko,indo,nko,Outd_nbit(pngz,set),.false. )
+              knd,-1,nko,indo,nko,Outd_nbit(pngz,set),.false. )
         endif
 
         if (pntt.ne.0.or.pntd.ne.0.or.pnhr.ne.0) then
@@ -649,7 +645,7 @@
                               l_minx,l_maxx,l_miny,l_maxy,nko )
             call out_fstecr3(w5,l_minx,l_maxx,l_miny,l_maxy,rf, &
                 'TW  ',Outd_convmult(pntw,set),Outd_convadd(pntw,set), &
-                kind,-1,nko, indo, nko, Outd_nbit(pntw,set),.false. )
+                knd,-1,nko, indo, nko, Outd_nbit(pntw,set),.false. )
         endif
 
         if (pnes.ne.0.or.pntd.ne.0) then
@@ -683,7 +679,7 @@
                             l_minx,l_maxx,l_miny,l_maxy, nko )
               call out_fstecr3(td_pres,l_minx,l_maxx,l_miny,l_maxy,rf, &
                 'TD  ',Outd_convmult(pntd,set),Outd_convadd(pntd,set),&
-                kind,-1,nko,indo,nko,Outd_nbit(pntd,set),.false. )
+                knd,-1,nko,indo,nko,Outd_nbit(pntd,set),.false. )
             endif
 
             if (pnes.ne.0) then
@@ -692,7 +688,7 @@
                                   l_minx,l_maxx,l_miny,l_maxy,nko )
                 call out_fstecr3(w5,l_minx,l_maxx,l_miny,l_maxy,rf, &
                    'ES  ',Outd_convmult(pnes,set),Outd_convadd(pnes,set),&
-                   kind,-1,nko,indo,nko,Outd_nbit(pnes,set),.false.)
+                   knd,-1,nko,indo,nko,Outd_nbit(pnes,set),.false.)
             endif
         endif
 
@@ -714,7 +710,7 @@
                               l_minx,l_maxx,l_miny,l_maxy,nko )
            call out_fstecr3(w5,l_minx,l_maxx,l_miny,l_maxy,rf, &
                 'HR  ',Outd_convmult(pnhr,set),Outd_convadd(pnhr,set), &
-                kind,-1,nko, indo, nko, Outd_nbit(pnhr,set),.false. )
+                knd,-1,nko, indo, nko, Outd_nbit(pnhr,set),.false. )
         endif
 
         if (pnvt.ne.0) then
@@ -723,7 +719,7 @@
                               l_minx,l_maxx,l_miny,l_maxy,nko )
             call out_fstecr3(vt_pres,l_minx,l_maxx,l_miny,l_maxy,rf, &
                  'VT  ',Outd_convmult(pnvt,set),Outd_convadd(pnvt,set), &
-                 kind,-1,nko,indo, nko, Outd_nbit(pnvt,set),.false. )
+                 knd,-1,nko,indo, nko, Outd_nbit(pnvt,set),.false. )
         endif
 
          if (pnth.ne.0) then
@@ -732,7 +728,7 @@
                            inttype=Out3_vinterp_type_S )
             call out_fstecr3(w5,l_minx,l_maxx,l_miny,l_maxy,rf, &
                  'TH  ',Outd_convmult(pnth,set),Outd_convadd(pnth,set), &
-                 kind,-1,nko, indo, nko, Outd_nbit(pnth,set),.false. )
+                 knd,-1,nko, indo, nko, Outd_nbit(pnth,set),.false. )
          endif
 
         if (pntt.ne.0) then
@@ -741,7 +737,7 @@
                               l_minx,l_maxx,l_miny,l_maxy,nko )
             call out_fstecr3(tt_pres,l_minx,l_maxx,l_miny,l_maxy,rf,  &
                  'TT  ',Outd_convmult(pntt,set),Outd_convadd(pntt,set), &
-                 kind,-1,nko, indo, nko, Outd_nbit(pntt,set),.false. )
+                 knd,-1,nko, indo, nko, Outd_nbit(pntt,set),.false. )
         endif
 
         if (pnww.ne.0) then
@@ -753,7 +749,7 @@
                               l_minx,l_maxx,l_miny,l_maxy,nko )
              call out_fstecr3(w5,l_minx,l_maxx,l_miny,l_maxy,rf, &
                   'WW  ',Outd_convmult(pnww,set),Outd_convadd(pnww,set), &
-                  kind,-1,nko, indo, nko, Outd_nbit(pnww,set),.false. )
+                  knd,-1,nko, indo, nko, Outd_nbit(pnww,set),.false. )
         endif
 
         deallocate(indo,rf,prprlvl,cible)

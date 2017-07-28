@@ -16,28 +16,28 @@
 !**s/r mat_vec2D - 2D_elliptic matrix_vector's computation
 !
 
-      subroutine  mat_vecs2D ( Sol, Rhs, Minx, Maxx, Miny, Maxy,nil,  &
+      subroutine  mat_vecs2D ( F_Sol, F_Rhs, Minx, Maxx, Miny, Maxy,nil,  &
                              njl,minx1, maxx1, minx2, maxx2,Nk,fdg1 )
       use gem_options
       use geomh
+      use glb_ld
+      use cstv
+      use sol
+      use opr
       implicit none
 #include <arch_specific.hf>
 !
-      integer Minx, Maxx, Miny, Maxy,nil, njl, &
-              minx1, maxx1, minx2, maxx2,Nk
-      real*8  Rhs(Minx:Maxx,Miny:Maxy,Nk), &
-              Sol(Minx:Maxx,Miny:Maxy,Nk), &
-             fdg1(minx1:maxx1, minx2:maxx2, Nk)
+      integer, intent(in):: Minx, Maxx, Miny, Maxy,nil, njl, &
+                            minx1, maxx1, minx2, maxx2, Nk
+      real*8, intent(out) ::  F_Rhs(Minx:Maxx,Miny:Maxy,Nk)
+      real*8, intent(in) :: F_Sol(Minx:Maxx,Miny:Maxy,Nk)
+      real*8, intent(out) :: fdg1(minx1:maxx1, minx2:maxx2, Nk)
 !author
 !       Abdessamad Qaddouri - December  2006
 !
 !revision
 ! v3_30 - Qaddouri A.       - initial version
 
-#include "glb_ld.cdk"
-#include "opr.cdk"
-#include "cstv.cdk"
-#include "sol.cdk"
 
       integer j,i,k,ii,jj,halox,haloy
       real*8  stencil1,stencil2,stencil3,stencil4,stencil5,cst,di_8
@@ -53,7 +53,7 @@
          fdg1(:,:,k) = .0d0
          do j=1+sol_pil_s, njl-sol_pil_n
          do i=1+sol_pil_w, nil-sol_pil_e
-            fdg1(i,j,k)=sol(i,j,k)
+            fdg1(i,j,k)=F_Sol(i,j,k)
          enddo
          enddo
       enddo
@@ -80,11 +80,11 @@
                stencil4= Opr_opsxp0_8(G_ni+ii)*Opr_opsyp2_8(jj)
                stencil5= Opr_opsxp0_8(G_ni+ii)*Opr_opsyp2_8(2*G_nj+jj)
 
-               Rhs(i,j,k) =stencil1*fdg1(i  ,j  ,k) + &
-                           stencil2*fdg1(i-1,j  ,k) + &
-                           stencil5*fdg1(i  ,j+1,k) + &
-                           stencil4*fdg1(i  ,j-1,k) + &
-                           stencil3*fdg1(i+1,j  ,k)
+               F_Rhs(i,j,k) =stencil1*fdg1(i  ,j  ,k) + &
+                             stencil2*fdg1(i-1,j  ,k) + &
+                             stencil5*fdg1(i  ,j+1,k) + &
+                             stencil4*fdg1(i  ,j-1,k) + &
+                             stencil3*fdg1(i+1,j  ,k)
             enddo
          enddo
       enddo

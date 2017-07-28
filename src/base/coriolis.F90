@@ -36,9 +36,10 @@ module coriolis
       subroutine set_coriolis(F_x_8, F_y_8, F_xu_8, F_yv_8, F_rot_8, Minx,Maxx,Miny,Maxy)
 
          ! coriolis - compute coriolis factor
-
+         use dcst
          use gem_options
          use grid_options
+         use glb_ld
          implicit none
 #include <arch_specific.hf>
 
@@ -48,8 +49,6 @@ module coriolis
                                F_xu_8(Minx:Maxx), & ! longitudes in radians U grid
                                F_yv_8(Miny:Maxy), & ! latitudes in radians V grid
                                F_rot_8(3,3)         ! rotation matrix of the grid
-#include "glb_ld.cdk"
-#include "dcst.cdk"
 
       integer :: i, j
       real*8  :: s0, ang, c0, sa, ca

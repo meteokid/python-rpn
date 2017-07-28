@@ -20,6 +20,8 @@
                             F_aiy_8,F_biy_8,F_ciy_8,F_g1_8,F_g2_8, &
                             Minx,Maxx,Miny,Maxy,Nk, Gni,Gnj, lnjs_nh,  &
                             nk12s, nk12, ni22s, ni22, fnjb)
+      use glb_ld
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 
@@ -50,8 +52,6 @@
 !  
 !----------------------------------------------------------------
 
-#include "glb_ld.cdk"
-#include "ptopo.cdk"
 
       integer i, j, k, cnt,k0,kn,k1,klon,ktotal
       real*8 g1(nk12*l_nj,Gni), ax(nk12*l_nj,Gni), cx(nk12*l_nj,Gni), &

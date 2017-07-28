@@ -18,15 +18,15 @@
       integer function set_io_pes ( F_comm_id, F_comm_setno, F_iome, &
                                     F_comm_io, F_iobcast, F_npes )
       use iso_c_binding
+      use glb_ld
+      use lun
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 
       integer F_comm_id, F_comm_setno, F_iome, F_comm_io, &
               F_iobcast, F_npes
 
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "ptopo.cdk"
       include "rpn_comm.inc"
 
       integer pe_xcoord(F_npes), pe_ycoord(F_npes), err

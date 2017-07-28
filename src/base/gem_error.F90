@@ -1,5 +1,6 @@
       subroutine gem_error (F_errorCode, F_FromSubName, F_Message)
 use iso_c_binding
+      use lun
       implicit none
 #include <arch_specific.hf>
       integer :: F_errorCode
@@ -8,7 +9,6 @@ use iso_c_binding
       !@author  Michel Desgagne
 
    include "rpn_comm.inc"
-#include "lun.cdk"
       integer :: errcode, err
 !
 !     ---------------------------------------------------------------

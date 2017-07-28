@@ -14,8 +14,10 @@
 !---------------------------------- LICENCE END ---------------------------------
 
       function adv_nml (F_nmlFileName_S) result (F_stat)
+      use adv_grid
       use adv_options
       use grid_options
+      use outgrid
       implicit none
 #include <arch_specific.hf>
 
@@ -26,10 +28,9 @@
       integer :: F_stat
 !@author Stephane Chamberland, Nov 2009
 !@revisions
-! v4_80 - Tanguay M.        - GEM4 Mass-Conservation 
+! v4_80 - Tanguay M.        - GEM4 Mass-Conservation
 
 #include "msg.h"
-#include "adv_grid.cdk"
 
       integer :: fileUnit
       integer, external :: file_open_existing

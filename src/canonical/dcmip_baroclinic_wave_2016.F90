@@ -23,6 +23,11 @@
 
       use geomh
 
+      use glb_ld
+      use cstv
+      use lun
+      use ver
+      use ptopo
       implicit none
 
       integer Mminx,Mmaxx,Mminy,Mmaxy,Nk
@@ -48,11 +53,6 @@
       !   Setup for Baroclinic wave with Terminator chemistry (DCMIP 2016)
       !===================================================================
 
-#include "glb_ld.cdk"
-#include "ver.cdk"
-#include "ptopo.cdk"
-#include "cstv.cdk"
-#include "lun.cdk"
 
       !-----------------------------------------------------------------------
 

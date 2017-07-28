@@ -19,18 +19,14 @@ module inp_base
    use vGrid_Descriptors
    use gem_options
    use geomh
+   use glb_ld
    use inp_mod
    use tdpack
-
-  implicit none
+   implicit none
 #include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include "glb_ld.cdk"
-#include "glb_pil.cdk"
-#include "hgc.cdk"
-#include "ver.cdk"
 
-  public
+   public
 
 contains
 
@@ -54,7 +50,7 @@ contains
       real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(OUT):: F_dest
 
 !     local variables
-      character*12 inttype
+      character(len=12) :: inttype
       integer nka
       integer, dimension (:    ), pointer :: ip1_list
       real   , dimension (:,:  ), pointer :: dummy
@@ -103,13 +99,16 @@ contains
       integer function inp_read ( F_var_S, F_hgrid_S, F_dest, &
                                   F_ip1, F_nka, F_hint_S )
 
+      use glb_pil
+      use hgc
+      implicit none
+
       character*(*)                     ,intent(IN)  :: F_var_S,F_hgrid_S
       character*(*),            optional,intent(IN)  :: F_hint_S
       integer                           ,intent(OUT) :: F_nka
       integer, dimension(:    ), pointer,intent(OUT) :: F_ip1
       real   , dimension(:,:,:), pointer,intent(OUT) :: F_dest
 
-#include "tr3d.cdk"
 
 !     local variables
       integer, external :: RPN_COMM_shuf_ezdist, &
@@ -359,6 +358,9 @@ contains
 !                    on proper Arakawa grid u and v respectively
 
       subroutine inp_read_uv ( F_u, F_v, F_target_S, F_ip1, F_nka )
+
+      use hgc
+      implicit none
 
       character*(*)                     , intent(in)  :: F_target_S
       integer                           , intent(out) :: F_nka
@@ -625,6 +627,7 @@ contains
                              F_ssqr,F_ssur,F_ssvr, F_ssq0,F_ssu0,F_ssv0,&
                              F_ssq0LS,F_ssu0LS,F_ssv0LS                ,&
                              Minx,Maxx,Miny,Maxy, F_nk )
+      use ver
       implicit none
 
       logical                , intent(IN)  :: F_stag_L

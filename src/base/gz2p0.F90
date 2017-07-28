@@ -21,6 +21,9 @@
       use gem_options
       use geomh
       use tdpack
+      use glb_ld
+      use cstv
+      use ver
       implicit none
 #include <arch_specific.hf>
 
@@ -38,9 +41,6 @@
 ! F_rna        I    - pressure levels from pressure analyse
 ! Nk           I    - number of levels from the pressure analyse
 
-#include "glb_ld.cdk"
-#include "cstv.cdk"
-#include "ver.cdk"
 
       integer i,j,k,m,NN
       real, allocatable, dimension(:  ) :: guess,a,topo

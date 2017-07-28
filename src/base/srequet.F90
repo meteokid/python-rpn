@@ -22,6 +22,17 @@
 !
       use grid_options
       use gem_options
+      use glb_ld
+      use lun
+      use out3
+      use levels
+      use outp
+      use outd
+      use outc
+      use hgc
+      use path
+      use outgrid
+      use timestep
       implicit none
 #include <arch_specific.hf>
 !
@@ -77,17 +88,6 @@
 !    functions declared in "rpn_fortran_callback" calls previously.
 !
 
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "out3.cdk"
-#include "grid.cdk"
-#include "timestep.cdk"
-#include "hgc.cdk"
-#include "level.cdk"
-#include "outd.cdk"
-#include "outp.cdk"
-#include "outc.cdk"
-#include "path.cdk"
 
       integer process_f_callback,longueur
       external process_f_callback,longueur
@@ -98,7 +98,7 @@
 !*
 !
       call rpn_f_callback_setverbose(Lun_out)
-      Grid_sets = 0
+      OutGrid_sets = 0
       Level_sets = 0
       Level_npres = 0
       Timestep_sets = 0

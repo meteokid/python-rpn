@@ -23,6 +23,12 @@
       use gem_options
       use geomh
 
+      use glb_ld
+      use cstv
+      use lun
+      use ver
+      use gmm_itf_mod
+      use ptopo
       implicit none
 
       integer Mminx,Mmaxx,Mminy,Mmaxy,Nk
@@ -45,16 +51,10 @@
       !   Setup for Baroclinic Instability on a Small Planet (DCMIP 2012)
       !==================================================================
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "ver.cdk"
-#include "ptopo.cdk"
-#include "cstv.cdk"
 
       !-------------------------------------------------------------------------------
 
-      integer i,j,k,istat
+      integer i,j,k
 
       real(8) x_a_8,y_a_8,utt_8,vtt_8,s_8(2,2),rlon_8
 
@@ -81,7 +81,7 @@
                   q1,      & ! Tracer q1 - Potential temperature (kg/kg)
                   q2         ! Tracer q2 - Ertel's potential vorticity (kg/kg)
 
-      REAL(8) :: eta
+!      REAL(8) :: eta
 
       !-----------------------------------------------------------------------
 

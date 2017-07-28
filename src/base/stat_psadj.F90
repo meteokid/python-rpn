@@ -20,16 +20,16 @@
       use gmm_vt0
       use grid_options
       use geomh
+      use glb_ld
+      use cstv
+      use lun
+      use gmm_itf_mod
+      use ptopo
       implicit none
 
       integer,          intent(in) :: F_time       !I, Time 0 or Time 1
       character(len=*), intent(in) :: F_comment_S  !I, Comment
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "cstv.cdk"
-#include "ptopo.cdk"
 
       real, pointer, dimension (:,:) :: w2d
       integer err,i,j,istat

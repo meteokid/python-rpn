@@ -17,6 +17,7 @@
 !
       integer function yyg_checkrot ()
       use grid_options
+      use lun
       implicit none
 #include <arch_specific.hf>
 !
@@ -27,7 +28,6 @@
 ! v4_40 - Qaddouri/Lee     - initial version
 ! v4_50 - Desgagne M.      - only retain test on grid rotation
 !
-#include "lun.cdk"
 !
 !-------------------------------------------------------------------
 !

@@ -21,6 +21,7 @@
                    minx1, maxx1, minx2, maxx2, nx1, nx2, nx3, F_pwr   , &
                    minx,maxx,miny,maxy,gnk,gni,nil,njl,nkl            , &
                    F_opsxp0_8, F_opsyp0_8,F_cdiff,F_npex,F_npey)
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 !
@@ -53,7 +54,6 @@
 !
 !----------------------------------------------------------------
 !
-#include "ptopo.cdk"
 
       real*8  fdg1_8 ( miny:maxy , minx1:maxx1, gni+F_npex  ), &
               fdg2_8 (minx1:maxx1, minx2:maxx2, nx3+F_npey  ), &

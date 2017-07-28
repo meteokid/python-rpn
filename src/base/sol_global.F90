@@ -16,6 +16,14 @@
 !
       subroutine sol_global (F_sol_8, F_rhs_8, F_dg1, F_dg2, F_dwfft, F_ni, F_nj, F_nk)
       use gem_options
+      use glb_ld
+      use ldnh
+      use glb_pil
+      use fft
+      use sol
+      use opr
+      use trp
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 
@@ -24,23 +32,15 @@
              F_dg1(*), F_dg2(*), F_dwfft(*)
 
 !
-!author 
+!author
 !     Michel Desgagne / Abdessamad Qaddouri -- January 2014
 !
 !revision
 ! v4_70 - Desgagne/Qaddouri  - initial version
 
-#include "glb_ld.cdk"
-#include "glb_pil.cdk"
-#include "ldnh.cdk"
-#include "sol.cdk"
-#include "opr.cdk"
-#include "ptopo.cdk"
-#include "fft.cdk"
-#include "trp.cdk"
 
-      integer Gni, i, j, nev, NSTOR, dim
-      real*8, dimension(:), allocatable :: wk_evec_8, abpt
+      integer Gni, i, j, dim
+      real*8, dimension(:), allocatable :: wk_evec_8
 !
 !     ---------------------------------------------------------------
 !
@@ -51,9 +51,9 @@
                       trp_12smax, trp_12sn, trp_22max, trp_22n     ,&
                       Schm_nith, G_ni, G_nj, Ptopo_npex, Ptopo_npey,&
                       Sol_ai_8, Sol_bi_8, Sol_ci_8, F_dg2, F_dwfft )
-         
+
       else
-         
+
          Gni= G_ni-Lam_pil_w-Lam_pil_e
          dim= Gni*Gni
          allocate ( wk_evec_8(Gni*Gni) )
@@ -63,19 +63,19 @@
             Opr_xevec_8((j+Lam_pil_w-1)*G_ni+i+Lam_pil_w)
          enddo
          enddo
-         
+
          call sol_mxma ( F_sol_8, F_rhs_8, wk_evec_8         ,&
               ldnh_maxx, ldnh_maxy, ldnh_nj, dim             ,&
               trp_12smax, trp_12sn, trp_22max, trp_22n       ,&
-              G_ni, G_nj, G_nk, trp_12sn                     ,& 
+              G_ni, G_nj, G_nk, trp_12sn                     ,&
               Ptopo_npex, Ptopo_npey                         ,&
               Sol_ai_8,Sol_bi_8,Sol_ci_8,F_dg1,F_dg2,F_dwfft )
-         
+
          deallocate (wk_evec_8)
 
       endif
 !
 !     ---------------------------------------------------------------
-! 
+!
       return
       end

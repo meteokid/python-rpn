@@ -14,10 +14,10 @@
 !---------------------------------- LICENCE END ---------------------------------
 
       subroutine out_padbuf (f,minx,maxx,miny,maxy,lnk)
+      use glb_ld
       implicit none
 #include <arch_specific.hf>
 
-#include "glb_ld.cdk"
 
       integer minx,maxx,miny,maxy,lnk
       real f(minx:maxx,miny:maxy,lnk)

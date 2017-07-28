@@ -18,6 +18,11 @@
 	subroutine adv_get_indices (ii,  F_x, F_y, F_z, F_num, &
                                  nind, F_i0, F_in, F_j0, F_jn, F_k0, F_nk, F_lev_S)
    use gem_options
+      use glb_ld
+      use ver
+      use adv_grid
+      use adv_interp
+      use outgrid
    implicit none
 
 #include <arch_specific.hf>
@@ -33,10 +38,6 @@
 !@ author  RPN-A Model Infrastructure Group  August 2015
    ! 
 
-#include "adv_grid.cdk"
-#include "adv_interp.cdk"
-#include "glb_ld.cdk"
-#include "ver.cdk"
    integer :: kkmax , idxk, idxjk, ii1, jj1,kk1
    integer :: id,i,j,k,n,n0,n1,n2,n3,m,nind 
    integer :: midxk,midxjk,mni,mnj,mnk,nn

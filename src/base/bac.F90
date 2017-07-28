@@ -28,31 +28,29 @@
       use gem_options
       use geomh
       use tdpack
+      use glb_ld
+      use cstv
+      use lun
+      use ver
+      use glb_pil
       implicit none
 #include <arch_specific.hf>
 
-      integer  Minx,Maxx,Miny,Maxy, ni,nj,Nk , i0, j0, k0, in, jn
-      real*8   F_lhs_sol (ni,nj,Nk)
-      real     F_fis (Minx:Maxx,Miny:Maxy)       , F_sl    (Minx:Maxx,Miny:Maxy)       , &
-               F_u   (Minx:Maxx,Miny:Maxy,  Nk)  , F_v     (Minx:Maxx,Miny:Maxy,  Nk)  , &
-               F_w   (Minx:Maxx,Miny:Maxy,  Nk)  , F_t     (Minx:Maxx,Miny:Maxy,  Nk)  , &
-               F_s   (Minx:Maxx,Miny:Maxy)       , F_zd    (Minx:Maxx,Miny:Maxy,  Nk)  , &
-               F_q   (Minx:Maxx,Miny:Maxy,  Nk+1), F_nest_q(Minx:Maxx,Miny:Maxy,  Nk+1), &
-               F_ru  (Minx:Maxx,Miny:Maxy,  Nk)  , F_rv    (Minx:Maxx,Miny:Maxy,  Nk)  , &
-               F_rt  (Minx:Maxx,Miny:Maxy,  Nk)  , F_rw    (Minx:Maxx,Miny:Maxy,  Nk)  , &
-               F_rf  (Minx:Maxx,Miny:Maxy,  Nk)  , F_rb    (Minx:Maxx,Miny:Maxy)       , &
-               F_nu  (Minx:Maxx,Miny:Maxy,  Nk)  , F_nv    (Minx:Maxx,Miny:Maxy,  Nk)  , &
-               F_nt  (Minx:Maxx,Miny:Maxy,  Nk)  , F_nw    (Minx:Maxx,Miny:Maxy,  Nk)  , &
-               F_nf  (Minx:Maxx,Miny:Maxy,  Nk)  , F_nb    (Minx:Maxx,Miny:Maxy)
+      integer, intent(in) :: Minx,Maxx,Miny,Maxy, ni,nj,Nk , i0, j0, k0, in, jn
+      real*8 :: F_lhs_sol (ni,nj,Nk)
+      real   :: F_fis (Minx:Maxx,Miny:Maxy)       , F_sl    (Minx:Maxx,Miny:Maxy)       , &
+                F_u   (Minx:Maxx,Miny:Maxy,  Nk)  , F_v     (Minx:Maxx,Miny:Maxy,  Nk)  , &
+                F_w   (Minx:Maxx,Miny:Maxy,  Nk)  , F_t     (Minx:Maxx,Miny:Maxy,  Nk)  , &
+                F_s   (Minx:Maxx,Miny:Maxy)       , F_zd    (Minx:Maxx,Miny:Maxy,  Nk)  , &
+                F_q   (Minx:Maxx,Miny:Maxy,  Nk+1), F_nest_q(Minx:Maxx,Miny:Maxy,  Nk+1), &
+                F_ru  (Minx:Maxx,Miny:Maxy,  Nk)  , F_rv    (Minx:Maxx,Miny:Maxy,  Nk)  , &
+                F_rt  (Minx:Maxx,Miny:Maxy,  Nk)  , F_rw    (Minx:Maxx,Miny:Maxy,  Nk)  , &
+                F_rf  (Minx:Maxx,Miny:Maxy,  Nk)  , F_rb    (Minx:Maxx,Miny:Maxy)       , &
+                F_nu  (Minx:Maxx,Miny:Maxy,  Nk)  , F_nv    (Minx:Maxx,Miny:Maxy,  Nk)  , &
+                F_nt  (Minx:Maxx,Miny:Maxy,  Nk)  , F_nw    (Minx:Maxx,Miny:Maxy,  Nk)  , &
+                F_nf  (Minx:Maxx,Miny:Maxy,  Nk)  , F_nb    (Minx:Maxx,Miny:Maxy)
 
-#include "glb_pil.cdk"
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "ver.cdk"
-#include "ptopo.cdk"
-#include "cstv.cdk"
-
-      integer i, j, k, km, nij, k0t, istat
+      integer i, j, k, km, nij, k0t
       real*8  w1, w2, w3, w4, Pbar, qbar
       real*8, dimension(i0:in,j0:jn):: xtmp_8, ytmp_8
       real  , dimension(:,:,:), allocatable :: GP
@@ -75,9 +73,9 @@
 
       do k=k0,l_nk
          do j= j0, jn
-         do i= i0, in
-            GP(i,j,k) = sngl(F_lhs_sol(i,j,k))
-         enddo
+            do i= i0, in
+               GP(i,j,k) = sngl(F_lhs_sol(i,j,k))
+            enddo
          enddo
       end do
 !

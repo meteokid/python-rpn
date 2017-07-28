@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -16,22 +16,22 @@
 
 
       subroutine set_betav_2(betav_m,betav_t,F_s,F_sl, Minx,Maxx,Miny,Maxy, Nk)
-
+      use dcst
       use grid_options
       use gem_options
+      use mtn_options
       use theo_options
       use tdpack
+      use glb_ld
+      use cstv
+      use ver
+      use type_mod
+      use glb_pil
       implicit none
 #include <arch_specific.hf>
 
       integer  Minx,Maxx,Miny,Maxy, Nk
 
-#include "glb_pil.cdk"
-#include "glb_ld.cdk"
-#include "type.cdk"
-#include "ver.cdk"
-#include "cstv.cdk"
-#include "dcst.cdk"
 
       real betav_m(Minx:Maxx,Miny:Maxy,Nk),betav_t(Minx:Maxx,Miny:Maxy,Nk)
       real F_s(Minx:Maxx,Miny:Maxy),F_sl(Minx:Maxx,Miny:Maxy)

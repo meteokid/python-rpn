@@ -16,11 +16,14 @@
 !**s/p mass_tr - Evaluate Mass of Tracer (assuming in Mixing Ratio)
 
       subroutine mass_tr (F_mass_tracer_8,F_name_S,F_tracer,F_air_mass,Minx,Maxx,Miny,Maxy,F_nk,F_k0)
-
+      use dcst
       use grid_options
       use gem_options
       use geomh
       use tdpack
+      use glb_ld
+      use cstv
+      use tracers
       implicit none
 
       !Arguments
@@ -40,10 +43,6 @@
       ! v5_00 - Tanguay M.        - Air mass provided/Efficiency/Scaling/Mixing Ratio
 
 !*@/
-#include "glb_ld.cdk"
-#include "tracers.cdk"
-#include "cstv.cdk"
-#include "dcst.cdk"
 
       !----------------------------------------------------------
       integer i,j,k,err,i0,in,j0,jn
@@ -139,7 +138,7 @@
          gc_mass_8 = gc_mass_8 / gc_area_8
          if (Schm_autobar_L) gc_mass_8 = gc_mass_8 / (Cstv_pref_8-Cstv_ptop_8) * grav_8
       elseif (Tr_scaling==1) then
-         gc_mass_8 = gc_mass_8*Dcst_rayt_8*Dcst_rayt_8
+         gc_mass_8 = gc_mass_8 * Dcst_rayt_8**2
       endif
 
       if (Tr_scaling==0.or.Schm_testcases_adv_L) then

@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -18,6 +18,8 @@
       subroutine liebman_dm (F_field,  F_mask, F_conv, F_maxite, &
                                      Minx, Maxx, Miny, Maxy, Nk)
       use gem_options
+      use glb_ld
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 !
@@ -32,8 +34,6 @@
 !revision
 ! v4_40 - Desgagne M.       - initial MPI version
 !
-#include "glb_ld.cdk"
-#include "ptopo.cdk"
 
       integer i,j,k,ite,i0,in,ic,j0,jn,jc,ier,count
       real    prfact,prmax(Nk),prmaxall(Nk),prmod,mask(2,Nk),maskall(2,Nk)
@@ -49,7 +49,7 @@
 !$omp parallel shared (i0,in,ic,j0,jn,jc,prmax,prmaxall,prfact, &
 !$omp                  count,sum0,sumall,mask,maskall) private (i,j,k,ite,prmod)
 
-!$omp single         
+!$omp single
       i0 = 1 ; in = l_ni ; ic = 1
       j0 = 1 ; jn = l_nj ; jc = 1
 !$omp end single
@@ -60,7 +60,7 @@
             prmax(k) = 0.0
          end do
 !$omp enddo
-         
+
 !$omp do
          do k=1,Nk
             if ( prmaxall(k) .gt. F_conv ) then

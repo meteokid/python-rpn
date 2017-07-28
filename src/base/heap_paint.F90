@@ -18,10 +18,10 @@
 
       subroutine heap_paint
       use gem_options
+      use glb_ld
       implicit none
 #include <arch_specific.hf>
 
-#include "glb_ld.cdk"
 
       integer i,j,k
       real*4, dimension (:,:,:), pointer :: wrk01

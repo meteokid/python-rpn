@@ -22,6 +22,8 @@
       use grid_options
       use tdpack, only : omega_8  
 
+      use glb_ld
+      use lun
       implicit none
 #include <arch_specific.hf>
 
@@ -42,8 +44,6 @@
 ! F_yv_8       I    - latitudes in radians V grid
 ! F_rot_8      I    - rotation matrix of the grid
 
-#include "glb_ld.cdk"
-#include "lun.cdk"
 
       real*8 ZERO, ONE, TWO
       parameter( ZERO = 0.0 )

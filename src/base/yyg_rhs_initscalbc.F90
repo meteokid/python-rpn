@@ -19,6 +19,10 @@
       Subroutine yyg_rhs_initscalbc()
       use tdpack
       use gem_options
+      use glb_ld
+      use glb_pil
+      use sol
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 !
@@ -26,11 +30,7 @@
 !           Abdessamad Qaddouri/V.Lee - October 2009
 !  PLEASE consult Abdessamad or Vivian before modifying this routine.
 !
-#include "ptopo.cdk"
-#include "glb_ld.cdk"
-#include "glb_pil.cdk"
 #include "yyg_rhs.cdk"
-#include "sol.cdk"
 
 
       integer err,i,j,k,imx,imy,kk,ii,jj,stencil

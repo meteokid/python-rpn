@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -21,12 +21,17 @@
       use grdc_options
       use gem_options
       use tdpack
+      use glb_ld
+      use lun
+      use tr3d
+      use rstr
+      use glb_pil
       implicit none
 #include <arch_specific.hf>
 
-      logical prout
-      integer dimgx,dimgy
-      real*8 xp(dimgx), yp(dimgy)
+      logical, intent(in) :: prout
+      integer, intent(in) :: dimgx,dimgy
+      real*8, intent(in) :: xp(dimgx), yp(dimgy)
 
 !author
 !        Michel Desgagne - 2001 (from MC2)
@@ -36,19 +41,13 @@
 ! v4_03 - Lee/Desgagne - ISST
 !
 
-#include "glb_ld.cdk"
-#include "glb_pil.cdk"
-#include "rstr.cdk"
-#include "tr3d.cdk"
-#include "lun.cdk"
 
       integer, external :: stretch_axis2
       logical flag_hu
       integer i,k,cnt,ierx,dum1,dum2
-      integer is,nis,js,njs,iw,ie,niw,jw,jn,njw
-      real x0, xl, y0, yl, dum, n1, n2, b1, b2
+      real x0, xl, y0, yl, dum
       real*8 ac_xp(max(1,Grdc_ni)), ac_yp(max(1,Grdc_nj)), &
-             xpx(dimgx), ypx(dimgy), rad2deg_8,xgi_8(G_ni),ygi_8(G_ni)
+             xpx(dimgx), ypx(dimgy), rad2deg_8
 !
 !---------------------------------------------------------------------
 !

@@ -22,6 +22,10 @@
       use gem_options
       use tdpack
 
+      use glb_ld
+      use cstv
+      use ver
+      use gmm_itf_mod
       implicit none
 
       integer Mminx,Mmaxx,Mminy,Mmaxy,Nk
@@ -62,10 +66,6 @@
       !                    |Lauritzen et al.,2015,GMD,8,1299-1313            |
       !----------------------------------------------------------------------|
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "cstv.cdk"
-#include "ver.cdk"
 
       !---------------------------------------------------------------
 

@@ -21,6 +21,7 @@
       subroutine verder (F_der, F_infield, F_wlnph, F_con1, F_con2, &
                                    Minx,Maxx,Miny,Maxy, F_Nk,F_i0,F_in,F_j0,F_jn)
 !
+      use glb_ld
       implicit none
 #include <arch_specific.hf>
 !
@@ -55,7 +56,6 @@
 ! F_jn         I    - ending point of calculation on N-S axis
 !
 
-#include "glb_ld.cdk"
 !
 !*
       integer i, j, k

@@ -18,6 +18,10 @@
 
 !
       subroutine pe_zero_topo (F_npx, F_npy )
+      use path
+      use clib_itf_mod
+      use ptopo
+      use version
       implicit none
 #include <arch_specific.hf>
 !
@@ -31,10 +35,6 @@
 !
 
 #include "component.cdk"
-#include "ptopo.cdk"
-#include "version.cdk"
-#include "path.cdk"
-#include <clib_interface_mu.hf>
       include 'gemdyn_version.inc'
 !
       integer,external :: exdb,ptopo_nml

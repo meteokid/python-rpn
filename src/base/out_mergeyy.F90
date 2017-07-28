@@ -17,6 +17,7 @@
 !
       subroutine out_mergeyy (F_vec, n)
 use iso_c_binding
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 
@@ -29,7 +30,6 @@ use iso_c_binding
 !revision
 ! v4_50 - Desgagne M. - Initial version
 
-#include "ptopo.cdk"
       include "rpn_comm.inc"
 
       integer tag, status, err

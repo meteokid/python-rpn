@@ -16,13 +16,19 @@
 !**s/r ens_filter_ggauss - Gaussian grid space filter
 !
       subroutine ens_filter_ggauss(bfact,lambda,dsp_local)
-
+      use dcst
       use ens_options
       use gem_options
       use step_options
       use gmm_vt1
       use geomh
       use tdpack
+      use glb_ld
+      use lun
+      use ldnh
+      use glb_pil
+      use trp
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 !
@@ -45,16 +51,9 @@
 ! dsp_local    I/O        filtered field
 !
 
-#include "ptopo.cdk"
-#include "glb_ld.cdk"
-#include "trp.cdk"
-#include "ldnh.cdk"
-#include "dcst.cdk"
-#include "lun.cdk"
-#include "glb_pil.cdk"
 
   integer i, j, k
-  real*8  dpi, sigma
+  real*8  sigma
 !     Arrays
   real, dimension(7)                   :: fg
   real, dimension(:,:),   allocatable  :: f2, wk2
@@ -68,8 +67,7 @@
 !
 !     Determine sigma
 !
-  dpi=pi_8
-  sigma=lambda*sqrt(-2.d0*log(bfact))/(2*dpi);
+  sigma=lambda*sqrt(-2.d0*log(bfact))/(2*pi_8);
 
 
 
@@ -86,7 +84,7 @@
 !      fg(4)=0.;fg(5)=Dcst_rayt_8*geomh_hxu_8(1)*geomh_cy_8(j);fg(3)=-fg(5)
       fg(4)=0.;fg(5)=Dcst_rayt_8*geomh_hx_8*geomh_cy_8(j);fg(3)=-fg(5)
       fg(2)=2*fg(3);fg(1)=3*fg(3);fg(6)=2*fg(5);fg(7)=3*fg(5)
-      fg=1/(sigma*sqrt(2*dpi))*exp(-fg*fg/(2*sigma*sigma))
+      fg=1/(sigma*sqrt(2*pi_8))*exp(-fg*fg/(2*sigma*sigma))
       fg=fg/sum(fg)
       do i=1,l_ni
         dsp_local(i,j,k)= sum(fg*psi_local(i-3:i+3,j,k))
@@ -100,7 +98,7 @@
 !  fg(4)=0.;fg(5)=Dcst_rayt_8*geomh_hyv_8(1);fg(3)=-fg(5)
    fg(4)=0.;fg(5)=Dcst_rayt_8*geomh_hy_8;fg(3)=-fg(5)
   fg(2)=2*fg(3);fg(1)=3*fg(3);fg(6)=2*fg(5);fg(7)=3*fg(5)
-  fg=1/(sigma*sqrt(2*dpi))*exp(-fg*fg/(2*sigma*sigma))
+  fg=1/(sigma*sqrt(2*pi_8))*exp(-fg*fg/(2*sigma*sigma))
   fg=fg/sum(fg)
   do k=1,l_nk
     do j=1,l_nj
@@ -119,16 +117,16 @@
         f2(3,j)=-f2(5,j)
         f2(2,j)=2*f2(3,j);f2(1,j)=3*f2(3,j)
         f2(6,j)=2*f2(5,j);f2(7,j)=3*f2(5,j)
-        f2(1:7,j)=1/(sigma*sqrt(2*dpi))* &
+        f2(1:7,j)=1/(sigma*sqrt(2*pi_8))* &
              exp(-f2(1:7,j)*f2(1:7,j)/(2*sigma*sigma))
         f2(1:7,j)=f2(1:7,j)/sum(f2(1:7,j))
-        f2(8,j)=180.d0*geomh_y_8(j)/dpi
+        f2(8,j)=180.d0*geomh_y_8(j)/pi_8
      enddo
      call glbcolc(wk2,G_ni,G_nj,f2,1,l_ni,1,l_nj,1)
 !     fg(4)=0.;fg(5)=Dcst_rayt_8*geomh_hyv_8(1);fg(3)=-fg(5)
      fg(4)=0.;fg(5)=Dcst_rayt_8*geomh_hy_8;fg(3)=-fg(5)
      fg(2)=2*fg(3);fg(1)=3*fg(3);fg(6)=2*fg(5);fg(7)=3*fg(5)
-     fg=1/(sigma*sqrt(2*dpi))*exp(-fg*fg/(2*sigma*sigma))
+     fg=1/(sigma*sqrt(2*pi_8))*exp(-fg*fg/(2*sigma*sigma))
      fg=fg/sum(fg)
      if (Lun_out.gt.0) then
         write(Lun_out,1000)

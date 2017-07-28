@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -19,10 +19,13 @@
       use gmm_vt0
       use gmm_nest
       use gem_options
+      use glb_ld
+      use tr3d
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 !
-!author 
+!author
 !     Michel Desgagne   - Spring 2006
 !
 !revision
@@ -31,12 +34,9 @@
 ! v4_05 - Lepine M.       - VMM replacement with GMM
 ! v4_14 - PLante          - Top piloting (Lid nesting)
 !
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "tr3d.cdk"
 
       character(len=GMM_MAXNAMELENGTH) :: tr_name
-      integer err,i,j,k,nvar,n,istat
+      integer i,j,n,istat
       real, pointer, dimension(:,:,:) :: tr,tr0
 !
 !----------------------------------------------------------------------

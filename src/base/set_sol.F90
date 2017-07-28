@@ -17,18 +17,18 @@
 
       subroutine set_sol
       use gem_options
+      use glb_ld
+      use cstv
+      use lun
+      use sol
+      use opr
+      use trp
       implicit none
 #include <arch_specific.hf>
 
 !author
 !     M. Desgagne - initial MPI version (from setoprz v4.8.2)
 
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "opr.cdk"
-#include "sol.cdk"
-#include "trp.cdk"
-#include "cstv.cdk"
 #include "prec.cdk"
 
       integer k,k1,k0

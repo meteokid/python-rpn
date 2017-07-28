@@ -20,6 +20,13 @@
       use grid_options
       use gem_options
       use tdpack
+      use glb_ld
+      use lun
+      use glb_pil
+      use fft
+      use sol
+      use opr
+      use trp
       implicit none
 #include <arch_specific.hf>
       character*(*) F_eigen_filename_S
@@ -37,13 +44,6 @@
 ! v4_40 - Qaddouri A.       - setup operators for Yin-Yang
 !
 
-#include "glb_ld.cdk"
-#include "glb_pil.cdk"
-#include "fft.cdk"
-#include "lun.cdk"
-#include "opr.cdk"
-#include "sol.cdk"
-#include "trp.cdk"
 
       real*8 ZERO_8, ONE_8, HALF_8
       parameter( ZERO_8 = 0.0 )

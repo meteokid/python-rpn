@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -18,6 +18,11 @@
 
       subroutine get_field ( F_dest, ni, nj, F_nomvar_S, F_filename_S,&
                                    F_inttyp_S, F_xfi, F_yfi, F_status )
+      use glb_ld
+      use lun
+      use glb_pil
+      use hgc
+      use clib_itf_mod
       implicit none
 #include <arch_specific.hf>
 !
@@ -25,36 +30,28 @@
       integer ni,nj,F_status
       real F_dest(ni,nj), F_xfi(ni), F_yfi(nj)
 !
-!author   
+!author
 !     M. Desgagne  -   Spring 2010
 !
 !revision
 ! v4_13 -  Desgagne M.           - initial version
 ! v4_40 -  Lee V.                - get non Z source grid as well
 !
-#include "hgc.cdk"
-#include "lun.cdk"
-#include "glb_ld.cdk"
-#include "glb_pil.cdk"
-#include <clib_interface_mu.hf>
 !
       integer,external :: fnom,fstouv,fstinf,fstprm,fstluk,fstfrm,fclos,&
            ezgdef_fmem,ezdefset,ezsetopt,ezsint,ezqkdef,ezgetopt,&
            ezsetival,ezgetival,ezgetval,samegrid_gid
 
-      character*1   typ, grd, grd_me, grd_pos
-      character*2   var
-      character*8   lab, inttyp
-      character*32  onesubgrid_S, oldsubgrid_S
+      character(len=1) :: typ, grd_me, grd_pos
+      character(len=2) :: var
+      character(len=8) :: lab
+      character(len=32):: onesubgrid_S, oldsubgrid_S
       integer dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit, &
-              dty, swa, lng, dlf, ubc, ex1, ex2, ex3,          &
-              g1o,g2o,g3o,g4o,nvar
-      integer unf,key,ni1,nj1,nk1,i,j,err,subid,oldsubid
+              dty, swa, lng, dlf, ubc, ex1, ex2, ex3
+      integer unf,key,ni1,nj1,nk1,err,subid,oldsubid
       integer sgid,dgid,nis,njs,nic,njc
       real, dimension(:  ), allocatable :: ax,ay
       real, dimension(:,:), allocatable :: source
-      real*8 rad2deg_8 
-      real extrap_value
 
 !-----------------------------------------------------------------------
 !
@@ -83,7 +80,7 @@
       endif
 
       write (6,1000) trim(F_filename_S),unf
-      
+
       key = fstinf (unf, nis,njs,nk1,-1," ",-1,-1,-1," ",F_nomvar_S)
       if (key.lt.0) then
          if (Lun_out.gt.0) write (Lun_out,9004) F_nomvar_S
@@ -139,7 +136,7 @@
          if (any(grd_ME==(/'U','u'/))) then
 
 ! We only test samegrid on core domain
-            nic = G_ni - Glb_pil_w - Glb_pil_e 
+            nic = G_ni - Glb_pil_w - Glb_pil_e
             njc = G_nj - Glb_pil_s - Glb_pil_n
             if (nis >= nic .and. njs/2 >= njc) then
                subid= samegrid_gid ( sgid, Hgc_ig1ro,Hgc_ig2ro              ,&

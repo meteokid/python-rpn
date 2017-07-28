@@ -17,12 +17,18 @@
 !
       subroutine smago_in_rhs (F_du, F_dv, F_dw, F_dlth, F_u, F_v, F_w, F_t, F_s, &
                                lminx, lmaxx, lminy, lmaxy, nk)
+      use dcst
       use gmm_smag
       use hzd_mod
       use grid_options
       use gem_options
       use geomh
       use tdpack
+      use glb_ld
+      use cstv
+      use tr3d
+      use ver
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 
@@ -38,12 +44,6 @@
 ! v5_0 - Girard C.    - initial version based on hzd_smago by S. Gaudreault
 ! v5_0 - Husain S.    - added vertically variable background diffusion
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "ver.cdk"
-#include "tr3d.cdk"
-#include "cstv.cdk"
-#include "dcst.cdk"
 
       integer :: i, j, k, istat, i0, in, j0, jn
       real, dimension(lminx:lmaxx,lminy:lmaxy) :: tension, shear_z, kt, kz
@@ -53,7 +53,7 @@
       real, dimension(nk) :: base_coefM, base_coefT
       real :: cdelta2, tension_z, shear, tension_u, shear_u, tension_v, shear_v
       real :: fact, smagparam, ismagprandtl, ismagprandtl_hu
-      real :: max_coef, crit_coef
+      real :: crit_coef
       logical :: switch_on_THETA, switch_on_hu, switch_on_fric_heat
 
       if( (hzd_smago_param <= 0.) .and. (hzd_smago_lnr(2) <=0.) ) return

@@ -20,6 +20,9 @@
       use geomh
       use Terminator
 
+      use glb_ld
+      use lun
+      use ptopo
       implicit none
 
       integer Mminx,Mmaxx,Mminy,Mmaxy,Nk
@@ -30,9 +33,6 @@
       !  Initial conditions for Terminator "Toy" chemistry module in Williamson's case
       !===============================================================================
 
-#include "glb_ld.cdk"
-#include "ptopo.cdk"
-#include "lun.cdk"
 
       !-----------------------------------------------------------------------
 

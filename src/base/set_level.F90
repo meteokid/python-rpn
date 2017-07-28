@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -20,11 +20,16 @@
       integer function set_level (F_argc,F_argv_S,F_cmdtyp_S,F_v1,F_v2)
 !
       use gem_options
+      use glb_ld
+      use lun
+      use dimout
+      use out_mod
+      use levels
       implicit none
 #include <arch_specific.hf>
 !
         integer F_argc,F_v1,F_v2
-        character *(*) F_argv_S(0:F_argc),F_cmdtyp_S     
+        character *(*) F_argv_S(0:F_argc),F_cmdtyp_S
 !
 !author Vivian Lee - RPN - April 1999
 !
@@ -34,7 +39,7 @@
 ! v2_10                    outputted when a "-1" is indicated
 ! v2_21 - Dugas B.       - use convip
 ! v2_30 - Lee V.         - reduced dimension of Level_typ to 1
-! v2_32 - Lee V.         - levset is now an ID defined by user, not the 
+! v2_32 - Lee V.         - levset is now an ID defined by user, not the
 ! v2_32                    actual "set" number forced to be in sequence
 ! v3_01 - Lee V.         - new ip1 encoding (kind=5 -- unnormalized)
 ! v3_02 - Lee V.         - eliminate levels repeated in one level set
@@ -57,7 +62,7 @@
 !       The "rpn_fortran_callback" routine will process the above
 !       statement and return 5 arguments to this function. For more
 !       information to how this is processed, see "SREQUET".
-!	
+!
 !arguments
 !  Name        I/O                 Description
 !----------------------------------------------------------------
@@ -85,14 +90,10 @@
 !      <a,b,c> means levels a to b, incrementing every c are requested
 !
 
-#include "glb_ld.cdk"
-#include "dimout.cdk"
-#include "level.cdk"
-#include "lun.cdk"
 !
 !*
       logical press_L,eta_L,found_L
-      character*5 stuff_S,blank_S
+      character(len=5) stuff_S,blank_S
       integer i,j,k,ii,idx,levset,num,levdesc,ilevel,LEV
       integer, dimension(size(Level_allpres)) :: ip1_stub
 !
@@ -193,7 +194,7 @@
                   i = i+1
                   read( F_argv_S(ii), * ) Level(i,j)
                   k=nint(Level(i,j))
-!              request for model levels close and include the surface 
+!              request for model levels close and include the surface
                   if (k .gt. 0.and. k .lt. Level_thermo) then
                      i=i-1
                      do idx=k,1,-1

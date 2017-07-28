@@ -14,42 +14,40 @@
 !---------------------------------- LICENCE END ---------------------------------
 !
       subroutine adv_param ()
+      use glb_ld
+      use ver
+      use adv_grid
+      use adv_interp
+      use outgrid
       implicit none
 #include <arch_specific.hf>
 
-   !@objective set 1-D interpolation of grid reflexion across the pole 
+   !@objective set 1-D interpolation of grid reflexion across the pole
    !@author  alain patoine
    !@revisions
    !*@/
 
-#include "glb_ld.cdk"
-#include "adv_grid.cdk"
-#include "adv_interp.cdk"
-#include "ver.cdk"
-   
-      real*8, parameter :: LARGE_8 = 1.D20 , TWO_8 = 2.D0  , SIX_8 = 6.D0      
+
+      real*8, parameter :: LARGE_8 = 1.D20 , TWO_8 = 2.D0  , SIX_8 = 6.D0
       integer :: i, j, k, i0, j0, k0, pnx, pny
       real*8 :: ra,rb,rc,rd
       real*8 :: prhxmn, prhymn, prhzmn, pdfi
       real*8 :: whx(G_ni+2*adv_halox)
       real*8 :: why(G_nj+2*adv_haloy)
-      real*8, dimension(:),allocatable :: whzt,whzm,whzx
-      
-#if !defined(TRIPROD)
-#define TRIPROD(za,zb,zc,zd) ((za-zb)*(za-zc)*(za-zd))
-#endif
+      real*8, dimension(0:l_nk+1) :: whzt,whzm,whzx
+
+      real*8 :: TRIPROD,za,zb,zc,zd
+      TRIPROD(za,zb,zc,zd) = ((za-zb)*(za-zc)*(za-zd))
 !
 !     ---------------------------------------------------------------
-!   
-            
-      allocate( whzm(0:l_nk+1), whzt(0:l_nk+1), whzx(0:l_nk+1))
+!
 
-		adv_xbc_8 = 1.D0/(adv_xg_8(adv_gminx+1)-adv_xg_8(adv_gminx))
-      adv_xabcd_8=-adv_xbc_8**3/SIX_8    
+      adv_xbc_8 = 1.D0/(adv_xg_8(adv_gminx+1)-adv_xg_8(adv_gminx))
+      adv_xabcd_8=-adv_xbc_8**3/SIX_8
       adv_xdabc_8=-adv_xabcd_8
       adv_xbacd_8= adv_xbc_8**3/TWO_8
       adv_xcabd_8=-adv_xbacd_8
-     
+
 
       adv_ybc_8 = 1.D0/(adv_yg_8(adv_gminx+1)-adv_yg_8(adv_gminx))
       adv_yabcd_8=-adv_ybc_8**3/SIX_8
@@ -73,7 +71,7 @@
       enddo
 
 ! Prepare zeta on super vertical grid
-      
+
       whzt(0    ) = 1.0 ; whzt(l_nk  ) = 1.0 ; whzt(l_nk+1) = 1.0
       do k = 1,l_nk-1
          whzt(k) = Ver_z_8%t(k+1) - Ver_z_8%t(k)
@@ -85,13 +83,13 @@
          whzm(k) = Ver_z_8%m(k+1) - Ver_z_8%m(k)
          prhzmn = min(whzm(k), prhzmn)
       enddo
-      
+
       whzx(0    ) = 1.0 ; whzx(l_nk  ) = 1.0 ; whzx(l_nk+1) = 1.0
       do k = 1,l_nk-1
          whzx(k) = Ver_z_8%x(k+1) - Ver_z_8%x(k)
          prhzmn = min(whzx(k), prhzmn)
       enddo
-      
+
       adv_ovdx_8 = 1.0d0/prhxmn
       adv_ovdy_8 = 1.0d0/prhymn
       adv_ovdz_8 = 1.0d0/prhzmn
@@ -162,7 +160,7 @@
       do k = 1,l_nk
          adv_bsz_8%m(k-1) = Ver_z_8%m(k)
       enddo
-           
+
       k0 = 1
       do k = 1,pnz
          pdfi = Ver_z_8%m(0) + (k-1) * prhzmn
@@ -177,11 +175,11 @@
       do k = 1,l_nk
          adv_bsz_8%x(k-1) = Ver_z_8%x(k)
       enddo
-     
+
       do k = 0,l_nk+1                  !! warning note the shift in k !
          adv_diz_8(k-1) = 1.0d0/whzm(k)
       enddo
-     
+
       allocate( &
       adv_zbc_8%t(l_nk),   adv_zbc_8%m(l_nk),    adv_zbc_8%x(l_nk), &
       adv_zabcd_8%t(l_nk), adv_zabcd_8%m(l_nk),  adv_zabcd_8%x(l_nk), &
@@ -198,7 +196,7 @@
          adv_zbacd_8%m(k) = 1.0/TRIPROD(rb,ra,rc,rd)
          adv_zcabd_8%m(k) = 1.0/TRIPROD(rc,ra,rb,rd)
          adv_zdabc_8%m(k) = 1.0/TRIPROD(rd,ra,rb,rc)
-     
+
          ra = Ver_z_8%t(k-1)
          rb = Ver_z_8%t(k)
          rc = Ver_z_8%t(k+1)
@@ -207,7 +205,7 @@
          adv_zbacd_8%t(k) = 1.0/TRIPROD(rb,ra,rc,rd)
          adv_zcabd_8%t(k) = 1.0/TRIPROD(rc,ra,rb,rd)
          adv_zdabc_8%t(k) = 1.0/TRIPROD(rd,ra,rb,rc)
-     
+
          ra = Ver_z_8%x(k-1)
          rb = Ver_z_8%x(k)
          rc = Ver_z_8%x(k+1)
@@ -222,19 +220,18 @@
          rb = Ver_z_8%m(k)
          rc = Ver_z_8%m(k+1)
          adv_zbc_8%m(k) = 1.0/(rc-rb)
-    
+
          rb = Ver_z_8%t(k)
          rc = Ver_z_8%t(k+1)
          adv_zbc_8%t(k) = 1.0/(rc-rb)
-     
+
          rb = Ver_z_8%x(k)
          rc = Ver_z_8%x(k+1)
          adv_zbc_8%x(k) = 1.0/(rc-rb)
       enddo
 
-      deallocate(whzt, whzm, whzx)
-!     
+!
 !     ---------------------------------------------------------------
-!       
+!
       return
       end subroutine adv_param

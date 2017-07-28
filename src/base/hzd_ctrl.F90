@@ -16,6 +16,7 @@
 module hzd_ctrl
   use hzd_exp
   use gem_options
+      use glb_ld
   implicit none
 #include <arch_specific.hf>
   private
@@ -26,12 +27,12 @@ module hzd_ctrl
      module procedure hzd_ctrl_vector
   end interface
 
-#include "glb_ld.cdk"
 
 contains
 
       subroutine hzd_ctrl_scalar ( F_f2hzd, F_type_S, &
                                    Minx,Maxx,Miny,Maxy,Nk )
+      use glb_ld
       implicit none
 
       character*(*), intent(IN) :: F_type_S
@@ -56,6 +57,7 @@ contains
 
       subroutine hzd_ctrl_vector ( F_u, F_v, &
                                    Minx,Maxx,Miny,Maxy,Nk )
+      use glb_ld
       implicit none
 
       integer Minx,Maxx,Miny,Maxy,Nk

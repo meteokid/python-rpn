@@ -19,6 +19,9 @@
                             F_aiy_8 , F_biy_8, F_ciy_8, F_cy2_8 , &
                             F_xp0_8 , F_xp2_8, F_yp0_8, F_yp2_8 , &
                             F_coef_8, F_njpole, Gni, Gnj,F_gnjv, NK)
+      use glb_ld
+      use trp
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 
@@ -44,9 +47,6 @@
 !  F_aix_8
 !----------------------------------------------------------------
 ! 
-#include "glb_ld.cdk"
-#include "trp.cdk"
-#include "ptopo.cdk"
     
       integer i, j, k, ii, jj, j2, in, jn
       real*8 ax_8(NK,trp_12emax,G_ni), bx_8(NK,trp_12emax,G_ni), &

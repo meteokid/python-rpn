@@ -25,6 +25,9 @@
       use gmm_pw
       use gem_options
 
+      use glb_ld
+      use tr3d
+      use gmm_itf_mod
       implicit none
  
       character* (*) F_trprefix_S, F_trsuffix_S, F_datev
@@ -71,9 +74,6 @@
       !DCMIP_2016: https://www.earthsystemcog.org/projects/dcmip-2016/       |
       !======================================================================|
  
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "tr3d.cdk"
  
       !--------------------------------------------------------------------------------------------
 

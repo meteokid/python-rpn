@@ -23,6 +23,10 @@
 !
       use gem_options
       use tdpack
+      use glb_ld
+      use cstv
+      use ver
+      use type_mod
       implicit none
 #include <arch_specific.hf>
 !
@@ -55,10 +59,6 @@
 ! F_tt1        I                   virtual temperature
 !
 
-#include "glb_ld.cdk"
-#include "type.cdk"
-#include "cstv.cdk"
-#include "ver.cdk"
 
       integer i,j,k
       real, dimension(l_ni,l_nj) :: t1,t2

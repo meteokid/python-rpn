@@ -16,6 +16,7 @@
 !**s/r memusage - Report on memory usage using get_max_rss
 !
       subroutine memusage ( unf )
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 !
@@ -26,7 +27,6 @@
 !revision
 ! v4_70 - Desgagne M.   - Initial version
 !
-#include "ptopo.cdk"
 
       integer, external :: get_max_rss
       integer i, err, imin,imax

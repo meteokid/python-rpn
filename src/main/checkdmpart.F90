@@ -1,16 +1,16 @@
       subroutine checkdmpart
+      use clib_itf_mod
       use step_options
       use iso_c_binding
+      use glb_ld
       use grid_options
       use geomh
+      use lun
+      use path
+      use ptopo
+      use version
       implicit none
 
-#include <clib_interface_mu.hf>
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "path.cdk"
-#include "ptopo.cdk"
-#include "version.cdk"
       include "rpn_comm.inc"
 
       external dummy_checkdm

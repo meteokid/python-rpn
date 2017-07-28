@@ -26,6 +26,12 @@
       use step_options
       use wil_options
 
+      use glb_ld
+      use cstv
+      use lun
+      use tr3d
+      use gmm_itf_mod
+      use ptopo
       implicit none
 
       integer F_my_step
@@ -35,12 +41,6 @@
       !   Evaluate Error norms L1,L2,LMASS,L_inf for Williamson's cases
       !================================================================================
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "ptopo.cdk"
-#include "tr3d.cdk"
-#include "cstv.cdk"
 
       !---------------------------------------------------------------
 

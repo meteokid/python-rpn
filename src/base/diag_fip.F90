@@ -19,6 +19,9 @@
                            Minx,Maxx,Miny,Maxy, Nk, i0,in,j0,jn )
       use gem_options
       use tdpack
+      use glb_ld
+      use cstv
+      use ver
       implicit none
 #include <arch_specific.hf>
     
@@ -41,9 +44,6 @@
 ! F_t          I    - temperature
 ! F_fis        I    - surface geopotential
 
-#include "glb_ld.cdk"
-#include "ver.cdk"
-#include "cstv.cdk"
  
       integer i,j,k,km
       real*8, parameter :: one = 1.d0, half = .5d0

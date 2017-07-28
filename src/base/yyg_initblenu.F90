@@ -16,6 +16,9 @@
 !
       Subroutine yyg_initblenu()
        use tdpack
+      use glb_ld
+      use glb_pil
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 !
@@ -26,9 +29,6 @@
 !revision
 !  v4.8  V.Lee - Correction for limiting range in point found on other grid
 !
-#include "ptopo.cdk"
-#include "glb_ld.cdk"
-#include "glb_pil.cdk"
 #include "yyg_blnu.cdk"
 
       integer err,Ndim,i,j,k,kk,ii,jj,ki,ksend,krecv

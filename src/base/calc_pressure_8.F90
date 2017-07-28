@@ -19,6 +19,9 @@
       subroutine calc_pressure_8 (F_pm_8, F_pt_8, F_p0_8, F_s, Minx,Maxx,Miny,Maxy,Nk)
       use gmm_vt1
       use gmm_geof
+      use glb_ld
+      use ver
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 
@@ -33,9 +36,6 @@
 ! v4_70 - Desgagne, M.     - Initial revision
 ! v4_XX - Tanguay, M.      - REAL 8 
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "ver.cdk"
 
       integer i, j, k, istat
       real*8 wk1_8(l_ni,l_nj,2),wk2_8(l_ni,l_nj,2)

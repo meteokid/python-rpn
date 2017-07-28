@@ -21,6 +21,10 @@
       use canonical
       use dcmip_options 
 
+      use glb_ld
+      use cstv
+      use lun
+      use gmm_itf_mod
       implicit none
 
       !object
@@ -30,10 +34,6 @@
       !   NOTE: The damping is not applied on zd and probably should be  
       !================================================================
     
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "cstv.cdk"
  
       !-----------------------------------------------------------------------
 
@@ -94,6 +94,10 @@
 
       subroutine dcmip_apply (F_ff,F_ffref,F_damp,Minx,Maxx,Miny,Maxy,Ni,Nj,Nk) ! Based on subr. apply 
 
+      use glb_ld
+      use cstv
+      use lun
+      use gmm_itf_mod
       implicit none
 
       !object

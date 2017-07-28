@@ -14,28 +14,28 @@
 !---------------------------------- LICENCE END ---------------------------------
 
    subroutine itf_phy_geom4 (F_istat)
+   use dcst
    use iso_c_binding
    use nest_blending, only: nest_blend
    use gmm_geof
    use gem_options
    use geomh
    use tdpack
+      use glb_ld
+      use cstv
+      use gmm_itf_mod
    implicit none
 #include <arch_specific.hf>
 
    integer F_istat
 
 #include <rmnlib_basics.hf>
-#include <gmm.hf>
 #include <msg.h>
-#include "glb_ld.cdk"
-#include "cstv.cdk"
-#include "dcst.cdk"
 
    logical :: nest_it
    integer :: i,j,istat
-   real,pointer :: wrk1(:,:)
-   real(kind=8) :: deg2rad_8
+   real, pointer :: wrk1(:,:)
+   real*8 :: deg2rad_8
    real :: w1(l_minx:l_maxx,l_miny:l_maxy,2),&
            w2(l_minx:l_maxx,l_miny:l_maxy,2)
    type(gmm_metadata) :: mymeta
@@ -77,8 +77,7 @@
    if (RMN_IS_OK(istat)) then
       do j = 1,l_nj
          do i = 1,l_ni
-             wrk1(i,j) = geomh_hx_8*geomh_hy_8*     &
-                  Dcst_rayt_8*Dcst_rayt_8*geomh_cy_8(j)
+             wrk1(i,j) = geomh_hx_8 * geomh_hy_8 * Dcst_rayt_8**2 *geomh_cy_8(j)
          end do
       end do
    else

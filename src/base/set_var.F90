@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -19,6 +19,15 @@
 
       use gem_options
       use tdpack
+      use glb_ld
+      use lun
+      use out3
+      use levels
+      use outp
+      use outd
+      use outc
+      use outgrid
+      use timestep
       implicit none
 #include <arch_specific.hf>
 
@@ -55,7 +64,7 @@
 !       statement and return 5 arguments to this function. For more
 !       information to how this is processed, see "SREQUET".
 !
-!	
+!
 !arguments
 !  Name        I/O                 Description
 !----------------------------------------------------------------
@@ -86,16 +95,6 @@
 !  specified or an error will occur.
 !
 
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "out3.cdk"
-#include "setsor.cdk"
-#include "outd.cdk"
-#include "outp.cdk"
-#include "outc.cdk"
-#include "grid.cdk"
-#include "level.cdk"
-#include "timestep.cdk"
 
       character*5 stuff_S
       character*8 varname_S
@@ -150,13 +149,13 @@
          set_var=1
          return
       else
-         do i=1,Grid_sets
-            if (gridset .eq. Grid_id(i)) then
+         do i=1,OutGrid_sets
+            if (gridset .eq. OutGrid_id(i)) then
                 gridset=i
                 exit
             endif
          enddo
-         if (i.gt.Grid_sets) then
+         if (i.gt.OutGrid_sets) then
              if (Lun_out.gt.0) write(Lun_out,*) &
                            'SET_VAR WARNING: invalid Grid set ID#'
              set_var=1
@@ -226,7 +225,7 @@
              Outd_filtcoef(jj,j)= 0.0
              Outd_convmult(jj,j)= 1.0
              Outd_convadd (jj,j)= 0.0
-             
+
              if (Outd_var_S(jj,j)(1:4).eq.'LA  ') Outd_nbit(jj,j)= 32
              if (Outd_var_S(jj,j)(1:4).eq.'LO  ') Outd_nbit(jj,j)= 32
 
@@ -261,7 +260,7 @@
           set_var=1
           return
           endif
-!                  
+!
           jj=0
           do ii=1,varmax
              jj = jj + 1
@@ -298,8 +297,8 @@
                  write(Lun_out,*) 'Outp_grid=',Outp_grid(j)
                  write(Lun_out,*) 'Outp_lev=',Outp_lev(j)
                  write(Lun_out,*) 'Outp_step=',Outp_step(j)
-                 if (Outp_accum_L(j))write(Lun_out,*)'Outp_accum_L=',Outp_accum_L(j) 
-                 if (Outp_avg_L  (j))write(Lun_out,*)'Outp_avg_L='  ,Outp_avg_L  (j) 
+                 if (Outp_accum_L(j))write(Lun_out,*)'Outp_accum_L=',Outp_accum_L(j)
+                 if (Outp_avg_L  (j))write(Lun_out,*)'Outp_avg_L='  ,Outp_avg_L  (j)
               endif
           else
               if (Lun_out.gt.0) write(Lun_out,1400)
@@ -312,7 +311,7 @@
           set_var=1
           return
           endif
-!                  
+!
           jj=0
           do ii=1,varmax
              jj = jj + 1

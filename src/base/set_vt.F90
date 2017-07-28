@@ -22,6 +22,11 @@
       use gmm_pw
       use gmm_smag
       use gem_options
+      use glb_ld
+      use lun
+      use tr3d
+      use gmm_itf_mod
+      use var_gmm
       implicit none
 #include <arch_specific.hf>
 
@@ -59,12 +64,7 @@
 !*@/
 
 #include <msg.h>
-#include <gmm.hf>
-#include "var_gmm.cdk"
 #include "gmm_gem_flags.hf"
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "tr3d.cdk"
 
 #define SET_GMMUSR_FLAG(MYMETA,MYFLAG) gmm_metadata(MYMETA%l,gmm_attributes(MYMETA%a%key,ior(MYMETA%a%uuid1,MYFLAG),MYMETA%a%uuid2,MYMETA%a%initmode,MYMETA%a%flags))
 

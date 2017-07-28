@@ -17,26 +17,26 @@
       integer function set_fft ()
       use grid_options
       use gem_options
+      use glb_ld
+      use lun
+      use glb_pil
+      use fft
+      use sol
       implicit none
 #include <arch_specific.hf>
 !
-!author 
+!author
 !     michel roch - rpn - june 1993
 !
 !revision
 ! v2_00 - Lee V.            - initial MPI version (from setfft v1_03)
 ! v2_40 - Qaddouri A.       - adjust for LAM version
 ! v3_00 - Desgagne & Lee    - Lam configuration
-! v3_30 - Tanguay M.        - Abort if LAM adjoint not FFT 
+! v3_30 - Tanguay M.        - Abort if LAM adjoint not FFT
 ! v4_40 - Qaddouri A.       _ Adjust for Yin-Yang FFT (sine, not cosine)
 !
-#include "glb_ld.cdk"
-#include "glb_pil.cdk"
-#include "fft.cdk"
-#include "sol.cdk"
-#include "lun.cdk"
 
-      integer npts,onept,next_down,err
+      integer npts,onept,next_down
 !
 !     ---------------------------------------------------------------
 !
@@ -44,7 +44,7 @@
 !      npts= l_ni - pil_w - pil_e
 !      call itf_fft_nextfactor2 ( npts, next_down )
 !      print*, 'hola1: ',l_ni,l_ni - pil_w - pil_e,npts
-      
+
       if (Lun_out.gt.0) write(Lun_out,1000)
 
       set_fft    = -1
@@ -59,7 +59,7 @@
       npts= G_ni-Lam_pil_w-Lam_pil_e+onept
 
       call itf_fft_nextfactor2 ( npts, next_down )
-      
+
       if ( npts .ne. G_ni-Lam_pil_w-Lam_pil_e+onept ) then
          if (Lun_out.gt.0) write (Lun_out,3001) &
          G_ni-Lam_pil_w-Lam_pil_e+onept,npts,next_down

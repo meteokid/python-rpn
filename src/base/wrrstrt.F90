@@ -20,13 +20,13 @@ use iso_c_binding
       use phy_itf, only: phy_restart
       use step_options
       use gem_options
+      use lun
+      use psadjust
+      use gmm_itf_mod
+      use wb_itf_mod
       implicit none
 #include <arch_specific.hf>
 
-#include <WhiteBoard.hf>
-#include "gmm.hf"
-#include "lun.cdk"
-#include "psadj.cdk"
 
       include "rpn_comm.inc"
 
@@ -47,7 +47,7 @@ use iso_c_binding
             ier = fnom (Lun_rstrt,'gem_restart','SEQ+UNF',0)
 
             write(Lun_rstrt) Lctl_step,Step_kount,Init_mode_L
-            write(Lun_rstrt) PSADJ_g_avg_ps_initial_8
+            write(Lun_rstrt) PSADJ_g_avg_ps_initial_8,PSADJ_scale_8,PSADJ_fact_8
 
             ier = fclos(Lun_rstrt)  
 

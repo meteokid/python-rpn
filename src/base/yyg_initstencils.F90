@@ -19,6 +19,10 @@
       subroutine yyg_initstencils
 !
       use gem_options
+      use glb_ld
+      use glb_pil
+      use sol
+      use opr
       implicit none
 #include <arch_specific.hf>
 !
@@ -35,10 +39,6 @@
 !     None
 !
 
-#include "glb_ld.cdk"
-#include "glb_pil.cdk"
-#include "opr.cdk"
-#include "sol.cdk"
 !
 
 !

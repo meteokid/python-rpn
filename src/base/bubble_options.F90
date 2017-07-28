@@ -13,9 +13,6 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 module bubble_options
-   use grid_options
-   use gem_options
-   use tdpack
    implicit none
    public
    save
@@ -57,15 +54,17 @@ module bubble_options
 contains
 
       integer function bubble_nml (F_namelistf_S)
+      use dcst
+      use grid_options
+      use lun
+      use tdpack
       implicit none
 
       character* (*) F_namelistf_S
 
-#include "dcst.cdk"
-#include "lun.cdk"
 
       integer, external :: fnom
-      integer unf, err
+      integer unf
 !
 !-------------------------------------------------------------------
 !
@@ -89,7 +88,8 @@ contains
  1000 bubble_nml = 0
 
       ! establish horizontal grid configuration
-      Dcst_rayt_8= Dcst_rayt_8*0.1d0 ! an accuracy problem
+      Dcst_rayt_8 = Dcst_rayt_8 * 0.1d0 ! an accuracy problem
+      Dcst_inv_rayt_8 = Dcst_inv_rayt_8 * 10.d0 ! an accuracy problem
       Grd_typ_S='LU'
       Grd_ni = bubble_ni ; Grd_nj = bubble_nj
       Grd_dx = (bubble_dx/Dcst_rayt_8)*(180./pi_8)
@@ -122,11 +122,13 @@ contains
 !-------------------------------------------------------------------
 !
       integer function bubble_cfg()
+      use glb_ld
+      use cstv
+      use gem_options
+      use grid_options
+      use tdpack
       implicit none
 #include <arch_specific.hf>
-
-#include "glb_ld.cdk"
-#include "cstv.cdk"
 
       integer k
       real*8 c1_8,Exner_8,height_8,pres_8
@@ -182,7 +184,13 @@ contains
                                F_q, pref_tr, suff_tr                ,&
                                Mminx,Mmaxx,Mminy,Mmaxy,nk )
       use gmm_geof
-      use geomh
+      use glb_ld
+      use cstv
+      use tdpack
+      use tr3d
+      use ver
+      use type_mod
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 
@@ -197,21 +205,11 @@ contains
            F_topo (Mminx:Mmaxx,Mminy:Mmaxy   ), &
            F_q    (Mminx:Mmaxx,Mminy:Mmaxy,nk)
 
-#include "gmm.hf"
-#include "glb_pil.cdk"
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "ptopo.cdk"
-#include "out3.cdk"
-#include "tr3d.cdk"
-#include "type.cdk"
-#include "ver.cdk"
-#include "cstv.cdk"
 
       type(gmm_metadata) :: mymeta
       character(len=GMM_MAXNAMELENGTH) :: tr_name
       integer i,j,k,istat,ii
-      real*8 pp, pi,theta
+      real*8 pp, ex,theta
       real, pointer, dimension(:,:,:) :: tr
 !
 !     ---------------------------------------------------------------
@@ -238,11 +236,11 @@ contains
             do i=1,l_ni
                ii=i+l_i0-1
                pp = exp(Ver_a_8%t(k)+Ver_b_8%t(k)*F_s(i,j))
-               pi = (pp/Cstv_pref_8)**cappa_8
+               ex = (pp/Cstv_pref_8)**cappa_8
                theta=bubble_theta
                if( (((ii)-bubble_ictr)**2 +((k)-bubble_kctr)**2) .lt. bubble_rad**2 ) &
                         theta=theta+0.5d0
-               F_t(i,j,k)=theta*pi
+               F_t(i,j,k)=theta*ex
             enddo
          enddo
       enddo

@@ -13,7 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 !
-module krylov_mod
+module krylov
    ! Common Krylov methods.
    !
    ! References
@@ -34,16 +34,17 @@ module krylov_mod
    private
 
 #include "prec.cdk"
-#include "lun.cdk"
-#include "glb_ld.cdk"
 
    public :: krylov_fbicgstab, krylov_fgmres
 
 contains
 
-      integer function krylov_fbicgstab(x, matvec, b, x0, ni, nj, nk, &
-                                        minx, maxx, miny, maxy, i0, il, j0, jl, &
-                                        tolerance, maxiter, precond_S, conv) result(retval)
+   integer function krylov_fbicgstab(x, matvec, b, x0, ni, nj, nk, &
+                                     minx, maxx, miny, maxy, i0, il, j0, jl, &
+                                     tolerance, maxiter, precond_S, conv) result(retval)
+      use glb_ld
+      use lun
+      implicit none
       ! Solves a linear system using a Bi-Conjugate Gradient STABilised
       !
       integer, intent(in) :: ni, nj, nk, minx, maxx, miny, maxy, i0, il, j0, jl
@@ -60,8 +61,9 @@ contains
       ! A matrix-vector product routine (A.*v).
       interface
          subroutine matvec(v, prod)
-#include "ldnh.cdk"
-#include "glb_ld.cdk"
+            use glb_ld, only: l_nk
+            use ldnh, only: ldnh_minx, ldnh_maxx, ldnh_miny, ldnh_maxy
+            implicit none
             real*8, dimension (ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk), intent(in) :: v
             real*8, dimension (ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk), intent(out) :: prod
          end subroutine
@@ -258,6 +260,8 @@ contains
    integer function krylov_fgmres(x, matvec, b, x0, ni, nj, nk, &
                                   minx, maxx, miny, maxy, i0, il, j0, jl, &
                                   tolerance, maxinner, maxouter, precond_S, conv) result(retval)
+      use glb_ld
+      implicit none
       ! Flexible generalized minimum residual method (with restarts)
       ! solve A x = b.
       !
@@ -275,8 +279,9 @@ contains
       ! A matrix-vector product routine (A.*vv).
       interface
          subroutine matvec(v, prod)
-#include "ldnh.cdk"
-#include "glb_ld.cdk"
+            use glb_ld, only: l_nk
+            use ldnh, only: ldnh_minx, ldnh_maxx, ldnh_miny, ldnh_maxy
+            implicit none
             real*8, dimension (ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk), intent(in) :: v
             real*8, dimension (ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk), intent(out) :: prod
          end subroutine
@@ -504,4 +509,4 @@ contains
       end do
    end subroutine givens_rotations
 
-end module krylov_mod
+end module krylov

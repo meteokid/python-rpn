@@ -17,6 +17,9 @@
 !
       subroutine dry_sfc_pressure (F_drysfcp0, presT, p0T, &
                                    Minx,Maxx,Miny,Maxy,Nk,F_timelevel_S)
+      use glb_ld
+      use cstv
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 
@@ -31,9 +34,6 @@
 !revision
 ! v4_70 - M. Desgagne      - Initial version
 
-#include "gmm.hf"
-#include "cstv.cdk"
-#include "glb_ld.cdk"
 
       integer i,j,k,istat
       real, dimension(Minx:Maxx,Miny:Maxy,Nk) :: sumq

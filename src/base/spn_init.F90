@@ -19,6 +19,12 @@
       use spn_work_mod
       use grid_options
       use gem_options
+      use glb_ld
+      use cstv
+      use lun
+      use ver
+      use ldnh
+      use glb_pil
       implicit none
 #include <arch_specific.hf>
 
@@ -29,12 +35,6 @@
 ! v4_80 - Qian, Dugas, Hussain            - initial version
 ! v4_80 - Baek - correction for NK
 
-#include "lun.cdk"
-#include "glb_ld.cdk"
-#include "glb_pil.cdk"
-#include "ldnh.cdk"
-#include "ver.cdk"
-#include "cstv.cdk"
 
       integer i,j,k,err1,next_down
       real t_turn, b_turn, pi2, nudging_tau

@@ -14,9 +14,10 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 module hzd_exp
-      use hzd_mod
-      use gem_options
-      use grid_options
+  use hzd_mod
+  use gem_options
+  use grid_options
+  use glb_ld
   implicit none
 #include <arch_specific.hf>
   private
@@ -44,7 +45,6 @@ contains
 ! v4_80 - Qaddouri A.      - initial version
 ! v4_80 - Lee   - optimization
 
-#include "glb_ld.cdk"
 
       integer iter1,mm,dpwr,itercnt,Niter
       real c1(Minx:Maxx,Miny:Maxy,Nk), c2(Minx:Maxx,Miny:Maxy,Nk)
@@ -154,7 +154,6 @@ contains
 ! v4_15 - Desgagne M.    - refonte majeure
 ! v5_0  - Lee V.         - add this back for horizontal diffusion
 
-#include "glb_ld.cdk"
 
       integer nn, mm
       real wk1(l_minx:l_maxx,l_miny:l_maxy,Nk), rnr,pwr

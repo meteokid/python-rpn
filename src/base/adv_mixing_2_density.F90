@@ -17,6 +17,7 @@
 
       subroutine adv_mixing_2_density (F_tr_mixing,F_tr_density,F_minx,F_maxx,F_miny,F_maxy,F_nk,F_kind,F_time)
 
+      use glb_ld
       implicit none
 
 #include <arch_specific.hf>
@@ -30,7 +31,6 @@
       !@revisions
       ! v4_XX - Tanguay M.        - GEM4 Mass-Conservation
 
-#include "glb_ld.cdk"
 
       !---------------------------------------------------------------------
       integer i,j,k

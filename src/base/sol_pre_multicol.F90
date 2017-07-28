@@ -2,30 +2,33 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r  sol_pre_multicol -  call multicolored block-gauss seidel  
+!**s/r  sol_pre_multicol -  call multicolored block-gauss seidel
 !
 
 !
       subroutine  sol_pre_multicol ( wk22, wk11,niloc,njloc, &
-                             Minx, Maxx, Miny, Maxy,nil,njl, &
-                              minx1, maxx1, minx2, maxx2,Nk )
+                                     Minx, Maxx, Miny, Maxy,nil,njl, &
+                                     minx1, maxx1, minx2, maxx2 )
       use gem_options
+      use glb_ld
+      use sol
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 !
       integer niloc, njloc, Minx, Maxx, Miny, Maxy, &
-              nil, njl, minx1, maxx1, minx2, maxx2, Nk
+              nil, njl, minx1, maxx1, minx2, maxx2
       real*8  wk11(*),wk22(*)
 !
 !author
@@ -34,8 +37,6 @@
 !revision
 ! v3_30 - Qaddouri A.       - initial version
 !
-#include "ptopo.cdk"
-#include "sol.cdk"
 #include "prec.cdk"
 !
       integer  nloc,ii,icol
@@ -74,16 +75,19 @@
       return
       end
 !
-!**s/r  bord_cor -  rhs correction in preconditionner 
-!                 
-      subroutine  bord_cor (Rhs, Sol, Minx, Maxx, Miny, Maxy, nil, njl, &
+!**s/r  bord_cor -  rhs correction in preconditionner
+!
+      subroutine  bord_cor (F_Rhs, F_Sol, Minx, Maxx, Miny, Maxy, nil, njl, &
                                     minx1, maxx1, minx2, maxx2,Nk,fdg1)
+      use glb_ld
+      use sol
+      use opr
       implicit none
 #include <arch_specific.hf>
 !
       integer Minx, Maxx, Miny, Maxy, nil, njl, &
               minx1, maxx1, minx2, maxx2, Nk
-      real*8 Sol (Minx:Maxx,Miny:Maxy,Nk), Rhs (Minx:Maxx,Miny:Maxy,Nk), &
+      real*8 F_Sol (Minx:Maxx,Miny:Maxy,Nk), F_Rhs (Minx:Maxx,Miny:Maxy,Nk), &
              fdg1(minx1:maxx1, minx2:maxx2, Nk)
 !
 !author
@@ -92,13 +96,10 @@
 !revision
 ! v3_30 - Qaddouri A.       - initial version
 !
-#include "glb_ld.cdk"
-#include "opr.cdk"
-#include "sol.cdk"
 
 !
       integer i,j,k,ii,jj, halox,haloy
-      real*8 stencil1,stencil2,stencil3,stencil4,stencil5,di_8
+      real*8 :: stencil2,stencil3,stencil4,stencil5,di_8
 !
 !     ---------------------------------------------------------------
 !
@@ -106,7 +107,7 @@
          fdg1(:,:,k) = 0.
          do j=1+sol_pil_s, njl-sol_pil_n
             do i=1+sol_pil_w, nil-sol_pil_e
-               fdg1(i,j,k)=Sol(i,j,k)
+               fdg1(i,j,k)=F_Sol(i,j,k)
             enddo
          enddo
       enddo
@@ -126,7 +127,7 @@
              jj=j+l_j0-1
              di_8= Opr_opsyp0_8(G_nj+jj) / cos( G_yg_8 (jj) )**2
              stencil2= Opr_opsxp2_8(ii)*di_8
-             Rhs(i,j,k) =Rhs(i,j,k)-stencil2*fdg1(i-1,j,k)
+             F_Rhs(i,j,k) =F_Rhs(i,j,k)-stencil2*fdg1(i-1,j,k)
           enddo
 !
           i=nil-sol_pil_e
@@ -135,15 +136,15 @@
              jj=j+l_j0-1
              di_8= Opr_opsyp0_8(G_nj+jj) / cos( G_yg_8 (jj) )**2
              stencil3= Opr_opsxp2_8(2*G_ni+ii)*di_8
-             Rhs(i,j,k) =Rhs(i,j,k)-stencil3*fdg1(i+1,j,k)
+             F_Rhs(i,j,k) =F_Rhs(i,j,k)-stencil3*fdg1(i+1,j,k)
           enddo
-!  
+!
           j=1+sol_pil_s
           jj=j+l_j0-1
           do i=1+sol_pil_w, nil-sol_pil_e
              ii=i+l_i0-1
              stencil4= Opr_opsxp0_8(G_ni+ii)*Opr_opsyp2_8(jj)
-             Rhs(i,j,k) =Rhs(i,j,k)-stencil4*fdg1(i,j-1,k)
+             F_Rhs(i,j,k) =F_Rhs(i,j,k)-stencil4*fdg1(i,j-1,k)
           enddo
 !
           j=njl-sol_pil_n
@@ -151,7 +152,7 @@
           do i=1+sol_pil_w, nil-sol_pil_e
              ii=i+l_i0-1
              stencil5= Opr_opsxp0_8(G_ni+ii)*Opr_opsyp2_8(2*G_nj+jj)
-             Rhs(i,j,k) =Rhs(i,j,k)-stencil5*fdg1(i,j+1,k)
+             F_Rhs(i,j,k) =F_Rhs(i,j,k)-stencil5*fdg1(i,j+1,k)
           enddo
 !
       enddo

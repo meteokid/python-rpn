@@ -25,17 +25,17 @@ subroutine nest_init_weight (F_grid)
       use gmm_nest
       use gem_options
       use grdc_options
+      use glb_ld
+      use gmm_itf_mod
+      use glb_pil
+      use var_gmm
+      use ptopo
   implicit none
 #include <arch_specific.hf>
 
   ! Arguments
   character(len=*), intent(in) :: F_grid        !staggered grid ('U':u-grid,'V':v-grid,'M':mass-grid)
 
-#include "gmm.hf"
-#include "var_gmm.cdk"
-#include "glb_pil.cdk"
-#include "glb_ld.cdk"
-#include "ptopo.cdk"
 
   ! Local variables
   type(gmm_metadata) :: mymeta

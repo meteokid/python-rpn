@@ -5,6 +5,9 @@
 
       use grid_options
       use gem_options
+      use glb_ld
+      use lun
+      use tracers
       implicit none
 
       !Arguments
@@ -35,9 +38,6 @@
       !     Based on Bermejo/Conde template from GEM3 (Gravel and DeGrandpre 2012)
       !
 !*@/
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "tracers.cdk"
 
       !----------------------------------------------------------
       integer i,j,k,err,count(k0:F_nk,3),l_count(3),g_count(3),time_p,time_m,iprod

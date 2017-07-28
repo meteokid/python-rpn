@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -21,29 +21,29 @@
       use phy_itf, only: phy_init, phymeta,phy_getmeta
       use step_options
       use gem_options
+      use glb_ld
+      use cstv
+      use lun
+      use out3
+      use levels
+      use outp
+      use ver
+      use gmm_itf_mod
+      use rstr
+      use var_gmm
+      use path
+      use clib_itf_mod
+      use wb_itf_mod
       implicit none
 #include <arch_specific.hf>
 
-!authors 
+!authors
 !     Desgagne, McTaggart-Cowan, Chamberland -- Spring 2014
 !
 !revision
 ! v4_70 - authors          - initial version
 
-#include <WhiteBoard.hf>
-#include <clib_interface_mu.hf>
 #include <msg.h>
-#include <gmm.hf>
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "var_gmm.cdk"
-#include "out3.cdk"
-#include "outp.cdk"
-#include "ver.cdk"
-#include "path.cdk"
-#include "level.cdk"
-#include "cstv.cdk"
-#include "rstr.cdk"
 
       character(len=32), parameter  :: VGRID_M_S = 'ref-m'
       character(len=32), parameter  :: VGRID_T_S = 'ref-t'
@@ -64,7 +64,7 @@
       integer istat, iverb
       character(len=32) :: varname_S,outname_S,bus0_S,refp0_S,refp0ls_S
       character(len=32) :: varlist_S(MAXELEM*MAXSET)
-      integer pnerror,i,k,j,n,ibus,multxmosaic
+      integer k,j,n,ibus,multxmosaic
       type(phymeta) :: pmeta
 !
 !     ---------------------------------------------------------------

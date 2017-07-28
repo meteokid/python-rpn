@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -22,6 +22,9 @@
                        bi_local,ci_local,nil,njl,Ni,Nj,Nk,i0,j0,wk)
       use grid_options
       use gem_options
+      use glb_ld
+      use sol
+      use opr
       implicit none
 #include <arch_specific.hf>
 !
@@ -29,19 +32,16 @@
       real*8  eval_local(Ni),evec_local(Ni,Ni),ai_local(Ni,Nj,Nk), &
               bi_local(Ni,Nj,Nk),ci_local(Ni,Nj,Nk),wk(*)
 !author
-!     Abdessamad Qaddouri  - initial version - December 2006 
+!     Abdessamad Qaddouri  - initial version - December 2006
 !
 !revision
 ! v3_30 - Qaddouri A.       - initial version
-! v4_40 - Qaddouri A.       - call prepoic indicating "Dirichlet" for Yin-Yang 
+! v4_40 - Qaddouri A.       - call prepoic indicating "Dirichlet" for Yin-Yang
 !                             instead of "Neumann" (boundary conditions)
 !
-#include "glb_ld.cdk"
-#include "opr.cdk"
-#include "sol.cdk"
 !
-      integer i,j,k,iloc,jloc,fni0,ii,jj,pnn,info
-      real*8  a_8(Ni,Ni), b_8(Ni,Ni), c_8(Ni,Ni), d_8(3*Ni-1),  &
+      integer i,j,k,iloc,jloc,ii,jj,pnn,info
+      real*8  a_8(Ni,Ni), b_8(Ni,Ni), d_8(3*Ni-1),  &
               r_8(Ni),di_8,zero,one,cst,faz_8
       parameter(zero=0.d0,one=1.d0)
       real*8  fdg1(Ni,Ni),fdg2(Ni,Ni),fdg3(Ni,Ni), &
@@ -52,7 +52,7 @@
       a_8=zero ; b_8=zero ; fdg3=zero
 !
       iloc=0
-      do i = 1+sol_pil_w,nil-sol_pil_e-1 
+      do i = 1+sol_pil_w,nil-sol_pil_e-1
          ii=i+i0-1
          iloc=iloc+1
          a_8(iloc,iloc+1) = Opr_opsxp2_8(2*G_ni+ii)
@@ -61,7 +61,7 @@
          b_8(iloc,iloc+1) = Opr_opsxp0_8(2*G_ni+ii)
          b_8(iloc,iloc  ) = Opr_opsxp0_8(G_ni+ii)
          b_8(iloc+1,iloc) = b_8(iloc,iloc+1)
-      enddo  
+      enddo
       a_8(Ni,Ni) = Opr_opsxp2_8(G_ni+(nil-sol_pil_e+i0-1))
       b_8(Ni,Ni) = Opr_opsxp0_8(G_ni+(nil-sol_pil_e+i0-1))
 !
@@ -80,7 +80,7 @@
       evec_local = a_8
       eval_local = r_8
 !
-      do i = 1, Ni 
+      do i = 1, Ni
          fdg3(i,i) = eval_local(i)
       end do
 !
@@ -96,7 +96,7 @@
             jloc=0
             do j=1+sol_pil_s,njl-sol_pil_n-1
                jj=j+j0-1
-               jloc=jloc+1 
+               jloc=jloc+1
                di_8= Opr_opsyp0_8(G_nj+jj) / (cos( G_yg_8 (jj) )**2)
                b_81(iloc,jloc)=eval_local(iloc) * di_8 + &
                      Opr_opsyp2_8(G_nj+jj)+cst*Opr_opsyp0_8(G_nj+jj)
@@ -105,7 +105,7 @@
             enddo
 !
             jj=njl-sol_pil_n+j0-1
-            di_8= Opr_opsyp0_8(G_nj+jj) / (cos( G_yg_8 (jj)) **2) 
+            di_8= Opr_opsyp0_8(G_nj+jj) / (cos( G_yg_8 (jj)) **2)
             b_81(iloc,Nj)=eval_local(iloc)*di_8+Opr_opsyp2_8(G_nj+jj)+ &
                           cst*Opr_opsyp0_8(G_nj+jj)
             a_81(iloc,1  )= zero
@@ -132,5 +132,5 @@
 !
 !     ---------------------------------------------------------------
 !
-      return 
+      return
       end

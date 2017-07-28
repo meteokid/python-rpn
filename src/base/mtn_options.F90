@@ -13,9 +13,14 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 module mtn_options
-   use grid_options
+   use cstv
    use gem_options
+   use glb_ld
+   use grid_options
    use tdpack
+   use tr3d
+   use ver
+   use glb_pil
    implicit none
    public
    save
@@ -60,12 +65,13 @@ module mtn_options
 contains
 
       integer function mtn_nml (F_namelistf_S)
+      use dcst
+      use lun
+      use glb_pil
       implicit none
 
       character* (*) F_namelistf_S
 
-#include "lun.cdk"
-#include "dcst.cdk"
 
       integer, external :: fnom
       integer unf
@@ -94,7 +100,7 @@ contains
       ! establish horizontal grid configuration
       Grd_typ_S='LU'
       Grd_ni = mtn_ni ; Grd_nj = mtn_nj
-      Grd_dx = (mtn_dx/Dcst_rayt_8)*(180./pi_8)
+      Grd_dx = (mtn_dx*Dcst_inv_rayt_8)*(180./pi_8)
       Grd_dy = Grd_dx
       Grd_latr = 0.
       Grd_lonr = (mtn_ni/2 + 20) * Grd_dx
@@ -124,11 +130,10 @@ contains
 !-------------------------------------------------------------------
 !
       integer function mtn_cfg()
+      use glb_pil
       implicit none
 #include <arch_specific.hf>
 
-#include "glb_ld.cdk"
-#include "cstv.cdk"
 
       integer k
       real*8 c1_8,Exner_8,height_8,pres_8
@@ -181,9 +186,11 @@ contains
       subroutine mtn_data ( F_u, F_v, F_w, F_t, F_zd, F_s, F_topo,&
                             F_q, pref_tr, suff_tr                ,&
                             Mminx,Mmaxx,Mminy,Mmaxy,F_theocase_S )
+      use dcst
       use gmm_vt1
       use gmm_geof
-      use geomh
+      use gmm_itf_mod
+      use glb_pil
       implicit none
 #include <arch_specific.hf>
 
@@ -198,21 +205,10 @@ contains
            F_topo (Mminx:Mmaxx,Mminy:Mmaxy  ), &
            F_q    (Mminx:Mmaxx,Mminy:Mmaxy,*)
 
-#include "gmm.hf"
-#include "glb_pil.cdk"
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "ptopo.cdk"
-#include "out3.cdk"
-#include "tr3d.cdk"
-#include "type.cdk"
-#include "ver.cdk"
-#include "cstv.cdk"
-#include "dcst.cdk"
 
       type(gmm_metadata) :: mymeta
       character(len=GMM_MAXNAMELENGTH) :: tr_name
-      integer i,j,k,i00,err,istat
+      integer i,j,k,i00,istat
       real a00, a01, a02, xcntr, zdi, zfac, zfac1, capc1
       real, allocatable, dimension(:,:) :: psurf, topo_ls
       real hauteur, tempo, dx, slp, slpmax

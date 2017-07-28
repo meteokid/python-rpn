@@ -22,6 +22,10 @@
       subroutine set_rhs
       use gmm_rhsc
       use gmm_orh
+      use glb_ld
+      use lun
+      use gmm_itf_mod
+      use var_gmm
       implicit none
 #include <arch_specific.hf>
 !
@@ -40,10 +44,6 @@
 !	none
 !
 
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "gmm.hf"
-#include "var_gmm.cdk"
 !
       integer :: istat
 !     ---------------------------------------------------------------

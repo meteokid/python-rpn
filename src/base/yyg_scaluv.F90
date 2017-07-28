@@ -17,6 +17,9 @@
       Subroutine yyg_scaluv(tabu_src,tabv_src,Minx,Maxx,Miny,Maxy,NK)
       use gem_options
       use geomh
+      use glb_ld
+      use glb_pil
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 !
@@ -28,9 +31,6 @@
 !revision
 !  v4.8  V.Lee - Added NK to arguments for call to int_cubuv_lag
 !
-#include "ptopo.cdk"
-#include "glb_ld.cdk"
-#include "glb_pil.cdk"
 #include "yyg_pil.cdk"
 
       integer Minx,Maxx,Miny,Maxy,Ni,Nj,NK,numproc

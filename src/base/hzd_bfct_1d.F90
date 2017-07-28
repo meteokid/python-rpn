@@ -20,6 +20,8 @@
 !
       subroutine hzd_bfct_1d (F_a_8,F_b_8,F_c_8,F_deltainv_8,F_pwr,gni,nx3)
 !
+      use glb_ld
+      use glb_pil
       implicit none
 #include <arch_specific.hf>
 !
@@ -45,8 +47,6 @@
 !  F_deltainv_8    0      diagonal(block) part of LU     
 !----------------------------------------------------------------
 !
-#include "glb_ld.cdk"
-#include "glb_pil.cdk"
 !*
       integer i,j,o1,o2,l_pil_w,l_pil_e
       real*8 wrk_8  (1:F_pwr,1:F_pwr)

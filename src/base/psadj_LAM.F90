@@ -20,6 +20,11 @@
       use gmm_vt1
       use gmm_vt0
       use geomh
+      use glb_ld
+      use cstv
+      use lun
+      use psadjust
+      use gmm_itf_mod
       implicit none
 
 #include <arch_specific.hf>
@@ -38,17 +43,12 @@
 ! v4_XX - Tanguay M.        - initial MPI version
 !
 !**/
-#include "glb_ld.cdk"
-#include "gmm.hf"
-#include "lun.cdk"
-#include "cstv.cdk"
-#include "psadj.cdk"
 
       type(gmm_metadata) :: mymeta
       real, pointer, dimension(:,:,:) :: tr
       real*8,dimension(Minx:Maxx,Miny:Maxy,1:l_nk):: pr_m_8,pr_t_8
       real*8,dimension(Minx:Maxx,Miny:Maxy)       :: pr_p0_1_8,pr_p0_0_8,pr_p0_dry_8,pr_fl_dry_8
-      real,  dimension(Minx:Maxx,Miny:Maxy,1:l_nk):: work,sumq
+      real,  dimension(Minx:Maxx,Miny:Maxy,1:l_nk):: sumq
       integer :: err,i,j,k,iteration,istat
       real*8 l_avg_8(2),g_avg_8(2),g_avg_ps_dry_1_8,g_avg_ps_dry_0_8,g_avg_fl_dry_0_8
       character(len= 9) communicate_S

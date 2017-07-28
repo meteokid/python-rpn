@@ -21,6 +21,9 @@
                              F_gni, F_gnj, F_gnk, F_nk         , &
                              F_npex1, F_npey1                  , & 
                              F_ai,F_bi,F_ci, F_dg1,F_dg2,F_dwfft )
+      use glb_ld
+      use glb_pil
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 
@@ -73,9 +76,6 @@
 ! F_dg2        I    - work field
 ! F_dwfft      I    - work field
 
-#include "ptopo.cdk"
-#include "glb_ld.cdk"
-#include "glb_pil.cdk"
 
       integer i,j,k, jr,l_pil_w,l_pil_e
       integer piece, p0, pn, ptotal, plon

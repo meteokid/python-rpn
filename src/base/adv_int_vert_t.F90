@@ -18,16 +18,21 @@
                                   F_k0, i0,in,j0,jn, F_cubic_L )
       use grid_options
       use gem_options
+      use glb_ld
+      use cstv
+      use ver
+      use adv_grid
+      use outgrid
       implicit none
 #include <arch_specific.hf>
 
-      integer :: F_ni,F_nj, F_nk,F_k0
-      integer i0,in,j0,jn,k00
-      real, dimension(F_ni,F_nj,F_nk) :: F_xt,F_yt,F_zt
-      real, dimension(F_ni,F_nj)      :: F_xtn,F_ytn,F_ztn
-      real, dimension(F_ni,F_nj,F_nk) :: F_xm,F_ym,F_zm
-      real, dimension(F_ni,F_nj,F_nk) :: F_wat,F_wdm
-      logical :: F_cubic_L
+      integer, intent(in) :: F_ni,F_nj, F_nk,F_k0
+      integer, intent(in) :: i0,in,j0,jn
+      real, dimension(F_ni,F_nj,F_nk), intent(out) :: F_xt,F_yt,F_zt
+      real, dimension(F_ni,F_nj), intent(out)      :: F_xtn,F_ytn,F_ztn
+      real, dimension(F_ni,F_nj,F_nk), intent(in) :: F_xm,F_ym,F_zm
+      real, dimension(F_ni,F_nj,F_nk), intent(in) :: F_wat,F_wdm
+      logical, intent(in) :: F_cubic_L
 
 !authors
 !     A. Plante & C. Girard
@@ -51,24 +56,17 @@
 
 
 #include "constants.h"
-#include "adv_grid.cdk"
-#include "ver.cdk"
-#include "glb_ld.cdk"
-#include "cstv.cdk"
-#include "ptopo.cdk"
 
-      integer :: i,j,k
+      integer :: i,j,k,k00
       integer :: BCS_BASE
-      integer :: n,cnt,nc,nc1,nc2,sum_cnt,totaln,err
-      real*8  two, half, EPS_8
+      integer :: cnt,nc,nc1,nc2
       real  :: xpos,ypos
       real*8, dimension(2:F_nk-2) :: w1, w2, w3, w4
       real*8, dimension(i0:in,F_nk) :: wdt
       real*8 :: lag3, hh, x, x1, x2, x3, x4, ww, wp, wm
       real :: zmin_bound, zmax_bound, z_bottom
       real :: minposx,maxposx,minposy,maxposy
-      real :: prct
-      parameter (two = 2.0, half=0.5, EPS_8 = 1.D-5)
+      real*8, parameter :: two = 2.0, half=0.5, EPS_8 = 1.d-5
 
       lag3( x, x1, x2, x3, x4 ) = &
         ( ( x  - x2 ) * ( x  - x3 ) * ( x  - x4 ) )/ &

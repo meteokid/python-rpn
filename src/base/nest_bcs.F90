@@ -19,6 +19,9 @@
       use gmm_nest
       use gmm_rhsc
       use gem_options
+      use glb_ld
+      use cstv
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 
@@ -28,9 +31,6 @@
 !revision
 ! v4_14 - Desgagne M.          - initial version
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "cstv.cdk"
 
       integer i,j,k,gmmstat
 !

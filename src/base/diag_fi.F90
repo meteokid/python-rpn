@@ -20,6 +20,10 @@
       use gmm_geof
       use gem_options
       use tdpack
+      use glb_ld
+      use cstv
+      use ver
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
     
@@ -44,10 +48,6 @@
 ! F_t          I    - temperature
 ! F_fis        I    - surface geopotential
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "ver.cdk"
-#include "cstv.cdk"
  
       integer i,j,k,km,istat
       real*8, parameter :: one = 1.d0, half = .5d0

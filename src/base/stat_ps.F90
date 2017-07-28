@@ -22,6 +22,14 @@
       use gem_options
       use geomh
       use tdpack
+      use glb_ld
+      use cstv
+      use lun
+      use tr3d
+      use gmm_itf_mod
+      use glb_pil
+      use tracers
+      use ptopo
       implicit none
 
 !author M.Tanguay
@@ -29,17 +37,9 @@
 !revision
 ! v4_80 - Tanguay M.        - initial MPI version
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "glb_pil.cdk"
-#include "tr3d.cdk"
-#include "tracers.cdk"
-#include "cstv.cdk"
-#include "ptopo.cdk"
 
       type(gmm_metadata) :: mymeta
-      integer err, i, j, istat, n, k
+      integer err, i, j, istat, k
       real, pointer, dimension(:,:,:)                        :: tr
       real,   dimension(l_minx:l_maxx,l_miny:l_maxy,l_nk)    :: sumq
       real*8, dimension(l_minx:l_maxx,l_miny:l_maxy)         :: pr_p0_8

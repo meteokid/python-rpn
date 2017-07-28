@@ -20,6 +20,7 @@
                            Minx,Maxx,Miny,Maxy,Nk )
 
       use geomh
+      use glb_ld
       implicit none
 #include <arch_specific.hf>
 
@@ -33,7 +34,6 @@
 !revision
 ! v4_80 - Desgagne M.       - initial version
 
-#include "glb_ld.cdk"
 
       integer i, j, k, i0, in, j0, jn
 !

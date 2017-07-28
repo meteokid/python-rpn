@@ -18,17 +18,17 @@
 
       integer function sol_transpose2 ( F_npex, F_npey, F_checkparti_L )
       use gem_options
+      use glb_ld
+      use lun
+      use ldnh
+      use sol
+      use trp
       implicit none
 #include <arch_specific.hf>
 
       logical F_checkparti_L
       integer F_npex, F_npey
 
-#include "glb_ld.cdk"
-#include "ldnh.cdk"
-#include "lun.cdk"
-#include "trp.cdk"
-#include "sol.cdk"
 
       logical, external :: decomp3
       integer,parameter :: lowest = 2

@@ -19,11 +19,11 @@
       subroutine pw_update_UV
       use gmm_vt1
       use gmm_pw
+      use glb_ld
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
 
       integer istat
 !     ________________________________________________________________

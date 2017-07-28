@@ -17,6 +17,10 @@
       subroutine out_steps
       use step_options
       use gem_options
+      use cstv
+      use out_mod
+      use out3
+      use outp
       implicit none
 #include <arch_specific.hf>
 
@@ -26,10 +30,6 @@
 !revision
 ! v4_50 - Desgagne M.       - Initial version
 
-#include "out.cdk"
-#include "out3.cdk"
-#include "outp.cdk"
-#include "cstv.cdk"
 #include "out_listes.cdk"
 
       character*16 datev

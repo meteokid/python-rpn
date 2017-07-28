@@ -21,6 +21,11 @@
       use gmm_vt1
       use grid_options
       use gem_options
+      use glb_ld
+      use cstv
+      use lun
+      use gmm_itf_mod
+      use rstr
       implicit none
 #include <arch_specific.hf>
 
@@ -31,12 +36,6 @@
 !----------------------------------------------------------------
 ! F_rstrt_L     O         Is a restart required
 !----------------------------------------------------------------
-
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "rstr.cdk"
-#include "cstv.cdk"
 
       logical, external :: gem_muststop
       integer, external :: model_timeout_alarm

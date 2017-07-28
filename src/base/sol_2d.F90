@@ -19,6 +19,13 @@
                           F_iln, F_print_L, F_offi, F_offj )
       use grid_options
       use gem_options
+      use glb_ld
+      use lun
+      use ldnh
+      use sol
+      use opr
+      use trp
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 
@@ -32,13 +39,6 @@
 !revision
 ! v4_70 - Desgagne/Qaddouri  - initial version
 
-#include "glb_ld.cdk"
-#include "ldnh.cdk"
-#include "lun.cdk"
-#include "trp.cdk"
-#include "ptopo.cdk"
-#include "sol.cdk"
-#include "opr.cdk"
 
       integer i,j,k,ni,nij,iter
       real linfini

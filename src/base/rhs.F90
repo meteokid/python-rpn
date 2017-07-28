@@ -24,6 +24,10 @@
       use gem_options
       use geomh
       use tdpack
+      use glb_ld
+      use cstv
+      use lun
+      use ver
       implicit none
 #include <arch_specific.hf>
 
@@ -55,10 +59,6 @@
 ! v4.70 - Gaudreault S.     - Reformulation in terms of real winds (removing wind images)
 !                           - Explicit integration of metric terms (optional)
 
-#include "glb_ld.cdk"
-#include "ver.cdk"
-#include "lun.cdk"
-#include "cstv.cdk"
 
       logical, save :: done_MU=.false.
       integer :: i0,  in,  j0,  jn
@@ -343,7 +343,7 @@
       if(hzd_div_damp.gt.0.) then
          call hz_div_damp ( F_oru, F_orv, F_u, F_v, &
                             i0u,inu,j0u,jnu,i0v,inv,j0v,jnv, &
-                            i0,in,j0,jn,l_minx,l_maxx,l_miny,l_maxy,G_nk )
+                            l_minx,l_maxx,l_miny,l_maxy,G_nk )
       endif
       if(hzd_in_rhs_L) then
          call hzd_in_rhs ( F_oru, F_orv, F_orw, F_ort, F_u, F_v, F_w, F_t, F_s, &

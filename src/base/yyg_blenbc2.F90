@@ -19,6 +19,9 @@
       Subroutine yyg_blenbc2(tab_dst,tab_src,Minx,Maxx,Miny,Maxy,NK)
 
       use geomh
+      use glb_ld
+      use glb_pil
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 !
@@ -26,9 +29,6 @@
 !           Abdessamad Qaddouri/V.Lee - October 2009
 !
 !     include 'mpif.h'
-#include "ptopo.cdk"
-#include "glb_ld.cdk"
-#include "glb_pil.cdk"
 #include "yyg_bln.cdk"
 
       integer Minx,Maxx,Miny,Maxy,Ni,Nj,NK,numproc

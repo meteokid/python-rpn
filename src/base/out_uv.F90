@@ -22,18 +22,18 @@
       use gmm_vt1
       use gmm_pw
       use gem_options
+      use glb_ld
+      use out_mod
+      use out3
+      use levels
+      use outp
+      use outd
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 
       integer levset, set
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "out3.cdk"
-#include "out.cdk"
-#include "outp.cdk"
-#include "level.cdk"
-#include "outd.cdk"
 
       type(vgrid_descriptor) :: vcoord
       logical :: write_diag_lev,near_sfc_L

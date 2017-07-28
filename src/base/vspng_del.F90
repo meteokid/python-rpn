@@ -21,6 +21,10 @@
                               F_aix_8,F_bix_8,F_cix_8,F_dix_8, &
                               F_aiy_8,F_biy_8,F_ciy_8        , &
                               Minx,Maxx,Miny,Maxy, nke, ntrp12, ntrp22, fnjb)
+      use glb_ld
+      use ldnh
+      use trp
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 !
@@ -50,10 +54,6 @@
 !----------------------------------------------------------------
 !
 
-#include "glb_ld.cdk"
-#include "trp.cdk"
-#include "ldnh.cdk"
-#include "ptopo.cdk"
 !
       integer i, j, k, cnt
       real*8 w1_8(ldnh_maxx,nke,ldnh_maxy),  &

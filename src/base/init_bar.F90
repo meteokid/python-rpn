@@ -23,6 +23,10 @@
       use inp_mod
       use gmm_pw
       use gem_options
+      use glb_ld
+      use cstv
+      use tr3d
+      use gmm_itf_mod
       implicit none
 
       character* (*) F_trprefix_S, F_trsuffix_S, F_datev
@@ -41,10 +45,6 @@
       !     prepare data for autobarotropic runs (Williamson cases)
       !============================================================
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "tr3d.cdk"
-#include "cstv.cdk"
 
       !---------------------------------------------------------------
 

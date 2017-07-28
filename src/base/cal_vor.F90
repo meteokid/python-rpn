@@ -18,8 +18,10 @@
       subroutine cal_vor ( F_QR,F_QQ, F_uu,F_vv          , &
                            F_filtqq, F_coefqq, F_absvor_L, &
                            Minx,Maxx,Miny,Maxy,Nk )
+      use dcst
       use dynkernel_options
       use geomh
+      use glb_ld
       implicit none
 #include <arch_specific.hf>
 
@@ -35,8 +37,6 @@
 !revision
 ! v4_80 - Desgagne M.       - initial version
 
-#include "glb_ld.cdk"
-#include "dcst.cdk"
 
       integer i, j, k, i0, in, j0, jn
       real deg2rad

@@ -21,6 +21,9 @@
                      minx1, maxx1, minx2, maxx2, nx1, nx2, nx3, F_pwr, &
                      Minx,Maxx,Miny,Maxy,Gnk,Gni,nil,njl,nkl, &
                      F_opsxp0_8, F_opsyp0_8,F_cdiff,F_npex,F_npey)
+      use glb_ld
+      use glb_pil
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 
@@ -76,9 +79,6 @@
 ! F_npex1      I    - number of processors on X
 ! F_npey1      I    - number of processors on Y
 
-#include "ptopo.cdk"
-#include "glb_ld.cdk"
-#include "glb_pil.cdk"
 
       real*8, dimension(Miny:Maxy ,minx1:maxx1,Gni+F_npex) :: fdg1_8
       real*8, dimension(Miny:Maxy ,minx1:maxx1,Gni) :: fwft_8

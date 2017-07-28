@@ -19,6 +19,8 @@
                                  l_miny,l_maxy,G_haloy,l_nj,l_nk,Lun_out)
       use ens_gmm_var
       use ens_options
+      use gmm_itf_mod
+      use var_gmm
       implicit none
 #include <arch_specific.hf>
 !
@@ -33,8 +35,6 @@
 ! v_4.1.3 - N. Gagnon      - Change name of most parameters in the NAMELIST
 !
 
-#include "gmm.hf"
-#include "var_gmm.cdk"
 #include "ens_gmm_dim.cdk"
 #include "ens_param.cdk"
 

@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -15,9 +15,11 @@
 
 !**s/r theo_hdif_main - applies horizontal diffusion on a given set of fields
 !
-      subroutine theo_hdif_main 
+      subroutine theo_hdif_main
       use gmm_vt1
       use grid_options
+      use glb_ld
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 
@@ -25,8 +27,6 @@
 !
 !revision
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
 
       integer i,istat
 !     _________________________________________________________________
@@ -43,7 +43,7 @@
          call theo_hdif_ctl ( ut1, l_minx,l_maxx,l_miny,l_maxy, G_nk)
          call theo_hdif_ctl (zdt1, l_minx,l_maxx,l_miny,l_maxy, G_nk)
          call theo_hdif_ctl ( wt1, l_minx,l_maxx,l_miny,l_maxy, G_nk)
-!     
+!
 !     _________________________________________________________________
 !
       return
@@ -53,6 +53,8 @@
 !
       subroutine theo_hdif_ctl(F_f2dif, Minx,Maxx,Miny,Maxy, NK)
       use gem_options
+      use glb_ld
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 
@@ -61,7 +63,6 @@
 !
 !AUTHOR    C. Girard
 !
-#include "glb_ld.cdk"
 #include "theo_dif.cdk"
 
       integer nn, mm
@@ -101,6 +102,8 @@
 
       subroutine theo_hdif(rfd,sfd,Minx,Maxx,Miny,Maxy,lnk,nu_dif,m,n)
       use gem_options
+      use glb_ld
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 !
@@ -113,7 +116,6 @@
 !
 !revision
 
-#include "glb_ld.cdk"
 
       integer i,j,k,id,jd,iff,jf,i0,in,j0,jn
       real wk(l_minx:l_maxx,l_miny:l_maxy)

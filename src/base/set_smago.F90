@@ -22,6 +22,9 @@
       use gem_options
       use geomh
       use tdpack
+      use glb_ld
+      use cstv
+      use ver
       implicit none
 #include <arch_specific.hf>
 
@@ -31,9 +34,6 @@
 !
 !revision
 ! v5_0 - Husain S.    - initial version based on hzd_smago
-#include "glb_ld.cdk"
-#include "ver.cdk"
-#include "cstv.cdk"
 
       integer k
       real*8 top_m, bot_m, top_t, bot_t, pi2

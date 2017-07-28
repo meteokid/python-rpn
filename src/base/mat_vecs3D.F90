@@ -16,29 +16,29 @@
 !**s/r mat_vecs3D - 3D_elliptic matrix_vector's computation
 !
 
-      subroutine  mat_vecs3D ( Sol, Rhs, Minx, Maxx, Miny, Maxy,nil, &
+      subroutine  mat_vecs3D ( F_Sol, F_Rhs, Minx, Maxx, Miny, Maxy,nil, &
                      njl,minx1, maxx1, minx2, maxx2,Nk,minx3,maxx3 )
       use gem_options
       use geomh
       use tdpack
+      use glb_ld
+      use cstv
+      use ver
+      use sol
+      use opr
       implicit none
 #include <arch_specific.hf>
 !
-      integer Minx, Maxx, Miny, Maxy,nil, njl, &
-             minx1, maxx1, minx2, maxx2,Nk,minx3,maxx3
-      real*8 Rhs(Minx:Maxx,Miny:Maxy,Nk), &
-             Sol(Minx:Maxx,Miny:Maxy,Nk)
+      integer, intent(in) :: Minx, Maxx, Miny, Maxy,nil, njl, &
+                             minx1, maxx1, minx2, maxx2,Nk,minx3,maxx3
+      real*8, intent(out) :: F_Rhs(Minx:Maxx,Miny:Maxy,Nk)
+      real*8, intent(in) :: F_Sol(Minx:Maxx,Miny:Maxy,Nk)
 !author
 !       Abdessamad Qaddouri -  2013
 !
 !revision
 ! v4_70 - Qaddouri A.       - initial version
 
-#include "glb_ld.cdk"
-#include "opr.cdk"
-#include "sol.cdk"
-#include "ver.cdk"
-#include "cstv.cdk"
 
       integer j,i,k,ii,jj,halox,haloy
       real*8  stencil1,stencil2,stencil3,stencil4,stencil5,cst,di_8
@@ -51,7 +51,7 @@
       xxx = - Cstv_hco2_8
       yyy = - Cstv_hco1_8
 
-      fdg1= 0.0d0 ; rhs= 0.0d0
+      fdg1= 0.0d0 ; F_Rhs= 0.0d0
 
       halox=1
       haloy=halox
@@ -64,7 +64,7 @@
          fdg1(:,:,k) = .0d0
          do j=1+sol_pil_s, njl-sol_pil_n
          do i=1+sol_pil_w, nil-sol_pil_e
-            fdg1(i,j,k)=sol(i,j,k)
+            fdg1(i,j,k)=F_Sol(i,j,k)
          enddo
          enddo
       enddo
@@ -100,13 +100,13 @@
                stencil7=Cstv_hco0_8*(Opr_opszp2_8(2*G_nk+k)+Opr_opszpl_8(2*G_nk+k)+xxx*Opr_opszpm_8(2*G_nk+k))
 
 ! Matrix*vector
-               Rhs(i,j,k)=stencil1*fdg1(i  ,j  ,k  ) +&
-                          stencil2*fdg1(i-1,j  ,k  ) +&
-                          stencil3*fdg1(i+1,j  ,k  ) +&
-                          stencil5*fdg1(i  ,j+1,k  ) +&
-                          stencil4*fdg1(i  ,j-1,k  ) +&
-                          stencil6*fdg1(i  ,j  ,k-1) +&
-                          stencil7*fdg1(i  ,j  ,k+1)
+               F_Rhs(i,j,k)=stencil1*fdg1(i  ,j  ,k  ) +&
+                            stencil2*fdg1(i-1,j  ,k  ) +&
+                            stencil3*fdg1(i+1,j  ,k  ) +&
+                            stencil5*fdg1(i  ,j+1,k  ) +&
+                            stencil4*fdg1(i  ,j-1,k  ) +&
+                            stencil6*fdg1(i  ,j  ,k-1) +&
+                            stencil7*fdg1(i  ,j  ,k+1)
             enddo
          enddo
       enddo

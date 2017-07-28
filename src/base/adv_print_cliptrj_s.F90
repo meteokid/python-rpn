@@ -13,12 +13,13 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 !
-           subroutine adv_print_cliptrj_s(cnt,F_ni,F_nj,F_nk,k0,mesg)
-           implicit none
+      subroutine adv_print_cliptrj_s(cnt,F_ni,F_nj,F_nk,k0,mesg)
+      use adv_grid
+      use outgrid
+      implicit none
 #include <arch_specific.hf>
 
-#include "msg.h"  
-#include "adv_grid.cdk"
+#include "msg.h"
 
       Integer :: F_ni,F_nj,F_nk,k0
       Integer :: cnt,sum_cnt,n,totaln,err
@@ -28,7 +29,7 @@
       n = max(1,adv_maxcfl)
       totaln = (F_ni*n*2 + (F_nj-2*n)*n*2) * (F_nk-k0+1)
       call rpn_comm_Allreduce(cnt,sum_cnt,1,"MPI_INTEGER", "MPI_SUM","grid",err)
-  
+
       if(sum_cnt .ne. 0 ) then
         write(msg_S,'(a,i5,a,f6.2,2x,a)')  &
          ' ADV trajtrunc : npts=',sum_cnt, &

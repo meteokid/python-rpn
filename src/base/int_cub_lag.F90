@@ -16,6 +16,7 @@
 !**s/r int_cub_lag - YY cubic interpolation for fields (local PE)
        subroutine int_cub_lag8 ( FF, F, Imx,Imy, geomgx,geomgy,   &
                                  Minx,Maxx,Miny,Maxy,Nk,Xi,Yi,NLEN) 
+      use glb_ld
        implicit none
 #include <arch_specific.hf>
        
@@ -93,6 +94,7 @@
 
        subroutine int_cub_lag4 ( FF, F, Imx,Imy, geomgx,geomgy,   &
                                  Minx,Maxx,Miny,Maxy,Nk,Xi,Yi,NLEN,mono_l ) 
+      use glb_ld
        implicit none
 #include <arch_specific.hf>
        
@@ -187,6 +189,7 @@
 
        subroutine int_cub_lag3 ( FF, F, Imx,Imy, geomgx,geomgy,   &
                                  Minx,Maxx,Miny,Maxy,Xi,Yi,mono_l )
+      use glb_ld
        implicit none
 #include <arch_specific.hf>
 
@@ -270,6 +273,7 @@
 
        Subroutine int_cub_lag2(FF,F,Imx,Imy,geomgx,geomgy,Minx,Maxx,Miny,Maxy,Xi,Yi) 
 
+      use glb_ld
        implicit none
 #include <arch_specific.hf>
 !
@@ -277,7 +281,6 @@
 !           Abdessamad Qaddouri - October 2009
 !revision   V.Lee - Aug 2011 (to replace int_cub_lag,int_cub_lagu,int_cub_lagv)
 !
-#include "glb_ld.cdk"
 
        integer Imx,Imy,Nx,Ny,Minx,Maxx,Miny,Maxy
        integer k,i,j,Mx,My

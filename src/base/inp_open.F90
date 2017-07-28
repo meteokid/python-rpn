@@ -19,14 +19,14 @@
       subroutine inp_open ( F_datev, F_vgd_src )
       use vGrid_Descriptors
       use inp_mod
+      use path
+      use clib_itf_mod
       implicit none
 #include <arch_specific.hf>
 
       character*(*)          , intent(IN)  :: F_datev
       type(vgrid_descriptor) , intent(OUT) :: F_vgd_src
 
-#include "path.cdk"
-#include <clib_interface_mu.hf>
 #include <rmnlib_basics.hf>
 
       character*2048 fn,root

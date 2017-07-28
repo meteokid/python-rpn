@@ -16,10 +16,13 @@
       subroutine adv_prepareWinds ( F_ud, F_vd, F_wd, F_ua, F_va, F_wa, F_wat , &
                                      ut0, vt0, zdt0, ut1, vt1 , zdt1          , &
                                      F_minx, F_maxx, F_miny, F_maxy , F_ni ,F_nj, F_nk )
+      use dcst
       use gmm_vt2
       use gmm_pw
       use gem_options
       use tdpack
+      use glb_ld
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 
@@ -33,18 +36,13 @@
 
  !@Objectives: Process winds in preparation for advection: de-stagger and interpolate from thermo to momentum levels
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "dcst.cdk"
 
       real, dimension(F_minx:F_maxx,F_miny:F_maxy,F_nk) :: uh,vh,wm,wh
       real :: err
       integer :: i,j,k
-      real*8  :: inv_rayt_8
 !
 !     ---------------------------------------------------------------
 !
-      inv_rayt_8 = 1.D0 / Dcst_rayt_8
 
       if(Schm_trapeze_L) then
 
@@ -70,8 +68,8 @@
          do k = 1,l_nk
             do j = 1,l_nj
             do i = 1,l_ni
-               uh(i,j,k) = inv_rayt_8 * pw_uu_moins(i,j,k)
-               vh(i,j,k) = inv_rayt_8 * pw_vv_moins(i,j,k)
+               uh(i,j,k) = Dcst_inv_rayt_8 * pw_uu_moins(i,j,k)
+               vh(i,j,k) = Dcst_inv_rayt_8 * pw_vv_moins(i,j,k)
             enddo
             enddo
          enddo

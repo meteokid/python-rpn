@@ -17,14 +17,14 @@
 
       subroutine tracers_step (F_water_tracers_only_L)
       use gem_options
+      use glb_ld
+      use lun
+      use tracers
       implicit none
 #include <arch_specific.hf>
 
       logical, intent(IN) :: F_water_tracers_only_L
 
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "tracers.cdk"
 
 ! local variables
       logical :: verbose_L

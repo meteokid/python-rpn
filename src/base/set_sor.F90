@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -21,6 +21,19 @@
       use step_options
       use grid_options
       use gem_options
+      use cstv
+      use lun
+      use out_mod
+      use out3
+      use levels
+      use outp
+      use outd
+      use outc
+      use hgc
+      use path
+      use wb_itf_mod
+      use timestep
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 
@@ -30,35 +43,17 @@
 !revision
 ! v4_80 - Desgagne M.       - major re-factorization of output
 
-#include <WhiteBoard.hf>
-#include <clib_interface_mu.hf>
-#include "lun.cdk"
-#include "ptopo.cdk"
-#include "out.cdk"
-#include "out3.cdk"
-#include "level.cdk"
-#include "timestep.cdk"
-#include "outd.cdk"
-#include "outp.cdk"
-#include "outc.cdk"
-#include "hgc.cdk"
-#include "cstv.cdk"
-#include "path.cdk"
       include "rpn_comm.inc"
 
       integer,external :: srequet
-      real*8, external :: dcmip_mult_X 
+      real*8, external :: dcmip_mult_X
 
       integer,parameter :: NBUS = 3
-      character(len=9) :: BUS_LIST_S(NBUS) = &
-                  (/'Entry    ', 'Permanent', 'Volatile '/)
 
-      character*5 blank_S
-      character*8 unit_S
-      character*256 fn
-      character(len=32) :: varname_S,outname_S,bus0_S
+      character(len=8) :: unit_S
+      character(len=256) :: fn
       logical iela
-      integer pnerror,i,idx,k,j,levset,ierr
+      integer pnerror,i,k,j,ierr
       integer, dimension (4,2) :: ixg, ixgall
       integer istat,options,rsti
       real, dimension (4,2) :: rot, rotall
@@ -76,15 +71,15 @@
       else
          pnerror = pnerror + 1
       endif
-      
+
       if  (pnerror .gt. 0) then
          if (Lun_out.gt.0) write(Lun_out,5000) pnerror
       endif
-      
+
       Out3_accavg_L = .false.
       Out3_ndigits = max(3,Out3_ndigits)
       select case(Out3_unit_s(3:3))
-      case('STE') 
+      case('STE')
          unit_S = 'TIMESTEPS'
          Out3_ndigits = max(6,Out3_ndigits)
       case('SEC')
@@ -179,7 +174,7 @@
          rot(3,Ptopo_couleur+1)= Grd_xlat2
          rot(4,Ptopo_couleur+1)= Grd_xlon2
       endif
-      
+
       call RPN_COMM_allreduce ( ixg  , ixgall  ,       8,&
            RPN_COMM_INTEGER,"MPI_SUM",RPN_COMM_MULTIGRID,ierr )
       call RPN_COMM_allreduce ( rot  , rotall  ,       8,&
@@ -198,7 +193,7 @@
       Out_deet= int(dcmip_mult_X(Cstv_dt_8))
 
       options = WB_REWRITE_NONE+WB_IS_LOCAL
-      istat= wb_put('model/Output/etik', Out3_etik_S, options)      
+      istat= wb_put('model/Output/etik', Out3_etik_S, options)
 
   900 format(/'+',35('-'),'+',17('-'),'+',5('-'),'+'/'| DYNAMIC VARIABLES REQUESTED FOR OUTPUT              |',5x,'|')
   901 format('|',1x,'OUTPUT',1x,'|',2x,'   OUTCFG   ',2x,'|',2x,' BITS  |','FILTPASS|FILTCOEF| LEV |')

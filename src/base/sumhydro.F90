@@ -17,6 +17,9 @@
 !
       subroutine sumhydro (F_qh,minx,maxx,miny,maxy,nk,F_timelevel_S)
       use gem_options
+      use glb_ld
+      use tr3d
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 
@@ -31,9 +34,6 @@
 ! v4_11 - Desgagne, M.     - First revision
 ! v4_60 - Lee, V.          - extracted this out of tt2virt
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "tr3d.cdk"
 
       integer i, j, k, n,istat
       real, pointer, dimension(:,:,:)     :: tr

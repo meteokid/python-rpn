@@ -21,6 +21,12 @@
                               ig1,ig2,ig3,grdtype,filename)
       use gem_options
       use geomh
+      use glb_ld
+      use out_mod
+      use out3
+      use hgc
+      use path
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 !
@@ -37,19 +43,13 @@
 !     Write buf in a fst file
 !
 
-#include "glb_ld.cdk"
-#include "out.cdk"
-#include "out3.cdk"
-#include "hgc.cdk"
-#include "ptopo.cdk"
-#include "path.cdk"
 !
       integer  fnom,fstinl,fstecr,fclos,longueur
       external fnom,fstinl,fstecr,fclos,longueur
 !
-      character*7 startindx
-      character*1024 fn
-      integer unf,err,nrec,n1,n2,n3,nlis,list_x,list_y, &
+      character(len=7) :: startindx
+      character(len=1024) :: fn
+      integer unf,err,n1,n2,n3,nlis,list_x,list_y, &
               nipos,njpos,pnip1,pnip3,i,j,k
       parameter (nlis = 1024)
       integer liste (nlis)

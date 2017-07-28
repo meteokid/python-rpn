@@ -17,22 +17,22 @@
 
       subroutine hz_div_damp ( F_du,F_dv, F_u, F_v, &
                               i0u,inu,j0u,jnu,i0v,inv,j0v,jnv, &
-                              i0,in,j0,jn,Minx,Maxx,Miny,Maxy,Nk )
+                              Minx,Maxx,Miny,Maxy,Nk )
+      use dcst
       use gem_options
       use geomh
       use tdpack
+      use cstv
       implicit none
 #include <arch_specific.hf>
 
-      real, dimension(Minx:Maxx,Miny:Maxy,NK),   intent (INOUT) :: F_du, F_dv
-      real, dimension(Minx:Maxx,Miny:Maxy,NK),   intent (IN)    :: F_u, F_v
-      integer, intent(IN) :: i0u,inu,j0u,jnu,i0v,inv,j0v,jnv
-      integer, intent(IN) :: i0,in,j0,jn,Minx,Maxx,Miny,Maxy,Nk
+      integer, intent(in) :: Minx,Maxx,Miny,Maxy,Nk
+      real, dimension(Minx:Maxx,Miny:Maxy,NK), intent (inout) :: F_du, F_dv
+      real, dimension(Minx:Maxx,Miny:Maxy,NK), intent (in)    :: F_u, F_v
+      integer, intent(in) :: i0u,inu,j0u,jnu,i0v,inv,j0v,jnv
 !author
 !   Claude Girard
 !
-#include "cstv.cdk"
-#include "dcst.cdk"
 
       integer i,j,k
       real div(Minx:Maxx,Miny:Maxy,Nk)
@@ -55,12 +55,12 @@
       do k =1, Nk
          do j=j0u,jnu
          do i=i0u,inu
-            F_du(i,j,k)=F_du(i,j,k)+kdiv_damp*(div(i+1,j,k)-div(i,j,k))*geomh_invDXMu_8(j)
+            F_du(i,j,k) = F_du(i,j,k)+kdiv_damp*(div(i+1,j,k)-div(i,j,k))*geomh_invDXMu_8(j)
          enddo
          enddo
          do j=j0v,jnv
          do i=i0v,inv
-            F_dv(i,j,k)=F_dv(i,j,k)+kdiv_damp*(div(i,j+1,k)-div(i,j,k))*geomh_invDYMv_8(j)
+            F_dv(i,j,k) = F_dv(i,j,k)+kdiv_damp*(div(i,j+1,k)-div(i,j,k))*geomh_invDYMv_8(j)
          enddo
          enddo
       enddo

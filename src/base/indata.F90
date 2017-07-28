@@ -17,21 +17,20 @@
 !               beginning of integration
 
       subroutine indata
-      use step_options
-      use gmm_vt1
-      use gmm_pw
-      use gmm_geof
-      use inp_mod
       use gem_options
       use grid_options
+      use glb_ld
+      use gmm_itf_mod
+      use gmm_pw
+      use gmm_geof
+      use gmm_vt1
+      use inp_mod
+      use lun
+      use step_options
       use theo_options
+      use tr3d
       implicit none
 #include <arch_specific.hf>
-
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "tr3d.cdk"
 
       integer k,istat,dim,err
       real, dimension(:,:), pointer :: topo_large_scale
@@ -134,7 +133,7 @@
       call pw_update_GPW
       call pw_init
 
-      call out_outdir (Step_total)
+      call out_outdir
 
       call iau_apply2 (0)
 

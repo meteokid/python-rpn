@@ -18,6 +18,9 @@
       subroutine adv_get_ij0n_ext (i0_e,in_e,j0_e,jn_e)
 
       use grid_options
+      use glb_ld
+      use adv_grid
+      use outgrid
       implicit none
 
 #include <arch_specific.hf>
@@ -30,8 +33,6 @@
       ! v4_80 - Tanguay M.        - GEM4 Mass-Conservation
       ! v5_00 - Tanguay M.        - Adjust extension
 
-#include "glb_ld.cdk"
-#include "adv_grid.cdk"
 
       !---------------------------------------------------------------------
       integer :: jext

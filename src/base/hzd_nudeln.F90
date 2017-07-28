@@ -16,6 +16,7 @@
 
       subroutine hzd_nudeln2(rfd,sfd,Minx,Maxx,Miny,Maxy,lnk,nu,m,n)
       use grid_options
+      use glb_ld
       implicit none
 #include <arch_specific.hf>
 !
@@ -54,7 +55,6 @@
 !    *                                                                 *
 !    *******************************************************************
 
-#include "glb_ld.cdk"
 
       integer i,j,k,id,jd,iff,jf,i0,in,j0,jn
       real wk(l_minx:l_maxx,l_miny:l_maxy)

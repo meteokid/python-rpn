@@ -25,6 +25,12 @@
       use geomh
       use step_options
 
+      use glb_ld
+      use cstv
+      use lun
+      use tr3d
+      use gmm_itf_mod
+      use ptopo
       implicit none
 
       integer F_my_step
@@ -38,12 +44,6 @@
       !   CASE 163: Maximum vertical velocity                              at each  T
       !==============================================================================
 
-#include "glb_ld.cdk"
-#include "gmm.hf"
-#include "lun.cdk"
-#include "ptopo.cdk"
-#include "cstv.cdk"
-#include "tr3d.cdk"
 
       !---------------------------------------------------------------
 

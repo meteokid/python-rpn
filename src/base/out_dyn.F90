@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -16,10 +16,16 @@
 !**s/r out_dyn - perform dynamic output
 
       subroutine out_dyn ( F_reg_out, F_casc_L )
-      use out_vref_mod, only: out_vref
       use step_options
       use grdc_options
       use gem_options
+      use lun
+      use out_mod
+      use out_vref, only: out_vref_itf
+      use out3
+      use levels
+      use outd
+      use outgrid
       implicit none
 #include <arch_specific.hf>
 
@@ -31,16 +37,10 @@
 !revision
 ! v4_80 - Desgagne M.       - major re-factorization of output
 
-#include "out3.cdk"
-#include "out.cdk"
-#include "lun.cdk"
-#include "grid.cdk"
-#include "level.cdk"
-#include "outd.cdk"
 #include "out_listes.cdk"
 #include <rmnlib_basics.hf>
 
-      character*15 prefix
+      character(len=15) prefix
       logical ontimec,flag_clos
       integer k,kk,jj,levset,gridset,istat
 !
@@ -77,18 +77,18 @@
             Out_prefix_S(1:1) = 'd'
             Out_prefix_S(2:2) = Level_typ_S(levset)
             call up2low (Out_prefix_S ,prefix)
-            Out_reduc_l       = Grid_reduc(gridset)
+            Out_reduc_l       = OutGrid_reduc(gridset)
 
             call out_open_file (trim(prefix))
 
             call out_href3 ( 'Mass_point'                , &
-                  Grid_x0 (gridset), Grid_x1 (gridset), 1, &
-                  Grid_y0 (gridset), Grid_y1 (gridset), 1 )
+                  OutGrid_x0 (gridset), OutGrid_x1 (gridset), 1, &
+                  OutGrid_y0 (gridset), OutGrid_y1 (gridset), 1 )
 
             if (Level_typ_S(levset).eq.'M') then
-               call out_vref (etiket=Out_etik_S)
+               call out_vref_itf (etiket=Out_etik_S)
             elseif (Level_typ_S(levset).eq.'P') then
-               call out_vref (Level_allpres(1:Level_npres),etiket=Out_etik_S)
+               call out_vref_itf (Level_allpres(1:Level_npres),etiket=Out_etik_S)
             endif
 
             call out_tracer (levset, kk)

@@ -19,6 +19,10 @@
 !
       subroutine set_vta
       use gmm_vta
+      use glb_ld
+      use lun
+      use gmm_itf_mod
+      use var_gmm
       implicit none
 #include <arch_specific.hf>
 !
@@ -33,10 +37,6 @@
 ! v4_05 - Lepine M.      - VMM replacement with GMM
 !
 
-#include "gmm.hf"
-#include "var_gmm.cdk"
-#include "glb_ld.cdk"
-#include "lun.cdk"
 
       integer :: istat
 !     ---------------------------------------------------------------

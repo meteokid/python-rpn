@@ -20,6 +20,10 @@
       use gmm_geof
       use gem_options
       use tdpack
+      use glb_ld
+      use cstv
+      use lun
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 
@@ -31,10 +35,6 @@
 !
 !revision
 !
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "cstv.cdk"
-#include "lun.cdk"
 
 ! Local varibales
 

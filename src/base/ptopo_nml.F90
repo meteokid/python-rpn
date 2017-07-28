@@ -16,6 +16,8 @@
 !**s/r ptopo_nml - Read namelist ptopo
 !
       integer function ptopo_nml (F_namelistf_S)
+      use lun
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 !
@@ -32,8 +34,6 @@
 !object
 !  Default configuration and reading namelist ptopo
 !
-#include "ptopo.cdk"
-#include "lun.cdk"
 
       integer,external :: fnom
 

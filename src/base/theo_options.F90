@@ -2,23 +2,21 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 module theo_options
-   use bubble_options
-   use mtn_options
    implicit none
    public
    save
-   
+
    !# Choices of theoretical case:
    !# * from Robert, JAS 1993
    !# * 'BUBBLE': uniform convective bubble
@@ -37,12 +35,15 @@ module theo_options
 contains
 
       integer function theocases_nml (F_namelistf_S,F_theo_L)
+      use glb_ld
+      use lun
+      use bubble_options
+      use mtn_options
       implicit none
 
       character* (*) F_namelistf_S
       logical F_theo_L
 
-#include "lun.cdk"
 
       integer, external :: fnom
       character*64 dumc_S
@@ -61,7 +62,7 @@ contains
       if (F_namelistf_S .ne. '') then
 
          unf = 0
-         if (fnom (unf,F_namelistf_S, 'SEQ+OLD', 0) .ne. 0) goto 9110 
+         if (fnom (unf,F_namelistf_S, 'SEQ+OLD', 0) .ne. 0) goto 9110
          rewind(unf)
          read (unf, nml=theo_cfgs, end= 1000, err=9130)
  1000    call fclos (unf)
@@ -116,9 +117,12 @@ contains
 !-------------------------------------------------------------------
 !
       subroutine theo_cfg()
+      use glb_ld
+      use lun
+      use mtn_options
+      use bubble_options
       implicit none
 
-#include "lun.cdk"
 
       integer err
 !
@@ -156,6 +160,9 @@ contains
 !
       subroutine theo_data ( F_u, F_v, F_w, F_t, F_zd, F_s, F_q, F_topo,&
                              pref_tr, suff_tr )
+      use glb_ld
+      use bubble_options
+      use mtn_options
       implicit none
 #include <arch_specific.hf>
 
@@ -163,7 +170,6 @@ contains
       real F_u(*), F_v(*), F_w (*), F_t(*), F_zd(*), &
            F_s(*), F_topo(*), F_q(*)
 
-#include "glb_ld.cdk"
 !
 !---------------------------------------------------------------------
 !

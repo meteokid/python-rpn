@@ -20,6 +20,7 @@
       use gem_options
       use grid_options
       use geomh
+      use glb_ld
       implicit none
 #include <arch_specific.hf>
 !
@@ -29,9 +30,8 @@
 !revision
 ! v4_80 - Qaddouri, Desgagne, Lee      - Initial version
 !
-#include "glb_ld.cdk"
 
-      integer i,j
+      integer j
       real*8  aaa,bbb,ccc,ddd,dx_8
 !
 !     ---------------------------------------------------------------

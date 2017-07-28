@@ -20,6 +20,8 @@
                            Minz, Maxz, F_nk, F_k0, &
                            Minx, Maxx, F_ni, F_i0, &
                            GNI, GNJ, GNK, F_ai_8, F_bi_8, F_ci_8 )
+      use glb_ld
+      use glb_pil
       implicit none
 #include <arch_specific.hf>
 !
@@ -60,8 +62,6 @@
 ! F_bi_8       O    -        diagonal of LU factorization
 ! F_ci_8       O    - super- diagonal of LU factorization
 
-#include "glb_ld.cdk"
-#include "glb_pil.cdk"
 
       integer k, kk, i, ii, j
       integer l_pil_w,l_pil_e, dim

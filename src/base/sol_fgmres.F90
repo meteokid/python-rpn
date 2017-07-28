@@ -18,6 +18,9 @@
                               Minx, Maxx, Miny, Maxy, F_gnk,&
                               F_nk, print_conv_L, conv, its )
       use gem_options
+      use glb_ld
+      use lun
+      use sol
       implicit none
 #include <arch_specific.hf>
 
@@ -32,9 +35,6 @@
 !revision
 ! v4_70 - Qaddouri A.       - initial version
 !
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "sol.cdk"
 #include "prec.cdk"
 
       integer niloc,njloc,nloc

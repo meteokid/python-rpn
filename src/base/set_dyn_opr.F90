@@ -18,10 +18,10 @@
       subroutine set_dyn_opr
       use grid_options
       use geomh
+      use glb_ld
       implicit none
 #include <arch_specific.hf>
 
-#include "glb_ld.cdk"
 !
 !     ---------------------------------------------------------------
 !

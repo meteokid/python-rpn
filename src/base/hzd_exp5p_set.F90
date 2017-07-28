@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -16,14 +16,18 @@
 !**s/r hzd_exp5p_set - Horizontal diffusion delN setup for LAMs
 
       subroutine hzd_exp5p_set
+      use dcst
       use hzd_mod
       use grid_options
       use gem_options
       use tdpack
+      use glb_ld
+      use cstv
+      use lun
       implicit none
 #include <arch_specific.hf>
 
-!author    
+!author
 !    Abdessamad Qaddouri - summer 2015
 !
 !revision
@@ -31,10 +35,6 @@
 ! v4_80 - Lee   - optimization
 !
 
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "cstv.cdk"
-#include "dcst.cdk"
 
       real*8 coef_8,coef_theta_8,coef_tr_8,nutop_8,c_8,deg2rad_8
 !
@@ -53,7 +53,7 @@
          coef_8= nutop_8/max(1.,float(HZD_niter))* &
                                   ((Dcst_rayt_8*c_8)**2)/Cstv_dt_8
          allocate( Hzd_coef_8(G_nk))
-         Hzd_coef_8(1:G_nk) = coef_8/(Dcst_rayt_8**2)*Cstv_dt_8
+         Hzd_coef_8(1:G_nk) = coef_8*(Dcst_inv_rayt_8**2)*Cstv_dt_8
       endif
 
       !for Theta
@@ -63,7 +63,7 @@
          coef_theta_8=nutop_8/max(1.,float(hzd_niter_theta))* &
                                   ((Dcst_rayt_8*c_8)**2)/Cstv_dt_8
          allocate( Hzd_coef_8_theta(G_nk))
-         Hzd_coef_8_theta(1:G_nk) = coef_theta_8/(Dcst_rayt_8**2)*Cstv_dt_8
+         Hzd_coef_8_theta(1:G_nk) = coef_theta_8*(Dcst_inv_rayt_8**2)*Cstv_dt_8
       endif
 
       !for Tracers
@@ -73,7 +73,7 @@
          coef_tr_8=nutop_8/max(1.,float(hzd_niter_tr))* &
                                   ((Dcst_rayt_8*c_8)**2)/Cstv_dt_8
          allocate( Hzd_coef_8_tr(G_nk))
-         Hzd_coef_8_tr(1:G_nk) = coef_tr_8/(Dcst_rayt_8**2)*Cstv_dt_8
+         Hzd_coef_8_tr(1:G_nk) = coef_tr_8*(Dcst_inv_rayt_8**2)*Cstv_dt_8
       endif
 
       if (Lun_out.gt.0) then

@@ -19,6 +19,10 @@
       subroutine slabsym ()
       use gmm_vt1
       use gem_options
+      use glb_ld
+      use lun
+      use tr3d
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 
@@ -30,10 +34,6 @@
 ! v3_30 - Lee V              - changed t0=> t1,nest is after t02t1
 ! v4_05 - Lepine M.          - VMM replacement with GMM
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "tr3d.cdk"
-#include "lun.cdk"
 
       type(gmm_metadata) :: mymeta
       integer err,i,j,k,n

@@ -17,13 +17,13 @@
 
       subroutine filter2 (F_fd, F_lx, F_coef, Minx,Maxx,Miny,Maxy,Nk)
       use gem_options
+      use glb_ld
       implicit none
 #include <arch_specific.hf>
 
       integer Minx,Maxx,Miny,Maxy,Nk, F_lx
       real F_fd(Minx:Maxx,Miny:Maxy,Nk),  F_coef
 
-#include "glb_ld.cdk"
 
       integer i, j, k, i0, in, j0, jn, n
       real w1(l_minx:l_maxx,l_miny:l_maxy,nk),coefficient

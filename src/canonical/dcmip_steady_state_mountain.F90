@@ -24,6 +24,12 @@
 
       use geomh
 
+      use glb_ld
+      use cstv
+      use lun
+      use ver
+      use gmm_itf_mod
+      use ptopo
       implicit none
 
       integer Mminx,Mmaxx,Mminy,Mmaxy,Nk
@@ -43,12 +49,6 @@
       !   Setup for Steady-State Atmosphere at Rest in the Presence of Orography (DCMIP 2012)
       !======================================================================================
 
-#include "glb_ld.cdk"
-#include "gmm.hf"
-#include "lun.cdk"
-#include "ver.cdk"
-#include "ptopo.cdk"
-#include "cstv.cdk"
 
       !-----------------------------------------------------------------------
 

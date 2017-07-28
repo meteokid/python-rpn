@@ -20,6 +20,8 @@
       subroutine itf_phy_nml
       use phy_itf, only: PHY_COMPATIBILITY_LVL, PHY_OK, phy_nml
       use gem_options
+      use lun
+      use path
       implicit none
 #include <arch_specific.hf>
 
@@ -29,8 +31,6 @@
 !revision
 ! v4_80 - authors          - initial version
 
-#include "lun.cdk"
-#include "path.cdk"
 
       integer, parameter :: COMPATIBILITY_LVL = 13
 		integer err,phy_code

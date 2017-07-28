@@ -19,6 +19,7 @@
 !
       subroutine glbdist (F_2bc,bni,bnj,F_2rc,Minx,Maxx,Miny,Maxy,nk,hx,hy)
 !
+      use glb_ld
       implicit none
 #include <arch_specific.hf>
 !
@@ -44,7 +45,6 @@
 ! nk            I           Vertical dimension of F_2bc and F_2rc
 !----------------------------------------------------------------
 !
-#include "glb_ld.cdk"
       integer err
 !----------------------------------------------------------------------
 !

@@ -12,7 +12,7 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-! 
+!
 
       subroutine adv_int_horiz_m ( F_xmu, F_ymu, F_zmu, &
                                    F_xmv, F_ymv, F_zmv, &
@@ -20,6 +20,11 @@
                                    F_ni,F_nj, F_nk,F_k0,i0,in,j0,jn)
       use grid_options
       use gem_options
+      use glb_ld
+      use ver
+      use adv_grid
+      use adv_interp
+      use outgrid
       implicit none
 #include <arch_specific.hf>
 
@@ -34,7 +39,7 @@
 !
 !revision
 !
-!object horizontal interpolation of upstream momentum positions 
+!object horizontal interpolation of upstream momentum positions
 !
 !arguments
 !______________________________________________________________________
@@ -52,26 +57,21 @@
 !                      |
 !----------------------------------------------------------------------
 
-#include "glb_ld.cdk"
-#include "adv_interp.cdk"
-#include "ver.cdk"
-#include "adv_grid.cdk"
-#include "ptopo.cdk"
 
       integer i,j,k,i0u,inu,j0v,jnv
-      real*8 aa, bb, cc, dd
-      real, pointer, dimension(:,:,:) :: pxh,pyh,pzh
+      real*8 aa, bb, cc
+      real, dimension(-1:F_ni+2,-1:F_nj+2,F_nk) :: pxh, pyh, pzh
       logical,save :: done = .false.
       real :: zmin_bound, zmax_bound
-      real ::posxu,posyu,posxv,posyv, minposx,maxposx,minposy,maxposy 
-      integer :: BCS_BASE ,n,cnt_u, cnt_v ,ncu, ncv, sum_cnt_u   
+      real ::posxu,posyu,posxv,posyv, minposx,maxposx,minposy,maxposy
+      integer :: BCS_BASE, ncu, ncv
 
-      real*8,  parameter :: EPS_8 = 1.D-5  
+      real*8,  parameter :: EPS_8 = 1.D-5
 
-!     
+!
 !---------------------------------------------------------------------
-!   
-      
+!
+
       zmin_bound=Ver_zmin_8
       zmax_bound=Ver_zmax_8
 
@@ -85,13 +85,6 @@
       if (l_south) minposy = adv_yy_8(1+BCS_BASE) + EPS_8
       maxposy = adv_yy_8(adv_lmaxy-1) - EPS_8
       if (l_north) maxposy = adv_yy_8(F_nj-BCS_BASE) - EPS_8
-
-
-      nullify (pxh,pyh,pzh)
-
-      allocate(pxh(-1:F_ni+2,-1:F_nj+2,F_nk))
-      allocate(pyh(-1:F_ni+2,-1:F_nj+2,F_nk))
-      allocate(pzh(-1:F_ni+2,-1:F_nj+2,F_nk))
 
       do k=F_k0,F_nk
          do j=1, F_nj
@@ -125,42 +118,43 @@
       bb=+0.5625d0
       cc=adv_dlx_8(F_ni/2)*0.5d0
 
-
       ncu=0
       ncv=0
+
       do k=F_k0,F_nk
-      do j=j0,jn
-      do i=i0u,inu
-          posxu =  aa*(pxh(i-1,j,k)+pxh(i+2,j,k)) &
-                        + bb*(pxh(i  ,j,k)+pxh(i+1,j,k)) - cc
-          posyu =  aa*(pyh(i-1,j,k)+pyh(i+2,j,k)) &
-                        + bb*(pyh(i  ,j,k)+pyh(i+1,j,k))
-          F_zmu(i,j,k) =  aa*(pzh(i-1,j,k)+pzh(i+2,j,k)) &
-                        + bb*(pzh(i  ,j,k)+pzh(i+1,j,k))
-          F_xmu(i,j,k) = min(max(posxu,minposx),maxposx)
-          F_ymu(i,j,k) = min(max(posyu,minposy),maxposy)
-          F_zmu(i,j,k) = min(zmax_bound,max(F_zmu(i,j,k),zmin_bound))
-          ncu=ncu+min(1,max(0,ceiling(abs(F_xmu(i,j,k)-posxu)+abs(F_ymu(i,j,k)-posyu))))
-      end do
-      end do
-    
-      do j=j0v,jnv
-      do i=i0,in
-          posxv =  aa*(pxh(i,j-1,k)+pxh(i,j+2,k)) &
-                        + bb*(pxh(i,j  ,k)+pxh(i,j+1,k))
-          posyv =  aa*(pyh(i,j-1,k)+pyh(i,j+2,k)) &
-                        + bb*(pyh(i,j  ,k)+pyh(i,j+1,k)) - cc
 
-          F_zmv(i,j,k) =  aa*(pzh(i,j-1,k)+pzh(i,j+2,k)) &
-                        + bb*(pzh(i,j  ,k)+pzh(i,j+1,k))
-          F_xmv(i,j,k) = min(max(posxv,minposx),maxposx)
-          F_ymv(i,j,k) = min(max(posyv,minposy),maxposy)
-          F_zmu(i,j,k) = min(zmax_bound,max(F_zmu(i,j,k),zmin_bound))
-          F_zmv(i,j,k) = min(zmax_bound,max(F_zmv(i,j,k),zmin_bound)) 
+         do j=j0,jn
+            do i=i0u,inu
+               posxu = aa*(pxh(i-1,j,k)+pxh(i+2,j,k)) &
+                     + bb*(pxh(i  ,j,k)+pxh(i+1,j,k)) - cc
+               posyu = aa*(pyh(i-1,j,k)+pyh(i+2,j,k)) &
+                     + bb*(pyh(i  ,j,k)+pyh(i+1,j,k))
+               F_zmu(i,j,k) = aa*(pzh(i-1,j,k)+pzh(i+2,j,k)) &
+                            + bb*(pzh(i  ,j,k)+pzh(i+1,j,k))
+               F_xmu(i,j,k) = min(max(posxu,minposx),maxposx)
+               F_ymu(i,j,k) = min(max(posyu,minposy),maxposy)
+               F_zmu(i,j,k) = min(zmax_bound,max(F_zmu(i,j,k),zmin_bound))
+               ncu=ncu+min(1,max(0,ceiling(abs(F_xmu(i,j,k)-posxu)+abs(F_ymu(i,j,k)-posyu))))
+            end do
+         end do
 
-         ncv=ncv+min(1,max(0,ceiling(abs(F_xmv(i,j,k)-posxv)+abs(F_ymv(i,j,k)-posyv))))
-      enddo
-      enddo
+         do j=j0v,jnv
+            do i=i0,in
+               posxv = aa*(pxh(i,j-1,k)+pxh(i,j+2,k)) &
+                     + bb*(pxh(i,j  ,k)+pxh(i,j+1,k))
+               posyv = aa*(pyh(i,j-1,k)+pyh(i,j+2,k)) &
+                     + bb*(pyh(i,j  ,k)+pyh(i,j+1,k)) - cc
+
+               F_zmv(i,j,k) = aa*(pzh(i,j-1,k)+pzh(i,j+2,k)) &
+                            + bb*(pzh(i,j  ,k)+pzh(i,j+1,k))
+               F_xmv(i,j,k) = min(max(posxv,minposx),maxposx)
+               F_ymv(i,j,k) = min(max(posyv,minposy),maxposy)
+               F_zmu(i,j,k) = min(zmax_bound,max(F_zmu(i,j,k),zmin_bound))
+               F_zmv(i,j,k) = min(zmax_bound,max(F_zmv(i,j,k),zmin_bound))
+
+               ncv=ncv+min(1,max(0,ceiling(abs(F_xmv(i,j,k)-posxv)+abs(F_ymv(i,j,k)-posyv))))
+            enddo
+         enddo
 
       enddo
 
@@ -169,9 +163,8 @@
      call adv_print_cliptrj_s (ncu,F_ni,F_nj,F_nk,F_k0, 'INTERP '//trim('m'))
      call adv_print_cliptrj_s (ncv,F_ni,F_nj,F_nk,F_k0, 'INTERP '//trim('m'))
 
-      deallocate(pxh,pyh,pzh)
-!     
+!
 !---------------------------------------------------------------------
-!     
+!
       return
       end subroutine adv_int_horiz_m

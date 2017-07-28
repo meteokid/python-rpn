@@ -24,27 +24,25 @@
       use gmm_pw
       use grid_options
       use gem_options
+      use glb_ld
+      use lun
+      use tr3d
+      use out_mod
+      use out3
+      use levels
+      use outp
+      use outd
+      use ver
+      use type_mod
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 
       integer levset,set
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "out3.cdk"
-#include "out.cdk"
-#include "level.cdk"
-#include "outd.cdk"
-#include "outp.cdk"
-#include "tr3d.cdk"
-#include "type.cdk"
-#include "ver.cdk"
-#include "ptopo.cdk"
-
       type(vgrid_descriptor) :: vcoord
-      character*512 fullname
-      integer i,j,k,ii,n,nko,kind,istat,indxtr
+      character(len=512) :: fullname
+      integer i,j,k,ii,n,nko,knd,istat,indxtr
       integer, dimension(:), allocatable::indo
       integer, dimension(:), pointer :: ip1t
       real ,dimension(:), allocatable::prprlvl,rf
@@ -60,7 +58,7 @@
 !
       if (Level_typ_S(levset) .eq. 'M') then  ! output tracers on model levels
 
-         kind=Level_kind_ip1
+         knd=Level_kind_ip1
 !        Setup the indexing for output
          allocate (indo( min(Level_max(levset),Level_thermo) ))
          call out_slev2(Level(1,levset), Level_max(levset), &
@@ -102,12 +100,12 @@
                   enddo
                   call out_fstecr3(t4,l_minx,l_maxx,l_miny,l_maxy,hybt,&
                        Outd_var_S(ii,set),Outd_convmult(ii,set)       ,&
-                       Outd_convadd(ii,set),kind,-1,G_nk,indo,nko     ,&
+                       Outd_convadd(ii,set),knd,-1,G_nk,indo,nko     ,&
                        Outd_nbit(ii,set),.false. )
                else
                   call out_fstecr3 ( tr1,l_minx,l_maxx,l_miny,l_maxy,&
                       hybt, Outd_var_S(ii,set),Outd_convmult(ii,set),&
-                      Outd_convadd(ii,set),kind,-1,G_nk,indo,nko    ,&
+                      Outd_convadd(ii,set),knd,-1,G_nk,indo,nko    ,&
                       Outd_nbit(ii,set),.false. )
                endif
 
@@ -140,7 +138,7 @@
 
       else  ! output tracers on pressure levels
 
-         kind=2
+         knd=2
 
 !        Setup the indexing for output
          nko=Level_max(levset)
@@ -217,7 +215,7 @@
 
                call out_fstecr3 ( w4,l_minx,l_maxx,l_miny,l_maxy,rf  , &
                              Outd_var_S(ii,set),Outd_convmult(ii,set), &
-                                        Outd_convadd(ii,set),kind,-1 , &
+                                        Outd_convadd(ii,set),knd,-1 , &
                                         nko, indo, nko               , &
                                         Outd_nbit(ii,set) , .false. )
 

@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -18,24 +18,24 @@
       subroutine out_dyn_casc
       use vGrid_Descriptors, only: vgrid_descriptor,vgd_get,VGD_OK,VGD_ERROR
       use vgrid_wb, only: vgrid_wb_get
-      use out_vref_mod, only: out_vref
+      use out_vref, only: out_vref_itf
       use gmm_vt1
       use gmm_pw
       use gmm_geof
       use grdc_options
       use gem_options
       use tdpack
+      use glb_ld
+      use tr3d
+      use out_mod
+      use out3
+      use outp
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "out.cdk"
-#include "out3.cdk"
-#include "outp.cdk"
-#include "tr3d.cdk"
 
-      character* 512 name
+      character(len=512) name
       integer k,istat,indo(G_nk+2)
       integer, dimension(:), pointer  :: ip1m
       real conv
@@ -76,17 +76,17 @@
 
       call out_href3 ( 'Mass_point', Grdc_gid, Grdc_gif, 1,&
                                      Grdc_gjd, Grdc_gjf, 1 )
-      call out_vref  ( etiket=Out3_etik_S )
+      call out_vref_itf  ( etiket=Out3_etik_S )
 
       conv= -tcdk_8
       call out_fstecr3 ( pw_tt_plus,l_minx,l_maxx,l_miny,l_maxy,hybt,'TT  ' ,1., &
                          conv,5,-1,G_nk,indo,G_nk,32,.false. )
-      if (Out3_sfcdiag_L) &           
+      if (Out3_sfcdiag_L) &
       call out_fstecr3 ( tdiag,l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+2), &
                          'TT  ' ,1., conv,4,-1,1,indo,1,32,.false. )
 
       call out_fstecr3 (pw_p0_plus,l_minx,l_maxx,l_miny,l_maxy,0.0,&
-                        'P0  ',.01,0., 2,-1,1, 1, 1, 32, .false.) 
+                        'P0  ',.01,0., 2,-1,1, 1, 1, 32, .false.)
 
       call out_fstecr3 ( wt1 ,l_minx,l_maxx,l_miny,l_maxy,hybt,'WT1 ' ,1., &
                          0.,5,-1,G_nk,indo,G_nk,32,.false. )
@@ -94,7 +94,7 @@
                          0.,5,-1,G_nk,indo,G_nk,32,.false. )
       if (.not.Schm_hydro_L) &
       call out_fstecr3 ( qt1 ,l_minx,l_maxx,l_miny,l_maxy,hybm,'QT1 ' ,1., &
-                         0.,5,-1,G_nk+1,indo,G_nk+1,32,.false. ) 
+                         0.,5,-1,G_nk+1,indo,G_nk+1,32,.false. )
       call out_fstecr3 ( fis0,l_minx,l_maxx,l_miny,l_maxy,0.  ,'FIS0',1., &
                          0.,5,-1,1,indo,1,32,.false. )
 
@@ -113,13 +113,13 @@
                                0.,4,-1,1,indo,1,32,.false. )
          endif
       end do
-     
+
       conv= 1.0 / knams_8
       call out_fstecr3 ( pw_uu_plus, l_minx,l_maxx,l_miny,l_maxy,hybm,'UU  ' ,&
                          conv, 0., 5,-1,G_nk,indo,G_nk,32,.false. )
       call out_fstecr3 ( pw_vv_plus, l_minx,l_maxx,l_miny,l_maxy,hybm,'VV  ' ,&
                          conv, 0., 5,-1,G_nk,indo,G_nk,32,.false. )
-      if (Out3_sfcdiag_L) then            
+      if (Out3_sfcdiag_L) then
          call out_fstecr3 ( udiag, l_minx,l_maxx,l_miny,l_maxy,hybm(G_nk+2),&
                             'UU  ' , conv, 0., 4,-1,1,indo,1,32,.false. )
          call out_fstecr3 ( vdiag, l_minx,l_maxx,l_miny,l_maxy,hybm(G_nk+2),&

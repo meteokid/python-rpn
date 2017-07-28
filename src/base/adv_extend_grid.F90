@@ -17,6 +17,9 @@
                               F_u_model,F_v_model, F_w_model, &
                              F_aminx,F_amaxx,F_aminy,F_amaxy, &
                            F_minx,F_maxx,F_miny,F_maxy,F_nk)
+      use glb_ld
+      use adv_grid
+      use outgrid
                            implicit none 
 #include <arch_specific.hf>
 
@@ -28,8 +31,6 @@
 
    !@objective Extend the grid from model to adw with filled halos
 
-#include "adv_grid.cdk"
-#include "glb_ld.cdk"
     
       integer, parameter :: nrow=0   
 !     

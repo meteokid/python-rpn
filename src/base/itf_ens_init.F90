@@ -18,6 +18,10 @@
       subroutine itf_ens_init
       use gem_options
       use grid_options
+      use glb_ld
+      use lun
+      use path
+      use wb_itf_mod
       implicit none
 #include <arch_specific.hf>
 
@@ -30,10 +34,6 @@
 ! v4.5.0 - Gagnon N.       - Add ptp_crit_w and ptp_fac_reduc 
 !                          - Add else for non-ensemble case
 
-#include <WhiteBoard.hf>
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "path.cdk"
 
       integer, external :: ens_nml
       integer err

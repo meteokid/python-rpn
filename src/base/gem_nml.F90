@@ -19,12 +19,12 @@
       use gem_options
       use grid_options
       use grdc_options
+      use lun
       implicit none
 #include <arch_specific.hf>
 
       character* (*) F_namelistf_S
 
-#include "lun.cdk"
 
       integer, external :: fnom, canonical_nml
       character*64 dumc_S

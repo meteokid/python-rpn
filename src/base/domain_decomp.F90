@@ -18,14 +18,14 @@
       integer function domain_decomp3 ( F_npex, F_npey, F_checkparti_L )
       use gem_options
       use grid_options
+      use glb_ld
+      use lun
       implicit none
 #include <arch_specific.hf>
 
       logical F_checkparti_L
       integer F_npex, F_npey
 
-#include "glb_ld.cdk"
-#include "lun.cdk"
 
       logical, external :: decomp3
       integer err, g_err, status

@@ -17,6 +17,12 @@
 
    subroutine stat_mass_tracers (F_time,F_comment_S) 
       use gem_options
+      use glb_ld
+      use lun
+      use tr3d
+      use gmm_itf_mod
+      use tracers
+      use ptopo
    implicit none
  
    !arguments
@@ -28,24 +34,19 @@
    !     Calculate and print the mass of each tracer 
    !================================================
 
-#include "glb_ld.cdk"
-#include "gmm.hf"
-#include "tr3d.cdk"
-#include "lun.cdk"
-#include "ptopo.cdk"
-#include "tracers.cdk"
 
    !---------------------------------------------------------------------
 
    integer :: err,n,k0,scaling_KEEP,count
    real, pointer, dimension (:,:,:) :: fld_tr
-   real*8 tracer_8
+   real*8 tracer_8,tracer_scaled_8
    real, dimension(l_minx:l_maxx,l_miny:l_maxy,l_nk):: air_mass,bidon,fld_ONE
    character(len=21) type_S
    character(len= 7) time_S
    character(len=GMM_MAXNAMELENGTH) in_S
    logical,save :: done_L=.false.
    real*8, save :: KEEP_tracer_8(MAXTR3D)
+   logical almost_zero
 
    !---------------------------------------------------------------------
 
@@ -76,7 +77,10 @@
 
       if (.not.done_L) KEEP_tracer_8(n) = tracer_8
 
-      if (Lun_out>0.and.Ptopo_couleur==0) write(Lun_out,1002) 'TRACERS: ',type_S,time_S,' C= ',tracer_8/KEEP_tracer_8(n),Tr3d_name_S(n)(1:4),F_comment_S
+      tracer_scaled_8 = tracer_8
+      if (.not.almost_zero(KEEP_tracer_8(n))) tracer_scaled_8 = tracer_scaled_8/KEEP_tracer_8(n)
+
+      if (Lun_out>0.and.Ptopo_couleur==0) write(Lun_out,1002) 'TRACERS: ',type_S,time_S,' C= ',tracer_scaled_8,Tr3d_name_S(n)(1:4),F_comment_S
 
       call canonical_terminator_2 (air_mass,tracer_8,count,l_minx,l_maxx,l_miny,l_maxy,l_nk,k0,Lun_out,Ptopo_couleur,type_S,time_S,F_comment_S)
 

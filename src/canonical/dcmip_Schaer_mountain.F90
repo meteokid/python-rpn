@@ -23,6 +23,12 @@
       use gem_options
       use geomh
 
+      use glb_ld
+      use cstv
+      use lun
+      use ver
+      use gmm_itf_mod
+      use ptopo
       implicit none
 
       integer Mminx,Mmaxx,Mminy,Mmaxy,Nk
@@ -43,12 +49,6 @@
       !   Setup for Mountain waves over a Schaer-type mountain on a small planet (DCMIP 2012)
       !======================================================================================
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "ver.cdk"
-#include "ptopo.cdk"
-#include "cstv.cdk"
 
       !-------------------------------------------------------------------------------
 

@@ -23,6 +23,9 @@
       use ens_options
       use grid_options
 
+      use glb_ld
+      use cstv
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 !
@@ -40,9 +43,6 @@
 !                                non-ensemble users.
 
 #include <rmnlib_basics.hf>
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "cstv.cdk"
 
       character(len=4), save :: mode= "SAVE"
       integer k,istat

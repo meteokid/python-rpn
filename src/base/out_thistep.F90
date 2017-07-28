@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -16,6 +16,11 @@
 !**s/r out_thistep
 
       subroutine out_thistep ( F_sorties, F_step, ns, F_component_S )
+      use levels
+      use outd
+      use outc
+      use outp
+      use timestep
       implicit none
 #include <arch_specific.hf>
 
@@ -23,12 +28,6 @@
       integer F_step,ns
       integer F_sorties(0:ns)
 
-#include "dimout.cdk"
-#include "timestep.cdk"
-#include "outd.cdk"
-#include "outp.cdk"
-#include "outc.cdk"
-#include "level.cdk"
 
       integer i,j,k,liste_m(2,50),liste_p(2,50),liste_h(2,50), &
               cnt,cnt_m,cnt_p,cnt_h,o_sets
@@ -60,11 +59,11 @@
 
       do j=1,Timestep_sets
           do i=1,Timestep_max(j)
-            if (F_step .eq. Timestep(i,j)) then
+            if (F_step .eq. Timestep_tbl(i,j)) then
                do k=1, o_sets
                   if ( o_step(k).eq.j ) then
                      if (trim(F_component_S) == 'PHY' ) &
-                     Outp_lasstep(k,F_step)= Timestep(max(1,i-1),j)
+                     Outp_lasstep(k,F_step)= Timestep_tbl(max(1,i-1),j)
                      if ( Level_typ_S(o_lev(k)) == 'M') then
                         cnt_m= cnt_m+1
                         cnt  = cnt  +1
@@ -117,8 +116,9 @@
 !* NOTE: Straight insertion is a N² routine and      *
 !*       should only be used for relatively small    *
 !*       arrays (N<100).                             *
-!*****************************************************         
-      SUBROUTINE PIKSRT(ARR,n1,n2)
+!*****************************************************
+      subroutine piksrt(arr,n1,n2)
+      use timestep
       implicit none
       integer n1,n2
       integer ARR(n1,n2)
@@ -134,4 +134,4 @@
 10       ARR(1:n1,i+1)=a(1:n1)
       end do
       return
-      END SUBROUTINE PIKSRT
+      end subroutine piksrt

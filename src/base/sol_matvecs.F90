@@ -18,6 +18,7 @@
       subroutine  sol_matvec ( wk22, wk11, Minx, Maxx, Miny, Maxy,  &
                                nil,njl, nk, minx1,maxx1,minx2,maxx2 )
       use gem_options
+      use sol
       implicit none
 #include <arch_specific.hf>
 !
@@ -30,7 +31,6 @@
 !revision
 ! v4_6 - Qaddouri A.      - initial version
 !
-#include "sol.cdk"
 !
       integer i0,in,j0,jn,minx3,maxx3
       real*8 fdg1   ( minx1:maxx1, minx2:maxx2,nk ), &

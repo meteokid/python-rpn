@@ -22,6 +22,11 @@
 
       use geomh
 
+      use glb_ld
+      use cstv
+      use lun
+      use ver
+      use ptopo
       implicit none
 
       integer Mminx,Mmaxx,Mminy,Mmaxy,Nk
@@ -39,11 +44,6 @@
       !   Setup for Gravity wave on a small planet along the equator (DCMIP 2012)
       !==========================================================================
 
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "ver.cdk"
-#include "ptopo.cdk"
-#include "cstv.cdk"
 
       !-----------------------------------------------------------------------
 

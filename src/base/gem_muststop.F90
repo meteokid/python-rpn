@@ -19,17 +19,17 @@
       use timestr_mod, only: timestr_isstep, TIMESTR_MATCH
       use step_options
       use gem_options
+      use cstv
+      use lun
+      use out_mod
+      use path
+      use clib_itf_mod
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 
       integer F_finalstep
 
-#include <clib_interface_mu.hf>
-#include "lun.cdk"
-#include "path.cdk"
-#include "out.cdk"
-#include "cstv.cdk"
-#include "ptopo.cdk"
       include "rpn_comm.inc"
 
       character*2048 filen,filen_link,append

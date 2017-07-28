@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -21,10 +21,15 @@
       subroutine prgenab ()
       use grid_options
       use gem_options
+      use glb_ld
+      use cstv
+      use lun
+      use ver
+      use type_mod
       implicit none
 #include <arch_specific.hf>
 !
-! author 
+! author
 !     Lee V - December 2007
 !
 ! revision
@@ -33,13 +38,6 @@
 !    See above
 ! arguments
 ! none
-!
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "pres.cdk"
-#include "type.cdk"
-#include "ver.cdk"
-#include "cstv.cdk"
 !
 
       integer k
@@ -78,23 +76,23 @@
       print *,'prgenab Ver_wp_8%m(k),Ver_wm_8%m(k),k=1,G_nk'
       do k=1,G_nk
          print *,k,Ver_wp_8%m(k),Ver_wm_8%m(k)
-      enddo 
+      enddo
       print *,'prgenab Ver_wp_8%t(k),Ver_wm_8%t(k),k=1,G_nk'
       do k=1,G_nk
          print *,k,Ver_wp_8%t(k),Ver_wm_8%t(k)
-      enddo 
+      enddo
       print *,'prgenab Ver_wpM_8(k),Ver_wmM_8(k),k=1,G_nk'
       do k=1,G_nk
          print *,k,Ver_wpM_8(k),Ver_wmM_8(k)
-      enddo 
+      enddo
       print *,'prgenab Ver_wpC_8(k),Ver_wmC_8(k),k=1,G_nk'
       do k=1,G_nk
          print *,k,Ver_wpC_8(k),Ver_wmC_8(k)
-      enddo 
+      enddo
       print *,'prgenab Ver_wpA_8(k),Ver_wmA_8(k),k=1,G_nk'
       do k=1,G_nk
          print *,k,Ver_wpA_8(k),Ver_wmA_8(k)
-      enddo 
+      enddo
       print *,'prgenab Ver_bzz_8(k),Ver_wpstar_8(k),k=1,G_nk'
       do k=1,G_nk
          print *,k,Ver_bzz_8(k),Ver_wpstar_8(k)
@@ -102,7 +100,7 @@
       print *,'prgenab Ver_hyb%m(k),Ver_hyb_%t(k),k=1,G_nk+1 for Output Levels'
       do k=1,G_nk+1
          print *,k,Ver_hyb%m(k),Ver_hyb%t(k)
-      enddo 
+      enddo
       endif
 
       return

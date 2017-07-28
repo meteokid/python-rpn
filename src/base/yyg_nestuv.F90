@@ -17,6 +17,9 @@
       subroutine yyg_nestuv (F_u, F_v, Minx,Maxx,Miny,Maxy, Nk )
       use gem_options
       use geomh
+      use glb_ld
+      use lun
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
       integer  Minx,Maxx,Miny,Maxy, Nk
@@ -35,9 +38,6 @@
 !arguments
 !       none
 !
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "lun.cdk"
 !
       type(gmm_metadata) :: mymeta
       character(len=GMM_MAXNAMELENGTH) :: tr_name

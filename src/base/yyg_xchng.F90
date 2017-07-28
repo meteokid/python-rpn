@@ -19,6 +19,9 @@
                              mono_L, F_interpo_S )
       use gem_options
       use geomh
+      use glb_ld
+      use glb_pil
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 
@@ -33,19 +36,14 @@
 ! v4_60 - Qaddouri A.   - initial version
 ! v4_70 - Desgagne M.   - major revision
 
-#include "ptopo.cdk"
-#include "glb_ld.cdk"
-#include "glb_pil.cdk"
 #include "yyg_pil.cdk"
 #include "yyg_pil0.cdk"
 
-      integer ni,nj, numproc, status
-      integer ierr,i,j,k,kk,kk_proc,m,mm,adr
+      integer ierr,k,kk,kk_proc,m,mm,adr
       integer tag2,recvlen,sendlen,ireq,sendmaxproc,recvmaxproc
       integer request(Ptopo_numproc*2)
       real, dimension (:,:), allocatable :: recv_pil,send_pil
-      real sent,recv
-      real*8 wrk1(Minx:Maxx,Miny:Maxy,Nk), send_pil_8
+      real*8, dimension(Minx:Maxx,Miny:Maxy,Nk) :: wrk1
 
       integer, dimension (:  ), pointer :: &
                sendproc ,  recvproc,  recv_len,  send_len, &

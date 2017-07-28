@@ -30,6 +30,13 @@
       use grid_options
       use gem_options
       use tdpack
+      use glb_ld
+      use cstv
+      use lun
+      use tr3d
+      use ver
+      use gmm_itf_mod
+      use wb_itf_mod
       implicit none
 #include <arch_specific.hf>
 
@@ -45,14 +52,7 @@
            F_q (Mminx:Mmaxx,Mminy:Mmaxy,Nk+1), &
            F_topo(Mminx:Mmaxx,Mminy:Mmaxy)
 
-#include <WhiteBoard.hf>
 #include <rmnlib_basics.hf>
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "tr3d.cdk"
-#include "lun.cdk"
-#include "ver.cdk"
-#include "cstv.cdk"
 
       character(len=4) vname
       logical urt1_l, ut1_l, sfcTT_L

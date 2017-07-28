@@ -474,7 +474,7 @@ module gem_options
    namelist /gem_cfgs_p/ Schm_itnlh
 
    !# Number of iterations to compute trajectories
-   integer :: Schm_itraj = 2
+   integer :: Schm_itraj = 3
    namelist /gem_cfgs  / Schm_itraj
    namelist /gem_cfgs_p/ Schm_itraj
 
@@ -497,7 +497,7 @@ module gem_options
    namelist /gem_cfgs  / Schm_psadj_print_L
    namelist /gem_cfgs_p/ Schm_psadj_print_L
 
-   !# Confirmation to use psadj with a LAM configuration
+   !# Confirmation to use psadjust with a LAM configuration
    logical :: Schm_psadj_lam_L = .false.
    namelist /gem_cfgs  / Schm_psadj_lam_L
    namelist /gem_cfgs_p/ Schm_psadj_lam_L

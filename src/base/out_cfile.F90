@@ -1,10 +1,9 @@
       subroutine out_cfile3
-      use gem_options
+      use out_mod
+      use out3
       implicit none
 #include <arch_specific.hf>
 !
-#include "out3.cdk"
-#include "out.cdk"
 !
       integer, external :: fstfrm
       integer err

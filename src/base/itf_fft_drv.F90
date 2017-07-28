@@ -16,6 +16,7 @@
 !**s/r itf_fft_drv
 !
       subroutine itf_fft_drv ( F_vec, F_n1 ,F_n2 ,F_n3, F_dir )
+      use fft
       implicit none
 #include <arch_specific.hf>
 !
@@ -28,7 +29,6 @@
 !revision
 ! v4_50 - Desgagne M.       - initial version
 
-#include "fft.cdk"
 
 !     __________________________________________________________________
 !

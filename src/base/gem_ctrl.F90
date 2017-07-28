@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -17,14 +17,17 @@
 !
       subroutine gem_ctrl
       use gem_options
+      use glb_ld
+      use lun
+      use rstr
       implicit none
 #include <arch_specific.hf>
 
-!author 
+!author
 !     Michel Roch - rpn - june 1993
 !revision
 ! v2_00 - Desgagne M.       - initial MPI version (from gefcn2 v1_03)
-! v2_10 - Tanguay M.        - cancel indata and p_main when 4D-Var 
+! v2_10 - Tanguay M.        - cancel indata and p_main when 4D-Var
 ! v2_20 - Desgagne M.       - correction for Step_total=0
 ! v2_21 - Dugas B.          - adapt to climate mode
 ! v2_30 - Desgagne M.       - entry vertical interpolator in gemdm
@@ -37,10 +40,6 @@
 !     Beginning of the integration. This subroutine
 !     reads the data and performs initialization if required.
 !     It then initiates the forward intergration of the model.
-
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "rstr.cdk"
 
       logical :: rstrt_L= .false.
       integer err

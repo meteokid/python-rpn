@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -21,6 +21,9 @@
       use ISO_C_BINDING
       use step_options
       use gem_options
+      use glb_ld
+      use out_mod
+      use out_meta
       implicit none
 #include <arch_specific.hf>
 
@@ -30,17 +33,12 @@
       integer ind_o(nk_o)
       real fa (lminx:lmaxx,lminy:lmaxy,nkfa), rf(nkfa), mul,add
 
-#include "glb_ld.cdk"
-#include "out.cdk"
-#include "out3.cdk"
-#include "outp.cdk"
       include 'convert_ip123.inc'
-      include 'out_meta.cdk'
 
 Interface
 subroutine out_stkecr2 ( fa,lminx,lmaxx,lminy,lmaxy,meta,nplans, &
                          g_id,g_if,g_jd,g_jf )
-      include "out_meta.cdk"
+      use out_meta
       integer lminx,lmaxx,lminy,lmaxy,nplans
       integer g_id,g_if,g_jd,g_jf
       real fa(lminx:lmaxx,lminy:lmaxy,nplans)
@@ -50,7 +48,7 @@ End Interface
 
       type(FLOAT_IP) :: RP1,RP2,RP3
       real,   parameter :: eps=1.e-12
-      character*8 dumc
+      character(len=8) dumc
       logical, save :: done= .false.
       integer modeip1,i,j,k,ip1,ip2,ip3,err
       integer, save :: istk = 0

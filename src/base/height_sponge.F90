@@ -17,10 +17,17 @@
 !**s/r  pressure_sponge -  Performs vertical blending
 !
       subroutine height_sponge ()
+      use dcst
       use gmm_vt1
       use gmm_geof
       use gem_options
+      use mtn_options
       use theo_options
+      use glb_ld
+      use cstv
+      use ver
+      use type_mod
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 !author
@@ -28,9 +35,6 @@
 !
 !revision
 !
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "dcst.cdk"
 
       type(gmm_metadata) :: mymeta
       integer istat
@@ -76,12 +80,18 @@
 
 
       subroutine apply(ff,value,betav, Minx,Maxx,Miny,Maxy, Nk)
+      use glb_ld
+      use glb_ld
+      use glb_ld
+      use cstv
+      use ver
+      use type_mod
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 
       integer  Minx,Maxx,Miny,Maxy, Nk
 
-#include "glb_ld.cdk"
 
       real ff(Minx:Maxx,Miny:Maxy,Nk),value,betav(Minx:Maxx,Miny:Maxy,Nk)
 
@@ -113,15 +123,18 @@
       subroutine apply_tt(tt,betav_t, F_s, F_sl,Minx,Maxx,Miny,Maxy, Nk)
       use mtn_options
       use tdpack
+      use glb_ld
+      use glb_ld
+      use glb_ld
+      use cstv
+      use ver
+      use type_mod
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 
       integer  Minx,Maxx,Miny,Maxy, Nk
 
-#include "glb_ld.cdk"
-#include "type.cdk"
-#include "cstv.cdk"
-#include "ver.cdk"
 
       real tt(Minx:Maxx,Miny:Maxy,Nk),F_s(Minx:Maxx,Miny:Maxy)
       real betav_t(Minx:Maxx,Miny:Maxy,Nk)

@@ -21,6 +21,11 @@
                                    F_x_svm, F_y_svm, F_z_svm,                  &
                                    F_num, F_nind, ii, F_k0, F_nk,              &
                                    F_mono_L,  F_conserv_L, F_lev)
+      use glb_ld
+      use adv
+      use adv_grid
+      use adv_interp
+      use outgrid
       implicit none
 #include <arch_specific.hf>
 
@@ -54,10 +59,6 @@
    !  2017-01,  A. Qaddouri        : Correction F_lin
    !@objective Tri-cubic interp: Lagrange 3d (Based on adx_tricub v3.1.1) (MASS-CONSERVATION)
 
-#include "adv.cdk"
-#include "adv_grid.cdk"
-#include "adv_interp.cdk"
-#include "glb_ld.cdk"
 
       logical :: zcubic_L
       integer :: n0, nx, ny, nz, m1, o1, o2, o3, o4 , &

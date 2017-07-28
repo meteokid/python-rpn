@@ -21,23 +21,26 @@
 !               Combine some rhs obtaining Rt", Rf" and Rc", the linear
 !               contributions to the rhs of Helmholtz equation
 !
-      subroutine pre ( F_ru  ,F_rv  , F_fis ,F_rc   ,F_rt, &
-                       F_rw  ,F_rf  ,F_oru  ,F_orv       , &
-                       F_rb,F_nest_t, Minx,Maxx,Miny,Maxy, &
-                       i0, j0, in, jn, k0, ni, nj, Nk )
+      subroutine pre ( F_ru, F_rv, F_fis, F_rc, F_rt, &
+                       F_rw, F_rf, F_rb, F_nest_t, Minx, Maxx, Miny, Maxy, &
+                       i0, j0, in, jn, k0, nk )
       use gmm_nest
       use grid_options
       use gem_options
       use geomh
       use tdpack
+      use glb_ld
+      use cstv
+      use lun
+      use ver
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 
-      integer Minx,Maxx,Miny,Maxy, i0, j0, in, jn, k0, ni, nj, Nk
+      integer, intent(in) :: Minx,Maxx,Miny,Maxy, i0, j0, in, jn, k0, nk
       real F_ru    (Minx:Maxx,Miny:Maxy,Nk)  ,F_rv    (Minx:Maxx,Miny:Maxy,Nk)  , &
            F_rc    (Minx:Maxx,Miny:Maxy,Nk)  ,F_rt    (Minx:Maxx,Miny:Maxy,Nk)  , &
            F_rw    (Minx:Maxx,Miny:Maxy,Nk)  ,F_rf    (Minx:Maxx,Miny:Maxy,Nk)  , &
-           F_oru   (Minx:Maxx,Miny:Maxy,Nk)  ,F_orv   (Minx:Maxx,Miny:Maxy,Nk)  , &
            F_rb    (Minx:Maxx,Miny:Maxy)     ,F_nest_t(Minx:Maxx,Miny:Maxy,Nk)  , &
            F_fis   (Minx:Maxx,Miny:Maxy)
 
@@ -56,17 +59,10 @@
 ! v4.70 - Gaudreault S.     - Reformulation in terms of real winds (removing wind images)
 ! v4.80 - Lee V.            - correction in range for xch halo on Ru, Rv
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "cstv.cdk"
-#include "ver.cdk"
 
-      integer :: i0u, inu, j0v, jnv
       integer :: i, j, k, km, k0t
-      real*8  x, y, z, cx, cy, cz, rx, ry, rz, mumu, &
-              rdiv, w1, w2, w3, w4, w5
-      real    w_rt
+      real*8  :: rdiv, w1, w2, w3, w4, w5
+      real    :: w_rt
       real*8, parameter :: zero=0.d0, one=1.d0 , &
                            alpha1=-1.d0/16.d0 , alpha2=9.d0/16.d0
 !

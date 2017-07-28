@@ -15,6 +15,9 @@
 !
       subroutine adv_cliptraj (F_x, F_y, F_ni,F_nj,F_nk,i0, in, j0, jn, k0,mesg)
       use grid_options
+      use glb_ld
+      use adv_grid
+      use outgrid
       implicit none
 #include <arch_specific.hf>
 
@@ -33,8 +36,6 @@
 
 #include "stop_mpi.h"
 #include "msg.h"
-#include "adv_grid.cdk"
-#include "glb_ld.cdk"
 
       real*8,  parameter :: EPS_8 = 1.D-5
 !     integer, parameter :: BCS_BASE = 4
@@ -42,10 +43,10 @@
 
       character(len=MSG_MAXLEN) :: msg_S
       integer :: n, i,j,k, cnt, sum_cnt, err, totaln
-      real :: minposx,maxposx,minposy,maxposy, posxmin,posxmax,posymin,posymax
-!     
+      real :: minposx,maxposx,minposy,maxposy
+!
 !---------------------------------------------------------------------
-!     
+!
       call timing_start2 (35, 'ADV_CLIP', 34)
 
       BCS_BASE= 4
@@ -69,11 +70,11 @@
                (F_y(i,j,k)<minposy).or.(F_y(i,j,k)>maxposy) ) then
                cnt=cnt+1
             endif
-            
+
             F_x(i,j,k) = min(max(F_x(i,j,k),minposx),maxposx)
 
             F_y(i,j,k) = min(max(F_y(i,j,k),minposy),maxposy)
-            
+
          enddo
       enddo
       enddo
@@ -83,7 +84,7 @@
       totaln = (F_ni*n*2 + (F_nj-2*n)*n*2) * (F_nk-k0+1)
 
       call rpn_comm_Allreduce(cnt,sum_cnt,1,"MPI_INTEGER", "MPI_SUM","grid",err)
-      
+
       if (trim(mesg).ne."" .and. sum_cnt>0) then
          write(msg_S,'(a,i5,a,f6.2,2x,a)')  &
          ' ADW trajtrunc: npts=',sum_cnt, &
@@ -92,10 +93,10 @@
          call msg(MSG_INFO,msg_S)
       endif
 
-      call timing_stop (35)  
-!     
+      call timing_stop (35)
+!
 !---------------------------------------------------------------------
-!     
+!
       return
       end subroutine adv_cliptraj
 

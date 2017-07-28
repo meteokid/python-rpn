@@ -17,14 +17,14 @@
 
       integer function dynkernel_nml (F_namelistf_S)
       use dynkernel_options
+      use lun
+      use clib_itf_mod
       implicit none
 #include <arch_specific.hf>
 
       character*(*), intent(in):: F_namelistf_S
 
 #include <rmnlib_basics.hf>
-#include <clib_interface_mu.hf>
-#include "lun.cdk"
 
       integer unf,err
 !

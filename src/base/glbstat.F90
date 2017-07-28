@@ -18,6 +18,8 @@
                             F_i0,F_in,F_j0,F_jn,F_k0,F_kn )
       use stat_mpi, only: statf_dm
       use gem_options
+      use glb_ld
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 
@@ -39,8 +41,6 @@
 ! F_k0,F_kn     I         Range of levels on which to perform statistics
 !----------------------------------------------------------------
 
-#include "glb_ld.cdk"
-#include "ptopo.cdk"
 
       integer nk,rx
       real, dimension(:,:), allocatable :: wk1

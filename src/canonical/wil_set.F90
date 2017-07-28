@@ -16,7 +16,7 @@
 !**s/r wil_set - Check and Convert parameters in williamson namelist
 
       subroutine wil_set (F_topo_L,F_adv_L,F_unout,F_err)
-
+      use dcst
       use wil_options
       use tdpack, only : rayt_8, omega_8, pi_8
 
@@ -30,14 +30,11 @@
       !   Check and Convert parameters in williamson namelist
       !======================================================
 
-#include "dcst.cdk"
-
-      !---------------------------------------------------------------
-
       F_err = 0
 
-      Dcst_rayt_8  = rayt_8
-      Dcst_omega_8 = omega_8
+      Dcst_rayt_8     = rayt_8
+      Dcst_inv_rayt_8 = 1.d0 / rayt_8
+      Dcst_omega_8    = omega_8
 
       if (Williamson_case/=5) F_topo_L = .false.
 

@@ -22,6 +22,12 @@
 
       use geomh
 
+      use glb_ld
+      use cstv
+      use lun
+      use ver
+      use gmm_itf_mod
+      use ptopo
       implicit none
 
       integer Mminx,Mmaxx,Mminy,Mmaxy,Nk,F_pert
@@ -40,12 +46,6 @@
       !   Setup for supercell (DCMIP 2016)
       !===================================
 
-#include "glb_ld.cdk"
-#include "ver.cdk"
-#include "ptopo.cdk"
-#include "cstv.cdk"
-#include "lun.cdk"
-#include "gmm.hf"
 
       !-------------------------------------------------------------------------------
 

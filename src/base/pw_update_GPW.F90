@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -19,6 +19,9 @@
       use gmm_vt1
       use gmm_pw
       use gmm_geof
+      use glb_ld
+      use ver
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 
@@ -28,11 +31,8 @@
 !revision
 ! v4_14 - Desgagne, M.     - Initial revision
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "ver.cdk"
 
-      integer i, j, k, istat
+      integer k, istat
       real fi(l_minx:l_maxx,l_miny:l_maxy,G_nk+1)
 !     ________________________________________________________________
 !
@@ -76,7 +76,7 @@
 !$omp enddo
 !$omp end parallel
 
-      call timing_stop (5)  
+      call timing_stop (5)
 !     ________________________________________________________________
 !
       return

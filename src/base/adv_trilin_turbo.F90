@@ -17,6 +17,9 @@ subroutine adv_trilin_turbo3 (F_out, F_in, F_dt, &
                               F_x, F_y, F_capz, F_ii, F_jj, F_kk, &
                               F_bsx_8, F_bsy_8, F_xbc_8, F_ybc_8, &
                               F_num, i0, in, j0, jn, k0, F_nk)
+      use glb_ld
+      use adv_grid
+      use outgrid
    implicit none
 #include <arch_specific.hf>
 !
@@ -44,8 +47,6 @@ subroutine adv_trilin_turbo3 (F_out, F_in, F_dt, &
    ! v4_10 -Plante A.       -  Replace single locator vector with 3 vectors.
    ! V4_14 -Plante A.       - Scope on loop k
 
-#include "glb_ld.cdk"
-#include "adv_grid.cdk"
 
    integer :: n, n0, o1, o2
    integer :: i, j, k, ii, jj, kk

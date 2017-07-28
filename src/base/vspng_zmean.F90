@@ -18,6 +18,7 @@
 
 !
       subroutine vspng_zmean( F_pert,F_field,tsum_8,Minx,Maxx,Miny,Maxy, Nk, lmean )
+      use glb_ld
       implicit none
 #include <arch_specific.hf>
 !
@@ -41,7 +42,6 @@
 !     non rotated grid.
 !     
 
-#include "glb_ld.cdk"
 !
       integer i,j,k
       integer i0,in,j0,jn,k0,kn,njk,err

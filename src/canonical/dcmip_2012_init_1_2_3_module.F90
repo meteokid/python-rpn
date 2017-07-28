@@ -54,11 +54,10 @@ MODULE dcmip_2012_init_1_2_3
   !
   !=======================================================================
 
+  use dcst
   use tdpack, only : rayt_8, rgasd_8, grav_8, cpd_8, pi_8
 
   IMPLICIT NONE
-
-#include "dcst.cdk"
 
 !-----------------------------------------------------------------------
 !     Physical Parameters
@@ -71,7 +70,7 @@ MODULE dcmip_2012_init_1_2_3
 !!!                             cp      = 1004.5d0,     &       ! Specific heat capacity (J kg^-1 K^1)
 !!!                             pi      = 4.d0*atan(1.d0)       ! pi
 
-        real(8), parameter ::   a_ref   = rayt_8,       &       ! Reference Earth's Radius [m]   
+        real(8), parameter ::   a_ref   = rayt_8,       &       ! Reference Earth's Radius [m]
                                 Rd      = Rgasd_8,      &       ! cte gaz - air sec   [J kg-1 K-1]
                                 grav    = grav_8,       &       ! acc. de gravite     [m s-2]
                                 cp_     = cpd_8,        &       ! chal. spec. air sec [J kg-1 K-1]
@@ -854,7 +853,7 @@ IMPLICIT NONE
                         dpsdlambda, &           ! Derivative of ps w.r.t lambda
                         dpsdphi                 ! Derivative of ps w.r.t phi
 
-        real(8) ::      a 
+        real(8) ::      a
 
                 !Reference Earth's Radius/X
                 !--------------------------

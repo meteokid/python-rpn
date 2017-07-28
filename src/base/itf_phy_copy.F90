@@ -17,6 +17,8 @@
 
       subroutine itf_phy_copy
       use gmm_pw
+      use glb_ld
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 
@@ -26,8 +28,6 @@
 !revision
 ! v4_70 - Desgagne, M.     - initial version
 
-#include <gmm.hf>
-#include "glb_ld.cdk"
 
       integer istat,k
       real, pointer, dimension (:,:,:) :: uu_copy,vv_copy  => null()

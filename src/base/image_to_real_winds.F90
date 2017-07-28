@@ -16,17 +16,16 @@
 !**s/r image_to_real_winds - Convert image winds to real winds
 
    subroutine image_to_real_winds( F_u,F_v,Minx,Maxx,Miny,Maxy,F_nk )
-
+      use dcst
       use geomh
       use tdpack
+      use glb_ld
    implicit none
 #include <arch_specific.hf>
 
    integer                                  , intent(IN)     :: Minx,Maxx,Miny,Maxy,F_nk
    real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(IN OUT) :: F_u, F_v
 
-#include "glb_ld.cdk"
-#include "dcst.cdk"
 
    ! Local variables
    integer :: i,j,k

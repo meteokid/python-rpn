@@ -2,18 +2,18 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r hzd_solfft_lam - parallel direct sol_8ution of high-order diffusion 
+!**s/r hzd_solfft_lam - parallel direct sol_8ution of high-order diffusion
 !                   equation with fffts
 
 
@@ -24,6 +24,9 @@
                    F_opsxp0_8, F_opsyp0_8,F_cdiff,F_npex,F_npey)
 !
       use grid_options
+      use glb_ld
+      use glb_pil
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 !
@@ -57,13 +60,10 @@
 !
 !----------------------------------------------------------------
 !
-#include "ptopo.cdk"
-#include "glb_ld.cdk"
-#include "glb_pil.cdk"
 
-      character*4 type_fft
+      character(len=4) :: type_fft
       integer o1,o2,i,j,k,l_pil_w,l_pil_e
-      integer ki,kkii,ki0,kin,kilon,kitotal,pi0,pin
+      integer kkii,ki0,kin,kilon,pi0,pin
       real*8  fdg1_8(miny :maxy ,minx1:maxx1,Gni+F_npex  )
       real*8  fwft_8(miny :maxy ,minx1:maxx1,Gni+2+F_npex)
       real*8  fdg2_8(minx1:maxx1,minx2:maxx2,nx3+F_npey  )
@@ -98,7 +98,7 @@
       enddo
 !$omp enddo
 !$omp single
-!       
+!
       call rpn_comm_transpose( F_Rhs_8, Minx, Maxx, Gni, (Maxy-Miny+1), &
                                       Minx1, Maxx1, gnk, fdg1_8,1, 2 )
 !$omp end single

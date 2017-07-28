@@ -22,10 +22,15 @@
                        F_rhs, F_rc , F_sl   , F_fis, F_nb , F_hu  , &
                        Minx,Maxx,Miny,Maxy, Nk , ni,nj, i0,j0,in,jn,k0, icln )
       use coriolis
-      use grid_options
+      use cstv
+      use dcst
       use gem_options
+      use grid_options
       use geomh
+      use glb_ld
+      use lun
       use tdpack
+      use ver
       implicit none
 #include <arch_specific.hf>
 
@@ -59,18 +64,11 @@
 ! v4.70 - Gaudreault S.     - Reformulation in terms of real winds (removing wind images)
 !                           - Explicit integration of metric terms (optional)
 
-#include "glb_ld.cdk"
-#include "ptopo.cdk"
-#include "ver.cdk"
-#include "cstv.cdk"
-#include "dcst.cdk"
-#include "lun.cdk"
-
       logical, save :: done=.false.
-      integer i, j, k, km, i0u, inu, j0v, jnv, nij, k0t, onept
-      real    w_nt
-      real*8  c1,qbar,ndiv,w1,w2,w3,w4,w5,barz,barzp,MUlin,dlnTstr_8, &
-              t_interp, mu_interp, u_interp, v_interp, mydelta_8
+      integer :: i, j, k, km, i0u, inu, j0v, jnv, nij, k0t, onept
+      real    :: w_nt
+      real*8  :: c1,qbar,ndiv,w1,w2,w3,w4,w5,barz,barzp,MUlin,dlnTstr_8, &
+                 t_interp, mu_interp, u_interp, v_interp, mydelta_8
       real*8 , dimension(i0:in,j0:jn) :: xtmp_8, ytmp_8
       real*8, parameter :: one=1.d0, half=0.5d0, &
                            alpha1=-1.d0/16.d0 , alpha2=9.d0/16.d0

@@ -20,6 +20,9 @@
       use gmm_vt1
       use gmm_vt0
       use gem_options
+      use glb_ld
+      use tr3d
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 
@@ -37,9 +40,6 @@
 !     Associate the variables at time t1 to the space on disk and memory
 !     associated with the variables at time t0
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "tr3d.cdk"
 
       character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: ut_list  = (/ 'URT0', 'URT1' /)
       character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: vt_list  = (/ 'VRT0', 'VRT1' /)

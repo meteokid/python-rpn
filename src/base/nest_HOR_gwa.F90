@@ -20,6 +20,9 @@
       use gmm_vt1
       use gmm_nest
       use gem_options
+      use glb_ld
+      use tr3d
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 
@@ -31,9 +34,6 @@
 ! v4_05 - Plante A.       - top blending
 ! v4_05 - Lepine M.       - VMM replacement with GMM
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "tr3d.cdk"
 
       integer n, gmmstat
       real, dimension(:,:,:), pointer :: fld3d=>null(), fld_nest3d=>null()

@@ -16,6 +16,9 @@
 !**s/p set_filt - initialize list of variables for filtering before output
       integer function set_filt (F_argc,F_argv_S,F_cmdtyp_S,F_v1,F_v2)
       use gem_options
+      use glb_ld
+      use lun
+      use out3
       implicit none
 #include <arch_specific.hf>
 !
@@ -56,9 +59,6 @@
 ! F_v2         I    - integer parameter 2 - not used
 !----------------------------------------------------------------
 
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "out3.cdk"
 
       character*5 stuff_S
       character*16 varname_S

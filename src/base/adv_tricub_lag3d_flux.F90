@@ -15,10 +15,16 @@
 
 !**s/p adv_tricub_lag3d_flux: Estimate FLUX_out/FLUX_in when LAM using Flux calculations based on Aranami et al. (2015)
 
-      subroutine adv_tricub_lag3d_flux (F_cub_o,F_in_o,F_cub_i,F_in_i, & 
-                                         F_x,F_y,F_z,F_num,k0,F_nk,F_lev_S) 
+      subroutine adv_tricub_lag3d_flux (F_cub_o,F_in_o,F_cub_i,F_in_i, &
+                                         F_x,F_y,F_z,F_num,k0,F_nk,F_lev_S)
 
       use grid_options
+      use glb_ld
+      use ver
+      use adv
+      use adv_grid
+      use adv_interp
+      use outgrid
       implicit none
 
 #include <arch_specific.hf>
@@ -36,14 +42,9 @@
 
       !@revisions
       ! v4_80 - Tanguay M.        - GEM4 Mass-Conservation
-      ! v5_00 - Tanguay M.        - Adjust extension 
+      ! v5_00 - Tanguay M.        - Adjust extension
 
 
-#include "adv_grid.cdk"
-#include "adv_interp.cdk"
-#include "glb_ld.cdk"
-#include "ver.cdk"
-#include "adv.cdk"
 #include "adv_precompute_flux.cdk"
 
       logical :: zcubic_L
@@ -52,7 +53,7 @@
       real*8, dimension(:),pointer :: p_bsz_8, p_zbc_8, p_zabcd_8
       real*8, dimension(:),pointer :: p_zbacd_8, p_zcabd_8, p_zdabc_8
 
-      integer jext 
+      integer jext
 
       integer :: n0,nx,ny,nz,m1,id,n,i,j,k,ii,jj,kk,kkmax,idxk,idxjk,o1,o2,o3,o4, &
                  i0_e,in_e,j0_e,jn_e,i0_o,in_o,j0_o,jn_o,i0_i,in_i,j0_i,jn_i
@@ -77,14 +78,14 @@
                       i0_e_i,in_e_i,j0_e_i,jn_e_i,i0_e_o,in_e_o,j0_e_o,jn_e_o, &
                       i0_n_i,in_n_i,j0_n_i,jn_n_i,i0_n_o,in_n_o,j0_n_o,jn_n_o
 
-!     
+!
 !---------------------------------------------------------------------
-!     
+!
       call timing_start2 (77, 'ADV_FLUX_', 39)
 
       kkmax   = l_nk - 1
       p_z00_8 = Ver_z_8%m(0)
-      if (F_lev_S == 'm') then       
+      if (F_lev_S == 'm') then
          p_lcz     => adv_lcz%m
          p_bsz_8   => adv_bsz_8%m
          p_zabcd_8 => adv_zabcd_8%m
@@ -265,8 +266,8 @@
       F_cub_o = 0.0
       F_cub_i = 0.0
 
-      nind_o = -1 
-      nind_i = -1 
+      nind_o = -1
+      nind_i = -1
 
       if (l_west) then
 
@@ -281,8 +282,8 @@
 #include "adv_tricub_lag3d_flux_loop_o.cdk"
 #include "adv_tricub_lag3d_flux_loop_i.cdk"
 
-      nind_o = -1 
-      nind_i = -1 
+      nind_o = -1
+      nind_i = -1
 
       if (l_south) then
 
@@ -297,8 +298,8 @@
 #include "adv_tricub_lag3d_flux_loop_o.cdk"
 #include "adv_tricub_lag3d_flux_loop_i.cdk"
 
-      nind_o = -1 
-      nind_i = -1 
+      nind_o = -1
+      nind_i = -1
 
       if (l_east) then
 
@@ -313,8 +314,8 @@
 #include "adv_tricub_lag3d_flux_loop_o.cdk"
 #include "adv_tricub_lag3d_flux_loop_i.cdk"
 
-      nind_o = -1 
-      nind_i = -1 
+      nind_o = -1
+      nind_i = -1
 
       if (l_north) then
 
@@ -330,9 +331,9 @@
 #include "adv_tricub_lag3d_flux_loop_i.cdk"
 
       call timing_stop (77)
-!     
+!
 !---------------------------------------------------------------------
-!     
+!
       return
 
       end subroutine adv_tricub_lag3d_flux

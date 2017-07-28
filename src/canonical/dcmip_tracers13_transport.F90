@@ -23,6 +23,12 @@
 
       use geomh
 
+      use glb_ld
+      use cstv
+      use lun
+      use ver
+      use gmm_itf_mod
+      use ptopo
       implicit none
 
       integer Mminx,Mmaxx,Mminy,Mmaxy,Nk
@@ -44,12 +50,6 @@
       !   Setup for Horizontal advection of thin cloud-like tracers in the presence of orography (DCMIP 2012)
       !======================================================================================================
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "ver.cdk"
-#include "ptopo.cdk"
-#include "cstv.cdk"
 
       !-----------------------------------------------------------------------
 

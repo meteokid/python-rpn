@@ -19,6 +19,9 @@
       use step_options
       use gmm_pw
       use gem_options
+      use glb_ld
+      use tr3d
+      use gmm_itf_mod
       implicit none
 
       character * (*) name_S
@@ -30,9 +33,6 @@
 !revision
 ! v4_14 - Desgagne, M.     - Initial revision
 !
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "tr3d.cdk"
 !
       type(gmm_metadata) :: meta
       integer istat,fld,i,k,err

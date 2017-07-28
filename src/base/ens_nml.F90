@@ -17,6 +17,7 @@
 !
       integer function ens_nml (F_namelist_S, F_Grdtyp_S, F_unout)
       use ens_options
+      use wb_itf_mod
       implicit none
 #include <arch_specific.hf>
 !
@@ -46,7 +47,6 @@
 ! F_unout             I             output unit
 !-----------------------------------------------------------------------
 !
-#include <WhiteBoard.hf>
 #include "ens_param.cdk"
 
       integer, external :: fnom,wkoffit
@@ -159,7 +159,7 @@
       endif
 
       err=0
-      if (.not.WB_IS_OK(ier)) ens_nml= -1
+      if (WB_IS_ERROR(ier)) ens_nml = -1
 !
 !--------------------------------------------------------------------
 !

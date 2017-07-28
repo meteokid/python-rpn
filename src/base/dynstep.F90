@@ -22,13 +22,13 @@
       use gmm_orh
       use grid_options
       use gem_options
+      use glb_ld
+      use lun
+      use tr3d
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "tr3d.cdk"
 
       character(len=GMM_MAXNAMELENGTH) :: tr_name
       logical first_L

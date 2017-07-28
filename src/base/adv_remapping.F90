@@ -17,6 +17,7 @@
 
       subroutine adv_remapping (F_m2_8,F_x2_8,F_n2,F_m1_8,F_x1_8,F_n1)
 
+      use tracers
       implicit none
 #include <arch_specific.hf>
 
@@ -35,7 +36,6 @@
       !INPUT : F_m_1(i) = mass(F_x_1(i-1),F_x_1(i))
       !OUTPUT: F_m_2(i) = mass(F_x_2(i-1),F_x_2(i)) = INT(psi)(F_x_2(i-1),F_x_2(i)) with INT(psi)(i-1,i) = F_m_1(i)
       !---------------------------------------------------------------------
-#include "tracers.cdk"
 
       !---------------------------------------------------------------------
 

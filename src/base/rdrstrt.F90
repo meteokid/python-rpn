@@ -19,12 +19,12 @@
       use phy_itf, only: phy_restart
       use step_options
       use gem_options
+      use lun
+      use psadjust
+      use wb_itf_mod
       implicit none
 #include <arch_specific.hf>
 
-#include <WhiteBoard.hf>
-#include "lun.cdk"
-#include "psadj.cdk"
 
       integer ier
 !
@@ -34,7 +34,7 @@
 
       rewind (Lun_rstrt)
       read (Lun_rstrt) Lctl_step,Step_kount,Init_mode_L
-      read (Lun_rstrt) PSADJ_g_avg_ps_initial_8
+      read (Lun_rstrt) PSADJ_g_avg_ps_initial_8,PSADJ_scale_8,PSADJ_fact_8
 
       close(Lun_rstrt)
       call fclos(Lun_rstrt)

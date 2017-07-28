@@ -17,6 +17,8 @@
                                Minx,Maxx,Miny,Maxy,nkund,nk )
       use gem_options
       use tdpack
+      use glb_ld
+      use out3
       implicit none
 #include <arch_specific.hf>
 !
@@ -30,8 +32,6 @@
 !author
 !     Michel Desgagne - Fall 2011
 
-#include "glb_ld.cdk"
-#include "out3.cdk"
 
       integer i,j,k,kk,kgrnd
       real w2(l_minx:l_maxx,l_miny:l_maxy,Out3_lieb_nk), grad

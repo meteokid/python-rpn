@@ -18,16 +18,16 @@
       integer function grid_nml3 (F_namelistf_S)
       use grid_options
       use gem_options
+      use glb_ld
+      use lun
+      use glb_pil
+      use hgc
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 
       character* (*) F_namelistf_S
 
-#include "glb_ld.cdk"
-#include "glb_pil.cdk"
-#include "hgc.cdk"
-#include "lun.cdk"
-#include "ptopo.cdk"
 
       integer, external ::  fnom, yyg_checkrot
 
@@ -344,16 +344,3 @@
  9999 call fclos (unf)
       return
       end
-
-      integer function grid_nml2 (F_namelistf_S, F_lam)
-      implicit none
-#include <arch_specific.hf>
-
-      character* (*) F_namelistf_S
-      logical F_lam
-      grid_nml2=-1
-      print*, 'grid_nml2 replaced by grid_nml3'
-      stop
-      return
-      end
-

@@ -18,11 +18,18 @@
                          orhsu, rhsu, orhsv, rhsv, orhsc ,&
                          rhsc, orhst,  rhst, orhsf, rhsf ,&
                          orhsw, rhsw, Minx,Maxx,Miny,Maxy, Nk )
-      use step_options
-      use gmm_vth
+      use adv
+      use adv_grid
       use adv_pos
       use grid_options
       use gem_options
+      use glb_ld
+      use gmm_itf_mod
+      use gmm_vth
+      use lun
+      use step_options
+      use tracers
+      use outgrid
       implicit none
 #include <arch_specific.hf>
 
@@ -37,41 +44,28 @@
 !@objective perform semi-lagrangian advection
 !@author RPN-A  Model Infrastructure Group  (based on : adx_main , adx_interp_gmm  )  June 2015
 
-#include "glb_ld.cdk"
-#include <gmm.hf>    
-#include "lun.cdk"
-#include "adv.cdk"
-#include "adv_grid.cdk"
-#include "tracers.cdk"
-      
       logical :: doAdwStat_L
       integer :: i0,j0,in,jn,i0u,inu,j0v,jnv ! advection computational i,j,k domain  (glb_ld.cdk)
-      integer :: k0, k0m, k0t, err, jext, ext, i0_e, j0_e, in_e, jn_e,  i0u_e, inu_e, j0v_e, jnv_e
-      real, dimension(:,:,:), allocatable  :: pxm, pym, pzm ! upstream positions valid at time t1
-      real, dimension(:,:,:), allocatable  :: ua,va,wa,wat  ! arrival winds
-      real, dimension(:,:,:), allocatable  :: ud,vd,wd      ! de-staggered   departure winds 
+      integer :: k0, k0m, k0t, err, jext, i0_e, j0_e, in_e, jn_e,  i0u_e, inu_e, j0v_e, jnv_e
+      real, dimension(l_ni,l_nj,l_nk) :: pxm, pym, pzm ! upstream positions valid at time t1
+      real, dimension(l_ni,l_nj,l_nk) :: ua,va,wa,wat  ! arrival winds
+      real, dimension(l_minx:l_maxx,l_miny:l_maxy,l_nk) :: ud,vd,wd      ! de-staggered   departure winds
       real, dimension(adv_lminx:adv_lmaxx,adv_lminy:adv_lmaxy,l_nk) :: a_ud , a_vd , a_wd
       real, dimension(1,1,1), target :: no_slice
       integer :: num, nm,nu,nv,nt,nmax
-      integer, dimension(:),  allocatable :: ii             ! pre-computed index used in the tricubic lagrangian interp loop 
-     
+      integer, dimension(:),  allocatable :: ii             ! pre-computed index used in the tricubic lagrangian interp loop
+
 !
 !     ---------------------------------------------------------------
-!      
+!
       if (Lun_debug_L) write (Lun_out,1000)
       doAdwStat_L = .false.
       if (Step_gstat.gt.0) then
          doAdwStat_L = (mod(Lctl_step,Step_gstat) == 0)
       end if
       doAdwStat_L = doAdwStat_L .and. (F_icn == Schm_itcn)
-      
-      allocate ( pxm(l_ni,l_nj,l_nk), pym(l_ni,l_nj,l_nk), pzm(l_ni,l_nj,l_nk),&
-                 ua (l_ni,l_nj,l_nk), va (l_ni,l_nj,l_nk), wa (l_ni,l_nj,l_nk),&
-                 wat(l_ni,l_nj,l_nk) )
-      allocate ( ud(l_minx:l_maxx,l_miny:l_maxy,l_nk),&
-                 vd(l_minx:l_maxx,l_miny:l_maxy,l_nk),&
-                 wd(l_minx:l_maxx,l_miny:l_maxy,l_nk) )
- 	   if (.not.associated(pxt)) then
+
+      if (.not.associated(pxt)) then
          allocate (pxt(l_ni,l_nj,l_nk), pyt(l_ni,l_nj,l_nk), &
                    pzt(l_ni,l_nj,l_nk), pxtn(l_ni,l_nj), &
                    pytn(l_ni,l_nj), pztn(l_ni,l_nj), &
@@ -94,7 +88,7 @@
      err = gmm_get(gmmk_yth_s , yth)
      err = gmm_get(gmmk_zth_s , zth)
 
-      
+
 !Get advection computational i,j,k domain
       !------------------------------------------
       i0 = 1 ; in = l_ni
@@ -135,10 +129,10 @@
       endif
 
       k0 = Lam_gbpil_t+1
-      k0t= k0     
+      k0t= k0
       if(Lam_gbpil_t.gt.0) k0t=k0-1
       k0m=max(k0t-2,1)
-    
+
 !
       nm=(in-i0+1)*(jn-j0+1)*(l_nk-k0+1)
       nt=(in-i0+1)*(jn-j0+1)*(l_nk-k0t+1)
@@ -163,59 +157,59 @@
       call adv_extend_grid (a_ud,a_vd, a_wd, ud, vd, wd            , &
                             adv_lminx,adv_lmaxx,adv_lminy,adv_lmaxy, &
                             l_minx,l_maxx,l_miny,l_maxy, l_nk)
-      call timing_stop (33) 
+      call timing_stop (33)
 
 
 ! Calculate upstream positions at t1 using angular displacement & trapezoidal rule
 
       call timing_start2 (34, 'ADV_TRAP', 30) ! Compute trajectories
       call adv_traj (F_fnitraj, pxm , pym , pzm        ,&
-                        a_ud, a_vd, a_wd, ua, va ,wa , wat,&
-                        xth, yth, zth, i0_e, in_e, j0_e, jn_e, i0u_e,&
-                        inu_e, j0v_e, jnv_e, k0, k0m, k0t ,&
-                        adv_lminx, adv_lmaxx, adv_lminy, adv_lmaxy, l_ni, l_nj, l_nk )
-      call timing_stop (34) 
+                     a_ud, a_vd, a_wd, ua, va ,wa , wat,&
+                     xth, yth, zth, i0_e, in_e, j0_e, jn_e, &
+                     k0, k0m, k0t ,&
+                     adv_lminx, adv_lmaxx, adv_lminy, adv_lmaxy, l_ni, l_nj, l_nk )
+      call timing_stop (34)
       call timing_stop (30)
 
       call timing_start2 (31, 'ADV_INTP_RH', 21)
       Adv_component_S = 'INTP_RHS'
 
       allocate (ii(nmax*4))
-      call adv_get_indices(ii, pxmu, pymu, pzmu, num, nu,  i0u, inu, j0, jn, k0, l_nk, 'm') 
+      call adv_get_indices(ii, pxmu, pymu, pzmu, num, nu,  i0u, inu, j0, jn, k0, l_nk, 'm')
       call adv_cubic('RHSU_S', rhsu, orhsu, pxmu, pymu, pzmu, &
                       no_slice, no_slice, no_slice, no_slice, no_slice, no_slice,&
                       l_ni, l_nj, l_nk, l_minx, l_maxx, l_miny, l_maxy,&
-                      nu, ii, i0u, inu, j0, jn, k0, 'm',0 ,0 )    
+                      nu, ii, i0u, inu, j0, jn, k0, 'm',0 ,0 )
 
-      call adv_get_indices(ii, pxmv, pymv, pzmv, num, nv, i0, in, j0v, jnv, k0, l_nk, 'm') 
-      call adv_cubic('RHSV_S', rhsv, orhsv, pxmv, pymv, pzmv, & 
+      call adv_get_indices(ii, pxmv, pymv, pzmv, num, nv, i0, in, j0v, jnv, k0, l_nk, 'm')
+      call adv_cubic('RHSV_S', rhsv, orhsv, pxmv, pymv, pzmv, &
                       no_slice, no_slice, no_slice, no_slice, no_slice, no_slice,&
                       l_ni, l_nj, l_nk, l_minx, l_maxx, l_miny, l_maxy,&
-                      nv, ii, i0, in, j0v, jnv, k0, 'm',0 ,0 ) 
+                      nv, ii, i0, in, j0v, jnv, k0, 'm',0 ,0 )
 
-      call adv_get_indices(ii, pxm, pym, pzm, num, nm, i0, in, j0, jn, k0, l_nk, 'm') 
-      call adv_cubic('RHSC_S', rhsc ,orhsc , pxm, pym, pzm,& 
+      call adv_get_indices(ii, pxm, pym, pzm, num, nm, i0, in, j0, jn, k0, l_nk, 'm')
+      call adv_cubic('RHSC_S', rhsc ,orhsc , pxm, pym, pzm,&
                       no_slice, no_slice, no_slice, no_slice, no_slice, no_slice,&
                       l_ni, l_nj, l_nk, l_minx, l_maxx, l_miny, l_maxy,&
-                      nm, ii, i0, in, j0, jn, k0, 'm', 0, 0 )    
+                      nm, ii, i0, in, j0, jn, k0, 'm', 0, 0 )
 
-!  RHS Interpolation: l_nk thermo levels       
+!  RHS Interpolation: l_nk thermo levels
       pxt(:,:,l_nk)=pxtn(:,:)
       pyt(:,:,l_nk)=pytn(:,:)
-      pzt(:,:,l_nk)=pztn(:,:) 
-     
+      pzt(:,:,l_nk)=pztn(:,:)
+
       call adv_get_indices(ii,  pxt, pyt, pzt, num, nt, i0, in, j0, jn, k0t, l_nk, 't')
-   
-      call adv_cubic('RHST_S', rhst, orhst, pxt, pyt, pzt, & 
+
+      call adv_cubic('RHST_S', rhst, orhst, pxt, pyt, pzt, &
                       no_slice, no_slice, no_slice, no_slice, no_slice, no_slice, &
                       l_ni, l_nj, l_nk, l_minx, l_maxx, l_miny, l_maxy, &
                       nt, ii, i0, in, j0, jn, k0t, 't', 0, 0 )
 
-      call adv_cubic('RHSF_S', rhsf, orhsf, pxt, pyt, pzt, & 
+      call adv_cubic('RHSF_S', rhsf, orhsf, pxt, pyt, pzt, &
                      no_slice, no_slice, no_slice, no_slice, no_slice, no_slice, &
                      l_ni, l_nj, l_nk, l_minx, l_maxx, l_miny, l_maxy, &
-                     nt, ii, i0, in, j0, jn, k0t, 't', 0, 0 )  
-  
+                     nt, ii, i0, in, j0, jn, k0t, 't', 0, 0 )
+
       if(.not.Schm_hydro_L) then
          call adv_cubic('RHSW_S', rhsw ,orhsw , pxt, pyt, pzt, &
                         no_slice, no_slice, no_slice, no_slice, no_slice, no_slice, &
@@ -223,22 +217,19 @@
                         nt, ii, i0, in, j0, jn, k0t, 't', 0, 0 )
       endif
 
-! Compute Courant numbers (CFL) for stats 
-      if ( doAdwStat_L ) then 
+! Compute Courant numbers (CFL) for stats
+      if ( doAdwStat_L ) then
          call  adv_cfl_lam3 (pxm, pym, pzm, i0,in,j0,jn, l_ni,l_nj,k0,l_nk,'m')
-         call  adv_cfl_lam3 (pxt, pyt, pzt, i0,in,j0,jn, l_ni,l_nj,k0,l_nk,'t')                      !                  
+         call  adv_cfl_lam3 (pxt, pyt, pzt, i0,in,j0,jn, l_ni,l_nj,k0,l_nk,'t')                      !
       endif
 
       deallocate (ii)
-      deallocate (pxm,pym,pzm,ua,va,wa,wat,ud,vd,wd)
 
-      call timing_stop (31)  
+      call timing_stop (31)
 
 1000  format(3X,'COMPUTE ADVECTION: (S/R ADV_MAIN)')
 !
 !     ---------------------------------------------------------------
-!     
+!
       return
       end subroutine adv_main
-     
-  

@@ -17,6 +17,11 @@
       use adv_pos
       use grid_options
       use gem_options
+      use glb_ld
+      use tr3d
+      use gmm_itf_mod
+      use adv
+      use tracers
       implicit none
 #include <arch_specific.hf>
 
@@ -28,11 +33,6 @@
    ! v4_80 - Tanguay M.        - GEM4 Mass-Conservation
    !@objective Perform advection of all tracers
 
-#include "glb_ld.cdk"
-#include "tr3d.cdk" 
-#include "gmm.hf"
-#include "adv.cdk"
-#include "tracers.cdk"
 
       logical qw_L      
       integer  n,count,jext,err

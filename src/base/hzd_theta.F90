@@ -20,12 +20,12 @@
       use gmm_pw
       use gmm_vt1
       use tdpack
+      use glb_ld
+      use lun
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "lun.cdk"
 
       integer istat,k
       real, parameter :: p_naught=100000., eps=1.0e-5

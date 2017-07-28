@@ -19,6 +19,9 @@
       use grid_options
       use gem_options
       use tdpack
+      use glb_ld
+      use path
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 
@@ -32,9 +35,6 @@
 ! v4_13 -  Desgagne M.           - initial version
 ! v4_80 -  Deagagne M.           - new min:max interface
 !
-#include "glb_ld.cdk"
-#include "ptopo.cdk"
-#include "path.cdk"
 
       character*8    inttyp
       character*1024 fn

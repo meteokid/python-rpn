@@ -19,6 +19,11 @@
       use phy_itf, only: phy_terminate
       use step_options
       use gem_options
+      use lun
+      use path
+      use clib_itf_mod
+      use ptopo
+      use version
       implicit none
 #include <arch_specific.hf>
 
@@ -37,11 +42,6 @@
 ! v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 ! v3_11 - M. Desgagne       - change to exfin
 
-#include "lun.cdk"
-#include "ptopo.cdk"
-#include "path.cdk"
-#include "version.cdk"
-#include <clib_interface_mu.hf>
 
       integer, external :: exfin
 

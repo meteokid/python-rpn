@@ -21,19 +21,18 @@
       use gmm_geof
       use gem_options
       use geomh
+      use glb_ld
+      use lun
+      use tr3d
+      use gmm_itf_mod
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 
 !author   M. Desgagne - April 2002
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "tr3d.cdk"
-#include "lun.cdk"
-#include "ptopo.cdk"
-
       character(len=GMM_MAXNAMELENGTH) :: tr_name
-      integer i,j,k,n,id,yy,mo,dd,hh,mm,ss,dum,istat
+      integer n,yy,mo,dd,hh,mm,ss,dum,istat
       real, pointer, dimension(:,:,:) :: tr1,trf
 !
 !     ---------------------------------------------------------------

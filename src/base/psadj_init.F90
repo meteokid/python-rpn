@@ -16,22 +16,21 @@
 !**s/r psadj_init - Estimate area and air mass at initial time
 
       subroutine psadj_init (F_kount)
-
+      use cstv
       use gem_options
       use gmm_vt1
       use gmm_geof
-      use grid_options
+      use gmm_itf_mod
       use geomh
-
+      use glb_ld
+      use grid_options
+      use psadjust
+      use rstr
       implicit none
 #include <arch_specific.hf>
 
       integer, intent(in) :: F_kount
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "psadj.cdk"
-#include "cstv.cdk"
 
       integer err,i,j,istat
       logical, save :: done = .false.
@@ -39,6 +38,7 @@
       real*8,dimension(l_minx:l_maxx,l_miny:l_maxy)       :: pr_p0_1_8,pr_p0_w_1_8
       real*8 l_avg_8,x_avg_8
       character(len= 9) communicate_S
+      logical almost_zero
 !
 !     ---------------------------------------------------------------
 !
@@ -50,6 +50,7 @@
       if ( Schm_psadj <= 2 ) then
          if ( Cstv_dt_8*F_kount <= Iau_period ) goto 999
          if ( ( Schm_psadj == 1 ) .and. done )  goto 999
+         if ( ( Schm_psadj == 1 ) .and. Rstri_rstn_L ) goto 999
       endif
 
       done= .true.
@@ -78,7 +79,7 @@
 
       PSADJ_fact_8  = PSADJ_fact_8/PSADJ_scale_8
       PSADJ_scale_8 = 1.0d0/PSADJ_scale_8
-      PSADJ_fact_8  =(1.0d0-(1.0d0-PSADJ_fact_8)*Cstv_psadj_8)/PSADJ_fact_8
+      if (.not.almost_zero(PSADJ_fact_8)) PSADJ_fact_8  =(1.0d0-(1.0d0-PSADJ_fact_8)*Cstv_psadj_8)/PSADJ_fact_8
 
       istat = gmm_get(gmmk_st1_s,st1)
 

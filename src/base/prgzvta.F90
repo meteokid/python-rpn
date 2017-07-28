@@ -22,6 +22,7 @@
                          F_cubzt_L, F_linbot, &
                          Minx,Maxx,Miny,Maxy, F_Nk)
       use tdpack
+      use glb_ld
       implicit none
 #include <arch_specific.hf>
 
@@ -34,7 +35,6 @@
       real    F_wlnph (Minx:Maxx,Miny:Maxy,F_Nk), F_la   (Minx:Maxx,Miny:Maxy)
       real    F_vtund(Minx:Maxx,Miny:Maxy,F_nundr), F_gzund(Minx:Maxx,Miny:Maxy,F_nundr)
 
-#include "glb_ld.cdk"
 
       integer i, j, k, kk, pnk, pnkm, pnindex(l_ni), pnund,   pn1
       real    prlprso

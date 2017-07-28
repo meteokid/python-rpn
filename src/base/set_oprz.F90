@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -18,19 +18,19 @@
       subroutine set_oprz2 (F_errcode)
       use gem_options
       use tdpack
+      use glb_ld
+      use lun
+      use ver
+      use opr
       implicit none
 #include <arch_specific.hf>
 
       integer F_errcode
 
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "opr.cdk"
-#include "ver.cdk"
 
       real*8, parameter ::  one = 1.d0
-      integer k, k0, km, AA, BB, CC
-      real*8  wk(G_nk), Falfas_8, Fbetas_8, r_8(G_nk)
+      integer k, k0, AA, BB, CC
+      real*8  Falfas_8, Fbetas_8, r_8(G_nk)
       real*8, dimension (G_nk*G_nk) :: br_8, bl_8
 !     __________________________________________________________________
 !

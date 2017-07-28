@@ -19,13 +19,13 @@
       use gmm_geof
       use grid_options
       use gem_options
+      use glb_ld
+      use lun
+      use gmm_itf_mod
+      use var_gmm
       implicit none
 #include <arch_specific.hf>
 
-#include "gmm.hf"
-#include "var_gmm.cdk"
-#include "glb_ld.cdk"
-#include "lun.cdk"
 
       integer :: istat
 !

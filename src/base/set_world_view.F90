@@ -28,18 +28,18 @@
       use step_options
       use theo_options
 
+      use glb_ld
+      use lun
+      use tr3d
+      use out3
+      use out_meta
+      use path
+      use outgrid
+      use wb_itf_mod
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 
-#include <WhiteBoard.hf>
-#include "lun.cdk"
-#include "ptopo.cdk"
-#include "grid.cdk"
-#include "glb_ld.cdk"
-#include "path.cdk"
-#include "out3.cdk"
-#include "tr3d.cdk"
-      include 'out_meta.cdk'
       include "rpn_comm.inc"
 
       integer, external :: gem_nml,exp_nml,gemdm_config,grid_nml3      ,&

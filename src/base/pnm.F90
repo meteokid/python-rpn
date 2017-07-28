@@ -22,6 +22,7 @@
                          Minx,Maxx,Miny,Maxy, Nk)
 !
       use tdpack
+      use glb_ld
       implicit none
 #include <arch_specific.hf>
 !
@@ -139,7 +140,6 @@
 !   ......................................and so on
 !
 
-#include "glb_ld.cdk"
 !
 
 !     none

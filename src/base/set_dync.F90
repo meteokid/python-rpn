@@ -16,26 +16,26 @@
 !**   s/r set_dync - initialize the dynamics model configuration
 
       subroutine set_dync (F_check_and_stop_L, F_errcode)
+      use dcst
       use dynkernel_options
-      use matvec_mod, only: matvec_init
+      use matvec, only: matvec_init
       use gmm_vt1
       use grid_options
       use gem_options
       use tdpack
+      use glb_ld
+      use cstv
+      use lun
+      use ver
+      use gmm_itf_mod
+      use sol
+      use opr
       implicit none
 #include <arch_specific.hf>
 
       logical F_check_and_stop_L
       integer F_errcode
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "opr.cdk"
-#include "sol.cdk"
-#include "cstv.cdk"
-#include "dcst.cdk"
-#include "ver.cdk"
 
       integer k,err,k0
       real tmean(G_nk)

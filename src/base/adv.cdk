@@ -1,6 +1,0 @@
-      character*12 Adv_component_S
-      logical Adv_done_precompute_L
-      common /adv_comp_S/ Adv_component_S
-      common /precompute_L/ Adv_done_precompute_L
- 
-

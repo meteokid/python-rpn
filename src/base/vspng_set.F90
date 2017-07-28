@@ -16,18 +16,17 @@
 !**s/r vspng_set - Vertical sponge setup
 
       subroutine vspng_set
+      use dcst
       use grid_options
       use gem_options
       use tdpack
+      use glb_ld
+      use cstv
+      use lun
+      use ver
+      use ptopo
       implicit none
 #include <arch_specific.hf>
-
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "ver.cdk"
-#include "cstv.cdk"
-#include "dcst.cdk"
-#include "ptopo.cdk"
 
       integer i,j,k
       real*8, dimension(:), allocatable :: weigh
@@ -72,8 +71,7 @@
                        Vspng_coef_8(k)      ,&
                        Vspng_coef_8(k)*Cstv_dt_8/(Dcst_rayt_8*c_8)**2,&
                        exp(Ver_z_8%m(k)),k
-         Vspng_coef_8(k)= Vspng_coef_8(k) * &
-                          Cstv_dt_8/(Dcst_rayt_8*Dcst_rayt_8)
+         Vspng_coef_8(k)= Vspng_coef_8(k) * Cstv_dt_8 * Dcst_inv_rayt_8**2
       end do
 
  1001 format(/,'INITIALIZATING SPONGE LAYER PROFILE ',  &

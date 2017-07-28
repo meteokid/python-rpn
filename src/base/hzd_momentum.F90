@@ -22,12 +22,12 @@
       use hzd_ctrl
       use grid_options
       use gem_options
+      use glb_ld
+      use lun
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "lun.cdk"
 
       logical, save :: switch_on_hzd= .true.
       integer istat

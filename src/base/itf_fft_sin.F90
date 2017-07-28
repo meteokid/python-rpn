@@ -16,6 +16,7 @@
 !**s/r itf_fft_sin - multiple fast real sine transform
 !
       subroutine itf_fft_sin ( F_a, F_inc, F_jump, F_lot )
+      use fft
       implicit none
 #include <arch_specific.hf>
 
@@ -56,7 +57,6 @@
 !     The subroutine itf_fft_set must have been called to set-up
 !     the commons in fft.cdk
 
-#include "fft.cdk"
 
       integer i, j, k, is, j0, jlot
       real*8  ai, as, ya, ys, xnor, w(511*Fft_nstore)

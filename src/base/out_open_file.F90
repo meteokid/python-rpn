@@ -19,6 +19,10 @@
       use timestr_mod, only: timestr_prognum
       use step_options
       use gem_options
+      use cstv
+      use out_mod
+      use out3
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 
@@ -30,10 +34,6 @@
 ! v4_8 - Desgagne M.       - initial version
 
 #include <rmnlib_basics.hf>
-#include "out.cdk"
-#include "out3.cdk"
-#include "cstv.cdk"
-#include "ptopo.cdk"
 
       character*4    unit_ext
       character*8    my_block

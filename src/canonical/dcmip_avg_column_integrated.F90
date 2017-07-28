@@ -20,6 +20,9 @@
       use gmm_vt1
       use geomh
 
+      use glb_ld
+      use lun
+      use gmm_itf_mod
       implicit none
 
       !Arguments
@@ -34,9 +37,6 @@
       !     Evaluate Average Column Integrated of F_tr
       !===============================================
 
-#include "glb_ld.cdk"
-#include "gmm.hf"
-#include "lun.cdk"
 
       !----------------------------------------------------------
 

@@ -20,6 +20,7 @@
                                         F_coef_8, F_arakawa_S,mm,dpwr )
       use gem_options
       use hzd_mod
+      use glb_ld
       implicit none
 #include <arch_specific.hf>
  
@@ -37,7 +38,6 @@
 ! v4_80 - Desgagne & Lee   - optimization
 !
 
-#include "glb_ld.cdk"
 
       integer i,j,k,i0,in,j0,jn
       real*8 wk_8 (Minx:Maxx,Miny:Maxy,Nk)

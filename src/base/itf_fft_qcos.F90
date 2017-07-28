@@ -16,6 +16,7 @@
 !**s/r itf_fft_qcos - multiple fast real shifted cosine transform
 !
       subroutine itf_fft_qcos ( F_a, F_inc, F_jump, F_lot, F_isign )
+      use fft
       implicit none
 #include <arch_specific.hf>
 !
@@ -62,7 +63,6 @@
 !     the commons in fft.cdk
 !
 
-#include "fft.cdk"
 
       integer i, j, k, is, k1, kk, j0, jlot
       real*8  ai, as, ya, ys, c, s, rr, w(511*Fft_nstore)

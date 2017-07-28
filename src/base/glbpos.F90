@@ -19,6 +19,8 @@
 !
       subroutine glbpos
 !
+      use glb_ld
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 !
@@ -37,8 +39,6 @@
 !     None
 !
 
-#include "glb_ld.cdk"
-#include "ptopo.cdk"
 !
       integer dim, err, gindx(6,Ptopo_numproc)
 !

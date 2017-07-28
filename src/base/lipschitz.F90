@@ -19,6 +19,10 @@
                                       F_i0,F_in,F_j0,F_jn)
 
       use geomh
+      use glb_ld
+      use cstv
+      use ver
+      use type_mod
       implicit none
 #include <arch_specific.hf>
 
@@ -49,13 +53,9 @@
 ! F_j0         I    - starting point of calculation on N-S axis
 ! F_jn         I    - ending point of calculation on N-S axis
 
-#include "glb_ld.cdk"
-#include "type.cdk"
-#include "cstv.cdk"
-#include "ver.cdk"
 
       integer i,j,k,i0,j0,km, iu,iv,iw, ju,jv,jw, ku,kv,kw
-      real pr1, pr2, dudx, dvdy, dwdy,dwdz, LipNOu, LipNOv, LipNOw
+      real dudx, dvdy, dwdz, LipNOu, LipNOv, LipNOw
 !     __________________________________________________________________
 !
       i0=F_i0

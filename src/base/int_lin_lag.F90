@@ -44,9 +44,9 @@
 
        Im = Imx(i)
        Jm = Imy(i)
-       betax= (Xi(i)-Geomgx(Im))/geomh_hx_8
+       betax= (Xi(i)-Geomgx(Im))*geomh_inv_hx_8
        betax1= (1.0d0-betax)
-       betay=(Yi(i)-Geomgy(Jm))/geomh_hy_8
+       betay=(Yi(i)-Geomgy(Jm))*geomh_inv_hy_8
        betay1=1.0d0-betay
    Do 300 k=1,Nk
        FF_8 = betay1*(betax1*F(Im,Jm,k)+betax*F(Im+1,Jm,k))+ &
@@ -79,9 +79,9 @@
 
        Im = Imx
        Jm = Imy
-           betax= (Xi-Geomgx(Im))/geomh_hx_8
+           betax= (Xi-Geomgx(Im))*geomh_inv_hx_8
            betax1= (1.0-betax)
-           betay=(Yi-Geomgy(Jm))/geomh_hy_8
+           betay=(Yi-Geomgy(Jm))*geomh_inv_hy_8
            betay1=1.0-betay
            FF= betay1*(betax1*F(Im,Jm)+betax*F(Im+1,Jm))+ &
                     betay*(betax1*F(Im,Jm+1)+betax*F(Im+1,Jm+1))
@@ -110,9 +110,9 @@
         do i = 1, Ni
            Im = imx(i,j)
            Jm = imy(i,j)
-           betax= ( Xi(i,j)-x(Im))/geomh_hx_8
+           betax= ( Xi(i,j)-x(Im))*geomh_inv_hx_8
            betax1= (1.0-betax)
-           betay=(Yi(i,j)-y(Jm))/geomh_hy_8
+           betay=(Yi(i,j)-y(Jm))*geomh_inv_hy_8
            betay1=1.0-betay
            FF(i,j)= betay1*(betax1*F(Im,Jm)+betax*F(Im+1,Jm))+ &
                     betay*(betax1*F(Im,Jm+1)+betax*F(Im+1,Jm+1))

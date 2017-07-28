@@ -16,6 +16,7 @@
 !**s/r tstpdyn -  Performs a dynamical timestep of the model
 
       subroutine tstpdyn ( F_fnitraj )
+      use glb_ld
       use gmm_vt1
       use gmm_vt0
       use gmm_nest
@@ -24,22 +25,28 @@
       use gmm_geof
       use gem_options
       use grid_options
+      use ldnh
+      use lun
       use tdpack
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 
       integer, intent(IN) ::  F_fnitraj ! number of iterations to
 !                                         compute upstream positions
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "ldnh.cdk"
-#include "lun.cdk"
-#include "nl.cdk"
-
       integer i0, in, j0, jn, k0, ni, nj, iln, gmmstat, icln
-      real*8, dimension (:,:,:), allocatable :: rhs_sol, lhs_sol
+
+      real*8, dimension (ldnh_maxx-ldnh_minx+1, ldnh_maxy-ldnh_miny+1, l_nk) :: rhs_sol, lhs_sol
       real, pointer, dimension(:,:,:)  :: hut1, hut0
+
+      real, dimension (l_maxx-l_minx+1, l_maxy-l_miny+1, l_nk) :: nl_u, & ! non-linear deviation of U
+                                                                  nl_v, & ! non-linear deviation of V
+                                                                  nl_t, & ! non-linear deviation of T -> X
+                                                                  nl_c, & ! non-linear portion of continuity equation
+                                                                  nl_w, & ! non-linear deviation of vertical motion
+                                                                  nl_f    ! non-linear deviation of FI -> WFI -> Q
+      real, dimension (l_maxx-l_minx+1, l_maxy-l_miny+1) :: nl_b
 !
 !     ---------------------------------------------------------------
 !
@@ -151,24 +158,16 @@
 
 !     Combine some rhs to obtain the linear part
 !     of the right-hand side of the elliptic problem
-      call pre (rhsu, rhsv,  fis0,  rhsc, rhst, &
-                rhsw, rhsf, orhsu, orhsv, rhsb, &
-                nest_t, l_minx,l_maxx,l_miny,l_maxy,&
-                i0, j0, in, jn, k0, l_ni, l_nj, l_nk)
+      call pre (rhsu, rhsv, fis0, rhsc, rhst, &
+                rhsw, rhsf, rhsb, nest_t, l_minx,l_maxx,l_miny,l_maxy,&
+                i0, j0, in, jn, k0, l_nk)
 
       call timing_stop (22)
 
       if ( Lun_debug_L ) write (Lun_out,1005) Schm_itnlh
 
-      ni = l_maxx-l_minx+1
-      nj = l_maxy-l_miny+1
-      allocate (nl_u(ni,nj,l_nk),nl_v(ni,nj,l_nk),nl_t(ni,nj,l_nk), &
-                nl_c(ni,nj,l_nk),nl_f(ni,nj,l_nk),nl_w(ni,nj,l_nk), &
-                nl_b(ni,nj))
-
       ni = ldnh_maxx-ldnh_minx+1
       nj = ldnh_maxy-ldnh_miny+1
-      allocate ( rhs_sol(ni,nj,l_nk), lhs_sol(ni,nj,l_nk) )
 
       do iln=1,Schm_itnlh
 
@@ -224,9 +223,6 @@
          call yyg_xchng (wt0, l_minx,l_maxx,l_miny,l_maxy, G_nk,&
                          .false., 'CUBIC')
 
-      deallocate ( nl_u,nl_v,nl_t,nl_c,nl_f,nl_b,nl_w,&
-                   rhs_sol,lhs_sol )
-!
 !     ---------------------------------------------------------------
 !
  1000 format( &

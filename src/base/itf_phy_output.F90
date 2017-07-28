@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -19,35 +19,34 @@
       use vertical_interpolation, only: vertint2
       use vGrid_Descriptors, only: vgrid_descriptor,vgd_get,VGD_OK,VGD_ERROR
       use vgrid_wb, only: vgrid_wb_get
-      use out_vref_mod, only: out_vref
+      use out_vref, only: out_vref_itf
       use phy_itf, only: phy_get,phymeta,phy_getmeta,phy_put
       use step_options
       use gmm_pw
       use grid_options
       use gem_options
+      use glb_ld
+      use lun
+      use out_mod
+      use out3
+      use levels
+      use outp
+      use gmm_itf_mod
+      use outgrid
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 
       integer stepno
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "out3.cdk"
-#include "out.cdk"
-#include "grid.cdk"
-#include "level.cdk"
-#include "outp.cdk"
-#include "ptopo.cdk"
 #include "out_listes.cdk"
 #include <rmnlib_basics.hf>
 
       type(phymeta) :: pmeta
       type(vgrid_descriptor) :: vcoord
-      character*15 prefix
-      character*8 dumc
-      integer i,ii,jj,k,kk,levset,nko,nko_pres,cnt,istat,&
-              gridset,ig1,mult,mosaic, ip2,modeip1,kind ,&
+      character(len=15) prefix
+      integer i,ii,jj,kk,levset,nko,nko_pres,cnt,istat,&
+              gridset,mult, knd ,&
               p_li0,p_li1,p_lj0,p_lj1,last_timestep
       integer grille_x0,grille_x1,grille_y0,grille_y1
       integer, dimension(:), allocatable :: indo_pres,indo,irff
@@ -106,7 +105,7 @@
             last_timestep= max(0,Outp_lasstep(kk,stepno))
          endif
          allocate ( indo( min(Level_max(levset),Level_momentum ) ) )
-         
+
          call out_slev2 (Level(1,levset), Level_max(levset), &
                          Level_momentum,indo,nko,write_diag_lev)
 
@@ -125,23 +124,23 @@
          Out_prefix_S(1:1) = 'p'
          Out_prefix_S(2:2) = Level_typ_S(levset)
          call up2low (Out_prefix_S ,prefix)
-         Out_reduc_l       = Grid_reduc(gridset)
+         Out_reduc_l       = OutGrid_reduc(gridset)
 
          call out_open_file (trim(prefix))
 
-         grille_x0 = max( 1   +Grd_bsc_ext1, Grid_x0(gridset) )
-         grille_x1 = min( G_ni-Grd_bsc_ext1, Grid_x1(gridset) )
-         grille_y0 = max( 1   +Grd_bsc_ext1, Grid_y0(gridset) )
-         grille_y1 = min( G_nj-Grd_bsc_ext1, Grid_y1(gridset) )
+         grille_x0 = max( 1   +Grd_bsc_ext1, OutGrid_x0(gridset) )
+         grille_x1 = min( G_ni-Grd_bsc_ext1, OutGrid_x1(gridset) )
+         grille_y0 = max( 1   +Grd_bsc_ext1, OutGrid_y0(gridset) )
+         grille_y1 = min( G_nj-Grd_bsc_ext1, OutGrid_y1(gridset) )
 
          call out_href3 ( 'Mass_point',grille_x0,grille_x1,1,&
                                        grille_y0,grille_y1,1 )
 
          if (Level_typ_S(levset).eq.'M') then
-            call out_vref (etiket=Out_etik_S)
+            call out_vref_itf (etiket=Out_etik_S)
          elseif (Level_typ_S(levset).eq.'P') then
-            call out_vref (Level_allpres(1:Level_npres),&
-                           etiket=Out_etik_S)
+            call out_vref_itf (Level_allpres(1:Level_npres),&
+                               etiket=Out_etik_S)
          endif
 
          PHYSICS_VARS: do ii=1, Outp_var_max(kk)
@@ -151,23 +150,23 @@
                              > 0 ) then
                FIELD_SHAPE: if (pmeta%nk .eq. 1) then ! 2D field
 
-                  rff(1)= 0. ; irff(1)= 1 ; kind= 2
+                  rff(1)= 0. ; irff(1)= 1 ; knd= 2
                   if ( pmeta%fmul.gt.1 ) then
                      do mult=1,pmeta%fmul
                         rff(mult)= mult
-                        irff(mult)= mult 
+                        irff(mult)= mult
                      enddo
-                     kind= 3
+                     knd= 3
                   endif
                   cnt= pmeta%fmul
-                    
+
                   ptr3d => data3d(p_li0:p_li1,p_lj0:p_lj1,1:cnt)
                   istat = phy_get ( ptr3d, Outp_var_S(ii,kk), &
                                     F_npath='O', F_bpath='PV')
                   if (Outp_avg_L(kk)) data3d = data3d*avgfact
                   call out_fstecr3 ( data3d, 1,l_ni, 1,l_nj, rff  ,&
                           Outp_var_S(ii,kk),Outp_convmult(ii,kk)  ,&
-                          Outp_convadd(ii,kk), kind, last_timestep,&
+                          Outp_convadd(ii,kk), knd, last_timestep,&
                           cnt,irff,cnt,Outp_nbit(ii,kk),.false. )
 
                   if (accum_L) then
@@ -240,17 +239,17 @@
 
          deallocate (indo)
          if (Level_typ_S(levset).eq.'P') deallocate (buso_pres, indo_pres, prprlvl, cible)
-         
+
          flag_clos= .true.
          if (jj .lt. outp_sorties(0,stepno)) then
             flag_clos= .not.( (gridset.eq.Outp_grid(outp_sorties(jj+1,stepno))).and. &
                  (Level_typ_S(levset).eq.Level_typ_S(Outp_lev(outp_sorties(jj+1,stepno)))))
          endif
-         
+
          if (flag_clos) call out_cfile3
-         
+
       end do
-      
+
       deallocate(rff,irff,data3d,zero)
       deallocate(hybm,hybt); nullify(hybm,hybt)
 

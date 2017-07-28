@@ -16,10 +16,13 @@
 !*s/r spn_calfiltre - compute a filter for spectral nudging
 
       subroutine spn_calfiltre ( F_nis, F_njs )
+      use dcst
       use spn_work_mod
       use grid_options
       use gem_options
       use tdpack
+      use lun
+      use glb_pil
       implicit none
 #include <arch_specific.hf>
 
@@ -32,9 +35,6 @@
 ! v4_80 - Qian, Dugas, Hussain            - initial version
 ! v4_80 - Baek - clarification
 
-#include "lun.cdk"
-#include "dcst.cdk"
-#include "glb_pil.cdk"
 
       integer i,j
       integer ni_trunc, ni_truncx, nj_trunc

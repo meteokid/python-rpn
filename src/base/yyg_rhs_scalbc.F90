@@ -20,6 +20,10 @@
                                 NK,iter,Linfini)
       use gem_options
       use geomh
+      use glb_ld
+      use glb_pil
+      use sol
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 
@@ -27,10 +31,6 @@
 !author
 !     Abdessamad Qaddouri/V.Lee  - October 2009
 !
-#include "ptopo.cdk"
-#include "glb_ld.cdk"
-#include "glb_pil.cdk"
-#include "sol.cdk"
 #include "yyg_rhs.cdk"
 
       integer minx,maxx,miny,maxy,Ni,Nj,NK,numproc

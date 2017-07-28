@@ -17,6 +17,10 @@
 
       integer function samevert ( zam_8,zbm_8,lvm, zat_8,zbt_8,lvt, &
                                   analtopo, F_topo, ni,nj,i0,in,j0,jn)
+      use glb_ld
+      use lun
+      use ver
+      use type_mod
       implicit none
 #include <arch_specific.hf>
 
@@ -37,10 +41,6 @@
 !     samevert = 0 - means NO vertical interpolation is needed. 
 !     samevert < 0 - error in this function
 
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "type.cdk"
-#include "ver.cdk"
 
       integer :: i,j,k,err,ndiff,sumdiff
       real, parameter :: DIFSIG=1.e-5

@@ -21,6 +21,10 @@
 !
       use gmm_vth
       use geomh
+      use glb_ld
+      use ver
+      use type_mod
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 !
@@ -37,14 +41,9 @@
 !     none
 !
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "type.cdk"
-#include "ver.cdk"
 !
       type(gmm_metadata) :: mymeta
       integer i, j, k, ijk, nij,istat
-      real pr1
 !*
 !
 !     ---------------------------------------------------------------

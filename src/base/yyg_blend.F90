@@ -17,6 +17,9 @@
       subroutine yyg_blend (F_apply_L)
       use gem_options
       use gmm_vt1
+      use glb_ld
+      use lun
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 
@@ -28,9 +31,6 @@
 !revision
 ! v4_70 - Lee V.        - Initial version
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "lun.cdk"
 
       integer istat
       real tempzd (l_minx:l_maxx,l_miny:l_maxy, l_nk)

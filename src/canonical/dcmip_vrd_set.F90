@@ -20,6 +20,10 @@
       use step_options
       use dcmip_options
 
+      use glb_ld
+      use cstv
+      use lun
+      use ver
       implicit none
 
       !object
@@ -27,11 +31,7 @@
       !     Setting for vertical diffusion (Based on eqspng_set)
       !=========================================================
 
-#include "glb_ld.cdk"
 #include "dcmip_vrd_coef.cdk"
-#include "ver.cdk"
-#include "cstv.cdk"
-#include "lun.cdk"
 
       !--------------------------------------------------------------------------------
 

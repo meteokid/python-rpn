@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -19,23 +19,13 @@
       use hzd_mod
       use gem_options
       use tdpack
+      use glb_ld
+      use cstv
+      use lun
+      use ver
       implicit none
-#include "cstv.cdk"
 #include <arch_specific.hf>
 
-
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "ver.cdk"
-
-      character*256 str1
-      integer i,j,k,ind1,ind2,npin,nvalid
-      integer, dimension(:) , allocatable :: pwr, lvl
-      real   , dimension(:) , allocatable :: lnr
-      real*8 c_8, x1, x2, rr, weight
-      real levhyb
-      real*8 pt25,nudif,epsilon
-      parameter (epsilon = 1.0d-12, pt25=0.25d0)
 !
 !     ---------------------------------------------------------------
 !
@@ -44,11 +34,11 @@
       Hzd_lnr = min(max(0.,Hzd_lnr),0.9999999)
       Hzd_pwr = Hzd_pwr / 2
       Hzd_pwr = min(max(2,Hzd_pwr*2),8)
-      
+
       Hzd_lnr_theta= min(max(0.,Hzd_lnr_theta),0.9999999)
       Hzd_pwr_theta= Hzd_pwr_theta / 2
       Hzd_pwr_theta= min(max(2,Hzd_pwr_theta*2),8)
-      
+
       if (Hzd_lnr_tr.lt.0.) Hzd_lnr_tr = Hzd_lnr
       if (Hzd_pwr_tr.lt.0 ) Hzd_pwr_tr = Hzd_pwr
       Hzd_lnr_tr = min(max(0.,Hzd_lnr_tr),0.9999999)
@@ -81,6 +71,10 @@
       end
 
       subroutine sorthzdexp (F_lvl,F_pwr,F_lnr,nk)
+      use glb_ld
+      use cstv
+      use lun
+      use ver
       implicit none
 #include <arch_specific.hf>
 

@@ -17,6 +17,7 @@
 
       subroutine yyg_scalgeo2 ( F_src, F_minx,F_maxx,F_miny,F_maxy, &
                                 NK, Interp_S, nomvar_S )
+      use glb_ld
       implicit none
 #include <arch_specific.hf>
 
@@ -27,7 +28,6 @@
 !author
 !           Abdessamad Qaddouri/V.Lee - October 2009
 
-#include "glb_ld.cdk"
 
       real  tab_dstf(l_minx:l_maxx,l_miny:l_maxy,NK)
       character*32 UPinterp_S

@@ -17,6 +17,7 @@
                                   F_var_S, F_status, F_quiet_L)
       use phy_itf, only: phy_get
       use grid_options
+      use glb_ld
       implicit none
 #include <arch_specific.hf>
 
@@ -29,7 +30,6 @@
    !@author  Michel Desgagne  -  Summer 2013
    !*@/
 
-#include "glb_ld.cdk"
 
       real, dimension(:,:,:), pointer :: ptr3d
 !

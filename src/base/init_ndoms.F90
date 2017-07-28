@@ -15,13 +15,13 @@
 
       subroutine init_ndoms (ndomains,dom_deb,err)
       use grid_options
+      use clib_itf_mod
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 
       integer ndomains,dom_deb,err
 
-#include <clib_interface_mu.hf>
-#include "ptopo.cdk"
 
       character*16 ndomains_S, last_domain_S
       integer indx1, dom_fin, last, istat

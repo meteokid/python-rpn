@@ -15,6 +15,8 @@
 
       subroutine glbcolc2(f2rc,g_id,g_if,g_jd,g_jf, &
                           f2cc,lminx,lmaxx,lminy,lmaxy,lnk,z_out,nk_out)
+      use glb_ld
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 
@@ -23,8 +25,6 @@
       real f2rc(g_id:g_if,g_jd:g_jf,nk_out),  &
            f2cc(lminx:lmaxx,lminy:lmaxy,lnk)
 
-#include "glb_ld.cdk"
-#include "ptopo.cdk"
 
       integer i, j, k, iproc, tag, err, status
       integer si,sj,loindx,hiindx,loindy,hiindy

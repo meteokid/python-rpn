@@ -19,6 +19,8 @@
                              F_npts, NSTOR, F_eigen_filename_S )
       use grid_options
       use tdpack
+      use glb_ld
+      use glb_pil
       implicit none
 #include <arch_specific.hf>
 
@@ -37,8 +39,6 @@
 ! F_npts       I    - number of points to operate on
 !
 
-#include "glb_ld.cdk"
-#include "glb_pil.cdk"
 
       integer i, j
       real*8 a_8(F_npts,F_npts), b_8(F_npts,F_npts), r_8(F_npts)

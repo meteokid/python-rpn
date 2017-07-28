@@ -18,21 +18,21 @@
       subroutine sol_main ( F_rhs_sol, F_lhs_sol, F_ni, F_nj, F_nk, F_iln )
       use gmm_orh
       use gem_options
+      use lun
+      use sol
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 
       integer F_ni,F_nj,F_nk,F_iln
       real*8  F_rhs_sol (F_ni,F_nj,F_nk), F_lhs_sol (F_ni,F_nj,F_nk)
 
-!author 
+!author
 !     Michel Desgagne / Abdessamad Qaddouri -- January 2014
 !
 !revision
 ! v4_70 - Desgagne/Qaddouri  - initial version
 
-#include "lun.cdk"
-#include "ptopo.cdk"
-#include "sol.cdk"
 
       logical print_conv
       integer offi,offj
@@ -55,12 +55,12 @@
            (Sol_type_S(11:12).eq.'2D')   ) then
 
          call sol_2d ( F_rhs_sol, F_lhs_sol, F_ni, F_nj, F_nk,&
-                                F_iln, print_conv, offi, offj )
+                       F_iln, print_conv, offi, offj )
 
       else
 
          call sol_3d ( F_rhs_sol, F_lhs_sol, F_ni, F_nj, F_nk,&
-                                F_iln, print_conv, offi, offj )
+                       print_conv, offi, offj )
 
       endif
 

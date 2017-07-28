@@ -17,6 +17,8 @@
 
       subroutine pw_update_T
       use gmm_pw
+      use glb_ld
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 
@@ -26,8 +28,6 @@
 !revision
 ! v4_14 - Desgagne, M.     - Initial revision
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
 
       integer istat
       real, pointer, dimension (:,:,:)  :: pw_tt  => null()

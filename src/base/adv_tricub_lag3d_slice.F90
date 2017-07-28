@@ -23,6 +23,14 @@
       use grid_options
       use gem_options
       use geomh
+      use glb_ld
+      use lun
+      use ver
+      use adv_grid
+      use tracers
+      use adv_interp
+      use outgrid
+      use ptopo
       implicit none
 
 #include <arch_specific.hf>
@@ -42,14 +50,7 @@
       !@revisions
       ! v4_80 - Tanguay M.        - GEM4 Mass-Conservation
 
-#include "adv_grid.cdk"
-#include "adv_interp.cdk"
-#include "tracers.cdk"
 #include "adv_slice_storage.cdk"
-#include "glb_ld.cdk"
-#include "ver.cdk"
-#include "ptopo.cdk"
-#include "lun.cdk"
 
       integer,dimension(:),pointer :: p_lcz
       real*8, dimension(:),pointer :: p_bsz_8, p_zbc_8, p_zabcd_8

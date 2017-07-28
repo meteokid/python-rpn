@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -14,16 +14,19 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/r  pre_jacobio3D -  BlocJacobi_3D additive-Schwarz preconditioner with
-!                        local solver = "separable" approximate elliptic problem 
+!                        local solver = "separable" approximate elliptic problem
 !
       subroutine pre_jacobi3D ( Sol,Rhs,evec_local,Ni,Nj,Nk,ai,bi,ci )
+      use glb_ld
+      use opr
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 
       integer Ni,Nj,Nk
       real*8 Rhs(Ni,Nj,Nk),Sol(Ni,Nj,Nk)
       real*8  ai(Ni,Nj,Nk), bi(Ni,Nj,Nk), ci(Ni,Nj,Nk)
-      real*8 evec_local(Ni,Ni) 
+      real*8 evec_local(Ni,Ni)
 
 !author
 !       Abdessamad Qaddouri -  2013
@@ -31,9 +34,6 @@
 !revision
 ! v4_70 - Qaddouri A.       - initial version
 
-#include "ptopo.cdk"
-#include "opr.cdk"
-#include "glb_ld.cdk"
 
       integer i,j,k,jr,l,k1,offi,offj
       real*8 fdg(Ni,Nj,Nk), w2_8(Ni,Nj,Nk)

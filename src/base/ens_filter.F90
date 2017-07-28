@@ -17,12 +17,16 @@
 !
       subroutine ens_filter (F_ugwdt1,F_vgwdt1,F_difut1,F_difvt1, &
                              F_ut1,F_vt1,F_tt1, Minx,Maxx,Miny,Maxy, Nk)
+      use dcst
       use ens_gmm_var
       use ens_options
       use gem_options
       use grid_options
       use geomh
       use tdpack
+      use glb_ld
+      use gmm_itf_mod
+      use var_gmm
       implicit none
 #include <arch_specific.hf>
 !
@@ -38,10 +42,6 @@
 ! v4_12 - Spacek L.         - staggered + gmm version
 ! v4.1.3 -N. Gagnon         - Change name of some parameters from NAMELIST
 
-#include "gmm.hf"
-#include "var_gmm.cdk"
-#include "glb_ld.cdk"
-#include "dcst.cdk"
 
       integer  E_nk
       integer i, j, k, i0, j0, in, jn

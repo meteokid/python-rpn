@@ -19,6 +19,11 @@
       use gmm_pw
       use grid_options
       use gem_options
+      use glb_ld
+      use cstv
+      use lun
+      use tr3d
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 
@@ -31,11 +36,6 @@
 ! v4_70 - authors          - initial version
 ! v4_XX - Tanguay M.       - SOURCE_PS: REAL*8 with iterations
 
-#include <gmm.hf>
-#include "glb_ld.cdk"
-#include "tr3d.cdk"
-#include "cstv.cdk"
-#include "lun.cdk"
 
       character(len=GMM_MAXNAMELENGTH) :: trname_S
       integer istat, i,j,k,n, cnt, iteration

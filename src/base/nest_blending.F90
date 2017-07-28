@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -15,14 +15,13 @@
 
 module nest_blending
 
-      use gmm_nest
   implicit none
 #include <arch_specific.hf>
   private
   public :: nest_blend
 
   ! This module blends a pair of GMM variables, 2D or 3D fields using a
-  ! set of pre-determined blending weights (which themselves may vary in 
+  ! set of pre-determined blending weights (which themselves may vary in
   ! 3D).  When 2D fields are given, the optional 'level' argument can
   ! be used to specify which level of the blending weight 3D field should
   ! be applied (default is G_nk+2, the bottom level blending weights).
@@ -33,16 +32,16 @@ module nest_blending
      module procedure blend_array2d
   end interface
 
-#include "gmm.hf"
 
 contains
 
   subroutine blend_gmm ( F_fld_S, F_nest_fld_S, F_grid_S )
+    use glb_ld
+    use gmm_itf_mod
     implicit none
 
     ! Apply blending to a GMM field.
 
-#include "glb_ld.cdk"
 
     ! Arguments
     character(len=*), intent(in) :: F_fld_S       !GMM name of model   field
@@ -54,7 +53,7 @@ contains
     real, dimension(:,:  ), pointer :: fld2d=>null(), fld_nest2d=>null()
     real, dimension(:,:,:), pointer :: fld3d=>null(), fld_nest3d=>null()
     type(gmm_metadata) :: metadata
-  !      
+  !
   !----------------------------------------------------------------------
   !
     gmmstat = gmm_getmeta (F_fld_S, metadata)
@@ -75,18 +74,18 @@ contains
 
        gmmstat = gmm_get (F_fld_S, fld2d, metadata)
        gmmstat = gmm_get (F_nest_fld_S, fld_nest2d, metadata)
-       
+
        call blend_array2d (fld2d, fld_nest2d, Minx,Maxx,Miny,Maxy, F_grid_S, level=G_nk+1)
 
     else
 
        gmmstat = gmm_get (F_fld_S, fld3d, metadata)
        gmmstat = gmm_get (F_nest_fld_S, fld_nest3d, metadata)
-    
+
        call blend_array3d (fld3d, fld_nest3d, Minx,Maxx,Miny,Maxy, Minz,Maxz, F_grid_S)
 
     endif levels
-  !      
+  !
   !----------------------------------------------------------------------
   !
     return
@@ -94,6 +93,7 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   subroutine blend_array3d (F_fld, F_nest_fld, Minx,Maxx,Miny,Maxy, Minz,Maxz, F_grid_s, level)
+    use gmm_itf_mod
     implicit none
 
     ! Apply blending to a 3D array
@@ -107,13 +107,13 @@ contains
 
     ! Local variables
     character(len=GMM_MAXNAMELENGTH) :: name
-    integer :: i,j,k,kw,ni,nj,gmmstat,offk
+    integer :: k,kw,gmmstat
     real, dimension(:,:,:), pointer :: weight=>null()
     type(gmm_metadata) :: metadata
-    
+
     ! Get information about weights for the requested F_grid_S
     call PRIV_get_weight_info (F_grid_S, name)
-    
+
     ! Obtain GMM pointer for name
     gmmstat = gmm_get (name, weight, metadata)
 
@@ -129,6 +129,7 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   subroutine blend_array2d(F_fld,F_nest_fld,Minx,Maxx,Miny,Maxy,F_grid_s,weight,level)
+    use gmm_itf_mod
     implicit none
 
     ! Apply blending mask to a 2D array.
@@ -149,7 +150,7 @@ contains
 
     ! Get information about weights for the requested grid
     call PRIV_get_weight_info(F_grid_S,name,nii,njj)
-    
+
     ! Obtain needed values from GMM
     if (present(weight)) then
        my_weight => weight
@@ -176,11 +177,15 @@ contains
 
   subroutine PRIV_get_weight_info(F_grid,F_gmm_name,F_ni,F_nj)
     ! Return information about the weight field associated with the requested grid
+    use glb_ld
+    use gmm_itf_mod
+    use gmm_nest
+    implicit none
+
     character(len=*), intent(in) :: F_grid              !staggered grid ('U':u-grid,'V':v-grid,'M':mass-grid)
     character(len=*), intent(out) :: F_gmm_name         !name of GMM weight variable
     integer, intent(out), optional :: F_ni,F_nj         !i,j dimensions of the weight field
     integer :: my_ni,my_nj
-#include "glb_ld.cdk"
 
     select case (trim(F_grid))
     case ('M')

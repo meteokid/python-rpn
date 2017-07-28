@@ -19,6 +19,8 @@
 
       use gem_options
 
+      use glb_ld
+      use ptopo
       implicit none
 
       integer F_minx,F_maxx,F_miny,F_maxy,F_nk
@@ -36,8 +38,6 @@
       !     Galewsky et al.,2004,Tellus,56A,429-440
       !===========================================================================
 
-#include "glb_ld.cdk"
-#include "ptopo.cdk"
 
       !---------------------------------------------------------------
 

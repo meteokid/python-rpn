@@ -23,6 +23,13 @@
       use gmm_geof
       use geomh
 
+      use glb_ld
+      use cstv
+      use lun
+      use tr3d
+      use psadjust
+      use gmm_itf_mod
+      use rstr
       implicit none
 #include <arch_specific.hf>
 
@@ -37,17 +44,9 @@
 ! v4_70 - Tanguay M.        - dry air pressure conservation
 ! v4_80 - Tanguay M.        - REAL*8 with iterations and psadj LAM
 !
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "cstv.cdk"
-#include "ptopo.cdk"
-#include "lun.cdk"
-#include "tr3d.cdk"
-#include "psadj.cdk"
-#include "rstr.cdk"
 
       type(gmm_metadata) :: mymeta
-      integer err,i,j,n,istat,iteration,MAX_iteration
+      integer err,i,j,n,istat,MAX_iteration
       real*8,dimension(l_minx:l_maxx,l_miny:l_maxy,1:l_nk):: pr_m_8,pr_t_8
       real*8,dimension(l_minx:l_maxx,l_miny:l_maxy)       :: pr_p0_0_8,pr_p0_w_0_8
       real*8 l_avg_8,g_avg_ps_0_8

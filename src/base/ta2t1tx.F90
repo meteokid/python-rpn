@@ -19,6 +19,8 @@
       use gmm_vt1
       use gmm_vta
       use gem_options
+      use tr3d
+      use gmm_itf_mod
       implicit none
 
 !author
@@ -37,8 +39,6 @@
 !                             recompute fip
 	
 #include <arch_specific.hf>
-#include <gmm.hf>
-#include "tr3d.cdk"
 
       integer n,istat
       real, pointer, dimension(:,:,:) :: tr,tra

@@ -17,6 +17,14 @@
 !
       subroutine out_gmm2 (levset,set)
       use gem_options
+      use glb_ld
+      use lun
+      use out3
+      use levels
+      use outd
+      use ver
+      use gmm_itf_mod
+      use outgrid
       implicit none
 #include <arch_specific.hf>
 
@@ -55,14 +63,6 @@
 ! ===========2*G_nk+3 -                              X
 ! model surface
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "out3.cdk"
-#include "grid.cdk"
-#include "outd.cdk"
-#include "lun.cdk"
-#include "ver.cdk"
-#include "level.cdk"
 
       type(gmm_metadata) :: tmp_meta
       character(len=GMM_MAXNAMELENGTH), dimension(:), pointer :: keylist
@@ -147,16 +147,16 @@
             select case (class_var(id,2))
             case('UU')
                call out_href3 ( 'U_point', &
-                    Grid_x0 (gridset), Grid_x1 (gridset), 1, &
-                    Grid_y0 (gridset), Grid_y1 (gridset), 1 )
+                    OutGrid_x0 (gridset), OutGrid_x1 (gridset), 1, &
+                    OutGrid_y0 (gridset), OutGrid_y1 (gridset), 1 )
             case('VV')
                call out_href3 ( 'V_point', &
-                    Grid_x0 (gridset), Grid_x1 (gridset), 1, &
-                    Grid_y0 (gridset), Grid_y1 (gridset), 1 )
+                    OutGrid_x0 (gridset), OutGrid_x1 (gridset), 1, &
+                    OutGrid_y0 (gridset), OutGrid_y1 (gridset), 1 )
             case default
                call out_href3 ( 'Mass_point', &
-                    Grid_x0 (gridset), Grid_x1 (gridset), 1, &
-                    Grid_y0 (gridset), Grid_y1 (gridset), 1 )
+                    OutGrid_x0 (gridset), OutGrid_x1 (gridset), 1, &
+                    OutGrid_y0 (gridset), OutGrid_y1 (gridset), 1 )
             end select
 
             nullify(tr2,tr3)

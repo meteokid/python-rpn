@@ -21,6 +21,11 @@
       subroutine nest_set_gmmvar
       use gmm_nest
       use gem_options
+      use glb_ld
+      use lun
+      use tr3d
+      use gmm_itf_mod
+      use var_gmm
       implicit none
 #include <arch_specific.hf>
 
@@ -39,11 +44,6 @@
 !	keys used by the Virtual Memory Manager to identify the
 !	nesting variables
 
-#include "gmm.hf"
-#include "var_gmm.cdk"
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "tr3d.cdk"
 
       character(len=GMM_MAXNAMELENGTH) :: tr_name
       integer i,istat

@@ -20,6 +20,9 @@
       use gmm_vt1
       use gmm_pw
       use gem_options
+      use glb_ld
+      use tr3d
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 
@@ -28,9 +31,6 @@
 !revision
 ! v4_70 - Desgagne M.   - Initial version
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "tr3d.cdk"
 
       character(len=GMM_MAXNAMELENGTH) :: tr_name
       integer istat,n

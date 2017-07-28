@@ -18,11 +18,11 @@
       subroutine set_params
       use gem_options
       use tdpack
+      use cstv
+      use ver
       implicit none
 #include <arch_specific.hf>
 
-#include "cstv.cdk"
-#include "ver.cdk"
 
       real*8, parameter :: zero=0.d0, one=1.d0
 !

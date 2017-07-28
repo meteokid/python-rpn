@@ -25,19 +25,19 @@
       use gem_options
       use grdc_options
       use tdpack
+      use glb_ld
+      use cstv
+      use lun
+      use out_mod
+      use out3
+      use levels
+      use rstr
+      use wb_itf_mod
+      use ptopo
       implicit none
 
 #include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <WhiteBoard.hf>
-#include "glb_ld.cdk"
-#include "out3.cdk"
-#include "level.cdk"
-#include "lun.cdk"
-#include "cstv.cdk"
-#include "out.cdk"
-#include "ptopo.cdk"
-#include "rstr.cdk"
 
       character(len=16)  dumc_S, datev
       integer i, k, ipcode, ipkind, err

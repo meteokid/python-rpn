@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -20,6 +20,9 @@
       use gmm_vt1
       use gmm_vta
       use gem_options
+      use glb_ld
+      use tr3d
+      use gmm_itf_mod
       implicit none
 
 !author
@@ -38,11 +41,8 @@
 !                             Move w out of non-hydrostatic section
 
 #include <arch_specific.hf>
-#include <gmm.hf>
-#include "glb_ld.cdk"
-#include "tr3d.cdk"
 
-      integer i, j, k, n, err,istat
+      integer i, j, k, n, istat
       real dfcoef
       real, pointer, dimension(:,:,:) :: tr,tra
 !     __________________________________________________________________
@@ -79,8 +79,8 @@
       if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(qta)'
 
       do k= 1, l_nk
-      do j= 1, l_nj 
-      do i= 1, l_ni 
+      do j= 1, l_nj
+      do i= 1, l_ni
          tta (i,j,k)   =  tta(i,j,k)   + dfcoef *  tt1(i,j,k)
          uta (i,j,k)   =  uta(i,j,k)   + dfcoef *  ut1(i,j,k)
          vta (i,j,k)   =  vta(i,j,k)   + dfcoef *  vt1(i,j,k)

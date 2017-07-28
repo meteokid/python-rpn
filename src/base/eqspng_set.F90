@@ -20,11 +20,11 @@
        use step_options
        use gem_options
        use geomh
+      use glb_ld
+      use ver
        implicit none
 #include <arch_specific.hf>
 
-#include "glb_ld.cdk"
-#include "ver.cdk"
 
        real    :: Href2
        real*8  :: pdb, pdtmp, pda,  pdc

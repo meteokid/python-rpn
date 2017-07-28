@@ -23,6 +23,11 @@
       use gem_options
       use geomh
       use tdpack
+      use glb_ld
+      use cstv
+      use lun
+      use ver
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 !
@@ -55,11 +60,6 @@
 ! F_w_L  | true to compute w                           | scal      | i |
 !________|_____________________________________________|___________|___|
 !
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "ver.cdk"
-#include "lun.cdk"
-#include "cstv.cdk"
 
       integer i, j, k, kp, i0, in, j0, jn, istat
       real*8 c1,c2

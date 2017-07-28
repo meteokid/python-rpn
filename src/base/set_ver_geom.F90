@@ -16,12 +16,12 @@
 
       subroutine set_ver_geom
       use gem_options
+      use glb_ld
+      use lun
+      use ver
       implicit none
 #include <arch_specific.hf>
 
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "ver.cdk"
 
       character*8 dumc
       integer k, pnip1
