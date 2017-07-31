@@ -50,7 +50,7 @@ def ftnNmlDtype2List(cfg, dtypename, dtypeattr, dtypeattrval):
                 nml.rm(nmlkeyname)
         if values:
             valuelist = []
-            for ii in xrange(max(values.keys())):
+            for ii in range(max(values.keys())):
                 valuelist.append(copy.copy(dtypeattrval))
             for ii in values.keys():
                 #valuelist[int(ii)-1] = ', '.join([x.data for x in values[ii]])

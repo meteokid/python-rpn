@@ -131,11 +131,11 @@ def plot_series(varlist, title=None, axename=None):
              var['hrs'], var['etiket'])
 
         level = get_level_str(var['ip1'], var['ip2'], var['ip3'])
-        for istat in xrange(len(xy)):
+        for istat in range(len(xy)):
             (i,j) = xy[istat]
             y = d[istat,:]
             plt.plot(hrs, y, markers[imark], label="%s xy:(%6.1f,%6.1f, %s) %12s" % (nomvar,i,j, level, etk))        
-        for istat in xrange(len(ll)):
+        for istat in range(len(ll)):
             (i,j) = ll[istat]
             y = d[len(xy)+istat,:]
             plt.plot(hrs, y, markers[imark], label="%s ll:(%6.1f,%6.1f, %s) %12s" % (nomvar,i,j, level, etk))
@@ -164,7 +164,7 @@ def xy2list(xy):
     xy2 = []
     for xy1 in xy:
         xy2 += xy1.replace('(','').replace(')','').split(',')
-    return [(float(xy2[i*2]),float(xy2[i*2+1])) for i in xrange(len(xy2)//2)]
+    return [(float(xy2[i*2]),float(xy2[i*2+1])) for i in range(len(xy2)//2)]
 
     
 def varstr2dict(var):

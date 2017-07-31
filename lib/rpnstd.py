@@ -76,7 +76,7 @@ class RPNFile:
               Type of file, FILE_MODE_RO, FILE_MODE_RW, FILE_MODE_RW_OLD
         """
         if not (isinstance(name, str) and name):
-            raise TypeError, 'RPNFile, need to provide a name for the file'
+            raise TypeError('RPNFile, need to provide a name for the file')
         self.filename = name
         self.lastread = None
         self.lastwrite = None
@@ -304,7 +304,7 @@ class RPNFile:
         elif key == NextMatch:               # fstsui, return FstHandle instance
             self.lastread = Fstdc.fstinf(self.iun, ' ', ' ', ' ', 0, 0, 0, 0, -1)
         else:
-            raise TypeError, 'RPNFile.info(), search keys arg is not of a valid type'
+            raise TypeError('RPNFile.info(), search keys arg is not of a valid type')
         result = RPNMeta()
         if self.lastread != None:
 #            self.lastread.__dict__['fileref']=self
@@ -625,12 +625,12 @@ class RPNMeta(RPNKeys, RPNDesc):
     Examples of use (also doctests):
 
     >>> myRPNMeta = RPNMeta() #New RPNMeta with default/wildcard descriptors
-    >>> d = myRPNMeta.__dict__.items()
+    >>> d = [x for x in myRPNMeta.__dict__.items()]
     >>> d.sort()
     >>> d
     [('dateo', -1), ('datev', -1), ('datyp', -1), ('deet', -1), ('etiket', '            '), ('fileref', None), ('grtyp', ' '), ('handle', -2), ('ig1', -1), ('ig2', -1), ('ig3', -1), ('ig4', -1), ('ip1', -1), ('ip2', -1), ('ip3', -1), ('nbits', -1), ('ni', -1), ('nj', -1), ('nk', -1), ('nom', '    '), ('npas', -1), ('nxt', 0), ('type', '  ')]
     >>> myRPNMeta = RPNMeta(nom='GZ', ip2=1)  #New RPNMeta with all descriptors to wildcard but nom, ip2
-    >>> d = myRPNMeta.__dict__.items()
+    >>> d = [x for x in myRPNMeta.__dict__.items()]
     >>> d.sort()
     >>> d
     [('dateo', -1), ('datev', -1), ('datyp', -1), ('deet', -1), ('etiket', '            '), ('fileref', None), ('grtyp', ' '), ('handle', -2), ('ig1', -1), ('ig2', -1), ('ig3', -1), ('ig4', -1), ('ip1', -1), ('ip2', 1), ('ip3', -1), ('nbits', -1), ('ni', -1), ('nj', -1), ('nk', -1), ('nom', 'GZ  '), ('npas', -1), ('nxt', 0), ('type', '  ')]
@@ -663,7 +663,7 @@ class RPNMeta(RPNKeys, RPNDesc):
             elif type(model) == type({}):
                 self.update(model)
             else:
-                raise TypeError, 'RPNMeta: cannot initialize from arg #1'
+                raise TypeError('RPNMeta: cannot initialize from arg #1')
         for name in args.keys(): # and update with specified attributes
             setattr(self, name, args[name])
 
@@ -789,7 +789,7 @@ class RPNGrid(RPNParm):
         if args is None:
             args = {}
         if type(args) != type({}):
-            raise TypeError, 'RPNGrid: args should be of type dict'
+            raise TypeError('RPNGrid: args should be of type dict')
         if keys:
             if 'grtyp' in args.keys():
                 raise ValueError('RPNGrid: cannot provide both keys and grtyp: '+repr(args))
@@ -799,14 +799,14 @@ class RPNGrid(RPNParm):
                 if 'grtyp' in keys.keys():
                     grtyp = keys['grtyp']
                 else:
-                    raise ValueError, 'RPNGrid: not able to find grtyp'
+                    raise ValueError('RPNGrid: not able to find grtyp')
             else:
-                raise TypeError, 'RPNGrid: wrong type for keys'
+                raise TypeError('RPNGrid: wrong type for keys')
         else:
             if 'grtyp' in args.keys():
                 grtyp = args['grtyp']
             else:
-                raise ValueError, 'RPNGrid: not able to find grtyp'
+                raise ValueError('RPNGrid: not able to find grtyp')
         return grtyp
 
     def parseArgs(self, keys, args=None):
@@ -814,7 +814,7 @@ class RPNGrid(RPNParm):
         if args is None:
             args = {}
         if type(args) != type({}):
-            raise TypeError, 'RPNGrid: args should be of type dict'
+            raise TypeError('RPNGrid: args should be of type dict')
         kv = self.allowedKeysVals().copy()
         if keys:
             if 'grtyp' in args.keys():
@@ -1346,7 +1346,7 @@ class RPNGrid(RPNParm):
 ##             #if verbose: print "using SCRIP"
 ##             if isVect!=1:
 ##                 #TODO: remove this exception when SCRIP.interp() does vectorial interp
-##                 raise TypeError, 'RPNGrid.interpolVect: SCRIP.interp() Cannot perform vectorial interpolation yet!'
+##                 raise TypeError('RPNGrid.interpolVect: SCRIP.interp() Cannot perform vectorial interpolation yet!')
 ##             #Try to interpolate with previously computed addr&weights (if any)
 ##             sg_a = sg.toScripGridPreComp()
 ##             dg_a = dg.toScripGridPreComp()
@@ -1362,7 +1362,7 @@ class RPNGrid(RPNParm):
 ##                 datax2 = scrip.scripObj.interp(datax)
 ##                 dataxy = (dg.reshapeDataFromScrip(datax2), None)
 ##             else:
-##                 raise TypeError, 'RPNGrid.interpolVect: Cannot perform interpolation between specified grids type'
+##                 raise TypeError('RPNGrid.interpolVect: Cannot perform interpolation between specified grids type')
         if isRec:
             recx.d = dataxy[0]
             recx.setGrid(self)
@@ -1435,7 +1435,7 @@ class RPNGridRef(RPNGridHelper):
         if args is None:
             args = {}
         if type(args) != type({}):
-            raise TypeError, 'RPNGridRef: args should be of type dict'
+            raise TypeError('RPNGridRef: args should be of type dict')
         #if keys is another grid or FstRec w/ grid
         #   or xyaxis was present in keys, args
         #   then it would already have been included
@@ -1535,7 +1535,7 @@ class RPNRec(RPNMeta):
     'X'
     >>> r = RPNRec([1, 2, 3, 4])
     >>> r2 = RPNRec(r)
-    >>> d = r2.__dict__.items()
+    >>> d = [x for x in r2.__dict__.items()]
     >>> d.sort()
     >>> d
     [('d', array([1, 2, 3, 4])), ('dateo', -1), ('datev', -1), ('datyp', -1), ('deet', -1), ('etiket', '            '), ('fileref', None), ('grid', None), ('grtyp', ' '), ('handle', -2), ('ig1', -1), ('ig2', -1), ('ig3', -1), ('ig4', -1), ('ip1', -1), ('ip2', -1), ('ip3', -1), ('nbits', -1), ('ni', -1), ('nj', -1), ('nk', -1), ('nom', '    '), ('npas', -1), ('nxt', 0), ('type', '  ')]
@@ -1693,7 +1693,7 @@ class RPNDate:
     >>> d3
     RPNDate(20030423, 13153500)
     >>> utc = pytz.timezone("UTC")
-    >>> d4 = datetime.datetime(2003, 04, 23, 11, 45, 35, 0, tzinfo=utc)
+    >>> d4 = datetime.datetime(2003, 4, 23, 11, 45, 35, 0, tzinfo=utc)
     >>> d5 = RPNDate(d4)
     >>> d5
     RPNDate(20030423, 11453500)

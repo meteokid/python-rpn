@@ -32,11 +32,14 @@ from rpnpy.librmn import const as _rc
 from rpnpy.librmn import base as _rb
 from rpnpy.librmn import RMNError
 from rpnpy import integer_types as _integer_types
+from rpnpy import C_WCHAR2CHAR as _C_WCHAR2CHAR
+from rpnpy import C_CHAR2WCHAR as _C_CHAR2WCHAR
+from rpnpy import C_MKSTR as _C_MKSTR
 
 #---- helpers -------------------------------------------------------
 
-_C_MKSTR = _ct.create_string_buffer
-_C_MKSTR.__doc__ = 'alias to ctypes.create_string_buffer'
+## _C_MKSTR = lambda x: _ct.create_string_buffer(x)
+## _C_MKSTR.__doc__ = 'alias to ctypes.create_string_buffer'
 
 _C_TOINT = lambda x: (x if (type(x) != type(_ct.c_int())) else x.value)
 _C_TOINT.__doc__ = 'lamda function to convert ctypes.c_int to python int'
@@ -157,8 +160,7 @@ def dtype_numpy2fst(npdtype, compress=True, missing=False):
         raise TypeError("dtype_numpy2fst: Expecting arg of type {0}, Got {1}"\
                         .format('numpy.dtype', type(npdtype)))
     datyp = 0 #default returned type: binary
-    for (i, dtype) in _rc.FST_DATYP2NUMPY_LIST.items() + \
-        _rc.FST_DATYP2NUMPY_LIST64.items():
+    for (i, dtype) in _rc.FST_DATYP2NUMPY_LIST_ITEMS:
         if dtype == npdtype:
             datyp = i
             break
@@ -562,8 +564,8 @@ def fstecr(iunit, data, meta=None, rewrite=True):
                 meta2['dateo'], meta2['deet'], meta2['npas'],
                 meta2['ni'], meta2['nj'], meta2['nk'],
                 meta2['ip1'], meta2['ip2'], meta2['ip3'],
-                meta2['typvar'], meta2['nomvar'], meta2['etiket'],
-                meta2['grtyp'],
+                _C_WCHAR2CHAR(meta2['typvar']), _C_WCHAR2CHAR(meta2['nomvar']),
+                _C_WCHAR2CHAR(meta2['etiket']), _C_WCHAR2CHAR(meta2['grtyp']),
                 meta2['ig1'], meta2['ig2'], meta2['ig3'], meta2['ig4'],
                 datyp, irewrite)
     if istat >= 0:
@@ -715,7 +717,9 @@ def fst_edit_dir(key, datev=-1, dateo=-1, deet=-1, npas=-1, ni=-1, nj=-1, nk=-1,
             except:
                 raise FSTDError('fst_edit_dir: error computing datev to keep_dateo ({0})'.format(repr(e)))
     istat = _rp.c_fst_edit_dir(key, datev, deet, npas, ni, nj, nk,
-                 ip1, ip2, ip3, typvar, nomvar, etiket, grtyp,
+                 ip1, ip2, ip3,
+                 _C_WCHAR2CHAR(typvar), _C_WCHAR2CHAR(nomvar),
+                 _C_WCHAR2CHAR(etiket), _C_WCHAR2CHAR(grtyp),
                  ig1, ig2, ig3, ig4, datyp)
     if istat >= 0:
         return
@@ -983,8 +987,9 @@ def fstinfx(key, iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
                         .format(type(key)))
     (cni, cnj, cnk) = (_ct.c_int(), _ct.c_int(), _ct.c_int())
     key2 = _rp.c_fstinfx(key, iunit, _ct.byref(cni), _ct.byref(cnj),
-                         _ct.byref(cnk), datev, etiket, ip1, ip2, ip3,
-                         typvar, nomvar)
+                         _ct.byref(cnk), datev, _C_WCHAR2CHAR(etiket),
+                         ip1, ip2, ip3,
+                         _C_WCHAR2CHAR(typvar), _C_WCHAR2CHAR(nomvar))
     ## key2 = _C_TOINT(key2)
     if key2 < 0:
         return None
@@ -1067,7 +1072,8 @@ def fstinl(iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
     (cni, cnj, cnk) = (_ct.c_int(), _ct.c_int(), _ct.c_int())
     cnfound         = _ct.c_int()
     istat = _rp.c_fstinl(iunit, _ct.byref(cni), _ct.byref(cnj), _ct.byref(cnk),
-                         datev, etiket, ip1, ip2, ip3, typvar, nomvar,
+                         datev, _C_WCHAR2CHAR(etiket), ip1, ip2, ip3,
+                         _C_WCHAR2CHAR(typvar), _C_WCHAR2CHAR(nomvar),
                          creclist, cnfound, nrecmax)
     ## if istat < 0:
     ##     raise FSTDError('fstinl: Problem searching record list')
@@ -1424,9 +1430,9 @@ def fstluk(key, dtype=None, rank=None, dataArray=None):
     >>> # then print its min,max,mean values
     >>> key   = rmn.fstinf(funit, nomvar='P0')
     >>> p0rec = rmn.fstluk(key)
-    >>> print("# P0 ip2={0} min={1} max={2} avg={3}"\
+    >>> print("# P0 ip2={0} min={1:8.4f} max={2:7.2f} avg={3:8.4f}"\
               .format(p0rec['ip2'], p0rec['d'].min(), p0rec['d'].max(), p0rec['d'].mean()))
-    # P0 ip2=0 min=530.641418457 max=1039.64147949 avg=966.49420166
+    # P0 ip2=0 min=530.6414 max=1039.64 avg=966.4942
     >>> rmn.fstcloseall(funit)
 
     See Also:
@@ -1631,9 +1637,10 @@ def fstopt(optName, optValue, setOget=_rc.FSTOP_SET):
        rpnpy.librmn.const
     """
     if isinstance(optValue, str):
-        istat = _rp.c_fstopc(optName, optValue, setOget)
+        istat = _rp.c_fstopc(_C_WCHAR2CHAR(optName), _C_WCHAR2CHAR(optValue),
+                             setOget)
     elif isinstance(optValue, _integer_types):
-        istat = _rp.c_fstopi(optName, optValue, setOget)
+        istat = _rp.c_fstopi(_C_WCHAR2CHAR(optName), optValue, setOget)
     else:
         raise TypeError("fstopt: cannot set optValue of type: {0} {1}"\
                         .format(type(optValue), repr(optValue)))
@@ -1686,7 +1693,7 @@ def fstouv(iunit, filemode=_rc.FST_RW):
     if not isinstance(filemode, str):
         raise TypeError("fstinfx: Expecting arg filemode of type str, Got {0}"\
                         .format(type(filemode)))
-    istat = _rp.c_fstouv(iunit, filemode)
+    istat = _rp.c_fstouv(iunit, _C_WCHAR2CHAR(filemode))
     if istat < 0:
         raise FSTDError()
     return
@@ -1818,10 +1825,10 @@ def fstprm(key):
         'ip1'   : cip1.value,
         'ip2'   : cip2.value,
         'ip3'   : cip3.value,
-        'typvar': ctypvar.value,
-        'nomvar': cnomvar.value,
-        'etiket': cetiket.value,
-        'grtyp' : cgrtyp.value,
+        'typvar': _C_CHAR2WCHAR(ctypvar.value),
+        'nomvar': _C_CHAR2WCHAR(cnomvar.value),
+        'etiket': _C_CHAR2WCHAR(cetiket.value),
+        'grtyp' : _C_CHAR2WCHAR(cgrtyp.value),
         'ig1'   : cig1.value,
         'ig2'   : cig2.value,
         'ig3'   : cig3.value,
@@ -1951,7 +1958,7 @@ def fstvoi(iunit, options=' '):
     if not isinstance(options, str):
         raise TypeError("fstvoi: Expecting options arg of type str, Got {0}"\
                         .format(type(options)))
-    istat = _rp.c_fstvoi(iunit, options)
+    istat = _rp.c_fstvoi(iunit, _C_WCHAR2CHAR(options))
     if istat < 0:
         raise FSTDError()
     return
@@ -2700,7 +2707,7 @@ def kindToString(kind):
                          .format(kind))
     (str1, str2) = (_C_MKSTR(' '), _C_MKSTR(' '))
     _rp.c_KindToString(kind, str1, str2)
-    str12 = str1[0]+str2[0]
+    str12 = _C_CHAR2WCHAR(str1[0]) + _C_CHAR2WCHAR(str2[0])
     if str12.strip() == '':
         raise FSTDError()
     return str12

@@ -10,7 +10,10 @@ import numpy as np
 import rpnpy.vgd.all as vgd
 import rpnpy.librmn.all as rmn
 
-C_MKSTR = ct.create_string_buffer
+from rpnpy import integer_types as _integer_types
+from rpnpy import C_WCHAR2CHAR as _C_WCHAR2CHAR
+from rpnpy import C_CHAR2WCHAR as _C_CHAR2WCHAR
+from rpnpy import C_MKSTR
 
 class VGDProtoTests(unittest.TestCase):
 
@@ -28,12 +31,12 @@ class VGDProtoTests(unittest.TestCase):
     def testGetPutOptInt(self):
         quiet = ct.c_int(0)
         v1 = ct.c_int(0)
-        ok = vgd.c_vgd_getopt_int('ALLOW_SIGMA', ct.byref(v1), quiet)
+        ok = vgd.c_vgd_getopt_int(_C_WCHAR2CHAR('ALLOW_SIGMA'), ct.byref(v1), quiet)
         self.assertEqual(ok,vgd.VGD_OK)
         self.assertEqual(v1.value,vgd.VGD_DISALLOW_SIGMA)
-        ok = vgd.c_vgd_putopt_int('ALLOW_SIGMA', vgd.VGD_ALLOW_SIGMA)
+        ok = vgd.c_vgd_putopt_int(_C_WCHAR2CHAR('ALLOW_SIGMA'), vgd.VGD_ALLOW_SIGMA)
         self.assertEqual(ok,vgd.VGD_OK)
-        ok = vgd.c_vgd_getopt_int('ALLOW_SIGMA', ct.byref(v1), quiet)
+        ok = vgd.c_vgd_getopt_int(_C_WCHAR2CHAR('ALLOW_SIGMA'), ct.byref(v1), quiet)
         self.assertEqual(ok,vgd.VGD_OK)
         self.assertEqual(v1.value,vgd.VGD_ALLOW_SIGMA)
 
@@ -57,12 +60,12 @@ class VGDProtoTests(unittest.TestCase):
         vkind = ct.c_int(0)
         vvers = ct.c_int(0)
         quiet = ct.c_int(0)
-        ok = vgd.c_vgd_get_int(vgd0ptr, 'KIND', ct.byref(vkind), quiet)
-        ok = vgd.c_vgd_get_int(vgd0ptr, 'VERS', ct.byref(vvers), quiet)
+        ok = vgd.c_vgd_get_int(vgd0ptr, _C_WCHAR2CHAR('KIND'), ct.byref(vkind), quiet)
+        ok = vgd.c_vgd_get_int(vgd0ptr, _C_WCHAR2CHAR('VERS'), ct.byref(vvers), quiet)
         self.assertEqual(ok,vgd.VGD_OK)
         self.assertEqual(vkind.value,vgd.VGD_HYB_KIND)
         self.assertEqual(vvers.value,vgd.VGD_HYB_VER)
-        ok = vgd.c_vgd_get_int(vgd0ptr, 'SCRAP', ct.byref(vkind), quiet)
+        ok = vgd.c_vgd_get_int(vgd0ptr, _C_WCHAR2CHAR('SCRAP'), ct.byref(vkind), quiet)
         self.assertEqual(ok,vgd.VGD_ERROR)
 
     def testNewReadGetFloat(self):
@@ -71,8 +74,8 @@ class VGDProtoTests(unittest.TestCase):
         v1 = ct.c_float(0)
         v2 = ct.c_float(0)
         quiet = ct.c_int(0)
-        ok = vgd.c_vgd_get_float(vgd0ptr, 'RC_2', ct.byref(v2), quiet)
-        ok = vgd.c_vgd_get_float(vgd0ptr, 'RC_1', ct.byref(v1), quiet)
+        ok = vgd.c_vgd_get_float(vgd0ptr, _C_WCHAR2CHAR('RC_2'), ct.byref(v2), quiet)
+        ok = vgd.c_vgd_get_float(vgd0ptr, _C_WCHAR2CHAR('RC_1'), ct.byref(v1), quiet)
         self.assertEqual(ok,vgd.VGD_OK)
         self.assertEqual(int(v1.value*100),160)
         self.assertEqual(int(v2.value),vgd.VGD_MISSING)
@@ -83,8 +86,8 @@ class VGDProtoTests(unittest.TestCase):
         v1 = ct.c_double(0)
         v2 = ct.c_double(0)
         quiet = ct.c_int(0)
-        ok = vgd.c_vgd_get_double(vgd0ptr, 'PREF', ct.byref(v1), quiet)
-        ok = vgd.c_vgd_get_double(vgd0ptr, 'PTOP', ct.byref(v2), quiet)
+        ok = vgd.c_vgd_get_double(vgd0ptr, _C_WCHAR2CHAR('PREF'), ct.byref(v1), quiet)
+        ok = vgd.c_vgd_get_double(vgd0ptr, _C_WCHAR2CHAR('PTOP'), ct.byref(v2), quiet)
         self.assertEqual(ok,vgd.VGD_OK)
         self.assertEqual(int(v1.value*100.),8000000)
         self.assertEqual(int(v2.value*100.),1000)
@@ -94,9 +97,9 @@ class VGDProtoTests(unittest.TestCase):
         #print vgd0ptr[0].ref_name
         v1 = C_MKSTR(' '*vgd.VGD_MAXSTR_NOMVAR)
         quiet = ct.c_int(0)
-        ok = vgd.c_vgd_get_char(vgd0ptr, 'RFLD', v1, quiet)
+        ok = vgd.c_vgd_get_char(vgd0ptr, _C_WCHAR2CHAR('RFLD'), v1, quiet)
         self.assertEqual(ok,vgd.VGD_OK)
-        self.assertEqual(v1.value.strip(),'P0')
+        self.assertEqual(_C_CHAR2WCHAR(v1.value).strip(),'P0')
 
     def testNewReadGetInt1D(self):
         vgd0ptr = self._newReadBcmk()
@@ -105,7 +108,7 @@ class VGDProtoTests(unittest.TestCase):
         v1 = ct.POINTER(ct.c_int)()
         nv = ct.c_int(0)
         quiet = ct.c_int(0)
-        ok = vgd.c_vgd_get_int_1d(vgd0ptr, 'VIPM', ct.byref(v1), ct.byref(nv), quiet)
+        ok = vgd.c_vgd_get_int_1d(vgd0ptr, _C_WCHAR2CHAR('VIPM'), ct.byref(v1), ct.byref(nv), quiet)
         self.assertEqual(ok,vgd.VGD_OK)
         self.assertEqual(nv.value,158)
         self.assertEqual(v1[0:3],[97642568, 97690568, 97738568])
@@ -117,7 +120,7 @@ class VGDProtoTests(unittest.TestCase):
         v1 = ct.POINTER(ct.c_float)()
         nv = ct.c_int(0)
         quiet = ct.c_int(0)
-        ok = vgd.c_vgd_get_float_1d(vgd0ptr, 'VCDM', ct.byref(v1), ct.byref(nv), quiet)
+        ok = vgd.c_vgd_get_float_1d(vgd0ptr, _C_WCHAR2CHAR('VCDM'), ct.byref(v1), ct.byref(nv), quiet)
         self.assertEqual(ok,vgd.VGD_OK)
         self.assertEqual(nv.value,158)
         self.assertEqual([int(x*10000000) for x in v1[0:3]],[1250, 1729, 2209])
@@ -129,7 +132,7 @@ class VGDProtoTests(unittest.TestCase):
         v1 = ct.POINTER(ct.c_double)()
         nv = ct.c_int(0)
         quiet = ct.c_int(0)
-        ok = vgd.c_vgd_get_double_1d(vgd0ptr, 'CA_M', ct.byref(v1), ct.byref(nv), quiet)
+        ok = vgd.c_vgd_get_double_1d(vgd0ptr, _C_WCHAR2CHAR('CA_M'), ct.byref(v1), ct.byref(nv), quiet)
         self.assertEqual(ok,vgd.VGD_OK)
         self.assertEqual(nv.value,158)
         self.assertEqual(int(v1[0]*100.),1000)
@@ -145,7 +148,7 @@ class VGDProtoTests(unittest.TestCase):
         nj = ct.c_int(0)
         nk = ct.c_int(0)
         quiet = ct.c_int(0)
-        ok = vgd.c_vgd_get_double_3d(vgd0ptr, 'VTBL', ct.byref(v1), ct.byref(ni), ct.byref(nj), ct.byref(nk), quiet)
+        ok = vgd.c_vgd_get_double_3d(vgd0ptr, _C_WCHAR2CHAR('VTBL'), ct.byref(v1), ct.byref(ni), ct.byref(nj), ct.byref(nk), quiet)
         self.assertEqual(ok,vgd.VGD_OK)
         self.assertEqual([int(x*100.) for x in v1[0:9]],
                          [500, 100, 300, 1000, 8000000, 160, 0, 0, 0])
@@ -154,21 +157,21 @@ class VGDProtoTests(unittest.TestCase):
         vgd0ptr = self._newReadBcmk()
         v1 = C_MKSTR('PRES')
         quiet = ct.c_int(0)
-        ok = vgd.c_vgd_put_char(vgd0ptr, 'RFLD', v1)
+        ok = vgd.c_vgd_put_char(vgd0ptr, _C_WCHAR2CHAR('RFLD'), v1)
         self.assertEqual(ok,vgd.VGD_OK)
         v2 = C_MKSTR(' '*vgd.VGD_MAXSTR_NOMVAR)
-        ok = vgd.c_vgd_get_char(vgd0ptr, 'RFLD', v2, quiet)
+        ok = vgd.c_vgd_get_char(vgd0ptr, _C_WCHAR2CHAR('RFLD'), v2, quiet)
         self.assertEqual(ok,vgd.VGD_OK)
-        self.assertEqual(v2.value.strip(),'PRES')
+        self.assertEqual(_C_CHAR2WCHAR(v2.value).strip(),'PRES')
 
     def testNewReadPutInt(self):
         vgd0ptr = self._newReadBcmk()
         v1 = ct.c_int(6)
         quiet = ct.c_int(0)
-        ok = vgd.c_vgd_put_int(vgd0ptr, 'IG_1', v1)
+        ok = vgd.c_vgd_put_int(vgd0ptr, _C_WCHAR2CHAR('IG_1'), v1)
         self.assertEqual(ok,vgd.VGD_OK)
         v2 = ct.c_int(0)
-        ok = vgd.c_vgd_get_int(vgd0ptr, 'IG_1', v2, quiet)
+        ok = vgd.c_vgd_get_int(vgd0ptr, _C_WCHAR2CHAR('IG_1'), v2, quiet)
         self.assertEqual(ok,vgd.VGD_OK)
         self.assertEqual(v1.value,v2.value)
 
@@ -176,11 +179,11 @@ class VGDProtoTests(unittest.TestCase):
         vgd0ptr = self._newReadBcmk()
         #print vgd0ptr[0].pref_8,vgd0ptr[0].ptop_8
         v1 = ct.c_double(70000.)
-        ok = vgd.c_vgd_put_double(vgd0ptr, 'PREF', v1)
+        ok = vgd.c_vgd_put_double(vgd0ptr, _C_WCHAR2CHAR('PREF'), v1)
         self.assertEqual(ok,vgd.VGD_OK)
         v2 = ct.c_double(0)
         quiet = ct.c_int(0)
-        ok = vgd.c_vgd_get_double(vgd0ptr, 'PREF', ct.byref(v2), quiet)
+        ok = vgd.c_vgd_get_double(vgd0ptr, _C_WCHAR2CHAR('PREF'), ct.byref(v2), quiet)
         self.assertEqual(ok,vgd.VGD_OK)
         self.assertEqual(int(v2.value*100.),7000000)
 
@@ -189,7 +192,7 @@ class VGDProtoTests(unittest.TestCase):
         vgd.c_vgd_free(vgd0ptr)
         v1 = C_MKSTR(' '*vgd.VGD_MAXSTR_NOMVAR)
         quiet = ct.c_int(0)
-        ok = vgd.c_vgd_get_char(vgd0ptr, 'RFLD', v1, quiet)
+        ok = vgd.c_vgd_get_char(vgd0ptr, _C_WCHAR2CHAR('RFLD'), v1, quiet)
         self.assertEqual(ok,vgd.VGD_ERROR)
 
     def testCmp(self):
@@ -198,7 +201,7 @@ class VGDProtoTests(unittest.TestCase):
         ok = vgd.c_vgd_vgdcmp(vgd0ptr,vgd1ptr)
         self.assertEqual(ok,vgd.VGD_OK)
         v1 = C_MKSTR('PRES')
-        ok = vgd.c_vgd_put_char(vgd0ptr, 'RFLD', v1)
+        ok = vgd.c_vgd_put_char(vgd0ptr, _C_WCHAR2CHAR('RFLD'), v1)
         ok = vgd.c_vgd_vgdcmp(vgd0ptr,vgd1ptr)
         self.assertNotEqual(ok,vgd.VGD_OK)
 
@@ -262,8 +265,8 @@ class VGDProtoTests(unittest.TestCase):
         vkind = ct.c_int(0)
         vvers = ct.c_int(0)
         quiet = ct.c_int(0)
-        ok = vgd.c_vgd_get_int(vgd0ptr, 'KIND', ct.byref(vkind), quiet)
-        ok = vgd.c_vgd_get_int(vgd0ptr, 'VERS', ct.byref(vvers), quiet)
+        ok = vgd.c_vgd_get_int(vgd0ptr, _C_WCHAR2CHAR('KIND'), ct.byref(vkind), quiet)
+        ok = vgd.c_vgd_get_int(vgd0ptr, _C_WCHAR2CHAR('VERS'), ct.byref(vvers), quiet)
         self.assertEqual(ok,vgd.VGD_OK)
         self.assertEqual(vkind.value,vgd.VGD_HYBS_KIND)
         self.assertEqual(vvers.value,vgd.VGD_HYBS_VER)
@@ -316,8 +319,8 @@ class VGDProtoTests(unittest.TestCase):
         vkind = ct.c_int(0)
         vvers = ct.c_int(0)
         quiet = ct.c_int(0)
-        ok = vgd.c_vgd_get_int(vgd0ptr, 'KIND', ct.byref(vkind), quiet)
-        ok = vgd.c_vgd_get_int(vgd0ptr, 'VERS', ct.byref(vvers), quiet)
+        ok = vgd.c_vgd_get_int(vgd0ptr, _C_WCHAR2CHAR('KIND'), ct.byref(vkind), quiet)
+        ok = vgd.c_vgd_get_int(vgd0ptr, _C_WCHAR2CHAR('VERS'), ct.byref(vvers), quiet)
         self.assertEqual(ok,vgd.VGD_OK)
         self.assertEqual(vkind.value,vgd.VGD_HYBS_KIND)
         self.assertEqual(vvers.value,vgd.VGD_HYBS_VER)
@@ -329,7 +332,7 @@ class VGDProtoTests(unittest.TestCase):
         nj = ct.c_int(0)
         nk = ct.c_int(0)
         quiet = ct.c_int(0)
-        ok = vgd.c_vgd_get_double_3d(vgd0ptr, 'VTBL', ct.byref(v1), ct.byref(ni), ct.byref(nj), ct.byref(nk), quiet)
+        ok = vgd.c_vgd_get_double_3d(vgd0ptr, _C_WCHAR2CHAR('VTBL'), ct.byref(v1), ct.byref(ni), ct.byref(nj), ct.byref(nk), quiet)
 
         vgd1ptr = vgd.c_vgd_construct()
         ok = vgd.c_vgd_new_from_table(vgd1ptr, v1, ni, nj, nk)
@@ -350,7 +353,7 @@ class VGDProtoTests(unittest.TestCase):
         ip1list = ct.POINTER(ct.c_int)()
         nip1 = ct.c_int(0)
         quiet = ct.c_int(0)
-        ok = vgd.c_vgd_get_int_1d(vgd0ptr, 'VIPM', ct.byref(ip1list), ct.byref(nip1), quiet)
+        ok = vgd.c_vgd_get_int_1d(vgd0ptr, _C_WCHAR2CHAR('VIPM'), ct.byref(ip1list), ct.byref(nip1), quiet)
 
         MB2PA = 100.
         p0_stn_mb = 1013.
@@ -379,7 +382,7 @@ class VGDProtoTests(unittest.TestCase):
         ip1list = ct.POINTER(ct.c_int)()
         nip1 = ct.c_int(0)
         quiet = ct.c_int(0)
-        ok = vgd.c_vgd_get_int_1d(vgd0ptr, 'VIPM', ct.byref(ip1list), ct.byref(nip1), quiet)
+        ok = vgd.c_vgd_get_int_1d(vgd0ptr, _C_WCHAR2CHAR('VIPM'), ct.byref(ip1list), ct.byref(nip1), quiet)
 
         MB2PA = 100.
         p0_stn_mb = 1013.
@@ -405,9 +408,9 @@ class VGDProtoTests(unittest.TestCase):
 
         rfld_name = C_MKSTR(' '*vgd.VGD_MAXSTR_NOMVAR)
         quiet = ct.c_int(0)
-        ok = vgd.c_vgd_get_char(vgd0ptr, 'RFLD', rfld_name, quiet)
+        ok = vgd.c_vgd_get_char(vgd0ptr, _C_WCHAR2CHAR('RFLD'), rfld_name, quiet)
 
-        rfld = rmn.fstlir(fileId, nomvar=rfld_name.value.strip())['d']
+        rfld = rmn.fstlir(fileId, nomvar=_C_CHAR2WCHAR(rfld_name.value).strip())['d']
         MB2PA = 100.
         rfld = rfld * MB2PA
         
@@ -416,9 +419,9 @@ class VGDProtoTests(unittest.TestCase):
         ip1list = ct.POINTER(ct.c_int)()
         nip1 = ct.c_int(0)
         quiet = ct.c_int(0)
-        ok = vgd.c_vgd_get_int_1d(vgd0ptr, 'VIPM', ct.byref(ip1list), ct.byref(nip1), quiet)
-        
-        ni = rfld.shape[0] ; nj = rfld.shape[1] ; in_log = 0
+        ok = vgd.c_vgd_get_int_1d(vgd0ptr, _C_WCHAR2CHAR('VIPM'), ct.byref(ip1list), ct.byref(nip1), quiet)
+
+        (ni, nj, in_log) = (rfld.shape[0], rfld.shape[1], 0)
         levels = np.empty((ni, nj, nip1.value), dtype=np.float32, order='FORTRAN')
         ok = vgd.c_vgd_levels(vgd0ptr, ni, nj, nip1, ip1list, levels, rfld, in_log);
         self.assertEqual(ok,vgd.VGD_OK)
@@ -436,9 +439,9 @@ class VGDProtoTests(unittest.TestCase):
 
         rfld_name = C_MKSTR(' '*vgd.VGD_MAXSTR_NOMVAR)
         quiet = ct.c_int(0)
-        ok = vgd.c_vgd_get_char(vgd0ptr, 'RFLD', rfld_name, quiet)
+        ok = vgd.c_vgd_get_char(vgd0ptr, _C_WCHAR2CHAR('RFLD'), rfld_name, quiet)
 
-        rfld = rmn.fstlir(fileId, nomvar=rfld_name.value.strip())['d']
+        rfld = rmn.fstlir(fileId, nomvar=_C_CHAR2WCHAR(rfld_name.value).strip())['d']
         MB2PA = 100.
         rfld = rfld * MB2PA
         
@@ -447,7 +450,7 @@ class VGDProtoTests(unittest.TestCase):
         ip1list = ct.POINTER(ct.c_int)()
         nip1 = ct.c_int(0)
         quiet = ct.c_int(0)
-        ok = vgd.c_vgd_get_int_1d(vgd0ptr, 'VIPM', ct.byref(ip1list), ct.byref(nip1), quiet)
+        ok = vgd.c_vgd_get_int_1d(vgd0ptr, _C_WCHAR2CHAR('VIPM'), ct.byref(ip1list), ct.byref(nip1), quiet)
         
         ni = rfld.shape[0] ; nj = rfld.shape[1] ; in_log = 0
         levels8 = np.empty((ni, nj, nip1.value), dtype=np.float64, order='FORTRAN')
@@ -469,9 +472,9 @@ class VGDProtoTests(unittest.TestCase):
 
         rfld_name = C_MKSTR(' '*vgd.VGD_MAXSTR_NOMVAR)
         quiet = ct.c_int(0)
-        ok = vgd.c_vgd_get_char(vgd0ptr, 'RFLD', rfld_name, quiet)
+        ok = vgd.c_vgd_get_char(vgd0ptr, _C_WCHAR2CHAR('RFLD'), rfld_name, quiet)
 
-        rfld = rmn.fstlir(fileId, nomvar=rfld_name.value.strip())['d']
+        rfld = rmn.fstlir(fileId, nomvar=_C_CHAR2WCHAR(rfld_name.value).strip())['d']
         MB2PA = 100.
         rfld = rfld * MB2PA
         
@@ -480,7 +483,7 @@ class VGDProtoTests(unittest.TestCase):
         ip1list = ct.POINTER(ct.c_int)()
         nip1 = ct.c_int(0)
         quiet = ct.c_int(0)
-        ok = vgd.c_vgd_get_int_1d(vgd0ptr, 'VIPM', ct.byref(ip1list), ct.byref(nip1), quiet)
+        ok = vgd.c_vgd_get_int_1d(vgd0ptr, _C_WCHAR2CHAR('VIPM'), ct.byref(ip1list), ct.byref(nip1), quiet)
         
         (ni,nj) = rfld.shape[0:2] ; in_log = 0
         levels = np.empty((ni, nj, nip1.value), dtype=np.float32, order='FORTRAN')
@@ -500,9 +503,9 @@ class VGDProtoTests(unittest.TestCase):
 
         rfld_name = C_MKSTR(' '*vgd.VGD_MAXSTR_NOMVAR)
         quiet = ct.c_int(0)
-        ok = vgd.c_vgd_get_char(vgd0ptr, 'RFLD', rfld_name, quiet)
+        ok = vgd.c_vgd_get_char(vgd0ptr, _C_WCHAR2CHAR('RFLD'), rfld_name, quiet)
 
-        rfld = rmn.fstlir(fileId, nomvar=rfld_name.value.strip())['d']
+        rfld = rmn.fstlir(fileId, nomvar=_C_CHAR2WCHAR(rfld_name.value).strip())['d']
         MB2PA = 100.
         rfld = rfld * MB2PA
         
@@ -511,7 +514,7 @@ class VGDProtoTests(unittest.TestCase):
         ip1list = ct.POINTER(ct.c_int)()
         nip1 = ct.c_int(0)
         quiet = ct.c_int(0)
-        ok = vgd.c_vgd_get_int_1d(vgd0ptr, 'VIPM', ct.byref(ip1list), ct.byref(nip1), quiet)
+        ok = vgd.c_vgd_get_int_1d(vgd0ptr, _C_WCHAR2CHAR('VIPM'), ct.byref(ip1list), ct.byref(nip1), quiet)
         
         ni = rfld.shape[0] ; nj = rfld.shape[1] ; in_log = 0
         levels8 = np.empty((ni, nj, nip1.value), dtype=np.float64, order='FORTRAN')

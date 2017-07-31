@@ -52,7 +52,7 @@ class RPNDate(object):
     >>> print('# {0}'.format(repr(d1-d2)))
     # -48.0
     >>> utc = pytz.timezone("UTC")
-    >>> d4 = datetime.datetime(2003, 04, 23, 11, 45, 35, 0, tzinfo=utc)
+    >>> d4 = datetime.datetime(2003, 4, 23, 11, 45, 35, 0, tzinfo=utc)
     >>> d5 = RPNDate(d4)
     >>> print('# {0}'.format(repr(d5)))
     # RPNDate(20030423, 11453500)

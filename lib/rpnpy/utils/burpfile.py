@@ -234,7 +234,7 @@ class BurpFile:
         # loop over reports
         handle = 0
         buf    = nbuf
-        for irep in xrange(nrep):
+        for irep in range(nrep):
 
             # get next report and load data into buffer
             handle = _brp.mrfloc(unit, handle)
@@ -273,7 +273,7 @@ class BurpFile:
                 getattr(self, attr)[irep] = _np.empty((rhp['nblk'], ), dtype=object)
 
             # loop over blocks
-            for iblk in xrange(rhp['nblk']):
+            for iblk in range(rhp['nblk']):
 
                 # get block header
                 bhp = _brp.mrbprm(buf, iblk+1)
@@ -363,7 +363,7 @@ class BurpFile:
         unit = _brp.burp_open(self.fname, _rbc.BURP_MODE_CREATE)
 
         # loop over reports
-        for irep in xrange(self.nrep):
+        for irep in range(self.nrep):
 
             # write report header
             _brp.mrbini(unit, buf, itime[irep], self.flgs[irep], self.stnids[irep], self.codtyp[irep],
@@ -371,7 +371,7 @@ class BurpFile:
                         self.delay[irep], idate[irep], self.rs[irep], self.runn[irep], self.sup[irep],
                         nsup, self.xaux[irep], nxaux)
 
-            for iblk in xrange(self.nblk[irep]):
+            for iblk in range(self.nblk[irep]):
 
                 nele = self.nelements[irep][iblk]
                 nlev = self.nlev[irep][iblk]
@@ -459,7 +459,7 @@ class BurpFile:
             iele = element-1
             outdata = []
 
-            for irep in xrange(self.nrep):
+            for irep in range(self.nrep):
 
                 if self.nblk[irep]>iblk:
                     if self.nelements[irep][block-1]>iele and self.nt[irep][iblk]>it:
@@ -476,7 +476,7 @@ class BurpFile:
 
             outdata = []
 
-            for irep in xrange(self.nrep):
+            for irep in range(self.nrep):
 
                 # find all block, element pairs for the BURP code
                 iele_code = [ _np.where(elem==code)[0] for elem in self.elements[irep] ]
@@ -552,7 +552,7 @@ class BurpFile:
         assert fmt in ('datetime', 'string', 'int', 'unix'), "Invalid format \'%s\'" % fmt
 
         dts = []
-        for i in xrange(self.nrep):
+        for i in range(self.nrep):
 
             d = _datetime(self.year[i], self.month[i], self.day[i], self.hour[i], self.minute[i])
 

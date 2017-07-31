@@ -38,6 +38,11 @@ import unittest
 
 import os
 import sys
+from rpnpy import integer_types as _integer_types
+from rpnpy import C_WCHAR2CHAR as _C_WCHAR2CHAR
+from rpnpy import C_CHAR2WCHAR as _C_CHAR2WCHAR
+from rpnpy import C_MKSTR as _C_MKSTR
+
 if sys.version_info > (3, ):
     long = int
 
@@ -64,7 +69,7 @@ class RpnPyBurpcTests(unittest.TestCase):
         ## d = difflib.Differ()
         ## result = d.compare(file1lines, file2lines)
         ## result = list(result)
-        ## print len(file1lines), len(file2lines), len(result)
+        ## print(len(file1lines), len(file2lines), len(result))
         ## from pprint import pprint
         ## pprint(result)
 
@@ -79,8 +84,9 @@ class RpnPyBurpcTests(unittest.TestCase):
         infile = os.path.join(os.getenv('ATM_MODEL_DFILES').strip(),
                               'bcmk_burp/2007021900.brp')
         iunit = 999
-        istat = brp.c_brp_SetOptChar("MSGLVL", "FATAL")
-        istat = brp.c_brp_open(iunit, infile, "r")
+        istat = brp.c_brp_SetOptChar(_C_WCHAR2CHAR("MSGLVL"),
+                                     _C_WCHAR2CHAR("FATAL"))
+        istat = brp.c_brp_open(iunit, _C_WCHAR2CHAR(infile), _C_WCHAR2CHAR("r"))
         logfid.write("enreg {}\n".format(istat))
         bs = brp.c_brp_newblk()
         br = brp.c_brp_newblk()
@@ -126,8 +132,8 @@ class RpnPyBurpcTests(unittest.TestCase):
         if len(testlist) > 0 and not '1' in testlist:
             return
         TMPDIR = os.getenv('TMPDIR', '/tmp')
-        logfile1 = os.path.join(TRMPDIR, "test_ex1_read1.log")
-        logfile2 = os.path.join(TRMPDIR, "test_ex1_read1_py.log")
+        logfile1 = os.path.join(TMPDIR, "test_ex1_read1.log")
+        logfile2 = os.path.join(TMPDIR, "test_ex1_read1_py.log")
         self._test_ex1_read1(logfile=logfile1)
         self._test_ex1_read1_py(logfile=logfile2)
         self.assertTrue(filecmp.cmp(logfile1, logfile2, shallow=False))
@@ -146,8 +152,9 @@ class RpnPyBurpcTests(unittest.TestCase):
         iunit = 999
         bs, br = brp.c_brp_newblk(), brp.c_brp_newblk()
         rs, rr = brp.c_brp_newrpt(), brp.c_brp_newrpt()
-        istat = brp.c_brp_SetOptChar("MSGLVL", "FATAL")
-        istat = brp.c_brp_open(iunit, infile, "r")
+        istat = brp.c_brp_SetOptChar(_C_WCHAR2CHAR("MSGLVL"),
+                                     _C_WCHAR2CHAR("FATAL"))
+        istat = brp.c_brp_open(iunit, _C_WCHAR2CHAR(infile), _C_WCHAR2CHAR("r"))
         logfid.write("Nombre Enreg = {}\n".format(istat))
         brp.RPT_SetHANDLE(rs,0)
         while brp.c_brp_findrpt(iunit, rs) >= 0:
@@ -263,8 +270,8 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
         if RPNPY_NOLONGTEST:
             return
         TMPDIR = os.getenv('TMPDIR', '/tmp')
-        logfile1 = os.path.join(TRMPDIR, "test_ex2_readburp.log")
-        logfile2 = os.path.join(TRMPDIR, "test_ex2_readburp_py.log")
+        logfile1 = os.path.join(TMPDIR, "test_ex2_readburp.log")
+        logfile2 = os.path.join(TMPDIR, "test_ex2_readburp_py.log")
         self._test_ex2_readburp(logfile=logfile1)
         self._test_ex2_readburp_py(logfile=logfile2)
         self.assertTrue(filecmp.cmp(logfile1, logfile2, shallow=False))
@@ -279,8 +286,9 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
         infile = os.path.join(os.getenv('ATM_MODEL_DFILES').strip(),
                               'bcmk_burp/2007021900.brp')
         iunit = 999
-        istat = brp.c_brp_SetOptChar("MSGLVL", "FATAL")
-        istat = brp.c_brp_open(iunit, infile, "r")
+        istat = brp.c_brp_SetOptChar(_C_WCHAR2CHAR("MSGLVL"),
+                                     _C_WCHAR2CHAR("FATAL"))
+        istat = brp.c_brp_open(iunit, _C_WCHAR2CHAR(infile), _C_WCHAR2CHAR("r"))
         logfid.write("Nombre Enreg = {}\n".format(istat))
         bs, br = brp.c_brp_newblk(), brp.c_brp_newblk()
         rs, rr = brp.c_brp_newrpt(), brp.c_brp_newrpt()
@@ -370,8 +378,8 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
         if len(testlist) > 0 and not '3' in testlist:
             return
         TMPDIR = os.getenv('TMPDIR', '/tmp')
-        logfile1 = os.path.join(TRMPDIR, "test_ex3_obs.log")
-        logfile2 = os.path.join(TRMPDIR, "test_ex3_obs_py.log")
+        logfile1 = os.path.join(TMPDIR, "test_ex3_obs.log")
+        logfile2 = os.path.join(TMPDIR, "test_ex3_obs_py.log")
         self._test_ex3_obs(logfile=logfile1)
         self._test_ex3_obs_py(logfile=logfile2)
         self.assertTrue(filecmp.cmp(logfile1, logfile2))
@@ -387,8 +395,9 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
         infile = os.path.join(os.getenv('ATM_MODEL_DFILES').strip(),
                               'bcmk_burp/2007021900.brp')
         iunit = 999
-        istat = brp.c_brp_SetOptChar("MSGLVL", "FATAL")
-        istat = brp.c_brp_open(iunit, infile, "r")
+        istat = brp.c_brp_SetOptChar(_C_WCHAR2CHAR("MSGLVL"),
+                                     _C_WCHAR2CHAR("FATAL"))
+        istat = brp.c_brp_open(iunit, _C_WCHAR2CHAR(infile), _C_WCHAR2CHAR("r"))
         bs, br = brp.c_brp_newblk(), brp.c_brp_newblk()
         rs, rr = brp.c_brp_newrpt(), brp.c_brp_newrpt()
         elems = set()
@@ -424,7 +433,7 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
                 for br in rr:
                     ## if br.bknat_kindd != 'flags':
                     ##     if (br.bknat & 3) == 3:
-                    ##         print br.bknat, (br.bknat & 3), br.bknat_kindd, br.bknat_multi, br.bknat_kind
+                    ##         print(br.bknat, (br.bknat & 3), br.bknat_kindd, br.bknat_multi, br.bknat_kind)
                     #TODO: review
                     ## if br.bknat_kindd != 'flags':
                     ##     elems.update(list(br.dlstele))
@@ -444,8 +453,8 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
         if len(testlist) > 0 and not '4' in testlist:
             return
         TMPDIR = os.getenv('TMPDIR', '/tmp')
-        logfile1 = os.path.join(TRMPDIR, "test_ex4_elements.log")
-        logfile2 = os.path.join(TRMPDIR, "test_ex4_elements_py.log")
+        logfile1 = os.path.join(TMPDIR, "test_ex4_elements.log")
+        logfile2 = os.path.join(TMPDIR, "test_ex4_elements_py.log")
         self._test_ex4_elements(logfile=logfile1)
         self._test_ex4_elements_py(logfile=logfile2)
         self.assertTrue(filecmp.cmp(logfile1, logfile2))
@@ -460,9 +469,10 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
                               'bcmk_burp/2007021900.brp')
         outfile = "tmp/test_ex5_write1.brp"
         iunit, ounit = 999, 998
-        istat = brp.c_brp_SetOptChar("MSGLVL", "FATAL")
-        istat = brp.c_brp_open(iunit, infile, "r")
-        istat = brp.c_brp_open(ounit, outfile, "w")
+        istat = brp.c_brp_SetOptChar(_C_WCHAR2CHAR("MSGLVL"),
+                                     _C_WCHAR2CHAR("FATAL"))
+        istat = brp.c_brp_open(iunit, _C_WCHAR2CHAR(infile), _C_WCHAR2CHAR("r"))
+        istat = brp.c_brp_open(ounit, _C_WCHAR2CHAR(outfile), _C_WCHAR2CHAR("w"))
         bs, br = brp.c_brp_newblk(), brp.c_brp_newblk()
         rs, rr = brp.c_brp_newrpt(), brp.c_brp_newrpt()
         brp.RPT_SetHANDLE(rs, 0 )
@@ -503,7 +513,7 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
                 rs.handle = rr.handle
                 rr.temps  = 2200
                 bfileo.append(rr)
-                ## print 'len bfileo=', len(bfileo)
+                ## print('len bfileo=', len(bfileo))
         # Print out content of created file for camparison
         self._test_ex2_readburp_py(infile=outfile, logfile=logfile)
 
@@ -514,8 +524,8 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
         if len(testlist) > 0 and not '5' in testlist:
             return
         TMPDIR = os.getenv('TMPDIR', '/tmp')
-        logfile1 = os.path.join(TRMPDIR, "test_ex5_write1.log")
-        logfile2 = os.path.join(TRMPDIR, "test_ex5_write1_py.log")
+        logfile1 = os.path.join(TMPDIR, "test_ex5_write1.log")
+        logfile2 = os.path.join(TMPDIR, "test_ex5_write1_py.log")
         self._test_ex5_write1(logfile=logfile1)
         self._test_ex5_write1_py(logfile=logfile2)
         self.assertTrue(filecmp.cmp(logfile1, logfile2, shallow=False))
@@ -529,8 +539,10 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
         sys.stdout = open("tmp/test_ex6_write2.log", "w")
         outfile = 'tmp/test_ex6_write2.brp'
         ounit = 20
-        istat = brp.c_brp_SetOptChar("MSGLVL", "FATAL")
-        istat = brp.c_brp_open(ounit, outfile, "a")
+        istat = brp.c_brp_SetOptChar(_C_WCHAR2CHAR("MSGLVL"),
+                                     _C_WCHAR2CHAR("FATAL"))
+        istat = brp.c_brp_open(ounit, _C_WCHAR2CHAR(outfile),
+                               _C_WCHAR2CHAR("a"))
 
         rr, tmp = brp.c_brp_newrpt(), brp.c_brp_newblk()
         br, br2 = brp.c_brp_newblk(), brp.c_brp_newblk()
@@ -802,8 +814,8 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
         if len(testlist) > 0 and not '6' in testlist:
             return
         TMPDIR = os.getenv('TMPDIR', '/tmp')
-        logfile1 = os.path.join(TRMPDIR, "test_ex6_write2.log")
-        logfile2 = os.path.join(TRMPDIR, "test_ex6_write2_py.log")
+        logfile1 = os.path.join(TMPDIR, "test_ex6_write2.log")
+        logfile2 = os.path.join(TMPDIR, "test_ex6_write2_py.log")
         self._test_ex6_write2(logfile=logfile1)
         self._test_ex6_write2_py(logfile=logfile2)
         self.assertTrue(filecmp.cmp(logfile1, logfile2, shallow=False))
@@ -990,14 +1002,14 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
         print(a)
         a['stnid'] = '12334567'
         print(a)
-        print '---'
+        print('---')
         a = a.getptr()
         print(a)
         print(a[0])
-        print '---'
+        print('---')
         a = brp.BurpcBlk()
         print(a)
-        print '---'
+        print('---')
         a = a.getptr()
         print(a)
         print(a[0])
@@ -1097,8 +1109,9 @@ bdesc  ={:6d}  btyp   ={:6d}  nbit   ={:6d}  datyp  ={:6d}  bfam   ={:6d}
     def todo_test_ex3_obs(self):
         """burplib_c iweb doc example 3"""
         infile, itype, iunit = self.knownValues[0]
-        istat = brp.c_brp_SetOptChar("MSGLVL", "FATAL")
-        istat = brp.c_brp_open(iunit, infile, "r")
+        istat = brp.c_brp_SetOptChar(_C_WCHAR2CHAR("MSGLVL"),
+                                     _C_WCHAR2CHAR("FATAL"))
+        istat = brp.c_brp_open(iunit, _C_WCHAR2CHAR(infile), _C_WCHAR2CHAR("r"))
         print("Nombre Enreg = {}".format(istat))
         bs, br = brp.c_brp_newblk(), brp.c_brp_newblk()
         rs, rr = brp.c_brp_newrpt(), brp.c_brp_newrpt()
@@ -1141,7 +1154,8 @@ bdesc  ={:6d}  btyp   ={:6d}  nbit   ={:6d}  datyp  ={:6d}  bfam   ={:6d}
     def todo_test_ex3_obs_c(self):
         """burplib_c iweb doc example 3"""
         infile, itype, iunit = self.knownValues[0]
-        istat = brp.c_brp_SetOptChar("MSGLVL", "FATAL")
+        istat = brp.c_brp_SetOptChar(_C_WCHAR2CHAR("MSGLVL"),
+                                     _C_WCHAR2CHAR("FATAL"))
         bfile = brp.BurpcFile(infile)
         print("Nombre Enreg = {}".format(len(bfile)))
         rs = brp.BurpcRpt()
@@ -1162,7 +1176,7 @@ bdesc  ={:6d}  btyp   ={:6d}  nbit   ={:6d}  datyp  ={:6d}  bfam   ={:6d}
                 br = rr.get(bkno, rr, br)
                 if not br: break
                 if (br.bknat & 3) == 2:  #TODO: use const with decoded bknat
-                    print 'bknat_multi', br.bknat & 3, rmn.mrbtyp_decode_bknat(br.bknat), rmn.BURP2BIN(br.bknat,8), rmn.BURP2BIN2LIST(br.bknat,8), rmn.BURP2BIN2LIST_BUFR(br.bknat,8)
+                    print('bknat_multi', br.bknat & 3, rmn.mrbtyp_decode_bknat(br.bknat), rmn.BURP2BIN(br.bknat,8), rmn.BURP2BIN2LIST(br.bknat,8), rmn.BURP2BIN2LIST_BUFR(br.bknat,8))
                     try:
                         counters[rr.stnid] += br.nt
                     except:

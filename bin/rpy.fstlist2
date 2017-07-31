@@ -15,7 +15,7 @@ Examples:
        --format '{nomvar}; {vdatev}; {level:<19}; {mean:<16}; {std:<15}; {min:<9}; {max:<9}' \
        -i $ATM_MODEL_DFILES/bcmk/2009042700_000 \
        --nomvar '^^' '>>' '!!' HY  ## Excludes these nomvar
-       
+ 
     rpy.fstlist2 \
        --format '{nomvar}; {vdatev}; lvl={levelval:8.4f} {levelunit:<4}; mean={mean:10.3e}; std={std:10.3e}; min={min:10.3e}; max={max:<10.3e}' \
        -i $ATM_MODEL_DFILES/bcmk/2009042700_000 \

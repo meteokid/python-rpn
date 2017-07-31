@@ -28,9 +28,12 @@ from rpnpy.librmn import proto as _rp
 from rpnpy.librmn import const as _rc
 from rpnpy.librmn import RMNError
 from rpnpy import integer_types as _integer_types
+from rpnpy import C_WCHAR2CHAR as _C_WCHAR2CHAR
+from rpnpy import C_CHAR2WCHAR as _C_CHAR2WCHAR
+from rpnpy import C_MKSTR as _C_MKSTR
 
-_C_MKSTR = _ct.create_string_buffer
-_C_MKSTR.__doc__ = 'alias to ctypes.create_string_buffer'
+## _C_MKSTR = lambda x: _ct.create_string_buffer(x)
+## _C_MKSTR.__doc__ = 'alias to ctypes.create_string_buffer'
 
 _C_TOINT = lambda x: (x if (type(x) != type(_ct.c_int())) else x.value)
 _C_TOINT.__doc__ = 'lamda function to convert ctypes.c_int to python int'
@@ -184,7 +187,8 @@ def fnom(filename, filemode=_rc.FST_RW, iunit=0):
     if not isinstance(filemode, str):
         raise TypeError("fnom: Expecting arg filemode of type str, Got {0}"\
                         .format(type(filemode)))
-    istat = _rp.c_fnom(_ct.byref(ciunit), filename, filemode, 0)
+    istat = _rp.c_fnom(_ct.byref(ciunit), _C_WCHAR2CHAR(filename),
+                       _C_WCHAR2CHAR(filemode), 0)
     istat = _C_TOINT(istat)
     if istat < 0:
         raise RMNBaseError()
@@ -260,7 +264,7 @@ def wkoffit(filename):
                         "Got {0}".format(type(filename)))
     if filename.strip() == '':
         raise ValueError("wkoffit: must provide a valid filename")
-    return _rp.c_wkoffit(filename, len(filename))
+    return _rp.c_wkoffit(_C_WCHAR2CHAR(filename), len(filename))
 
 
 def crc32(crc, buf):
@@ -334,18 +338,19 @@ def cigaxg(grtyp, ig1, ig2=0, ig3=0, ig4=0):
                         .format(type(grtyp)))
     if grtyp.strip() == '':
         raise ValueError("cigaxg: must provide a valid grtyp")
-    (cig1, cig2, cig3, cig4) = (_ct.c_int(ig1), _ct.c_int(ig2),
-                                _ct.c_int(ig3), _ct.c_int(ig4))
     if _IS_LIST(ig1):
         (cig1, cig2, cig3, cig4) = (_ct.c_int(ig1[0]), _ct.c_int(ig1[1]),
                                     _ct.c_int(ig1[2]), _ct.c_int(ig1[3]))
+    else:
+        (cig1, cig2, cig3, cig4) = (_ct.c_int(ig1), _ct.c_int(ig2),
+                                    _ct.c_int(ig3), _ct.c_int(ig4))
     (cxg1, cxg2, cxg3, cxg4) = (_ct.c_float(0.), _ct.c_float(0.),
                                 _ct.c_float(0.), _ct.c_float(0.))
-    _rp.f_cigaxg(grtyp,
-                _ct.byref(cxg1), _ct.byref(cxg2),
-                _ct.byref(cxg3), _ct.byref(cxg4),
-                _ct.byref(cig1), _ct.byref(cig2),
-                _ct.byref(cig3), _ct.byref(cig4))
+    _rp.f_cigaxg(_C_WCHAR2CHAR(grtyp),
+                _ct.byref(cxg1),_ct.byref(cxg2),
+                _ct.byref(cxg3),_ct.byref(cxg4),
+                _ct.byref(cig1),_ct.byref(cig2),
+                _ct.byref(cig3),_ct.byref(cig4))
     return (cxg1.value, cxg2.value, cxg3.value, cxg4.value)
 
 
@@ -353,7 +358,7 @@ def cxgaig(grtyp, xg1, xg2=0., xg3=0., xg4=0.):
     """
     Encode real grid descriptors into ig1, ig2, ig3, ig4
 
-    (ig1, ig2, ig3, ig4) = cxgaig(grtyp, xg1, xg2, xg3, xg4)
+    (ig1, ig2, ig3, ig4) = cxgaig(grtyp, gx1, xg2, xg3, xg4)
     (ig1, ig2, ig3, ig4) = cxgaig(grtyp, xg1234)
 
     Args:
@@ -390,14 +395,15 @@ def cxgaig(grtyp, xg1, xg2=0., xg3=0., xg4=0.):
                         .format(type(grtyp)))
     if grtyp.strip() == '':
         raise ValueError("cigaxg: must provide a valid grtyp")
-    (cxg1, cxg2, cxg3, cxg4) = (_ct.c_float(xg1), _ct.c_float(xg2),
-                                _ct.c_float(xg3), _ct.c_float(xg4))
     if _IS_LIST(xg1):
         (cxg1, cxg2, cxg3, cxg4) = (_ct.c_float(xg1[0]), _ct.c_float(xg1[1]),
                                     _ct.c_float(xg1[2]), _ct.c_float(xg1[3]))
+    else:
+        (cxg1, cxg2, cxg3, cxg4) = (_ct.c_float(xg1), _ct.c_float(xg2),
+                                    _ct.c_float(xg3), _ct.c_float(xg4))
     (cig1, cig2, cig3, cig4) = (_ct.c_int(0), _ct.c_int(0),
                                 _ct.c_int(0), _ct.c_int(0))
-    _rp.f_cxgaig(grtyp,
+    _rp.f_cxgaig(_C_WCHAR2CHAR(grtyp),
             _ct.byref(cig1), _ct.byref(cig2), _ct.byref(cig3), _ct.byref(cig4),
             _ct.byref(cxg1), _ct.byref(cxg2), _ct.byref(cxg3), _ct.byref(cxg4))
     return (cig1.value, cig2.value, cig3.value, cig4.value)
@@ -527,7 +533,8 @@ def newdate_options_set(option):
         newdate
     """
     cmd = 'set'
-    _rp.f_newdate_options(option, cmd, len(option), len(cmd))
+    _rp.f_newdate_options(_C_WCHAR2CHAR(option), _C_WCHAR2CHAR(cmd),
+                          len(option), len(cmd))
 
 
 def newdate_options_get(option):
@@ -553,11 +560,14 @@ def newdate_options_get(option):
         accept_leapyear
         newdate
     """
-    cmd = _C_MKSTR('get ')
+    cmd = 'get '
     optionv = _C_MKSTR(option.strip()+' '*32)
-    #optionv = _C_MKSTR('year            ')
-    _rp.f_newdate_options(optionv, cmd, len(optionv.value), len(cmd.value))
-    return optionv.value.strip()
+    loptionv = len(optionv.value)
+    _rp.f_newdate_options(optionv, _C_WCHAR2CHAR(cmd), loptionv, len(cmd))
+    if isinstance(optionv.value, bytes):
+        return _C_CHAR2WCHAR(optionv.value).strip()
+    else:
+        return optionv.value.strip()
 
 
 def ignore_leapyear():
@@ -772,9 +782,10 @@ def newdate(imode, idate1, idate2=0):
             raise TypeError("newdate: Expecting idate1 of type=list, len=14, " +
                             "Got type={0}, len={1}".format(type(idate1), len(idate1)))
 
-    if idate1 < 0 or idate2 < 0:
-        raise ValueError("newdate: must provide a valid idates: {0}, {1}"\
-                         .format(idate1, idate2))
+    if not isinstance(idate1, (list, tuple)):
+        if idate1 < 0 or idate2 < 0:
+            raise ValueError("newdate: must provide a valid idates: {0}, {1}"\
+                             .format(idate1, idate2))
     cimode = _ct.c_int(imode)
     (cidate1, cidate2, cidate3) = (_ct.c_int(), _ct.c_int(), _ct.c_int())
     if imode == 1:

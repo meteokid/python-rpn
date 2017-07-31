@@ -304,8 +304,8 @@ class Librmn_fstd98_Test(unittest.TestCase):
         #Note: For the order to be ok in the FSTD file, order='FORTRAN' is mandatory
         la['d'] = np.empty((ni,nj),dtype=np.float32,order='FORTRAN')
         lo['d'] = np.empty((ni,nj),dtype=np.float32,order='FORTRAN')
-        for j in xrange(nj):
-            for i in xrange(ni):
+        for j in range(nj):
+            for i in range(ni):
                 lo['d'][i,j] = 100.+float(i)        
                 la['d'][i,j] = float(j)
         rmn.fstecr(funit,la['d'],la)

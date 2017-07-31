@@ -31,8 +31,9 @@ from rpnpy.burpc import BurpcError
 import rpnpy.librmn.all as _rmn
 
 from rpnpy import integer_types as _integer_types
-
-## _C_MKSTR = _ct.create_string_buffer
+from rpnpy import C_WCHAR2CHAR as _C_WCHAR2CHAR
+from rpnpy import C_CHAR2WCHAR as _C_CHAR2WCHAR
+from rpnpy import C_MKSTR as _C_MKSTR
 
 # Ternary assignment operator equivalent to C's "(cond) ? vTrue : vFalse"
 ## _GETCOND = lambda c, vT, vF: vT if (c) else vF
@@ -60,7 +61,7 @@ RPT_TEMPS  = lambda rpt: _RPTPTR(rpt)[0].temps
 # Get burp report flgs
 RPT_FLGS   = lambda rpt: _RPTPTR(rpt)[0].flgs
 # Get burp report stnid
-RPT_STNID  = lambda rpt: _RPTPTR(rpt)[0].stnid
+RPT_STNID  = lambda rpt: _C_CHAR2WCHAR(_RPTPTR(rpt)[0].stnid)
 # Get burp report idtyp
 RPT_IDTYP  = lambda rpt: _RPTPTR(rpt)[0].idtype
 # Get burp report lati
@@ -111,7 +112,7 @@ def RPT_SetFLGS(rpt, val):
 
 def RPT_SetSTNID(rpt, val):
     """Set burp report stnid"""
-    _bp.c_brp_setstnid(_RPTPTR(rpt), val)
+    _bp.c_brp_setstnid(_RPTPTR(rpt), _C_WCHAR2CHAR(val))
 
 def RPT_SetIDTYP(rpt, val):
     """Set burp report idtyp"""
@@ -409,11 +410,11 @@ def brp_opt(name, value=None):
             raise KeyError("Cannot get value for name: {}".format(name))
 
     if isinstance(value, str):
-        istat = _bp.c_brp_SetOptChar(name, value)
+        istat = _bp.c_brp_SetOptChar(_C_WCHAR2CHAR(name), _C_WCHAR2CHAR(value))
         if istat != 0:
             raise BurpcError('c_brp_SetOptChar: {}={}'.format(name, value))
     elif isinstance(value, float):
-        istat = _bp.c_brp_SetOptFloat(name, value)
+        istat = _bp.c_brp_SetOptFloat(_C_WCHAR2CHAR(name), value)
         if istat != 0:
             raise BurpcError('c_mrfopr:{}={}'.format(name, value), istat)
     else:
@@ -469,7 +470,8 @@ def brp_open(filename, filemode=_bc.BRP_FILE_READ, funit=0, getnbr=False):
     if not funit:
         raise BurpcError('Problem associating a unit with file: {} (mode={})'
                         .format(filename, filemode))
-    nrep = _bp.c_brp_open(funit, filename, brpcmode)
+    nrep = _bp.c_brp_open(funit, _C_WCHAR2CHAR(filename),
+                          _C_WCHAR2CHAR(brpcmode))
     if getnbr:
         return (funit, nrep)
     return funit

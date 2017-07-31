@@ -24,6 +24,9 @@ from rpnpy.burpc import proto as _bp
 from rpnpy.burpc import const as _bc
 from rpnpy.burpc import BurpcError
 import rpnpy.librmn.all as _rmn
+from rpnpy import C_WCHAR2CHAR as _C_WCHAR2CHAR
+from rpnpy import C_CHAR2WCHAR as _C_CHAR2WCHAR
+from rpnpy import C_MKSTR as _C_MKSTR
 
 from rpnpy import integer_types as _integer_types
 
@@ -202,7 +205,9 @@ class BurpcFile(_BurpcObjBase):
         self.__rpt       = BurpcRpt()
         fstmode, brpmode, brpcmode = _bp.brp_filemode(self.filemode)
         self.funit       = _rmn.get_funit(self.filename, fstmode, self.funit)
-        self.nrep        = _bp.c_brp_open(self.funit, self.filename, brpcmode)
+        self.nrep        = _bp.c_brp_open(self.funit,
+                                          _C_WCHAR2CHAR(self.filename),
+                                          _C_WCHAR2CHAR(brpcmode))
         if self.nrep < 0:
             raise BurpcError('Problem opening with mode {} the file: {}'
                              .format(repr(brpcmode), repr(self.filename)))
@@ -458,7 +463,10 @@ class BurpcRpt(_BurpcObjBase):
             BurpcError on any other error
         """
         if name in self.__class__.__attrlist:
-            return getattr(self.__ptr[0], name)  #TODO: use proto fn?
+            v = getattr(self.__ptr[0], name)  #TODO: use proto fn?
+            if isinstance(v, bytes):
+                v = _C_CHAR2WCHAR(v)
+            return v
         elif name in self.__class__.__attrlist2:
             try:
                 name2 = self.__attrlist2names[name]
@@ -545,7 +553,7 @@ class BurpcRpt(_BurpcObjBase):
             'flgs'  : flgs_dict['flgs'],
             'flgsl' : flgs_dict['flgsl'],
             'flgsd' : flgs_dict['flgsd'],
-            'stnid' : getattr(self.__ptr[0], 'stnid'),
+            'stnid' : _C_CHAR2WCHAR(getattr(self.__ptr[0], 'stnid')),
             'idtyp' : idtyp,
             'idtypd': idtyp_desc,
             'ilat'  : ilat,

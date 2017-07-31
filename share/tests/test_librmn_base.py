@@ -9,6 +9,11 @@ import unittest
 import ctypes as ct
 import numpy as np
 
+from rpnpy import integer_types as _integer_types
+from rpnpy import C_WCHAR2CHAR as _C_WCHAR2CHAR
+from rpnpy import C_CHAR2WCHAR as _C_CHAR2WCHAR
+from rpnpy import C_MKSTR as _C_MKSTR
+
 if sys.version_info > (3,):
     long = int
 
@@ -67,7 +72,7 @@ class LibrmnCigaxgKnownValues(unittest.TestCase):
         for name,proj,dims,xg,ig in self.knownValues:
             (cxg1,cxg2,cxg3,cxg4) = (ct.c_float(0.),ct.c_float(0.),ct.c_float(0.),ct.c_float(0.))
             (cig1,cig2,cig3,cig4) = (ct.c_int(ig[0]),ct.c_int(ig[1]),ct.c_int(ig[2]),ct.c_int(ig[3]))            
-            istat = rmn.f_cigaxg(proj,
+            istat = rmn.f_cigaxg(_C_WCHAR2CHAR(proj),
                                  ct.byref(cxg1),ct.byref(cxg2),
                                  ct.byref(cxg3),ct.byref(cxg4),
                                  ct.byref(cig1),ct.byref(cig2),
@@ -83,7 +88,7 @@ class LibrmnCigaxgKnownValues(unittest.TestCase):
         for name,proj,dims,xg,ig in self.knownValues:
             (cxg1,cxg2,cxg3,cxg4) = (ct.c_float(xg[0]),ct.c_float(xg[1]),ct.c_float(xg[2]),ct.c_float(xg[3]))
             (cig1,cig2,cig3,cig4) = (ct.c_int(0),ct.c_int(0),ct.c_int(0),ct.c_int(0))            
-            istat = rmn.f_cxgaig(proj,
+            istat = rmn.f_cxgaig(_C_WCHAR2CHAR(proj),
                                  ct.byref(cig1),ct.byref(cig2),
                                  ct.byref(cig3),ct.byref(cig4),
                                  ct.byref(cxg1),ct.byref(cxg2),
@@ -96,12 +101,12 @@ class LibrmnCigaxgKnownValues(unittest.TestCase):
         for name,proj,dims,xg,ig in self.knownValues:
             (cxg1,cxg2,cxg3,cxg4) = (ct.c_float(0.),ct.c_float(0.),ct.c_float(0.),ct.c_float(0.))
             (cig1,cig2,cig3,cig4) = (ct.c_int(ig[0]),ct.c_int(ig[1]),ct.c_int(ig[2]),ct.c_int(ig[3]))            
-            istat = rmn.f_cigaxg(proj,
+            istat = rmn.f_cigaxg(_C_WCHAR2CHAR(proj),
                                  ct.byref(cxg1),ct.byref(cxg2),
                                  ct.byref(cxg3),ct.byref(cxg4),
                                  ct.byref(cig1),ct.byref(cig2),
                                  ct.byref(cig3),ct.byref(cig4))
-            istat = rmn.f_cxgaig(proj,
+            istat = rmn.f_cxgaig(_C_WCHAR2CHAR(proj),
                                  ct.byref(cig1),ct.byref(cig2),
                                  ct.byref(cig3),ct.byref(cig4),
                                  ct.byref(cxg1),ct.byref(cxg2),

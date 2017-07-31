@@ -367,8 +367,8 @@ class Librmn_grids_Test(unittest.TestCase):
                 if drlon > 180.: drlon =- 360.
                 if False in (abs(lat1-lat0)<epsilon, dlon<epsilon,
                              abs(rlat1-rlat)<epsilon, drlon<epsilon):
-                    print 'n',i,j,abs(lat1-lat0), dlon, \
-                        abs(rlat1-rlat), drlon
+                    print('n',i,j,abs(lat1-lat0), dlon, \
+                        abs(rlat1-rlat), drlon)
                     ok = False
         self.assertTrue(ok)
 
@@ -389,8 +389,8 @@ class Librmn_grids_Test(unittest.TestCase):
                 if drlon > 180.: drlon =- 360.
                 if False in (abs(lat1-lat0)<epsilon, dlon<epsilon,
                              abs(rlat1-rlat)<epsilon, drlon<epsilon):
-                    print 'r',i,j,abs(lat1-lat0), dlon, \
-                        abs(rlat1-rlat), drlon
+                    print('r',i,j,abs(lat1-lat0), dlon, \
+                        abs(rlat1-rlat), drlon)
                     ok = False
         self.assertTrue(ok)
 
@@ -411,8 +411,8 @@ class Librmn_grids_Test(unittest.TestCase):
                 if drlon > 180.: drlon =- 360.
                 if False in (abs(lat1-lat0)<epsilon, dlon<epsilon,
                              abs(rlat1-rlat)<epsilon, drlon<epsilon):
-                    print 'r2',i,j,abs(lat1-lat0), dlon, \
-                        abs(rlat1-rlat), drlon
+                    print('r2',i,j,abs(lat1-lat0), dlon, \
+                        abs(rlat1-rlat), drlon)
                     ok = False
         self.assertTrue(ok)
 

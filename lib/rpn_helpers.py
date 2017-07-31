@@ -10,6 +10,13 @@ Module rpn_helpers contains the helpers functions/classes for the rpn package
 """
 import rpnpy.version as rpn_version
 import Fstdc
+import sys
+
+if sys.version_info < (3,):
+    _integer_types = (int, long,)
+else:
+    _integer_types = (int,)
+    long = int
 
 LEVEL_KIND_MSL=0 #metres above sea level
 LEVEL_KIND_SIG=1 #Sigma
@@ -47,18 +54,18 @@ def levels_to_ip1(levels, kind):
     >>> levels_to_ip1([1024., 850., 650., 500., 10., 2., 0.3], 2)
     [(39948288, 1024), (41744464, 850), (41544464, 650), (41394464, 500), (42043040, 10), (43191616, 1840), (44340192, 1660)]
     """
-    if not type(levels) in (type(()), type([])):
-        raise ValueError, 'levels_to_ip1: levels should be a list or a tuple; '+repr(levels)
-    if type(kind) <> type(0):
-        raise TypeError, 'levels_to_ip1: kind should be an int in range [0, 3]; '+repr(kind)
+    if not isinstance(levels, (list, tuple)):
+        raise ValueError('levels_to_ip1: levels should be a list or a tuple; '+repr(levels))
+    if not isinstance(kind, _integer_types):
+        raise TypeError('levels_to_ip1: kind should be an int in range [0, 3]; '+repr(kind))
     elif not kind in (0, 1, 2, 3): #(0, 1, 2, 3, 4, 5, 6): 
-        raise ValueError, 'levels_to_ip1: kind should be an int in range [0, 3]; '+repr(kind)
-    if type(levels) == type(()):
+        raise ValueError('levels_to_ip1: kind should be an int in range [0, 3]; '+repr(kind))
+    if isinstance(levels, tuple):
         ip1_list = Fstdc.level_to_ip1(list(levels), kind)
     else:
         ip1_list = Fstdc.level_to_ip1(levels, kind)
     if not ip1_list:
-        raise TypeError, 'levels_to_ip1: wrong args type; levels_to_ip1(levels, kind)'
+        raise TypeError('levels_to_ip1: wrong args type; levels_to_ip1(levels, kind)')
     return(ip1_list)
 
 
@@ -88,15 +95,15 @@ def ip1_to_levels(ip1list):
     >>> [(int(x*10.e6+0.5), y) for x, y in ip1_to_levels([39948288, 1024, 41744464, 850, 41544464, 650, 41394464, 500, 42043040, 10, 43191616, 1840, 44340192, 1660])]
     [(10240000000, 2), (10240000000, 2), (8500000000, 2), (8500000000, 2), (6500000000, 2), (6500000000, 2), (5000000000, 2), (5000000000, 2), (100000000, 2), (100000000, 2), (20000000, 2), (20000000, 2), (3000000, 2), (3000000, 2)]
     """
-    if not type(ip1list) in (type(()), type([])):
-        raise TypeError, 'ip1_to_levels: levels should be a list or a tuple'
+    if not isinstance(ip1list, (list, tuple)):
+        raise TypeError('ip1_to_levels: levels should be a list or a tuple')
 
-    if type(ip1list) == type(()):
+    if isinstance(ip1list, tuple):
         levels = Fstdc.ip1_to_level(list(ip1list))
     else:
         levels = Fstdc.ip1_to_level(ip1list)
     if not levels:
-        raise TypeError, 'ip1_to_levels: wrong args type; ip1_to_levels(ip1list)'
+        raise TypeError('ip1_to_levels: wrong args type; ip1_to_levels(ip1list)')
     return(levels)
 
 
@@ -141,14 +148,14 @@ def cxgaig(grtyp, xg1, xg2=None, xg3=None, xg4=None):
     ValueError: cxgaig error: grtyp ['I'] must be one of ('A', 'B', 'E', 'G', 'L', 'N', 'S')
     """
     validgrtyp = ('A', 'B', 'E', 'G', 'L', 'N', 'S') #I
-    if xg2 == xg3 == xg4 == None and type(xg1) in (type([]), type(())) and len(xg1) == 4:
+    if xg2 == xg3 == xg4 == None and isinstance(xg1, (list, tuple)) and len(xg1) == 4:
         (xg1, xg2, xg3, xg4) = xg1
     if None in (grtyp, xg1, xg2, xg3, xg4):
-        raise TypeError, 'cxgaig error: missing argument, calling is cxgaig(grtyp, xg1, xg2, xg3, xg4)'
+        raise TypeError('cxgaig error: missing argument, calling is cxgaig(grtyp, xg1, xg2, xg3, xg4)')
     elif not grtyp in validgrtyp:
-        raise ValueError, 'cxgaig error: grtyp ['+repr(grtyp)+'] must be one of '+repr(validgrtyp)
+        raise ValueError('cxgaig error: grtyp ['+repr(grtyp)+'] must be one of '+repr(validgrtyp))
     elif not (type(xg1) == type(xg2) == type(xg3) == type(xg4) == type(0.)):
-        raise TypeError, 'cxgaig error: ig1, ig2, ig3, ig4 should be of type real:'+repr((xg1, xg2, xg3, xg4))
+        raise TypeError('cxgaig error: ig1, ig2, ig3, ig4 should be of type real:'+repr((xg1, xg2, xg3, xg4)))
     else:
        return(Fstdc.cxgaig(grtyp, xg1, xg2, xg3, xg4))
 
@@ -194,14 +201,14 @@ def cigaxg(grtyp, ig1, ig2=None, ig3=None, ig4=None):
     ValueError: cigaxg error: grtyp ['I'] must be one of ('A', 'B', 'E', 'G', 'L', 'N', 'S')
     """
     validgrtyp = ('A', 'B', 'E', 'G', 'L', 'N', 'S') #I
-    if ig2 == ig3 == ig4 == None and type(ig1) in (type([]), type(())) and len(ig1) == 4:
+    if ig2 == ig3 == ig4 == None and isinstance(ig1, (list, tuple)) and len(ig1) == 4:
         (ig1, ig2, ig3, ig4) = ig1
     if None in (grtyp, ig1, ig2, ig3, ig4):
-        raise TypeError, 'cigaxg error: missing argument, calling is cigaxg(grtyp, ig1, ig2, ig3, ig4)'
+        raise TypeError('cigaxg error: missing argument, calling is cigaxg(grtyp, ig1, ig2, ig3, ig4)')
     elif not grtyp in validgrtyp:
-        raise ValueError, 'cigaxg error: grtyp ['+repr(grtyp)+'] must be one of '+repr(validgrtyp)
+        raise ValueError('cigaxg error: grtyp ['+repr(grtyp)+'] must be one of '+repr(validgrtyp))
     elif not (type(ig1) == type(ig2) == type(ig3) == type(ig4) == type(0)):
-        raise TypeError, 'cigaxg error: ig1, ig2, ig3, ig4 should be of type int:'+repr((ig1, ig2, ig3, ig4))
+        raise TypeError('cigaxg error: ig1, ig2, ig3, ig4 should be of type int:'+repr((ig1, ig2, ig3, ig4)))
     else:
         return(Fstdc.cigaxg(grtyp, ig1, ig2, ig3, ig4))
 
@@ -224,12 +231,12 @@ class RPNParm:
         for name in reference.keys():            # copy initial values from reference
             self.__dict__[name]=reference[name]  # bypass setatttr method for new attributes
         if model != None:
-            if isinstance(model, RPNParm):        # update with model attributes
+            if isinstance(model, RPNParm):       # update with model attributes
                self.update(model)
-            elif type(model) == type({}):     # update with dict
+            elif isinstance(model, dict):        # update with dict
                self.update(model)
             else:
-                raise TypeError, 'RPNParm.__init__: model must be an RPNParm class instances'
+                raise TypeError('RPNParm.__init__: model must be an RPNParm class instances')
         for name in extra.keys():                # add extras using own setattr method
             setattr(self, name, extra[name])
 
@@ -258,14 +265,14 @@ class RPNParm:
                         self.__dict__[name]=with1.__dict__[name]
                 #else:
                 #    print "cannot set:"+name+repr(allowedKeysVals.keys())
-        elif type(with1) == type({}):
+        elif isinstance(with1, dict):
             for name in with1.keys():
                 if name in self.__dict__.keys():
                    if (updateToWild
                         or with1[name] != allowedKeysVals[name]):
                         setattr(self, name, with1[name])
         else:
-            raise TypeError, 'RPNParm.update: can only operate on RPNParm class instances or dict'
+            raise TypeError('RPNParm.update: can only operate on RPNParm class instances or dict')
 
     def update_cond(self, with1):
         """Short form for RPNParm.update(with1, False)
@@ -304,9 +311,9 @@ class RPNParm:
                     else:
                         self.__dict__[name]=value
                 else:
-                    raise TypeError, 'RPNParm: Wrong type for attribute '+name+'='+repr(value)
+                    raise TypeError('RPNParm: Wrong type for attribute '+name+'='+repr(value))
         else:
-            raise ValueError, 'RPNParm: attribute '+name+' does not exist for class '+repr(self.__class__)
+            raise ValueError('RPNParm: attribute '+name+' does not exist for class '+repr(self.__class__))
 
     def __setitem__(self, name, value):
         self.__setattr__(name, value)

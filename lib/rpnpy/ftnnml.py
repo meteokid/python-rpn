@@ -16,7 +16,7 @@ set/rename vat values, create new namelist, delete values or namelists, ...
 ## TOTO: catch value format like: kfctrig4=2*0.0000000E+00  , 2*5.0000001E-02
 
 import re
-#import sys
+import sys
 
 _islisttype   = lambda x: isinstance(x, (list, tuple))
 _isstringtype = lambda x: isinstance(x, str)
@@ -347,7 +347,7 @@ class FtnNmlFile(FtnNmlObj):
         rawdata = ""
         try:
             fd = open(filename, "rb")
-            try:     rawdata = "".join(fd.readlines())
+            try:     rawdata = "".join([x.decode(sys.stdin.encoding) for x in fd.readlines()])
             finally: fd.close()
         except IOError:
             raise IOError(" Oops! File does not exist or is not readable: {0}".
@@ -359,7 +359,7 @@ class FtnNmlFile(FtnNmlObj):
         try:
             fd = open(filename, "wb")
             try:
-                fd.write(self.toStr(clean, uplowcase, updnsort))
+                fd.write(self.toStr(clean, uplowcase, updnsort).encode('ascii'))
             except IOError:
                 raise IOError(" Oops! Cannot wrtie to file: {0}".
                               format(filename))

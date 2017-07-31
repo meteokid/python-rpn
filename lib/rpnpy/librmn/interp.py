@@ -27,12 +27,14 @@ import numpy  as _np
 from rpnpy.librmn import proto as _rp
 from rpnpy.librmn  import const as _rc
 from rpnpy.librmn  import RMNError
+from rpnpy import integer_types as _integer_types
+from rpnpy import C_WCHAR2CHAR as _C_WCHAR2CHAR
+from rpnpy import C_CHAR2WCHAR as _C_CHAR2WCHAR
+from rpnpy import C_MKSTR as _C_MKSTR
 
 #TODO: make sure caller can provide allocated array (recycle mem)
 
 #---- helpers -------------------------------------------------------
-
-_C_MKSTR = _ct.create_string_buffer
 
 def _getCheckArg(okTypes, value, valueDict, key):
     if isinstance(valueDict, dict) and (value is None or value is valueDict):
@@ -106,12 +108,12 @@ def ezsetopt(option, value):
     if not isinstance(option, str):
         raise TypeError("ezsetopt: expecting args of type str, Got {0}".
                         format(type(option)))
-    if isinstance(value, int):
-        istat = _rp.c_ezsetival(option, value)
+    if isinstance(value, _integer_types):
+        istat = _rp.c_ezsetival(_C_WCHAR2CHAR(option), value)
     elif isinstance(value, float):
-        istat = _rp.c_ezsetval(option, value)
+        istat = _rp.c_ezsetval(_C_WCHAR2CHAR(option), value)
     elif isinstance(value, str):
-        istat = _rp.c_ezsetopt(option, value)
+        istat = _rp.c_ezsetopt(_C_WCHAR2CHAR(option), _C_WCHAR2CHAR(value))
     else:
         raise TypeError("ezsetopt: Not a supported type {0}".
                         format(type(value)))
@@ -174,12 +176,13 @@ def ezqkdef(ni, nj=None, grtyp=None, ig1=None, ig2=None, ig3=None, ig4=None,
             iunit = gridParams['iunit']
         except:
             iunit = 0
+            #TODO: if needed raise error
     if (type(ni), type(nj), type(grtyp), type(ig1), type(ig2), type(ig3),
         type(ig4), type(iunit)) != (int, int, str, int, int, int, int, int):
         raise TypeError('ezqkdef: wrong input data type')
     if grtyp.strip() in ('', 'X'):
         raise EzscintError('ezqkdef: Grid type {0} Not supported'.format(grtyp))
-    gdid = _rp.c_ezqkdef(ni, nj, grtyp, ig1, ig2, ig3, ig4, iunit)
+    gdid = _rp.c_ezqkdef(ni, nj, _C_WCHAR2CHAR(grtyp), ig1, ig2, ig3, ig4, iunit)
     if gdid >= 0:
         return gdid
     raise EzscintError()
@@ -229,8 +232,8 @@ def ezgdef_fmem(ni, nj=None, grtyp=None, grref=None, ig1=None, ig2=None,
     ...                     gp['xlat2'], gp['xlon2'])
     >>> gp['ax'] = np.empty((ni,1), dtype=np.float32, order='FORTRAN')
     >>> gp['ay'] = np.empty((1,nj), dtype=np.float32, order='FORTRAN')
-    >>> for i in xrange(ni): gp['ax'][i,0] = gp['lon0']+float(i)*gp['dlon']
-    >>> for j in xrange(nj): gp['ay'][0,j] = gp['lat0']+float(j)*gp['dlat']
+    >>> for i in range(ni): gp['ax'][i,0] = gp['lon0']+float(i)*gp['dlon']
+    >>> for j in range(nj): gp['ay'][0,j] = gp['lat0']+float(j)*gp['dlat']
     >>> gid = rmn.ezgdef_fmem(ni, nj, gp['grtyp'], gp['grref'],
     ...                       ig1234[0], ig1234[1], ig1234[2], ig1234[3],
     ...                       gp['ax'], gp['ay'])
@@ -280,7 +283,7 @@ def ezgdef_fmem(ni, nj=None, grtyp=None, grref=None, ig1=None, ig2=None,
         raise EzscintError('ezgdef_fmem: Unknown grid type: '+grtyp)
     ax = _ftnf32(ax)
     ay = _ftnf32(ay)
-    gdid = _rp.c_ezgdef_fmem(ni, nj, grtyp, grref, ig1, ig2, ig3, ig4, ax, ay)
+    gdid = _rp.c_ezgdef_fmem(ni, nj, _C_WCHAR2CHAR(grtyp), _C_WCHAR2CHAR(grref), ig1, ig2, ig3, ig4, ax, ay)
     if gdid >= 0:
         return gdid
     raise EzscintError()
@@ -359,7 +362,7 @@ def ezgdef_supergrid(ni, nj, grtyp, grref, vercode, subgridid):
         type(csubgridid)) != (int, int, str, str, int, _np.ndarray):
         raise TypeError('ezgdef_fmem: wrong input data type')
     nsubgrids = csubgridid.size
-    gdid = _rp.c_ezgdef_supergrid(ni, nj, grtyp, grref, vercode, nsubgrids,
+    gdid = _rp.c_ezgdef_supergrid(ni, nj, _C_WCHAR2CHAR(grtyp), _C_WCHAR2CHAR(grref), vercode, nsubgrids,
                                   csubgridid)
     if gdid >= 0:
         return gdid
@@ -522,17 +525,20 @@ def ezgetopt(option, vtype=int):
                         format(type(option)))
     if vtype == int:
         cvalue = _ct.c_int()
-        istat = _rp.c_ezgetival(option, cvalue)
+        istat = _rp.c_ezgetival(_C_WCHAR2CHAR(option), cvalue)
     elif vtype == float:
         cvalue = _ct.c_float()
-        istat = _rp.c_ezgetval(option, cvalue)
+        istat = _rp.c_ezgetval(_C_WCHAR2CHAR(option), cvalue)
     elif vtype == str:
         cvalue = _C_MKSTR(' '*64)
-        istat = _rp.c_ezgetopt(option, cvalue)
+        istat = _rp.c_ezgetopt(_C_WCHAR2CHAR(option), cvalue)
     else:
         raise TypeError("ezgetopt: Not a supported type {0}".format(repr(vtype)))
     if istat >= 0:
-        return cvalue.value
+        if isinstance(cvalue.value, bytes):
+            return _C_CHAR2WCHAR(cvalue.value)
+        else:
+            return cvalue.value
     raise EzscintError()
 
 
@@ -679,7 +685,7 @@ def ezgprm(gdid, doSubGrid=False):
             'shape' : (max(1, cni.value), max(1, cnj.value)),
             'ni'    : cni.value,
             'nj'    : cnj.value,
-            'grtyp' : cgrtyp.value,
+            'grtyp' : _C_CHAR2WCHAR(cgrtyp.value),
             'ig1'   : cig1.value,
             'ig2'   : cig2.value,
             'ig3'   : cig3.value,
@@ -754,8 +760,8 @@ def ezgxprm(gdid, doSubGrid=False):
     ...                     gp['xlat2'], gp['xlon2'])
     >>> gp['ax'] = np.empty((ni,1), dtype=np.float32, order='FORTRAN')
     >>> gp['ay'] = np.empty((1,nj), dtype=np.float32, order='FORTRAN')
-    >>> for i in xrange(ni): gp['ax'][i,0] = gp['lon0']+float(i)*gp['dlon']
-    >>> for j in xrange(nj): gp['ay'][0,j] = gp['lat0']+float(j)*gp['dlat']
+    >>> for i in range(ni): gp['ax'][i,0] = gp['lon0']+float(i)*gp['dlon']
+    >>> for j in range(nj): gp['ay'][0,j] = gp['lat0']+float(j)*gp['dlat']
     >>> gid = rmn.ezgdef_fmem(ni, nj, gp['grtyp'], gp['grref'],
     ...                       ig1234[0], ig1234[1], ig1234[2], ig1234[3],
     ...                       gp['ax'], gp['ay'])
@@ -793,12 +799,12 @@ def ezgxprm(gdid, doSubGrid=False):
             'shape' : (max(1, cni.value), max(1, cnj.value)),
             'ni'    : cni.value,
             'nj'    : cnj.value,
-            'grtyp' : cgrtyp.value,
+            'grtyp' : _C_CHAR2WCHAR(cgrtyp.value),
             'ig1'   : cig1.value,
             'ig2'   : cig2.value,
             'ig3'   : cig3.value,
             'ig4'   : cig4.value,
-            'grref' : cgrref.value,
+            'grref' : _C_CHAR2WCHAR(cgrref.value),
             'ig1ref'   : cig1ref.value,
             'ig2ref'   : cig2ref.value,
             'ig3ref'   : cig3ref.value,
@@ -891,12 +897,12 @@ def ezgfstp(gdid):
     if istat >= 0:
         return {
             'id'    : gdid,
-            'typvarx': ctypvarx.value,
-            'nomvarx': cnomvarx.value,
-            'etikx'  : cetikx.value,
-            'typvary': ctypvary.value,
-            'nomvary': cnomvary.value,
-            'etiky ' : cetiky.value,
+            'typvarx': _C_CHAR2WCHAR(ctypvarx.value),
+            'nomvarx': _C_CHAR2WCHAR(cnomvarx.value),
+            'etikx'  : _C_CHAR2WCHAR(cetikx.value),
+            'typvary': _C_CHAR2WCHAR(ctypvary.value),
+            'nomvary': _C_CHAR2WCHAR(cnomvary.value),
+            'etiky ' : _C_CHAR2WCHAR(cetiky.value),
             'ip1'   : cip1.value,
             'ip2'   : cip2.value,
             'ip3'   : cip3.value,
@@ -1038,9 +1044,9 @@ def gdll(gdid, lat=None, lon=None):
     >>> grid = rmn.defGrid_G(90, 45)
     >>> lalo = rmn.gdll(grid['id'])
     >>> (i, j) = (45, 20)
-    >>> print("# Lat, Lon of point {0}, {1} is: {2}, {3}"
+    >>> print("# Lat, Lon of point {0}, {1} is: {2:4.1f}, {3:5.1f}"
     ...       .format(i, j, lalo['lat'][i,j], lalo['lon'][i,j]))
-    # Lat, Lon of point 45, 20 is: -7.91161346436, 180.0
+    # Lat, Lon of point 45, 20 is: -7.9, 180.0
 
     See Also:
         gdxyfll
@@ -1112,9 +1118,9 @@ def gdxyfll(gdid, lat=None, lon=None):
     >>> grid = rmn.defGrid_G(90, 45)
     >>> (la, lo) = (45., 273.)
     >>> xy = rmn.gdxyfll(grid['id'], [la], [lo])
-    >>> print("# x, y pos at lat={0}, lon={1} is: {2}, {3}"
+    >>> print("# x, y pos at lat={0}, lon={1} is: {2:5.2f}, {3:5.2f}"
     ...       .format(la, lo, xy['x'][0], xy['y'][0]))
-    # x, y pos at lat=45.0, lon=273.0 is: 69.25, 34.3758773804
+    # x, y pos at lat=45.0, lon=273.0 is: 69.25, 34.37
 
     See Also:
         gdllfxy
@@ -1185,9 +1191,9 @@ def gdllfxy(gdid, xpts=None, ypts=None):
     >>> grid = rmn.defGrid_G(90, 45)
     >>> (i, j) = (69, 34)
     >>> lalo = rmn.gdllfxy(grid['id'], [i], [j])
-    >>> print("# Lat, Lon of point {0}, {1} is: {2}, {3}"
+    >>> print("# Lat, Lon of point {0}, {1} is: {2:4.1f}, {3:5.1f}"
     ...       .format(i, j, lalo['lat'][0], lalo['lon'][0]))
-    # Lat, Lon of point 69, 34 is: 43.5131988525, 272.0
+    # Lat, Lon of point 69, 34 is: 43.5, 272.0
 
     See Also:
         gdll
@@ -1853,7 +1859,7 @@ def gdrls(gdid):
     if not isinstance(gdid, (list, tuple)):
         gdid = [gdid]
     for id1 in gdid:
-        if not isinstance(id1, int):
+        if not isinstance(id1, _integer_types):
             raise TypeError("gdrls: Expecting gdid of type int, Got {0}"\
                             .format(type(id1)))
         istat = _rp.c_gdrls(id1)

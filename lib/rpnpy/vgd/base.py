@@ -24,8 +24,10 @@ from rpnpy.vgd  import VGDError
 import rpnpy.librmn.all as _rmn
 
 from rpnpy import integer_types as _integer_types
+from rpnpy import C_WCHAR2CHAR as _C_WCHAR2CHAR
+from rpnpy import C_CHAR2WCHAR as _C_CHAR2WCHAR
+from rpnpy import C_MKSTR as _C_MKSTR
 
-_C_MKSTR = _ct.create_string_buffer
 _MB2PA = 100.
 
 def vgd_new_sigm(hyb, ip1=-1, ip2=-1):
@@ -794,10 +796,13 @@ def vgd_get_opt(key, quiet=1):
     if not key2 in _vc.VGD_OPR_KEYS['getopt_int']:
         raise KeyError('Problem getting opt, invalid key (key={0})'.format(key))
     v1 = _ct.c_int(0)
-    ok = _vp.c_vgd_getopt_int(key2, _ct.byref(v1), quiet)
+    ok = _vp.c_vgd_getopt_int(_C_WCHAR2CHAR(key2), _ct.byref(v1), quiet)
     if ok != _vc.VGD_OK:
         raise VGDError('Problem getting opt (key={0})'.format(key))
-    return v1.value
+    if isinstance(v1.value, bytes):
+        return _C_CHAR2WCHAR(v1.value)
+    else:
+        return v1.value
 
 
 def vgd_put_opt(key, value):
@@ -836,7 +841,7 @@ def vgd_put_opt(key, value):
     key2 = key.upper()
     if not key2 in _vc.VGD_OPR_KEYS['putopt_int']:
         raise VGDError('Problem setting opt, invalid key (key={0})'.format(key))
-    ok = _vp.c_vgd_putopt_int(key2, value)
+    ok = _vp.c_vgd_putopt_int(_C_WCHAR2CHAR(key2), value)
     if ok != _vc.VGD_OK:
         raise VGDError('Problem setting opt (key={0}, value={1})'.
                         format(key, repr(value)))
@@ -884,44 +889,45 @@ def vgd_get(vgd_ptr, key, quiet=1):
     """
     v1 = None
     key2 = key.upper()[0:4]
+    key2b = _C_WCHAR2CHAR(key2)
     if   key2 in _vc.VGD_OPR_KEYS['get_char']:
         v1 = _C_MKSTR(' '*_vc.VGD_MAXSTR_ETIKET)
-        ok = _vp.c_vgd_get_char(vgd_ptr, key2, v1, quiet)
+        ok = _vp.c_vgd_get_char(vgd_ptr, key2b, v1, quiet)
         if ok == _vc.VGD_OK:
-            v1 = v1.value.strip()
+            v1 = _C_CHAR2WCHAR(v1.value).strip()
     elif key2 in _vc.VGD_OPR_KEYS['get_int']:
         v1 = _ct.c_int(0)
-        ok = _vp.c_vgd_get_int(vgd_ptr, key2, _ct.byref(v1), quiet)
+        ok = _vp.c_vgd_get_int(vgd_ptr, key2b, _ct.byref(v1), quiet)
         if ok == _vc.VGD_OK:
             v1 = v1.value
     elif key2 in _vc.VGD_OPR_KEYS['get_float']:
         v1 = _ct.c_float(0.)
-        ok = _vp.c_vgd_get_float(vgd_ptr, key2, _ct.byref(v1), quiet)
+        ok = _vp.c_vgd_get_float(vgd_ptr, key2b, _ct.byref(v1), quiet)
         if ok == _vc.VGD_OK:
             v1 = v1.value
     elif key2 in _vc.VGD_OPR_KEYS['get_int_1d']:
         v1 = _ct.POINTER(_ct.c_int)()
         nv = _ct.c_int(0)
-        ok = _vp.c_vgd_get_int_1d(vgd_ptr, key2, _ct.byref(v1),
+        ok = _vp.c_vgd_get_int_1d(vgd_ptr, key2b, _ct.byref(v1),
                                   _ct.byref(nv), quiet)
         if ok == _vc.VGD_OK:
             v1 = [v for v in v1[0:nv.value]]
     elif key2 in _vc.VGD_OPR_KEYS['get_float_1d']:
         v1 = _ct.POINTER(_ct.c_float)()
         nv = _ct.c_int(0)
-        ok = _vp.c_vgd_get_float_1d(vgd_ptr, key2, _ct.byref(v1),
+        ok = _vp.c_vgd_get_float_1d(vgd_ptr, key2b, _ct.byref(v1),
                                     _ct.byref(nv), quiet)
         if ok == _vc.VGD_OK:
             v1 = [v for v in v1[0:nv.value]]
     elif key2 in _vc.VGD_OPR_KEYS['get_double']:
         v1 = _ct.c_double(0.)
-        ok = _vp.c_vgd_get_double(vgd_ptr, key2, _ct.byref(v1), quiet)
+        ok = _vp.c_vgd_get_double(vgd_ptr, key2b, _ct.byref(v1), quiet)
         if ok == _vc.VGD_OK:
             v1 = v1.value
     elif key2 in _vc.VGD_OPR_KEYS['get_double_1d']:
         v1 = _ct.POINTER(_ct.c_double)()
         nv = _ct.c_int(0)
-        ok = _vp.c_vgd_get_double_1d(vgd_ptr, key2, _ct.byref(v1),
+        ok = _vp.c_vgd_get_double_1d(vgd_ptr, key2b, _ct.byref(v1),
                                      _ct.byref(nv), quiet)
         if ok == _vc.VGD_OK:
             v1 = [v for v in v1[0:nv.value]]
@@ -930,7 +936,7 @@ def vgd_get(vgd_ptr, key, quiet=1):
         ni = _ct.c_int(0)
         nj = _ct.c_int(0)
         nk = _ct.c_int(0)
-        ok = _vp.c_vgd_get_double_3d(vgd_ptr, key2, _ct.byref(v1),
+        ok = _vp.c_vgd_get_double_3d(vgd_ptr, key2b, _ct.byref(v1),
                                      _ct.byref(ni), _ct.byref(nj),
                                      _ct.byref(nk), quiet)
         if ok == _vc.VGD_OK:
@@ -987,13 +993,14 @@ def vgd_put(vgd_ptr, key, value):
         vgd_put_opt
     """
     key2 = key.upper()[0:4]
+    key2b = _C_WCHAR2CHAR(key2)
     if   key2 in _vc.VGD_OPR_KEYS['put_char']:
         v1 = _C_MKSTR(str(value))
-        ok = _vp.c_vgd_put_char(vgd_ptr, key2, v1)
+        ok = _vp.c_vgd_put_char(vgd_ptr, key2b, v1)
     elif key2 in _vc.VGD_OPR_KEYS['put_int']:
-        ok = _vp.c_vgd_put_int(vgd_ptr, key2, value)
+        ok = _vp.c_vgd_put_int(vgd_ptr, key2b, value)
     elif key2 in _vc.VGD_OPR_KEYS['put_double']:
-        ok = _vp.c_vgd_put_double(vgd_ptr, key2, value)
+        ok = _vp.c_vgd_put_double(vgd_ptr, key2b, value)
     else:
         raise KeyError('Problem setting val, invalid key (key={0})'.
                         format(key))
@@ -1127,7 +1134,7 @@ def vgd_levels(vgd_ptr, rfld=None, ip1list='VIPM', in_log=_vc.VGD_DIAG_PRES,
         rank0 = True
     elif isinstance(rfld, (list, tuple)):
         rfld = _np.array(rfld, dtype=_np.float32, order='FORTRAN')
-    elif isinstance(rfld, int):
+    elif isinstance(rfld, _integer_types):
         if _vc.VGD_VCODE_NEED_RFLD[vcode]:
             fileId = rfld
             rfld_name = vgd_get(vgd_ptr, 'RFLD')
@@ -1160,7 +1167,7 @@ def vgd_levels(vgd_ptr, rfld=None, ip1list='VIPM', in_log=_vc.VGD_DIAG_PRES,
 
     ok = _vc.VGD_OK
     if vkind == 2:  # Workaround for pressure levels
-        for k in xrange(nip1):
+        for k in range(nip1):
             value = _rmn.convertIp(_rmn.CONVIP_DECODE, int(ip1list1[k]))[0]
             levels8[:, :, k] = value * _MB2PA
     else:

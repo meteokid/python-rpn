@@ -32,6 +32,7 @@ from rpnpy.librmn import fstd98 as _rf
 from rpnpy.librmn import interp as _ri
 from rpnpy.utils  import llacar as _ll
 from rpnpy.librmn import RMNError
+from rpnpy import integer_types as _integer_types
 
 _list2ftnf32 = lambda x: x if isinstance(x, _np.ndarray) \
                            else _np.asfortranarray(x, dtype=_np.float32)
@@ -807,14 +808,14 @@ def defGrid_L(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
             pass
     for k in ('ni', 'nj'):
         v = params[k]
-        if not isinstance(v, int):
+        if not isinstance(v, _integer_types):
             raise TypeError('defGrid_L: wrong input data type for ' +
                             '{0}, expecting int, Got ({1})'.format(k, type(v)))
         if v <= 0:
             raise ValueError('defGrid_L: grid dims must be >= 0, got {0}={1}'.format(k, v))
     for k in ('lat0', 'lon0', 'dlat', 'dlon'):
         v = params[k]
-        if isinstance(v, int):
+        if isinstance(v, _integer_types):
             v = float(v)
         if not isinstance(v, float):
             raise TypeError('defGrid_L: wrong input data type for ' +
@@ -902,7 +903,7 @@ def defGrid_E(ni, nj=None, xlat1=None, xlon1=None, xlat2=None, xlon2=None,
             pass
     for k in ('ni', 'nj'):
         v = params[k]
-        if not isinstance(v, int):
+        if not isinstance(v, _integer_types):
             raise TypeError('defGrid_E: wrong input data type for ' +
                             '{0}, expecting int, Got ({1})'.format(k, type(v)))
         if v <= 0:
@@ -913,7 +914,7 @@ def defGrid_E(ni, nj=None, xlat1=None, xlon1=None, xlat2=None, xlon2=None,
         except:
             raise TypeError('defGrid_E: provided incomplete grid ' +
                             'description, missing: {0}'.format(k))
-        if isinstance(v, int):
+        if isinstance(v, _integer_types):
             v = float(v)
         if not isinstance(v, float):
             raise TypeError('defGrid_E: wrong input data type for ' +
@@ -1159,14 +1160,14 @@ def defGrid_ZEr(ni, nj=None, rlat0=None, rlon0=None, dlat=None, dlon=None,
     params['grref'] = 'E'
     for k in ('ni', 'nj'):
         v = params[k]
-        if not isinstance(v, int):
+        if not isinstance(v, _integer_types):
             raise TypeError('defGrid_ZE: wrong input data type for ' +
                             '{0}, expecting int, Got ({1})'.format(k, type(v)))
         if v <= 0:
             raise ValueError('defGrid_ZE: grid dims must be >= 0, got {0}={1}'.format(k, v))
     for k in ('rlat0', 'rlon0', 'dlat', 'dlon'):
         v = params[k]
-        if isinstance(v, int):
+        if isinstance(v, _integer_types):
             v = float(v)
         if not isinstance(v, (float, _np.float32)):
             raise TypeError('defGrid_ZE: wrong input data type for ' +
@@ -1178,7 +1179,7 @@ def defGrid_ZEr(ni, nj=None, rlat0=None, rlon0=None, dlat=None, dlon=None,
         except:
             raise TypeError('defGrid_ZE: provided incomplete grid ' +
                             'description, missing: {0}'.format(k))
-        if isinstance(v, int):
+        if isinstance(v, _integer_types):
             v = float(v)
         if not isinstance(v, (float, _np.float32)):
             raise TypeError('defGrid_ZE: wrong input data type for ' +
@@ -1199,9 +1200,9 @@ def defGrid_ZEr(ni, nj=None, rlat0=None, rlon0=None, dlat=None, dlon=None,
         egrid_rll2ll(params['xlat1'], params['xlon1'],
                      params['xlat2'], params['xlon2'],
                      params['rlat0'], params['rlon0'])
-    for i in xrange(params['ni']):
+    for i in range(params['ni']):
         params['ax'][i, 0] = params['rlon0'] + float(i)*params['dlon']
-    for j in xrange(params['nj']):
+    for j in range(params['nj']):
         params['ay'][0, j] = params['rlat0'] + float(j)*params['dlat']
 
     params['ig1'] = ig1234[0]
@@ -1448,14 +1449,14 @@ def defGrid_ZL(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
     params['grref'] = 'L'
     for k in ('ni', 'nj'):
         v = params[k]
-        if not isinstance(v, int):
+        if not isinstance(v, _integer_types):
             raise TypeError('defGrid_ZL: wrong input data type for ' +
                             '{0}, expecting int, Got ({1})'.format(k, type(v)))
         if v <= 0:
             raise ValueError('defGrid_ZL: grid dims must be >= 0, got {0}={1}'.format(k, v))
     for k in ('lat0', 'lon0', 'dlat', 'dlon'):
         v = params[k]
-        if isinstance(v, int):
+        if isinstance(v, _integer_types):
             v = float(v)
         if not isinstance(v, float):
             raise TypeError('defGrid_ZL: wrong input data type for ' +
@@ -1472,9 +1473,9 @@ def defGrid_ZL(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
                              order='FORTRAN')
     params['ay'] = _np.empty((1, params['nj']), dtype=_np.float32,
                              order='FORTRAN')
-    for i in xrange(params['ni']):
+    for i in range(params['ni']):
         params['ax'][i, 0] = params['lon0'] + float(i)*params['dlon']
-    for j in xrange(params['nj']):
+    for j in range(params['nj']):
         params['ay'][0, j] = params['lat0'] + float(j)*params['dlat']
     ## if params['ax'][:, 0].max() > 360.:
     ##     params['ax'][:, 0] -= 360.
@@ -1786,7 +1787,7 @@ def defGrid_G(ni, nj=None, glb=True, north=True, inverted=False,
             pass
     for k in ('ni', 'nj'):
         v = params[k]
-        if not isinstance(v, int):
+        if not isinstance(v, _integer_types):
             raise TypeError('defGrid_G: wrong input data type for ' +
                             '{0}, expecting int, Got ({1})'.format(k, type(v)))
         if v <= 0:
@@ -1883,7 +1884,7 @@ def defGrid_PS(ni, nj=None, north=True, pi=None, pj=None, d60=None,
             pass
     for k in ('ni', 'nj'):
         v = params[k]
-        if not isinstance(v, int):
+        if not isinstance(v, _integer_types):
             raise TypeError('defGrid_PS: wrong input data type for ' +
                             '{0}, expecting int, Got ({1})'.format(k, type(v)))
         if v <= 0:
@@ -1894,7 +1895,7 @@ def defGrid_PS(ni, nj=None, north=True, pi=None, pj=None, d60=None,
         except:
             raise TypeError('defGrid_PS: provided incomplete grid ' +
                             'description, missing: {0}'.format(k))
-        if isinstance(v, int):
+        if isinstance(v, _integer_types):
             v = float(v)
         if not isinstance(v, float):
             raise TypeError('defGrid_PS: wrong input data type for' +
@@ -2004,14 +2005,14 @@ def defGrid_YY(nj, overlap=0., xlat1=0., xlon1=180., xlat2=0., xlon2=270.,
             pass
     for k in ('nj', ):
         v = params[k]
-        if not isinstance(v, int):
+        if not isinstance(v, _integer_types):
             raise TypeError('defGrid_YY: wrong input data type for ' +
                             '{0}, expecting int, Got ({1})'.format(k, type(v)))
         if v <= 0:
             raise ValueError('defGrid_YY: grid dims must be >= 0, got {0}={1}'.format(k, v))
     for k in ('xlat1', 'xlon1', 'xlat2', 'xlon2', 'overlap'):
         v = params[k]
-        if isinstance(v, int):
+        if isinstance(v, _integer_types):
             v = float(v)
         if not isinstance(v, float):
             raise TypeError('defGrid_YY: wrong input data type for ' +
@@ -2110,10 +2111,10 @@ def yyg_yangrot_py(yinlat1, yinlon1, yinlat2, yinlon2):
     xyz2 = _ll.llacar_py(xlon2, xlat2)
     xyz3 = [0., 0., 0.]
     xyz4 = [0., 0., 0.]
-    for i in xrange(3):
+    for i in range(3):
         xyz3[i] = 0.
         xyz4[i] = 0.
-        for j in xrange(3):
+        for j in range(3):
             xyz3[i] = xyz3[i] + invrot[i, j]*xyz1[j]
             xyz4[i] = xyz4[i] + invrot[i, j]*xyz2[j]
     #Obtain the real geographic coordinates
@@ -2311,9 +2312,9 @@ def egrid_rll2ll(xlat1, xlon1, xlat2, xlon2, rlat, rlon):
     #Obtain the cartesian coordinates
     xyz1 = _ll.llacar_py(rlon, rlat)
     xyz3 = [0., 0., 0.]
-    for i in xrange(3):
+    for i in range(3):
         xyz3[i] = 0.
-        for j in xrange(3):
+        for j in range(3):
             xyz3[i] = xyz3[i] + invrot[i, j]*xyz1[j]
     #Obtain the real geographic coordinates
     (lon, lat) = _ll.cartall_py(xyz3)
@@ -2361,9 +2362,9 @@ def egrid_ll2rll(xlat1, xlon1, xlat2, xlon2, lat, lon):
     #Obtain the cartesian coordinates
     xyz1 = _ll.llacar_py(lon, lat)
     xyz3 = [0., 0., 0.]
-    for i in xrange(3):
+    for i in range(3):
         xyz3[i] = 0.
-        for j in xrange(3):
+        for j in range(3):
             xyz3[i] = xyz3[i] + rot[i, j]*xyz1[j]
     #Obtain the real geographic coordinates
     (lon, lat) = _ll.cartall_py(xyz3)

@@ -293,9 +293,9 @@ def fst_read_3d(fileId, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
     Read TT   ip1=97899568 ip2=0 ip3=0 typv=P  etk=G133K80P
     Read TT   ip1=98152568 ip2=0 ip3=0 typv=P  etk=G133K80P
     # ...
-    >>> print("# TT ip2={0} min={1} max={2} avg={3}"
+    >>> print("# TT ip2={0} min={1:4.1f} max={2:3.1f} avg={3:4.1f}"
     ...       .format(tt3d['ip2'], tt3d['d'].min(), tt3d['d'].max(), tt3d['d'].mean()))
-    # TT ip2=0 min=-88.4167709351 max=40.3292922974 avg=-36.2873840332
+    # TT ip2=0 min=-88.4 max=40.3 avg=-36.3
     >>> rmn.fstcloseall(fileId)
 
     See Also:

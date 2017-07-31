@@ -14,8 +14,18 @@ __date__ = '$Date: 2004/04/16 21:16:24 $'
 __copyright__ = 'Copyright (c) 2004 Mark Pilgrim'
 __license__ = 'Python'
 
-import sys, urllib2, urlparse, gzip
-from StringIO import StringIO
+import sys
+import gzip
+
+if sys.version_info[0] < 3:
+    from StringIO import StringIO
+    import urlparse
+    import urllib2
+else:
+    from io import StringIO
+    import urllib.request as urllib2
+    import urllib.parse as urlparse
+
 
 USER_AGENT = 'OpenAnything/{0} +http://diveintopython.org/http_web_services/'.format(__version__)
 

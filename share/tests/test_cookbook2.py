@@ -154,7 +154,7 @@ class rpnpyCookbook2(unittest.TestCase):
             rfldNameIn = vgd.vgd_get(vIn, 'RFLD')
             vkind    = vgd.vgd_get(vIn, 'KIND')
             vver     = vgd.vgd_get(vIn, 'VERS')
-            VGD_KIND_VER_INV = dict((v, k) for k, v in vgd.VGD_KIND_VER.iteritems())
+            VGD_KIND_VER_INV = dict((v, k) for k, v in vgd.VGD_KIND_VER.items())
             vtype = VGD_KIND_VER_INV[(vkind,vver)]
             print("CB51: Found vgrid type=%s (kind=%d, vers=%d) with %d levels, RFLD=%s" %
                   (vtype, vkind, vver, len(ip1listIn0), rfldNameIn))
@@ -259,8 +259,8 @@ class rpnpyCookbook2(unittest.TestCase):
             ## extrap_value = 'extrapolate' # -99999.
             ## # Way too slow, needs a C implementation
             extrap_value = -999.
-            ## for j in xrange(rshape[1]):
-            ##     for i in xrange(rshape[0]):
+            ## for j in range(rshape[1]):
+            ##     for i in range(rshape[0]):
             ##         f = scipy_interp1d(pIn[i,j,:], r3d['d'][i,j,:],
             ##                            kind='cubic',
             ##                            bounds_error=False,
@@ -282,7 +282,7 @@ class rpnpyCookbook2(unittest.TestCase):
 
         ## # Write interpolated values to file with grid and vgrid
         ## try:
-        ##     for k in xrange(ip1listOut):
+        ##     for k in range(ip1listOut):
         ##         ip1 = ip1listOut[k]
         ##         (ldiagval, ldiagkind) = rmn.convertIp(rmn.CONVIP_DECODE, ip1)
         ##         print("CB51: Wrote TT(%7.2f %s): mean=%6.1f, std=%6.1f, min=%6.1f, max=%6.1f]" %
