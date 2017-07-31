@@ -33,8 +33,10 @@ cd rpnpy
 # export CMCGRIDF=${CMCGRIDF:-/fs/cetusops/fs1/prod/hubs/gridpt/dbase}
 # export ATM_MODEL_DFILES=${ATM_MODEL_DFILES:-/home/ordenv/ssm-domains9/release/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles}
 # rm -f .setenv.__extlib__.${ORDENV_PLAT}.dot
-# . ./.setenv.dot --dev
-. ./.setenv.dot
+# . ./.setenv.dot --science --dev
+# . ./.setenv.dot --cmc --dev
+# . ./.setenv.dot  --science
+. ./.setenv.dot --cmc
 export storage_model=${storage_model:-$TMPDIR}
 rm -f lib/rpnpy/version.py
 cat >> lib/rpnpy/version.py << EOF
