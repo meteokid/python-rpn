@@ -1120,7 +1120,7 @@ def gdxyfll(gdid, lat=None, lon=None):
     >>> xy = rmn.gdxyfll(grid['id'], [la], [lo])
     >>> print("# x, y pos at lat={0}, lon={1} is: {2:5.2f}, {3:5.2f}"
     ...       .format(la, lo, xy['x'][0], xy['y'][0]))
-    # x, y pos at lat=45.0, lon=273.0 is: 69.25, 34.37
+    # x, y pos at lat=45.0, lon=273.0 is: 69.25, 34.38
 
     See Also:
         gdllfxy

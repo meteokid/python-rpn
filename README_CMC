@@ -87,7 +87,7 @@ make -s forced_extlibdotfile
 # make sharedlibs
 # make sharedlibs_cp
 ## Note: Need to do "make extlibdotfile" on other arch before the next step
-# make components_ssm_all
+make components_ssm_all
 # make components_ssm
 
 ## For additional ARCH

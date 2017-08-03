@@ -179,7 +179,7 @@ class RpnPyLibrmnBurp(unittest.TestCase):
                 ('*********', -1, -1, -1, -1, -1, None)
             handle = 0
             nbrp2 = 0
-            for irep in xrange(nbrp):
+            for irep in range(nbrp):
                 handle = rmn.mrfloc(funit, handle, stnid, idtyp, lat, lon,
                                     date, time, sup)
                 ## sys.stderr.write(repr(handle)+'\n')
@@ -187,7 +187,7 @@ class RpnPyLibrmnBurp(unittest.TestCase):
                 nbrp2 += 1
             handle = 0
             sup = []
-            for irep in xrange(nbrp):
+            for irep in range(nbrp):
                 handle = rmn.mrfloc(funit, handle, stnid, idtyp, lat, lon,
                                     date, time, sup)
                 self.assertNotEqual(handle, 0)
@@ -228,7 +228,7 @@ class RpnPyLibrmnBurp(unittest.TestCase):
             ## sys.stderr.write(repr(handle)+"("+repr(maxlen)+') rmn.mrfget empty size='+repr(buf.size)+'\n')
 
             handle = 0
-            for irep in xrange(nbrp):
+            for irep in range(nbrp):
                 handle = rmn.mrfloc(funit, handle)
                 buf = rmn.mrfget(handle, buf, funit)
                 ## print handle, buf.shape, buf[0:10]
@@ -283,7 +283,7 @@ class RpnPyLibrmnBurp(unittest.TestCase):
             handle = rmn.mrfloc(funit, handle)
             buf    = rmn.mrfget(handle, buf, funit)
             params = rmn.mrbhdr(buf)
-            for iblk in xrange(params['nblk']):
+            for iblk in range(params['nblk']):
                 blkparams = rmn.mrbprm(buf, iblk+1)
             blkparams0 = {'datypd': 'uint', 'nele': 10, 'nbit': 20,
                           'datyp': 2, 'nval': 17,   'bdesc': 0, 'btyp': 9326,
@@ -311,7 +311,7 @@ class RpnPyLibrmnBurp(unittest.TestCase):
             handle = rmn.mrfloc(funit, handle)
             buf    = rmn.mrfget(handle, buf, funit)
             params = rmn.mrbhdr(buf)
-            for iblk in xrange(params['nblk']):
+            for iblk in range(params['nblk']):
                 blkparams = rmn.mrbprm(buf, iblk+1)
                 blktypdict = rmn.mrbtyp_decode(blkparams['btyp'])
                 btyp1 = rmn.mrbtyp_encode(blktypdict)
@@ -339,11 +339,11 @@ class RpnPyLibrmnBurp(unittest.TestCase):
 
     ##         handle = 0
     ##         buf = None
-    ##         for irep in xrange(nbrp):
+    ##         for irep in range(nbrp):
     ##             handle = rmn.mrfloc(funit, handle)
     ##             buf = rmn.mrfget(handle, buf, funit)
     ##             rparams = rmn.mrbhdr(buf)
-    ##             for iblk in xrange(rparams['nblk']):
+    ##             for iblk in range(rparams['nblk']):
     ##                 bparams = rmn.mrbprm(buf, iblk+1)
     ##                 ## print irep, handle, iblk+1, bparams['datyp']
     ##                 print bparams['datyp']
@@ -366,7 +366,7 @@ class RpnPyLibrmnBurp(unittest.TestCase):
             ##     'cmcids' : None,
             ##     'tblval' : None
             ##     }
-            for iblk in xrange(params['nblk']):
+            for iblk in range(params['nblk']):
                 blkparams = rmn.mrbprm(buf, iblk+1)
                 ## blkdata   = rmn.mrbxtr(buf, iblk+1, blkdata['cmcids'], blkdata['tblval'])
                 blkdata   = rmn.mrbxtr(buf, iblk+1)
@@ -399,7 +399,7 @@ class RpnPyLibrmnBurp(unittest.TestCase):
             handle = rmn.mrfloc(funit, handle)
             buf    = rmn.mrfget(handle, buf, funit)
             params = rmn.mrbhdr(buf)
-            for iblk in xrange(params['nblk']):
+            for iblk in range(params['nblk']):
                 blkparams  = rmn.mrbprm(buf, iblk+1)
                 blkdata    = rmn.mrbxtr(buf, iblk+1)
                 lstelebufr = rmn.mrbdcl(blkdata['cmcids'])
@@ -481,7 +481,7 @@ class RpnPyLibrmnBurp(unittest.TestCase):
             handle = rmn.mrfloc(funit, handle)
             buf    = rmn.mrfget(handle, buf, funit)
             params = rmn.mrbhdr(buf)
-            for iblk in xrange(params['nblk']):
+            for iblk in range(params['nblk']):
                 blkparams = rmn.mrbprm(buf, iblk+1)
                 blkdata   = rmn.mrbxtr(buf, iblk+1)
                 rval      = rmn.mrbcvt_decode(blkdata['cmcids'],
@@ -490,6 +490,48 @@ class RpnPyLibrmnBurp(unittest.TestCase):
                 rval      = rmn.mrbcvt_decode(blkdata,
                                               datyp=blkparams['datyp'])
                 #TODO: check results
+            rmn.burp_close(funit)
+
+    def testmrbcvtencodeKnownValues(self):
+        """mrbprm should give known result with known input"""
+        for mypath, itype, iunit in self.knownValues:
+            rmn.mrfopt(rmn.FSTOP_MSGLVL, rmn.BURPOP_MSG_FATAL)
+            funit  = rmn.burp_open(self.getFN(mypath))
+            nbrp   = rmn.mrfnbr(funit)
+            maxlen = max(64, rmn.mrfmxl(funit))+10
+
+            buf = None
+            handle = 0
+            handle = rmn.mrfloc(funit, handle)
+            buf    = rmn.mrfget(handle, buf, funit)
+            params = rmn.mrbhdr(buf)
+            for iblk in range(params['nblk']):
+                blkparams = rmn.mrbprm(buf, iblk+1)
+                blkdata   = rmn.mrbxtr(buf, iblk+1)
+                rval      = rmn.mrbcvt_decode(blkdata['cmcids'],
+                                              blkdata['tblval'],
+                                              blkparams['datyp'])
+                tblval    = rmn.mrbcvt_encode(blkdata['cmcids'], rval)
+                for iele in range(blkdata['cmcids'].size):
+                    e_cmcids = blkdata['cmcids'][iele]
+                    e_cmcids = rmn.mrbcvt_dict_bufr(e_cmcids, raise_error=False)['e_bufrid']
+                    e_rval = rval[iele,:,:]
+                    e_tblval0 = blkdata['tblval'][iele,:,:]
+                    e_tblval1 = tblval[iele,:,:]
+                    if not _np.all(e_tblval0 == e_tblval1):
+                        ## print 'b1',repr(blkparams)
+                        print('b2',repr(blkdata))
+                        print('b3',repr(rmn.mrbcvt_dict(e_cmcids)))
+                        print('b4',repr(rmn.mrbcvt_dict_bufr(e_cmcids, raise_error=False)))
+                        print('rv',repr(e_rval.ravel()), blkparams['datyp'])
+                        print('t0',repr(e_tblval0.ravel()))
+                        print('t1',repr(e_tblval1.ravel()))
+                    #TODO: problem w/ values < 0: decode int as is... but encode shift values by -1
+                    self.assertTrue(_np.all(e_tblval0 == e_tblval1),
+                                    "{}, {}: id={}, \nrval:{}, \nexp:{}, \ngot:{}"
+                                    .format(iblk, iele, e_cmcids, 
+                                            e_rval.ravel(), e_tblval0.ravel(),
+                                            e_tblval1.ravel()))
             rmn.burp_close(funit)
 
     def testmrfvoiKnownValues(self):
@@ -525,7 +567,7 @@ class RpnPyLibrmnBurp(unittest.TestCase):
             handle = rmn.mrfloc(funit, handle)
             buf    = rmn.mrfget(handle, buf, funit)
             params = rmn.mrbhdr(buf)
-            for iblk in xrange(params['nblk']):
+            for iblk in range(params['nblk']):
                 blkdata = rmn.mrb_prm_xtr_dcl_cvt(buf, iblk+1)
                 #TODO: check results
             rmn.burp_close(funit)
@@ -575,7 +617,7 @@ class RpnPyLibrmnBurp(unittest.TestCase):
     ##         MRBCVT_DECODE = 0
     ##         MRBCVT_ENCODE = 1
 
-    ##         for irep in xrange(nbrp):
+    ##         for irep in range(nbrp):
     ##             handle = rmn.c_mrfloc(funit, handle, stnid, idtyp, lat, lon, date, time, sup, nsup)
     ##             ier = rmn.c_mrfget(handle, buf)
     ##             ier = rmn.c_mrbhdr(buf, 
@@ -585,7 +627,7 @@ class RpnPyLibrmnBurp(unittest.TestCase):
     ##                     sup, nsup, xaux, nxaux)
     ##             ## print irep, handle, itime, iflgs, stnids, idburp, ilat, ilon, idx, idy, ialt, idelay, idate, irs, irunn, nblk
 
-    ##             for iblk in xrange(nblk.value):
+    ##             for iblk in range(nblk.value):
     ##                 ier = rmn.c_mrbprm(buf, iblk, 
     ##                              nele, nval, nt, bfam, bdesc, btyp, nbit, bit0, datyp)
     ##                 lstele = _np.empty((nele.value, ), dtype=_np.int32)

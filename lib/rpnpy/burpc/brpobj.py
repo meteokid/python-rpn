@@ -504,7 +504,7 @@ class BurpcRpt(_BurpcObjBase):
         """
         if name == 'stnid':
             self.__derived = None
-            _bp.c_brp_setstnid(self.__ptr, value)
+            _bp.c_brp_setstnid(self.__ptr, _C_WCHAR2CHAR(value))
         elif name in self.__class__.__attrlist:
             self.__derived = None
             setattr(self.__ptr[0], name, value)  #TODO: use proto fn?
