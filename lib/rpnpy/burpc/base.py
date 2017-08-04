@@ -205,9 +205,9 @@ BLK_DVAL   = lambda blk, e, v, t: \
     _BLKPTR(blk)[0].drval[e + _BLKPTR(blk)[0].nele*(v+(_BLKPTR(blk)[0].nval)*t)]
 # Get burp block CHARVAL
 BLK_CHARVAL= lambda blk, l, c: \
-    _BLKPTR(blk)[0].charval[l * _BLKPTR(blk)[0].nt + c]
+    _C_CHAR2WCHAR(_BLKPTR(blk)[0].charval[l * _BLKPTR(blk)[0].nt + c])
 # Get burp block STORE_TYPE
-BLK_STORE_TYPE = lambda blk: _BLKPTR(blk)[0].store_type
+BLK_STORE_TYPE = lambda blk: _C_CHAR2WCHAR(_BLKPTR(blk)[0].store_type)
 
 ## /*
 ##  * Macros for setting values of a Block
@@ -281,7 +281,7 @@ def BLK_SetRVAL(blk, e, v, t, val):
 
 def BLK_SetCVAL(blk, l, c, val):
     """Set burp block CVAL"""
-    _BLKPTR(blk)[0].charval[l * _BLKPTR(blk)[0].nt + c] = val
+    _BLKPTR(blk)[0].charval[l * _BLKPTR(blk)[0].nt + c] = _C_WCHAR2CHAR(val)
 
 def BLK_SetLSTELE(blk, i, val):
     """Set burp block LSTELE"""
@@ -293,7 +293,7 @@ def BLK_SetDLSTELE(blk, i, val):
 
 def BLK_SetSTORE_TYPE(blk, val):
     """Set burp block STORE_TYPE"""
-    _BLKPTR(blk)[0].store_type = val
+    _BLKPTR(blk)[0].store_type = _C_WCHAR2CHAR(val)
 
 
 def brp_SetOptFloat(name, value):

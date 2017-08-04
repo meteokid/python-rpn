@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 # . s.ssmuse.dot /ssm/net/hpcs/201402/02/base /ssm/net/hpcs/201402/02/intel13sp1u2 /ssm/net/rpn/libs/15.2
 """
 Unit tests for burpc
@@ -1154,7 +1155,7 @@ class RpnPyBurpc(unittest.TestCase):
                 'bfam' : 14,
                 'nval' : 1,
                 'btyp' : 106,
-                'bkstpd' : 'statistiques de diff\xc3\xa9rences (r\xc3\xa9sidus)',
+                'bkstpd' : "statistiques de différences (résidus)",
                 'bknat' : 0,
                 'bktyp_alt' : 0,
                 'bknat_kindd' : 'data',
