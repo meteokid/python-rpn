@@ -146,7 +146,7 @@
          PHYSICS_VARS: do ii=1, Outp_var_max(kk)
 
             WRITE_FIELD: if (phy_getmeta (pmeta, Outp_var_S(ii,kk), &
-                             F_npath='O',F_bpath='PVE', F_quiet=.true.)&
+                             F_npath='O',F_bpath='PVED', F_quiet=.true.)&
                              > 0 ) then
                FIELD_SHAPE: if (pmeta%nk .eq. 1) then ! 2D field
 
@@ -162,7 +162,7 @@
 
                   ptr3d => data3d(p_li0:p_li1,p_lj0:p_lj1,1:cnt)
                   istat = phy_get ( ptr3d, Outp_var_S(ii,kk), &
-                                    F_npath='O', F_bpath='PV')
+                                    F_npath='O', F_bpath='PVED')
                   if (Outp_avg_L(kk)) data3d = data3d*avgfact
                   call out_fstecr3 ( data3d, 1,l_ni, 1,l_nj, rff  ,&
                           Outp_var_S(ii,kk),Outp_convmult(ii,kk)  ,&
@@ -179,7 +179,7 @@
 
                   ptr3d => data3d(p_li0:p_li1,p_lj0:p_lj1,:)
                   istat = phy_get (ptr3d,Outp_var_S(ii,kk),F_npath='O', &
-                                   F_bpath='PV')
+                                   F_bpath='PVD')
                   if (Outp_avg_L(kk)) data3d = data3d*avgfact
 
                   if (Level_typ_S(levset).eq.'M') then

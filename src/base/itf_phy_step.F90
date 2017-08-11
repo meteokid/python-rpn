@@ -18,6 +18,7 @@
       subroutine itf_phy_step ( F_step_kount, F_lctl_step )
       use iso_c_binding
       use phy_itf, only: phy_input,phy_step,phy_snapshot
+      use itf_phy_filter, only: ipf_smooth_fld
       use gem_options
       use lun
       use tr3d
@@ -41,7 +42,7 @@
 
       integer,external :: itf_phy_prefold_opr
 
-      integer err_geom, err_input, err_step, err
+      integer err_geom, err_input, err_step, err_smooth, err
 !
 !     ---------------------------------------------------------------
 !
@@ -69,6 +70,15 @@
 
       call gem_error (err_input,'itf_phy_step','Problem with phy_input')
       call timing_stop  ( 45 )
+
+      ! Smooth the thermodynamic state variables on request
+      err_smooth = min(&
+           ipf_smooth_fld('PW_TT:M','TTMS'), &
+           ipf_smooth_fld('TR/HU:M','HUMS'), & 
+           ipf_smooth_fld('PW_TT:P','TTPS'), &
+           ipf_smooth_fld('TR/HU:P','HUPS') &
+           )
+      call gem_error (err_smooth,'itf_phy_step','Problem with ipf_smooth_fld') 
 
       call set_num_threads ( Ptopo_nthreads_phy, F_step_kount )
 

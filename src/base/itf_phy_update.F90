@@ -15,6 +15,7 @@
 !/@*
       subroutine itf_phy_update3 (F_apply_L)
       use phy_itf, only: phy_get
+      use itf_phy_filter, only: ipf_smooth_tend
       use gmm_vt1
       use gmm_pw
       use grid_options
@@ -36,6 +37,7 @@
 ! v4_70 - authors          - initial version
 ! v4_XX - Tanguay M.       - SOURCE_PS: REAL*8 with iterations
 
+      logical, parameter :: SMOOTH_EXPLICIT=.false.
 
       character(len=GMM_MAXNAMELENGTH) :: trname_S
       integer istat, i,j,k,n, cnt, iteration
@@ -91,6 +93,7 @@
             ptr3d => data3d(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,1:l_nk)
             istat = phy_get ( ptr3d, trim(trname_S), F_npath='V', F_bpath='D',&
                               F_end=(/-1,-1,l_nk/), F_quiet=.true. )
+            if (Tr3d_name_S(k)(1:2).eq.'HU' .and. SMOOTH_EXPLICIT) istat = ipf_smooth_tend(ptr3d,'SQE') 
          enddo
       endif
 
@@ -106,7 +109,7 @@
 
       ptr3d => pw_tt_plus(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,1:l_nk)
       istat = phy_get(ptr3d,gmmk_pw_tt_plus_s,F_npath='V',F_bpath='D',F_end=(/-1,-1,l_nk/))
-
+      if (SMOOTH_EXPLICIT) istat = ipf_smooth_tend(ptr3d,'STE')
 
       if (source_ps_L) then
 

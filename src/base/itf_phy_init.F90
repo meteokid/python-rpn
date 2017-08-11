@@ -19,6 +19,7 @@
       use vGrid_Descriptors, only: vgrid_descriptor,vgd_get,vgd_put,VGD_OK,VGD_ERROR
       use vgrid_wb, only: vgrid_wb_get, vgrid_wb_put
       use phy_itf, only: phy_init, phymeta,phy_getmeta
+      use itf_phy_filter, only: ipf_init
       use step_options
       use gem_options
       use glb_ld
@@ -51,13 +52,13 @@
       type(vgrid_descriptor) :: vcoord, vcoordt
       integer err,zuip,ztip,vtype
       integer, dimension(:), pointer :: ip1m, ip1t
-      real :: zu,zt
+      real :: zu,zt,sig
       real, dimension(:,:), pointer :: ptr2d
 
       integer,parameter :: tlift= 0
-      integer,parameter :: NBUS = 3
+      integer,parameter :: NBUS = 4
       character(len=9) :: BUS_LIST_S(NBUS) = &
-                  (/'Entry    ', 'Permanent', 'Volatile '/)
+                  (/'Entry    ', 'Permanent', 'Volatile ', 'Dynamics'/)
       character(len=GMM_MAXNAMELENGTH) :: diag_prefix
 
 !For sorting the output
@@ -125,6 +126,10 @@
                       'model/Hgrid/lclphy','model/Hgrid/lclcore', &
                       'model/Hgrid/global','model/Hgrid/local'  , &
                                        G_nk+1, Ver_std_p_prof%m )
+
+! Initialize filter weights for smoothing
+      if (.not.WB_IS_OK(wb_get('phy/cond_smoothsig',sig))) sig=-1.
+      err= min(ipf_init(F_sig=sig), err)
 
 ! Retrieve the heights of the diagnostic levels (thermodynamic
 ! and momentum) from the physics ( zero means NO diagnostic level)
