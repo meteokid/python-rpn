@@ -48,7 +48,7 @@
          return
       end if
 
-      if( Cstv_Tstr_8 .lt. 0. ) then
+      if( Cstv_Tstr_8 < 0. ) then
          ! TSTAR variable in the vertical
          err = gmm_get(gmmk_tt1_s,tt1)
          call estimate_tmean (tmean,tt1,l_minx,l_maxx,l_miny,l_maxy,G_nk)

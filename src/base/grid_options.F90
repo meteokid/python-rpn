@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -36,21 +36,29 @@ module grid_options
    integer :: Grd_maxcfl = 1
    namelist /grid/ Grd_maxcfl
 
-   !# (LU only) Mesh length (resolution) in x-direction (degrees) 
+   !# (LU only) Mesh length (resolution) in x-direction (degrees)
    real  :: Grd_dx = 0.
    namelist /grid/ Grd_dx
 
-   !# (LU only) Mesh length (resolution) in y-direction (degrees) 
+   !# (LU only) Mesh length (resolution) in y-direction (degrees)
    real  :: Grd_dy = 0.
    namelist /grid/ Grd_dy
 
-   !# Latitude on rotated grid of reference point, Grd_iref,Grd_jref (degrees) 
+   !# Latitude on rotated grid of reference point, Grd_iref,Grd_jref (degrees)
    real  :: Grd_latr = 0.
    namelist /grid/ Grd_latr
 
-   !# Longitude on rotated grid of reference point, Grd_iref,Grd_jref (degrees) 
+   !# Longitude on rotated grid of reference point, Grd_iref,Grd_jref (degrees)
    real  :: Grd_lonr = 180.
    namelist /grid/ Grd_lonr
+
+   !# Reference Point I on rotated grid, 1 < Grd_iref < Grd_ni
+   integer  :: Grd_iref = -1
+   namelist /grid/ Grd_iref
+
+   !# Reference Point J on rotated grid, 1 < Grd_jref < Grd_nj
+   integer :: Grd_jref = -1
+   namelist /grid/ Grd_jref
 
    !# (GY only) Overlap extent along latitude axis for GY grid (degrees)
    real  :: Grd_overlap = 0.
@@ -74,12 +82,11 @@ module grid_options
    real  :: Grd_xlat2 = 0.
    namelist /grid/ Grd_xlat2
 
-   character*12 Grd_yinyang_S
+   character(len=12) :: Grd_yinyang_S
    logical Grd_roule, Grd_yinyang_L
    integer Grd_bsc_base, Grd_bsc_adw, Grd_bsc_ext1, Grd_extension
-   integer Grd_iref, Grd_jref
    integer Grd_ndomains, Grd_mydomain
-   integer Grd_local_gid,Grd_lclcore_gid,Grd_global_gid,Grd_lphy_gid
+   integer Grd_local_gid,Grd_lclcore_gid,Grd_global_gid,Grd_lphy_gid,Grd_glbcore_gid
    integer Grd_lphy_i0,Grd_lphy_in,Grd_lphy_j0,Grd_lphy_jn,Grd_lphy_ni,Grd_lphy_nj
    real*8 Grd_rot_8(3,3), Grd_x0_8, Grd_xl_8, Grd_y0_8, Grd_yl_8
 

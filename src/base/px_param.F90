@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -27,8 +27,8 @@
       integer ip1(fstkeys_max),fstkeys(fstkeys_max)
       real*8  hyb_8(fstkeys_max),hybm_8(fstkeys_max)
       real*8  a_8(fstkeys_max),b_8(fstkeys_max)
-      character*1 staglevs
-      character*8 vcode_S
+      character(len=1) :: staglevs
+      character(len=8) :: vcode_S
 
 !author
 !     V.Lee July 2008 (from GEMDM, hybrid code)
@@ -49,7 +49,7 @@
 ! b_8           O       list of B coefficients for each level
 ! vcode         O       code number for type of vertical coordinate
 !                        0=pressure
-!                        1=SIGMA 
+!                        1=SIGMA
 !                        2=ETASEF (eta for spectral)
 !                        3=SIGPT  (eta, rcoef=1.0)
 !                        4=HYBLG  (hybrid Laprise/Girard)
@@ -63,23 +63,22 @@
                 read_decode_hyb,read_decode_bang
       external  fstinf, fstprm, fstlir, fstluk, fnom, &
                 read_decode_hyb,read_decode_bang
-      integer  ni,nj,nk,ni1,nj1,nk1,i,j,k,n,m,ip1x,ip2x,ip3x
+      integer  ni,nj,nk,i,j,k,n,m
       integer  e1_key,hy_key,pt_key,p0_key,xx_key
       integer  datev, dateo, deet, ipas, ip1a, ip2a, ip3a,  &
                ig1a, ig2a, ig3a, ig4a, bit, datyp, &
-               swa, lng, dlf, ubc, ex1, ex2, ex3, kind, ip1mode, status
-      real     rcoef(2),lev,ptop,pref,pr1
+               swa, lng, dlf, ubc, ex1, ex2, ex3, kind, status
+      real     rcoef(2),lev,ptop,pref
       real*8   x1_8,etatop_8,eta1_8,ptop_8,pref_8,pr1_8,pr2_8,rcoef_8(2)
-      character*1  tva, grda, blk_S
-      character*4  var
-      character*12 etik_S
+      character(len=1) :: tva, grda, blk_S
+      character(len=4) :: var
+      character(len=12) :: etik_S
       logical found
       type(vgrid_descriptor) :: vgd
 
       integer,dimension(:), pointer :: lookup_ip1
       real,   dimension(:,:), allocatable :: work
       real*8, dimension(:), pointer :: lookup_a_8,lookup_b_8
-      real*8, dimension(:,:),allocatable:: work_8
 !
 ! ---------------------------------------------------------------------
 !
@@ -100,28 +99,28 @@
          px_param = fstprm ( fstkeys(k), dateo, deet, ipas, ni, nj, nk,&
                     bit, datyp, ip1a,ip2a,ip3a, tva, var, etik_S, grda,&
                  ig1a,ig2a,ig3a,ig4a, swa,lng, dlf, ubc, ex1, ex2, ex3 )
-         if (px_param.lt.0) then
+         if (px_param < 0) then
              print *,'px_param error: fstprm on key',fstkeys(k)
              return
          endif
          call convip (ip1a, lev, i,-1, blk_S, .false.)
-         if (k.eq.1) kind=i
-         if ((k.eq.fstkeys_max).and.(i.eq.4)) diag_lvl_L = .true.
+         if (k == 1) kind=i
+         if ((k == fstkeys_max).and.(i == 4)) diag_lvl_L = .true.
          ip1(k)=ip1a
          hyb_8(k)=lev
       enddo
-      
+
       call incdatr(datev,dateo,ipas*deet/3600.0d0)
 
 !     Sort levels in ascending order
-      if (fstkeys_max.gt.1) then
+      if (fstkeys_max > 1) then
          n = fstkeys_max
          do i = 1, n-1
             k = i
             do j = i+1, n
-               if (hyb_8(k) .gt. hyb_8(j))  k=j
+               if (hyb_8(k) > hyb_8(j))  k=j
             enddo
-            if (k .ne. i) then
+            if (k /= i) then
                x1_8     = hyb_8(k)
                m      = ip1(k)
                hyb_8(k) = hyb_8(i)
@@ -133,9 +132,9 @@
 !   AND  Eliminate levels that are redundant in LISTE
          i = 1
          do j=2,n
-            if (hyb_8(i) .ne. hyb_8(j)) then
+            if (hyb_8(i) /= hyb_8(j)) then
                 i = i+1
-                if (i .ne. j) then
+                if (i /= j) then
                     hyb_8(i) = hyb_8(j)
                      ip1(i) =  ip1(j)
                 endif
@@ -143,28 +142,28 @@
          enddo
          ip1_max = i
       else
-         ip1_max = 1 
+         ip1_max = 1
       endif
 
       hy_key=fstinf (iun,ni,nj,nk,datev,' ',-1,  -1,  -1,' ','HY')
       pt_key=fstinf (iun,ni,nj,nk,datev,' ',-1,  -1,  -1,' ','PT')
       e1_key=fstinf (iun,ni,nj,nk,datev,' ',-1,  -1,  -1,' ','E1')
-      if (kind.eq.1) then
+      if (kind == 1) then
           rcoef_8(1) = 1.0
           rcoef_8(2) = 1.0
           pref_8  = 800.0
           p0_key=fstinf (iun,ni,nj,nk,datev,etik_S,-1,ip2a,ip3a,' ','P0')
-          if (p0_key.lt.0) then
+          if (p0_key < 0) then
                  print *,'px_param error: No p0 found, kind = 1'
                  px_param = -1
                  return
           endif
-          if (hy_key.ge.0) then
+          if (hy_key >= 0) then
               vcode_S='HYBLG'
               vcode = 4
               px_param=read_decode_hyb (iun,'HY',  -1,  -1,' ', &
                                                  datev,ptop,pref,rcoef(1))
-              if (px_param.lt.0) then
+              if (px_param < 0) then
                   print *,'px_param error: in read_decode_hyb'
                   return
               endif
@@ -172,20 +171,20 @@
               pref_8=pref
               rcoef_8(1) = rcoef(1)
               rcoef_8(2) = rcoef(2)
-          else if (pt_key.ge.0) then
+          else if (pt_key >= 0) then
                allocate (work(ni,nj))
                px_param = fstluk(work,pt_key,ni,nj,nk)
-               if (px_param.lt.0) then
+               if (px_param < 0) then
                    print *,'px_param error: in fstluk PT'
                    return
                endif
                ptop = work(1,1)
                ptop_8 = work(1,1)
                deallocate (work)
-               if (e1_key.ge.0) then
+               if (e1_key >= 0) then
                    allocate (work(ni,nj))
                    px_param = fstluk(work,e1_key,ni,nj,nk)
-                   if (px_param.lt.0) then
+                   if (px_param < 0) then
                        print *,'px_param error: in fstluk E1'
                        return
                    endif
@@ -195,7 +194,7 @@
                    vcode = 2
                    eta1_8=1.0d0 / (1.0d0 - etatop_8)
                    do i=1,ip1_max
-                      b_8(i) = (hyb_8(i) - etatop_8)*eta1_8 
+                      b_8(i) = (hyb_8(i) - etatop_8)*eta1_8
                       a_8(i) = ptop_8*100.0d0* (1.0d0 - b_8(i))
                    enddo
                else
@@ -206,17 +205,17 @@
                    a_8(i) = ptop_8*100.0d0* (1.0d0 - hyb_8(i))
                 enddo
                endif
-          else 
+          else
                vcode_S='SIGMA'
                vcode = 1
                do i=1,ip1_max
                   a_8(i) = 0.0d0
-                  b_8(i) = hyb_8(i) 
+                  b_8(i) = hyb_8(i)
                enddo
           endif
       endif
 
-      if (kind.eq.2) then
+      if (kind == 2) then
          vcode_S='PRESS'
          vcode = 0
          do i=1,ip1_max
@@ -225,14 +224,14 @@
          enddo
       endif
 
-      if (kind.eq.5) then
+      if (kind == 5) then
          rcoef(1) = 1.0
          rcoef(2) = 1.0
          pref_8  = 800.0
          ptop_8=0.0
 !         xx_key=fstinf (iun,ni, nj, nk, -1,' ',ig1a,ig2a,-1 ,' ','!!  ')
          xx_key=fstinf (iun,ni, nj, nk, -1,' ',-1,-1,-1 ,' ','!!  ')
-         if (xx_key.ge.0) then
+         if (xx_key >= 0) then
              status = vgd_new (vgd,unit=iun,format='fst',ip1=-1,ip2=-1)
              if (status /= VGD_OK) then
                 print*, 'px_param error: cannot build coordinate descriptor'
@@ -250,7 +249,7 @@
              do i=1,size(ip1)
                 j = 1; found = .false.
                 do while (.not.found .and. j<=minval((/size(lookup_a_8),size(lookup_b_8),size(lookup_ip1)/)))
-                   if (ip1(i).eq.lookup_ip1(j)) then                         
+                   if (ip1(i) == lookup_ip1(j)) then
                       a_8(i)=lookup_a_8(j)
                       b_8(i)=lookup_b_8(j)
                       found = .true.
@@ -275,9 +274,9 @@
              endif
              vcode = 6
              vcode_S='HYBSTAG'
-         else if (hy_key.ge.0) then
+         else if (hy_key >= 0) then
               p0_key=fstinf (iun,ni,nj,nk,datev,etik_S,-1,ip2a,ip3a,' ','P0')
-              if (p0_key.lt.0) then
+              if (p0_key < 0) then
                  print *,'px_param error: HY found,No p0 found, kind = 5'
                  px_param = -1
                  return
@@ -286,7 +285,7 @@
               vcode = 4
               px_param=read_decode_hyb (iun,'HY',  -1,  -1,' ', &
                                                  datev,ptop,pref,rcoef(1))
-              if (px_param.lt.0) then
+              if (px_param < 0) then
                   print *,'px_param error: in read_decode_hyb'
                   return
               endif
@@ -300,13 +299,13 @@
              return
          endif
       endif
-      if ( vcode.eq.4 ) then
-           if (kind.eq.1) then
+      if ( vcode == 4 ) then
+           if (kind == 1) then
                do i=1,ip1_max
                   hybm_8(i) = hyb_8(i) + (1.0d0 - hyb_8(i))*ptop_8/pref_8
                enddo
            endif
-           if ( kind.eq.5 ) then
+           if ( kind == 5 ) then
                do i=1,ip1_max
                   hybm_8(i) = hyb_8(i)
                enddo

@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -21,7 +21,7 @@
 !
       integer F_n, F_ndown
 !
-!author 
+!author
 !     Jean Cote - 1990
 !
 !revision
@@ -41,7 +41,7 @@
 !
 !     ---------------------------------------------------------------
 !
-      if ( F_n.le.m ) F_n = m + 1
+      if ( F_n <= m ) F_n = m + 1
       keep= F_n
 ! going up
       F_n = F_n - 1
@@ -49,13 +49,13 @@
       i = F_n
 
   20  do 30 j=1,n
-         if( mod(i,k(j)) .eq. 0 ) go to 40
+         if( mod(i,k(j)) == 0 ) go to 40
   30  continue
 
       go to 10
   40  i = i/k(j)
 
-      if( i .ne. 1 ) go to 20
+      if( i /= 1 ) go to 20
 
 ! going down
       F_ndown = keep + 1
@@ -63,13 +63,13 @@
       i = F_ndown
 
  200  do 300 j=1,n
-         if( mod(i,k(j)) .eq. 0 ) go to 400
+         if( mod(i,k(j)) == 0 ) go to 400
  300  continue
 
       go to 100
  400  i = i/k(j)
 
-      if( i .ne. 1 ) go to 200
+      if( i /= 1 ) go to 200
 !
 !     ---------------------------------------------------------------
 !

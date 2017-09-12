@@ -51,7 +51,7 @@
 !
 !     ---------------------------------------------------------------
 !
-      if (Lun_out.gt.0) write(Lun_out,2020) Init_dfnp
+      if (Lun_out > 0) write(Lun_out,2020) Init_dfnp
 
       allocate (Init_dfco(0:Init_halfspan))
 
@@ -75,8 +75,8 @@
          prsum     = prsum + 2.0 * Init_dfco(n)
       end do
 
-      if (Lun_out.gt.0) write(Lun_out,2030)
-      if (Lun_out.gt.0)  &
+      if (Lun_out > 0) write(Lun_out,2030)
+      if (Lun_out > 0)  &
           write(Lun_out,*) (Init_dfco(n),n=0,Init_halfspan), prsum
 
       do n=0,Init_halfspan
@@ -88,18 +88,18 @@
          prsum = prsum + 2.0 * Init_dfco(n)
       end do
 
-      if (Lun_out.gt.0) write(Lun_out,2040)
-      if (Lun_out.gt.0) &
+      if (Lun_out > 0) write(Lun_out,2040)
+      if (Lun_out > 0) &
           write(Lun_out,*) (Init_dfco(n),n=0,Init_halfspan), prsum
 
       if ( .not. Rstri_rstn_L ) call digflt()
 
-      if (Lun_out.gt.0) write(Lun_out,1000) &
+      if (Lun_out > 0) write(Lun_out,1000) &
            Lctl_step,Lctl_step+Init_dfnp-1-Step_kount
 
       call gem_run (F_rstrt_L)
 
-      if ((Step_kount.eq.Init_dfnp-1).and.(.not.F_rstrt_L)) then
+      if ((Step_kount == Init_dfnp-1).and.(.not.F_rstrt_L)) then
          Init_mode_L = .false.
          call ta2t1tx()
          call pw_update_GPW
@@ -114,7 +114,7 @@
             call rpn_comm_xch_halo (fis0,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,1,&
                     G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
          endif
-         if (Lun_out.gt.0) write(Lun_out,1050) Lctl_step
+         if (Lun_out > 0) write(Lun_out,1050) Lctl_step
       endif
 
  1000 format(/,' =====> DIGITAL FILTER INITIALIZATION SCHEME: ', &

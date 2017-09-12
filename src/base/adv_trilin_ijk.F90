@@ -47,14 +47,15 @@ subroutine adv_trilin_ijk ( F_x, F_y, F_z, F_capz, F_ii, F_jj, F_kk,        &
    ! v4_10 -Plante A.       -  Replace single locator vector with 3 vectors.
 
 
-   integer :: n, n0, o1, o2
+   integer :: n, n0
    integer :: i, j, k, ii, jj, kk
    real    :: capx, capy, capz
-   real*8  :: rri, rrj, rrk, prf1, prf2, prf3, prf4
+   real*8  :: rri, rrj, rrk
 
    !---------------------------------------------------------------------
 
-!$omp parallel do private(n,n0,ii,jj,kk,rri,rrj,rrk,capx,capy,capz,o1,o2,prf1,prf2,prf3,prf4)
+!$omp parallel do private(i,j,k,n,n0,ii,jj,kk,rri,rrj,rrk, &
+!$omp               capx,capy,capz)
     do k=k0,F_nk
        do j=j0,jn
 
@@ -89,8 +90,8 @@ subroutine adv_trilin_ijk ( F_x, F_y, F_z, F_capz, F_ii, F_jj, F_kk,        &
             F_kk(n) = kk
          enddo
 
-      enddo
-   enddo
+       enddo
+    enddo
 !$omp end parallel do
 
    !---------------------------------------------------------------------

@@ -333,14 +333,19 @@ module gem_options
    namelist /gem_cfgs  / Lam_blendoro_L
    namelist /gem_cfgs_p/ Lam_blendoro_L
 
+   !# True->to check for time left in job
+   logical :: Lctl_cktimeleft_L = .false.
+   namelist /gem_cfgs  / Lctl_cktimeleft_L
+   namelist /gem_cfgs_p/ Lctl_cktimeleft_L
+
    !# True->to print more information to std output
    logical :: Lctl_debug_L = .false.
    namelist /gem_cfgs  / Lctl_debug_L
    namelist /gem_cfgs_p/ Lctl_debug_L
 
-   !# precistion in print glbstats
+   !# precision in print glbstats
    !# * 'LCL_4'
-   !# * 'LCL_8'
+   !# * 'GLB_8'
    character(len=6) :: Lctl_rxstat_S = 'LCL_4'
    namelist /gem_cfgs  / Lctl_rxstat_S
    namelist /gem_cfgs_p/ Lctl_rxstat_S
@@ -731,26 +736,6 @@ module gem_options
    character(len=16) :: Vtopo_length_S = ''
    namelist /gem_cfgs  / Vtopo_length_S
    namelist /gem_cfgs_p/ Vtopo_length_S
-
-   !# True-> apply vertical sponge to momentum, and divergence
-   logical :: Zblen_L = .false.
-   namelist /gem_cfgs  / Zblen_L
-   namelist /gem_cfgs_p/ Zblen_L
-
-   !# True-> apply vertical sponge also to temperature
-   logical :: Zblen_spngtt_L = .false.
-   namelist /gem_cfgs  / Zblen_spngtt_L
-   namelist /gem_cfgs_p/ Zblen_spngtt_L
-
-   !# height (in meters) of lower boundary for sponge
-   real :: Zblen_hmin = 0.
-   namelist /gem_cfgs  / Zblen_hmin
-   namelist /gem_cfgs_p/ Zblen_hmin
-
-   !# thickness (in meters) of vertical sponge
-   real :: Zblen_spngthick = 0.
-   namelist /gem_cfgs  / Zblen_spngthick
-   namelist /gem_cfgs_p/ Zblen_spngthick
 
    !# True-> divergence high level modulation in initial computation of Zdot
    logical :: Zdot_divHLM_L = .false.

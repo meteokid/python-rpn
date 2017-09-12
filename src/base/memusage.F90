@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -39,30 +39,30 @@
       memory(Ptopo_myproc+1) = get_max_rss()
       call rpn_comm_REDUCE ( memory, memoryt, Ptopo_numproc,&
                        "MPI_INTEGER","MPI_SUM",0,"grid",err )
-      if (unf.gt.0) then
+      if (unf > 0) then
          sum   = 0.0
-         sumd2 = 0.0      
+         sumd2 = 0.0
          imin  = 1
          imax  = Ptopo_numproc
          maxd  = memoryt(Ptopo_numproc)/1000000.
          mind  = memoryt(1)/1000000.
-         
+
          do i=1,Ptopo_numproc
             fijk  = memoryt(i)/1000000.
             sum   = sum   + fijk
             sumd2 = sumd2 + fijk*fijk
-            if (fijk .gt. maxd) then
+            if (fijk > maxd) then
                maxd = fijk
                imax = i
             endif
-            if (fijk .lt. mind) then
+            if (fijk < mind) then
                mind = fijk
                imin = i
             endif
          end do
-         
+
          npt_8 = Ptopo_numproc
-         moy = sum / npt_8 
+         moy = sum / npt_8
          var = max(0.d0,1.0d0*(sumd2 + moy*moy*npt_8 - 2*moy*sum) / npt_8)
          var = sqrt(var)
 
@@ -71,7 +71,7 @@
 
          do i=1,Ptopo_numproc
             fijk  = memoryt(i)/1000000.
-            if (fijk.gt.(moy+var)) write (unf,97) i-1,fijk
+            if (fijk > (moy+var)) write (unf,97) i-1,fijk
          end do
       endif
 

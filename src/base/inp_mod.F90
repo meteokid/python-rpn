@@ -13,16 +13,18 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 module inp_mod
-      
-      character*16 Inp_datev
-      logical Inp_zd_L,Inp_w_L
-      integer Inp_nfiles , Inp_comm_id, Inp_comm_setno,&
-              Inp_iome   , Inp_comm_io, Inp_iobcast, Inp_kind      ,&
+   implicit none
+   public
+   save
+
+   character(len=16) :: Inp_datev
+   logical Inp_zd_L,Inp_w_L
+   integer Inp_nfiles , Inp_comm_id, Inp_comm_setno,&
+           Inp_iome   , Inp_comm_io, Inp_iobcast, Inp_kind      ,&
               Inp_version, Inp_handle , Inp_cmcdate
-      integer, dimension(:), pointer :: Inp_list_unf => null()
-      real*8 Inp_pref_a_8
+   integer, dimension(:), pointer :: Inp_list_unf => null()
+   real*8 Inp_pref_a_8
 
-
-      ! Remove the following 2 lines by 2021 
-      integer Inp_ut1_is_urt1
+   ! Remove the following 2 lines by 2021
+   integer Inp_ut1_is_urt1
 end module inp_mod

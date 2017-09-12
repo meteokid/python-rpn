@@ -27,7 +27,7 @@
       implicit none
 #include <arch_specific.hf>
 
-      character* (*) nomvar
+      character(len=*) nomvar
       logical F_empty_stk_L
       integer lminx,lmaxx,lminy,lmaxy,nkfa,nbit,nk_o,kind,lstep
       integer ind_o(nk_o)
@@ -50,26 +50,31 @@ End Interface
       real,   parameter :: eps=1.e-12
       character(len=8) dumc
       logical, save :: done= .false.
-      integer modeip1,i,j,k,ip1,ip2,ip3,err
+      integer modeip1,i,j,k,err
       integer, save :: istk = 0
       real, save, dimension (:,:,:), pointer :: f2c => null()
       type (meta_fstecr), save, dimension(:), pointer :: meta => null()
 !
 !----------------------------------------------------------------------
 !
-      if (.not.associated(meta)) allocate (meta(out_stk_size))
-      if (.not.associated(f2c )) &
+      if (.not.associated(meta)) then
+         allocate (meta(out_stk_size))
+      end if
+
+      if (.not.associated(f2c )) then
          allocate (f2c(l_minx:l_maxx,l_miny:l_maxy,out_stk_size))
+      end if
+
       if (.not.done) then
-         out_stk_full= 0 ; out_stk_part= 0 ; done= .true.
+         out_stk_full = 0 ; out_stk_part = 0 ; done = .true.
       endif
 
       if (F_empty_stk_L) then
-         if ( istk .gt. 0) then
+         if ( istk > 0) then
             call out_stkecr2 ( f2c,l_minx,l_maxx,l_miny,l_maxy ,&
                                meta,istk, Out_gridi0,Out_gridin,&
                                           Out_gridj0,Out_gridjn )
-            if (istk.lt.out_stk_size) out_stk_part= out_stk_part + 1
+            if (istk < out_stk_size) out_stk_part= out_stk_part + 1
          endif
          istk= 0
          deallocate (meta, f2c) ; nullify (meta, f2c)
@@ -77,7 +82,7 @@ End Interface
       endif
 
       modeip1= 1
-      if (kind.eq.2) modeip1= 3 !old ip1 style for pressure lvls output
+      if (kind == 2) modeip1= 3 !old ip1 style for pressure lvls output
 
       if ( lstep > 0 ) then
          RP2%lo  = dble(lstep           ) * dble(Step_dt) / 3600.d0
@@ -113,7 +118,7 @@ End Interface
          meta(istk)%nj   = Out_gridjn - Out_gridj0 + 1
          meta(istk)%nbits= nbit
          meta(istk)%dtyp = 134
-         if (istk.eq.out_stk_size) then
+         if (istk == out_stk_size) then
             call out_stkecr2 ( f2c,l_minx,l_maxx,l_miny,l_maxy ,&
                                meta,istk, Out_gridi0,Out_gridin,&
                                           Out_gridj0,Out_gridjn )

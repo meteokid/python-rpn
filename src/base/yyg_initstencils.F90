@@ -46,10 +46,10 @@
       real*8 one, half
       parameter( one  = 1.d0, half = .5d0 )
       real*8 di_8,xagauche_8,xadroite_8,yasud_8,yanord_8
-      integer Gni,Gnj,err,i,j,ii,jj
+      integer Gni,Gnj,i,j,ii,jj
 
 !
-!To compute Boundary Condition stencils for Yin-Yang 
+!To compute Boundary Condition stencils for Yin-Yang
 
       Gni = G_ni-Lam_pil_w-Lam_pil_e
       Gnj = G_nj-Lam_pil_s-Lam_pil_n
@@ -97,5 +97,5 @@
       enddo
 
       return
- 
+
       end

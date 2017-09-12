@@ -38,7 +38,7 @@
       real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in)  :: F_in  !Field at previous time step
       real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in)  :: F_for_flux_o !I: Advected mixing ratio with 0 in NEST
       real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in)  :: F_for_flux_i !I: Advected mixing ratio with 0 in CORE
-      character*40 kind_S
+      character(len=42) :: kind_S
 !
 !  author Monique Tanguay
 !
@@ -73,15 +73,15 @@
          if (CLIP_L)             F_out(i0:in,j0:jn,k0:F_nk) = F_mono(i0:in,j0:jn,k0:F_nk)
 
          if(verbose_L) then
-         if (Lun_out.gt.0.and..not.CLIP_L.and..not.SLICE_L) then
+         if (Lun_out > 0.and..not.CLIP_L.and..not.SLICE_L) then
             write(Lun_out,*) 'TRACERS: ----------------------------------------------------------------------'
             write(Lun_out,*) 'TRACERS: Cubic SL Interpolation: ',F_name_S(4:7)
             write(Lun_out,*) 'TRACERS: ----------------------------------------------------------------------'
-         elseif(Lun_out.gt.0.and.CLIP_L) then
+         elseif(Lun_out > 0.and.CLIP_L) then
             write(Lun_out,*) 'TRACERS: ----------------------------------------------------------------------'
             write(Lun_out,*) 'TRACERS: Cubic MONO(CLIPPING) SL Interpolation: ',F_name_S(4:7)
             write(Lun_out,*) 'TRACERS: ----------------------------------------------------------------------'
-         elseif(Lun_out.gt.0.and.SLICE_L) then
+         elseif(Lun_out > 0.and.SLICE_L) then
             write(Lun_out,*)    'TRACERS: ----------------------------------------------------------------------'
             write(Lun_out,1000) 'TRACERS: Local SL Mass Conserving Interpolation (SLICE): ',F_name_S(4:7)
             if (Tr_SLICE_rebuild==1) kind_S = 'Laprise and Plante 1995 (PPM1)          '

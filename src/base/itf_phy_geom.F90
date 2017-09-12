@@ -90,7 +90,7 @@
    if (RMN_IS_OK(istat)) then
       w1 = 1.
       nest_it = ( Lam_0ptend_L .and. &
-                ((Lam_blend_Hx.gt.0).or.(Lam_blend_Hy.gt.0)) )
+                ((Lam_blend_Hx > 0).or.(Lam_blend_Hy > 0)) )
       if ( nest_it ) then
          w2 = 0.
          call nest_blend (w1(:,:,1),w2(:,:,1),l_minx,l_maxx,l_miny,l_maxy,'M',level=G_nk+1)

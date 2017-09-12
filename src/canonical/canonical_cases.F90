@@ -24,7 +24,7 @@
       use gmm_vt0
       use gmm_vt1
       use gem_options
-      use tdpack, only : rgasd_8, cpd_8  
+      use tdpack, only : rgasd_8, cpd_8
 
       use glb_ld
       use cstv
@@ -80,14 +80,14 @@
 
          if (Dcmip_case==0) return
 
-         if (Lun_out.gt.0) then
+         if (Lun_out > 0) then
             write (Lun_out,1005) G_nk,Hyb_rcoef
 
             do k=1,G_nk
                dcmip_height  =-8780.2*alog(Ver_hyb%m(k))
-               if (k.lt.G_nk)&
+               if (k < G_nk)&
                dcmip_heightp1 =-8780.2*alog(Ver_hyb%m(k+1))
-               if (k.eq.G_nk) dcmip_heightp1 = 0.
+               if (k == G_nk) dcmip_heightp1 = 0.
                call convip(pnip1,Ver_hyb%m(k),5,1,dumc,.false.)
                write (Lun_out,1006) k,Ver_hyb%m(k),dcmip_height, &
                                     dcmip_height-dcmip_heightp1,pnip1

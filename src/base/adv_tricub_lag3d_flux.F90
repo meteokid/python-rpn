@@ -16,7 +16,7 @@
 !**s/p adv_tricub_lag3d_flux: Estimate FLUX_out/FLUX_in when LAM using Flux calculations based on Aranami et al. (2015)
 
       subroutine adv_tricub_lag3d_flux (F_cub_o,F_in_o,F_cub_i,F_in_i, &
-                                         F_x,F_y,F_z,F_num,k0,F_nk,F_lev_S)
+                                         F_x,F_y,F_z,F_num,k0,F_lev_S)
 
       use grid_options
       use glb_ld
@@ -31,7 +31,6 @@
 
       character(len=*), intent(in) :: F_lev_S ! m/t : Momemtum/thermo level
       integer, intent(in) :: F_num ! number points
-      integer, intent(in) :: F_nk ! number of vertical levels
       integer, intent(in) :: k0   ! scope of operator
       real,dimension(F_num), intent(in)    :: F_x, F_y, F_z ! interpolation target x,y,z coordinates
       real,dimension(*),     intent(in)    :: F_in_o,F_in_i ! field to interpolate (F_in_o for FLUX_out;F_in_i for FLUX_in)
@@ -55,13 +54,13 @@
 
       integer jext
 
-      integer :: n0,nx,ny,nz,m1,id,n,i,j,k,ii,jj,kk,kkmax,idxk,idxjk,o1,o2,o3,o4, &
-                 i0_e,in_e,j0_e,jn_e,i0_o,in_o,j0_o,jn_o,i0_i,in_i,j0_i,jn_i
+      integer :: n0,nx,ny,nz,m1,id,n,kkmax,o1,o2,o3,o4, &
+                 i0_e,in_e,j0_e,jn_e
       real   :: za
       real*8 :: a1, a2, a3, a4, &
               b1, b2, b3, b4, c1, c2, c3, c4, &
               d1, d2, d3, d4, p1, p2, p3, p4, &
-              rri,rrj,rrk,ra,rb,rc,rd, &
+              ra,rb,rc,rd, &
               triprd,zb,zc,zd,p_z00_8
 
       triprd(za,zb,zc,zd)=(dble(za)-zb)*(za-zc)*(za-zd)

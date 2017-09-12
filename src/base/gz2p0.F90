@@ -27,10 +27,11 @@
       implicit none
 #include <arch_specific.hf>
 
-      integer Nk,Mminx,Mmaxx,Mminy,Mmaxy,F_i0,F_in,F_j0,F_jn
-      real F_gz  (Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
-           F_ps  (Mminx:Mmaxx,Mminy:Mmaxy)   , &
-           F_topo(Mminx:Mmaxx,Mminy:Mmaxy)   , F_rna(Nk)
+      integer, intent(in) :: Nk,Mminx,Mmaxx,Mminy,Mmaxy,F_i0,F_in,F_j0,F_jn
+      real, dimension(Mminx:Mmaxx,Mminy:Mmaxy,Nk), intent(in) :: F_gz
+      real, dimension(Mminx:Mmaxx,Mminy:Mmaxy), intent(out) :: F_ps
+      real, dimension(Mminx:Mmaxx,Mminy:Mmaxy), intent(inout) :: F_topo
+      real, dimension(Nk), intent(in) :: F_rna
 
 !arguments
 !  Name        I/O                 Description
@@ -52,24 +53,25 @@
       if (Schm_autobar_L) then
          F_topo = 0.
          do j=1,l_nj
-         do i=1,l_ni
-            F_ps(i,j) =  (grav_8*F_gz(i,j,1)-F_topo(i,j)) &
-                        /(Rgasd_8*Cstv_Tstr_8) &
-                        +Ver_z_8%m(1)-Cstv_Zsrf_8
-            F_ps(i,j) = exp(F_ps(i,j)) * Cstv_pref_8
-         enddo
+            do i=1,l_ni
+               F_ps(i,j) =  (grav_8*F_gz(i,j,1)-F_topo(i,j)) &
+                           /(Rgasd_8*Cstv_Tstr_8) &
+                           +Ver_z_8%m(1)-Cstv_Zsrf_8
+               F_ps(i,j) = exp(F_ps(i,j)) * Cstv_pref_8
+            enddo
          enddo
          return
       endif
 
-      if (Nk < 2) &
-      call gem_error(-1,'gz2p0','Impossible to proceed: NK < 2')
+      if (Nk < 2) then
+         call gem_error(-1,'gz2p0','Impossible to proceed: NK < 2')
+      end if
 
       acc = .1 * grav_8
-      conv = alog(100.)
+      conv = log(100.)
 !     Convert millibar to log of pascal unit - Pressure Analysis
       do k=1,Nk
-         lna(k) = alog(F_rna(k))
+         lna(k) = log(F_rna(k))
       enddo
       do k=1,Nk-1
          sdd(k) = 1./(lna(k+1)-lna(k))
@@ -81,27 +83,27 @@
 
       m=0
       do j=F_j0,F_jn
-      do i=F_i0,F_in
-         m=m+1
-         topo(m)=F_topo(i,j)
-      enddo
+         do i=F_i0,F_in
+            m=m+1
+            topo(m)=F_topo(i,j)
+         enddo
       enddo
       do k=1,Nk
          m=0
          do j=F_j0,F_jn
-         do i=F_i0,F_in
-            m=m+1
-            zcol(m,k) = grav_8*F_gz(i,j,k)
-         enddo
+            do i=F_i0,F_in
+               m=m+1
+               zcol(m,k) = grav_8*F_gz(i,j,k)
+            enddo
          enddo
       enddo
 !
 !     Compute derivative of geopotential (from vdfds)
 !
       do k=1,Nk-1
-      do i=1,NN
-         tcol(i,k+1) = sdd(k)*(zcol(i,k+1)-zcol(i,k))
-      enddo
+         do i=1,NN
+            tcol(i,k+1) = sdd(k)*(zcol(i,k+1)-zcol(i,k))
+         enddo
       enddo
 
       do i=1,NN
@@ -109,10 +111,10 @@
       enddo
 
       do k=2,Nk-1
-      do i=1,NN
-         tcol(i,k) = (sdd(k)*tcol(i,k+1)+sdd(k-1)*tcol(i,k)) &
-                     /(sdd(k)+sdd(k-1))
-      enddo
+         do i=1,NN
+            tcol(i,k) = (sdd(k)*tcol(i,k+1)+sdd(k-1)*tcol(i,k)) &
+                        /(sdd(k)+sdd(k-1))
+         enddo
       enddo
 
 !     BOUNDARIES
@@ -129,10 +131,10 @@
       call vterp1 (guess,topo,zcol,tcol,lna,acc,NN,Nk)
       m=0
       do j=F_j0,F_jn
-      do i=F_i0,F_in
-         m=m+1
-         F_ps(i,j) = exp (guess(m) + conv)
-      enddo
+         do i=F_i0,F_in
+            m=m+1
+            F_ps(i,j) = exp (guess(m) + conv)
+         enddo
       enddo
 
       deallocate(guess,a,topo,zcol,tcol)

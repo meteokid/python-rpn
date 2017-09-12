@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -30,9 +30,9 @@
 
 #include <arch_specific.hf>
 
-      character*2048 dirname_S,cmd
-      character*16   datev
-      character*3    mycol_S,myrow_S
+      character(len=2048) :: dirname_S,cmd
+      character(len=16) :: datev
+      character(len=3) :: mycol_S,myrow_S
       logical saverestart, save_additional
       integer err
       real*8 dayfrac
@@ -40,21 +40,23 @@
 !
 !     ---------------------------------------------------------------
 !
-      if ( Init_mode_L .and. (Step_kount.ge.Init_halfspan) ) return
+      if ( Init_mode_L .and. (Step_kount >= Init_halfspan) ) return
       save_additional= (Step_kount == Step_bkup_additional)
       saverestart= .false.
-      if ( Fcst_bkup_S /= 'NIL' ) &
-      saverestart= ( timestr_isstep (Fcst_bkup_S, Step_CMCdate0, &
-                     real(Cstv_dt_8),Step_kount) == TIMESTR_MATCH )
+      if ( Fcst_bkup_S /= 'NIL' ) then
+         saverestart = ( timestr_isstep (Fcst_bkup_S, Step_CMCdate0, &
+                         real(Cstv_dt_8),Step_kount) == TIMESTR_MATCH )
+      end if
 
       if (saverestart .or. save_additional) then
          call wrrstrt ()
          dayfrac = dble(Step_kount) * Cstv_dt_8 * OV_day
          call incdatsd (datev,Step_runstrt_S,dayfrac)
          dirname_S= trim(Path_output_S)//'/'//Out_laststep_S//'/restart_'//trim(datev)
-         if (Grd_yinyang_L) &
-         dirname_S=trim(dirname_S)//'/'//trim(Grd_yinyang_S)
-         if (Ptopo_myproc.eq.0) then
+         if (Grd_yinyang_L) then
+            dirname_S=trim(dirname_S)//'/'//trim(Grd_yinyang_S)
+         end if
+         if (Ptopo_myproc == 0) then
             err= clib_mkdir_r ( trim(dirname_S) )
             call mkdir_gem ( trim(dirname_S), Ptopo_npex, Ptopo_npey )
          endif
@@ -70,7 +72,7 @@
 !    pathnew = trim(newdir)//'/'//trim(myname)
 !    istat = clib_rename(filelist(ifile),pathnew)
 !enddo
-         if (Lun_out.gt.0) write (Lun_out,1002) Lctl_step,datev
+         if (Lun_out > 0) write (Lun_out,1002) Lctl_step,datev
       endif
 
  1002 format (' SAVING A RESTART AT TIMESTEP: ',i7,' valid: ',a)

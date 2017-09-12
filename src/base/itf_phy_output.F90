@@ -27,19 +27,19 @@
       use gem_options
       use glb_ld
       use lun
-      use out_mod
-      use out3
       use levels
-      use outp
-      use gmm_itf_mod
+      use out3
       use outgrid
+      use outp
+      use out_listes
+      use out_mod
+      use gmm_itf_mod
       use ptopo
       implicit none
 #include <arch_specific.hf>
 
       integer stepno
 
-#include "out_listes.cdk"
 #include <rmnlib_basics.hf>
 
       type(phymeta) :: pmeta
@@ -59,15 +59,18 @@
       real, dimension(:,:,:), pointer :: lnpres,ptr3d
       real, dimension(:,:,:), allocatable         :: buso_pres,cible
       real, dimension(:,:,:), allocatable, target :: data3d, zero
+      real hybt_gnk2(1),hybm_gnk2(1)
+      integer ind0(1)
 !
 !----------------------------------------------------------------------
 !
-      if (outp_sorties(0,stepno).le.0) then
-         if (Lun_out.gt.0) write(Lun_out,7002) stepno
+      if (outp_sorties(0,stepno) <= 0) then
+         if (Lun_out > 0) write(Lun_out,7002) stepno
          return
       else
-         if (Lun_out.gt.0) write(Lun_out,7001) &
-                           stepno,trim(Out_laststep_S)
+         if (Lun_out > 0) then
+            write(Lun_out,7001) stepno,trim(Out_laststep_S)
+         end if
       endif
 
       istat = fstopc('MSGLVL','SYSTEM',.false.)
@@ -92,6 +95,9 @@
       deallocate(ip1m); nullify(ip1m)
       if (vgd_get(vcoord,'VCDM - vertical coordinate (m)',hybm) /= VGD_OK) istat = VGD_ERROR
       if (vgd_get(vcoord,'VCDT - vertical coordinate (t)',hybt) /= VGD_OK) istat = VGD_ERROR
+      hybt_gnk2(1)= hybt(G_nk+2)
+      hybm_gnk2(1)= hybm(G_nk+2)
+      ind0(1) = 1
 
       do jj=1, outp_sorties(0,stepno)
 
@@ -109,7 +115,7 @@
          call out_slev2 (Level(1,levset), Level_max(levset), &
                          Level_momentum,indo,nko,write_diag_lev)
 
-         if (Level_typ_S(levset).eq.'P') then
+         if (Level_typ_S(levset) == 'P') then
             nko_pres = Level_max(levset)
             allocate ( indo_pres(nko_pres),buso_pres(l_ni,l_nj,nko_pres),&
                        prprlvl(nko_pres),cible(l_ni,l_nj,nko_pres) )
@@ -136,9 +142,9 @@
          call out_href3 ( 'Mass_point',grille_x0,grille_x1,1,&
                                        grille_y0,grille_y1,1 )
 
-         if (Level_typ_S(levset).eq.'M') then
+         if (Level_typ_S(levset) == 'M') then
             call out_vref_itf (etiket=Out_etik_S)
-         elseif (Level_typ_S(levset).eq.'P') then
+         elseif (Level_typ_S(levset) == 'P') then
             call out_vref_itf (Level_allpres(1:Level_npres),&
                                etiket=Out_etik_S)
          endif
@@ -148,10 +154,10 @@
             WRITE_FIELD: if (phy_getmeta (pmeta, Outp_var_S(ii,kk), &
                              F_npath='O',F_bpath='PVED', F_quiet=.true.)&
                              > 0 ) then
-               FIELD_SHAPE: if (pmeta%nk .eq. 1) then ! 2D field
+               FIELD_SHAPE: if (pmeta%nk == 1) then ! 2D field
 
                   rff(1)= 0. ; irff(1)= 1 ; knd= 2
-                  if ( pmeta%fmul.gt.1 ) then
+                  if ( pmeta%fmul > 1 ) then
                      do mult=1,pmeta%fmul
                         rff(mult)= mult
                         irff(mult)= mult
@@ -182,9 +188,9 @@
                                    F_bpath='PVD')
                   if (Outp_avg_L(kk)) data3d = data3d*avgfact
 
-                  if (Level_typ_S(levset).eq.'M') then
+                  if (Level_typ_S(levset) == 'M') then
 
-                     if (pmeta%stag .eq. 1) then ! thermo
+                     if (pmeta%stag == 1) then ! thermo
                         call out_fstecr3 (data3d                       ,&
                                  1,l_ni, 1,l_nj, hybt                  ,&
                                  Outp_var_S(ii,kk),Outp_convmult(ii,kk),&
@@ -192,10 +198,10 @@
                                  G_nk,indo,nko,Outp_nbit(ii,kk),.false. )
                         if (write_diag_lev) then
                            call out_fstecr3 (data3d(1,1,G_nk+1)        ,&
-                                 1,l_ni, 1,l_nj, hybt(G_nk+2)          ,&
+                                 1,l_ni, 1,l_nj, hybt_gnk2             ,&
                                  Outp_var_S(ii,kk),Outp_convmult(ii,kk),&
                                  Outp_convadd(ii,kk),Level_kind_diag,last_timestep,&
-                                 1,1,1,Outp_nbit(ii,kk),.false. )
+                                 1,ind0,1,Outp_nbit(ii,kk),.false. )
                         endif
                      else  ! momentum
                         call out_fstecr3 (data3d                       ,&
@@ -205,17 +211,17 @@
                                  G_nk,indo,nko,Outp_nbit(ii,kk),.false. )
                         if (write_diag_lev) then
                            call out_fstecr3 (data3d(1,1,G_nk+1)        ,&
-                                 1,l_ni, 1,l_nj, hybm(G_nk+2)          ,&
+                                 1,l_ni, 1,l_nj, hybm_gnk2             ,&
                                  Outp_var_S(ii,kk),Outp_convmult(ii,kk),&
                                  Outp_convadd(ii,kk),Level_kind_diag,last_timestep,&
-                                 1,1,1,Outp_nbit(ii,kk),.false. )
+                                 1,ind0,1,Outp_nbit(ii,kk),.false. )
                         endif
                      endif
 
-                  elseif (Level_typ_S(levset).eq.'P') then
+                  elseif (Level_typ_S(levset) == 'P') then
 
                      lnpres => wlnpi_m
-                     if ( pmeta%stag .eq. 1 ) lnpres => wlnpi_t
+                     if ( pmeta%stag == 1 ) lnpres => wlnpi_t
 
                      call vertint2 ( buso_pres, cible, nko_pres, data3d,&
                                      lnpres, G_nk, 1,l_ni, 1,l_nj      ,&
@@ -238,12 +244,12 @@
          end do PHYSICS_VARS
 
          deallocate (indo)
-         if (Level_typ_S(levset).eq.'P') deallocate (buso_pres, indo_pres, prprlvl, cible)
+         if (Level_typ_S(levset) == 'P') deallocate (buso_pres, indo_pres, prprlvl, cible)
 
          flag_clos= .true.
-         if (jj .lt. outp_sorties(0,stepno)) then
-            flag_clos= .not.( (gridset.eq.Outp_grid(outp_sorties(jj+1,stepno))).and. &
-                 (Level_typ_S(levset).eq.Level_typ_S(Outp_lev(outp_sorties(jj+1,stepno)))))
+         if (jj < outp_sorties(0,stepno)) then
+            flag_clos= .not.( (gridset == Outp_grid(outp_sorties(jj+1,stepno))).and. &
+                 (Level_typ_S(levset) == Level_typ_S(Outp_lev(outp_sorties(jj+1,stepno)))))
          endif
 
          if (flag_clos) call out_cfile3

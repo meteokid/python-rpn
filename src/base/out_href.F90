@@ -29,7 +29,7 @@
       implicit none
 #include <arch_specific.hf>
 
-      character* (*), intent(in ) :: F_arakawa_S
+      character(len=*), intent(in ) :: F_arakawa_S
       integer,        intent(in ) :: F_x0,F_x1,F_stridex,&
                                      F_y0,F_y1,F_stridey
 #include <rmnlib_basics.hf>
@@ -101,15 +101,15 @@
 !      if (old_grid_L) return
 
       nis = in - i0 + 1  ;  njs = jn - j0 + 1
-      if ( (nis .le. 0) .or. (njs .le. 0) ) then
-         if (Lun_out.gt.0) write(Lun_out,9000)
+      if ( (nis <= 0) .or. (njs <= 0) ) then
+         if (Lun_out > 0) write(Lun_out,9000)
          return
       endif
 
       nis = (in - i0) / Out_stride + 1
       njs = (jn - j0) / Out_stride + 1
 
-      if ((Out3_iome .ge. 0) .and. (Ptopo_couleur.eq.0)) then
+      if ((Out3_iome >= 0) .and. (Ptopo_couleur == 0)) then
 
          if ( (Grd_yinyang_L) .and. (.not.Out_reduc_l) ) then
 
@@ -167,9 +167,9 @@
 
          else
 
-            if ( Out_stride .le. 1 ) then
+            if ( Out_stride <= 1 ) then
                ni = nis
-               if ( (Grd_typ_S(1:2) == 'GU') .and. (nis.eq.G_ni) ) &
+               if ( (Grd_typ_S(1:2) == 'GU') .and. (nis == G_ni) ) &
                ni = G_ni+1
                ix1= Ptopo_couleur*4+1
                ix2= Ptopo_couleur*4+2

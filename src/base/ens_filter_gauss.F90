@@ -88,7 +88,7 @@
       sigma=lambda*sqrt(-2.d0*log(bfact))/(2*dpi);
 !
 !
-!     Transfer to a double precision array to apply 2D Fourier filter
+!     Transfer to a real*8 array to apply 2D Fourier filter
 !     ===================================================================
 !
       psi_local=dble(dsp_local(:,:,1:l_nk))
@@ -185,7 +185,7 @@
       endif
 !
       INITIALIZE: if (.not.init_done) then
-         if (Lun_out.gt.0) then
+         if (Lun_out > 0) then
             write(*,*)'min_global',min_global
             write( Lun_out,1000)
             write( Lun_out,1009)lambda,bfact,sigma

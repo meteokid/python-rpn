@@ -15,16 +15,17 @@
 
 !**s/r init_component
 
-      subroutine init_component
+      subroutine init_component()
+      use clib_itf_mod
+      use component_mod
       use dcst
       use iso_c_binding
-      use step_options
-      use grid_options
-      use tdpack
       use glb_ld
+      use grid_options
       use path
-      use clib_itf_mod
       use ptopo
+      use step_options
+      use tdpack
       use version
       implicit none
 #include <arch_specific.hf>
@@ -35,7 +36,6 @@
 ! v4_50 - M. Desgagne       - Initial version
 ! v4_80 - M. Desgagne       - remove *bloc*, introduce RPN_COMM_*_io_*
 !
-#include "component.cdk"
       include "rpn_comm.inc"
 
       external init_ndoms, pe_zero_topo
@@ -82,8 +82,8 @@
          call RPN_COMM_size ('MULTIGRID',Ptopo_world_numproc,ierr)
          call RPN_COMM_rank ('MULTIGRID',Ptopo_world_myproc ,ierr)
 
-         if (Ptopo_couleur.eq.0) Grd_yinyang_S = 'YIN'
-         if (Ptopo_couleur.eq.1) Grd_yinyang_S = 'YAN'
+         if (Ptopo_couleur == 0) Grd_yinyang_S = 'YIN'
+         if (Ptopo_couleur == 1) Grd_yinyang_S = 'YAN'
          ierr= clib_chdir(trim(Grd_yinyang_S))
          Ptopo_ncolors = 2
       else
@@ -105,10 +105,10 @@
 
       G_periodx= .false.  ;  G_periody= .false.
 
-      l_west  = (0            .eq. Ptopo_mycol)
-      l_east  = (Ptopo_npex-1 .eq. Ptopo_mycol)
-      l_south = (0            .eq. Ptopo_myrow)
-      l_north = (Ptopo_npey-1 .eq. Ptopo_myrow)
+      l_west  = (0 == Ptopo_mycol)
+      l_east  = (Ptopo_npex-1 == Ptopo_mycol)
+      l_south = (0 == Ptopo_myrow)
+      l_north = (Ptopo_npey-1 == Ptopo_myrow)
 
       north= 0 ; south= 0 ; east= 0 ; west= 0
       if (l_north) north = 1

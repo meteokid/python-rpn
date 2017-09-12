@@ -86,7 +86,7 @@
                              no_slice, no_slice, no_slice, no_slice, no_slice, no_slice, nbpts,                       &
                              no_indices_1, no_indices_2,  k0, l_nk, .false., .false., 't')
 
-!$omp parallel
+!$omp parallel private(k) shared(i0_e,in_e,j0_e,jn_e)
 !$omp do
       do k = k0,l_nk
          cub_o(i0_e:in_e,j0_e:jn_e,k)= w_cub_o_c(i0_e:in_e,j0_e:jn_e,k)

@@ -68,7 +68,7 @@
 
       if ( .not.rstrt_L ) call gem_run (rstrt_L)
 
-      if (Lun_out.gt.0) write(Lun_out,3000) Lctl_step
+      if (Lun_out > 0) write(Lun_out,3000) Lctl_step
 
  3000 format(/,'GEM_CTRL: END OF CURRENT TIME SLICE AT TIMESTEP',I8, &
              /,'===================================================')

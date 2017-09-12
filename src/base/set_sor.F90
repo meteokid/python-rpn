@@ -60,7 +60,7 @@
 !
 !-------------------------------------------------------------------
 !
-      if (Lun_out.gt.0) write(Lun_out,5200)
+      if (Lun_out > 0) write(Lun_out,5200)
 
       pnerror    = 0
 
@@ -72,8 +72,8 @@
          pnerror = pnerror + 1
       endif
 
-      if  (pnerror .gt. 0) then
-         if (Lun_out.gt.0) write(Lun_out,5000) pnerror
+      if  (pnerror > 0) then
+         if (Lun_out > 0) write(Lun_out,5000) pnerror
       endif
 
       Out3_accavg_L = .false.
@@ -96,19 +96,19 @@
       case default
          unit_S = 'HOURS'
       end select
-      if (Lun_out.gt.0) write(Lun_out,3000)unit_S
+      if (Lun_out > 0) write(Lun_out,3000)unit_S
 
       ! Transfer filter and xnbit info to requested variables
       do k=1, Outd_sets
          do j=1,Outd_var_max(k)
             do i=1,Out3_filtpass_max
-               if (Outd_varnm_S(j,k) .eq. Out3_filt_S(i)) then
+               if (Outd_varnm_S(j,k) == Out3_filt_S(i)) then
                   Outd_filtpass(j,k) = Out3_filtpass(i)
                   Outd_filtcoef(j,k) = Out3_filtcoef(i)
                endif
             enddo
             do i=1,Out3_xnbits_max
-               if (Outd_varnm_S(j,k) .eq. Out3_xnbits_S(i)) then
+               if (Outd_varnm_S(j,k) == Out3_xnbits_S(i)) then
                   Outd_nbit(j,k) = Out3_xnbits(i)
                endif
             enddo
@@ -117,13 +117,13 @@
       do k=1, Outp_sets
          do j=1,Outp_var_max(k)
             do i=1,Out3_filtpass_max
-               if (Outp_varnm_S(j,k) .eq. Out3_filt_S(i)) then
+               if (Outp_varnm_S(j,k) == Out3_filt_S(i)) then
                   Outp_filtpass(j,k) = Out3_filtpass(i)
                   Outp_filtcoef(j,k) = Out3_filtcoef(i)
                endif
             enddo
             do i=1,Out3_xnbits_max
-               if (Outp_varnm_S(j,k) .eq. Out3_xnbits_S(i)) then
+               if (Outp_varnm_S(j,k) == Out3_xnbits_S(i)) then
                   Outp_nbit(j,k) = Out3_xnbits(i)
                endif
             enddo
@@ -133,13 +133,13 @@
       do k=1, Outc_sets
          do j=1,Outc_var_max(k)
             do i=1,Out3_filtpass_max
-               if (Outc_varnm_S(j,k) .eq. Out3_filt_S(i)) then
+               if (Outc_varnm_S(j,k) == Out3_filt_S(i)) then
                   Outc_filtpass(j,k) = Out3_filtpass(i)
                   Outc_filtcoef(j,k) = Out3_filtcoef(i)
                endif
             enddo
             do i=1,Out3_xnbits_max
-               if (Outc_varnm_S(j,k) .eq. Out3_xnbits_S(i)) then
+               if (Outc_varnm_S(j,k) == Out3_xnbits_S(i)) then
                   Outc_nbit(j,k) = Out3_xnbits(i)
                endif
             enddo
@@ -148,7 +148,7 @@
 
 ! Print table of dynamic variables demanded for output
 
-      if (Lun_out.gt.0) then
+      if (Lun_out > 0) then
          write(Lun_out,900)
          write(Lun_out,1006)
          write(Lun_out,901)
@@ -164,7 +164,7 @@
       endif
 
       ixg = 0 ; ixgall = 0 ; rot = 0. ; rotall = 0.
-      if (Ptopo_myproc.eq.0) then
+      if (Ptopo_myproc == 0) then
          ixg(1,Ptopo_couleur+1)= Hgc_ig1ro
          ixg(2,Ptopo_couleur+1)= Hgc_ig2ro
          ixg(3,Ptopo_couleur+1)= Hgc_ig3ro

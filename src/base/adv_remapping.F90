@@ -13,7 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/p adv_remapping - 1D-Remapping based on Zerroukat, 2012, SLICE-3D  
+!**s/p adv_remapping - 1D-Remapping based on Zerroukat, 2012, SLICE-3D
 
       subroutine adv_remapping (F_m2_8,F_x2_8,F_n2,F_m1_8,F_x1_8,F_n1)
 
@@ -21,7 +21,7 @@
       implicit none
 #include <arch_specific.hf>
 
-      integer F_n2,F_n1  
+      integer F_n2,F_n1
 
       real*8 F_m2_8(F_n2),F_x2_8(0:F_n2),F_m1_8(F_n1),F_x1_8(0:F_n1)
 
@@ -29,7 +29,7 @@
 
       !@revisions
       !v4_80 - Tanguay M.        - GEM4 Mass-Conservation
-      !v4_80 - Qaddouri A.       - Fast_loc_1D/PPM2 Z4 Z41 Z412 
+      !v4_80 - Qaddouri A.       - Fast_loc_1D/PPM2 Z4 Z41 Z412
 
       !arguments
       !---------------------------------------------------------------------
@@ -39,8 +39,8 @@
 
       !---------------------------------------------------------------------
 
-      integer i,zz,ia,ib,n1,n2,ii,i0,pnx,iaa(F_n2),ibb(F_n2)
-      real*8 psi_abc_8(F_n1,4),rbr_8,x00_8,hxmn_8,whx_8(F_n1),ovdx_8,rri_8,fi_8,bsx_8(F_n1+1), &
+      integer i,zz,ia,ib,iaa(F_n2),ibb(F_n2)
+      real*8 psi_abc_8(F_n1,4),rbr_8, &
              zet_8,zet1_8,zet2_8
       real*8, parameter :: INV_1_8 = 1.d0, INV_2_8 = 0.5d0, INV_3_8 = 1.d0/3.d0, INV_4_8 = 1.d0/4.d0
 
@@ -54,7 +54,7 @@
       !--------------------------------
       call adv_Fast_loc_1D_old (iaa,ibb,F_x2_8,F_n2,F_x1_8,F_n1)
 
-      !Build psi such that INT(psi)(i,i+1) = F_m_1(i) 
+      !Build psi such that INT(psi)(i,i+1) = F_m_1(i)
       !----------------------------------------------
 
       if (Tr_SLICE_rebuild==1) call adv_rebuild_LP  (psi_abc_8,F_x1_8,F_m1_8,F_n1)
@@ -69,7 +69,7 @@
 
          rbr_8 = 0.0d0
 
-         if (ia/=ib) then 
+         if (ia/=ib) then
 
             !Residual at Left on (ia-1,ia)
             !-----------------------------
@@ -107,11 +107,11 @@
                      psi_abc_8(ia,3) * (zet2_8**3 - zet1_8**3)*INV_3_8+ &
                      psi_abc_8(ia,4) * (zet2_8**4 - zet1_8**4)*INV_4_8) * (F_x1_8(ia) - F_x1_8(ia-1)) + rbr_8
 
-         endif 
+         endif
 
          F_m2_8(i) = rbr_8
 
       enddo
-      
+
       return
       end

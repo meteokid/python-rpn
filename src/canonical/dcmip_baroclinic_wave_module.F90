@@ -1,4 +1,4 @@
-MODULE baroclinic_wave 
+MODULE baroclinic_wave
 !-------------------------------------------------------------------------
 !Subroutines DCMIP_2016 (https://github.com/ClimateGlobalChange/DCMIP2016)
 !-------------------------------------------------------------------------
@@ -19,9 +19,9 @@ MODULE baroclinic_wave
 !    pertt    type of perturbation (0 = exponential, 1 = stream function)
 !        X    Earth scaling factor
 !
-!  Given a point specified by: 
-!      lon    longitude (radians) 
-!      lat    latitude (radians) 
+!  Given a point specified by:
+!      lon    longitude (radians)
+!      lat    latitude (radians)
 !      p/z    pressure (Pa) / height (m)
 !  zcoords    1 if z is specified, 0 if p is specified
 !
@@ -53,7 +53,7 @@ MODULE baroclinic_wave
        a     = 6371220.0d0,           & ! Reference Earth's Radius (m)
        Rd    = 287.0d0,               & ! Ideal gas const dry air (J kg^-1 K^1)
     !!!g     = 9.80616d0,             & ! Gravity (m s^2)
-       grav  = 9.80616d0,             & ! Gravity (m s^2) !Otherwise with conflict common block on Hadar 
+       grav  = 9.80616d0,             & ! Gravity (m s^2) !Otherwise with conflict common block on Hadar
        cp    = 1004.5d0,              & ! Specific heat capacity (J kg^-1 K^1)
        Lvap  = 2.5d6,                 & ! Latent heat of vaporization of water
        Rvap  = 461.5d0,               & ! Ideal gas constnat for water vapor
@@ -83,7 +83,7 @@ MODULE baroclinic_wave
        pertlat    = 2.d0*pi/9.d0,     & ! Perturbation latitude
        pertz      = 15000.d0   ,      & ! Perturbation height cap
        dxepsilon  = 1.d-5               ! Small value for numerical derivatives
- 
+
   REAL(8), PARAMETER ::               &
        moistqlat  = 2.d0*pi/9.d0,     & ! Humidity latitudinal width
        moistqp    = 34000.d0,         & ! Humidity vertical pressure width
@@ -93,7 +93,7 @@ MODULE baroclinic_wave
        moistqr    = 0.9d0,            & ! Maximum saturation ratio
        moisteps   = 0.622d0,          & ! Ratio of gas constants
        moistT0    = 273.16d0,         & ! Reference temperature (K)
-       moistE0Ast = 610.78d0            ! Saturation vapor pressure at T0 (Pa) 
+       moistE0Ast = 610.78d0            ! Saturation vapor pressure at T0 (Pa)
 
 CONTAINS
 
@@ -102,7 +102,7 @@ CONTAINS
 !=======================================================================
   SUBROUTINE baroclinic_wave_test(deep,moist,pertt,X,lon,lat,p,z,zcoords,Ver_a,Ver_b,pref,u,v,t,tv,thetav,phis,ps,rho,q) &
     BIND(c, name = "baroclinic_wave_test")
- 
+
     IMPLICIT NONE
 
 !-----------------------------------------------------------------------
@@ -145,23 +145,23 @@ CONTAINS
     REAL(8) :: aref, omegaref
     REAL(8) :: T0, constH, constC, scaledZ, inttau2, rratio
     REAL(8) :: inttermU, bigU, rcoslat, omegarcoslat
-    REAL(8) :: eta, qratio, qnum, qden
+    REAL(8) :: eta
     REAL(8) :: st1
 
     !------------------------------------------------
     !   Pressure and temperature
     !------------------------------------------------
-    if (zcoords .eq. 1) then
-      CALL evaluate_pressure_temperature(deep, X, lon, lat, z, p, t)
+    if (zcoords == 1) then
+      CALL evaluate_pressure_temperature(deep, X, lat, z, p, t)
     else
 
-      st1 = log(p0/pref) !SAME definition of ps as defined below 
+      st1 = log(p0/pref) !SAME definition of ps as defined below
 
       p = exp(Ver_a + Ver_b*st1)
 
-      CALL evaluate_z_temperature(deep, X, lon, lat, p, z, t)
+      CALL evaluate_z_temperature(deep, X, lat, p, z, t)
 
-      ! Initialize virtual temperature !REFERENCE STATE 
+      ! Initialize virtual temperature !REFERENCE STATE
       tv = t
 
     end if
@@ -183,7 +183,7 @@ CONTAINS
     inttau2 = constC * z * exp(- scaledZ**2)
 
     ! radius ratio
-    if (deep .eq. 0) then
+    if (deep == 0) then
       rratio = 1.d0
     else
       rratio = (z + aref) / aref;
@@ -199,14 +199,14 @@ CONTAINS
     !-----------------------------------------------------
     inttermU = (rratio * cos(lat))**(K - 1.d0) - (rratio * cos(lat))**(K + 1.d0)
     bigU = grav / aref * K * inttau2 * inttermU * t
-    if (deep .eq. 0) then
+    if (deep == 0) then
       rcoslat = aref * cos(lat)
     else
       rcoslat = (z + aref) * cos(lat)
     end if
 
     omegarcoslat = omegaref * rcoslat
-    
+
     u = - omegarcoslat + sqrt(omegarcoslat**2 + rcoslat * bigU)
     v = 0.d0
 
@@ -215,11 +215,11 @@ CONTAINS
     !-----------------------------------------------------
 
     ! Exponential type
-    if (pertt .eq. 0) then
+    if (pertt == 0) then
       u = u + evaluate_exponential(lon, lat, z)
 
     ! Stream function type
-    elseif (pertt .eq. 1) then
+    elseif (pertt == 1) then
       u = u - 1.d0 / (2.d0 * dxepsilon) *                       &
           ( evaluate_streamfunction(lon, lat + dxepsilon, z)    &
           - evaluate_streamfunction(lon, lat - dxepsilon, z))
@@ -242,17 +242,17 @@ CONTAINS
     !-----------------------------------------------------
     !   Initialize specific humidity
     !-----------------------------------------------------
-    if (moist .eq. 1) then
+    if (moist == 1) then
       eta = p/p0
 
-      if (eta .gt. moisttr) then
+      if (eta > moisttr) then
         q = moistq0 * exp(- (lat/moistqlat)**4)          &
                     * exp(- ((eta-1.d0)*p0/moistqp)**2)
       else
         q = moistqs
       end if
 
-      ! Initialize virtual temperature 
+      ! Initialize virtual temperature
       tv = t
 
       ! Convert virtual temperature to temperature
@@ -272,13 +272,13 @@ CONTAINS
 !-----------------------------------------------------------------------
 !    Calculate pointwise pressure and temperature
 !-----------------------------------------------------------------------
-  SUBROUTINE evaluate_pressure_temperature(deep, X, lon, lat, z, p, t)
+  SUBROUTINE evaluate_pressure_temperature(deep, X, lat, z, p, t)
 
     INTEGER, INTENT(IN)  :: deep ! Deep (1) or Shallow (0) test case
 
     REAL(8), INTENT(IN)  :: &
                 X,          & ! Earth scaling ratio
-                lon,        & ! Longitude (radians)
+             !!!lon,        & ! Longitude (radians)
                 lat,        & ! Latitude (radians)
                 z             ! Altitude (m)
 
@@ -319,7 +319,7 @@ CONTAINS
     !--------------------------------------------
     !    radius ratio
     !--------------------------------------------
-    if (deep .eq. 0) then
+    if (deep == 0) then
       rratio = 1.d0
     else
       rratio = (z + aref) / aref;
@@ -346,13 +346,13 @@ CONTAINS
 !-----------------------------------------------------------------------
 !    Calculate pointwise z and temperature given pressure
 !-----------------------------------------------------------------------
-  SUBROUTINE evaluate_z_temperature(deep, X, lon, lat, p, z, t)
-    
+  SUBROUTINE evaluate_z_temperature(deep, X, lat, p, z, t)
+
     INTEGER, INTENT(IN)  :: deep ! Deep (1) or Shallow (0) test case
 
     REAL(8), INTENT(IN)  :: &
                 X,          & ! Earth scaling ratio
-                lon,        & ! Longitude (radians)
+             !!!lon,        & ! Longitude (radians)
                 lat,        & ! Latitude (radians)
                 p             ! Pressure (Pa)
 
@@ -368,17 +368,17 @@ CONTAINS
     z0 = 0.d0
     z1 = 10000.d0
 
-    CALL evaluate_pressure_temperature(deep, X, lon, lat, z0, p0, t)
-    CALL evaluate_pressure_temperature(deep, X, lon, lat, z1, p1, t)
+    CALL evaluate_pressure_temperature(deep, X, lat, z0, p0, t)
+    CALL evaluate_pressure_temperature(deep, X, lat, z1, p1, t)
 
-    max_ix = 100  
+    max_ix = 100
 
     DO ix = 1,max_ix
       z2 = z1 - (p1 - p) * (z1 - z0) / (p1 - p0)
 
-      CALL evaluate_pressure_temperature(deep, X, lon, lat, z2, p2, t)
+      CALL evaluate_pressure_temperature(deep, X, lat, z2, p2, t)
 
-      IF (ABS((p2 - p)/p) .lt. 1.0d-13) THEN
+      IF (ABS((p2 - p)/p) < 1.0d-13) THEN
         EXIT
       END IF
 
@@ -389,14 +389,14 @@ CONTAINS
       p1 = p2
     END DO
 
-    if (ix .eq. max_ix+1) then
+    if (ix == max_ix+1) then
       write(*,*) 'Iteration failed to converge'
       stop
     end if
 
     z = z2
 
-    CALL evaluate_pressure_temperature(deep, X, lon, lat, z, p0, t)
+    CALL evaluate_pressure_temperature(deep, X, lat, z, p0, t)
 
   END SUBROUTINE evaluate_z_temperature
 
@@ -456,7 +456,7 @@ CONTAINS
     end if
 
     ! Horizontal tapering of stream function
-    if (greatcircler .lt. 1.d0) then
+    if (greatcircler < 1.d0) then
       cospert = cos(0.5d0 * pi * greatcircler)
     else
       cospert = 0.d0

@@ -29,8 +29,8 @@
 #include <arch_specific.hf>
 !
         integer F_argc,F_v1,F_v2
-        character *(*) F_argv_S(0:F_argc),F_cmdtyp
-        character(len=5) stuff
+        character(len=*) F_argv_S(0:F_argc),F_cmdtyp
+        character(len=5) :: stuff
 !
 !author Vivian Lee - RPN - April 1999
 !
@@ -108,9 +108,9 @@
       integer,external ::  dcmip_div_X
 !
       argc_out=min(F_argc,6)
-      if (Lun_out.gt.0) then
+      if (Lun_out > 0) then
           write(Lun_out,*)
-          if (argc_out.lt.F_argc) then
+          if (argc_out < F_argc) then
           write(Lun_out,*) F_argv_S(0),'=',F_argv_S(1),',',F_argv_S(2),',',(F_argv_S(i),i=3,argc_out),'...'
           else
           write(Lun_out,*) F_argv_S(0),'=',F_argv_S(1),',',F_argv_S(2),',',(F_argv_S(i),i=3,argc_out)
@@ -120,9 +120,10 @@
       read(F_argv_S(1),*)stepset
       Timestep_sets = Timestep_sets + 1
 
-      if (Timestep_sets.gt.MAXSET) then
-          if (Lun_out.gt.0) &
-          write(Lun_out,*)'SET_STEP WARNING: too many TIMESTEP sets'
+      if (Timestep_sets > MAXSET) then
+          if (Lun_out > 0) then
+            write(Lun_out,*)'SET_STEP WARNING: too many TIMESTEP sets'
+          end if
           Timestep_sets = Timestep_sets - 1
           set_step=1
           return
@@ -137,35 +138,35 @@
       Timestep_id(j)=stepset
       Timestep_init_L(j)=.false.
       do 100 ii=2,F_argc
-         if (index(F_argv_S(ii),'[').gt.0) then
+         if (index(F_argv_S(ii),'[') > 0) then
              stuff=F_argv_S(ii)
              read(stuff(2:4),*) num
-         else if (F_argv_S(ii).eq.'month' ) then
+         else if (F_argv_S(ii) == 'month' ) then
              month_flag= .true.
              day_flag  = .false.
              hour_flag = .false.
              step_flag = .false.
-         else if (F_argv_S(ii).eq.'day' ) then
+         else if (F_argv_S(ii) == 'day' ) then
              month_flag= .false.
              day_flag  = .true.
              hour_flag = .false.
              step_flag = .false.
-         else if (F_argv_S(ii).eq.'hour') then
+         else if (F_argv_S(ii) == 'hour') then
              hour_flag = .true.
              step_flag = .false.
              day_flag  = .false.
              month_flag= .false.
-         else if (F_argv_S(ii).eq.'step') then
+         else if (F_argv_S(ii) == 'step') then
              step_flag = .true.
              hour_flag = .false.
              day_flag  = .false.
              month_flag= .false.
-         else if (F_argv_S(ii).eq.'init') then
+         else if (F_argv_S(ii) == 'init') then
              Timestep_init_L(j)=.true.
          else if (step_flag) then
              i = i+1
              read(F_argv_S(ii),*)rstep
-             if (rstep.eq.-1) then
+             if (rstep == -1) then
              i = i-1
              do 70 istep=lctl_step,Step_total
              i = i+1
@@ -178,8 +179,9 @@
              i = i+1
              read(F_argv_S(ii),*)hour
              Timestep_tbl(i,j)=transtep(hour)
-             if ( Schm_canonical_dcmip_L ) &
-             Timestep_tbl(i,j)= dcmip_div_X(transtep(hour))
+             if ( Schm_canonical_dcmip_L ) then
+               Timestep_tbl(i,j)= dcmip_div_X(transtep(hour))
+             end if
          else if (day_flag) then
              i = i+1
              read(F_argv_S(ii),*)day
@@ -189,17 +191,19 @@
              read(F_argv_S(ii),*)month
              Timestep_tbl(i,j)=transtep3(month)
          else
-             if (Lun_out.gt.0) &
-             write(Lun_out,*)'SET_STEP WARNING: Timestep type not recognizable'
+             if (Lun_out > 0) then
+               write(Lun_out,*)'SET_STEP WARNING: Timestep type not recognizable'
+             end if
              Timestep_sets = Timestep_sets - 1
              set_step=1
              return
          endif
  100  continue
 
-      if (i.gt.MAXSTEP) then
-          if (Lun_out.gt.0) &
-          write(Lun_out,*)'SET_STEP WARNING: Requested timesteps > MAXSTEP'
+      if (i > MAXSTEP) then
+          if (Lun_out > 0) then
+            write(Lun_out,*)'SET_STEP WARNING: Requested timesteps > MAXSTEP'
+          end if
           Timestep_sets = Timestep_sets - 1
           set_step=1
           return
@@ -210,7 +214,7 @@
       do ii = 2, i
          found_L = .false.
          do k = 1, ii-1
-            if ( Timestep_tbl(ii,j).eq.Timestep_tbl(k,j) ) found_L = .true.
+            if ( Timestep_tbl(ii,j) == Timestep_tbl(k,j) ) found_L = .true.
          enddo
          if (.not. found_L) then
              istep = istep + 1
@@ -220,10 +224,10 @@
 
       Timestep_max(Timestep_sets)=istep
 
-      if (Lun_out.gt.0) then
+      if (Lun_out > 0) then
       write(Lun_out,*) ' Timestep_set(',j,') : Timestep_id=',Timestep_id(j)
       write(Lun_out,*) ' Timestep_init_L=',Timestep_init_L(j)
-         if (Timestep_max(j).gt.30) then
+         if (Timestep_max(j) > 30) then
              write(Lun_out,*) ' Timestep=', &
                       (Timestep_tbl(i,j),i=1,30),',... up to ,',Timestep_tbl(Timestep_max(j),j)
          else

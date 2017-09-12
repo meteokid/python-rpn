@@ -1,4 +1,4 @@
-MODULE DCMIP_2016_physics_module 
+MODULE DCMIP_2016_physics_module
 !-------------------------------------------------------------------------
 !Subroutines DCMIP_2016 (https://github.com/ClimateGlobalChange/DCMIP2016)
 !-------------------------------------------------------------------------
@@ -26,28 +26,28 @@ CONTAINS
 !     qsc    (INOUT) cloud water specific on model levels (kg/kg)
 !     qsr    (INOUT) rain water specific on model levels (kg/kg)
 !     rho    (INOUT) dry air density on model levels (kg/m^3)
-!     theta  (INOUT) Potential temperature (K)  
-!     exner  (INOUT) Exner function (p/p0)**(R/cp)   
+!     theta  (INOUT) Potential temperature (K)
+!     exner  (INOUT) Exner function (p/p0)**(R/cp)
 !     t      (INOUT) Temperature (K)
-!     dudt   (INOUT) Zonal wind tendency      (For GEM staggering) 
-!     dvdt   (INOUT) Meridional wind tendency (For GEM staggering) 
-!     pdel_mid  (IN) Layer thickness (Pa) (Thermo) For RJ large-scale prec. 
+!     dudt   (INOUT) Zonal wind tendency      (For GEM staggering)
+!     dvdt   (INOUT) Meridional wind tendency (For GEM staggering)
+!     pdel_mid  (IN) Layer thickness (Pa) (Thermo) For RJ large-scale prec.
 !     dt        (IN) time step (s)
 !     z      (INOUT) heights of model levels in the grid column (m)            !THERMO
 !     zi     (INOUT) heights of model interfaces levels in the grid column (m) !MOMENTUM
 !     lat       (IN) latitude of column
-!     wm        (IN) weight Thermo to Momentum (above M) 
-!     wp        (IN) weight Thermo to Momentum (below M) 
+!     wm        (IN) weight Thermo to Momentum (above M)
+!     wp        (IN) weight Thermo to Momentum (below M)
 !     nz        (IN) number of levels in the column
 !     precl     (IN) large-scale precip rate (m/s)
 !     pbl_type  (IN) type of planetary boundary layer to use (0,1)
 !                    0 = Default Reed-Jablonowski boundary layer
 !                    1 = Modified Bryan boundary layer
-!                   -1 = NONE 
+!                   -1 = NONE
 !     prec_type (IN) type of precipitation/microphysics to use (0,1)
 !                    0 = Default Kessler physics routines
 !                    1 = Reed-Jablonowski microphysics
-!                   -1 = NONE 
+!                   -1 = NONE
 !
 !  Authors: Paul Ullrich
 !           University of California, Davis
@@ -64,14 +64,14 @@ CONTAINS
 !
 !    Klemp, J. B., W. C. Skamarock, W. C., and S.-H. Park, 2015:
 !    Idealized Global Nonhydrostatic Atmospheric Test Cases on a Reduced
-!    Radius Sphere. Journal of Advances in Modeling Earth Systems. 
+!    Radius Sphere. Journal of Advances in Modeling Earth Systems.
 !    doi:10.1002/2015MS000435
 !
 !    Note: PRESSURE is not changed (RHO is changed) in DCMIP2016_PHYSICS when GEM
 !
 !=======================================================================
 
-SUBROUTINE DCMIP2016_PHYSICS(test, u, v, p, pint, qsv, qsc, qsr, rho, theta, exner, t, dudt, dvdt, pdel_mid, &  
+SUBROUTINE DCMIP2016_PHYSICS(test, u, v, p, pint, qsv, qsc, qsr, rho, theta, exner, t, dudt, dvdt, pdel_mid, &
                              dt, z, zi, lat, wm , wp, nz, precl, pbl_type, prec_type)
 
   use Kessler_module
@@ -105,24 +105,24 @@ SUBROUTINE DCMIP2016_PHYSICS(test, u, v, p, pint, qsv, qsc, qsr, rho, theta, exn
             rho          ! Dry air density on model levels (kg/m^3)
 
   REAL(8), DIMENSION(nz), INTENT(INOUT) :: &
-            theta        ! Potential temperature (K) 
+            theta        ! Potential temperature (K)
 
   REAL(8), DIMENSION(nz), INTENT(INOUT) :: &
-            exner        ! Exner function (p/p0)**(R/cp) 
+            exner        ! Exner function (p/p0)**(R/cp)
 
   REAL(8), DIMENSION(nz), INTENT(INOUT) :: &
-            t            ! Temperature (K) 
+            t            ! Temperature (K)
 
   REAL(8), DIMENSION(nz), INTENT(INOUT) :: &
-            dudt         ! Zonal wind tendency       (For GEM staggering) 
+            dudt         ! Zonal wind tendency       (For GEM staggering)
 
   REAL(8), DIMENSION(nz), INTENT(INOUT) :: &
-            dvdt         ! Meridional  wind tendency (For GEM staggering) 
+            dvdt         ! Meridional  wind tendency (For GEM staggering)
 
   REAL(8), DIMENSION(nz), INTENT(IN) :: &
-            pdel_mid     ! Layer thickness (Pa) (Thermo) For RJ large-scale prec. 
+            pdel_mid     ! Layer thickness (Pa) (Thermo) For RJ large-scale prec.
 
-  REAL(8), INTENT(IN) :: & 
+  REAL(8), INTENT(IN) :: &
             dt           ! Time step (s)
 
   REAL(8), DIMENSION(0:nz), INTENT(INOUT) :: &
@@ -133,8 +133,8 @@ SUBROUTINE DCMIP2016_PHYSICS(test, u, v, p, pint, qsv, qsc, qsr, rho, theta, exn
             lat          ! Latitude of column (radians)
 
   REAL(8), DIMENSION(nz), INTENT(IN) :: &
-            wm      ,  & ! Weight Thermo to Momentum (above M) 
-            wp           ! Weight Thermo to Momentum (below M) 
+            wm      ,  & ! Weight Thermo to Momentum (above M)
+            wp           ! Weight Thermo to Momentum (below M)
 
   INTEGER, INTENT(IN) :: &
             nz           ! Number of levels in grid column
@@ -170,7 +170,7 @@ SUBROUTINE DCMIP2016_PHYSICS(test, u, v, p, pint, qsv, qsc, qsr, rho, theta, exn
     SST_TC   = 302.15d0,     & ! Constant Value for SST
     T0       = 273.16d0,     & ! Control temp for calculation of qsat
     e0       = 610.78d0,     & ! Saturation vapor pressure at T0
-    rhow     = 1000.0d0,     & ! Density of Liquid Water 
+    rhow     = 1000.0d0,     & ! Density of Liquid Water
     Cd0      = 0.0007d0,     & ! Constant for Cd calc. Simth and Vogl 2008
     Cd1      = 0.000065d0,   & ! Constant for Cd calc. Simth and Vogl 2008
     Cm       = 0.002d0,      & ! Constant for Cd calc. Simth and Vogl 2008
@@ -197,12 +197,6 @@ SUBROUTINE DCMIP2016_PHYSICS(test, u, v, p, pint, qsv, qsc, qsr, rho, theta, exn
     zam,                      & ! Altitude of lowest model level (m) !MOMENTUM
     Tsurf,                    & ! Sea surface temperature (K)
     ps,                       & ! Surface pressure (Pa)
-    pres,                     & ! Pressure on model level (Pa)
-    presi,                    & ! Pressure on model interface (Pa)
-    rhomi,                    & ! Moist pressure on model interface (kg/m^3)
-    thetav,                   & ! Virtual potential temperature (K)
-    dz,                       & ! Thickness of model level (m)
-    deltaqsv,                 & ! Change in specific humidity
     wind,                     & ! Wind speed in the lowest model level (m/s)
     Cd,                       & ! Drag coefficient for momentum
     qsat,                     & ! Saturation specific humidity
@@ -210,12 +204,8 @@ SUBROUTINE DCMIP2016_PHYSICS(test, u, v, p, pint, qsv, qsc, qsr, rho, theta, exn
 
   ! Matrix coefficients for PBL scheme
   REAL(8) ::                  &
-    CA,                       & ! Matrix coefficients for PBL scheme
-    CC,                       & ! Matrix coefficients for PBL scheme
     CAm,                      & ! Matrix coefficients for PBL scheme
     CAE,                      & ! Matrix coefficients for PBL scheme
-    CBm,                      & ! Matrix coefficients for PBL scheme
-    CBE,                      & ! Matrix coefficients for PBL scheme
     CCm,                      & ! Matrix coefficients for PBL scheme
     CCE                         ! Matrix coefficients for PBL scheme
 
@@ -241,29 +231,29 @@ SUBROUTINE DCMIP2016_PHYSICS(test, u, v, p, pint, qsv, qsc, qsr, rho, theta, exn
     Ke                          ! Eddy diffusivity for boundary layer (on MOMENTUM levels)
 
   REAL(8), DIMENSION(nz)     :: &
-    qv                          ! Water vapor mixing ratio   
+    qv                          ! Water vapor mixing ratio
 
   REAL(8), DIMENSION(nz)     :: &
-    qc                          ! Cloud water mixing ratio 
+    qc                          ! Cloud water mixing ratio
 
   REAL(8), DIMENSION(nz)     :: &
-    qr                          ! Rain water mixing ratio 
+    qr                          ! Rain water mixing ratio
 
   REAL(4), DIMENSION(nz)     :: &
-    t4,q4                       ! Storage (TEMPORAIRE) 
+    t4,q4                       ! Storage (TEMPORAIRE)
 
   REAL(8), DIMENSION(nz)     :: &
-    dtdt,dqdt                   ! Storage (TEMPORAIRE) 
+    dtdt,dqdt                   ! Storage (TEMPORAIRE)
 
   REAL(4), DIMENSION(nz+1)   :: &
-    log_p_t_4,log_p_m_4         ! Storage (TEMPORAIRE) 
+    log_p_t_4,log_p_m_4         ! Storage (TEMPORAIRE)
 
   REAL(4), DIMENSION(nz+1)   :: &
-    zt_4,zm_4                   ! Storage (TEMPORAIRE) 
+    zt_4,zm_4                   ! Storage (TEMPORAIRE)
 
   REAL(8) rpdel_int, rpdel_mid, dlnpint, tmp, rho_, tv_
 
-  !Initialize tendencies 
+  !Initialize tendencies
   !---------------------
   dudt = 0.0d0
   dvdt = 0.0d0
@@ -272,7 +262,7 @@ SUBROUTINE DCMIP2016_PHYSICS(test, u, v, p, pint, qsv, qsc, qsr, rho, theta, exn
 
   !Conversion from Specific to Mixing ratio
   !----------------------------------------
-  do k = 1,nz 
+  do k = 1,nz
      qv(k) = qsv(k)/(1.0d0 - qsv(k))
      qc(k) = qsc(k)/(1.0d0 - qsv(k))
      qr(k) = qsr(k)/(1.0d0 - qsv(k))
@@ -290,7 +280,7 @@ SUBROUTINE DCMIP2016_PHYSICS(test, u, v, p, pint, qsv, qsc, qsr, rho, theta, exn
   !------------------------------------------------
 
   ! Moist baroclinic wave test
-  if (test .eq. 1) then 
+  if (test == 1) then
     Tsurf = &
       (T00 + pi*u0/rair * 1.5d0 * sin(etav) * (cos(etav))**0.5d0 * &
       ((-2.d0*(sin(lat))**6 * ((cos(lat))**2 + 1.d0/3.d0) &
@@ -301,11 +291,11 @@ SUBROUTINE DCMIP2016_PHYSICS(test, u, v, p, pint, qsv, qsc, qsr, rho, theta, exn
       (1.d0+zvir*q0*exp(-(lat/latw)**4))
 
   ! Tropical cyclone test
-  elseif (test .eq. 2) then
+  elseif (test == 2) then
     Tsurf = SST_TC
 
   ! Supercell test
-  elseif (test .eq. 3) then
+  elseif (test == 3) then
     Tsurf = 0.d0
 
   ! Invalid test
@@ -329,7 +319,7 @@ SUBROUTINE DCMIP2016_PHYSICS(test, u, v, p, pint, qsv, qsc, qsr, rho, theta, exn
   !--------------------------------------------------------------------------
   ! Large-scale precipitation (Reed-Jablonowski): As in SIMPLIFIED_PHYSICS_V6
   !--------------------------------------------------------------------------
-  if (prec_type .eq. 1) then
+  if (prec_type == 1) then
 
     qsc = 0.0d0
     qsr = 0.0d0
@@ -359,7 +349,7 @@ SUBROUTINE DCMIP2016_PHYSICS(test, u, v, p, pint, qsv, qsc, qsr, rho, theta, exn
   !------------------------------------------------
   ! Large-scale precipitation (Kessler)
   !------------------------------------------------
-  elseif (prec_type .eq. 0) then
+  elseif (prec_type == 0) then
 
     do k=1,nz
       qv(k) = max(qv(k),0.0d0)
@@ -369,20 +359,20 @@ SUBROUTINE DCMIP2016_PHYSICS(test, u, v, p, pint, qsv, qsc, qsr, rho, theta, exn
 
     CALL KESSLER(   &
       theta,        &
-      qv,           & 
+      qv,           &
       qc,           &
       qr,           &
       rho,          &
       exner,        &
       dt,           &
-      z(1),         & !Above BOTTOM 
+      z(1),         & !Above BOTTOM
       nz,           &
       precl)
 
     !Conversion from Mixing ratio to Specific
     !----------------------------------------
 
-    do k = 1,nz 
+    do k = 1,nz
        qsv(k)= qv(k)/(1.0d0 + qv(k))
        qsc(k)= qc(k)/(1.0d0 + qv(k))
        qsr(k)= qr(k)/(1.0d0 + qv(k))
@@ -391,12 +381,12 @@ SUBROUTINE DCMIP2016_PHYSICS(test, u, v, p, pint, qsv, qsc, qsr, rho, theta, exn
     !Convert theta to temperature
     !----------------------------
     do k = 1,nz
-      t(k)  = theta(k) * exner(k) 
-      rho(k)= p(k)/(rair*t(k)*(one + zvir * qsv(k))*(one + qv(k))) 
+      t(k)  = theta(k) * exner(k)
+      rho(k)= p(k)/(rair*t(k)*(one + zvir * qsv(k))*(one + qv(k)))
       rhom(k) = rho(k) / (one - qsv(k))
     enddo
 
-  elseif (prec_type .ne. -1) then
+  elseif (prec_type /= -1) then
     write(*,*) 'Invalid prec_type specified in DCMIP2016_PHYSICS', prec_type
     stop
   endif
@@ -404,17 +394,17 @@ SUBROUTINE DCMIP2016_PHYSICS(test, u, v, p, pint, qsv, qsc, qsr, rho, theta, exn
   !----------------------------------------------------
   ! Do not apply surface fluxes or PBL for supercell
   !----------------------------------------------------
-  if (test .eq. 3) then
+  if (test == 3) then
     return
   endif
 
   !----------------------------------------------------
   ! Do not apply surface fluxes or PBL
   !----------------------------------------------------
-  if (pbl_type .eq. -1) return 
+  if (pbl_type == -1) return
 
   !----------------------------------------------------
-  ! Reset Heights of model levels (m) 
+  ! Reset Heights of model levels (m)
   !----------------------------------------------------
 
      !Bottom
@@ -433,7 +423,7 @@ SUBROUTINE DCMIP2016_PHYSICS(test, u, v, p, pint, qsv, qsc, qsr, rho, theta, exn
      !-----------
      log_p_t_4(nz+1) = log(pint(0))
      log_p_m_4(nz+1) = log(pint(0))
-     zm_4(nz+1) = zi(0) 
+     zm_4(nz+1) = zi(0)
 
      do k=nz,1,-1
 
@@ -469,7 +459,7 @@ SUBROUTINE DCMIP2016_PHYSICS(test, u, v, p, pint, qsv, qsc, qsr, rho, theta, exn
   !------------------------------------------------
   wind = sqrt(u(1)**2 + v(1)**2)
 
-  if (wind .lt. v20) then
+  if (wind < v20) then
     Cd = Cd0 + Cd1 * wind
   else
     Cd = Cm
@@ -479,13 +469,13 @@ SUBROUTINE DCMIP2016_PHYSICS(test, u, v, p, pint, qsv, qsc, qsr, rho, theta, exn
   Ke = 0.
 
   ! Reed-Jablonowski Boundary layer
-  if (pbl_type .eq. 0) then
+  if (pbl_type == 0) then
     do k = 1, nz
 
       ! ----------------------------
       ! Km Thermo
       ! ----------------------------
-      if (p(k) .ge. pbltop) then
+      if (p(k) >= pbltop) then
         Km(k) = Cd * wind * zam
       else
         Km(k) = Cd * wind * zam * exp(-(pbltop-p(k))**2/pblconst**2)
@@ -494,7 +484,7 @@ SUBROUTINE DCMIP2016_PHYSICS(test, u, v, p, pint, qsv, qsc, qsr, rho, theta, exn
       ! ----------------------------
       ! Ke Momentum
       ! ----------------------------
-      if (pint(k) .ge. pbltop) then
+      if (pint(k) >= pbltop) then
         Ke(k) = C  * wind * zat
       else
         Ke(k) = C  * wind * zat * exp(-(pbltop-pint(k))**2/pblconst**2)
@@ -503,13 +493,13 @@ SUBROUTINE DCMIP2016_PHYSICS(test, u, v, p, pint, qsv, qsc, qsr, rho, theta, exn
     enddo
 
   ! Bryan Planetary Boundary Layer
-  elseif (pbl_type .eq. 1) then
+  elseif (pbl_type == 1) then
     do k = 1, nz
 
       ! ----------------------------
       ! Km Thermo
       ! ----------------------------
-      if (z(k) .le. zpbltop) then
+      if (z(k) <= zpbltop) then
         Km(k) = kappa * sqrt(Cd) * wind * z(k) &
               * (one - z(k)/zpbltop) * (one - z(k)/zpbltop)
       else
@@ -519,7 +509,7 @@ SUBROUTINE DCMIP2016_PHYSICS(test, u, v, p, pint, qsv, qsc, qsr, rho, theta, exn
       ! ----------------------------
       ! Ke Momentum
       ! ----------------------------
-      if (zi(k) .le. zpbltop) then
+      if (zi(k) <= zpbltop) then
         Ke(k) = kappa * sqrt(C) * wind * zi(k) &
               * (one - zi(k)/zpbltop) * (one - zi(k)/zpbltop)
       else
@@ -555,7 +545,7 @@ SUBROUTINE DCMIP2016_PHYSICS(test, u, v, p, pint, qsv, qsc, qsr, rho, theta, exn
   rhom(1) = rho(1) / (1.0 - qsv(1))
 
   !------------------------------------------------
-  ! Boundary layer 
+  ! Boundary layer
   !------------------------------------------------
 
   !
@@ -566,7 +556,7 @@ SUBROUTINE DCMIP2016_PHYSICS(test, u, v, p, pint, qsv, qsc, qsr, rho, theta, exn
   enddo
 
   !-----------------------------------------------------
-  !AS IN SIMPLIFIED_PHYSICS_V6 
+  !AS IN SIMPLIFIED_PHYSICS_V6
   !-----------------------------------------------------
   do k = 1, nz
 
@@ -605,7 +595,7 @@ SUBROUTINE DCMIP2016_PHYSICS(test, u, v, p, pint, qsv, qsc, qsr, rho, theta, exn
     CCm = rpdel_int*dt*gravit*gravit*Km(k+1)*rho_*rho_/(pint(k)-pint(k+1))
     endif
 
-    if (k .eq. 1) then
+    if (k == 1) then
        CEE(k) = CCE/(1.0d0+CAE+CCE)
        CEm(k) = CCm/(1.0d0+CAm+CCm)
        CFu(k) = u(k)/(1.0d0+CAm+CCm)
@@ -624,7 +614,7 @@ SUBROUTINE DCMIP2016_PHYSICS(test, u, v, p, pint, qsv, qsc, qsr, rho, theta, exn
   enddo
 
   !Calculate the updated temperaure and specific humidity and wind tendencies
-  !-------------------------------------------------------------------------- 
+  !--------------------------------------------------------------------------
 
   !First we need to calculate the tendencies at the top model level
   !----------------------------------------------------------------
@@ -659,6 +649,6 @@ SUBROUTINE DCMIP2016_PHYSICS(test, u, v, p, pint, qsv, qsc, qsr, rho, theta, exn
 
   return
 
-END SUBROUTINE DCMIP2016_PHYSICS 
+END SUBROUTINE DCMIP2016_PHYSICS
 
-END MODULE DCMIP_2016_physics_module 
+END MODULE DCMIP_2016_physics_module

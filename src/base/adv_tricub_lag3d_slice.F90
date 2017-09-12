@@ -18,8 +18,10 @@
       subroutine adv_tricub_lag3d_slice (F_cub_rho,F_in_rho,      &
                                          F_x_usm,F_y_usm,F_z_usm, & !POSITIONS USM
                                          F_x_svm,F_y_svm,F_z_svm, & !POSITIONS SVM
-                                         F_num,F_ni,F_nj,k0,F_nk,F_lev_S)
+                                         F_num,F_ni,k0,F_nk,F_lev_S)
 
+
+      use adv_slice_storage
       use grid_options
       use gem_options
       use geomh
@@ -37,7 +39,7 @@
 
       character(len=*), intent(in) :: F_lev_S ! m/t : Momemtum/thermo level
       integer, intent(in) :: F_num     ! number points
-      integer, intent(in) :: F_ni,F_nj ! dimension of horizontal fields
+      integer, intent(in) :: F_ni      ! dimension of horizontal fields
       integer, intent(in) :: F_nk ! number of vertical levels
       integer, intent(in) :: k0   ! scope of operator
       real,dimension(F_num), intent(in)  :: F_x_usm, F_y_usm, F_z_usm ! interpolation target x,y,z coordinates USM
@@ -50,13 +52,11 @@
       !@revisions
       ! v4_80 - Tanguay M.        - GEM4 Mass-Conservation
 
-#include "adv_slice_storage.cdk"
-
       integer,dimension(:),pointer :: p_lcz
       real*8, dimension(:),pointer :: p_bsz_8, p_zbc_8, p_zabcd_8
       real*8, dimension(:),pointer :: p_zbacd_8, p_zcabd_8, p_zdabc_8
 
-      integer :: n,i,j,k,ii,jj,kk,kkmax,idxk,idxjk,o1,o2,o3,o4, &
+      integer :: n,i,j,k,ii,jj,kk,kkmax,idxk,idxjk,o2, &
                  i0_e,in_e,j0_e,jn_e,i0_c,in_c,j0_c,jn_c
       real*8 :: p_z00_8
 
@@ -133,8 +133,9 @@
          allocate (x_usm_8(0:l_ni,1:l_nj  ,k0:F_nk),y_usm_8(0:l_ni,1:l_nj,k0:F_nk),z_usm_8(0:l_ni,1:l_nj,k0:F_nk), &
                    x_svm_8(1:l_ni,0:l_nj  ,k0:F_nk),y_svm_8(1:l_ni,0:l_nj,k0:F_nk),z_svm_8(1:l_ni,0:l_nj,k0:F_nk))
 
-         if (Lctl_step==1) &
-         allocate (z_bve_8(0:l_ni,0:l_nj+1,k0:F_nk+1))
+         if (Lctl_step==1) then
+            allocate (z_bve_8(0:l_ni,0:l_nj+1,k0:F_nk+1))
+         end if
 
          allocate (i_bw(l_nj),i_be(l_nj),j_ps_(k0:F_nk),j_pn_(k0:F_nk))
 

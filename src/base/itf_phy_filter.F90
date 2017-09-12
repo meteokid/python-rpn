@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -50,7 +50,7 @@ contains
       real, intent(in), optional :: F_sig               !Standard deviation of Gaussian filter (increase for more smoothing) [1 gridpoint]
 
       ! Local variables
-      integer :: i,j,k,ii,jj,cnt
+      integer :: i,j,ii,jj,cnt
       real :: d_euclid,d_sphere,sigm,mysig,wt_sum
 
       ! Initialize return status
@@ -193,7 +193,7 @@ contains
       fld => ifld(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,1:l_nk)
       F_status = phy_get(fld,F_iname,F_npath='V',F_bpath='PVD',F_end=(/-1,-1,l_nk/),F_quiet=.false.)
       if (F_status < 0) return
-      
+
       ! Apply smoothing operator
       if (gaussian_filter(flds,ifld) /= RMN_OK) then
          call msg(MSG_WARNING,'(itf_phy_filter::ipf_smooth_fld) Call to gaussian_filter failed')
@@ -250,7 +250,7 @@ contains
 
       ! Exchange halos for smoothing operation
       ifld = F_ifld
-      call yyg_xchng(ifld,l_minx,l_maxx,l_miny,l_maxy,G_nk,.false.,'CUBIC')
+      call yyg_xchng(ifld,l_minx,l_maxx,l_miny,l_maxy,G_nk,.false.,'PHYSI')
       call rpn_comm_xch_halo(ifld,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,G_nk, &
            G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 

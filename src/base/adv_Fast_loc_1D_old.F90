@@ -13,7 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/p adv_Fast_loc_1D - Localize F_x2 in F_x1 
+!**s/p adv_Fast_loc_1D - Localize F_x2 in F_x1
 
       subroutine adv_Fast_loc_1D_old (ia,ib,F_x2_8,F_n2,F_x1_8,F_n1)
 
@@ -73,7 +73,7 @@
 
       do i = 1,F_n2
 
-         !Find indice such as x_1(ia(i)-1) .le. x_2(i-1) .le. x_1(ia(i))
+         !Find indice such as x_1(ia(i)-1) <= x_2(i-1) <= x_1(ia(i))
          !--------------------------------------------------------------
          rri_8 = F_x2_8(i-1)
          ia(i) = (rri_8 - x00_8) * ovdx_8
@@ -81,7 +81,7 @@
          if (rri_8 < bsx_8(ia(i))) ia(i) = ia(i) - 1
          ia(i) = max(1,min(ia(i),F_n1))
 
-         !Find indice such as x_1(ib(i)-1) .le. x_2(i) .le. x_1(ib(i))
+         !Find indice such as x_1(ib(i)-1) <= x_2(i) <= x_1(ib(i))
          !------------------------------------------------------------
          rri_8 = F_x2_8(i)
          ib(i) = (rri_8 - x00_8) * ovdx_8

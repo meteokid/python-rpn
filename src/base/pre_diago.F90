@@ -17,7 +17,7 @@
 !
 
       subroutine pre_diago( F_Sol, F_Rhs, Minx, Maxx, Miny, Maxy, &
-                            nil,njl, minx1, maxx1, minx2, maxx2, Nk )
+                            nil,njl, Nk )
       use gem_options
       use glb_ld
       use cstv
@@ -26,10 +26,9 @@
       implicit none
 #include <arch_specific.hf>
 !
-      integer Minx, Maxx, Miny, Maxy, nil, njl, &
-              minx1, maxx1, minx2, maxx2,Nk
-      real*8  F_Rhs(Minx:Maxx,Miny:Maxy,Nk), &
-              F_Sol(Minx:Maxx,Miny:Maxy,Nk)
+      integer, intent(in) :: Minx, Maxx, Miny, Maxy, nil, njl, Nk
+      real*8, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(out) :: F_Rhs
+      real*8, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(in) :: F_Sol
 !
 ! author    Abdessamad Qaddouri -  December 2006
 !

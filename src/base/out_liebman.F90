@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -37,7 +37,7 @@
       real w2(l_minx:l_maxx,l_miny:l_maxy,Out3_lieb_nk), grad
 !
 !----------------------------------------------------------------------
-! 
+!
 !$omp parallel private (grad, kgrnd) shared (w2)
 !$omp do
 
@@ -52,13 +52,13 @@
 !           Determine if fictitious level is above or below ground
             ttx(i,j,k) = fis0(i,j) - htx(i,j,k)
 
-            if ( ttx(i,j,k) .gt. 0 ) then
+            if ( ttx(i,j,k) > 0 ) then
 
 !           fictitious level is under ground:
 !           temperature is obtained by linear EXTrapolation
 !           identify under ground grid point
 
-               if ( abs( wlao(i,j)*180./pi_8 ) .ge. 49. ) then
+               if ( abs( wlao(i,j)*180./pi_8 ) >= 49. ) then
                    ttx(i,j,k) = vt(i,j,Nk) +       .0005 * ttx(i,j,k)
                else
                    ttx(i,j,k) = vt(i,j,Nk) + stlo_8 * ttx(i,j,k)
@@ -74,7 +74,7 @@
                do kk= nk, 1, -1
                   kgrnd = kk
                   ttx(i,j,k) = gz (i,j,kk) - htx(i,j,k)
-                  if ( ttx(i,j,k) .gt. 0. ) goto 10
+                  if ( ttx(i,j,k) > 0. ) goto 10
                enddo
  10            grad = - (vt(i,j,kgrnd) - vt(i,j,kgrnd+1) ) / &
                         (gz(i,j,kgrnd) - gz(i,j,kgrnd+1) )
@@ -97,6 +97,6 @@
                        l_minx,l_maxx,l_miny,l_maxy,Out3_lieb_nk)
 !
 !----------------------------------------------------------------------
-! 
+!
       return
       end

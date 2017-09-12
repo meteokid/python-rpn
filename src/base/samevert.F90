@@ -2,18 +2,18 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**function samevert - 
+!**function samevert -
 
       integer function samevert ( zam_8,zbm_8,lvm, zat_8,zbt_8,lvt, &
                                   analtopo, F_topo, ni,nj,i0,in,j0,jn)
@@ -38,7 +38,7 @@
 !     Compare analysis levels to model levels and topographies between
 !     analysis and the model. Returns 3 types of codes:
 !     samevert > 0 - means Vertical interpolation is needed.
-!     samevert = 0 - means NO vertical interpolation is needed. 
+!     samevert = 0 - means NO vertical interpolation is needed.
 !     samevert < 0 - error in this function
 
 
@@ -48,9 +48,9 @@
 ! ---------------------------------------------------------------------
 !
       samevert = 0
-      if (Lun_out.gt.0) write(Lun_out,*) 'SAMEVERT CHECK'
-      if (in.gt.ni.or.jn.gt.nj.or.i0.lt.1.or.j0.lt.1) then
-          if (Lun_out.gt.0) then
+      if (Lun_out > 0) write(Lun_out,*) 'SAMEVERT CHECK'
+      if (in > ni.or.jn > nj.or.i0 < 1.or.j0 < 1) then
+          if (Lun_out > 0) then
              write(lun_out,*) ' ******* ERROR   ********'
              write(Lun_out,*) 'RANGE TO VERIFY IS GREATER THAN DIMENSIONS'
              write(lun_out,*) ' i0,in,j0,jn=',i0,in,j0,jn,' in (',ni,',',nj,')'
@@ -59,7 +59,7 @@
           return
       endif
 
-      if (G_nk.ne.lvm) then
+      if (G_nk /= lvm) then
           samevert = 1
           return
       endif
@@ -74,7 +74,7 @@
          if (abs(zat_8(k)-Ver_a_8%t(k)) > DIFSIG .or. &
              abs(zbt_8(k)-Ver_b_8%t(k)) > DIFSIG) samevert=samevert+1
       enddo
-      if (samevert.gt.0) then
+      if (samevert > 0) then
           return
       endif
 

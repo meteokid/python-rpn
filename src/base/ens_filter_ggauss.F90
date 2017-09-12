@@ -128,7 +128,7 @@
      fg(2)=2*fg(3);fg(1)=3*fg(3);fg(6)=2*fg(5);fg(7)=3*fg(5)
      fg=1/(sigma*sqrt(2*pi_8))*exp(-fg*fg/(2*sigma*sigma))
      fg=fg/sum(fg)
-     if (Lun_out.gt.0) then
+     if (Lun_out > 0) then
         write(Lun_out,1000)
         write(Lun_out,1009)lambda,bfact,sigma
         do j=1,G_nj

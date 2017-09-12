@@ -27,8 +27,7 @@
 #include <arch_specific.hf>
 
       integer F_argc,F_v1,F_v2
-      character *(*) F_argv_S(0:F_argc),F_cmdtyp_S
-      character(len=5) :: stuff_S
+      character(len=*) F_argv_S(0:F_argc),F_cmdtyp_S
 
 !author
 !     Vivian Lee - rpn - April 1999
@@ -101,14 +100,14 @@
 !     in the output routines. The maximum number of definitions is 4.
 !
 
-      integer i, j, k, gridset,gridout(5),longueur
+      integer i, j, gridset,gridout(5),longueur
       integer niout,njout
       external longueur
       character(len=8) grdtyp_S
 !
 !-------------------------------------------------------------------
 !
-      if (Lun_out.gt.0) then
+      if (Lun_out > 0) then
           write(Lun_out,*)
           write(Lun_out,*) F_argv_S(0),'=',F_argv_S(1),',',F_argv_S(2),',',(F_argv_S(i),i=3,F_argc)
       endif
@@ -116,8 +115,9 @@
       read(F_argv_S(1),*) gridset
       OutGrid_sets = OutGrid_sets + 1
       if (OutGrid_sets > OUTGRID_MAXGRID1) then
-          if (Lun_out > 0) &
-          write(Lun_out,*)'SET_GRID WARNING: Too many grid definitions'
+          if (Lun_out > 0) then
+            write(Lun_out,*)'SET_GRID WARNING: Too many grid definitions'
+          end if
           OutGrid_sets = OutGrid_sets - 1
           set_grid = 1
           return
@@ -126,13 +126,13 @@
       j = OutGrid_sets
       OutGrid_id(j)=gridset
 
-      if(index(F_argv_S(2),'model') .ne. 0) then
+      if(index(F_argv_S(2),'model') /= 0) then
          grdtyp_S='model'
-      else if (index(F_argv_S(2),'core') .ne. 0) then
+      else if (index(F_argv_S(2),'core') /= 0) then
          grdtyp_S='core'
-      else if (index(F_argv_S(2),'free') .ne. 0) then
+      else if (index(F_argv_S(2),'free') /= 0) then
          grdtyp_S='free'
-      else if (index(F_argv_S(2),'reduc') .ne. 0) then
+      else if (index(F_argv_S(2),'reduc') /= 0) then
          grdtyp_S='reduc'
          gridout(1)= 0 ; gridout(2)= 0
          gridout(3)= 0 ; gridout(4)= 0
@@ -141,12 +141,13 @@
          read(F_argv_S(4),*) gridout(2)
          read(F_argv_S(5),*) gridout(3)
          read(F_argv_S(6),*) gridout(4)
-         if (F_argc.gt.6) then
-            if (index(F_argv_S(7),'"').eq.0) read(F_argv_S(7),*)gridout(5)
+         if (F_argc > 6) then
+            if (index(F_argv_S(7),'"') == 0) read(F_argv_S(7),*)gridout(5)
          endif
       else
-         if (Lun_out.gt.0) &
-         write(Lun_out,*)'SET_GRID WARNING: Grid Type Undefined'
+         if (Lun_out > 0) then
+            write(Lun_out,*)'SET_GRID WARNING: Grid Type Undefined'
+         end if
          OutGrid_sets = OutGrid_sets - 1
          set_grid = 1
          return
@@ -155,31 +156,31 @@
 !    Calculate the origin and outer coordinates of the output grid
 !    and set to the maximum/minimum possible
 
-      OutGrid_reduc (j)= (grdtyp_S.eq.'reduc')
+      OutGrid_reduc (j)= (grdtyp_S == 'reduc')
       OutGrid_stride(j)= 1
 
-      if (grdtyp_S.eq.'model') then
+      if (grdtyp_S == 'model') then
 
          OutGrid_x0(j)=1
          OutGrid_x1(j)=G_ni
          OutGrid_y0(j)=1
          OutGrid_y1(j)=G_nj
 
-      else if (grdtyp_S.eq.'core') then
+      else if (grdtyp_S == 'core') then
 
          OutGrid_x0(j)=1      + Lam_pil_w
          OutGrid_x1(j)=Grd_ni - Lam_pil_e
          OutGrid_y0(j)=1      + Lam_pil_s
          OutGrid_y1(j)=Grd_nj - Lam_pil_n
 
-      else if (grdtyp_S.eq.'free') then
+      else if (grdtyp_S == 'free') then
 
          OutGrid_x0(j)=1       + Lam_pil_w + Lam_blend_Hx
          OutGrid_x1(j)=Grd_ni  - Lam_pil_e - Lam_blend_Hx
          OutGrid_y0(j)=1       + Lam_pil_s + Lam_blend_Hy
          OutGrid_y1(j)=Grd_nj  - Lam_pil_n - Lam_blend_Hy
 
-      else if (grdtyp_S.eq.'reduc') then
+      else if (grdtyp_S == 'reduc') then
 
          OutGrid_x0(j)=min( G_ni,      max(1,gridout(1)) )
          OutGrid_x1(j)=max( OutGrid_x0(j), min(G_ni,gridout(2)) )
@@ -188,7 +189,7 @@
          OutGrid_stride(j)=min( max(gridout(5),1), &
              min(OutGrid_x1(j)-OutGrid_x0(j)+1,OutGrid_y1(j)-OutGrid_y0(j)+1)/2-1 )
          if (Grd_yinyang_L) then
-            if (trim(Grd_yinyang_S) .eq. 'YAN') then
+            if (trim(Grd_yinyang_S) == 'YAN') then
                OutGrid_x0(j)= 0 ; OutGrid_x1(j)= -1
             endif
          endif
@@ -197,16 +198,17 @@
 
       niout=OutGrid_x1(j) - OutGrid_x0(j) + 1
       njout=OutGrid_y1(j) - OutGrid_y0(j) + 1
-      if (niout.lt.1.or.njout.lt.1) then
+      if (niout < 1.or.njout < 1) then
           OutGrid_sets = OutGrid_sets - 1
-          if (.not. ((Grd_yinyang_L).and.(trim(Grd_yinyang_S) .eq. 'YAN'))) then
-             if (Lun_out.gt.0) &
-             write (Lun_out,*)'ERROR in description of output grid!'
+          if (.not. ((Grd_yinyang_L).and.(trim(Grd_yinyang_S) == 'YAN'))) then
+             if (Lun_out > 0) then
+               write (Lun_out,*)'ERROR in description of output grid!'
+             end if
           endif
           return
       endif
 
-!      if (Lun_out.gt.0) write(Lun_out,*) ' Grid_set(',j,') : OutGrid_id=',OutGrid_id(j)
+!      if (Lun_out > 0) write(Lun_out,*) ' Grid_set(',j,') : OutGrid_id=',OutGrid_id(j)
 !
 !-------------------------------------------------------------------
 !

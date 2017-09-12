@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -125,16 +125,16 @@
 !$omp enddo
 
 !$omp do
-      do k= 1,Nk            
+      do k= 1,Nk
       do j= F_j0, F_jn
       do i= F_i0, F_in
          x0=F_pres(i,j,k)
-         if (k.eq.1) then
+         if (k == 1) then
             xm=F_pres(i,j,1)
             xp=F_pres(i,j,2)
             aa=F_pres(i,j,3)-x0
             bb=F_pres(i,j,2)-x0
-         elseif (k.eq.nk) then
+         elseif (k == nk) then
             xm=F_pres(i,j,Nk-1)
             xp=F_pres(i,j,Nk)
             aa=F_pres(i,j,Nk-1)-x0
@@ -190,7 +190,7 @@
 
             difgz = gz_temp(i,j,nk) - F_newtopo(i,j)
 
-            if ( (abs(difgz).lt.1.e-5) .or. (difgz .gt. 0.) ) then
+            if ( (abs(difgz) < 1.e-5) .or. (difgz > 0.) ) then
 
 !          surface of target grid is below the surface of source grid
 !          we assume SCHUMAN-NEWELL Lapse rate under ground to obtain
@@ -207,7 +207,7 @@
 
                do k=nk, 2, -1
                   difgz = gz_temp(i,j,k) - F_newtopo(i,j)
-                  if ( difgz .gt. 0. ) goto 20
+                  if ( difgz > 0. ) goto 20
                enddo
  20            lapse = - ( F_vt(i,j,k)-F_vt(i,j,k+1) ) / &
                          ( gz_temp(i,j,k)-gz_temp(i,j,k+1) )
@@ -217,9 +217,9 @@
             ttop = F_vt(i,j,k)
             tbot = ttop + lapse * difgz
 
-            if ( abs(lapse) .lt. 1E-10 ) then
-               F_ssq0(i,j) = F_pres(i,j,k) * exp ( difgz/(rgasd_8*ttop) ) 
-            else          
+            if ( abs(lapse) < 1E-10 ) then
+               F_ssq0(i,j) = F_pres(i,j,k) * exp ( difgz/(rgasd_8*ttop) )
+            else
                cons = 1. / ( rgasd_8 * lapse )
                F_ssq0(i,j) = F_pres(i,j,k) * ( tbot/ttop ) ** cons
             endif

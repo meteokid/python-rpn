@@ -12,23 +12,23 @@
 
       !Arguments
       !---------
-      character (len=*), intent(in) :: F_name_S                           !I, Name of field to be ajusted 
+      character (len=*), intent(in) :: F_name_S                           !I, Name of field to be ajusted
       integer,           intent(in) :: Minx,Maxx,Miny,Maxy                !I, Dimension H
       integer,           intent(in) :: k0                                 !I, Scope of operator
       integer,           intent(in) :: F_nk                               !I, Number of vertical levels
-      logical,           intent(in) :: F_BC_min_max_L                     !I, T IF MONO(CLIPPING) after Bermejo-Conde 
-      logical,           intent(in) :: F_CLIP_L                           !I, T IF F_high is MONO(CLIPPING) 
-      logical,           intent(in) :: F_ILMC_L                           !I, T IF F_high is MONO(ILMC) 
-      real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(out)    :: F_out  !I: Corrected (conservative) solution 
-      real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in)     :: F_high !I: High-order SL solution based on F_CLIP_L,F_ILMC_L  
-      real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in)     :: F_low  !I:  Low-order SL solution 
+      logical,           intent(in) :: F_BC_min_max_L                     !I, T IF MONO(CLIPPING) after Bermejo-Conde
+      logical,           intent(in) :: F_CLIP_L                           !I, T IF F_high is MONO(CLIPPING)
+      logical,           intent(in) :: F_ILMC_L                           !I, T IF F_high is MONO(ILMC)
+      real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(out)    :: F_out  !I: Corrected (conservative) solution
+      real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in)     :: F_high !I: High-order SL solution based on F_CLIP_L,F_ILMC_L
+      real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in)     :: F_low  !I:  Low-order SL solution
       real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in)     :: F_min  !I: MIN over cell
       real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in)     :: F_max  !I: MAX over cell
-      real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in)     :: F_old  !I: Field at previous time step 
+      real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in)     :: F_old  !I: Field at previous time step
       real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in)     :: F_for_flux_o !I: Advected mixing ratio with 0 in NEST
       real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in)     :: F_for_flux_i !I: Advected mixing ratio with 0 in CORE
 
-      !Author Monique Tanguay 
+      !Author Monique Tanguay
       ! Revision
       ! v4_80 - Qaddouri A.       - Version for Yin-Yang Grid
       ! v5_00 - Tanguay M.        - Provide air mass to mass_tr
@@ -42,7 +42,7 @@
       !----------------------------------------------------------
       integer i,j,k,err,count(k0:F_nk,3),l_count(3),g_count(3),time_p,time_m,iprod
       real*8  mass_old_8,mass_tot_old_8,mass_new_8,mass_tot_new_8, &
-              mass_out_8,mass_tot_out_8,mass_wei_8, &  
+              mass_out_8,mass_tot_out_8,mass_wei_8, &
               mass_deficit_8,lambda_8,correction_8,p_exp_8,H_minus_L_8,ratio_8, &
               mass_flux_o_8,mass_flux_i_8,mass_bflux_8
       real*8, parameter :: ONE_8=1.d0
@@ -50,14 +50,17 @@
           mass_p(Minx:Maxx,Miny:Maxy,F_nk),mass_m(Minx:Maxx,Miny:Maxy,F_nk), &
            bidon(Minx:Maxx,Miny:Maxy,F_nk)
       logical LAM_L, verbose_L
+      logical :: almost_zero
 
       !----------------------------------------------------------
 
-      verbose_L = Tr_verbose/=0 
+      verbose_L = Tr_verbose/=0
 
       LAM_L = .not.Grd_yinyang_L
 
-      if (Schm_psadj==0.and..NOT.LAM_L.and..NOT.Schm_autobar_L) call handle_error(-1,'BERMEJO-CONDE','Schm_psadj_L should be TRUE when NOT LAM')
+      if (Schm_psadj==0 .and. .NOT.LAM_L .and. .NOT.Schm_autobar_L) then
+         call handle_error(-1,'BERMEJO-CONDE','Schm_psadj_L should be TRUE when NOT LAM')
+      end if
 
       time_p = 1
       time_m = 0
@@ -65,7 +68,7 @@
       call get_density (bidon,mass_p,time_p,Minx,Maxx,Miny,Maxy,F_nk,k0)
       call get_density (bidon,mass_m,time_m,Minx,Maxx,Miny,Maxy,F_nk,k0)
 
-!$omp parallel do 
+!$omp parallel do private(k)
       do k=1,F_nk
          F_new(:,:,k) = F_high(:,:,k)
       enddo
@@ -84,12 +87,12 @@
 
       !Default values if no Mass correction
       !------------------------------------
-      F_out = F_new 
+      F_out = F_new
 
       call mass_tr (mass_old_8,F_name_S(4:7),F_old,mass_p,Minx,Maxx,Miny,Maxy,F_nk-k0+1,k0)
       call mass_tr (mass_new_8,F_name_S(4:7),F_new,mass_m,Minx,Maxx,Miny,Maxy,F_nk-k0+1,k0)
 
-      mass_bflux_8 = 0.0d0 
+      mass_bflux_8 = 0.0d0
 
       !Estimate mass of FLUX_out and mass of FLUX_in
       !---------------------------------------------
@@ -129,28 +132,34 @@
       !-----------------------------------------
       !Compute Mass preserving BC solution F_out
       !-----------------------------------------
-!$omp parallel do private(i,j,H_minus_L_8) shared(weight,mass_deficit_8)
+!$omp parallel private(k,i,j,H_minus_L_8) &
+!$omp shared(weight,mass_deficit_8)
+!$omp do
       do k=k0,F_nk
 
          do j=1+pil_s,l_nj-pil_n
          do i=1+pil_w,l_ni-pil_e
 
-            H_minus_L_8 = F_high(i,j,k) - F_low(i,j,k) 
+            H_minus_L_8 = F_high(i,j,k) - F_low(i,j,k)
 
-            if (sign(ONE_8,mass_deficit_8)==sign(ONE_8,H_minus_L_8)) weight(i,j,k) = abs(H_minus_L_8)**p_exp_8*sign(ONE_8,mass_deficit_8)
+            if (int(sign(ONE_8,mass_deficit_8)) == int(sign(ONE_8,H_minus_L_8))) then
+               weight(i,j,k) = abs(H_minus_L_8)**p_exp_8*sign(ONE_8,mass_deficit_8)
+            end if
 
          enddo
          enddo
 
       enddo
-!$omp end parallel do
+!$omp end do
+!$omp end parallel
 
       call mass_tr (mass_wei_8,F_name_S(4:7),weight,mass_m,Minx,Maxx,Miny,Maxy,F_nk-k0+1,k0)
 
-      if (mass_wei_8==0.d0) then
+      if ( almost_zero(mass_wei_8) ) then
 
-         if (verbose_L.and.Lun_out>0) & 
-         write(Lun_out,1002) 'TRACERS: Diff. too small             =',mass_tot_new_8,mass_tot_old_8,mass_tot_new_8-mass_tot_old_8
+         if (verbose_L.and.Lun_out>0) then
+            write(Lun_out,1002) 'TRACERS: Diff. too small =',mass_tot_new_8,mass_tot_old_8,mass_tot_new_8-mass_tot_old_8
+         end if
 
          return
 
@@ -158,13 +167,13 @@
 
       lambda_8 = mass_deficit_8/mass_wei_8
 
-      if (verbose_L.and.Lun_out>0) write(Lun_out,1003) 'TRACERS: LAMBDA                  = ',lambda_8,F_name_S(4:6)  
+      if (verbose_L.and.Lun_out>0) write(Lun_out,1003) 'TRACERS: LAMBDA                  = ',lambda_8,F_name_S(4:6)
 
       if (.NOT.verbose_L) then
 
          if (.NOT.Tr_BC_min_max_L) then
 
-!$omp parallel do private(i,j,correction_8) shared(weight,lambda_8)
+!$omp parallel do private(k,i,j,correction_8) shared(weight,lambda_8)
          do k=k0,F_nk
 
             do j=1+pil_s,l_nj-pil_n
@@ -182,7 +191,7 @@
 
          else
 
-!$omp parallel do private(i,j,correction_8) shared(weight,lambda_8)
+!$omp parallel do private(k,i,j,correction_8) shared(weight,lambda_8)
          do k=k0,F_nk
 
             do j=1+pil_s,l_nj-pil_n
@@ -209,7 +218,9 @@
 
       else
 
-!$omp parallel do private(i,j,correction_8) shared(weight,count,lambda_8)
+!$omp parallel private(k,i,j,correction_8) &
+!$omp shared(weight,count,lambda_8)
+!$omp do
       do k=k0,F_nk
 
          count(k,1) = 0.
@@ -242,7 +253,8 @@
          enddo
 
       enddo
-!$omp end parallel do
+!$omp end do
+!$omp end parallel
 
       endif
 

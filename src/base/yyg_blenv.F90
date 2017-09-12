@@ -22,6 +22,7 @@
       use glb_ld
       use glb_pil
       use ptopo
+      use yyg_blnv
       implicit none
 #include <arch_specific.hf>
 !
@@ -29,21 +30,17 @@
 !           Abdessamad Qaddouri/V.Lee - October 2009
 !
 !     include 'mpif.h'
-#include "yyg_blnv.cdk"
 
-      integer Minx,Maxx,Miny,Maxy,Ni,Nj,NK,numproc
+      integer Minx,Maxx,Miny,Maxy,NK
       real  tabu_src (Minx:Maxx,Miny:Maxy,Nk), tabv_src (Minx:Maxx,Miny:Maxy,Nk)
       real  tab_dst (Minx:Maxx,Miny:Maxy,Nk)
       real*8  tabu_src_8(Minx:Maxx,Miny:Maxy,NK)
       real*8  tabv_src_8(Minx:Maxx,Miny:Maxy,NK)
-      integer ierr,i,j,k,kk,kk_proc,m,mm,adr
+      integer ierr,k,kk,kk_proc,m,mm,adr
       real, dimension (:,:), allocatable :: recv_pil,send_pil
-      real sent,recv
 !     integer status(MPI_STATUS_SIZE)
 !     integer stat(MPI_STATUS_SIZE,Ptopo_numproc)
-      integer status
       integer request(Ptopo_numproc*2)
-      real*8  send_pil_8,tabu_8,tabv_8
       integer tag2,recvlen,sendlen,tag1,ireq
       tag2=14
       tag1=13
@@ -60,13 +57,13 @@
 
 
 !     print *,'sendlen=',sendlen,' recvlen=',recvlen
-      if (sendlen.gt.0) then
+      if (sendlen > 0) then
           allocate(send_pil(sendlen*NK,Bln_vsendmaxproc))
 !         assume rpn_comm_xch_halo already done on tab_src
           tabu_src_8(:,:,:)=dble(tabu_src(:,:,:))
           tabv_src_8(:,:,:)=dble(tabv_src(:,:,:))
       endif
-      if (recvlen.gt.0) then
+      if (recvlen > 0) then
           allocate(recv_pil(recvlen*NK,Bln_vrecvmaxproc))
       endif
 
@@ -74,14 +71,14 @@
       do 100 kk=1,Bln_vsendmaxproc
 !
 !        For each processor (in other colour)
-         if (Ptopo_couleur.eq.0) then
+         if (Ptopo_couleur == 0) then
              kk_proc = Bln_vsendproc(kk)+Ptopo_numproc-1
          else
              kk_proc = Bln_vsendproc(kk)-1
          endif
 
 !        prepare to send to other colour processor
-         if (Bln_vsend_len(kk).gt.0) then
+         if (Bln_vsend_len(kk) > 0) then
 !            prepare something to send
 
                 adr=Bln_vsend_adr(kk)+1
@@ -111,12 +108,12 @@
       do 200 kk=1,Bln_vrecvmaxproc
 !        For each processor (in other colour)
 
-         if (Ptopo_couleur.eq.0) then
+         if (Ptopo_couleur == 0) then
              kk_proc = Bln_vrecvproc(kk)+Ptopo_numproc-1
          else
              kk_proc = Bln_vrecvproc(kk)-1
          endif
-         if (Bln_vrecv_len(kk).gt.0) then
+         if (Bln_vrecv_len(kk) > 0) then
 !            detect something to receive
 
              ireq = ireq+1
@@ -136,7 +133,7 @@
 
 ! Now fill my results if I have received something
 
-      if (recvlen.gt.0) then
+      if (recvlen > 0) then
 
           do 300 kk=1,Bln_vrecvmaxproc
              mm=0
@@ -154,8 +151,8 @@
 
 
       endif
-      if (recvlen.gt.0)deallocate(recv_pil)
-      if (sendlen.gt.0) deallocate(send_pil)
+      if (recvlen > 0)deallocate(recv_pil)
+      if (sendlen > 0) deallocate(send_pil)
 
 !
 !

@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -16,7 +16,7 @@ module dcmip_options
    implicit none
    public
    save
-   
+
    !# Dcmip case selector
    !# * Dcmip_case=0 (none)
    !# * Dcmip_case=11 (3D deformational flow)
@@ -33,7 +33,7 @@ module dcmip_options
    !# * Dcmip_case=163 (Supercell -Small Planet-)
    integer :: Dcmip_case = 0
    namelist /dcmip/ Dcmip_case
-   
+
    !# Type of precipitation/microphysics
    !# * Dcmip_prec_type=-1 (none)
    !# * Dcmip_prec_type=0 (Large-scale precipitation -Kessler-)
@@ -54,7 +54,7 @@ module dcmip_options
    integer :: Dcmip_moist = 1
    namelist /dcmip/ Dcmip_moist
 
-   !# Set lower value of Tracer in Terminator 
+   !# Set lower value of Tracer in Terminator
    !# * Dcmip_lower_value=0 (free)
    !# * Dcmip_lower_value=1 (0)
    !# * Dcmip_lower_value=2 (1.0e-15)
@@ -80,7 +80,7 @@ module dcmip_options
    !# Vertical Diffusion Tracers (if <0,we remove REF)
    real :: Dcmip_nuZ_tr = 0.
    namelist /dcmip/ Dcmip_nuZ_tr
-   
+
    !# Earth's radius reduction factor
    real*8  :: Dcmip_X = 1.d0
    namelist /dcmip/ Dcmip_X
@@ -89,14 +89,14 @@ module dcmip_options
 contains
 
    function dcmip_options_init() result(F_istat)
-      implicit none 
+      implicit none
       integer :: F_istat
 #include <rmnlib_basics.hf>
       logical, save :: init_L = .false.
       F_istat = RMN_OK
       if (init_L) return
       init_L = .true.
-      
+
       return
    end function dcmip_options_init
 

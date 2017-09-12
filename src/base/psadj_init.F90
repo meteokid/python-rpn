@@ -63,7 +63,7 @@
       do j=1+pil_s,l_nj-pil_n
       do i=1+pil_w,l_ni-pil_e
          l_avg_8 = l_avg_8 + geomh_area_8(i,j) * geomh_mask_8(i,j)
-         if(fis0(i,j).gt.1.) &
+         if(fis0(i,j) > 1.) &
             x_avg_8 = x_avg_8 + geomh_area_8(i,j) * geomh_mask_8(i,j)
       enddo
       enddo

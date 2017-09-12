@@ -24,7 +24,7 @@
       implicit none
 #include <arch_specific.hf>
 
-      character* (*) F_component_S
+      character(len=*) F_component_S
       integer F_step,ns
       integer F_sorties(0:ns)
 
@@ -59,9 +59,9 @@
 
       do j=1,Timestep_sets
           do i=1,Timestep_max(j)
-            if (F_step .eq. Timestep_tbl(i,j)) then
+            if (F_step == Timestep_tbl(i,j)) then
                do k=1, o_sets
-                  if ( o_step(k).eq.j ) then
+                  if ( o_step(k) == j ) then
                      if (trim(F_component_S) == 'PHY' ) &
                      Outp_lasstep(k,F_step)= Timestep_tbl(max(1,i-1),j)
                      if ( Level_typ_S(o_lev(k)) == 'M') then

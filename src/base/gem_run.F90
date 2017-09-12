@@ -39,7 +39,7 @@
 
       logical, external :: gem_muststop
       integer, external :: model_timeout_alarm
-      character*16 datev
+      character(len=16) :: datev
       integer stepf,last_step,seconds_since,istat,print_label
       real*8 dayfrac, sec_in_day
       parameter (sec_in_day=86400.0d0)
@@ -57,7 +57,7 @@
       dayfrac = dble(Step_kount) * Cstv_dt_8 / sec_in_day
       call incdatsd (datev,Step_runstrt_S,dayfrac)
 
-      if (Lun_out.gt.0) write (6,900) datev
+      if (Lun_out > 0) write (6,900) datev
 
       call blocstat (.true.)
 
@@ -79,12 +79,12 @@
 
       call canonical_cases ("ERR")
 
-      do while (Step_kount .lt. stepf)
+      do while (Step_kount < stepf)
 
          seconds_since= model_timeout_alarm(Step_alarm)
 
          Lctl_step= Lctl_step + 1  ;  Step_kount= Step_kount + 1
-         if (Lun_out.gt.0) write (Lun_out,print_label) Lctl_step,last_step
+         if (Lun_out > 0) write (Lun_out,print_label) Lctl_step,last_step
 
          call out_outdir
 
@@ -118,7 +118,7 @@
 
          call blocstat (.false.)
 
-         if (Lun_out.gt.0) write(Lun_out,3000) Lctl_step
+         if (Lun_out > 0) write(Lun_out,3000) Lctl_step
 
          call save_restart
 
@@ -130,7 +130,7 @@
 
  999  seconds_since= model_timeout_alarm(Step_alarm)
 
-      if (Lun_out.gt.0) write(Lun_out,4000) Lctl_step
+      if (Lun_out > 0) write(Lun_out,4000) Lctl_step
 
  900  format (/'STARTING THE INTEGRATION WITH THE FOLLOWING DATA: VALID ',a)
  1001 format(/,'EXPO: PERFORMING TIMESTEP #',I9,' OUT OF ',I9, &

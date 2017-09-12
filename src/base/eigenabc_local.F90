@@ -110,7 +110,7 @@
                           cst*Opr_opsyp0_8(G_nj+jj)
             a_81(iloc,1  )= zero
             c_81(iloc,Nj) = zero
-            if(Nj .gt. 1) a_81(iloc,Nj) =c_81(iloc, Nj-1)
+            if(Nj > 1) a_81(iloc,Nj) =c_81(iloc, Nj-1)
          enddo
 !
          ai_local(:,:,k)=zero;bi_local(:,:,k)=zero;ci_local(:,:,k)=zero

@@ -15,10 +15,11 @@
 
 !**s/r dcmip_vrd_set - Setting for vertical diffusion (Based on eqspng_set)
 
-      subroutine dcmip_vrd_set
+      subroutine dcmip_vrd_set()
 
       use step_options
       use dcmip_options
+      use dcmip_vrd_coef
 
       use glb_ld
       use cstv
@@ -30,8 +31,6 @@
       !=========================================================
       !     Setting for vertical diffusion (Based on eqspng_set)
       !=========================================================
-
-#include "dcmip_vrd_coef.cdk"
 
       !--------------------------------------------------------------------------------
 
@@ -52,7 +51,7 @@
 
       if (.NOT.Dcmip_wd_L.and..NOT.Dcmip_th_L.and..NOT.Dcmip_tr_L) return
 
-      if (Lun_out.gt.0) write(Lun_out,1000)
+      if (Lun_out > 0) write(Lun_out,1000)
 
       Dcmip_ref_wd = 0.
       Dcmip_ref_th = 0.

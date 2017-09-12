@@ -1,7 +1,23 @@
-#if defined (DOC)
-!
-!**comdeck yyg_pil.cdk
-!
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+
+module yyg_blnv
+   implicit none
+   public
+   save
+
 !______________________________________________________________________
 !                                                                      |
 !  VARIABLES ASSOCIATED WITH BCS communication for Yin-Yang            |
@@ -27,31 +43,16 @@
 ! Pil_sendw_s2(*,M)  | element (s(1,2)) in matrix for polar vectors    |
 !                    | transformation                                  |
 !______________________________________________________________________|
-#endif
-!
-!
 !Declarations for V variables (on V grid)
-      integer  Pil_vsend_all, Pil_vrecv_all,Pil_vsendmaxproc,Pil_vrecvmaxproc
-      integer, dimension (: ), pointer :: &
-               Pil_vsendproc, Pil_vrecvproc, &
-               Pil_vrecv_len, Pil_vsend_len, &
-               Pil_vrecv_adr, Pil_vsend_adr, &
-               Pil_vrecv_i   ,Pil_vrecv_j   ,Pil_vsend_imx1, Pil_vsend_imy1, &
-               Pil_vsend_imx2,Pil_vsend_imy2
-!
-      real*8,  dimension (: ), pointer ::  &
-               Pil_vsend_xxr,Pil_vsend_yyr, & 
-               Pil_vsend_s1, Pil_vsend_s2
-!
-      common/Pil_vi/ &
-               Pil_vsend_all, Pil_vrecv_all,Pil_vsendmaxproc,Pil_vrecvmaxproc,&
-               Pil_vsendproc, Pil_vrecvproc, &
-               Pil_vrecv_len, Pil_vsend_len, &
-               Pil_vrecv_adr, Pil_vsend_adr, &
-               Pil_vrecv_i   ,Pil_vrecv_j   ,Pil_vsend_imx1, Pil_vsend_imy1, &
-               Pil_vsend_imx2,Pil_vsend_imy2
+   integer  Bln_vsend_all, Bln_vrecv_all,Bln_vsendmaxproc,Bln_vrecvmaxproc
+   integer, dimension (: ), pointer :: &
+               Bln_vsendproc, Bln_vrecvproc, &
+               Bln_vrecv_len, Bln_vsend_len, &
+               Bln_vrecv_adr, Bln_vsend_adr, &
+               Bln_vrecv_i   ,Bln_vrecv_j   ,Bln_vsend_imx1, Bln_vsend_imy1, &
+               Bln_vsend_imx2,Bln_vsend_imy2
 
-      common/Pil_vr8/ &
-               Pil_vsend_xxr,Pil_vsend_yyr, & 
-               Pil_vsend_s1, Pil_vsend_s2
-
+   real*8,  dimension (: ), pointer ::  &
+               Bln_vsend_xxr,Bln_vsend_yyr, &
+               Bln_vsend_s1, Bln_vsend_s2
+end module yyg_blnv

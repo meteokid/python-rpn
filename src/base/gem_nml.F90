@@ -23,11 +23,11 @@
       implicit none
 #include <arch_specific.hf>
 
-      character* (*) F_namelistf_S
+      character(len=*) F_namelistf_S
 
 
       integer, external :: fnom, canonical_nml
-      character*64 dumc_S
+      character(len=64) :: dumc_S
       logical dum_L
       integer err,unf
 !
@@ -35,20 +35,20 @@
 !
       gem_nml = -1
 
-      if ((F_namelistf_S.eq.'print').or.(F_namelistf_S.eq.'PRINT')) then
+      if ((F_namelistf_S == 'print').or.(F_namelistf_S == 'PRINT')) then
          gem_nml = 0
-         if ( Lun_out.ge.0) then
+         if ( Lun_out >= 0) then
             write (Lun_out,nml=gem_cfgs_p)
-            if (Grdc_ndt.gt.0) write (lun_out,nml=grdc_p)
+            if (Grdc_ndt > 0) write (lun_out,nml=grdc_p)
             err= canonical_nml ('print', Lun_out, dum_L, dum_L)
          endif
          return
       endif
 
-      if (F_namelistf_S .ne. '') then
+      if (F_namelistf_S /= '') then
 
          unf = 0
-         if (fnom (unf,F_namelistf_S, 'SEQ+OLD', 0) .ne. 0) goto 9110
+         if (fnom (unf,F_namelistf_S, 'SEQ+OLD', 0) /= 0) goto 9110
          rewind(unf)
          read (unf, nml=gem_cfgs, end = 9120, err=9120)
          rewind(unf)
@@ -63,25 +63,25 @@
       err= canonical_nml (F_namelistf_S, Lun_out, Schm_canonical_dcmip_L,&
                                              Schm_canonical_williamson_L )
 
-      if (err.eq.1) gem_nml= 1
+      if (err == 1) gem_nml= 1
 
       goto 9999
 
- 9110 if (Lun_out.gt.0) then
+ 9110 if (Lun_out > 0) then
          write (Lun_out, 9050) trim( F_namelistf_S )
          write (Lun_out, 8000)
       endif
       goto 9999
 
  9120 call fclos (unf)
-      if (Lun_out.ge.0) then
+      if (Lun_out >= 0) then
          write (Lun_out, 9150) 'gem_cfgs',trim( F_namelistf_S )
          write (Lun_out, 8000)
       endif
       goto 9999
 
  9130 call fclos (unf)
-      if (Lun_out.ge.0) then
+      if (Lun_out >= 0) then
          write (Lun_out, 9150) 'grdc',trim( F_namelistf_S )
          write (Lun_out, 8000)
       endif

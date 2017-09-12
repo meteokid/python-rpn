@@ -41,7 +41,7 @@ module gmm_geof
       real, pointer, dimension (:,:) :: sls       => null()
       real, pointer, dimension (:,:) :: topo_low  => null()
       real, pointer, dimension (:,:) :: topo_high => null()
- 
+
       integer, parameter :: MAXNAMELENGTH = 32
 
       character(len=MAXNAMELENGTH) :: &

@@ -104,13 +104,13 @@
             end do
 
             if (Lun_debug_L.and.F_print_L) write(Lun_out,1001) linfini,iter
-            if ((iter.gt.1).and.(linfini.lt.Sol_yyg_eps)) exit
+            if ((iter > 1).and.(linfini < Sol_yyg_eps)) exit
 
          end do
 
          if (F_print_L) then
             write(Lun_out,1002) linfini,iter
-            if (linfini.gt.Sol_yyg_eps) write(Lun_out,9001) Sol_yyg_eps
+            if (linfini > Sol_yyg_eps) write(Lun_out,9001) Sol_yyg_eps
          endif
 
       else

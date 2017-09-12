@@ -53,16 +53,16 @@
 
       !-----------------------------------------------------------------------
 
-      integer i,j,k,istat
+      integer i,j,k
 
-      real(8) sc1_8,x_a_8,y_a_8,utt_8,vtt_8,s_8(2,2),rlon_8
+      real(8) x_a_8,y_a_8,utt_8,vtt_8,s_8(2,2),rlon_8
 
       real(8)  :: &
                   lon,  &    ! Longitude (radians)
                   lat,  &    ! Latitude (radians)
                   z, &       ! Height (m)
-                  hyam, &    ! A coefficient for hybrid-eta coordinate, at model level midpoint
-                  hybm, &    ! B coefficient for hybrid-eta coordinate, at model level midpoint
+               !!!hyam, &    ! A coefficient for hybrid-eta coordinate, at model level midpoint
+               !!!hybm, &    ! B coefficient for hybrid-eta coordinate, at model level midpoint
                   gc         ! bar{z} for Gal-Chen coordinate
 
       logical  :: hybrid_eta ! flag to indicate whether the hybrid sigma-p (eta) coordinate is used
@@ -111,7 +111,7 @@
 
       !-----------------------------------------------------------------------
 
-      if (Lun_out.gt.0) write (Lun_out,1000)
+      if (Lun_out > 0) write (Lun_out,1000)
 
       zcoords    = 0
       cfv        = 1
@@ -126,13 +126,13 @@
             lat   = geomh_y_8(j)
             y_a_8 = geomh_y_8(j)
 
-            if (Ptopo_couleur.eq.0) then
+            if (Ptopo_couleur == 0) then
 
                do i = 1,l_ni
 
                   lon = geomh_x_8(i)
 
-                  call test1_advection_orography (lon,lat,p,z,zcoords,cfv,Ver_a_8%t(k),Ver_b_8%t(k),Cstv_pref_8,hybrid_eta,hyam,hybm,gc, &
+                  call test1_advection_orography (lon,lat,p,z,zcoords,cfv,Ver_a_8%t(k),Ver_b_8%t(k),Cstv_pref_8,hybrid_eta,gc, &
                                                   u,v,w,zd,t,tv,phis,ps,rho,q,q1,q2,q3,q4)
 
                   F_t   (i,j,k) = tv
@@ -160,7 +160,7 @@
 
                   lon = rlon_8 + acos(-1.D0)
 
-                  call test1_advection_orography (lon,lat,p,z,zcoords,cfv,Ver_a_8%t(k),Ver_b_8%t(k),Cstv_pref_8,hybrid_eta,hyam,hybm,gc, &
+                  call test1_advection_orography (lon,lat,p,z,zcoords,cfv,Ver_a_8%t(k),Ver_b_8%t(k),Cstv_pref_8,hybrid_eta,gc, &
                                                   utt_8,vtt_8,w,zd,t,tv,phis,ps,rho,q,q1,q2,q3,q4)
 
                   F_t   (i,j,k) = tv
@@ -193,13 +193,13 @@
             lat   = geomh_y_8(j)
             y_a_8 = geomh_y_8(j)
 
-            if (Ptopo_couleur.eq.0) then
+            if (Ptopo_couleur == 0) then
 
                do i = 1,l_niu
 
                   lon = geomh_xu_8(i)
 
-                  call test1_advection_orography (lon,lat,p,z,zcoords,cfv,Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,hybrid_eta,hyam,hybm,gc, &
+                  call test1_advection_orography (lon,lat,p,z,zcoords,cfv,Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,hybrid_eta,gc, &
                                                   u,v,w,zd,t,tv,phis,ps,rho,q,q1,q2,q3,q4)
 
                   F_u(i,j,k) = u
@@ -216,7 +216,7 @@
 
                   lon = rlon_8 + acos(-1.D0)
 
-                  call test1_advection_orography (lon,lat,p,z,zcoords,cfv,Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,hybrid_eta,hyam,hybm,gc, &
+                  call test1_advection_orography (lon,lat,p,z,zcoords,cfv,Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,hybrid_eta,gc, &
                                                   utt_8,vtt_8,w,zd,t,tv,phis,ps,rho,q,q1,q2,q3,q4)
 
                   u = s_8(1,1)*utt_8 + s_8(1,2)*vtt_8
@@ -240,13 +240,13 @@
             lat   = geomh_yv_8(j)
             y_a_8 = geomh_yv_8(j)
 
-            if (Ptopo_couleur.eq.0) then
+            if (Ptopo_couleur == 0) then
 
                do i = 1,l_ni
 
                   lon = geomh_x_8(i)
 
-                  call test1_advection_orography (lon,lat,p,z,zcoords,cfv,Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,hybrid_eta,hyam,hybm,gc, &
+                  call test1_advection_orography (lon,lat,p,z,zcoords,cfv,Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,hybrid_eta,gc, &
                                                   u,v,w,zd,t,tv,phis,ps,rho,q,q1,q2,q3,q4)
 
                   F_v(i,j,k) = v
@@ -263,7 +263,7 @@
 
                   lon = rlon_8 + acos(-1.D0)
 
-                  call test1_advection_orography (lon,lat,p,z,zcoords,cfv,Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,hybrid_eta,hyam,hybm,gc, &
+                  call test1_advection_orography (lon,lat,p,z,zcoords,cfv,Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,hybrid_eta,gc, &
                                                   utt_8,vtt_8,w,zd,t,tv,phis,ps,rho,q,q1,q2,q3,q4)
 
                   v = s_8(2,1)*utt_8 + s_8(2,2)*vtt_8

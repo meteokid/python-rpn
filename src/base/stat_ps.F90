@@ -67,7 +67,7 @@
 
       istat = gmm_get('TR/HU:P',tr)
 
-!$omp parallel do shared(sumq,tr)
+!$omp parallel do private(k) shared(sumq,tr)
       do k=1,l_nk
          sumq(1:l_ni,1:l_nj,k) = sumq(1:l_ni,1:l_nj,k) + tr(1:l_ni,1:l_nj,k)
       end do

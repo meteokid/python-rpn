@@ -26,7 +26,7 @@
       implicit none
 #include <arch_specific.hf>
 
-      character*(*) F_datev_S
+      character(len=*) F_datev_S
 
 !author
 !     Michel Desgagne   - Spring 2002

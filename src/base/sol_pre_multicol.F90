@@ -22,6 +22,7 @@
                                      minx1, maxx1, minx2, maxx2 )
       use gem_options
       use glb_ld
+      use prec
       use sol
       use ptopo
       implicit none
@@ -36,8 +37,6 @@
 !
 !revision
 ! v3_30 - Qaddouri A.       - initial version
-!
-#include "prec.cdk"
 !
       integer  nloc,ii,icol
       real*8 wk12(niloc*njloc*Schm_nith), fdg(niloc,njloc,Schm_nith)
@@ -55,7 +54,7 @@
 !
       do ii=1,Ptopo_numproc-1
       do icol=1,Prec_ncol
-         if (Prec_mycol.eq.icol) then
+         if (Prec_mycol == icol) then
             call pre_jacobi2D(wk22,wk12,Prec_xevec_8,fdg,niloc,njloc, &
                              Schm_nith,Prec_ai_8,Prec_bi_8,Prec_ci_8)
             call tab_vec ( wint_8 , Minx,Maxx,Miny,Maxy,Schm_nith, &

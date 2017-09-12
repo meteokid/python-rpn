@@ -44,7 +44,7 @@
       include "rpn_comm.inc"
 
       logical wrapit_L, iope_L
-      integer  nz, nz2, err, ni, nis, njs, k, kk
+      integer  nz, err, ni, nis, njs, k, kk
       integer, dimension (:)    , pointer     :: zlist
       real   , dimension (:,:  ), pointer     :: guwrap
       real   , dimension (:,:,:), pointer     :: wk, wk_glb
@@ -53,18 +53,18 @@
 !
       nis= g_if - g_id + 1
       njs= g_jf - g_jd + 1
-      if ( (nis .lt. 1) .or. (njs .lt. 1) ) return
+      if ( (nis < 1) .or. (njs < 1) ) return
 
-      if (out_type_S .eq. 'REGDYN') then
+      if (out_type_S == 'REGDYN') then
          call timing_start2 ( 81, 'OUT_DUCOL', 80)
       else
          call timing_start2 ( 91, 'OUT_PUCOL', 48)
       endif
 
       if (Out3_ezcoll_L) then
-         iope_L= (Out3_iome .ge. 0)
+         iope_L= (Out3_iome >= 0)
          nz    = (nplans + Out3_npes -1) / Out3_npes
-         if (Out3_iome .ge.0) then
+         if (Out3_iome >= 0) then
             allocate (wk_glb(G_ni,G_nj,nz),zlist(nz))
          else
             allocate (wk_glb(1,1,1),zlist(1))
@@ -80,14 +80,14 @@
       endif
 
       if ( (iope_L) .and. (nz>0) ) then
-         if ((Grd_yinyang_L) .and. (Ptopo_couleur.eq.0)) then
+         if ((Grd_yinyang_L) .and. (Ptopo_couleur == 0)) then
             allocate (wk(nis,njs*2,nz))
          else
             allocate (wk(nis,njs,nz))
          endif
          wk(1:nis,1:njs,1:nz) = wk_glb(g_id:g_if,g_jd:g_jf,1:nz)
 !!$         do k= 1, nz
-!!$            if (zlist(k).gt.0) then
+!!$            if (zlist(k) > 0) then
 !!$               call low_pass_dwt2d_r4 (wk(1,1,k),nis,njs,nis,njs)
 !!$!                call low_pass_quant_dwt2d_r4 (wk(1,1,k),nis,njs,nis,njs)
 !!$            endif
@@ -95,7 +95,7 @@
          deallocate (wk_glb)
       endif
 
-      if (out_type_S .eq. 'REGDYN') then
+      if (out_type_S == 'REGDYN') then
          call timing_stop (81)
          call timing_start2 ( 82, 'OUT_DUECR', 80)
       else
@@ -105,26 +105,26 @@
 
       if (iope_L) then
 
-         wrapit_L = ( (Grd_typ_S(1:2) == 'GU') .and. (nis.eq.G_ni) )
+         wrapit_L = ( (Grd_typ_S(1:2) == 'GU') .and. (nis == G_ni) )
          if (wrapit_L) allocate ( guwrap(G_ni+1,njs) )
 
          do k= nz, 1, -1
 
-            if (zlist(k).gt.0) then
+            if (zlist(k) > 0) then
                kk= zlist(k)
 
                if ( (Grd_yinyang_L) .and. (.not.Out_reduc_l) ) then
 
                   call out_mergeyy (wk(1,1,k), nis*njs)
 
-                  if (Ptopo_couleur.eq.0) &
-
-                  err = fstecr ( wk(1,1,k),wk,-meta(kk)%nbits,Out_unf, &
-                              Out_dateo,Out_deet,Out_npas,nis,2*njs,1, &
-                              meta(kk)%ip1,meta(kk)%ip2,meta(kk)%ip3 , &
-                              Out_typvar_S,meta(kk)%nv,Out_etik_S,'U', &
-                              meta(kk)%ig1,meta(kk)%ig2,meta(kk)%ig3 , &
-                              Out_ig4,meta(kk)%dtyp,Out_rewrit_L )
+                  if (Ptopo_couleur == 0) then
+                     err = fstecr ( wk(1,1,k),wk,-meta(kk)%nbits,Out_unf, &
+                                    Out_dateo,Out_deet,Out_npas,nis,2*njs,1, &
+                                    meta(kk)%ip1,meta(kk)%ip2,meta(kk)%ip3 , &
+                                    Out_typvar_S,meta(kk)%nv,Out_etik_S,'U', &
+                                    meta(kk)%ig1,meta(kk)%ig2,meta(kk)%ig3 , &
+                                    Out_ig4,meta(kk)%dtyp,Out_rewrit_L )
+                  end if
                else
 
                   if (wrapit_L) then
@@ -153,7 +153,7 @@
 
       endif
 
-      if (out_type_S .eq. 'REGDYN') then
+      if (out_type_S == 'REGDYN') then
          call timing_stop (82)
       else
          call timing_stop (92)

@@ -53,10 +53,12 @@
       real, dimension(:,:  ), pointer :: qdiag
       real, dimension(:,:,:), pointer :: tr1,ptr3d
       logical :: write_diag_lev,near_sfc_L,outvar_L
+      real hybt_gnk2(1)
+      integer ind0(1)
 !
 !----------------------------------------------------------------------
 !
-      if (Level_typ_S(levset) .eq. 'M') then  ! output tracers on model levels
+      if (Level_typ_S(levset) == 'M') then  ! output tracers on model levels
 
          knd=Level_kind_ip1
 !        Setup the indexing for output
@@ -72,11 +74,13 @@
             deallocate(ip1t); nullify(ip1t)
             if (vgd_get(vcoord,'VCDT - vertical coordinate (t)',hybt) /= VGD_OK) istat = VGD_ERROR
          endif
+         hybt_gnk2(1)=hybt(G_nk+2)
+         ind0(1)=1
 
          do ii=1,Outd_var_max(set)
             outvar_L=.false.
             do n=1,Tr3d_ntr
-               if (Outd_var_S(ii,set).eq.trim(Tr3d_name_S(n))) then
+               if (Outd_var_S(ii,set) == trim(Tr3d_name_S(n))) then
                   nullify (tr1)
                   if (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H') then
                      fullname= 'TR/'//trim(Tr3d_name_S(n))//':M'
@@ -120,14 +124,14 @@
                                       F_start=(/-1,-1,l_nk+1/), F_end=(/-1,-1,l_nk+1/),&
                                       F_quiet=.true.)
                   endif
-                  if (istat.eq.0) then
+                  if (istat == 0) then
                      if (Out3_cliph_L) t4(:,:,G_nk+1)= &
                                  max ( t4(:,:,G_nk+1), 0. )
                      call out_fstecr3 ( t4(l_minx,l_miny,G_nk+1)      ,&
                             l_minx,l_maxx,l_miny,l_maxy               ,&
-                            hybt(G_nk+2),Outd_var_S(ii,set)           ,&
+                            hybt_gnk2,Outd_var_S(ii,set)           ,&
                             Outd_convmult(ii,set),Outd_convadd(ii,set),&
-                            Level_kind_diag,-1,1,1,1,Outd_nbit(ii,set),&
+                            Level_kind_diag,-1,1,ind0,1,Outd_nbit(ii,set),&
                             .false. )
                   endif
                endif
@@ -159,7 +163,7 @@
 
             outvar_L=.false.
             do n=1,Tr3d_ntr
-               if (Outd_var_S(ii,set).eq.trim(Tr3d_name_S(n))) then
+               if (Outd_var_S(ii,set) == trim(Tr3d_name_S(n))) then
                 nullify (tr1)
                 if (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H') then
                      fullname= 'TR/'//trim(Tr3d_name_S(n))//':M'
@@ -188,7 +192,7 @@
                else
                   istat=-1
                endif
-               if (istat.eq.0) then
+               if (istat == 0) then
                   t5(:,:,1:G_nk  ) = tr1(:,:,1:G_nk)
                   call vertint2 ( w4,cible,nko, t5 ,pw_log_pt,G_nk+1,&
                                   l_minx,l_maxx,l_miny,l_maxy       ,&
@@ -199,7 +203,7 @@
                           1,l_ni,1,l_nj, inttype=Out3_vinterp_type_S )
                endif
 
-               if (Outd_filtpass(ii,set).gt.0) &
+               if (Outd_filtpass(ii,set) > 0) &
                     call filter2( w4,Outd_filtpass(ii,set), &
                                     Outd_filtcoef(ii,set), &
                             l_minx,l_maxx,l_miny,l_maxy, nko)

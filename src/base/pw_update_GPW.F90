@@ -66,9 +66,9 @@
          pw_gz_plus(1:l_ni,1:l_nj,k)= fi(1:l_ni,1:l_nj,k)
          pw_log_pm (1:l_ni,1:l_nj,k)= log(pw_pm_plus(1:l_ni,1:l_nj,k))
          pw_log_pt (1:l_ni,1:l_nj,k)= log(pw_pt_plus(1:l_ni,1:l_nj,k))
-         if (k.eq.1) &
+         if (k == 1) &
          pw_me_plus(1:l_ni,1:l_nj)= fis0(1:l_ni,1:l_nj)
-         if (k.eq.l_nk) then
+         if (k == l_nk) then
             pw_log_pm(1:l_ni,1:l_nj,l_nk+1)= log(pw_p0_plus(1:l_ni,1:l_nj))
             pw_log_pt(1:l_ni,1:l_nj,l_nk+1)= pw_log_pm(1:l_ni,1:l_nj,l_nk+1)
          endif

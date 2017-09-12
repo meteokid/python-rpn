@@ -13,14 +13,14 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/p adv_rebuild_LP - 1D-Rebuild based on Laprise and Plante 1995 (PPM1)  
+!**s/p adv_rebuild_LP - 1D-Rebuild based on Laprise and Plante 1995 (PPM1)
 
       subroutine adv_rebuild_LP (F_psi_8,F_xu_8,F_m_8,F_n)
 
       implicit none
 #include <arch_specific.hf>
 
-      integer F_n 
+      integer F_n
 
       real*8 F_psi_8(F_n,3),F_xu_8(0:F_n),F_m_8(F_n)
 
@@ -31,7 +31,7 @@
 
       !arguments
       !---------------------------------------------------------------------
-      !F_psi_8(i) = INT(psi)(F_xu(i-1),F_xu(i)) = F_m(i) 
+      !F_psi_8(i) = INT(psi)(F_xu(i-1),F_xu(i)) = F_m(i)
       !---------------------------------------------------------------------
 
       integer i,shift
@@ -60,11 +60,11 @@
 
       !Cubic rebuild with extrapolation at the boundaries: We resolve a linear system
       !------------------------------------------------------------------------------
-      do i=1,F_n 
+      do i=1,F_n
 
          shift = 0
-         if (i==1  ) shift =  1 
-         if (i==F_n) shift = -1 
+         if (i==1  ) shift =  1
+         if (i==F_n) shift = -1
 
          i_12_8 = d2_8(i+(1)-2+shift)*i1_8(i+(1)-2+shift)
          i_13_8 = d3_8(i+(1)-2+shift)*i1_8(i+(1)-2+shift)
@@ -89,13 +89,13 @@
          r_k3_8 = (r_j3_8-r_j2_8)/(j_33_8-j_23_8)
 
          x_c_8 = r_k3_8
-         x_b_8 = r_j2_8 - j_23_8 * x_c_8 
-         x_a_8 = r_i1_8 - i_12_8 * x_b_8 - i_13_8 * x_c_8 
+         x_b_8 = r_j2_8 - j_23_8 * x_c_8
+         x_a_8 = r_i1_8 - i_12_8 * x_b_8 - i_13_8 * x_c_8
 
-         !Convertion from parabola in x to parabola in zeta=[x-x(i-1)]/[x(i)-x(i-1)] 
+         !Convertion from parabola in x to parabola in zeta=[x-x(i-1)]/[x(i)-x(i-1)]
          !--------------------------------------------------------------------------
-         F_psi_8(i,1) = x_a_8 + x_b_8*F_xu_8(i-1) + x_c_8*F_xu_8(i-1)**2 
-         F_psi_8(i,2) = (F_xu_8(i)-F_xu_8(i-1))*(x_b_8+2.0d0*x_c_8*F_xu_8(i-1)) 
+         F_psi_8(i,1) = x_a_8 + x_b_8*F_xu_8(i-1) + x_c_8*F_xu_8(i-1)**2
+         F_psi_8(i,2) = (F_xu_8(i)-F_xu_8(i-1))*(x_b_8+2.0d0*x_c_8*F_xu_8(i-1))
          F_psi_8(i,3) = x_c_8*(F_xu_8(i)-F_xu_8(i-1))**2
 
       enddo

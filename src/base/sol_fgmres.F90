@@ -14,18 +14,19 @@
 !---------------------------------- LICENCE END ---------------------------------
 !**s/r sol_fgmres - FGMRES based iterative elliptic solver
 !
-      subroutine sol_fgmres ( F_w2_8, F_w1_8, iln, nil, njl,&
+      subroutine sol_fgmres ( F_w2_8, F_w1_8, nil, njl,&
                               Minx, Maxx, Miny, Maxy, F_gnk,&
                               F_nk, print_conv_L, conv, its )
       use gem_options
       use glb_ld
       use lun
+      use prec
       use sol
       implicit none
 #include <arch_specific.hf>
 
       logical print_conv_L
-      integer iln, nil, njl, Minx, Maxx, Miny, Maxy, F_gnk, F_nk, its
+      integer nil, njl, Minx, Maxx, Miny, Maxy, F_gnk, F_nk, its
       real*8 F_w1_8 (Minx:Maxx,Miny:Maxy,F_gnk), &
              F_w2_8 (Minx:Maxx,Miny:Maxy,F_gnk), conv
 
@@ -35,7 +36,6 @@
 !revision
 ! v4_70 - Qaddouri A.       - initial version
 !
-#include "prec.cdk"
 
       integer niloc,njloc,nloc
       integer halox, haloy, minx1, maxx1, minx2, maxx2
@@ -52,7 +52,7 @@
       njloc = (Njl-pil_n)-(1+pil_s)+1
       nloc  = niloc*njloc*F_nk
 
-      if (lastdt .eq. -1) then  ! allocate and initialize sol2
+      if (lastdt == -1) then  ! allocate and initialize sol2
           allocate (sol2(nloc))
           sol2 = 0.
           lastdt = 0
@@ -101,7 +101,7 @@
 
       sol2= sol1  ! Save solution sol1 into sol2
 
-      if (icode .eq. 1) then
+      if (icode == 1) then
 
          if (sol2D_precond_S == 'JACOBI')   then
                call pre_jacobi2D ( wk22,wk11,Prec_xevec_8,niloc,njloc,&
@@ -114,7 +114,7 @@
 
       else
 
-         if (icode.ge.2) then
+         if (icode >= 2) then
 
             if (Lun_debug_L.and.print_conv_L) write(lun_out, 199) conv,its
 

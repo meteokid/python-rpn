@@ -26,15 +26,12 @@ module hzd_mod
 !--------------------|-------------------------------------------------|
 ! Hzd_geom*          | Hor. diffu. in the dynamics (rhs)               |
 !----------------------------------------------------------------------
-       real*8, dimension(:,:), pointer :: Hzd_geom_q => null()
-       real*8, dimension(:,:), pointer :: Hzd_geom_u => null()
-       real*8, dimension(:,:), pointer :: Hzd_geom_v => null()
-       real*8, dimension(:), pointer   :: Hzd_smago_lnrM_8, Hzd_smago_lnrT_8
-       common /Hzd_pntr/ Hzd_geom_q, Hzd_geom_u, Hzd_geom_v, &
-                        Hzd_smago_lnrM_8, Hzd_smago_lnrT_8
+   real*8, dimension(:,:), pointer :: Hzd_geom_q => null()
+   real*8, dimension(:,:), pointer :: Hzd_geom_u => null()
+   real*8, dimension(:,:), pointer :: Hzd_geom_v => null()
+   real*8, dimension(:), pointer   :: Hzd_smago_lnrM_8, Hzd_smago_lnrT_8
 
-
-       integer      Hzd_niter,Hzd_niter_tr,Hzd_niter_theta
-       real*8 , dimension(:), pointer :: Hzd_coef_8,Hzd_coef_8_tr,Hzd_coef_8_theta
+   integer      Hzd_niter,Hzd_niter_tr,Hzd_niter_theta
+   real*8 , dimension(:), pointer :: Hzd_coef_8,Hzd_coef_8_tr,Hzd_coef_8_theta
 
 end module hzd_mod

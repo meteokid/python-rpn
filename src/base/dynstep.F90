@@ -49,8 +49,8 @@
 !     first_L is TRUE  for the first timestep
 !           or the first timestep after digital filter initialisation
 
-      first_L = (Step_kount.eq.1).or.(.not.Init_mode_L .and.  &
-                 Step_kount.eq.(Init_dfnp+1)/2)
+      first_L = (Step_kount == 1).or.(.not.Init_mode_L .and.  &
+                 Step_kount == (Init_dfnp+1)/2)
 
       keep_itcn = Schm_itcn
 
@@ -105,9 +105,9 @@
             call yyg_xchng (tr1 , l_minx,l_maxx,l_miny,l_maxy, G_nk,&
                             .true., 'CUBIC')
          end do
-         !yyblend= (Schm_nblendyy .gt. 0)
+         !yyblend= (Schm_nblendyy > 0)
          !if (yyblend) &
-         !call yyg_blend (mod(Step_kount,Schm_nblendyy).eq.0)
+         !call yyg_blend (mod(Step_kount,Schm_nblendyy) == 0)
       else
          call nest_gwa
          call spn_main
@@ -121,7 +121,7 @@
       call pw_update_UV
       call pw_update_T
 
-      if ( Lctl_step-Vtopo_start .eq. Vtopo_ndt) Vtopo_L = .false.
+      if ( Lctl_step-Vtopo_start == Vtopo_ndt) Vtopo_L = .false.
 
       Schm_itcn = keep_itcn
 

@@ -15,17 +15,14 @@
 !**s/r nest_init -- Initializes nesting data for LAM configuration
 
       subroutine nest_init ()
-      use step_options
+      use gem_options
       use gmm_vt1
       use gmm_nest
       use gmm_geof
-      use gem_options
-      use geomh
-      use glb_ld
       use lun
-      use tr3d
       use gmm_itf_mod
-      use ptopo
+      use step_options
+      use tr3d
       implicit none
 #include <arch_specific.hf>
 
@@ -99,7 +96,7 @@
             tr_name = 'TR/'//trim(Tr3d_name_S(n))//':P'
             istat = gmm_get(tr_name,tr1)
             tr_name = 'NEST/'//trim(Tr3d_name_S(n))//':F'
-      	    istat = gmm_get(tr_name,trf)
+            istat = gmm_get(tr_name,trf)
             trf = tr1
          end do
 

@@ -97,7 +97,7 @@
             if (Tr3d_hzd(i)) then
                nullify (tr)
                istat = gmm_get('TR/'//trim(Tr3d_name_S(i))//':P',tr)
-               if (istat.eq.0) call hzd_ctrl4 &
+               if (istat == 0) call hzd_ctrl4 &
                      (tr, 'S_TR', l_minx,l_maxx,l_miny,l_maxy,G_nk)
             endif
          end do
@@ -199,9 +199,9 @@
             end do
           endif
 
-         yyblend= (Schm_nblendyy .gt. 0)
+         yyblend= (Schm_nblendyy > 0)
          if (yyblend) &
-         call yyg_blend (mod(Step_kount,Schm_nblendyy).eq.0)
+         call yyg_blend (mod(Step_kount,Schm_nblendyy) == 0)
 
       endif
 

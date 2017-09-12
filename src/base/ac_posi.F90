@@ -60,13 +60,13 @@
       Grdc_gif = 0
       Grdc_gjf = 0
 !
-      if ( (Grdc_ndt.lt.0) .or. (Grd_yinyang_S .eq. 'YAN') .or. &
-           (Grdc_ni .eq.0) .or. (Grdc_nj.eq.0) .or. (Grdc_dx.lt.0.) ) then
+      if ( (Grdc_ndt < 0) .or. (Grd_yinyang_S == 'YAN') .or. &
+           (Grdc_ni == 0) .or. (Grdc_nj == 0) .or. (Grdc_dx < 0.) ) then
          Grdc_ndt = -1
          return
       endif
 
-      if (Grdc_dy.lt.0) Grdc_dy = Grdc_dx
+      if (Grdc_dy < 0) Grdc_dy = Grdc_dx
 !
 !     *** Positional parameters for f and q points
 !
@@ -75,8 +75,8 @@
       xl   = x0 + (Grdc_ni  -1) * Grdc_dx
       yl   = y0 + (Grdc_nj  -1) * Grdc_dy
 !
-      if (x0.lt.0.0)x0=x0+360.0
-      if (xl.lt.0.0)xl=xl+360.0
+      if (x0 < 0.0)x0=x0+360.0
+      if (xl < 0.0)xl=xl+360.0
 !
       ierx = stretch_axis2 ( ac_xp, Grdc_dx, x0, xl, dum1, Grdc_ni, &
                  Grdc_ni, dum, .false.,Lun_debug_L,360., dum2, .false.)
@@ -87,19 +87,19 @@
       Grdc_yp1 = ac_yp(1)
 !
       do i=1,dimgx
-         if (xpx(i).le.ac_xp(1)      ) Grdc_gid=i
-         if (xpx(i).le.ac_xp(Grdc_ni)) Grdc_gif=i
+         if (xpx(i) <= ac_xp(1)      ) Grdc_gid=i
+         if (xpx(i) <= ac_xp(Grdc_ni)) Grdc_gif=i
       enddo
 
       do i=1,dimgy
-         if (ypx(i).le.ac_yp(1)      ) Grdc_gjd=i
-         if (ypx(i).le.ac_yp(Grdc_nj)) Grdc_gjf=i
+         if (ypx(i) <= ac_yp(1)      ) Grdc_gjd=i
+         if (ypx(i) <= ac_yp(Grdc_nj)) Grdc_gjf=i
       enddo
 
       ! Tests if same grid
       if(&
-           Grdc_iref.eq.Grd_iref.and.&
-           Grdc_jref.eq.Grd_jref.and.&
+           Grdc_iref == Grd_iref.and.&
+           Grdc_jref == Grd_jref.and.&
            abs(Grdc_latr-Grd_latr)<1.e-6.and.&
            abs(Grdc_lonr-Grd_lonr)<1.e-6.and.&
            abs(Grdc_dx-Grd_dx)/Grd_dx<1.e-6)then
@@ -115,10 +115,10 @@
          Grdc_gjf = Grdc_gjf + 3
       endif
 
-      if ( (Grdc_gid.lt.1    ).or.(Grdc_gjd.lt.1    ).or. &
-           (Grdc_gif.gt.dimgx).or.(Grdc_gjf.gt.dimgy) ) Grdc_ndt = -1
+      if ( (Grdc_gid < 1    ).or.(Grdc_gjd < 1    ).or. &
+           (Grdc_gif > dimgx).or.(Grdc_gjf > dimgy) ) Grdc_ndt = -1
 
-      if (Grdc_ndt.gt.0) then
+      if (Grdc_ndt > 0) then
          if ((prout).and.(.not.Rstri_rstn_L)) &
          write (6,1006) Grdc_gid,Grdc_gif,Grdc_gjd,Grdc_gjf,Grdc_ndt,Grdc_start,Grdc_end
          !#TODO: update since out_sgrid is no longuer avail.
@@ -129,7 +129,7 @@
          return
       endif
 
-      if (Grdc_trnm_S(1).eq.'@#$%') then
+      if (Grdc_trnm_S(1) == '@#$%') then
          do i=1,Tr3d_ntr
             Grdc_trnm_S(i) = Tr3d_name_S(i)
          end do
@@ -137,10 +137,10 @@
       else
          cnt = 0
          do 10 k=1,max_trnm
-            if (Grdc_trnm_S(k).eq.'@#$%') goto 89
+            if (Grdc_trnm_S(k) == '@#$%') goto 89
             flag_hu= (trim(Grdc_trnm_S(k)) == 'HU')
             do i=1,Tr3d_ntr
-               if (trim(Grdc_trnm_S(k)).eq.trim(Tr3d_name_S(i))) then
+               if (trim(Grdc_trnm_S(k)) == trim(Tr3d_name_S(i))) then
                   cnt=cnt+1
                   Grdc_trnm_S(cnt) = Tr3d_name_S(i)
                   goto 10

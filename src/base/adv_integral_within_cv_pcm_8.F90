@@ -16,10 +16,10 @@
 !**s/r adv_integral_within_cv_pcm_8 - Integral based on PCM of Zerroukat et al(2002).
 !                                     Based on CODE Zerroukat et al(2002)/Mahidjiba et al(2008)
 
-      function adv_integral_within_cv_pcm_8 ( x1_8, x2_8, mass_cv_8, dx_8, slope_8, & 
+      function adv_integral_within_cv_pcm_8 ( x1_8, x2_8, mass_cv_8, dx_8, slope_8, &
                                               x_left_8, x_right_8, rho_left_8, rho_right_8)
 
-      implicit none          
+      implicit none
 
       real*8 mass_cv_8,x1_8,x2_8,dx_8,slope_8,x_left_8,x_right_8
       real*8 rho_left_8,rho_right_8,adv_integral_within_cv_pcm_8
@@ -60,8 +60,8 @@
       !Local variables
       !---------------
       real*8 a0_8,a1_8,a2_8,a3_8,s1_8,s2_8,m1_8,m2_8
-      real*8 mass_transformed_8, slope_transformed_8  
-               
+      real*8 mass_transformed_8, slope_transformed_8
+
       !Check if the born of integrations x1 & x2 are within the cv
       !-----------------------------------------------------------
       if ( x1_8 < x_left_8  .or. x2_8 < x_left_8 &
@@ -76,31 +76,31 @@
 
          stop
 
-      endif      
-       
+      endif
+
       !Compute transformed variables
-      !----------------------------- 
+      !-----------------------------
       s1_8 = (x1_8-x_left_8) / dx_8
       s2_8 = (x2_8-x_left_8) / dx_8
 
        mass_transformed_8 = mass_cv_8 / dx_8
       slope_transformed_8 = slope_8 * dx_8
-               
+
       !Evaluate the cubic coefficients
       !-------------------------------
       a0_8 = rho_left_8
-      a1_8 = -3.*rho_left_8 + 3.*mass_transformed_8 & 
-                              - slope_transformed_8          
-      a2_8 = +3.*rho_left_8 - rho_right_8 & 
+      a1_8 = -3.*rho_left_8 + 3.*mass_transformed_8 &
+                              - slope_transformed_8
+      a2_8 = +3.*rho_left_8 - rho_right_8 &
              -2.*mass_transformed_8 + 2.*slope_transformed_8
-      a3_8 = -1.*rho_left_8 + rho_right_8 - slope_transformed_8               
+      a3_8 = -1.*rho_left_8 + rho_right_8 - slope_transformed_8
 
-      !Compute definite integral between x1 and x2 
+      !Compute definite integral between x1 and x2
       !-------------------------------------------
       m1_8 = a0_8*s1_8 + a1_8*s1_8**2. + a2_8*s1_8**3. + a3_8*s1_8**4.
-      m2_8 = a0_8*s2_8 + a1_8*s2_8**2. + a2_8*s2_8**3. + a3_8*s2_8**4.          
-               
+      m2_8 = a0_8*s2_8 + a1_8*s2_8**2. + a2_8*s2_8**3. + a3_8*s2_8**4.
+
       adv_integral_within_cv_pcm_8 = (m2_8 - m1_8) * dx_8
 
-      return 
-      end 
+      return
+      end

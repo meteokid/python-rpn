@@ -23,9 +23,9 @@
       use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
-      integer  Minx,Maxx,Miny,Maxy, Nk
+      integer, intent(in) :: Minx,Maxx,Miny,Maxy, Nk
 !
-      real     F_u  (Minx:Maxx,Miny:Maxy,  Nk)  ,  F_v (Minx:Maxx,Miny:Maxy,  Nk)
+      real, dimension(Minx:Maxx, Miny:Maxy, Nk) :: F_u, F_v
 !
 !author
 !     Michel Desgagne   - Spring 2006
@@ -41,12 +41,9 @@
 !
 
 !
-      type(gmm_metadata) :: mymeta
-      character(len=GMM_MAXNAMELENGTH) :: tr_name
 !     temp variables to manipulate winds for Yin-Yang
-      real tempu   (Minx:Maxx,Miny:Maxy,  NK)
-      real tempv   (Minx:Maxx,Miny:Maxy,  NK)
-      integer err,i,j,k
+      real, dimension(Minx:Maxx, Miny:Maxy, NK) :: tempu, tempv
+      integer :: i,j,k
 
 !----------------------------------------------------------------------
 !

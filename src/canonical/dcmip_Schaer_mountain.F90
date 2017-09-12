@@ -80,9 +80,9 @@
 
       !-------------------------------------------------------------------------------
 
-      if (Lun_out.gt.0.and.Cstv_tstr_8.ne.300.0) call handle_error(-1,'DCMIP_SCHAER_MOUNTAIN','SET TSTR AS T AT EQUATOR')
+      if (Lun_out > 0.and.Cstv_tstr_8 /= 300.0) call handle_error(-1,'DCMIP_SCHAER_MOUNTAIN','SET TSTR AS T AT EQUATOR')
 
-      if (Lun_out.gt.0) write (Lun_out,1000) Shear, Set_topo_L
+      if (Lun_out > 0) write (Lun_out,1000) Shear, Set_topo_L
 
       zcoords = 0
 
@@ -107,7 +107,7 @@
             lat   = geomh_y_8(j)
             y_a_8 = geomh_y_8(j)
 
-            if (Ptopo_couleur.eq.0) then
+            if (Ptopo_couleur == 0) then
 
                do i = 1,l_ni
 
@@ -172,7 +172,7 @@
             lat   = geomh_y_8(j)
             y_a_8 = geomh_y_8(j)
 
-            if (Ptopo_couleur.eq.0) then
+            if (Ptopo_couleur == 0) then
 
                do i = 1,l_niu
 
@@ -227,7 +227,7 @@
             lat   = geomh_yv_8(j)
             y_a_8 = geomh_yv_8(j)
 
-            if (Ptopo_couleur.eq.0) then
+            if (Ptopo_couleur == 0) then
 
                do i = 1,l_ni
 

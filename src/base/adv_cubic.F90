@@ -122,7 +122,7 @@
       nbpts = F_ni*F_nj*F_nk
 
       if (flux_n>0) then
-!$omp parallel do
+!$omp parallel do private(k)
       do k = 1,F_nk
          fld_adw(:,:,k)= 0.0
       enddo
@@ -141,7 +141,7 @@
          err = gmm_get(gmmk_min_s ,fld_min ,mymeta)
          err = gmm_get(gmmk_max_s ,fld_max ,mymeta)
 
-!$omp parallel do
+!$omp parallel do private(k)
          do k = 1,F_nk
             fld_cub (:,:,k)= fld_out(:,:,k)
             fld_mono(:,:,k)= fld_out(:,:,k)
@@ -150,7 +150,7 @@
 
          if (flux_n>0) then
 
-!$omp parallel do
+!$omp parallel do private(k)
             do k = 1,F_nk
                cub_o(:,:,k)= 0.0
                cub_i(:,:,k)= 0.0
@@ -159,7 +159,7 @@
 
             if (.NOT.done_mask_L) then
 
-!$omp parallel
+!$omp parallel private(i,j,k)
 !$omp do
                do k = 1,F_nk
                   fld_ONE(:,:,k)= 0.0
@@ -194,7 +194,7 @@
 
             done_mask_L = .TRUE.
 
-!$omp parallel do
+!$omp parallel do private (i,j,k)
             do k=1,F_nk
             do j=adv_lminy,adv_lmaxy
             do i=adv_lminx,adv_lmaxx
@@ -232,7 +232,7 @@
                                    nbpts, F_nind, F_ii, F_k0, F_nk,        &
                                    mono_L, conserv_L, F_lev_S)
 
-!$omp parallel
+!$omp parallel private(k)
       if (.NOT. conserv_L) then
 !$omp do
          do k = F_k0, F_nk

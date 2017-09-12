@@ -31,24 +31,24 @@ module coriolis
 
    public :: set_coriolis
 
-   contains
+contains
 
-      subroutine set_coriolis(F_x_8, F_y_8, F_xu_8, F_yv_8, F_rot_8, Minx,Maxx,Miny,Maxy)
+   subroutine set_coriolis(F_x_8, F_y_8, F_xu_8, F_yv_8, F_rot_8, Minx,Maxx,Miny,Maxy)
 
-         ! coriolis - compute coriolis factor
-         use dcst
-         use gem_options
-         use grid_options
-         use glb_ld
-         implicit none
+      ! coriolis - compute coriolis factor
+      use dcst
+      use gem_options
+      use grid_options
+      use glb_ld
+      implicit none
 #include <arch_specific.hf>
 
-         integer, intent(in) :: Minx,Maxx,Miny,Maxy
-         real*8, intent(in) :: F_x_8 (Minx:Maxx), & ! longitudes in radians PHI grid
-                               F_y_8 (Miny:Maxy), & ! latitudes in radians PHI grid
-                               F_xu_8(Minx:Maxx), & ! longitudes in radians U grid
-                               F_yv_8(Miny:Maxy), & ! latitudes in radians V grid
-                               F_rot_8(3,3)         ! rotation matrix of the grid
+      integer, intent(in) :: Minx,Maxx,Miny,Maxy
+      real*8, intent(in) :: F_x_8 (Minx:Maxx), & ! longitudes in radians PHI grid
+                            F_y_8 (Miny:Maxy), & ! latitudes in radians PHI grid
+                            F_xu_8(Minx:Maxx), & ! longitudes in radians U grid
+                            F_yv_8(Miny:Maxy), & ! latitudes in radians V grid
+                            F_rot_8(3,3)         ! rotation matrix of the grid
 
       integer :: i, j
       real*8  :: s0, ang, c0, sa, ca
@@ -72,7 +72,7 @@ module coriolis
 
       s0 = F_rot_8(3,3)
 
-      if ( abs( (abs(s0)-1.d0) ).gt.1.0e-10 ) then
+      if ( abs( (abs(s0)-1.d0) ) > 1.0e-10 ) then
          ang = atan2( F_rot_8(2,3), F_rot_8(1,3) )
       else
          s0 = sign( 1.d0, s0 )

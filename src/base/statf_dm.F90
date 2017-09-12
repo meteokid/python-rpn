@@ -56,7 +56,7 @@ contains
       use ptopo
       implicit none
 
-      character*(*) F_nv_S , F_from_S
+      character(len=*) F_nv_S , F_from_S
       integer Minx,Maxx,Miny,Maxy,Mink,Maxk, &
               F_i0,F_j0,F_k0,F_in,F_jn,F_kn,F_no,F_rx
       real F_field (Minx:Maxx,Miny:Maxy,Mink:Maxk)
@@ -78,7 +78,7 @@ contains
       use ptopo
       implicit none
 
-      character*(*) F_nv_S , F_from_S
+      character(len=*) F_nv_S , F_from_S
       integer Minx,Maxx,Miny,Maxy,Mink,Maxk, &
               F_i0,F_j0,F_k0,F_in,F_jn,F_kn,F_no,F_rx
       real*8 F_field (Minx:Maxx,Miny:Maxy,Mink:Maxk)

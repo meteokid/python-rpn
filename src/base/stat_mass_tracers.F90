@@ -2,20 +2,20 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r stat_mass_tracers - Calculate and print the mass of each tracer 
+!**s/r stat_mass_tracers - Calculate and print the mass of each tracer
 
-   subroutine stat_mass_tracers (F_time,F_comment_S) 
+   subroutine stat_mass_tracers (F_time,F_comment_S)
       use gem_options
       use glb_ld
       use lun
@@ -24,14 +24,14 @@
       use tracers
       use ptopo
    implicit none
- 
+
    !arguments
-   integer,          intent(in) :: F_time       !I, Time 0 or Time 1 
+   integer,          intent(in) :: F_time       !I, Time 0 or Time 1
    character(len=*), intent(in) :: F_comment_S  !I, Comment
 
    !object
    !================================================
-   !     Calculate and print the mass of each tracer 
+   !     Calculate and print the mass of each tracer
    !================================================
 
 
@@ -52,7 +52,7 @@
 
    call canonical_terminator_0 (count)
 
-   k0 = Lam_gbpil_T+1 
+   k0 = Lam_gbpil_T+1
 
    call get_density (bidon,air_mass,F_time,l_minx,l_maxx,l_miny,l_maxy,l_nk,k0)
 
@@ -70,7 +70,7 @@
       if (F_time==0) in_S = 'TR/'//trim(Tr3d_name_S(n))//':M'
 
       err = gmm_get(in_S, fld_tr)
-      
+
       call canonical_terminator_1 (fld_tr,in_S,count,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,l_nk)
 
       call mass_tr (tracer_8,Tr3d_name_S(n)(1:4),fld_tr,air_mass,l_minx,l_maxx,l_miny,l_maxy,l_nk-k0+1,k0)
@@ -108,4 +108,4 @@
 
 1002 format(1X,A9,A21,1X,A7,A4,E19.12,1X,A4,1X,A16)
 
-end subroutine stat_mass_tracers 
+end subroutine stat_mass_tracers

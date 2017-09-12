@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -15,7 +15,7 @@
 
 !**s/r hzd_del2 - horizontal diffusion problem
 !
-      subroutine hzd_del2  (F_sol, F_rhs_8, F_opsxp0_8, F_opsyp0_8, &
+      subroutine hzd_del2  (F_sol, F_opsxp0_8, F_opsyp0_8, &
                             F_aix_8,F_bix_8,F_cix_8,F_dix_8, &
                             F_aiy_8,F_biy_8,F_ciy_8,F_g1_8,F_g2_8, &
                             Minx,Maxx,Miny,Maxy,Nk, Gni,Gnj, lnjs_nh,  &
@@ -29,13 +29,13 @@
               nk12s, nk12, ni22s, ni22, fnjb
 
       real   F_sol(Minx:Maxx,Miny:Maxy,Nk)
-      real*8 F_rhs_8,F_opsxp0_8(*),F_opsyp0_8(*), &
+      real*8 F_opsxp0_8(*),F_opsyp0_8(*), &
              F_aix_8(lnjs_nh,Gni),F_bix_8(lnjs_nh,Gni), &
              F_cix_8(lnjs_nh,Gni),F_dix_8(lnjs_nh,Gni), &
              F_aiy_8(ni22s,Gnj),F_biy_8(ni22s,Gnj),F_ciy_8(ni22s,Gnj), &
              F_g1_8(Miny:Maxy,nk12s,*),F_g2_8(nk12s,ni22s,*)
 
-!author    
+!author
 !     J.P. Toviessi / Jean Cote
 !
 !revision
@@ -48,8 +48,6 @@
 !  Name        I/O                 Description
 !----------------------------------------------------------------
 !  F_sol       I/O           result
-!  F_rhs_8      I            r.h.s. of horizontal diffusion equation
-!  
 !----------------------------------------------------------------
 
 
@@ -63,8 +61,9 @@
       call rpn_comm_transpose48 ( F_sol , l_minx,l_maxx, Gni,1, (maxy-miny+1), &
                                 (maxy-miny+1), 1, nk12s, Nk  , F_g1_8,  1 &
                                 ,1.0d0,0.d0)
-!$omp parallel private(k0,kn,k1,cnt,i,j,k) shared(g1,g2,ax,ay,cx,cy,ktotal,klon)
 
+!$omp parallel private(k0,kn,k1,cnt,i,j,k) &
+!$omp shared(g1,g2,ax,ay,cx,cy,ktotal,klon)
 !$omp do
       do i = 1, Gni-1
          cnt = 0
@@ -75,7 +74,7 @@
             ax(cnt,i) = F_aix_8(j,i)
             cx(cnt,i) = F_cix_8(j,i)
          enddo
-         enddo 
+         enddo
       enddo
 !$omp enddo
       cnt = 0
@@ -85,9 +84,9 @@
          cnt = k + (j-1)*nk12
          g1(cnt,Gni) = F_opsxp0_8(Gni)*F_g1_8(j,k,Gni)
       enddo
-      enddo 
+      enddo
 !$omp enddo
-      
+
 !
       ktotal=l_nj*nk12
       klon = (ktotal+Ptopo_npeOpenMP)/Ptopo_npeOpenMP

@@ -46,11 +46,11 @@
 !
 !     ---------------------------------------------------------------
 !
-      if ( Rstri_user_busper_L .and. (F_step_kount.eq.0) ) return
+      if ( Rstri_user_busper_L .and. (F_step_kount == 0) ) return
 
       call timing_start2 ( 40, 'PHYSTEP', 1 )
 
-      if (Lun_out.gt.0) write (Lun_out,1001) F_lctl_step
+      if (Lun_out > 0) write (Lun_out,1001) F_lctl_step
 
       if (F_step_kount == 0) then
          call itf_phy_geom4 (err_geom)
@@ -74,11 +74,11 @@
       ! Smooth the thermodynamic state variables on request
       err_smooth = min(&
            ipf_smooth_fld('PW_TT:M','TTMS'), &
-           ipf_smooth_fld('TR/HU:M','HUMS'), & 
+           ipf_smooth_fld('TR/HU:M','HUMS'), &
            ipf_smooth_fld('PW_TT:P','TTPS'), &
            ipf_smooth_fld('TR/HU:P','HUPS') &
            )
-      call gem_error (err_smooth,'itf_phy_step','Problem with ipf_smooth_fld') 
+      call gem_error (err_smooth,'itf_phy_step','Problem with ipf_smooth_fld')
 
       call set_num_threads ( Ptopo_nthreads_phy, F_step_kount )
 

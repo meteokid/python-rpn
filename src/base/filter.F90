@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -31,8 +31,8 @@
 !
 !-------------------------------------------------------------------
 !
-      if ( ( F_coef .ge. 0.0001 ) .and. ( F_coef .le. 0.5 ) ) then
-         
+      if ( ( F_coef >= 0.0001 ) .and. ( F_coef <= 0.5 ) ) then
+
          coefficient = 1. - F_coef
          i0 = 1 + pil_w
          if (l_west ) i0 = i0+1
@@ -47,7 +47,7 @@
               l_ni,l_nj,Nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 
             do k=1,Nk
-               do j= 1+pil_s, l_nj-pil_n 
+               do j= 1+pil_s, l_nj-pil_n
                do i=i0,in
                   w1(i,j,k)= F_coef* (F_fd(i-1,j,k)+F_fd(i+1,j,k))*half &
                              + coefficient* F_fd (i,j,k)
@@ -56,14 +56,14 @@
             end do
             if (l_west) then
                do k=1,Nk
-                  do j= 1+pil_s, l_nj-pil_n 
+                  do j= 1+pil_s, l_nj-pil_n
                      w1(i0-1,j,k) = F_fd(i0-1,j,k)
                   end do
                end do
             endif
             if (l_east) then
                do k=1,Nk
-                  do j= 1+pil_s, l_nj-pil_n 
+                  do j= 1+pil_s, l_nj-pil_n
                      w1(in+1,j,k) = F_fd(in+1,j,k)
                   end do
                end do
@@ -74,7 +74,7 @@
 
             do k=1,Nk
                do j=j0,jn
-               do i= 1+pil_w, l_ni-pil_e 
+               do i= 1+pil_w, l_ni-pil_e
                   F_fd(i,j,k)= F_coef * (w1(i,j-1,k)+w1(i,j+1,k))*half &
                                + coefficient * w1(i,j,k)
                   end do
@@ -83,14 +83,14 @@
 
             if (l_south) then
                do k=1,Nk
-                  do i= 1+pil_w, l_ni-pil_e 
+                  do i= 1+pil_w, l_ni-pil_e
                      F_fd(i,j0-1,k) = w1(i,j0-1,k)
                   end do
                end do
             endif
             if (l_north) then
                do k=1,Nk
-                  do i= 1+pil_w, l_ni-pil_e 
+                  do i= 1+pil_w, l_ni-pil_e
                      F_fd(i,jn+1,k) = w1(i,jn+1,k)
                   end do
                end do

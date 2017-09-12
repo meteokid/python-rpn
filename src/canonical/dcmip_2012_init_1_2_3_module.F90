@@ -40,7 +40,7 @@ MODULE dcmip_2012_init_1_2_3
   !
   ! v2: bug fixes in the tracer initialization for height-based models
   ! v3: test 3-1: the density is now initialized with the unperturbed background temperature (not the perturbed temperature)
-  ! v3: constants converted to double precision
+  ! v3: constants converted to real*8
   ! v4: modified tracers in test 1-1, now with cutoff altitudes. Outside of the vertical domain all tracers are set to 0
   ! v4: modified cos-term in vertical velocity (now cos(2 pi t/tau)) in test 1-1, now completing one full up and down cycle
   ! v4: added subroutine test1_advection_orography for test 1-3
@@ -159,7 +159,7 @@ IMPLICIT NONE
       real(8) :: height                                                 ! The height of the model levels
       real(8) :: ptop                                                   ! Model top in p
       real(8) :: sin_tmp, cos_tmp, sin_tmp2, cos_tmp2                   ! Calculate great circle distances
-      real(8) :: d1, d2, r, r2, d3, d4                                  ! For tracer calculations
+      real(8) :: d1, d2, r, r2                                          ! For tracer calculations
       real(8) :: s, bs                                                  ! Shape function
       real(8) :: lonp                                                   ! Translational longitude, depends on time
       real(8) :: ud                                                     ! Divergent part of u
@@ -180,7 +180,7 @@ IMPLICIT NONE
 
         ! Height and pressure are aligned (p = p0 exp(-z/H))
 
-        if (zcoords .eq. 1) then
+        if (zcoords == 1) then
 
                 height = z
                 p = p0 * exp(-z/H)
@@ -318,9 +318,9 @@ IMPLICIT NONE
 
                 ! Make the ellipse
 
-        if (d1 .le. RR) then
+        if (d1 <= RR) then
                 q3 = 1.d0
-        elseif (d2 .le. RR) then
+        elseif (d2 <= RR) then
                 q3 = 1.d0
         else
                 q3 = 0.1d0
@@ -328,7 +328,7 @@ IMPLICIT NONE
 
                 ! Put in the slot
 
-        if (height .gt. z0 .and. abs(lat) .lt. 0.125d0) then
+        if (height > z0 .and. abs(lat) < 0.125d0) then
 
                 q3 = 0.1d0
 
@@ -351,7 +351,7 @@ IMPLICIT NONE
 !       commented out below
 !************
 
-        !if (height .gt. (z0+1.25*ZZ) .or. height .lt. (z0-1.25*ZZ)) then
+        !if (height > (z0+1.25*ZZ) .or. height < (z0-1.25*ZZ)) then
 
         !       q2 = 0.0
         !       q3 = 0.0
@@ -372,14 +372,14 @@ END SUBROUTINE test1_advection_deformation
 ! TEST CASE 12 - PURE ADVECTION - 3D HADLEY-LIKE FLOW
 !==========================================================================================
 
-SUBROUTINE test1_advection_hadley (lon,lat,p,z,zcoords,Ver_a,Ver_b,pref,u,v,w,zd,t,tv,phis,ps,rho,q,q1,time)
+SUBROUTINE test1_advection_hadley (lat,p,z,zcoords,Ver_a,Ver_b,pref,u,v,w,zd,t,tv,phis,ps,rho,q,q1,time)
 
 IMPLICIT NONE
 !-----------------------------------------------------------------------
 !     input/output params parameters at given location
 !-----------------------------------------------------------------------
 
-        real(8), intent(in)  :: lon, &          ! Longitude (radians)
+        real(8), intent(in)  :: &
                                 lat, &          ! Latitude (radians)
 !!!                             z,      &       ! Height (m)
                                 Ver_a , &       ! Ver_a_8     GEM
@@ -446,7 +446,7 @@ IMPLICIT NONE
 
         ! Height and pressure are aligned (p = p0 exp(-z/H))
 
-        if (zcoords .eq. 1) then
+        if (zcoords == 1) then
 
                 height = z
                 p = p0 * exp(-z/H)
@@ -538,7 +538,7 @@ IMPLICIT NONE
 
         ! Tracer 1 - Layer
 
-        if (height .lt. z2 .and. height .gt. z1) then
+        if (height < z2 .and. height > z1) then
 
                 q1 = 0.5d0 * (1.d0 + cos( 2.d0*pi*(height-z0)/(z2-z1) ) )
 
@@ -556,7 +556,7 @@ END SUBROUTINE test1_advection_hadley
 ! TEST CASE 13 - HORIZONTAL ADVECTION OF THIN CLOUD-LIKE TRACERS IN THE PRESENCE OF OROGRAPHY
 !==========================================================================================
 
-SUBROUTINE test1_advection_orography (lon,lat,p,z,zcoords,cfv,Ver_a,Ver_b,pref,hybrid_eta,hyam,hybm,gc,u,v,w,zd,t,tv,phis,ps,rho,q,q1,q2,q3,q4)
+SUBROUTINE test1_advection_orography (lon,lat,p,z,zcoords,cfv,Ver_a,Ver_b,pref,hybrid_eta,gc,u,v,w,zd,t,tv,phis,ps,rho,q,q1,q2,q3,q4)
 
 IMPLICIT NONE
 !-----------------------------------------------------------------------
@@ -569,8 +569,8 @@ IMPLICIT NONE
                                 Ver_a , &       ! Ver_a_8     GEM
                                 Ver_b , &       ! Ver_b_8     GEM
                                 pref  , &       ! Cstv_pref_8 GEM
-                                hyam, &         ! A coefficient for hybrid-eta coordinate, at model level midpoint
-                                hybm, &         ! B coefficient for hybrid-eta coordinate, at model level midpoint
+                             !!!hyam, &         ! A coefficient for hybrid-eta coordinate, at model level midpoint
+                             !!!hybm, &         ! B coefficient for hybrid-eta coordinate, at model level midpoint
                                 gc              ! bar{z} for Gal-Chen coordinate
 
         logical, intent(in)  :: hybrid_eta      ! flag to indicate whether the hybrid sigma-p (eta) coordinate is used
@@ -665,7 +665,7 @@ IMPLICIT NONE
 
         r = acos( sin(phim)*sin(lat) + cos(phim)*cos(lat)*cos(lon - lambdam) )
 
-        if (r .lt. Rm) then
+        if (r < Rm) then
 !!!     if (.FALSE.  ) then !!! Pas de montagnes pour Andre
 
                 zs = (h0/2.d0)*(1.d0+cos(pi*r/Rm))*cos(pi*r/zetam)**2.d0
@@ -690,7 +690,7 @@ IMPLICIT NONE
 
         ! Height and pressure are aligned (p = p0 exp(-z/H))
 
-        if (zcoords .eq. 1) then
+        if (zcoords == 1) then
 
                 height = z
                 p = p0 * exp(-z/H)
@@ -753,20 +753,20 @@ IMPLICIT NONE
         ! the variation of the height along coordinate surfaces
         ! See section 1.3 and the appendix of the test case document
 
-        if (cfv .eq. 0) then
+        if (cfv == 0) then
 
                 ! if the horizontal velocities do not follow the vertical coordinate
 
                 w = 0.d0
 
-        elseif (cfv .eq. 1) then
+        elseif (cfv == 1) then
 
                 ! if the horizontal velocities follow hybrid eta GEM coordinates then
                 ! the perceived vertical velocity is
 
                 call test1_adv_oro_hyb_eta_GEM_velocity(w)
 
-        elseif (cfv .eq. 2) then
+        elseif (cfv == 2) then
 
                 ! if the horizontal velocities follow Gal Chen coordinates then
                 ! the perceived vertical velocity is
@@ -795,7 +795,7 @@ IMPLICIT NONE
 
         rz = abs(height - zp1)
 
-        if (rz .lt. 0.5d0*dzp1 .and. r .lt. Rp) then
+        if (rz < 0.5d0*dzp1 .and. r < Rp) then
 
                 q1 = 0.25d0*(1.d0+cos(2.d0*pi*rz/dzp1))*(1.d0+cos(pi*r/Rp))
 
@@ -807,7 +807,7 @@ IMPLICIT NONE
 
         rz = abs(height - zp2)
 
-        if (rz .lt. 0.5d0*dzp2 .and. r .lt. Rp) then
+        if (rz < 0.5d0*dzp2 .and. r < Rp) then
 
                 q2 = 0.25d0*(1.d0+cos(2.d0*pi*rz/dzp2))*(1.d0+cos(pi*r/Rp))
 
@@ -819,7 +819,7 @@ IMPLICIT NONE
 
         rz = abs(height - zp3)
 
-        if (rz .lt. 0.5d0*dzp3 .and. r .lt. Rp) then
+        if (rz < 0.5d0*dzp3 .and. r < Rp) then
 
                 q3 = 1.d0
 
@@ -868,7 +868,7 @@ IMPLICIT NONE
 
                 ! Derivatives of surface height
 
-                if (r .lt. Rm) then
+                if (r < Rm) then
 !!!             if (.FALSE.  ) then !!! Pas de montagnes pour Andre
                         dzsdx = -h0*pi/(2.d0*Rm)*sin(pi*r/Rm)*cos(pi*r/zetam)**2 - &
                                 (h0*pi/zetam)*(1.d0+cos(pi*r/Rm))*cos(pi*r/zetam)*sin(pi*r/zetam)
@@ -878,7 +878,7 @@ IMPLICIT NONE
 
                 ! Prevent division by zero
 
-                if (1.d0-cos(r)**2 .gt. 0.d0) then
+                if (1.d0-cos(r)**2 > 0.d0) then
                         dzsdlambda = dzsdx * (cos(phim)*cos(lat)*sin(lon-lambdam)) &
                                         /sqrt(1.d0-cos(r)**2)
                         dzsdphi    = dzsdx * (-sin(phim)*cos(lat) + cos(phim)*sin(lat)*cos(lon-lambdam)) &
@@ -902,7 +902,7 @@ IMPLICIT NONE
 
                 ! Prevent division by zero
 
-                if (abs(lat) .lt. pi/2.d0) then
+                if (abs(lat) < pi/2.d0) then
                         w = - (u/(a*cos(lat)))*dzdlambda - (v/a)*dzdphi
                 else
                         w = 0.d0
@@ -939,7 +939,7 @@ IMPLICIT NONE
 
                 ! Derivatives of surface height
 
-                if (r .lt. Rm) then
+                if (r < Rm) then
                         dzsdx = -h0*pi/(2.d0*Rm)*sin(pi*r/Rm)*cos(pi*r/zetam)**2 - &
                                 (h0*pi/zetam)*(1.d0+cos(pi*r/Rm))*cos(pi*r/zetam)*sin(pi*r/zetam)
                 else
@@ -948,7 +948,7 @@ IMPLICIT NONE
 
                 ! Prevent division by zero
 
-                if (1.d0-cos(r)**2 .gt. 0.d0) then
+                if (1.d0-cos(r)**2 > 0.d0) then
                         dzsdlambda = dzsdx * (cos(phim)*cos(lat)*sin(lon-lambdam)) &
                                         /sqrt(1.d0-cos(r)**2)
                         dzsdphi    = dzsdx * (-sin(phim)*cos(lat) + cos(phim)*sin(lat)*cos(lon-lambdam)) &
@@ -965,7 +965,7 @@ IMPLICIT NONE
 
                 ! Prevent division by zero
 
-                if (abs(lat) .lt. pi/2.d0) then
+                if (abs(lat) < pi/2.d0) then
                         w = - (u/(a*cos(lat)))*dzdlambda - (v/a)*dzdphi
                 else
                         w = 0.d0
@@ -1003,7 +1003,7 @@ END SUBROUTINE test1_advection_orography
 !=========================================================================
 ! Test 2-0:  Steady-State Atmosphere at Rest in the Presence of Orography
 !=========================================================================
-SUBROUTINE test2_steady_state_mountain (lon,lat,p,z,zcoords,Ver_a,Ver_b,pref,hybrid_eta,hyam,hybm,u,v,w,t,tv,phis,ps,rho,q,Set_topo_L)
+SUBROUTINE test2_steady_state_mountain (lon,lat,p,z,zcoords,Ver_a,Ver_b,pref,hybrid_eta,u,v,w,t,tv,phis,ps,rho,q,Set_topo_L)
 
 IMPLICIT NONE
 !-----------------------------------------------------------------------
@@ -1015,9 +1015,10 @@ IMPLICIT NONE
 !!!                             z, &            ! Height (m)
                                 Ver_a , &       ! Ver_a_8     GEM
                                 Ver_b , &       ! Ver_b_8     GEM
-                                pref  , &       ! Cstv_pref_8 GEM
-                                hyam, &         ! A coefficient for hybrid-eta coordinate, at model level midpoint
-                                hybm            ! B coefficient for hybrid-eta coordinate, at model level midpoint
+                                pref            ! Cstv_pref_8 GEM
+!!!                             pref, &         ! Cstv_pref_8 GEM
+!!!                             hyam, &         ! A coefficient for hybrid-eta coordinate, at model level midpoint
+!!!                             hybm            ! B coefficient for hybrid-eta coordinate, at model level midpoint
 
         logical, intent(in)  :: hybrid_eta      ! flag to indicate whether the hybrid sigma-p (eta) coordinate is used
                                                 ! if set to .true., then the pressure will be computed via the
@@ -1088,7 +1089,7 @@ IMPLICIT NONE
 !-----------------------------------------------------------------------
 !    compute exponents
 !-----------------------------------------------------------------------
-     if(gamma.ne.0.d0) then
+     if(gamma /= 0.d0) then
         exponent     = g/(Rd*gamma)
         exponent_rev = 1.d0/exponent
      endif
@@ -1099,7 +1100,7 @@ IMPLICIT NONE
 
         r = acos( sin(phim)*sin(lat) + cos(phim)*cos(lat)*cos(lon - lambdam) )
 
-        if (r .lt. Rm) then
+        if (r < Rm) then
 
                 zs = (h0/2.d0)*(1.d0+cos(pi*r/Rm))*cos(pi*r/zetam)**2.d0   ! mountain height
 
@@ -1125,7 +1126,7 @@ IMPLICIT NONE
 !    PS (surface pressure)
 !-----------------------------------------------------------------------
 
-        if(gamma.eq.0.d0) then
+        if(gamma == 0.d0) then
            ps = p0 * exp(-g*zs/(Rd*T0))
         else
            ps = p0 * (1.d0 - gamma/T0*zs)**exponent
@@ -1138,7 +1139,7 @@ IMPLICIT NONE
 
         ! Height and pressure are aligned (p = p0 * (1.d0 - gamma/T0*z)**exponent)
 
-        if (zcoords .eq. 1) then
+        if (zcoords == 1) then
 
                 !height = z
                 !p = p0 * (1.d0 - gamma/T0*z)**exponent
@@ -1148,7 +1149,7 @@ IMPLICIT NONE
 !!!             if (hybrid_eta) p = hyam*p0 + hybm*ps                 ! compute the pressure based on the surface pressure and hybrid coefficients
                 if (hybrid_eta) p = exp(Ver_a + Ver_b*log(ps/pref))   ! compute the pressure as in GEM
 
-                if(gamma.eq.0.d0) then
+                if(gamma == 0.d0) then
                    height = - Rd*T0/g*log(p/p0)
                 else
                    height = T0/gamma * (1.d0 - (p/p0)**exponent_rev)  ! compute the height at this pressure
@@ -1312,7 +1313,7 @@ IMPLICIT NONE
 !    SHEAR FLOW OR CONSTANT FLOW
 !-----------------------------------------------------------------------
 
-        if (shear .eq. 1) then
+        if (shear == 1) then
 
                 c = cs
 
@@ -1332,7 +1333,7 @@ IMPLICIT NONE
 !    HEIGHT AND PRESSURE
 !-----------------------------------------------------------------------
 
-        if (zcoords .eq. 1) then
+        if (zcoords == 1) then
 
                 height = z
                 p = peq*exp( -(ueq*ueq/(2.d0*Rd*Teq))*(sin(lat)**2) - g*height/(Rd*t)    )
@@ -1392,7 +1393,7 @@ IMPLICIT NONE
 !     initialize Factor for Rayleigh friction
 !-----------------------------------------------------------------------
         f_rayleigh_friction = 0.
-        if (z.gt.zh)  f_rayleigh_friction = sin( (pi/2) *(z-zh)/(ztop-zh) ) **2
+        if (z > zh)  f_rayleigh_friction = sin( (pi/2) *(z-zh)/(ztop-zh) ) **2
 
 END SUBROUTINE test2_schaer_mountain
 
@@ -1534,7 +1535,7 @@ IMPLICIT NONE
 !    HEIGHT AND PRESSURE AND MEAN TEMPERATURE
 !-----------------------------------------------------------------------
 
-        if (zcoords .eq. 1) then
+        if (zcoords == 1) then
 
                 height = z
                 p = ps*( (bigG/TS)*exp(-N2*height/g)+1.d0 - (bigG/TS)  )**(cp_/Rd)

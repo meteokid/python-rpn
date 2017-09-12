@@ -14,10 +14,10 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/r dcmip_init - Prepare initial conditions for DCMIP 2012/2016 runs
- 
+
       subroutine dcmip_init (F_u, F_v, F_w, F_t, F_zd, F_s, F_q, F_topo, &
                              Mminx,Mmaxx,Mminy,Mmaxy,Nk, &
-                             F_trprefix_S,F_trsuffix_S,F_datev )
+                             F_trprefix_S,F_trsuffix_S )
       use canonical
       use dcmip_options
       use inp_mod
@@ -29,8 +29,8 @@
       use tr3d
       use gmm_itf_mod
       implicit none
- 
-      character* (*) F_trprefix_S, F_trsuffix_S, F_datev
+
+      character(len=*) F_trprefix_S, F_trsuffix_S
       integer Mminx,Mmaxx,Mminy,Mmaxy,Nk
       real F_u (Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
            F_v (Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
@@ -43,7 +43,7 @@
 
       !object
       !======================================================================|
-      !Prepare initial conditions for DCMIP 2012/2016 runs                   | 
+      !Prepare initial conditions for DCMIP 2012/2016 runs                   |
       !----------------------------------------------------------------------|
       !  case DCMIP 2012   | Pure advection                                  |
       !                    | ------------------------------------------------|
@@ -73,36 +73,36 @@
       !DCMIP_2012: https://www.earthsystemcog.org/projects/dcmip-2012/       |
       !DCMIP_2016: https://www.earthsystemcog.org/projects/dcmip-2016/       |
       !======================================================================|
- 
- 
+
+
       !--------------------------------------------------------------------------------------------
 
-      integer istat,i,j,k,istat1,istat2,istat3,istat4, &
+      integer istat,istat1,istat2,istat3,istat4, &
               Deep,Pertt,Pert,Moist,Shear,Tracers
       real, pointer, dimension(:,:,:) :: cl,cl2,qv,qc,qr,q1,q2,q3,q4
-      real, dimension(1,1,1), target  :: empty 
+      real, dimension(1,1,1), target  :: empty
 
       !----------------------------------------------------------------------------------------------
 
       if (Schm_sleve_L ) call handle_error (-1,'DCMIP_init','  SLEVE not available YET  ')
 
-      !Prescribed d(Zeta)dot and dz/dt 
+      !Prescribed d(Zeta)dot and dz/dt
       !-------------------------------
       Inp_zd_L = .TRUE.
       Inp_w_L  = .TRUE.
 
-      !Obtain specific humidity 
+      !Obtain specific humidity
       !------------------------
       istat = gmm_get('TR/'//'HU'//':P',qv)
 
-      !Initialization QC/QR for Precipitation 
+      !Initialization QC/QR for Precipitation
       !--------------------------------------
       if (Dcmip_prec_type/=-1) then
 
          istat1 = gmm_get('TR/'//'QC'//':P',qc)
          istat2 = gmm_get('TR/'//'RW'//':P',qr)
 
-         if (istat1/=0.or.istat2/=0) call handle_error(-1,'DCMIP_INIT','Tracers QC/RW required when Precipitation') 
+         if (istat1/=0.or.istat2/=0) call handle_error(-1,'DCMIP_INIT','Tracers QC/RW required when Precipitation')
 
          qc = 0. !ZERO Cloud water mixing ratio
          qr = 0. !ZERO Rain  water mixing ratio
@@ -110,36 +110,36 @@
          istat = gmm_get(gmmk_art_s, art)
          istat = gmm_get(gmmk_wrt_s, wrt)
 
-         art = 0. !ZERO Averaged precipitation rate 
-         wrt = 0. !ZERO Averaged precipitation rate (WORK FIELD) 
+         art = 0. !ZERO Averaged precipitation rate
+         wrt = 0. !ZERO Averaged precipitation rate (WORK FIELD)
 
-      endif 
+      endif
 
-      !DCMIP 2016: Baroclinic wave with Toy Terminal Chemistry 
+      !DCMIP 2016: Baroclinic wave with Toy Terminal Chemistry
       !-------------------------------------------------------
       if (Dcmip_case==161) then
 
           istat1= gmm_get (trim(F_trprefix_S)//'CL'//trim(F_trsuffix_S), cl )
           istat2= gmm_get (trim(F_trprefix_S)//'CL2'//trim(F_trsuffix_S),cl2)
 
-          if (istat1/=0.or.istat2/=0) call handle_error(-1,'DCMIP_INIT','Tracers CL/CL2 required when Chemistry') 
+          if (istat1/=0.or.istat2/=0) call handle_error(-1,'DCMIP_INIT','Tracers CL/CL2 required when Chemistry')
 
           !--------------------------------------------------------------------------
-          Deep  = 0           !Deep atmosphere (no=0)  
-          Pertt = 0           !Type of perturbation (exponential=0/stream function=1) 
+          Deep  = 0           !Deep atmosphere (no=0)
+          Pertt = 0           !Type of perturbation (exponential=0/stream function=1)
           Moist = Dcmip_moist !Moist=1/Dry=0 Initial conditions
           !--------------------------------------------------------------------------
 
           call dcmip_baroclinic_wave_2016 (F_u,F_v,F_w,F_t,F_zd,F_s,F_topo,qv,cl,cl2, &
                                            Mminx,Mmaxx,Mminy,Mmaxy,Nk,Deep,Moist,Pertt,Dcmip_X)
 
-          F_q = 0. !ZERO log of non-hydrostatic perturbation pressure 
+          F_q = 0. !ZERO log of non-hydrostatic perturbation pressure
 
-      !DCMIP 2016: Tropical cyclone 
+      !DCMIP 2016: Tropical cyclone
       !----------------------------
       elseif (Dcmip_case==162) then
 
-          call dcmip_tropical_cyclone (F_u,F_v,F_w,F_t,F_zd,F_s,F_topo,qv,Mminx,Mmaxx,Mminy,Mmaxy,Nk) 
+          call dcmip_tropical_cyclone (F_u,F_v,F_w,F_t,F_zd,F_s,F_topo,qv,Mminx,Mmaxx,Mminy,Mmaxy,Nk)
 
           F_q = 0. !ZERO log of non-hydrostatic perturbation pressure
 
@@ -199,8 +199,8 @@
 
           endif
 
-          F_q = 0. !ZERO log of non-hydrostatic perturbation pressure 
-          F_w = 0. !ZERO Dz/Dt 
+          F_q = 0. !ZERO log of non-hydrostatic perturbation pressure
+          F_w = 0. !ZERO Dz/Dt
 
       !DCMIP 2012: Pure 3D Advection
       !-----------------------------
@@ -213,36 +213,36 @@
           istat3 = gmm_get('TR/'//'Q3'//':P',q3)
           istat4 = gmm_get('TR/'//'Q4'//':P',q4)
 
-          if ((istat1/=0.or.istat2/=0.or.istat3/=0.or.istat4/=0).and.Dcmip_case==11) goto 999 
-          if ((istat1/=0)                                       .and.Dcmip_case==12) goto 999 
-          if ((istat1/=0.or.istat2/=0.or.istat3/=0.or.istat4/=0).and.Dcmip_case==13) goto 999 
+          if ((istat1/=0.or.istat2/=0.or.istat3/=0.or.istat4/=0).and.Dcmip_case==11) goto 999
+          if ((istat1/=0)                                       .and.Dcmip_case==12) goto 999
+          if ((istat1/=0.or.istat2/=0.or.istat3/=0.or.istat4/=0).and.Dcmip_case==13) goto 999
 
           !3D deformational flow
           !---------------------
           if (Dcmip_case==11) call dcmip_tracers11_transport (F_u,F_v,F_zd,F_t,qv,F_topo,F_s,q1,q2,q3,q4, &
                                                               Mminx,Mmaxx,Mminy,Mmaxy,Nk)
 
-          !3D Hadley-like meridional circulation 
+          !3D Hadley-like meridional circulation
           !-------------------------------------
           if (Dcmip_case==12) call dcmip_tracers12_transport (F_u,F_v,F_zd,F_t,qv,F_topo,F_s,q1,&
                                                               Mminx,Mmaxx,Mminy,Mmaxy,Nk)
 
-          !2D solid-body rotation of thin cloud-like tracer in the presence of orography 
+          !2D solid-body rotation of thin cloud-like tracer in the presence of orography
           !-----------------------------------------------------------------------------
           if (Dcmip_case==13) call dcmip_tracers13_transport (F_u,F_v,F_zd,F_t,qv,F_topo,F_s,q1,q2,q3,q4, &
                                                               Mminx,Mmaxx,Mminy,Mmaxy,Nk)
 
           !Store REFERENCE at initial time
           !-------------------------------
-          istat = gmm_get(gmmk_q1ref_s,q1ref) 
-          istat = gmm_get(gmmk_q2ref_s,q2ref) 
-          istat = gmm_get(gmmk_q3ref_s,q3ref) 
-          istat = gmm_get(gmmk_q4ref_s,q4ref) 
+          istat = gmm_get(gmmk_q1ref_s,q1ref)
+          istat = gmm_get(gmmk_q2ref_s,q2ref)
+          istat = gmm_get(gmmk_q3ref_s,q3ref)
+          istat = gmm_get(gmmk_q4ref_s,q4ref)
 
-          if (Dcmip_case>  0) q1ref(1:l_ni,1:l_nj,1:Nk) = q1(1:l_ni,1:l_nj,1:Nk) 
-          if (Dcmip_case/=12) q2ref(1:l_ni,1:l_nj,1:Nk) = q2(1:l_ni,1:l_nj,1:Nk) 
-          if (Dcmip_case/=12) q3ref(1:l_ni,1:l_nj,1:Nk) = q3(1:l_ni,1:l_nj,1:Nk) 
-          if (Dcmip_case/=12) q4ref(1:l_ni,1:l_nj,1:Nk) = q4(1:l_ni,1:l_nj,1:Nk) 
+          if (Dcmip_case>  0) q1ref(1:l_ni,1:l_nj,1:Nk) = q1(1:l_ni,1:l_nj,1:Nk)
+          if (Dcmip_case/=12) q2ref(1:l_ni,1:l_nj,1:Nk) = q2(1:l_ni,1:l_nj,1:Nk)
+          if (Dcmip_case/=12) q3ref(1:l_ni,1:l_nj,1:Nk) = q3(1:l_ni,1:l_nj,1:Nk)
+          if (Dcmip_case/=12) q4ref(1:l_ni,1:l_nj,1:Nk) = q4(1:l_ni,1:l_nj,1:Nk)
 
       !DCMIP 2012: Mountain waves over a Schaer-type mountain on a small planet
       !------------------------------------------------------------------------
@@ -258,9 +258,9 @@
               istat = gmm_get(gmmk_topo_low_s , topo_low )
               istat = gmm_get(gmmk_topo_high_s, topo_high)
 
-              topo_low (1:l_ni,1:l_nj) = 0. 
+              topo_low (1:l_ni,1:l_nj) = 0.
               topo_high(1:l_ni,1:l_nj) = F_topo (1:l_ni,1:l_nj)
-              F_topo   (1:l_ni,1:l_nj) = 0. 
+              F_topo   (1:l_ni,1:l_nj) = 0.
 
               !Reset initial conditions according to topo_low
               !----------------------------------------------
@@ -268,8 +268,8 @@
 
           endif
 
-          F_q = 0. !ZERO log of non-hydrostatic perturbation pressure 
-          F_w = 0. !ZERO Dz/Dt 
+          F_q = 0. !ZERO log of non-hydrostatic perturbation pressure
+          F_w = 0. !ZERO Dz/Dt
 
       !DCMIP 2012: Gravity wave on a small planet along the equator
       !------------------------------------------------------------
@@ -279,8 +279,8 @@
 
           call dcmip_gravity_wave (F_u,F_v,F_zd,F_t,qv,F_topo,F_s,thbase,Mminx,Mmaxx,Mminy,Mmaxy,Nk)
 
-          F_q = 0. !ZERO log of non-hydrostatic perturbation pressure 
-          F_w = 0. !ZERO Dz/Dt 
+          F_q = 0. !ZERO log of non-hydrostatic perturbation pressure
+          F_w = 0. !ZERO Dz/Dt
 
       !DCMIP 2012: Dry Baroclinic Instability on a Small Planet with dynamic tracers
       !------------------------------------------------------------------------------------
@@ -293,29 +293,29 @@
               Dcmip_case==413 ) then
 
           !-------------------------------------------------------
-          Moist   = Dcmip_moist ! Moist=1/Dry=0 Initial conditions 
+          Moist   = Dcmip_moist ! Moist=1/Dry=0 Initial conditions
           Tracers = 1           ! Tracers=1/No Tracers=0
           !-------------------------------------------------------
 
           !Dynamical Tracers: Potential temperature and Ertel's potential vorticity
-          !------------------------------------------------------------------------ 
+          !------------------------------------------------------------------------
           istat1 = gmm_get('TR/'//'Q1'//':P',q1)
           istat2 = gmm_get('TR/'//'Q2'//':P',q2)
 
-          if ((istat1/=0.or.istat2/=0).and.Tracers==1) call handle_error(-1,'DCMIP_INIT','Tracers Q1/Q2 required when Dcmip_case=41X') 
+          if ((istat1/=0.or.istat2/=0).and.Tracers==1) call handle_error(-1,'DCMIP_INIT','Tracers Q1/Q2 required when Dcmip_case=41X')
 
           call dcmip_baroclinic_wave_2012 (F_u,F_v,F_zd,F_t,qv,F_topo,F_s,q1,q2, &
                                            Mminx,Mmaxx,Mminy,Mmaxy,Nk,Moist,Dcmip_X,Tracers)
 
-          F_q = 0. !ZERO log of non-hydrostatic perturbation pressure 
-          F_w = 0. !ZERO Dz/Dt 
+          F_q = 0. !ZERO log of non-hydrostatic perturbation pressure
+          F_w = 0. !ZERO Dz/Dt
 
       !DCMIP 2012: Moist Baroclinic Instability driven by Simple Physics
       !-----------------------------------------------------------------
       elseif (Dcmip_case==43) then
 
           !-------------------------------------------------------
-          Moist   = Dcmip_moist ! Moist=1/Dry=0 Initial conditions 
+          Moist   = Dcmip_moist ! Moist=1/Dry=0 Initial conditions
           Tracers = 0           ! Tracers=1/No Tracers=0
           !-------------------------------------------------------
 
@@ -351,4 +351,4 @@
 
   999 call handle_error(-1,'DCMIP_INIT','Inappropriate list of tracers')
 
-      end  
+      end

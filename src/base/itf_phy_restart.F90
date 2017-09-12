@@ -28,7 +28,7 @@
       use ptopo
       implicit none
 
-      character*(*) F_WorR_S
+      character(len=*) F_WorR_S
       logical F_spin_L
 !author
 !     M. Desgagne - Mars 2008
@@ -74,7 +74,7 @@
 
       ier = fnom (unf,fn,'SEQ+UNF',0)
 
-      if (Lun_out.gt.0) write(Lun_out,3000) Lctl_step,trim(fn)
+      if (Lun_out > 0) write(Lun_out,3000) Lctl_step,trim(fn)
 
       write(unf) F_spin_L
 
@@ -127,7 +127,7 @@
             fn = '../busper/'//trim(startindx)//'/BUSPER4spinphy_'//trim(datev)
          endif
          if (Lun_out > 0) write(Lun_out,1000) trim(fn)
-         if (clib_fileexist (trim(fn)).lt.1) errcode= -1
+         if (clib_fileexist (trim(fn)) < 1) errcode= -1
       endif
 
       call gem_error (errcode,'itf_phy_restart','Incomplete set of USER specified BUSPER4spinphy files')
@@ -137,8 +137,8 @@
          fn  = 'restart_BUSPER'
          yela= clib_fileexist (trim(fn))
          call rpn_comm_ALLREDUCE (yela,tousla,1,"MPI_INTEGER","MPI_SUM","grid",ier)
-         if (tousla .eq. -Ptopo_numproc) return
-         if (yela.lt.1) errcode= -1
+         if (tousla == -Ptopo_numproc) return
+         if (yela < 1) errcode= -1
       endif
 
       call gem_error (errcode,'itf_phy_restart','Incomplete set of restart_BUSPER files')
@@ -146,7 +146,7 @@
 !     Open the busper file and check the spinup switch for reading
       unf = 0
       ier = fnom ( unf,fn,'SEQ+UNF+OLD',0 )
-      if (Lun_out.gt.0) write(Lun_out,2000) Lctl_step,trim(fn)
+      if (Lun_out > 0) write(Lun_out,2000) Lctl_step,trim(fn)
 
       errcode= -1
       read (unf,err=999) spin_L
@@ -159,17 +159,17 @@
          gmmstat = gmm_get ('BUSPER_3d',BUSPER_3d,meta_busper)
          dim = (meta_busper%l(1)%high-meta_busper%l(1)%low+1)*&
                (meta_busper%l(2)%high-meta_busper%l(2)%low+1)
-         if ( (datev_infile .ne.  datev      )   .or.  &
-              (dim_infile   .ne.  dim        )   .or. &
-              (ibuf(3)      .ne.  Grd_ni     )   .or. &
-              (ibuf(4)      .ne.  Grd_nj     )   .or. &
-              (rbuf(1)      .ne.  Grd_dx     )   .or. &
-              (rbuf(2)      .ne.  Grd_dy     )   .or. &
-              (rbuf(3)      .ne.  Grd_xlon1  )   .or. &
-              (rbuf(4)      .ne.  Grd_xlat1  )   .or. &
-              (rbuf(5)      .ne.  Grd_xlon2  )   .or. &
-              (rbuf(6)      .ne.  Grd_xlat2  )  ) then
-            if (Lun_out.gt.0) write(Lun_out,2006) 'BUSPER4spinphy_'//trim(datev)
+         if ( (datev_infile /= datev      )   .or.  &
+              (dim_infile /= dim        )   .or. &
+              (ibuf(3) /= Grd_ni     )   .or. &
+              (ibuf(4) /= Grd_nj     )   .or. &
+              (rbuf(1) /= Grd_dx     )   .or. &
+              (rbuf(2) /= Grd_dy     )   .or. &
+              (rbuf(3) /= Grd_xlon1  )   .or. &
+              (rbuf(4) /= Grd_xlat1  )   .or. &
+              (rbuf(5) /= Grd_xlon2  )   .or. &
+              (rbuf(6) /= Grd_xlat2  )  ) then
+            if (Lun_out > 0) write(Lun_out,2006) 'BUSPER4spinphy_'//trim(datev)
             goto 999
          else
             read (unf,err=999) BUSPER_3d

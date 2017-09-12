@@ -29,7 +29,7 @@
 !
 !     ---------------------------------------------------------------
 !
-      if (Lun_out.gt.0) write(Lun_out,1002)
+      if (Lun_out > 0) write(Lun_out,1002)
 
       Hzd_lnr = min(max(0.,Hzd_lnr),0.9999999)
       Hzd_pwr = Hzd_pwr / 2
@@ -39,18 +39,18 @@
       Hzd_pwr_theta= Hzd_pwr_theta / 2
       Hzd_pwr_theta= min(max(2,Hzd_pwr_theta*2),8)
 
-      if (Hzd_lnr_tr.lt.0.) Hzd_lnr_tr = Hzd_lnr
-      if (Hzd_pwr_tr.lt.0 ) Hzd_pwr_tr = Hzd_pwr
+      if (Hzd_lnr_tr < 0.) Hzd_lnr_tr = Hzd_lnr
+      if (Hzd_pwr_tr < 0 ) Hzd_pwr_tr = Hzd_pwr
       Hzd_lnr_tr = min(max(0.,Hzd_lnr_tr),0.9999999)
       Hzd_pwr_tr = Hzd_pwr_tr / 2
       Hzd_pwr_tr = min(max(2,Hzd_pwr_tr*2),8)
 
-      if ((Hzd_lnr.le.0.).and.(Hzd_lnr_theta.le.0.)  &
-                         .and.(Hzd_lnr_tr   .le.0.)) then
-         if((Hzd_smago_param.le.0.).and.(Hzd_smago_lnr(2).eq.0.)) then
-            if (Lun_out.gt.0) write(Lun_out,1003)
+      if ((Hzd_lnr <= 0.).and.(Hzd_lnr_theta <= 0.)  &
+                         .and.(Hzd_lnr_tr <= 0.)) then
+         if((Hzd_smago_param <= 0.).and.(Hzd_smago_lnr(2) == 0.)) then
+            if (Lun_out > 0) write(Lun_out,1003)
          else
-            if (Lun_out.gt.0) write(Lun_out,1004) &
+            if (Lun_out > 0) write(Lun_out,1004) &
                               Hzd_smago_param,100*Hzd_smago_lnr(2)
          endif
       endif
@@ -91,9 +91,9 @@
       do i = 1, n-1
          k = i
          do j = i+1, n
-            if (F_lvl(k) .gt. F_lvl(j))  k=j
+            if (F_lvl(k) > F_lvl(j))  k=j
          enddo
-         if (k .ne. i) then
+         if (k /= i) then
             x2     = F_lnr(k)
             x1     = F_lvl(k)
             m      = F_pwr(k)

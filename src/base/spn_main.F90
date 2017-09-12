@@ -14,7 +14,7 @@
 !---------------------------------- LICENCE END --------------------------------
 !
 !*s/r spn_main - spectral nudging driver
- 
+
       subroutine spn_main
       use step_options
       use gem_options
@@ -49,7 +49,7 @@
 
       if ( Lctl_step > 2 ) then
 
-         if ( mod(Lctl_step,no_steps) .eq. 0 ) then
+         if ( mod(Lctl_step,no_steps) == 0 ) then
 
             if (Lun_out > 0) write(Lun_out,1001) Lctl_step
 

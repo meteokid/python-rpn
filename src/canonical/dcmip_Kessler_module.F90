@@ -1,6 +1,6 @@
-MODULE Kessler_module 
+MODULE Kessler_module
 !-------------------------------------------------------------------------
-!Subroutines DCMIP_2016 (https://github.com/ClimateGlobalChange/DCMIP2016) 
+!Subroutines DCMIP_2016 (https://github.com/ClimateGlobalChange/DCMIP2016)
 !-------------------------------------------------------------------------
 
 CONTAINS
@@ -62,7 +62,7 @@ CONTAINS
 !
 !    Klemp, J. B., W. C. Skamarock, W. C., and S.-H. Park, 2015:
 !    Idealized Global Nonhydrostatic Atmospheric Test Cases on a Reduced
-!    Radius Sphere. Journal of Advances in Modeling Earth Systems. 
+!    Radius Sphere. Journal of Advances in Modeling Earth Systems.
 !    doi:10.1002/2015MS000435
 !
 !=======================================================================
@@ -92,7 +92,7 @@ SUBROUTINE KESSLER(theta, qv, qc, qr, rho, pk, dt, z, nz, precl) &
             z       ,     & ! Heights of thermo. levels in the grid column (m)
             pk              ! Exner function (p/p0)**(R/cp)
 
-  REAL(8), INTENT(IN) :: & 
+  REAL(8), INTENT(IN) :: &
             dt              ! Time step (s)
 
   INTEGER, INTENT(IN) :: nz ! Number of thermodynamic levels in the column
@@ -126,14 +126,14 @@ SUBROUTINE KESSLER(theta, qv, qc, qr, rho, pk, dt, z, nz, precl) &
   end do
 
   ! Maximum time step size in accordance with CFL condition
-  if (dt .le. 0.d0) then
+  if (dt <= 0.d0) then
     write(*,*) 'kessler.f90 called with nonpositive dt'
     stop
   end if
 
   dt_max = dt
   do k=1,nz-1
-    if (velqr(k) .ne. 0.d0) then
+    if (velqr(k) /= 0.d0) then
       dt_max = min(dt_max, 0.8d0*(z(k+1)-z(k))/velqr(k))
     end if
   end do
@@ -183,7 +183,7 @@ SUBROUTINE KESSLER(theta, qv, qc, qr, rho, pk, dt, z, nz, precl) &
     end do
 
     ! Recalculate liquid water terminal velocity
-    if (nt .ne. rainsplit) then
+    if (nt /= rainsplit) then
       do k=1,nz
         velqr(k)  = 36.34d0*(qr(k)*r(k))**0.1364*rhalf(k)
       end do

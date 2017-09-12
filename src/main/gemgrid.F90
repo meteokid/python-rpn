@@ -66,17 +66,17 @@
       outfile= 'tape1'
       if (Grd_yinyang_L .and. Grd_yinyang_S == 'YAN') outfile= 'tape2'
 
- 88   if (grid_nml3(fn).lt.0) then
+ 88   if (grid_nml3(fn) < 0) then
          print *,'STOP: problem with NAMELIST GRID'
          print *,"Use checknml to verify: \'checknml grid\'"
          stop
       endif
-!!$      if (step_nml(fn).lt.0) then
+!!$      if (step_nml(fn) < 0) then
 !!$         print *,'STOP: problem with NAMELIST STEP'
 !!$         print *,"Use checknml to verify: \'checknml step\'"
 !!$         stop
 !!$      endif
-      if (gem_nml(fn).lt.0) then
+      if (gem_nml(fn) < 0) then
          print *,'STOP: problem with NAMELIST GEM_CFGS'
          print *,"Use checknml to verify: \'checknml gem_cfgs\'"
          stop
@@ -114,7 +114,7 @@
       err = clib_remove(outfile)
 
       unf1= 0
-      if (fnom(unf1,outfile,'RND',0).ge.0) then
+      if (fnom(unf1,outfile,'RND',0) >= 0) then
          err= fstouv (unf1, 'RND')
       else
          print *,'problem opening', trim(outfile)
@@ -155,7 +155,7 @@
       call set_gmm
       call nest_set_gmmvar
       unf2=0
-      if (fnom(unf2,trim(outfile)//'_core','RND',0).ge.0) then
+      if (fnom(unf2,trim(outfile)//'_core','RND',0) >= 0) then
          err= fstouv (unf2, 'RND')
       else
          print *,'problem opening', trim(outfile//'_core')
@@ -204,7 +204,7 @@
       err= fclos (unf2)
 
       unf1=0
-      if (fnom(unf1,trim(outfile)//'_free','RND',0).ge.0) then
+      if (fnom(unf1,trim(outfile)//'_free','RND',0) >= 0) then
          err= fstouv (unf1, 'RND')
       else
          print *,'problem opening', trim(outfile//'_core')

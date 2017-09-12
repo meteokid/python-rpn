@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -26,7 +26,7 @@
       implicit none
 #include <arch_specific.hf>
 
-!author 
+!author
 !     Gravel              - spring 2003 (after MC2 v_4.9.3)
 !
 !revision
@@ -121,7 +121,7 @@
       do n=1,Tr3d_ntr
          nullify(tr)
          err = gmm_get('TR/'//trim(Tr3d_name_S(n))//':P',tr,mymeta)
-         if (err.eq.0) then
+         if (err == 0) then
          if (l_north)      then
             do k=1,G_nk
                jin = l_nj-pil_n

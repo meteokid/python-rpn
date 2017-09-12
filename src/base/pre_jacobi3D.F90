@@ -35,7 +35,7 @@
 ! v4_70 - Qaddouri A.       - initial version
 
 
-      integer i,j,k,jr,l,k1,offi,offj
+      integer i,j,k,jr,offi,offj
       real*8 fdg(Ni,Nj,Nk), w2_8(Ni,Nj,Nk)
 !
 !     ---------------------------------------------------------------

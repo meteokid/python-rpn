@@ -26,7 +26,7 @@
       implicit none
 #include <arch_specific.hf>
 
-      character* (*) F_namelistf_S
+      character(len=*) F_namelistf_S
 
 !authors    Michel Desgagne - Spring 2011
 !
@@ -45,9 +45,9 @@
 !
       step_nml = -1
 
-      if ((F_namelistf_S.eq.'print').or.(F_namelistf_S.eq.'PRINT')) then
+      if ((F_namelistf_S == 'print').or.(F_namelistf_S == 'PRINT')) then
          step_nml = 0
-         if (Lun_out.gt.0) then
+         if (Lun_out > 0) then
             write (Lun_out  ,nml=step)
             write (Lun_out,8000) Step_alarm
          endif
@@ -56,10 +56,10 @@
 
 ! Defaults values for ptopo namelist variables
 
-      if (F_namelistf_S .ne. '') then
+      if (F_namelistf_S /= '') then
          unf = 0
-         if (fnom (unf,F_namelistf_S, 'SEQ+OLD', 0) .ne. 0) then
-            if (Lun_out.ge.0) write (Lun_out, 7050) trim( F_namelistf_S )
+         if (fnom (unf,F_namelistf_S, 'SEQ+OLD', 0) /= 0) then
+            if (Lun_out >= 0) write (Lun_out, 7050) trim( F_namelistf_S )
             goto 9999
          endif
          rewind(unf)
@@ -67,13 +67,13 @@
          goto 9000
       endif
 
- 9120 if (Lun_out.ge.0) write (Lun_out, 7060) trim( F_namelistf_S )
+ 9120 if (Lun_out >= 0) write (Lun_out, 7060) trim( F_namelistf_S )
       goto 9999
- 9130 if (Lun_out.ge.0) write (Lun_out, 7070) trim( F_namelistf_S )
+ 9130 if (Lun_out >= 0) write (Lun_out, 7070) trim( F_namelistf_S )
       goto 9999
 
- 9000 if (Step_dt .lt. 0.) then
-         if (Lun_out.gt.0) write(Lun_out,*)  &
+ 9000 if (Step_dt < 0.) then
+         if (Lun_out > 0) write(Lun_out,*)  &
                     ' Step_dt must be specified in namelist &step'
          goto 9999
       endif
@@ -127,7 +127,7 @@
          err= min( timestr2step (Step_spinphy, Fcst_spinphy_S, Step_dt), err)
       endif
 
-      if (err.lt.0) goto 9999
+      if (err < 0) goto 9999
 
       Step_delay= Step_initial
 

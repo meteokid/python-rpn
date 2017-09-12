@@ -24,6 +24,7 @@
       use glb_pil
       use sol
       use ptopo
+      use yyg_rhs
       implicit none
 #include <arch_specific.hf>
 
@@ -31,9 +32,8 @@
 !author
 !     Abdessamad Qaddouri/V.Lee  - October 2009
 !
-#include "yyg_rhs.cdk"
 
-      integer minx,maxx,miny,maxy,Ni,Nj,NK,numproc
+      integer minx,maxx,miny,maxy,NK
       real*8  sol_src1(minx:maxx,miny:maxy,Nk)
       real*8  rhs_dst1(minx:maxx,miny:maxy,Nk)
       real*8  tab_src_8(l_minx:l_maxx,l_miny:l_maxy,Nk)
@@ -41,7 +41,6 @@
       real    linfini,L1,L2,L3(2),L4(2),infini(Nk)
       integer ierr,i,j,k,kk,kk_proc,m,mm,iter,adr
       real, dimension (:,:), allocatable :: recv_pil,send_pil
-      real sent,recv
 !     integer status(MPI_STATUS_SIZE)
 !     integer stat(MPI_STATUS_SIZE,Ptopo_numproc)
       integer status
@@ -79,12 +78,12 @@
       tab_src_8(:,:,:)=dble(tab_src(:,:,:))
 
 !     print *,'sendlen=',sendlen,' recvlen=',recvle
-      if (sendlen.gt.0) then
+      if (sendlen > 0) then
           allocate(send_pil(sendlen*NK,Rhsx_sendmaxproc))
           allocate(send_Rhsx_8(sendlen*NK))
 
       endif
-      if (recvlen.gt.0) then
+      if (recvlen > 0) then
           allocate(recv_pil(recvlen*NK,Rhsx_recvmaxproc))
       endif
 
@@ -92,14 +91,14 @@
       do 100 kk=1,Rhsx_sendmaxproc
 !
 !        For each processor (in other colour)
-         if (Ptopo_couleur.eq.0) then
+         if (Ptopo_couleur == 0) then
              kk_proc = Rhsx_sendproc(kk)+Ptopo_numproc-1
          else
              kk_proc = Rhsx_sendproc(kk)-1
          endif
 
 !        prepare to send to other colour processor
-         if (Rhsx_send_len(kk).gt.0) then
+         if (Rhsx_send_len(kk) > 0) then
 !            prepare something to send
 
              adr=Rhsx_send_adr(kk)+1
@@ -142,12 +141,12 @@
       do 101 kk=1,Rhsx_recvmaxproc
 !        For each processor (in other colour)
 
-         if (Ptopo_couleur.eq.0) then
+         if (Ptopo_couleur == 0) then
              kk_proc = Rhsx_recvproc(kk)+Ptopo_numproc-1
          else
              kk_proc = Rhsx_recvproc(kk)-1
          endif
-         if (Rhsx_recv_len(kk).gt.0) then
+         if (Rhsx_recv_len(kk) > 0) then
 !            detect something to receive
 
              ireq = ireq+1
@@ -177,7 +176,7 @@
 
 
 
-      if (sendlen.gt.0) deallocate(send_pil,send_Rhsx_8)
+      if (sendlen > 0) deallocate(send_pil,send_Rhsx_8)
 
 !     Check the precision
 !     call mpi_allreduce(Linfini,L1,1,MPI_REAL,MPI_MAX,Ptopo_intracomm,ierr)
@@ -186,13 +185,13 @@
       L4=0.
       Linfini=L1
 
-      if (Ptopo_myproc.eq.0.and.Ptopo_couleur.eq.0) then
+      if (Ptopo_myproc == 0.and.Ptopo_couleur == 0) then
 !         call MPI_Send(L3,2,MPI_REAL,1,tag1,Ptopo_intercomm,ierr)
 !         call MPI_Recv(L4,2,MPI_REAL,1,tag2,Ptopo_intercomm,status,ierr)
           call RPN_COMM_Send(L3,2,'MPI_REAL',1,tag1,'GRIDPEERS',ierr)
           call RPN_COMM_Recv(L4,2,'MPI_REAL',1,tag2,'GRIDPEERS',status,ierr)
       endif
-      if (Ptopo_myproc.eq.0.and.Ptopo_couleur.eq.1) then
+      if (Ptopo_myproc == 0.and.Ptopo_couleur == 1) then
 !         call MPI_Recv(L4,2,MPI_REAL,0,tag1,Ptopo_intercomm,status,ierr)
 !         call MPI_Send(L3,2,MPI_REAL,0,tag2,Ptopo_intercomm,ierr)
           call RPN_COMM_Recv(L4,2,'MPI_REAL',0,tag1,'GRIDPEERS',status,ierr)
@@ -200,14 +199,14 @@
       endif
       Linfini=max(Linfini,L4(1))
       L2=max(L2,L4(2))
-      if (iter.gt.1) linfini=linfini/L2
+      if (iter > 1) linfini=linfini/L2
 !     call mpi_bcast(linfini,1,mpi_real,0,Ptopo_intracomm,ierr)
       call RPN_COMM_bcast(linfini,1,'MPI_REAL',0,'GRID',ierr)
 !      print *,'YYG_rhs:iter=',iter,linfini
 
 ! Now fill my results if I have received something
 
-      if (recvlen.gt.0) then
+      if (recvlen > 0) then
 
           do 200 kk=1,Rhsx_recvmaxproc
              mm=0

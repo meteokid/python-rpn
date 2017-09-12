@@ -22,7 +22,7 @@
       implicit none
 #include <arch_specific.hf>
 
-      character*(*), intent(in):: F_namelistf_S
+      character(len=*), intent(in):: F_namelistf_S
 
 #include <rmnlib_basics.hf>
 
@@ -32,18 +32,18 @@
 !
       dynkernel_nml = -1
 
-      if ((F_namelistf_S.eq.'print').or.(F_namelistf_S.eq.'PRINT')) then
+      if ((F_namelistf_S == 'print').or.(F_namelistf_S == 'PRINT')) then
          dynkernel_nml = 0
-         if (Lun_out.gt.0) then
+         if (Lun_out > 0) then
             write (Lun_out  ,nml=dyn_kernel)
          endif
          return
       endif
 
-      if (F_namelistf_S .ne. '') then
+      if (F_namelistf_S /= '') then
          unf = 0
-         if (fnom (unf,F_namelistf_S, 'SEQ+OLD', 0) .ne. 0) then
-            if (Lun_out.ge.0) write (Lun_out, 7050) trim( F_namelistf_S )
+         if (fnom (unf,F_namelistf_S, 'SEQ+OLD', 0) /= 0) then
+            if (Lun_out >= 0) write (Lun_out, 7050) trim( F_namelistf_S )
             goto 9999
          endif
          rewind(unf)
@@ -53,7 +53,7 @@
          goto 9000
       endif
 
- 9130 if (Lun_out.ge.0) write (Lun_out, 7070) trim( F_namelistf_S )
+ 9130 if (Lun_out >= 0) write (Lun_out, 7070) trim( F_namelistf_S )
       goto 9999
 
  9000 err = clib_toupper ( Dynamics_Kernel_S )

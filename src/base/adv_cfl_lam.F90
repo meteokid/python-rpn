@@ -65,7 +65,7 @@ subroutine adv_cfl_lam3 ( F_x_in, F_y_in, F_z_in, i0, in, j0, jn, &
       p_dlz_8 => adv_dlz_8%t
    endif
 
-
+   p_dlz_8 = abs(p_dlz_8)
    adv_cfl_8(:  ) = 0.D0
    adv_cfl_i(:,:) = 0
 

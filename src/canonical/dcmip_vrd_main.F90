@@ -71,6 +71,7 @@
 
       use canonical
       use dcmip_options
+      use dcmip_vrd_coef
       use tdpack, only : cappa_8
 
       use glb_ld
@@ -79,11 +80,9 @@
       use gmm_itf_mod
       implicit none
 
-      integer Minx,Maxx,Miny,Maxy,Nk
-
-      real F_u (Minx:Maxx,Miny:Maxy,Nk), F_v(Minx:Maxx,Miny:Maxy,Nk), &
-           F_zd(Minx:Maxx,Miny:Maxy,Nk), F_w(Minx:Maxx,Miny:Maxy,Nk), F_tv(Minx:Maxx,Miny:Maxy,Nk), &
-           F_s (Minx:Maxx,Miny:Maxy)
+      integer, intent(in) :: Minx,Maxx,Miny,Maxy,Nk
+      real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(inout) :: F_u, F_v, F_zd, F_w, F_tv
+      real, dimension(Minx:Maxx,Miny:Maxy), intent(inout) :: F_s
 
       !object
       !=====================================================================================
@@ -136,8 +135,6 @@
       !
       !_____________________________________________________________________
       !
-
-#include "dcmip_vrd_coef.cdk"
 
       !---------------------------------------------------------------
 
@@ -219,7 +216,7 @@
          if (Tr3d_name_S(n)=="QC") call dcmip_vrd_fld (tr,qcref,Dcmip_ref_tr,Dcmip_cp_tr_t,Dcmip_cm_tr_t,Minx,Maxx,Miny,Maxy,Nk)
          if (Tr3d_name_S(n)=="RW") call dcmip_vrd_fld (tr,qrref,Dcmip_ref_tr,Dcmip_cp_tr_t,Dcmip_cm_tr_t,Minx,Maxx,Miny,Maxy,Nk)
 
-!$omp parallel private(i,j)
+!$omp parallel private(i,j,k)
 !$omp do
          do k=1,G_nk
             do j=1,l_nj
@@ -271,7 +268,7 @@
 
       p_fld (1:l_ni,1:l_nj,1:Nk) = F_fld (1:l_ni,1:l_nj,1:Nk) - F_ref_on * F_ref_fld(1:l_ni,1:l_nj,1:Nk)
 
-!$omp parallel private(kp,km,i,j)
+!$omp parallel private(kp,km,i,j,k)
 !$omp do
       do k=1,Nk
          kp=min(Nk,k+1)

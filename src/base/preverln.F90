@@ -61,7 +61,7 @@
       do j=1,F_nk
 
          i = j - 1
-         if ( i.gt.0 ) then
+         if ( i > 0 ) then
 !           A wing
             F_evec_8(i,j) =     Opr_opszp2_8(2*G_nk+i) &
                           +     Opr_opszpl_8(2*G_nk+i) &
@@ -78,7 +78,7 @@
                        + xxx*Opr_opszpm_8(G_nk+i) &
                        + yyy*Opr_opszp0_8(G_nk+i)
          i=j+1
-         if(i.lt.(F_nk+1)) then
+         if(i < (F_nk+1)) then
             F_evec_8(i,j) =     Opr_opszp2_8(i) &
                           +     Opr_opszpl_8(i) &
                           + xxx*Opr_opszpm_8(i)
@@ -96,7 +96,7 @@
       enddo
 
       F_errcode= 0
-      if ((err.lt.0).and.(lun_out.gt.0)) then
+      if ((err < 0).and.(lun_out > 0)) then
          write(lun_out,9000)
          F_errcode = -1
       else

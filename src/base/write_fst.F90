@@ -30,7 +30,7 @@
       implicit none
 #include <arch_specific.hf>
 !
-      character* (*) varname, filename, grdtype
+      character(len=*) varname, filename, grdtype
       integer nx,ny,nz,ig1,ig2,ig3
       real buf(nx,ny,nz),maxrange
 !author
@@ -65,15 +65,15 @@
       err = fnom  (unf, fn, 'rnd', 0)
       call fstouv (unf,'rnd')
 !
-      if (grdtype(1:1).eq."Z") then
+      if (grdtype(1:1) == "Z") then
 !
       err = fstinl (unf, nipos,n2,n3, -1, ' ', ig1, ig2,ig3,' ', &
                                       '>>', liste, list_x, nlis)
       err = fstinl (unf, n1,njpos,n3, -1, ' ', ig1, ig2,ig3,' ', &
                                       '^^', liste, list_y, nlis)
 !
-      if ((list_x.lt.1).or.(list_y.lt.1).or. &
-          (nipos.ne.nx).or.(njpos.ne.ny)) then
+      if ((list_x < 1).or.(list_y < 1).or. &
+          (nipos /= nx).or.(njpos /= ny)) then
          err= fstecr(Geomh_longs(Ptopo_gindx(1,Ptopo_myproc+1)),wk3, &
                      -32,unf,0,0,0,nx,1,1,ig1,ig2,ig3,'X', '>>', &
                      Out3_etik_S,Hgc_gxtyp_s,Hgc_ig1ro,Hgc_ig2ro, &
@@ -91,15 +91,15 @@
       do j = 1, ny
       do i = 1, nx
         wk3(i,j)=buf(i,j,k)
-        if (wk3(i,j).gt. maxrange) wk3(i,j)=-999999.
-        if (wk3(i,j).lt.-maxrange) wk3(i,j)=-999999.
+        if (wk3(i,j) > maxrange) wk3(i,j)=-999999.
+        if (wk3(i,j) < -maxrange) wk3(i,j)=-999999.
       enddo
       end do
 !
       pnip1 = k
       pnip3 = Out_ip3
       pnip3 = Lctl_step
-      if (pnip3.lt.0) pnip3 = Out_npas
+      if (pnip3 < 0) pnip3 = Out_npas
 
       err = fstecr (wk3,wk3,-32,unf,Out_dateo,int(Out_deet),Out_npas, &
                     nx,ny,1,pnip1,Out_ip2,pnip3,'P',varname,Out3_etik_S, &

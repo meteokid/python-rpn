@@ -26,7 +26,7 @@
       implicit none
 #include <arch_specific.hf>
 !
-      character*(*) F_nomvar_S, F_filename_S, F_inttyp_S
+      character(len=*) F_nomvar_S, F_filename_S, F_inttyp_S
       integer ni,nj,F_status
       real F_dest(ni,nj), F_xfi(ni), F_yfi(nj)
 !
@@ -60,30 +60,30 @@
       subid= -1 ; oldsubid= -1
 
       err = clib_isfile(trim(F_filename_S))
-      if ( err.lt.0 ) then
-         if (Lun_out.gt.0) write (Lun_out, 9001) trim(F_filename_S)
+      if ( err < 0 ) then
+         if (Lun_out > 0) write (Lun_out, 9001) trim(F_filename_S)
          goto 999
       endif
 
       unf = 0
       err = fnom  (unf,trim(F_filename_S),'RND+OLD+R/O',0)
-      if ( err.lt.0 ) then
-         if (Lun_out.gt.0) &
+      if ( err < 0 ) then
+         if (Lun_out > 0) &
               write (Lun_out, 9002) trim(F_filename_S),'RND+OLD+R/O'
          goto 999
       endif
 
       err = fstouv(unf,'RND')
-      if ( err.lt.0 ) then
-         if (Lun_out.gt.0) write (Lun_out, 9003) trim(F_filename_S),'RND'
+      if ( err < 0 ) then
+         if (Lun_out > 0) write (Lun_out, 9003) trim(F_filename_S),'RND'
          goto 999
       endif
 
       write (6,1000) trim(F_filename_S),unf
 
       key = fstinf (unf, nis,njs,nk1,-1," ",-1,-1,-1," ",F_nomvar_S)
-      if (key.lt.0) then
-         if (Lun_out.gt.0) write (Lun_out,9004) F_nomvar_S
+      if (key < 0) then
+         if (Lun_out > 0) write (Lun_out,9004) F_nomvar_S
          goto 999
       endif
 
@@ -103,14 +103,14 @@
          allocate (ax(nis),ay(njs))
 
          key = fstinf (unf, ni1,nj1,nk1,-1," ",g1,g2,-1," ",">>")
-         if (key.lt.0) then
+         if (key < 0) then
             write (6,9004)
             goto 999
          endif
          err = fstluk (ax, key, ni1,nj1,nk1)
 
          key = fstinf (unf, ni1,nj1,nk1,-1," ",g1,g2,-1," ","^^")
-         if (key.lt.0) then
+         if (key < 0) then
             write (6,9004)
             goto 999
          endif
@@ -125,7 +125,7 @@
                                    g1,g2,g3,g4, ax, ay)
 
          if (samegrid_gid (sgid, Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro,&
-                           F_xfi, F_yfi, ni, nj) .gt. -1) &
+                           F_xfi, F_yfi, ni, nj) > -1) &
                            F_inttyp_S = 'NEAREST'
 
       else
@@ -144,7 +144,7 @@
                                      F_yfi(1+Glb_pil_s), nic, njc )
                if (subid >= 0) print *,'U grid contains sub grid match to ',ni,nj
             endif
-            if (subid.ge.0) then
+            if (subid >= 0) then
                F_inttyp_S = 'NEAREST'
                onesubgrid_S = 'YES'
                err = ezsetival('SUBGRIDID',subid)
@@ -163,13 +163,13 @@
       err = ezsetopt ('INTERP_DEGREE', trim(F_inttyp_S))
       err = ezsint   (F_dest, source)
 
-      if (subid.ge.0) then
+      if (subid >= 0) then
 !     Reset to original values
          err = ezsetival ('SUBGRIDID'   ,oldsubid)
          err = ezsetopt  ('USE_1SUBGRID',trim(oldsubgrid_S))
       endif
 
-      if (err.lt.0) then
+      if (err < 0) then
          write (6,9005)
          goto 999
       endif

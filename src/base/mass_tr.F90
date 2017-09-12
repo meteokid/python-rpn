@@ -109,7 +109,7 @@
       !-------------------
       !Evaluate Local Mass
       !-------------------
-!$omp parallel do private(i,j) shared(c_level_8)
+!$omp parallel do private(k,i,j) shared(c_level_8)
       do k=F_k0,F_nk
          c_level_8(k) = 0.0d0
          do j=j0,jn

@@ -46,7 +46,7 @@
 
       integer istat,i,j,k,n,ierr,istat1,istat2
 
-      real, pointer    , dimension(:,:,:) :: tr,tr_r,cl,cl2,tr_1,tr_2
+      real, pointer    , dimension(:,:,:) :: tr,tr_r,cl,cl2
 
       real*4, parameter :: CLY_REF = 4.*10.**(-6)
 

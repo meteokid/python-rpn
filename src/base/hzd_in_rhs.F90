@@ -49,7 +49,7 @@
       dpwr = Hzd_pwr/2
       niter=Hzd_niter
 
-      if(niter.gt.0) then
+      if(niter > 0) then
          coef_8(1:NK) = Hzd_coef_8(1:Nk)
 
          u0=F_u
@@ -98,7 +98,7 @@
       dpwr = Hzd_pwr_theta/2
       niter= Hzd_niter_theta
 
-      if(niter.gt.0) then
+      if(niter > 0) then
          coef_8(1:NK) = Hzd_coef_8_theta(1:Nk)
 
          !theta=t/pi; pi=(p/p0)**cappa; p=exp(a+b*s); p0=1.

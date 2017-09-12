@@ -47,25 +47,27 @@
       real, dimension(:    ), pointer, save :: hybm  => null()
       real, dimension(:,:  ), pointer :: udiag,vdiag => null()
       real, dimension(:,:,:), allocatable:: uv_pres,uu_pres,vv_pres,cible
+      real hybm_gnk2(1)
+      integer ind0(1)
 !
 !-------------------------------------------------------------------
 !
       pnuu=0 ; pnvv=0 ; pnuv=0
 
       do ii=1,Outd_var_max(set)
-         if (Outd_var_S(ii,set).eq.'UU')then
+         if (Outd_var_S(ii,set) == 'UU')then
             pnuu=ii
          endif
-         if (Outd_var_S(ii,set).eq.'VV')then
+         if (Outd_var_S(ii,set) == 'VV')then
             pnvv=ii
          endif
-         if (Outd_var_S(ii,set).eq.'UV')then
+         if (Outd_var_S(ii,set) == 'UV')then
             pnuv=ii
          endif
       enddo
 
       psum=pnuu+pnuv+pnvv
-      if (psum.eq.0)return
+      if (psum == 0)return
 
       i0 = 1 ; in = l_ni
       j0 = 1 ; jn = l_nj
@@ -76,7 +78,7 @@
       istat = gmm_get(gmmk_diag_uu_s   , udiag     )
       istat = gmm_get(gmmk_diag_vv_s   , vdiag     )
 
-      if (Level_typ_S(levset) .eq. 'M') then  ! Output on model levels
+      if (Level_typ_S(levset) == 'M') then  ! Output on model levels
 
          kind=Level_kind_ip1
 !        Setup the indexing for output
@@ -93,8 +95,10 @@
             deallocate(ip1m); nullify(ip1m)
             if (vgd_get(vcoord,'VCDM - vertical coordinate (m)',hybm) /= VGD_OK) istat = VGD_ERROR
          endif
+         hybm_gnk2(1)=hybm(G_nk+2)
+         ind0(1)=1
 
-         if ( (pnuu.ne.0) .or. (pnvv.ne.0) ) then
+         if ( (pnuu /= 0) .or. (pnvv /= 0) ) then
             call out_fstecr3(pw_uu_plus,l_minx,l_maxx,l_miny,l_maxy,hybm,&
                    'UU  ',Outd_convmult(pnuu,set),Outd_convadd(pnuu,set),&
                    kind,-1,G_nk, indo, nko,Outd_nbit(pnuu,set),.false. )
@@ -103,17 +107,17 @@
                    kind,-1,G_nk, indo, nko,Outd_nbit(pnvv,set),.false. )
             if (write_diag_lev) then
                call out_fstecr3(udiag, l_minx,l_maxx,l_miny,l_maxy,&
-                                hybm(G_nk+2), 'UU', Outd_convmult(pnuu,set),&
+                                hybm_gnk2, 'UU', Outd_convmult(pnuu,set),&
                                 Outd_convadd(pnuu,set),Level_kind_diag,-1,1,&
-                                1,1,Outd_nbit(pnuu,set),.false. )
+                                ind0,1,Outd_nbit(pnuu,set),.false. )
                call out_fstecr3(vdiag, l_minx,l_maxx,l_miny,l_maxy,&
-                                hybm(G_nk+2), 'VV', Outd_convmult(pnuu,set),&
+                                hybm_gnk2, 'VV', Outd_convmult(pnuu,set),&
                                 Outd_convadd(pnuu,set),Level_kind_diag,-1,1,&
-                                1,1,Outd_nbit(pnuu,set),.false. )
+                                ind0,1,Outd_nbit(pnuu,set),.false. )
             endif
          endif
 
-         if (pnuv.ne.0) then
+         if (pnuv /= 0) then
             do k = 1, G_nk
                do j = j0, jn
                do i = i0, in
@@ -132,9 +136,9 @@
                                    vdiag(i,j)*vdiag(i,j))
                enddo
                enddo
-               call out_fstecr3(uu,l_minx,l_maxx,l_miny,l_maxy, hybm(G_nk+2),&
+               call out_fstecr3(uu,l_minx,l_maxx,l_miny,l_maxy, hybm_gnk2,&
                        'UV  ',Outd_convmult(pnuv,set),Outd_convadd(pnuv,set),&
-                       Level_kind_diag,-1,1,1,1, Outd_nbit(pnuv,set),.false. )
+                       Level_kind_diag,-1,1,ind0,1,Outd_nbit(pnuv,set),.false. )
             endif
          endif
          deallocate(indo)
@@ -178,7 +182,7 @@
                          l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj,&
                          inttype=Out3_vinterp_type_S )
 
-         if (pnuv.ne.0) then
+         if (pnuv /= 0) then
             allocate(uv_pres(l_minx:l_maxx,l_miny:l_maxy,nko   ))
             do k =  1, nko
             do j = j0, jn
@@ -188,7 +192,7 @@
             enddo
             enddo
             enddo
-            if (Outd_filtpass(pnuv,set).gt.0) &
+            if (Outd_filtpass(pnuv,set) > 0) &
                call filter2( uv_pres,Outd_filtpass(pnuv,set),&
                              Outd_filtcoef(pnuv,set), &
                              l_minx,l_maxx,l_miny,l_maxy,nko)
@@ -198,15 +202,15 @@
             deallocate (uv_pres)
          endif
 
-         if ( (pnuu.ne.0) .or. (pnvv.ne.0) )then
-            if (Outd_filtpass(pnuu,set).gt.0) &
+         if ( (pnuu /= 0) .or. (pnvv /= 0) )then
+            if (Outd_filtpass(pnuu,set) > 0) &
                 call filter2( uu_pres,Outd_filtpass(pnuu,set),&
                               Outd_filtcoef(pnuu,set), &
                               l_minx,l_maxx,l_miny,l_maxy,nko)
             call out_fstecr3(uu_pres,l_minx,l_maxx,l_miny,l_maxy,rf   ,&
                  'UU  ',Outd_convmult(pnuu,set),Outd_convadd(pnuu,set),&
                  kind,-1,nko, indo, nko, Outd_nbit(pnuu,set),.false. )
-            if (Outd_filtpass(pnvv,set).gt.0) &
+            if (Outd_filtpass(pnvv,set) > 0) &
                  call filter2( vv_pres,Outd_filtpass(pnvv,set),&
                                Outd_filtcoef(pnvv,set), &
                                l_minx,l_maxx,l_miny,l_maxy,nko)

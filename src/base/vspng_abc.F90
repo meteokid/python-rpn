@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -32,11 +32,11 @@
              F_yp0_8(Gnj,3), F_yp2_8(Gnj,3), &
              F_coef_8(NK)
 
-!author    
+!author
 !     Michel Desgagne  October 2000
 !
 !revision
-! v2_11 - Desgagne M.       - initial version 
+! v2_11 - Desgagne M.       - initial version
 ! v3_03 - Desgagne M.       - adjust horizontal scope (in,jn)
 ! v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 ! v3_20 - Lee V.            - correction to insure index in,jn >=0
@@ -46,9 +46,9 @@
 !----------------------------------------------------------------
 !  F_aix_8
 !----------------------------------------------------------------
-! 
-    
-      integer i, j, k, ii, jj, j2, in, jn
+!
+
+      integer i, j, k, jj, j2, in, jn
       real*8 ax_8(NK,trp_12emax,G_ni), bx_8(NK,trp_12emax,G_ni), &
              cx_8(NK,trp_12emax,G_ni), ay_8(NK,trp_22emax,G_nj), &
              by_8(NK,trp_22emax,G_nj), cy_8(NK,trp_22emax,G_nj), &
@@ -58,7 +58,7 @@
 !
 !     ---------------------------------------------------------------
 !
-      if (F_njpole .lt. 1) then
+      if (F_njpole < 1) then
          mdifc = ONE_8
       else
          do j = 1, F_njpole
@@ -77,13 +77,13 @@
 !     as the tile is ldnh_maxy size (l_maxy size)
 !     jn = trp_12en
 !88   j2 = Ptopo_gindx(3,Ptopo_myproc+1) + Trp_12en0 + jn - 2
-!     if (j2.gt.Gnj) then
+!     if (j2 > Gnj) then
 !        jn = jn - 1
 !        goto 88
 !     endif
       jn = trp_12en
       j2 = Ptopo_gindx(3,Ptopo_myproc+1) + Trp_12en0 + jn - 2
-      if (j2.gt.Gnj) jn = jn - (j2-Gnj)
+      if (j2 > Gnj) jn = jn - (j2-Gnj)
 
 !     Insure that any filling on the end of the tile is within the tile
 !     in case JN is negative
@@ -126,13 +126,13 @@
 !     as the tile is ldnh_maxx size (l_maxx size)
 !     in = trp_22en
 !99   j2 = Ptopo_gindx(1,Ptopo_myproc+1) + trp_22en0 + in - 2
-!     if (j2.gt.G_ni) then
+!     if (j2 > G_ni) then
 !        in = in - 1
 !        goto 99
 !     endif
       in = trp_22en
       j2 = Ptopo_gindx(1,Ptopo_myproc+1) + trp_22en0 + in - 2
-      if (j2.gt.G_ni) in = in - (j2-G_ni)
+      if (j2 > G_ni) in = in - (j2-G_ni)
 
 !     Insure that any filling on the end of the tile is within the tile
 !     in case IN is negative

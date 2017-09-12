@@ -12,7 +12,7 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-!**s/r set_poic - preparation of projection matrix in the east-west, 
+!**s/r set_poic - preparation of projection matrix in the east-west,
 !                   C grid model
 
       subroutine set_poic2 ( F_eval_8, F_evec_8, F_xp0_8, F_xp2_8, &
@@ -24,7 +24,7 @@
       implicit none
 #include <arch_specific.hf>
 
-      character*(*) F_eigen_filename_S
+      character(len=*) F_eigen_filename_S
       integer F_npts, NSTOR
       real*8  F_eval_8(NSTOR)  , F_evec_8(NSTOR,NSTOR)
       real*8  F_xp0_8 (NSTOR,3), F_xp2_8 (NSTOR,3)

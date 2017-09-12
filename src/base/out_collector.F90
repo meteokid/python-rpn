@@ -61,7 +61,7 @@ contains
          l_npex   = Ptopo_npex / Bloc_npx
          irest    = Ptopo_npex - l_npex * Bloc_npx
          i0       = mpx * l_npex + 1
-         if ( mpx .lt. irest ) then
+         if ( mpx < irest ) then
             l_npex = l_npex + 1
             i0     = i0 + mpx
          else
@@ -74,7 +74,7 @@ contains
             l_npey   = Ptopo_npey / Bloc_npy
             irest    = Ptopo_npey - l_npey * Bloc_npy
             j0       = mpx * l_npey + 1
-            if ( mpx .lt. irest ) then
+            if ( mpx < irest ) then
                l_npey = l_npey + 1
                j0     = j0 + mpx
             else
@@ -262,7 +262,7 @@ contains
             local_nk = Nk / Bloc_nblocs
             irest  = Nk  - local_nk * Bloc_nblocs
             kstart = mpx * local_nk + 1
-            if ( mpx .lt. irest ) then
+            if ( mpx < irest ) then
                local_nk   = local_nk + 1
                kstart = kstart + mpx
             else

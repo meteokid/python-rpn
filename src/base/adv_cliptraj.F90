@@ -85,7 +85,7 @@
 
       call rpn_comm_Allreduce(cnt,sum_cnt,1,"MPI_INTEGER", "MPI_SUM","grid",err)
 
-      if (trim(mesg).ne."" .and. sum_cnt>0) then
+      if (trim(mesg) /= "" .and. sum_cnt>0) then
          write(msg_S,'(a,i5,a,f6.2,2x,a)')  &
          ' ADW trajtrunc: npts=',sum_cnt, &
          ', %=',real(sum_cnt)/real(totaln)*100., &

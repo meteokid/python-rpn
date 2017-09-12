@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -20,7 +20,7 @@
       implicit none
 #include <arch_specific.hf>
 !
-      character(*) F_alongxy
+      character(len=*) :: F_alongxy
       integer F_npts, F_halo, F_min, F_max, F_ni, F_i0
 !author
 !     Michel Desgagne     Fall 2011
@@ -29,8 +29,8 @@
 ! v4_40 - Desgagne M.       - Initial version
 !
 
-      character*24 Part_type_S
-      integer npe,val1,val2,err,irest,mpx,lstp
+      character(len=24) :: Part_type_S
+      integer npe,val1,val2,irest,mpx,lstp
 !
 !-------------------------------------------------------------------
 !
@@ -51,14 +51,14 @@
       if (Part_type_S == 'ALLEQUALLBUT1') then
          val1 = (F_npts + npe - 1)/npe
          val2 =  F_npts -(npe - 1)*val1
-         if (val2 .gt. 0) F_i0 = mpx*val1 + 1
+         if (val2 > 0) F_i0 = mpx*val1 + 1
       endif
 
       if (Part_type_S == 'MOSTUNIFORM') then
          val1  = F_npts / npe
          irest = F_npts - val1 * npe
          F_i0  = mpx * val1 + 1
-         if ( mpx .lt. irest ) then
+         if ( mpx < irest ) then
             val1 = val1 + 1
             F_i0 = F_i0 + mpx
          else
@@ -66,7 +66,7 @@
          endif
       endif
 
-      if (F_i0 .gt. F_npts)  then
+      if (F_i0 > F_npts)  then
          write (6,9001) F_npts,npe,trim(Part_type_S)
          return
       end if
@@ -89,4 +89,4 @@
 !
       return
       end
- 
+

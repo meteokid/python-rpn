@@ -137,13 +137,13 @@ contains
     do i=0,nodd-1           ! split into even / odd (assumed zero)
       even(i) = f(i)
     enddo
-    if(iand(ni,1) .ne. 0) even(nodd) = f(nodd)      ! one more even values than odd values if ni is odd
-    if(iand(ni,1) .eq. 0) even(nodd) = even(nodd-1) ! mirror condition at upper boundary if ni is even
+    if(iand(ni,1) /= 0) even(nodd) = f(nodd)      ! one more even values than odd values if ni is odd
+    if(iand(ni,1) == 0) even(nodd) = even(nodd-1) ! mirror condition at upper boundary if ni is even
     do i = 0,nodd-1
       f(2*i)   = even(i)
       f(2*i+1) = .5 * (even(i) + even(i+1))
     enddo
-    if(iand(ni,1) .ne. 0) f(ni-1) = even(neven-1)   ! odd number of points, one extra even element
+    if(iand(ni,1) /= 0) f(ni-1) = even(neven-1)   ! odd number of points, one extra even element
   end subroutine inv_linear53_dwt1d_r4z
 end subroutine inv_linear53_dwt2d_r4z
 
@@ -191,7 +191,7 @@ contains
       even(i) = f(i)
       odd(i)  = f(neven+i)
     enddo
-    if(iand(ni,1) .ne. 0) even(nodd) = f(nodd)   ! one more even values than odd values if ni is odd
+    if(iand(ni,1) /= 0) even(nodd) = f(nodd)   ! one more even values than odd values if ni is odd
     odd(-1)   = odd(0)         ! mirror condition at lower boundary
     odd(nodd) = odd(nodd-1)    ! mirror condition at upper boundary, used only of ni is odd
 
@@ -200,7 +200,7 @@ contains
       even(i) = even(i) - .25 * (odd(i-1) + odd(i))
     enddo
 
-    if(iand(ni,1) .eq. 0) even(nodd) = even(nodd-1) ! mirror condition at upper boundary if ni is even
+    if(iand(ni,1) == 0) even(nodd) = even(nodd-1) ! mirror condition at upper boundary if ni is even
     do i = 0,nodd-1  ! unpredict odd points
       odd(i) = odd(i) + .5 * (even(i) + even(i+1))
     enddo
@@ -208,7 +208,7 @@ contains
       f(2*i)   = even(i)
       f(2*i+1) = odd(i)
     enddo
-    if(iand(ni,1) .ne. 0) f(ni-1) = even(neven-1)  ! odd number of points, one extra even element
+    if(iand(ni,1) /= 0) f(ni-1) = even(neven-1)  ! odd number of points, one extra even element
   end subroutine inv_linear53_dwt1d_r4
 end subroutine inv_linear53_dwt2d_r4
 
@@ -252,7 +252,7 @@ contains
       even(i) = f(2*i)
       odd(i)  = f(2*i+1)
     enddo
-    if(iand(ni,1) .ne. 0) then  ! is ni odd ?
+    if(iand(ni,1) /= 0) then  ! is ni odd ?
       even(nodd) = f(ni-1)      ! one more even values than odd values if ni is odd
     else
       even(nodd) = even(nodd-1) ! mirror condition at upper boundary if ni is even
@@ -307,7 +307,7 @@ contains
       even(i) = f(2*i)
       odd(i)  = f(2*i+1)
     enddo
-    if(iand(ni,1) .ne. 0) then  ! is ni odd ?
+    if(iand(ni,1) /= 0) then  ! is ni odd ?
       even(nodd) = f(ni-1)      ! one more even values than odd values if ni is odd
     else
       even(nodd) = even(nodd-1) ! mirror condition at upper boundary if ni is even

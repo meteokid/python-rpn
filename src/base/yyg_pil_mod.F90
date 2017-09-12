@@ -1,7 +1,22 @@
-#if defined (DOC)
-!
-!**comdeck yyg_pil.cdk
-!
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+
+module yyg_pil
+   implicit none
+   public
+   save
 !______________________________________________________________________
 !                                                                      |
 !  VARIABLES ASSOCIATED WITH BCS communication for Yin-Yang            |
@@ -37,28 +52,17 @@
 ! Pil_send_s4(*,M)   | element (s(2,2)) in matrix for polar vectors    |
 !                    | transformation                                  |
 !______________________________________________________________________|
-#endif
 !
 !Declarations for Scalar variables (on Phi grid for cubic interpolation)
-      integer  Pil_send_all, Pil_recv_all,Pil_sendmaxproc,Pil_recvmaxproc
-      integer, dimension (:  ), pointer :: &
-               Pil_sendproc, Pil_recvproc, &
-               Pil_recv_len, Pil_send_len, &
-               Pil_recv_adr, Pil_send_adr, &
-               Pil_recv_i   , Pil_recv_j   , Pil_send_imx , Pil_send_imy
-!
-      real*8,  dimension (: ), pointer :: &
-               Pil_send_xxr, Pil_send_yyr, & 
-               Pil_send_s1,  Pil_send_s2, Pil_send_s3, Pil_send_s4
-!
-      common/Pil_i/ Pil_send_all, Pil_recv_all, &
-               Pil_sendmaxproc,Pil_recvmaxproc, &
-               Pil_sendproc, Pil_recvproc, &
-               Pil_recv_len, Pil_send_len, &
-               Pil_recv_adr, Pil_send_adr, &
-               Pil_recv_i   , Pil_recv_j   , Pil_send_imx , Pil_send_imy
+   integer :: Pil_send_all, Pil_recv_all,Pil_sendmaxproc,Pil_recvmaxproc
+   integer, dimension (:  ), pointer :: &
+            Pil_sendproc, Pil_recvproc, &
+            Pil_recv_len, Pil_send_len, &
+            Pil_recv_adr, Pil_send_adr, &
+            Pil_recv_i   , Pil_recv_j   , Pil_send_imx , Pil_send_imy
 
-      common/Pil_r8/ &
-               Pil_send_xxr, Pil_send_yyr, &
-               Pil_send_s1,  Pil_send_s2, Pil_send_s3, Pil_send_s4
-!
+   real*8,  dimension (: ), pointer :: &
+            Pil_send_xxr, Pil_send_yyr, &
+            Pil_send_s1,  Pil_send_s2, Pil_send_s3, Pil_send_s4
+
+end module yyg_pil

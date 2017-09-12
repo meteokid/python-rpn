@@ -62,11 +62,11 @@
          do n= 1, Tr3d_ntr
             trname_S = 'TR/'//trim(Tr3d_name_S(n))//':P'
             istat = gmm_get(trim(trname_S),data3d)
-            if ( (Tr3d_name_S(n)(1:2).eq.'HU') .or. &
+            if ( (Tr3d_name_S(n)(1:2) == 'HU') .or. &
                  (Schm_wload_L.and.Tr3d_wload(n)) )then
                ptr3d => tdu(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,1:l_nk)
                if ( phy_get (ptr3d, trim(trname_S), F_npath='V', F_bpath='D', &
-                             F_end=(/-1,-1,l_nk/), F_quiet=.true.) .lt. 0 ) cycle
+                             F_end=(/-1,-1,l_nk/), F_quiet=.true.) < 0 ) cycle
 !$omp parallel private(i,j,k)
 !$omp do
                do k=1, l_nk
@@ -93,7 +93,7 @@
             ptr3d => data3d(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,1:l_nk)
             istat = phy_get ( ptr3d, trim(trname_S), F_npath='V', F_bpath='D',&
                               F_end=(/-1,-1,l_nk/), F_quiet=.true. )
-            if (Tr3d_name_S(k)(1:2).eq.'HU' .and. SMOOTH_EXPLICIT) istat = ipf_smooth_tend(ptr3d,'SQE') 
+            if (Tr3d_name_S(k)(1:2) == 'HU' .and. SMOOTH_EXPLICIT) istat = ipf_smooth_tend(ptr3d,'SQE')
          enddo
       endif
 
@@ -139,7 +139,8 @@
             !-----------------------------------------------------------------------------------------------------
             !d(ps) = Vertical_Integral [ d(qw)/(1-qw_phy)] d(pi) (Claude Girard)
             !-----------------------------------------------------------------------------------------------------
-!$omp parallel private(i,j,k) shared(qw_dyn,qw_phy,pr_m_dyn_8,pr_m_phy_8,pr_p0_8)
+!$omp parallel private(i,j,k) &
+!$omp shared(qw_dyn,qw_phy,pr_m_dyn_8,pr_m_phy_8,pr_p0_8)
 !$omp do
             do j=1+pil_s,l_nj-pil_n
                do k=1,l_nk
@@ -187,7 +188,7 @@
          istat = gmm_get(trim(trname_S),data3d)
          ptr3d => data3d(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,1:l_nk)
          if ( phy_get ( ptr3d, trim(trname_S), F_npath='V', F_bpath='D',&
-                        F_end=(/-1,-1,l_nk/), F_quiet=.true. ) .lt.0 ) cycle
+                        F_end=(/-1,-1,l_nk/), F_quiet=.true. ) < 0 ) cycle
          trname_S = 'TR/'//trim(Tr3d_name_S(k))//':M'
          if (Grd_yinyang_L) &
          call yyg_xchng (data3d, l_minx,l_maxx,l_miny,l_maxy, &
@@ -198,7 +199,7 @@
          cnt   = cnt + 1
       end do
 
-      if (cnt.gt.0) then
+      if (cnt > 0) then
          istat = gmm_get(gmmk_tt1_s, tt1)
          call tt2virt2 (tt1, .true., l_minx,l_maxx,l_miny,l_maxy,l_nk)
          if (Grd_yinyang_L) then

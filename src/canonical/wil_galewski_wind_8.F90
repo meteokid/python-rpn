@@ -67,8 +67,8 @@
 
       endif
 
-      if (kind.eq.1) wil_galewski_wind_8 = wind_wk_8
-      if (kind.eq.2) wil_galewski_wind_8 = vort_wk_8
+      if (kind == 1) wil_galewski_wind_8 = wind_wk_8
+      if (kind == 2) wil_galewski_wind_8 = vort_wk_8
 
       !---------------------------------------------------------------
 

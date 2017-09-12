@@ -20,7 +20,7 @@
       use wil_options
       use gem_options
       use grid_options
-      use tdpack, only : omega_8  
+      use tdpack, only : omega_8
 
       use glb_ld
       use lun
@@ -62,7 +62,7 @@
 !     ---------------------------------------
       s0 = F_rot_8(3,3)
 
-      if ( abs( (abs(s0)-ONE) ).gt.1.0e-10 ) then
+      if ( abs( (abs(s0)-ONE) ) > 1.0e-10 ) then
          ang = atan2( F_rot_8(2,3), F_rot_8(1,3) )
       else
          s0 = sign( ONE, s0 )
@@ -103,7 +103,7 @@
 
       coef_8 = TWO * omega_8
 
-      if (trim(Grd_yinyang_S) .eq. 'YAN') then
+      if (trim(Grd_yinyang_S) == 'YAN') then
 
 !       processing coriolis FACTOR on V grid
 !       ____________________________________

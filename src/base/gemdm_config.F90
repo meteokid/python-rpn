@@ -57,9 +57,9 @@
          return
       endif
 
-      if ( (Step_nesdt .le. 0) .and. (Grd_typ_S(1:1).eq.'L') &
+      if ( (Step_nesdt <= 0) .and. (Grd_typ_S(1:1) == 'L') &
                                .and. (.not. Lam_ctebcs_L ) ) then
-         if (Lun_out.gt.0) write(Lun_out,*)  &
+         if (Lun_out > 0) write(Lun_out,*)  &
                     ' Fcst_nesdt_S must be specified in namelist &step'
          return
       endif
@@ -75,7 +75,7 @@
       if (lun_out>0) write (Lun_out,6007) Step_runstrt_S, datev
       call datp2f ( Step_CMCdate0, Step_runstrt_S)
 
-      Lun_debug_L = (Lctl_debug_L.and.Ptopo_myproc.eq.0)
+      Lun_debug_L = (Lctl_debug_L.and.Ptopo_myproc == 0)
 
 !     Use newcode style:
       call convip ( ipcode, pcode, ipkind, 0, ' ', .false. )
@@ -126,13 +126,13 @@
       endif
       Out3_postproc_fact = max(0,Out3_postproc_fact)
 
-      if(Out3_nbitg .lt. 0) then
+      if(Out3_nbitg < 0) then
          if (lun_out>0) write (Lun_out, 9154)
          Out3_nbitg=16
       endif
       Out3_lieb_nk = 0
       do i = 1, MAXELEM
-         if(Out3_lieb_levels(i) .le. 0. ) goto 81
+         if(Out3_lieb_levels(i) <= 0. ) goto 81
          Out3_lieb_nk = Out3_lieb_nk + 1
       enddo
  81   continue
@@ -142,7 +142,7 @@
 !     Counting # of vertical levels specified by user
       G_nk = 0
       do k = 1, maxhlev
-         if (hyb(k) .lt. 0.) exit
+         if (hyb(k) < 0.) exit
          G_nk = k
       enddo
       if (lun_out>0) &
@@ -158,7 +158,7 @@
       err= min( timestr2step (Grdc_ndt,   Grdc_nfe    , Step_dt), err)
       err= min( timestr2step (Grdc_start, Grdc_start_S, Step_dt), err)
       err= min( timestr2step (Grdc_end,   Grdc_end_S  , Step_dt), err)
-      if (err.lt.0) return
+      if (err < 0) return
 
       if (Grdc_ndt   > -1) Grdc_ndt  = max( 1, Grdc_ndt)
       if (Grdc_start <  0) Grdc_start= Lctl_step
@@ -166,8 +166,10 @@
 
       Grdc_maxcfl = max(1,Grdc_maxcfl)
       Grdc_pil    = Grdc_maxcfl + Grd_bsc_base + Grd_bsc_ext1
-      Grdc_iref   = Grdc_ni / 2 + Grdc_pil
-      Grdc_jref   = Grdc_nj / 2 + Grdc_pil
+      if ((Grdc_iref==-1) .and. (Grdc_jref==-1)) then
+           Grdc_iref   = Grdc_ni / 2 + Grdc_pil
+           Grdc_jref   = Grdc_nj / 2 + Grdc_pil
+      endif
       Grdc_ni     = Grdc_ni   + 2*Grdc_pil
       Grdc_nj     = Grdc_nj   + 2*Grdc_pil
 
@@ -258,7 +260,7 @@
 
 !     Check for modified epsilon/ super epsilon
       if ( Cstv_rE_8 /= 1.0d0 ) then
-         if (Cstv_Tstr_8 .lt. 0. ) then
+         if (Cstv_Tstr_8 < 0. ) then
              if (lun_out>0) write (Lun_out, 9680) 'Cstv_rE_8'
             return
          endif
@@ -269,8 +271,8 @@
          endif
       endif
 
-      if ( Cstv_bA_8 .lt. Cstv_bA_m_8)  Cstv_bA_m_8=Cstv_bA_8
-      if ( Cstv_bA_nh_8 .lt. Cstv_bA_8) Cstv_bA_nh_8=Cstv_bA_8
+      if ( Cstv_bA_8 < Cstv_bA_m_8)  Cstv_bA_m_8=Cstv_bA_8
+      if ( Cstv_bA_nh_8 < Cstv_bA_8) Cstv_bA_nh_8=Cstv_bA_8
 
 !     Check for incompatible use of IAU and DF
       if (Iau_period > 0. .and. Init_balgm_L) then
@@ -288,14 +290,14 @@
       if (Schm_autobar_L) then
          Schm_hydro_L = .true.
          call wil_set (Schm_topo_L,Schm_testcases_adv_L,Lun_out,err)
-         if (err.lt.0) return
+         if (err < 0) return
          if (Lun_out>0) write (Lun_out, 6100) Schm_topo_L
       endif
 
       err= 0
       err= min( timestr2step (Init_dfnp, Init_dflength_S, Step_dt), err)
       err= min( timestr2sec  (sec,       Init_dfpl_S,     Step_dt), err)
-      if (err.lt.0) return
+      if (err < 0) return
 
       Init_halfspan = -9999
 
@@ -327,12 +329,12 @@
          call handle_error_setdebug(Lctl_debug_L)
       endif
 
-      if (Hzd_lnr_theta .lt. 0.) then
+      if (Hzd_lnr_theta < 0.) then
          Hzd_lnr_theta = Hzd_lnr
          if (lun_out>0) write (Lun_out, 6200)
       endif
-      if (Hzd_pwr_theta .lt. 0 ) then
-         if ((lun_out>0).and.(Hzd_lnr_theta .gt. 0.)) write (Lun_out, 6201)
+      if (Hzd_pwr_theta < 0 ) then
+         if ((lun_out>0).and.(Hzd_lnr_theta > 0.)) write (Lun_out, 6201)
          Hzd_pwr_theta = Hzd_pwr
       endif
 
@@ -348,7 +350,7 @@
       else
          err= min( timestr2step (Vtopo_ndt,Vtopo_length_S,Step_dt),err)
       endif
-      Vtopo_L = (Vtopo_ndt .gt. 0)
+      Vtopo_L = (Vtopo_ndt > 0)
 
  6005 format (/' Starting time Step_runstrt_S not specified'/)
  6007 format (/X,48('#'),/,2X,'STARTING DATE OF THIS RUN IS : ',a16,/ &

@@ -115,7 +115,7 @@
             end do
             end do
             end do
-         elseif ( Step_kount .eq. Init_halfspan ) then
+         elseif ( Step_kount == Init_halfspan ) then
             tra(1:l_ni,1:l_nj,1:G_nk) = tr(1:l_ni,1:l_nj,1:G_nk)
          endif
 

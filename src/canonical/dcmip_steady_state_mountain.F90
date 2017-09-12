@@ -58,10 +58,11 @@
 
       real(8)  :: lon, &          ! Longitude (radians)
                   lat, &          ! Latitude (radians)
-                  z,   &          ! Height (m)
-                  hyam,&          ! A coefficient for hybrid-eta coordinate, at model level midpoint
-                  hybm,&          ! B coefficient for hybrid-eta coordinate, at model level midpoint
-                  gc              ! bar{z} for Gal-Chen coordinate
+                  z               ! Height (m)
+               !!!z,   &          ! Height (m)
+               !!!hyam,&          ! A coefficient for hybrid-eta coordinate, at model level midpoint
+               !!!hybm,&          ! B coefficient for hybrid-eta coordinate, at model level midpoint
+               !!!gc              ! bar{z} for Gal-Chen coordinate
 
       logical  :: hybrid_eta      ! flag to indicate whether the hybrid sigma-p (eta) coordinate is used
                                   ! if set to .true., then the pressure will be computed via the
@@ -99,7 +100,7 @@
 
       !-----------------------------------------------------------------------
 
-      if (Lun_out.gt.0) write (Lun_out,1000) Set_topo_L
+      if (Lun_out > 0) write (Lun_out,1000) Set_topo_L
 
       zcoords    = 0
       hybrid_eta = .TRUE. ! as in GEM
@@ -128,7 +129,7 @@
             lat   = geomh_y_8(j)
             y_a_8 = geomh_y_8(j)
 
-            if (Ptopo_couleur.eq.0) then
+            if (Ptopo_couleur == 0) then
 
                do i = 1,l_ni
 
@@ -136,7 +137,7 @@
 
                   if (.NOT.Set_topo_L) phis = F_topo(i,j)
 
-                  call test2_steady_state_mountain (lon,lat,p,z,zcoords,Ver_a_8%t(k),Ver_b_8%t(k),Cstv_pref_8,hybrid_eta,hyam,hybm, &
+                  call test2_steady_state_mountain (lon,lat,p,z,zcoords,Ver_a_8%t(k),Ver_b_8%t(k),Cstv_pref_8,hybrid_eta, &
                                                     u,v,w,t,tv,phis,ps,rho,q,Set_topo_L)
 
                   F_t(i,j,k)  = tv
@@ -171,7 +172,7 @@
 
                   if (.NOT.Set_topo_L) phis = F_topo(i,j)
 
-                  call test2_steady_state_mountain (lon,lat,p,z,zcoords,Ver_a_8%t(k),Ver_b_8%t(k),Cstv_pref_8,hybrid_eta,hyam,hybm, &
+                  call test2_steady_state_mountain (lon,lat,p,z,zcoords,Ver_a_8%t(k),Ver_b_8%t(k),Cstv_pref_8,hybrid_eta, &
                                                     utt_8,vtt_8,w,t,tv,phis,ps,rho,q,Set_topo_L)
 
                   F_t(i,j,k)  = tv
@@ -209,7 +210,7 @@
             lat   = geomh_y_8(j)
             y_a_8 = geomh_y_8(j)
 
-            if (Ptopo_couleur.eq.0) then
+            if (Ptopo_couleur == 0) then
 
                do i = 1,l_niu
 
@@ -217,7 +218,7 @@
 
                   if (.NOT.Set_topo_L) phis = F_topo(i,j)
 
-                  call test2_steady_state_mountain (lon,lat,p,z,zcoords,Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,hybrid_eta,hyam,hybm, &
+                  call test2_steady_state_mountain (lon,lat,p,z,zcoords,Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,hybrid_eta, &
                                                     utt_8,vtt_8,w,t,tv,phis,ps,rho,q,Set_topo_L)
 
                   F_u(i,j,k) = u
@@ -246,7 +247,7 @@
 
                   if (.NOT.Set_topo_L) phis = F_topo(i,j)
 
-                  call test2_steady_state_mountain (lon,lat,p,z,zcoords,Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,hybrid_eta,hyam,hybm, &
+                  call test2_steady_state_mountain (lon,lat,p,z,zcoords,Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,hybrid_eta, &
                                                     utt_8,vtt_8,w,t,tv,phis,ps,rho,q,Set_topo_L)
 
                   u = s_8(1,1)*utt_8 + s_8(1,2)*vtt_8
@@ -280,7 +281,7 @@
             lat   = geomh_yv_8(j)
             y_a_8 = geomh_yv_8(j)
 
-            if (Ptopo_couleur.eq.0) then
+            if (Ptopo_couleur == 0) then
 
                do i = 1,l_ni
 
@@ -288,7 +289,7 @@
 
                   if (.NOT.Set_topo_L) phis = F_topo(i,j)
 
-                  call test2_steady_state_mountain (lon,lat,p,z,zcoords,Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,hybrid_eta,hyam,hybm, &
+                  call test2_steady_state_mountain (lon,lat,p,z,zcoords,Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,hybrid_eta, &
                                                     utt_8,vtt_8,w,t,tv,phis,ps,rho,q,Set_topo_L)
 
                   F_v(i,j,k) = v
@@ -317,7 +318,7 @@
 
                   if (.NOT.Set_topo_L) phis = F_topo(i,j)
 
-                  call test2_steady_state_mountain (lon,lat,p,z,zcoords,Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,hybrid_eta,hyam,hybm, &
+                  call test2_steady_state_mountain (lon,lat,p,z,zcoords,Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,hybrid_eta, &
                                                     utt_8,vtt_8,w,t,tv,phis,ps,rho,q,Set_topo_L)
 
                   v = s_8(2,1)*utt_8 + s_8(2,2)*vtt_8

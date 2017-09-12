@@ -115,7 +115,7 @@
          !------------------------------------------------------
          do j=1+pil_s,l_nj-pil_n
          do i=1+pil_w,l_ni-pil_e
-            if(fis0(i,j).gt.1.) then
+            if(fis0(i,j) > 1.) then
                pr_p0_0_8(i,j) = pr_p0_0_8(i,j) + &
                  (PSADJ_g_avg_ps_initial_8 - g_avg_ps_0_8)*PSADJ_fact_8
             else

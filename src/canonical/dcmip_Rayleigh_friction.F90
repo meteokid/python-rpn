@@ -13,13 +13,13 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r dcmip_Rayleigh_friction - Apply Rayleigh Friction (Based on subr. height_sponge) 
- 
+!**s/r dcmip_Rayleigh_friction - Apply Rayleigh Friction (Based on subr. height_sponge)
+
       subroutine dcmip_Rayleigh_friction
- 
+
       use gmm_vt1
       use canonical
-      use dcmip_options 
+      use dcmip_options
 
       use glb_ld
       use cstv
@@ -29,17 +29,17 @@
 
       !object
       !================================================================
-      !   Apply Rayleigh Friction 
+      !   Apply Rayleigh Friction
       !   -------------------------------------------------------------
-      !   NOTE: The damping is not applied on zd and probably should be  
+      !   NOTE: The damping is not applied on zd and probably should be
       !================================================================
-    
- 
+
+
       !-----------------------------------------------------------------------
 
-      integer istat,i,j,k
+      integer istat
 
-      real w_fcu(l_minx:l_maxx,l_miny:l_maxy,l_nk), & 
+      real w_fcu(l_minx:l_maxx,l_miny:l_maxy,l_nk), &
            w_fcv(l_minx:l_maxx,l_miny:l_maxy,l_nk), &
            w_fcw(l_minx:l_maxx,l_miny:l_maxy,l_nk)
 
@@ -48,11 +48,11 @@
       if (.NOT.(Dcmip_case== 20.or. &
                 Dcmip_case== 21.or. &
                 Dcmip_case== 22.or. &
-                Dcmip_case==163)) call handle_error(-1,'DCMIP_RAYLEIGH_FRICTION','FCU FCV FCW need to be prescribed') 
+                Dcmip_case==163)) call handle_error(-1,'DCMIP_RAYLEIGH_FRICTION','FCU FCV FCW need to be prescribed')
 
-      if (Lun_out.gt.0) write (Lun_out,1000) 
- 
-      !Recover Winds u,v,w to be treated by Rayleigh damped layer 
+      if (Lun_out > 0) write (Lun_out,1000)
+
+      !Recover Winds u,v,w to be treated by Rayleigh damped layer
       !----------------------------------------------------------
       istat = gmm_get(gmmk_ut1_s,ut1)
       istat = gmm_get(gmmk_vt1_s,vt1)
@@ -64,7 +64,7 @@
       istat = gmm_get(gmmk_vref_s,vref)
       istat = gmm_get(gmmk_wref_s,wref)
 
-      !Recover Factors u,v,w for Rayleigh damped layer (linked to vertical grid dependence) 
+      !Recover Factors u,v,w for Rayleigh damped layer (linked to vertical grid dependence)
       !------------------------------------------------------------------------------------
       istat = gmm_get(gmmk_fcu_s,fcu)
       istat = gmm_get(gmmk_fcv_s,fcv)
@@ -79,20 +79,20 @@
       call dcmip_apply ( wt1, wref, w_fcw, l_minx, l_maxx, l_miny, l_maxy, l_ni,  l_nj, l_nk)
 
       !---------------------------------------------------------------
- 
+
       return
 
  1000 format( &
       /,'APPLY RAYLEIGH FRICTION: (S/R DCMIP_RAYLEIGH FRICTION)',   &
       /,'======================================================',/,/)
 
-      end subroutine dcmip_Rayleigh_friction  
+      end subroutine dcmip_Rayleigh_friction
 
 !==================================================================================
 
 !**s/r dcmip_apply - Apply Rayleigh Friction for a given field
 
-      subroutine dcmip_apply (F_ff,F_ffref,F_damp,Minx,Maxx,Miny,Maxy,Ni,Nj,Nk) ! Based on subr. apply 
+      subroutine dcmip_apply (F_ff,F_ffref,F_damp,Minx,Maxx,Miny,Maxy,Ni,Nj,Nk) ! Based on subr. apply
 
       use glb_ld
       use cstv
@@ -102,10 +102,10 @@
 
       !object
       !============================================
-      !   Apply Rayleigh Friction for a given field 
+      !   Apply Rayleigh Friction for a given field
       !============================================
 
-      integer  Minx,Maxx,Miny,Maxy,Ni,Nj,Nk 
+      integer  Minx,Maxx,Miny,Maxy,Ni,Nj,Nk
 
       real F_ff(Minx:Maxx,Miny:Maxy,Nk),F_ffref(Minx:Maxx,Miny:Maxy,Nk),F_damp(Minx:Maxx,Miny:Maxy,Nk)
 
@@ -122,7 +122,7 @@
       enddo
 
       !---------------------------------------------------------------
-      
+
       return
 
-      end subroutine dcmip_apply  
+      end subroutine dcmip_apply

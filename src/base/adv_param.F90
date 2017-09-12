@@ -27,7 +27,6 @@
    !@revisions
    !*@/
 
-
       real*8, parameter :: LARGE_8 = 1.D20 , TWO_8 = 2.D0  , SIX_8 = 6.D0
       integer :: i, j, k, i0, j0, k0, pnx, pny
       real*8 :: ra,rb,rc,rd
@@ -35,12 +34,15 @@
       real*8 :: whx(G_ni+2*adv_halox)
       real*8 :: why(G_nj+2*adv_haloy)
       real*8, dimension(0:l_nk+1) :: whzt,whzm,whzx
+      real*8 sig
+      real*8 triprod,za,zb,zc,zd
 
-      real*8 :: TRIPROD,za,zb,zc,zd
-      TRIPROD(za,zb,zc,zd) = ((za-zb)*(za-zc)*(za-zd))
-!
+      triprod(za,zb,zc,zd) = ((za-zb)*(za-zc)*(za-zd))
+
 !     ---------------------------------------------------------------
-!
+
+! Vertical variable type:  Height--> sig <0 , Pressure --> sig >0
+      sig=(Ver_z_8%m(l_nk)-Ver_z_8%m(1))/(abs(  Ver_z_8%m(l_nk)-Ver_z_8%m(1) ))
 
       adv_xbc_8 = 1.D0/(adv_xg_8(adv_gminx+1)-adv_xg_8(adv_gminx))
       adv_xabcd_8=-adv_xbc_8**3/SIX_8
@@ -73,18 +75,21 @@
 ! Prepare zeta on super vertical grid
 
       whzt(0    ) = 1.0 ; whzt(l_nk  ) = 1.0 ; whzt(l_nk+1) = 1.0
+      if( sig <0.) whzt(0    ) = 1000. ; whzt(l_nk  ) = 1000. ; whzt(l_nk+1) = 1000.
       do k = 1,l_nk-1
          whzt(k) = Ver_z_8%t(k+1) - Ver_z_8%t(k)
          prhzmn = min(whzt(k), prhzmn)
       enddo
 
       whzm(0    ) = 1.0  ; whzm(l_nk  ) = 1.0 ; whzm(l_nk+1) = 1.0
+      if( sig <0.)   whzm(0    ) = 1000.  ; whzm(l_nk  ) = 1000. ; whzm(l_nk+1) = 1000.
       do k = 1,l_nk-1
          whzm(k) = Ver_z_8%m(k+1) - Ver_z_8%m(k)
          prhzmn = min(whzm(k), prhzmn)
       enddo
 
       whzx(0    ) = 1.0 ; whzx(l_nk  ) = 1.0 ; whzx(l_nk+1) = 1.0
+      if( sig <0.)  whzx(0    ) = 1000. ; whzx(l_nk  ) = 1000. ; whzx(l_nk+1) = 1000.
       do k = 1,l_nk-1
          whzx(k) = Ver_z_8%x(k+1) - Ver_z_8%x(k)
          prhzmn = min(whzx(k), prhzmn)
@@ -92,11 +97,11 @@
 
       adv_ovdx_8 = 1.0d0/prhxmn
       adv_ovdy_8 = 1.0d0/prhymn
-      adv_ovdz_8 = 1.0d0/prhzmn
+      adv_ovdz_8 = sig/prhzmn
 
       pnx = int(1.0+(adv_xg_8(adv_gmaxx)-adv_x00_8)   *adv_ovdx_8)
       pny = int(1.0+(adv_yg_8(adv_gmaxy)-adv_y00_8)   *adv_ovdy_8)
-      pnz = nint(1.0+(Ver_z_8%m(l_nk+1)-Ver_z_8%m(0))*adv_ovdz_8)
+      pnz = nint(1.0+ sig*(Ver_z_8%m(l_nk+1)-Ver_z_8%m(0))*adv_ovdz_8)
 
       allocate( adv_lcx(pnx), adv_lcy(pny),  adv_bsx_8(G_ni+2*adv_halox), &
               adv_dlx_8(G_ni+2*adv_halox), adv_bsy_8(G_nj+2*adv_haloy), &
@@ -134,10 +139,13 @@
       k0 = 1
       do k = 1,pnz
          pdfi = Ver_z_8%m(0) + (k-1) * prhzmn
+        if ( sig > 0.d0) then
          if (pdfi > Ver_z_8%t(k0+1)) k0 = min(l_nk-2, k0+1)
+        else
+         if (pdfi < Ver_z_8%t(k0+1)) k0 = min(l_nk-2, k0+1)
+        endif
          adv_lcz%t(k) = k0
       enddo
-
       do k = 0,l_nk+1            !! warning note the shift in k !!
          adv_dlz_8%t(k-1) =       whzt(k)
       enddo
@@ -145,11 +153,14 @@
       do k = 1,l_nk
          adv_bsz_8%t(k-1) = Ver_z_8%t(k)
       enddo
-
       k0 = 1
       do k = 1,pnz
          pdfi = Ver_z_8%m(0) + (k-1) * prhzmn
+        if ( sig > 0.d0) then
          if (pdfi > Ver_z_8%m(k0+1)) k0 = min(l_nk-2, k0+1)
+        else
+         if (pdfi < Ver_z_8%m(k0+1)) k0 = min(l_nk-2, k0+1)
+        endif
          adv_lcz%m(k) = k0
       enddo
 
@@ -164,7 +175,11 @@
       k0 = 1
       do k = 1,pnz
          pdfi = Ver_z_8%m(0) + (k-1) * prhzmn
+        if ( sig > 0.d0) then
          if (pdfi > Ver_z_8%x(k0+1)) k0 = min(l_nk-2, k0+1)
+        else
+         if (pdfi < Ver_z_8%x(k0+1)) k0 = min(l_nk-2, k0+1)
+        endif
          adv_lcz%x(k) = k0
       enddo
 

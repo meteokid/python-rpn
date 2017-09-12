@@ -84,9 +84,9 @@
 
                !Check if poids <0
                !-----------------
-               if (poids(i,j)*(1.d0-poids(i,j)) .gt. 0.d0) then
+               if (poids(i,j)*(1.d0-poids(i,j)) > 0.d0) then
                    sp(1) = sp(1) + poids(i,j)*area_4(i,j)
-               elseif (abs(poids(i,j)-1.d0) .lt. 1.d-14) then
+               elseif (abs(poids(i,j)-1.d0) < 1.d-14) then
                    sp(2) = sp(2) + poids(i,j)*area_4(i,j)
                endif
 
@@ -106,12 +106,12 @@
 
             x_a_4 = poids(i,j)*(2.d0*acos(-1.d0) - sf(2))/sf(1)
 
-            if (poids(i,j)*(1.d0-poids(i,j)) .gt. 0.d0) then
+            if (poids(i,j)*(1.d0-poids(i,j)) > 0.d0) then
                 poids(i,j) = min( 1.0d0, x_a_4 )
             endif
-            if (poids(i,j)*(1.0-poids(i,j)) .gt. 0.d0) then
+            if (poids(i,j)*(1.0-poids(i,j)) > 0.d0) then
                 sp(1) = sp(1) + poids(i,j)*area_4(i,j)
-            elseif (abs(poids(i,j)-1.d0) .lt. 1.d-14) then
+            elseif (abs(poids(i,j)-1.d0) < 1.d-14) then
                 sp(2) = sp(2) + poids(i,j)*area_4(i,j)
             endif
 
@@ -127,7 +127,7 @@
          do i = 1+pil_w, l_ni-pil_e
             x_a_4 = poids(i,j)*(2.d0*acos(-1.d0) - sf(2))/sf(1)
 
-            if (poids(i,j)*(1.d0-poids(i,j)) .gt. 0.d0) then
+            if (poids(i,j)*(1.d0-poids(i,j)) > 0.d0) then
                 poids(i,j) = min( 1.d0, x_a_4 )
             endif
 

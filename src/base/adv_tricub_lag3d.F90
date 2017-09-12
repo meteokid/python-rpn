@@ -145,7 +145,7 @@
             call adv_tricub_lag3d_slice (F_cub, F_in_rho,           &
                                          F_x_usm, F_y_usm, F_z_usm, & !POSITIONS USM
                                          F_x_svm, F_y_svm, F_z_svm, & !POSITIONS SVM
-                                         F_num, l_ni, l_nj, F_k0, F_nk, F_lev)
+                                         F_num, l_ni, F_k0, F_nk, F_lev)
          else
 
             call handle_error(-1,'ADV_TRICUB_LAG3D','Current F_conserv_local NOT AVAILABLE')
@@ -160,7 +160,7 @@
       !Estimate FLUX_out/FLUX_in
       !-------------------------
       if (F_flux_n>0) call adv_tricub_lag3d_flux (F_cub_o, F_in_o, F_cub_i, F_in_i, &
-                                                  F_x, F_y, F_z, F_num, F_k0, F_nk, F_lev)   ! todo:  optimiser
+                                                  F_x, F_y, F_z, F_num, F_k0, F_lev)   ! todo:  optimiser
 
       if ( trim(Adv_component_S) == 'TRAJ' ) then
          call timing_stop (37)

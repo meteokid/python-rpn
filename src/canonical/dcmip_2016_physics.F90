@@ -61,9 +61,7 @@
 
       real(8)  :: dlnpint,zvir
 
-      real(4)  :: t4(l_nk),p4(l_nk)
-
-      real(8) not_rotated_lat(l_ni,l_nj),lon,lat,rlon_8,s_8(2,2),x_a_8,y_a_8,dt_split_8
+      real(8) not_rotated_lat(l_ni,l_nj),lat,rlon_8,s_8(2,2),x_a_8,y_a_8
 
       integer i,j,k,istat,kk,step_reset,test
 
@@ -197,7 +195,7 @@
          lat   = geomh_y_8(j)
          y_a_8 = geomh_y_8(j)
 
-         if (Ptopo_couleur.eq.0) then
+         if (Ptopo_couleur == 0) then
 
              do i = 1, l_ni
 
@@ -339,7 +337,7 @@
             enddo
 
 
-            if (Dcmip_prec_type.ge.0) then
+            if (Dcmip_prec_type >= 0) then
                 !Kessler microphysics or
                 !Reed-Jablonowski large scale precipitation
 
@@ -364,7 +362,7 @@
          istat = gmm_get(gmmk_ut1_s, ut1) !True wind u Staggered
          istat = gmm_get(gmmk_vt1_s, vt1) !True wind v Staggered
 
-!$omp parallel
+!$omp parallel private(k)
 !$omp do
          do k= 1,l_nk
             ut1(1:l_niu,1:l_nj, k) = ut1(1:l_niu,1:l_nj, k) + Cstv_dt_8*sdu(1:l_niu,1:l_nj, k)

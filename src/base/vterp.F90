@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -38,10 +38,10 @@
 !  Name        I/O                 Description
 !----------------------------------------------------------------
 ! F_X           O         X point to find
-! F_F           I         function       
-! F_FX          I         value at one point of the function  
-! F_G           I         slopes of points                    
-! F_Y           I         value of points                     
+! F_F           I         function
+! F_FX          I         value at one point of the function
+! F_G           I         slopes of points
+! F_Y           I         value of points
 ! F_ACC         I         accuracy requested for the interpolation
 !----------------------------------------------------------------------
 !
@@ -54,9 +54,9 @@
 !
       do i=1,np
 !
-        if (F_fx(i) .eq. F_f(i,nn)) then
+        if (F_fx(i) == F_f(i,nn)) then
            F_x(i) = F_y(nn)
-        elseif (F_fx(i) .lt. F_f(i,nn)) then
+        elseif (F_fx(i) < F_f(i,nn)) then
 !          EXTRAPOLATION
            f1 = F_f(i,nn-1)
            f0 = F_f(i,nn)
@@ -67,19 +67,19 @@
            root = g0**2 - 2.*(g0-g1)*(f0-F_fx(i))/(y0-y1)
 !        * IF  ROOT GE 0  USE QUADRATIC EXTRAPOLATION
 !        * IF ROOT LT 0 .OR. G0 = G1     USE LINEAR FORMULA
-           if (root.ge.0.0 .and. abs((g0-g1)/g0).gt.0.01) then 
+           if (root >= 0.0 .and. abs((g0-g1)/g0) > 0.01) then
               root = sqrt(root)
               F_x(i)    = y0-(y0-y1)*(g0+root)/(g0-g1)
            else
               F_x(i)    = y0+(F_fx(i)-f0)/g0
            endif
-        elseif (F_fx(i) .gt. F_f(i,1)) then
+        elseif (F_fx(i) > F_f(i,1)) then
            WRITE(*,*)'1 VTERP1 VALEUR A INTERPOLER TROP GRANDE'
            stop
         else
 !          INTERPOLATION
            do 20 n=2,nn
-              if (F_fx(i) .gt. F_f(i,n)) then
+              if (F_fx(i) > F_f(i,n)) then
                  f1 = F_f(i,n-1)
                  f0 = F_f(i,n)
                  g1 = F_g(i,n-1)
@@ -96,9 +96,9 @@
                  q  = F_x(i)-y1
                  r  = c*F_x(i)-cd
                  er = a*p+b*q+p*q*r-F_fx(i)
-                 if (abs(er) .lt. F_acc) goto 40
+                 if (abs(er) < F_acc) goto 40
                  der= a+b+p*r+q*r+c*p*q
-                 F_x(i)  = F_x(i) -er/der 
+                 F_x(i)  = F_x(i) -er/der
                  go to 10
               endif
  20        continue
@@ -111,4 +111,4 @@
 !     ---------------------------------------------------------------
 !
       return
-      end 
+      end

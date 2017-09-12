@@ -47,7 +47,7 @@
 
       !-----------------------------------------------------------------------
 
-      integer i,j,k,istat
+      integer i,j,k
 
       real(8) x_a_8,y_a_8,utt_8,vtt_8,s_8(2,2),rlon_8
 
@@ -76,7 +76,7 @@
 
       !-----------------------------------------------------------------------
 
-      if (Lun_out.gt.0) write (Lun_out,1000)
+      if (Lun_out > 0) write (Lun_out,1000)
 
       zcoords = 0
 
@@ -89,7 +89,7 @@
             lat   = geomh_y_8(j)
             y_a_8 = geomh_y_8(j)
 
-            if (Ptopo_couleur.eq.0) then
+            if (Ptopo_couleur == 0) then
 
                do i = 1,l_ni
 
@@ -142,7 +142,7 @@
             lat   = geomh_y_8(j)
             y_a_8 = geomh_y_8(j)
 
-            if (Ptopo_couleur.eq.0) then
+            if (Ptopo_couleur == 0) then
 
                do i = 1,l_niu
 
@@ -187,7 +187,7 @@
             lat   = geomh_yv_8(j)
             y_a_8 = geomh_yv_8(j)
 
-            if (Ptopo_couleur.eq.0) then
+            if (Ptopo_couleur == 0) then
 
                do i = 1,l_ni
 

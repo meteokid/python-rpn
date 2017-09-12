@@ -324,7 +324,7 @@
       end do
       end do
 
-      if(Cstv_Tstr_8.lt.0.) then
+      if(Cstv_Tstr_8 < 0.) then
          w1=one/Ver_Tstar_8%t(k)
          dlnTstr_8=w1*(Ver_Tstar_8%m(k+1)-Ver_Tstar_8%m(k))*Ver_idz_8%t(k)
          do j = j0, jn
@@ -340,7 +340,7 @@
 
 !$omp  end parallel
 
-      if(hzd_div_damp.gt.0.) then
+      if(hzd_div_damp > 0.) then
          call hz_div_damp ( F_oru, F_orv, F_u, F_v, &
                             i0u,inu,j0u,jnu,i0v,inv,j0v,jnv, &
                             l_minx,l_maxx,l_miny,l_maxy,G_nk )

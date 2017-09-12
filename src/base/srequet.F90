@@ -94,7 +94,7 @@
       integer set_level,set_step,set_grid,set_filt,set_xnbit,set_var,set_conv
       external set_level,set_step,set_grid,set_filt,set_xnbit,set_var,set_conv
 
-      integer p1a,p1b,istat,nada,j
+      integer p1a,p1b,istat,j
 !*
 !
       call rpn_f_callback_setverbose(Lun_out)
@@ -122,7 +122,7 @@
 
       istat= process_f_callback(trim(Path_outcfg_S))
 
-      if (Lun_out.gt.0) then
+      if (Lun_out > 0) then
          write(Lun_out,*)' Level_allpres=',(Level_allpres(j),j=1,Level_npres)
          write(Lun_out,*)'SREQUET:Number of warnings =',istat
       endif

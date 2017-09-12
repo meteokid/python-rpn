@@ -26,7 +26,7 @@
       implicit none
 #include <arch_specific.hf>
 !
-      character*(*) F_nv_S , F_from_S
+      character(len=*) F_nv_S , F_from_S
       integer minx,maxx,miny,maxy,mink,maxk, &
               F_i0,F_j0,F_k0,F_in,F_jn,F_kn,F_no,F_rx
       real F_field(minx:maxx,miny:maxy,mink:maxk)
@@ -37,7 +37,7 @@
 !revision
 ! v2_00 - Desgagne M.       - initial MPI version (from MC2)
 ! v3_00 - Desgagne & Lee    - Lam configuration
-! v3_30 - Tanguay M.        - Ask if Lun_out.gt.0
+! v3_30 - Tanguay M.        - Ask if Lun_out > 0
 ! v3_?  - Lee V.            - acid test
 !
 !object
@@ -86,13 +86,13 @@
          fijk = F_field(i,j,k)
          sum = sum + fijk
          sumd2 = sumd2 + fijk*fijk
-         if (fijk .gt. maxd) then
+         if (fijk > maxd) then
             maxd = fijk
             imax = i
             jmax = j
             kmax = k
          endif
-         if (fijk .lt. mind) then
+         if (fijk < mind) then
             mind = fijk
             imin = i
             jmin = j
@@ -114,8 +114,8 @@
 !
 ! ** On imprime
 !
-!      if(Lun_out.gt.0) then
-         if (F_rx.lt.8) then
+!      if(Lun_out > 0) then
+         if (F_rx < 8) then
             write(6,98) no,F_nv_S,moy,var,imin,jmin,kmin,mind, &
                                        imax,jmax,kmax,maxd,F_from_S
          else

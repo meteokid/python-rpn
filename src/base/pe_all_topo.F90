@@ -46,7 +46,7 @@ use iso_c_binding
 !
       lun_out    = -1
       Lun_debug_L=.false.
-      if (Ptopo_myproc.eq.0) lun_out= 6
+      if (Ptopo_myproc == 0) lun_out= 6
 
       call gemtim4 ( Lun_out, 'STARTING GEMDM', .false. )
       call timing_start2 ( 2, 'INIT_GEM', 1)
@@ -133,11 +133,11 @@ use iso_c_binding
 
       Lun_rstrt = 0 ; Rstri_rstn_L= .false. ; Step_kount= 0
       err = wkoffit('gem_restart')
-      if (err.ge.-1) then
+      if (err >= -1) then
          err= fnom( Lun_rstrt,'gem_restart','SEQ+UNF+OLD',0 )
-         if (err.ge.0) then
+         if (err >= 0) then
            Rstri_rstn_L = .true.
-           if (lun_out.gt.0) write (lun_out,1001)
+           if (lun_out > 0) write (lun_out,1001)
            call rdrstrt
          endif
       endif
@@ -147,8 +147,8 @@ use iso_c_binding
       unf=0
       Schm_theoc_L = .false.
       fn=trim(Path_work_S)//'/theoc'
-      if (wkoffit(fn).gt.-3) then
-         if (Ptopo_myproc.eq.0) write (Lun_out,*) &
+      if (wkoffit(fn) > -3) then
+         if (Ptopo_myproc == 0) write (Lun_out,*) &
                                 'Assume Theoretical case'
          Schm_theoc_L = .true.
       else
@@ -172,7 +172,7 @@ use iso_c_binding
       use clib_itf_mod
       implicit none
 
-      character*(*), intent(IN) :: F_path_S
+      character(len=*), intent(IN) :: F_path_S
       integer      , intent(IN) :: F_npex,F_npey
 
       character(len=2048) ici

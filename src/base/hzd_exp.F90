@@ -33,8 +33,8 @@ contains
       implicit none
 #include <arch_specific.hf>
 
-      character*(*)          , intent(IN) :: F_hgrid_S
-      character*(*), optional, intent(IN) :: F_type_S
+      character(len=*)          , intent(IN) :: F_hgrid_S
+      character(len=*), optional, intent(IN) :: F_type_S
       integer, intent(IN) :: Minx,Maxx,Miny,Maxy,Nk
       real, dimension(Minx:Maxx,Miny:Maxy,NK),           intent (INOUT) :: F_c1
       real, dimension(Minx:Maxx,Miny:Maxy,NK), optional, intent (INOUT) :: F_vv
@@ -54,27 +54,27 @@ contains
 !
       dpwr = Hzd_pwr
       niter= Hzd_niter
-      if (niter.gt.0) coef_8(1:NK) = Hzd_coef_8(1:Nk)
+      if (niter > 0) coef_8(1:NK) = Hzd_coef_8(1:Nk)
 
       if (present(F_type_S)) then
-         if (F_type_S.eq.'S_THETA') then
+         if (F_type_S == 'S_THETA') then
             dpwr = Hzd_pwr_theta
             niter= Hzd_niter_theta
-            if (niter.gt.0) coef_8(1:NK) = Hzd_coef_8_theta(1:Nk)
+            if (niter > 0) coef_8(1:NK) = Hzd_coef_8_theta(1:Nk)
          endif
-         if (F_type_S.eq.'S_TR') then
+         if (F_type_S == 'S_TR') then
             dpwr = Hzd_pwr_tr
             niter= Hzd_niter_tr
-            if (niter.gt.0) coef_8(1:NK) = Hzd_coef_8_tr(1:Nk)
+            if (niter > 0) coef_8(1:NK) = Hzd_coef_8_tr(1:Nk)
          endif
-         if (F_type_S.eq.'VSPNG') then
+         if (F_type_S == 'VSPNG') then
             dpwr = 2
             niter= Vspng_niter
-            if (niter.gt.0)coef_8(1:NK) = Vspng_coef_8(1:Nk)
+            if (niter > 0)coef_8(1:NK) = Vspng_coef_8(1:Nk)
          endif
       endif
 
-      if (niter.le.0) return
+      if (niter <= 0) return
       dpwr=dpwr/2
 
 !     Fill all halo regions
@@ -110,7 +110,7 @@ contains
 
             itercnt = itercnt + 1
 
-            if (itercnt.eq.G_halox) then
+            if (itercnt == G_halox) then
                if (Grd_yinyang_L) then
                    if (present(F_vv)) then
                        call yyg_nestuv(c1, c2, l_minx,l_maxx,l_miny,l_maxy,Nk)
@@ -142,7 +142,7 @@ contains
       implicit none
 #include <arch_specific.hf>
 
-      character*(*) F_grd_S
+      character(len=*) F_grd_S
       integer       Minx,Maxx,Miny,Maxy,Nk
       real          F_f2hzd (Minx:Maxx,Miny:Maxy,Nk)
 !
@@ -165,32 +165,32 @@ contains
       rnr = log(1.- Hzd_lnR)
       pwr = Hzd_pwr
 
-      if (F_grd_S.eq.'S_THETA') then
+      if (F_grd_S == 'S_THETA') then
          rnr = log(1.- Hzd_lnR_theta)
          pwr = Hzd_pwr_theta
       endif
-      if (F_grd_S.eq.'S_TR') then
+      if (F_grd_S == 'S_TR') then
          rnr = log(1.- Hzd_lnR_tr)
          pwr = Hzd_pwr_tr
       endif
 
-      if ((F_grd_S.eq.'S_THETA').or.(F_grd_S.eq.'S_TR')) then
+      if ((F_grd_S == 'S_THETA').or.(F_grd_S == 'S_TR')) then
 
          lnr    = 1.0d0 - exp(rnr)
          nu_dif = 0.0d0
-         if (pwr.gt.0) nu_dif = pt25*lnr**(2.d0/pwr)
+         if (pwr > 0) nu_dif = pt25*lnr**(2.d0/pwr)
          nu_dif = min ( nu_dif, pt25-epsilon )
          visco  = min ( nu_dif, pt25 )
-         if (nu_dif.lt.1.0e-10) return
+         if (nu_dif < 1.0e-10) return
 
       else
 !from 4.8: pwr=Hzd_del, lnr=Hzd_visco
          lnr    = 1.0d0 - exp(rnr)
          nu_dif = 0.0d0
-         if (pwr.gt.0) nu_dif = pt25*lnr**(2.d0/pwr)
+         if (pwr > 0) nu_dif = pt25*lnr**(2.d0/pwr)
          nu_dif  = min ( nu_dif, pt25-epsilon )
          visco= min ( nu_dif, pt25 )
-         if (nu_dif.lt.1.0e-10) return
+         if (nu_dif < 1.0e-10) return
 
       endif
 
@@ -204,7 +204,7 @@ contains
          call hzd_nudeln2(F_f2hzd, wk1, l_minx,l_maxx,l_miny,l_maxy,&
                                                    Nk, visco, mm,nn )
 
-         if (mm.ne.nn) &
+         if (mm /= nn) &
               call rpn_comm_xch_halo( wk1, l_minx,l_maxx,l_miny,l_maxy,&
               l_ni,l_nj, Nk, G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 

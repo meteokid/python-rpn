@@ -16,7 +16,7 @@
 !**   s/r ens_marfield_ptp - define a markov chain field for PTP
 !
 
-      subroutine ens_marfield_ptp()
+      subroutine ens_marfield_ptp
 !
       use phy_itf, only : phy_put
 
@@ -30,12 +30,14 @@
       use cstv
       use lun
       use gmm_itf_mod
+      use path
       use ptopo
       implicit none
 #include <arch_specific.hf>
 
+
 !
-!author: Rabah Aider RPN-A  (from ens_marfield_cg.ftn90)
+!author: Rabah Aider R.P.N.-A  (from ens_marfield_cg.ftn90)
 !
 !arguments     none
 !
@@ -43,6 +45,7 @@
 #include <rmnlib_basics.hf>
 #include "ens_gmm_dim.cdk"
 #include "mem.cdk"
+
 !
        real,    external ::  gasdev
        real*8 :: polg
@@ -52,18 +55,22 @@
 ! idum                       Semence du générateur de nombres aléatoires
 !
       integer :: nlat, nlon
-      integer :: l ,m, nc, i, j, indx, ier
+      integer :: l ,m, nc,np, i, j, k, indx, ier
       integer lmin,lmax
-      integer :: gmmstat, istat
+      integer ::  gmmstat, istat
       integer :: gdyy, n
       real    :: fstd, fstr, tau
       real    :: sumsp , fact,fact2
       real    :: offi,offj
-      real xfi(l_ni),yfi(l_nj)
+      real    :: xfi(l_ni),yfi(l_nj)
       real*8  :: rad2deg_8,  pri_8
       logical, save :: init_done=.false.
+      logical :: Init_mc_L
+! placer les chaines de Markov dans perbus
+      integer, save :: mrk2
 !
 ! paidum   pointer vers l'etat du generateur sauvegarde idum
+      type(gmm_metadata) :: meta
       integer, pointer :: paiv,paiy,paiset,pagset,paidum
 !
 !      variables et champs auxiliaires reels
@@ -75,16 +82,21 @@
       real*8,    dimension(:), allocatable :: pspectrum , fact1, fact1n
       real*8,    dimension(:), allocatable  :: wrk1
       real*8,    dimension(:,:,:), allocatable :: p,cc
-      real,    dimension(:,:), allocatable :: f, f_str
-      real,    dimension(:,:,:), pointer   ::  ptr3d, fgem_str
+      real  ,    dimension(:,:),allocatable :: f, f_str
+      real,    dimension(:,:,:),pointer   ::  ptr3d, fgem_str
       integer, dimension(:,:) , allocatable :: sig
 
+      integer ::itstep_s, iperiod_iau
+      integer ::ier0,ier1,ier2,ier3,ier4,unf0,unf1,unf2,unf3,unf4
+      character(len=10) :: stnc
 !
 ! Initialise les variables de Ens_nml.cdk
 !
 
       dt=real(Cstv_dt_8)
       rad2deg_8=180.0d0/pi_8
+      itstep_s=step_dt*step_kount
+      iperiod_iau = iau_period
 !
 !     Look for the spectral coefficients
 !
@@ -103,126 +115,241 @@
 
 !     Valeurs initiales des composantes principales
 !
-!     Assure that busper is to 1 at the begining in inichamp1
 
        if (.not.init_done) then
-         if (Lun_out.gt.0) then
+         if (Lun_out > 0) then
             write( Lun_out,1000)
          endif
          init_done=.true.
       endif
 
-!     Rstri_rstn_L
-     if ( Step_kount .eq. 1 ) then
+   Init_mc_L = .true.
+   if ( (Ens_iau_mc)) then
+      if ( .not. Ens_first_init_mc) Init_mc_L = .false.
+   endif
 
-       do nc=1,Ens_ptp_ncha
 
-         lmin = Ens_ptp_trnl(nc)
-         lmax = Ens_ptp_trnh(nc)
-         nlon = Ens_ptp_nlon(nc)
-         nlat = Ens_ptp_nlat(nc)
-         fstd = Ens_ptp_std(nc)
-         tau  = Ens_ptp_tau(nc)/2.146
+  if (step_kount == 1 ) then
 
-         eps  = exp(-dt/tau)
+     if (Init_mc_L) then
 
-        allocate ( pspectrum(lmin:lmax) , fact1(lmin:lmax) )
+         do nc=1,Ens_ptp_ncha
+            lmin = Ens_ptp_trnl(nc)
+            lmax = Ens_ptp_trnh(nc)
+            nlon = Ens_ptp_nlon(nc)
+            nlat = Ens_ptp_nlat(nc)
+            fstd = Ens_ptp_std(nc)
+            tau  = Ens_ptp_tau(nc)/2.146
+
+            eps  = exp(-dt/tau)
+
+           allocate ( pspectrum(lmin:lmax) , fact1(lmin:lmax) )
 !Bruit blanc en nombre d'ondes
-         do l=lmin,lmax
-           pspectrum(l)=1.D0
-         enddo
+           do l= lmin,lmax
+            pspectrum(l)=1.D0
+           enddo
 !Normalisation du spectre pour que la variance du champ aléatoire soit std**2
-         sumsp=0.D0
-         do l=lmin,lmax
-          sumsp=sumsp+pspectrum(l)
-         enddo
-         pspectrum=pspectrum/sumsp
+           sumsp=0.D0
+           do l=lmin,lmax
+             sumsp=sumsp+pspectrum(l)
+           enddo
+           pspectrum=pspectrum/sumsp
 
-         do l=lmin,lmax
-          fact1(l)=fstd*SQRT(4.*pi_8/real((2*l+1))*pspectrum(l))
-         enddo
-
-         dumdum(:,nc)=0
-         paiv  => dumdum( 1,nc)
-         paiy  => dumdum(33,nc)
-         paiset=> dumdum(34,nc)
-         pagset=> dumdum(35,nc)
-         paidum=> dumdum(36,nc)
-         paidum=-Ens_mc_seed
-
-
+           do l=lmin,lmax
+            fact1(l)=fstd*SQRT(4.*pi_8/real((2*l+1))*pspectrum(l))
+           enddo
+          np=nc+1
+          dumdum(:,np)=0
+          paiv  => dumdum(1,np)
+          paiy  => dumdum(33,np)
+          paiset=> dumdum(34,np)
+          pagset=> dumdum(35,np)
+          paidum=> dumdum(36,np)
+          paidum=-(Ens_mc_seed + 1000*nc)
 ! Valeurs initiales des coefficients spectraux
               ar_p=0.d0
               br_p=0.d0
               ai_p=0.d0
               bi_p=0.d0
 
-        do l=lmin,lmax
-            br_p(lmax-l+1,1,nc)=fact1(l)*gasdev(paiv,paiy,paiset,pagset,paidum)
-            ar_p(lmax-l+1,1,nc)=br_p(lmax-l+1,1,nc)
-          do m=2,l+1
-             br_p(lmax-l+1,m,nc)=fact1(l)*gasdev(paiv,paiy,paiset,pagset,paidum)/sqrt(2.)
-             ar_p(lmax-l+1,m,nc)=br_p(lmax-l+1,m,nc)
-             bi_p(lmax-l+1,m,nc)=fact1(l)*gasdev(paiv,paiy,paiset,pagset,paidum)/sqrt(2.)
-             ai_p(lmax-l+1,m,nc)=bi_p(lmax-l+1,m,nc)
+           do l=lmin,lmax
+               br_p(lmax-l+1,1,nc)=fact1(l)*gasdev(paiv,paiy,paiset,pagset,paidum)
+               ar_p(lmax-l+1,1,nc)=br_p(lmax-l+1,1,nc)
+             do m=2,l+1
+               br_p(lmax-l+1,m,nc)=fact1(l)*gasdev(paiv,paiy,paiset,pagset,paidum)/sqrt(2.)
+               ar_p(lmax-l+1,m,nc)=br_p(lmax-l+1,m,nc)
+               bi_p(lmax-l+1,m,nc)=fact1(l)*gasdev(paiv,paiy,paiset,pagset,paidum)/sqrt(2.)
+               ai_p(lmax-l+1,m,nc)=bi_p(lmax-l+1,m,nc)
+             enddo
           enddo
-        enddo
-
          deallocate (pspectrum, fact1)
        enddo
+    else
+      do nc=1,Ens_ptp_ncha
 
+            lmin = Ens_ptp_trnl(nc)
+            lmax = Ens_ptp_trnh(nc)
+            unf0=0 ; unf1=0 ;unf2=0 ;unf3=0 ;unf4=0
+
+            write(stnc,'(I1)') nc
+
+            ier0 = fnom(unf0, trim(Path_input_S)//'/'// 'MRKV_RAND_PARAM_P_nc'//trim(stnc) , &
+                        'SEQ+UNFORMATTED+OLD',0)
+            ier1 = fnom(unf1, trim(Path_input_S)//'/'// 'MRKV_AR_PTP_nc'//trim(stnc), &
+                        'SEQ+UNFORMATTED+OLD',0)
+            ier2 = fnom(unf2, trim(Path_input_S)//'/'// 'MRKV_BR_PTP_nc'//trim(stnc), &
+                        'SEQ+UNFORMATTED+OLD',0)
+            ier3 = fnom(unf3, trim(Path_input_S)//'/'// 'MRKV_AI_PTP_nc'//trim(stnc), &
+                        'SEQ+UNFORMATTED+OLD',0)
+            ier4 = fnom(unf4, trim(Path_input_S)//'/'// 'MRKV_BI_PTP_nc'//trim(stnc), &
+                        'SEQ+UNFORMATTED+OLD',0)
+
+            if (ier0 /= 0) then
+                write( Lun_out,3000)
+                stop
+            endif
+
+            if (ier1 /= 0) then
+              write( Lun_out,2500)
+              stop
+            elseif  (ier2 /= 0) then
+              write( Lun_out,2500)
+              stop
+            elseif  (ier3 /= 0) then
+              write( Lun_out,2500)
+              stop
+            elseif  (ier4 /= 0) then
+              write( Lun_out,2500)
+              stop
+            endif
+
+            if (ier0 /= 0) then
+               write( Lun_out,3000)
+               stop
+            endif
+
+            np=nc+1
+            do i=1,36
+                 read(unf0),dumdum(i,np)
+            enddo
+            do l=lmin,lmax
+               do m=1,l+1
+                  read(unf1),ar_p(lmax-l+1,m,nc)
+                  read(unf2),br_p(lmax-l+1,m,nc)
+                  read(unf3),ai_p(lmax-l+1,m,nc)
+                  read(unf4),bi_p(lmax-l+1,m,nc)
+
+               enddo
+            enddo
+              close(unf0);  close(unf1); close(unf2);  close(unf3); close(unf4)
+
+       enddo
     endif
+  endif
 
 !  Begin Markov chains
 
  allocate(fgem_str(l_ni, l_nj,Ens_ptp_ncha))
 
- do nc=1,Ens_ptp_ncha
+    do nc=1,Ens_ptp_ncha
 
-        lmin = Ens_ptp_trnl(nc) ; nlon = Ens_ptp_nlon(nc)
-        lmax = Ens_ptp_trnh(nc) ; nlat = Ens_ptp_nlat(nc)
-        fstd = Ens_ptp_std(nc)  ; fmin = Ens_ptp_min(nc)
-        fstr = Ens_ptp_str(nc)  ; fmax = Ens_ptp_max(nc)
+        lmin = Ens_ptp_trnl(nc)
+        lmax = Ens_ptp_trnh(nc)
+        nlon = Ens_ptp_nlon(nc)
+        nlat = Ens_ptp_nlat(nc)
+        fmin = Ens_ptp_min(nc)
+        fmax = Ens_ptp_max(nc)
+        fstd = Ens_ptp_std(nc)
+        fstr = Ens_ptp_str(nc)
         tau  =  Ens_ptp_tau(nc)/2.146
-
         eps  = exp(-dt/tau)
 
-! Spectrum choice
-
-         allocate ( pspectrum(lmin:lmax) )
-         allocate ( fact1(lmin:lmax),fact1n(lmin:lmax) )
-
-         do l=lmin,lmax
-           pspectrum(l)=1.D0
-         enddo
-         sumsp=0.D0
-         do l=lmin,lmax
-          sumsp=sumsp+pspectrum(l)
-         enddo
-         pspectrum=pspectrum/sumsp
-         fact2 =(1.-eps*eps)/SQRT(1.+eps*eps)
-
+        np=nc+1
 ! Random generator function
-         paiv  => dumdum( 1,nc) ; paiy  => dumdum(33,nc)
-         paiset=> dumdum(34,nc) ; pagset=> dumdum(35,nc)
-         paidum=> dumdum(36,nc)
 
-       do l=lmin,lmax
-          fact1n(l)=fstd*SQRT(4.*pi_8/real((2*l+1)) &
-                   *pspectrum(l))*SQRT((1.-eps*eps))
+        paiv  => dumdum(1,np)
+        paiy  => dumdum(33,np)
+        paiset=> dumdum(34,np)
+        pagset=> dumdum(35,np)
+        paidum=> dumdum(36,np)
 
-          br_p(lmax-l+1,1,nc) = eps*br_p(lmax-l+1,1,nc)  &
-                               + gasdev(paiv,paiy,paiset,pagset,paidum)*fact1n(l)
-          ar_p(lmax-l+1,1,nc) = eps*ar_p(lmax-l+1,1,nc)  + br_p(lmax-l+1,1,nc)*fact2
-            do m=2,l+1
-              br_p(lmax-l+1,m,nc) = eps*br_p(lmax-l+1,m,nc) &
-                              + gasdev(paiv,paiy,paiset,pagset,paidum)*fact1n(l)/SQRT(2.)
-              ar_p(lmax-l+1,m,nc) = eps*ar_p(lmax-l+1,m,nc)+br_p(lmax-l+1,m,nc)*fact2
-              bi_p(lmax-l+1,m,nc) = eps*bi_p(lmax-l+1,m,nc) &
-                              + gasdev(paiv,paiy,paiset,pagset,paidum)*fact1n(l)/SQRT(2.)
-              ai_p(lmax-l+1,m,nc) = eps*ai_p(lmax-l+1,m,nc)+bi_p(lmax-l+1,m,nc)*fact2
+! Spectrum choice
+        allocate ( pspectrum(lmin:lmax) )
+        allocate ( fact1(lmin:lmax),fact1n(lmin:lmax) )
+
+        do l=lmin,lmax
+          pspectrum(l)=1.D0
+        enddo
+        sumsp=0.D0
+        do l=lmin,lmax
+         sumsp=sumsp+pspectrum(l)
+        enddo
+        pspectrum=pspectrum/sumsp
+        fact2 =(1.-eps*eps)/SQRT(1.+eps*eps)
+
+        write(stnc,'(I1)') nc
+
+     if (itstep_s == iperiod_iau) then
+       if (ptopo_couleur == 0  .and. ptopo_myproc == 0) then
+          unf0=0; unf1=0; unf2=0; unf3=0; unf4=0
+            ier0 = fnom(unf0,trim(Path_output_S)//'/'//'MRKV_RAND_PARAM_P_nc'//trim(stnc), &
+                         'SEQ+UNFORMATTED',0)
+            ier1 = fnom(unf1,trim(Path_output_S)//'/'//'MRKV_AR_PTP_nc'//trim(stnc), &
+                         'SEQ+UNFORMATTED',0)
+            ier2 = fnom(unf2,trim(Path_output_S)//'/'//'MRKV_BR_PTP_nc'//trim(stnc), &
+                         'SEQ+UNFORMATTED',0)
+            ier3 = fnom(unf3,trim(Path_output_S)//'/'//'MRKV_AI_PTP_nc'//trim(stnc), &
+                         'SEQ+UNFORMATTED',0)
+            ier4 = fnom(unf4,trim(Path_output_S)//'/'//'MRKV_BI_PTP_nc'//trim(stnc), &
+                         'SEQ+UNFORMATTED',0)
+
+            if (ier0 /= 0) then
+               write( Lun_out,1500)
+               stop
+            elseif  (ier1 /= 0) then
+               write( Lun_out,1500)
+               stop
+            elseif  (ier2 /= 0) then
+               write( Lun_out,1500)
+               stop
+            elseif  (ier3 /= 0) then
+               write( Lun_out,1500)
+               stop
+            elseif  (ier4 /= 0) then
+               write( Lun_out,1500)
+               stop
+            endif
+
+           do i=1,36
+             write (unf0)  dumdum(i,np)
            enddo
-       enddo
+           do l=lmin,lmax
+             do m=1,l+1
+                write (unf1)ar_p(lmax-l+1,m,nc)
+                write (unf2)br_p(lmax-l+1,m,nc)
+                write (unf3)ai_p(lmax-l+1,m,nc)
+                write (unf4)bi_p(lmax-l+1,m,nc)
+             enddo
+           enddo
+            close(unf0);close(unf1);close(unf2);close(unf3);close(unf4)
+       endif
+     endif
+
+     do l=lmin,lmax
+       fact1n(l)=fstd*SQRT(4.*pi_8/real((2*l+1))*pspectrum(l))*SQRT((1.-eps*eps))
+       br_p(lmax-l+1,1,nc) = eps*br_p(lmax-l+1,1,nc)  &
+                               + gasdev(paiv,paiy,paiset,pagset,paidum)*fact1n(l)
+       ar_p(lmax-l+1,1,nc) = eps*ar_p(lmax-l+1,1,nc)  + br_p(lmax-l+1,1,nc)*fact2
+        do m=2,l+1
+           br_p(lmax-l+1,m,nc) = eps*br_p(lmax-l+1,m,nc) &
+                              + gasdev(paiv,paiy,paiset,pagset,paidum)*fact1n(l)/SQRT(2.)
+           ar_p(lmax-l+1,m,nc) = eps*ar_p(lmax-l+1,m,nc)+br_p(lmax-l+1,m,nc)*fact2
+           bi_p(lmax-l+1,m,nc) = eps*bi_p(lmax-l+1,m,nc) &
+                              + gasdev(paiv,paiy,paiset,pagset,paidum)*fact1n(l)/SQRT(2.)
+           ai_p(lmax-l+1,m,nc) = eps*ai_p(lmax-l+1,m,nc)+bi_p(lmax-l+1,m,nc)*fact2
+        enddo
+     enddo
+
 deallocate (pspectrum, fact1, fact1n)
 
 allocate(p( nlat, lmax-lmin+1, 0:lmax))
@@ -233,44 +360,50 @@ allocate(f_str(nlon, nlat))
 allocate(sig(lmax-lmin+1, 0:lmax))
 
 ! Associated Legendre polynomials
-       p=0.D0
-       do l=lmin,lmax
-          fact=DSQRT((2.D0*DBLE(l)+1.D0)/(4.D0*pi_8))
-          do m=0,l
-            sig(lmax-l+1,m)=(-1.D0)**(l+m)
-            do j=1,nlat/2
+     p=0.D0
+     do l=lmin,lmax
+       fact=DSQRT((2.D0*DBLE(l)+1.D0)/(4.D0*pi_8))
+       do m=0,l
+       sig(lmax-l+1,m)=(-1.D0)**(l+m)
+          do j=1,nlat/2
              call pleg (l, m, j, nlat, polg)
               p(j,lmax-l+1,m)=polg*fact
               p(nlat-j+1,lmax-l+1,m)=polg*fact*sig(lmax-l+1,m)
-            enddo
           enddo
        enddo
+     enddo
      cc=0.D0
 
 !$omp parallel
 !$omp do
-    do m=1,lmax+1
+     do m=1,lmax+1
         do j=1,nlat/2
-              cc(1,j,m)=0.d0
-              cc(1,nlat-j+1,m)=0.d0
-              cc(2,j,m)=0.d0
-              cc(2,nlat-j+1,m)=0.d0
+           cc(1,j,m)=0.d0
+           cc(1,nlat-j+1,m)=0.d0
+           cc(2,j,m)=0.d0
+           cc(2,nlat-j+1,m)=0.d0
 
-              cc(1,j,m)=cc(1,j,m) + Dot_product(p(j,1:lmax-lmin+1,m-1),ar_p(1:lmax-lmin+1,m,nc))
-              cc(1,nlat-j+1,m)=cc(1,nlat-j+1,m) &
-                                  + Dot_product(p(j,1:lmax-lmin+1,m-1),ar_p(1:lmax-lmin+1,m,nc)*sig(1:lmax-lmin+1,m-1))
-              cc(2,j,m)=cc(2,j,m) + Dot_product(p(j,1:lmax-lmin+1,m-1),ai_p(1:lmax-lmin+1,m,nc))
-              cc(2,nlat-j+1,m)=cc(2,nlat-j+1,m) &
-                                  + Dot_product(p(j,1:lmax-lmin+1,m-1),ai_p(1:lmax-lmin+1,m,nc)*sig(1:lmax-lmin+1,m-1))
+           cc(1,j,m)        = cc(1,j,m) &
+                            + Dot_product(p(j,1:lmax-lmin+1,m-1), &
+                            ar_p(1:lmax-lmin+1,m,nc))
+           cc(1,nlat-j+1,m) = cc(1,nlat-j+1,m) &
+                            + Dot_product(p(j,1:lmax-lmin+1,m-1), &
+                            ar_p(1:lmax-lmin+1,m,nc)*sig(1:lmax-lmin+1,m-1))
+           cc(2,j,m)        = cc(2,j,m) &
+                            + Dot_product(p(j,1:lmax-lmin+1,m-1), &
+                            ai_p(1:lmax-lmin+1,m,nc))
+           cc(2,nlat-j+1,m) = cc(2,nlat-j+1,m) &
+                            + Dot_product(p(j,1:lmax-lmin+1,m-1), &
+                              ai_p(1:lmax-lmin+1,m,nc)*sig(1:lmax-lmin+1,m-1))
         enddo
-    enddo
+     enddo
 
 !$omp enddo
 !$omp end parallel
 
 ! Fourier Transform (inverse)
 
-            wrk1=0.0
+	    wrk1=0.0
             n=-1
             do i=1,nlat
                do j=1,lmax+1
@@ -288,7 +421,7 @@ allocate(sig(lmax-lmin+1, 0:lmax))
             do j=1,nlat
                do i=1,nlon+2
                   n = n + 1
-                  if (i .le. nlon) then
+                  if (i <= nlon) then
                      f(i,j) = wrk1(n)
                   end if
                enddo
@@ -345,15 +478,23 @@ allocate(sig(lmax-lmin+1, 0:lmax))
  1000 format( &
            /,'INITIALIZE SCHEMES CONTROL PARAMETERS (S/R ENS_MARFIELD_PTP)', &
            /,'======================================================')
+ 1500 format(' S/R  ENS_MARFIELD_PTP : problem with registering random parameters)', &
+              /,'======================================================')
+
+ 2500 format(' S/R  ENS_MARFIELD_PTP : problem with opening  Markov Coeff)', &
+              /,'======================================================')
+
+ 3000 format(' S/R  ENS_MARFIELD_PTP : problem in opening MKV_RAND_PARAM_P file)', &
+              /,'======================================================')
  6000 format('ens_marfield_ptp at gmm_get(',A,')')
 
 
-      return
+return
 
 contains
 
  subroutine pleg(l, m, jlat, nlat , plg )
-      implicit none
+ implicit none
 
       integer l,m ,i,j , jlat, nlat
       real*8  factor , x , plg , lat, theta
@@ -366,7 +507,7 @@ contains
       end if
 
       lat=(-90.D0+90.D0/DBLE(nlat)+DBLE(jlat-1)*180.D0/DBLE(nlat))*pi_8/180.D0
-      theta=pi_8/2.D0-lat
+      theta=pi/2.D0-lat
       x=DCOS(theta)
 
       pl=ZERO
@@ -405,7 +546,7 @@ contains
         real, dimension(nx,ny,nz) :: field
         mean=sum(field)/(nx*ny*nz)
         std=sqrt(sum((field-mean)**2)/(nx*ny*nz-1))
-        if (Lun_out.gt.0)write(Lun_out,99)Lctl_step,msg1,mean,std,         &
+        if (Lun_out > 0)write(Lun_out,99)Lctl_step,msg1,mean,std,         &
         minloc(field),minval(field),maxloc(field),maxval(field),msg2
  99   format (i4,a4,' Mean:',e14.7,' Std:',e14.7, &
               ' Min:[(',i3,',',i3,',',i3,')', &
@@ -413,5 +554,5 @@ contains
               e14.7,']',a6)
       end subroutine stat
 
-end subroutine ens_marfield_ptp
+END subroutine ens_marfield_ptp
 

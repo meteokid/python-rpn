@@ -47,7 +47,7 @@
       Hzd_Niter= 0 ; Hzd_Niter_theta= 0 ; Hzd_Niter_tr= 0
       coef_8= 0. ; coef_theta_8= 0. ; coef_tr_8= 0.
       !for U,V,W,Zd
-      if ( (Hzd_lnR.gt.0.) .and. (Hzd_pwr.gt.0) ) then
+      if ( (Hzd_lnR > 0.) .and. (Hzd_pwr > 0) ) then
          nutop_8 = 1./4. * Hzd_lnR**(2./Hzd_pwr)
          Hzd_Niter= max(int(8.d0*nutop_8+0.9999999),1)
          coef_8= nutop_8/max(1.,float(HZD_niter))* &
@@ -57,7 +57,7 @@
       endif
 
       !for Theta
-      if ( (Hzd_lnR_theta.gt.0) .and. (Hzd_pwr_theta.gt.0) )  then
+      if ( (Hzd_lnR_theta > 0) .and. (Hzd_pwr_theta > 0) )  then
          nutop_8 = 1./4. * Hzd_lnR_theta**(2./Hzd_pwr_theta)
          Hzd_Niter_theta = max(int(8.d0*nutop_8+0.9999999),1)
          coef_theta_8=nutop_8/max(1.,float(hzd_niter_theta))* &
@@ -67,7 +67,7 @@
       endif
 
       !for Tracers
-      if ( (Hzd_lnR_tr.gt.0) .and. (Hzd_pwr_tr.gt.0) )  then
+      if ( (Hzd_lnR_tr > 0) .and. (Hzd_pwr_tr > 0) )  then
          nutop_8 = 1./4. * Hzd_lnR_tr**(2./Hzd_pwr_tr)
          Hzd_Niter_tr = max(int(8.d0*nutop_8+0.9999999),1)
          coef_tr_8=nutop_8/max(1.,float(hzd_niter_tr))* &
@@ -76,7 +76,7 @@
          Hzd_coef_8_tr(1:G_nk) = coef_tr_8*(Dcst_inv_rayt_8**2)*Cstv_dt_8
       endif
 
-      if (Lun_out.gt.0) then
+      if (Lun_out > 0) then
          write(Lun_out,1010) coef_8      ,Hzd_pwr/2      ,'Winds ',Hzd_Niter
          write(Lun_out,1010) coef_theta_8,Hzd_pwr_theta/2,'Theta ',Hzd_Niter_theta
          write(Lun_out,1010) coef_tr_8   ,Hzd_pwr_tr/2   ,'Tracer',Hzd_Niter_tr, ' if specified'

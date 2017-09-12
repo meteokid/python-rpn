@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -40,24 +40,24 @@
 !     output in model levels for dynamic variables
       kk=0
       do k=1,F_levmax
-         if (F_level(k).eq.0.0) then
+         if (F_level(k) == 0.0) then
 !     ground zero (surface or lowest possible level in model)
              kk=kk+1
              F_indo(kk)=F_nk
-         else if (F_level(k).lt.0.0) then
+         else if (F_level(k) < 0.0) then
              kk=kk+1
 !     ground zero with surfaces above it
              F_indo(kk)=F_nk + nint(F_level(k))
          else
 !     model level as defined by user. Discard levels that do not exist
-             if (F_level(k).le.F_nk)then
+             if (F_level(k) <= F_nk)then
                  kk=kk+1
                  F_indo(kk)=nint(F_level(k))
              endif
          endif
       enddo
       F_nko=kk
-      
+
       ! Diagnostic level additions
       F_nearsfc_L = .false.
       if ( (F_nko == F_nk) .or. &

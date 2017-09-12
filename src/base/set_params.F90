@@ -34,22 +34,22 @@
 
       Cstv_tau_m_8   = Cstv_dt_8 * Cstv_bA_m_8
       Cstv_invT_m_8  = one/Cstv_tau_m_8
-      Cstv_Beta_m_8  = (one-Cstv_bA_m_8)/Cstv_bA_m_8      
+      Cstv_Beta_m_8  = (one-Cstv_bA_m_8)/Cstv_bA_m_8
 
 !     Parameters for the nonhydrostatic case
       Cstv_tau_nh_8   = Cstv_dt_8 * Cstv_bA_nh_8
       Cstv_invT_nh_8  = one/Cstv_tau_nh_8
       Cstv_Beta_nh_8  = (one-Cstv_bA_nh_8)/Cstv_bA_nh_8
 
-      if (Schm_advec.eq.1) then ! traditional advection
+      if (Schm_advec == 1) then ! traditional advection
          Cstv_dtA_8  = Cstv_dt_8 * 0.5d0
-         Cstv_dtzA_8 = Cstv_dt_8 * 0.5d0 
+         Cstv_dtzA_8 = Cstv_dt_8 * 0.5d0
       endif
-      if (Schm_advec.eq.2) then ! consistent advection
+      if (Schm_advec == 2) then ! consistent advection
          Cstv_dtA_8  = Cstv_tau_m_8
          Cstv_dtzA_8 = Cstv_tau_8
       endif
-      if (Schm_advec.eq.3) then ! reversed advection
+      if (Schm_advec == 3) then ! reversed advection
          Cstv_dtA_8  = (one-Cstv_bA_m_8)*Cstv_dt_8
          Cstv_dtzA_8 = (one-Cstv_bA_8)*Cstv_dt_8
       endif
@@ -57,7 +57,7 @@
       Cstv_dtD_8  = Cstv_dt_8 - Cstv_dtA_8
       Cstv_dtzD_8 = Cstv_dt_8 - Cstv_dtzA_8
 
-      if (Schm_advec.eq.0) then ! no advection
+      if (Schm_advec == 0) then ! no advection
          Cstv_dtA_8  = 0.d0
          Cstv_dtD_8  = 0.d0
          Cstv_dtzA_8 = 0.d0

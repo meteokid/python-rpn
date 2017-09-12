@@ -167,7 +167,7 @@ CONTAINS
 !-----------------------------------------------------------------------
 !    calculate eta
 !-----------------------------------------------------------------------
-    if (zcoords .eq. 0) then
+    if (zcoords == 0) then
 
 !!!   eta = p / ps
 
@@ -255,7 +255,7 @@ CONTAINS
     IMPLICIT NONE
     REAL(8), INTENT(IN) :: eta
 
-    if (eta .ge. eta_tropo) then
+    if (eta >= eta_tropo) then
       t_mean = T0*eta**exponent       ! mean temperature at each level
     else
       t_mean = T0*eta**exponent + delta_T*(eta_tropo-eta)**5
@@ -488,12 +488,12 @@ CONTAINS
     ! version v3 (7/20/2012):
     ! if construct prevents DIVISION BY ZERO in zeta calculation
 
-    if (abs(lat-perturb_lat).le.epsilon .and. abs(lon-perturb_lon).le.epsilon) then  ! grid point is at center position
+    if (abs(lat-perturb_lat) <= epsilon .and. abs(lon-perturb_lon) <= epsilon) then  ! grid point is at center position
       zeta = -4.d0/a*cos_tmp*SIN(lat)*COS(lat)*(2.d0-5.d0*(SIN(lat))**2) + perturbation_amplitude/a*TAN(lat)
 
-    else if ( (abs(lat+perturb_lat).le.epsilon .and. abs(lon-(perturb_lon+pi)).le.epsilon) & ! antipode
-          .or. abs(lat-pi*0.5d0).le.epsilon                                                & ! north pole
-          .or. abs(lat+pi*0.5d0).le.epsilon) then                                            ! south pole
+    else if ( (abs(lat+perturb_lat) <= epsilon .and. abs(lon-(perturb_lon+pi)) <= epsilon) & ! antipode
+          .or. abs(lat-pi*0.5d0) <= epsilon                                                & ! north pole
+          .or. abs(lat+pi*0.5d0) <= epsilon) then                                            ! south pole
       zeta = -4.d0/a*cos_tmp*SIN(lat)*COS(lat)*(2.d0-5.d0*(SIN(lat))**2)
 
     else                                                                                     ! all other positions

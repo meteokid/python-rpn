@@ -63,9 +63,6 @@
       real, dimension(-1:F_ni+2,-1:F_nj+2,F_nk) :: pxh, pyh, pzh
       logical,save :: done = .false.
       real :: zmin_bound, zmax_bound
-      real ::posxu,posyu,posxv,posyv, minposx,maxposx,minposy,maxposy
-      integer :: BCS_BASE, ncu, ncv
-
       real*8,  parameter :: EPS_8 = 1.D-5
 
 !
@@ -74,17 +71,6 @@
 
       zmin_bound=Ver_zmin_8
       zmax_bound=Ver_zmax_8
-
-      BCS_BASE= 4
-      if (Grd_yinyang_L) BCS_BASE = 3
-      minposx = adv_xx_8(adv_lminx+1) + EPS_8
-      if (l_west)  minposx = adv_xx_8(1+BCS_BASE) + EPS_8
-      maxposx = adv_xx_8(adv_lmaxx-1) - EPS_8
-      if (l_east)  maxposx = adv_xx_8(F_ni-BCS_BASE) - EPS_8
-      minposy = adv_yy_8(adv_lminy+1) + EPS_8
-      if (l_south) minposy = adv_yy_8(1+BCS_BASE) + EPS_8
-      maxposy = adv_yy_8(adv_lmaxy-1) - EPS_8
-      if (l_north) maxposy = adv_yy_8(F_nj-BCS_BASE) - EPS_8
 
       do k=F_k0,F_nk
          do j=1, F_nj
@@ -118,50 +104,31 @@
       bb=+0.5625d0
       cc=adv_dlx_8(F_ni/2)*0.5d0
 
-      ncu=0
-      ncv=0
-
       do k=F_k0,F_nk
 
          do j=j0,jn
             do i=i0u,inu
-               posxu = aa*(pxh(i-1,j,k)+pxh(i+2,j,k)) &
-                     + bb*(pxh(i  ,j,k)+pxh(i+1,j,k)) - cc
-               posyu = aa*(pyh(i-1,j,k)+pyh(i+2,j,k)) &
-                     + bb*(pyh(i  ,j,k)+pyh(i+1,j,k))
+               F_xmu(i,j,k) = aa*(pxh(i-1,j,k)+pxh(i+2,j,k)) &
+                            + bb*(pxh(i  ,j,k)+pxh(i+1,j,k)) - cc
+               F_ymu(i,j,k) = aa*(pyh(i-1,j,k)+pyh(i+2,j,k)) &
+                            + bb*(pyh(i  ,j,k)+pyh(i+1,j,k))
                F_zmu(i,j,k) = aa*(pzh(i-1,j,k)+pzh(i+2,j,k)) &
                             + bb*(pzh(i  ,j,k)+pzh(i+1,j,k))
-               F_xmu(i,j,k) = min(max(posxu,minposx),maxposx)
-               F_ymu(i,j,k) = min(max(posyu,minposy),maxposy)
-               F_zmu(i,j,k) = min(zmax_bound,max(F_zmu(i,j,k),zmin_bound))
-               ncu=ncu+min(1,max(0,ceiling(abs(F_xmu(i,j,k)-posxu)+abs(F_ymu(i,j,k)-posyu))))
             end do
          end do
 
          do j=j0v,jnv
             do i=i0,in
-               posxv = aa*(pxh(i,j-1,k)+pxh(i,j+2,k)) &
-                     + bb*(pxh(i,j  ,k)+pxh(i,j+1,k))
-               posyv = aa*(pyh(i,j-1,k)+pyh(i,j+2,k)) &
-                     + bb*(pyh(i,j  ,k)+pyh(i,j+1,k)) - cc
-
+               F_xmv(i,j,k) = aa*(pxh(i,j-1,k)+pxh(i,j+2,k)) &
+                            + bb*(pxh(i,j  ,k)+pxh(i,j+1,k))
+               F_ymv(i,j,k) = aa*(pyh(i,j-1,k)+pyh(i,j+2,k)) &
+                            + bb*(pyh(i,j  ,k)+pyh(i,j+1,k)) - cc
                F_zmv(i,j,k) = aa*(pzh(i,j-1,k)+pzh(i,j+2,k)) &
                             + bb*(pzh(i,j  ,k)+pzh(i,j+1,k))
-               F_xmv(i,j,k) = min(max(posxv,minposx),maxposx)
-               F_ymv(i,j,k) = min(max(posyv,minposy),maxposy)
-               F_zmu(i,j,k) = min(zmax_bound,max(F_zmu(i,j,k),zmin_bound))
-               F_zmv(i,j,k) = min(zmax_bound,max(F_zmv(i,j,k),zmin_bound))
-
-               ncv=ncv+min(1,max(0,ceiling(abs(F_xmv(i,j,k)-posxv)+abs(F_ymv(i,j,k)-posyv))))
             enddo
          enddo
 
       enddo
-
-
-! Print  Trajectory clipping stat
-     call adv_print_cliptrj_s (ncu,F_ni,F_nj,F_nk,F_k0, 'INTERP '//trim('m'))
-     call adv_print_cliptrj_s (ncv,F_ni,F_nj,F_nk,F_k0, 'INTERP '//trim('m'))
 
 !
 !---------------------------------------------------------------------

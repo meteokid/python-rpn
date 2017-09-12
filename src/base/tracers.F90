@@ -44,7 +44,7 @@
 !        2 letters
 
 
-      character*512 varname,attributes
+      character(len=512) :: varname,attributes
       character(len=PHY_MAXNAMELENGTH) :: varname_S,prefix_S, &
                                           basename_S,time_S,ext_S
       integer i,j,ind,wload,hzd,monot,massc,dejala,istat,nmeta
@@ -54,8 +54,9 @@
 !     __________________________________________________________________
 !
       nmeta= 0 ; nullify(pmeta)
-      if ( Schm_phyms_L ) &
-      nmeta = phy_getmeta(pmeta,' ',F_npath='V',F_bpath='D',F_quiet=.true.)
+      if ( Schm_phyms_L ) then
+         nmeta = phy_getmeta(pmeta,' ',F_npath='V',F_bpath='D',F_quiet=.true.)
+      end if
 
       do i=1,nmeta
          varname_S = pmeta(i)%vname
@@ -80,7 +81,7 @@
       do i=1,MAXTR3D
          if (Tr3d_list_s(i)=='') exit
          ind= index(Tr3d_list_s(i),",")
-         if (ind .eq. 0) then
+         if (ind == 0) then
             call low2up(Tr3d_list_s(i), varname)
             attributes = ''
          else
@@ -116,17 +117,17 @@
          Tr3d_wload(dejala)= .false.
       endif
 
-      if (Lun_out.gt.0) then
+      if (Lun_out > 0) then
          write (Lun_out,1001)
          do i=1,Tr3d_ntr
             write(Lun_out,1002) Tr3d_name_S(i),Tr3d_wload(i),Tr3d_hzd(i),Tr3d_mono(i),Tr3d_mass(i),Tr3d_vmin(i)
          end do
       endif
 
-      call ac_posi (G_xg_8,G_yg_8,G_ni,G_nj,Lun_out.gt.0)
+      call ac_posi (G_xg_8,G_yg_8,G_ni,G_nj,Lun_out > 0)
 
  1001 format (/' Final list of tracers:'/3x,' Name   Wload  Hzd   Mono  Mass    Min')
- 1002 format (4x,a4,2l6,2i6,3x,e9.3)
+ 1002 format (4x,a4,2l6,2i6,3x,e10.3)
 !
 !     __________________________________________________________________
 !

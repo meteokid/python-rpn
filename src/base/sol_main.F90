@@ -43,19 +43,19 @@
 
       if (Lun_debug_L) write(Lun_out,1000)
 
-      print_conv = (F_iln.eq.Schm_itnlh ) .and. &
-                   (Orh_icn.eq.Schm_itcn) .and. &
-                   (Ptopo_couleur.eq.0  ) .and. &
-                   (Lun_out.gt.0)
+      print_conv = (F_iln == Schm_itnlh ) .and. &
+                   (Orh_icn == Schm_itcn) .and. &
+                   (Ptopo_couleur == 0  ) .and. &
+                   (Lun_out > 0)
 
       offi = Ptopo_gindx(1,Ptopo_myproc+1)-1
       offj = Ptopo_gindx(3,Ptopo_myproc+1)-1
 
       if ( (trim(Sol_type_S) == 'DIRECT') .or. &
-           (Sol_type_S(11:12).eq.'2D')   ) then
+           (Sol_type_S(11:12) == '2D')   ) then
 
          call sol_2d ( F_rhs_sol, F_lhs_sol, F_ni, F_nj, F_nk,&
-                       F_iln, print_conv, offi, offj )
+                       print_conv, offi, offj )
 
       else
 

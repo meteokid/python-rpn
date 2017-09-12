@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -35,13 +35,13 @@ use iso_c_binding
 !
 !     ---------------------------------------------------------------
 !
-      if (Lun_out.gt.0) write(Lun_out,2000) Lctl_step
+      if (Lun_out > 0) write(Lun_out,2000) Lctl_step
 
       call split_on_hostid (RPN_COMM_comm('GRID'),me,howmany,newcomm)
 
       call timing_start2 ( 33, 'RESTART', 34 )
       do i=0,howmany-1
-         if (i.eq.me) then
+         if (i == me) then
 
             Lun_rstrt = 0
             ier = fnom (Lun_rstrt,'gem_restart','SEQ+UNF',0)
@@ -49,7 +49,7 @@ use iso_c_binding
             write(Lun_rstrt) Lctl_step,Step_kount,Init_mode_L
             write(Lun_rstrt) PSADJ_g_avg_ps_initial_8,PSADJ_scale_8,PSADJ_fact_8
 
-            ier = fclos(Lun_rstrt)  
+            ier = fclos(Lun_rstrt)
 
             !        Write Gmm-files
 
@@ -69,6 +69,6 @@ use iso_c_binding
              /,'=========================================')
 !
 !     ---------------------------------------------------------------
-!      
+!
       return
       end

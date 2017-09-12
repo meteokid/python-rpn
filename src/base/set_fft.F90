@@ -45,12 +45,12 @@
 !      call itf_fft_nextfactor2 ( npts, next_down )
 !      print*, 'hola1: ',l_ni,l_ni - pil_w - pil_e,npts
 
-      if (Lun_out.gt.0) write(Lun_out,1000)
+      if (Lun_out > 0) write(Lun_out,1000)
 
       set_fft    = -1
       Fft_fast_L = .false.
 
-      if (( Sol_type_S.ne.'DIRECT' ) .or. ( .not. sol_fft_L )) then
+      if (( Sol_type_S /= 'DIRECT' ) .or. ( .not. sol_fft_L )) then
          set_fft = 0
       endif
 
@@ -60,8 +60,8 @@
 
       call itf_fft_nextfactor2 ( npts, next_down )
 
-      if ( npts .ne. G_ni-Lam_pil_w-Lam_pil_e+onept ) then
-         if (Lun_out.gt.0) write (Lun_out,3001) &
+      if ( npts /= G_ni-Lam_pil_w-Lam_pil_e+onept ) then
+         if (Lun_out > 0) write (Lun_out,3001) &
          G_ni-Lam_pil_w-Lam_pil_e+onept,npts,next_down
          return
       else
@@ -69,7 +69,7 @@
       endif
 
       Fft_fast_L= .true.
-      if (Lun_out.gt.0) write(Lun_out,*) 'Fft_fast_L = ',Fft_fast_L
+      if (Lun_out > 0) write(Lun_out,*) 'Fft_fast_L = ',Fft_fast_L
 
  1000 format( &
       /,'COMMON INITIALIZATION AND PREPARATION FOR FFT (S/R SET_FFT)', &

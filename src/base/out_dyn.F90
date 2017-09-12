@@ -26,6 +26,7 @@
       use levels
       use outd
       use outgrid
+      use out_listes
       implicit none
 #include <arch_specific.hf>
 
@@ -37,12 +38,11 @@
 !revision
 ! v4_80 - Desgagne M.       - major re-factorization of output
 
-#include "out_listes.cdk"
 #include <rmnlib_basics.hf>
 
       character(len=15) prefix
       logical ontimec,flag_clos
-      integer k,kk,jj,levset,gridset,istat
+      integer kk,jj,levset,gridset,istat
 !
 !----------------------------------------------------------------------
 !
@@ -55,13 +55,14 @@
 !
       if (F_reg_out) then
 
-         if (outd_sorties(0,Lctl_step).lt.1) then
-            if (Lun_out.gt.0) write(Lun_out,7002) Lctl_step
+         if (outd_sorties(0,Lctl_step) < 1) then
+            if (Lun_out > 0) write(Lun_out,7002) Lctl_step
             goto 887
          endif
 
-         if (Lun_out.gt.0) write(Lun_out,7001) &
-                           Lctl_step,trim(Out_laststep_S)
+         if (Lun_out > 0) then
+            write(Lun_out,7001) Lctl_step,trim(Out_laststep_S)
+         end if
 
          call canonical_cases ("OUT")
 
@@ -85,9 +86,9 @@
                   OutGrid_x0 (gridset), OutGrid_x1 (gridset), 1, &
                   OutGrid_y0 (gridset), OutGrid_y1 (gridset), 1 )
 
-            if (Level_typ_S(levset).eq.'M') then
+            if (Level_typ_S(levset) == 'M') then
                call out_vref_itf (etiket=Out_etik_S)
-            elseif (Level_typ_S(levset).eq.'P') then
+            elseif (Level_typ_S(levset) == 'P') then
                call out_vref_itf (Level_allpres(1:Level_npres),etiket=Out_etik_S)
             endif
 
@@ -102,9 +103,9 @@
             call out_gmm2   (levset, kk)
 
             flag_clos= .true.
-            if (jj .lt. outd_sorties(0,Lctl_step)) then
-              flag_clos= .not.( (gridset.eq.Outd_grid(outd_sorties(jj+1,Lctl_step))).and. &
-              (Level_typ_S(levset).eq.Level_typ_S(Outd_lev(outd_sorties(jj+1,Lctl_step)))))
+            if (jj < outd_sorties(0,Lctl_step)) then
+              flag_clos= .not.( (gridset == Outd_grid(outd_sorties(jj+1,Lctl_step))).and. &
+              (Level_typ_S(levset) == Level_typ_S(Outd_lev(outd_sorties(jj+1,Lctl_step)))))
             endif
 
             if (flag_clos) call out_cfile3
@@ -119,21 +120,21 @@
 !
 !########## SPECIAL OUTPUT FOR CASCADE ###########################
 
-      if ((F_casc_L) .and. (Grdc_ndt.gt.0)) then
+      if ((F_casc_L) .and. (Grdc_ndt > 0)) then
 
          ontimec = .false.
-         if ( Lctl_step.ge.Grdc_start.and.Lctl_step.le.Grdc_end) &
-              ontimec = (mod(Lctl_step+Grdc_start,Grdc_ndt).eq.0)
+         if ( Lctl_step >= Grdc_start.and.Lctl_step <= Grdc_end ) then
+            ontimec = (mod(Lctl_step+Grdc_start,Grdc_ndt) == 0)
+         end if
 
-         if ( Init_mode_L .and. (Step_kount.ge.Init_halfspan) ) &
-              ontimec = .false.
+         if ( Init_mode_L .and. (Step_kount >= Init_halfspan) ) then
+            ontimec = .false.
+         end if
 
          if ( ontimec ) then
 
             call out_open_file ('casc')
-
             call out_dyn_casc
-
             call out_cfile3
 
          endif

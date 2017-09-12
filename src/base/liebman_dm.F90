@@ -47,7 +47,8 @@
       prmaxall = 1000.
 
 !$omp parallel shared (i0,in,ic,j0,jn,jc,prmax,prmaxall,prfact, &
-!$omp                  count,sum0,sumall,mask,maskall) private (i,j,k,ite,prmod)
+!$omp                  count,sum0,sumall,mask,maskall)          &
+!$omp          private (i,j,k,ite,prmod)
 
 !$omp single
       i0 = 1 ; in = l_ni ; ic = 1
@@ -63,7 +64,7 @@
 
 !$omp do
          do k=1,Nk
-            if ( prmaxall(k) .gt. F_conv ) then
+            if ( prmaxall(k) > F_conv ) then
                do j=j0,jn,jc
                do i=i0,in,ic
                   prmod = prfact * F_mask(i,j,k)               * &
@@ -79,17 +80,17 @@
 !$omp enddo
 
 !$omp single
-         if ((i0.eq.1   ).and.(j0.eq.1   )) then
+         if ((i0 == 1   ).and.(j0 == 1   )) then
             i0=l_ni ; in=1 ; ic=-1
          endif
-         if ((i0.eq.l_ni).and.(j0.eq.1   )) then
+         if ((i0 == l_ni).and.(j0 == 1   )) then
             j0=l_nj ; jn=1 ; jc=-1
          endif
-         if ((i0.eq.l_ni).and.(j0.eq.l_nj)) then
+         if ((i0 == l_ni).and.(j0 == l_nj)) then
             i0 = 1    ; in = l_ni ; ic =  1
             j0 = l_nj ; jn = 1    ; jc = -1
          endif
-         if ((i0.eq.1   ).and.(j0.eq.l_nj)) then
+         if ((i0 == 1   ).and.(j0 == l_nj)) then
             i0 = 1 ; in = l_ni ; ic = 1
             j0 = 1 ; jn = l_nj ; jc = 1
          endif
@@ -98,14 +99,14 @@
 
          count = 0
          do k=1,Nk
-            if ( prmaxall(k) .lt. F_conv ) count = count + 1
+            if ( prmaxall(k) < F_conv ) count = count + 1
          end do
 !$omp end single
 
-         if ( count.eq.Nk ) exit
+         if ( count == Nk ) exit
 
 !$omp single
-         if (mod(ite,Out3_liebxch_iter).eq.0) &
+         if (mod(ite,Out3_liebxch_iter) == 0) &
          call rpn_comm_xch_halo( F_field, Minx,Maxx,Miny,Maxy,l_ni,l_nj,Nk, &
                                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 !$omp end single

@@ -22,6 +22,7 @@
       use glb_ld
       use glb_pil
       use ptopo
+      use yyg_pilu
       implicit none
 #include <arch_specific.hf>
 !
@@ -31,17 +32,15 @@
 !revision
 !  v4.8  V.Lee - Correction for limiting range in point found on other grid
 !
-#include "yyg_pilu.cdk"
 
-      integer err,Ndim,i,j,k,kk,ii,jj,ki,ksend,krecv
+      integer i,j,kk,ii,jj,ki,ksend,krecv
       integer imx1,imx2
       integer imy1,imy2
-      integer kkproc,adr
       integer, dimension (:), pointer :: recv_len,send_len
       real*8  xx_8(G_niu,G_nj),yy_8(G_niu,G_nj)
       real*8  xg_8(1-G_ni:2*G_ni),yg_8(1-G_nj:2*G_nj)
       real*8  xgu_8(1-G_ni:2*G_ni-1),ygv_8(1-G_nj:2*G_nj-1)
-      real*8  t,p,s(2,2),h1,h2
+      real*8  s(2,2),h1,h2
       real*8  x_d,y_d,x_a,y_a
       real*8 TWO_8
       parameter( TWO_8   = 2.0d0 )
@@ -131,13 +130,13 @@
 !
 
 ! check to collect from who
-         if (i  .ge.l_i0.and.i  .le.l_i0+l_ni-1 .and. &
-             j  .ge.l_j0.and.j  .le.l_j0+l_nj-1      ) then
+         if (i >= l_i0.and.i <= l_i0+l_ni-1 .and. &
+             j >= l_j0.and.j <= l_j0+l_nj-1      ) then
              do kk=1,Ptopo_numproc
-                if (max(imx1,imx2).ge.Ptopo_gindx(1,kk).and. &
-                    max(imx1,imx2).le.Ptopo_gindx(2,kk).and. &
-                    max(imy1,imy2).ge.Ptopo_gindx(3,kk).and. &
-                    max(imy1,imy2).le.Ptopo_gindx(4,kk) ) then
+                if (max(imx1,imx2) >= Ptopo_gindx(1,kk).and. &
+                    max(imx1,imx2) <= Ptopo_gindx(2,kk).and. &
+                    max(imy1,imy2) >= Ptopo_gindx(3,kk).and. &
+                    max(imy1,imy2) <= Ptopo_gindx(4,kk) ) then
                     recv_len(kk)=recv_len(kk)+1
                 endif
              enddo
@@ -145,13 +144,13 @@
          endif
 
 ! check to send to who
-         if (max(imx1,imx2).ge.l_i0.and.         &
-             max(imx1,imx2).le.l_i0+l_ni-1 .and. &
-             max(imy1,imy2).ge.l_j0.and.         &
-             max(imy1,imy2).le.l_j0+l_nj-1) then
+         if (max(imx1,imx2) >= l_i0.and.         &
+             max(imx1,imx2) <= l_i0+l_ni-1 .and. &
+             max(imy1,imy2) >= l_j0.and.         &
+             max(imy1,imy2) <= l_j0+l_nj-1) then
              do kk=1,Ptopo_numproc
-                if (i  .ge.Ptopo_gindx(1,kk).and.i  .le.Ptopo_gindx(2,kk).and. &
-                    j  .ge.Ptopo_gindx(3,kk).and.j  .le.Ptopo_gindx(4,kk))then
+                if (i >= Ptopo_gindx(1,kk).and.i <= Ptopo_gindx(2,kk).and. &
+                    j >= Ptopo_gindx(3,kk).and.j <= Ptopo_gindx(4,kk))then
                     send_len(kk)=send_len(kk)+1
                 endif
              enddo
@@ -178,26 +177,26 @@
          imy2 = min(max(imy2-1,glb_pil_s+1),G_njv-glb_pil_n-3)
 !
 ! check to collect from who
-         if (i  .ge.l_i0.and.i  .le.l_i0+l_ni-1 .and. &
-             j  .ge.l_j0.and.j  .le.l_j0+l_nj-1      ) then
+         if (i >= l_i0.and.i <= l_i0+l_ni-1 .and. &
+             j >= l_j0.and.j <= l_j0+l_nj-1      ) then
              do kk=1,Ptopo_numproc
-                if (max(imx1,imx2).ge.Ptopo_gindx(1,kk).and. &
-                    max(imx1,imx2).le.Ptopo_gindx(2,kk).and. &
-                    max(imy1,imy2).ge.Ptopo_gindx(3,kk).and. &
-                    max(imy1,imy2).le.Ptopo_gindx(4,kk) ) then
+                if (max(imx1,imx2) >= Ptopo_gindx(1,kk).and. &
+                    max(imx1,imx2) <= Ptopo_gindx(2,kk).and. &
+                    max(imy1,imy2) >= Ptopo_gindx(3,kk).and. &
+                    max(imy1,imy2) <= Ptopo_gindx(4,kk) ) then
                     recv_len(kk)=recv_len(kk)+1
                 endif
              enddo
          endif
 
 ! check to send to who
-         if (max(imx1,imx2).ge.l_i0.and.         &
-             max(imx1,imx2).le.l_i0+l_ni-1 .and. &
-             max(imy1,imy2).ge.l_j0.and.         &
-             max(imy1,imy2).le.l_j0+l_nj-1) then
+         if (max(imx1,imx2) >= l_i0.and.         &
+             max(imx1,imx2) <= l_i0+l_ni-1 .and. &
+             max(imy1,imy2) >= l_j0.and.         &
+             max(imy1,imy2) <= l_j0+l_nj-1) then
              do kk=1,Ptopo_numproc
-                if (i  .ge.Ptopo_gindx(1,kk).and.i .le.Ptopo_gindx(2,kk).and. &
-                    j  .ge.Ptopo_gindx(3,kk).and.j .le.Ptopo_gindx(4,kk))then
+                if (i >= Ptopo_gindx(1,kk).and.i <= Ptopo_gindx(2,kk).and. &
+                    j >= Ptopo_gindx(3,kk).and.j <= Ptopo_gindx(4,kk))then
                     send_len(kk)=send_len(kk)+1
                 endif
              enddo
@@ -223,26 +222,26 @@
          imy2 = min(max(imy2-1,glb_pil_s+1),G_njv-glb_pil_n-3)
 !
 ! check to collect from who
-         if (i  .ge.l_i0.and.i  .le.l_i0+l_ni-1 .and. &
-             j  .ge.l_j0.and.j  .le.l_j0+l_nj-1      ) then
+         if (i >= l_i0.and.i <= l_i0+l_ni-1 .and. &
+             j >= l_j0.and.j <= l_j0+l_nj-1      ) then
              do kk=1,Ptopo_numproc
-                if (max(imx1,imx2).ge.Ptopo_gindx(1,kk).and. &
-                    max(imx1,imx2).le.Ptopo_gindx(2,kk).and. &
-                    max(imy1,imy2).ge.Ptopo_gindx(3,kk).and. &
-                    max(imy1,imy2).le.Ptopo_gindx(4,kk) ) then
+                if (max(imx1,imx2) >= Ptopo_gindx(1,kk).and. &
+                    max(imx1,imx2) <= Ptopo_gindx(2,kk).and. &
+                    max(imy1,imy2) >= Ptopo_gindx(3,kk).and. &
+                    max(imy1,imy2) <= Ptopo_gindx(4,kk) ) then
                     recv_len(kk)=recv_len(kk)+1
                 endif
              enddo
          endif
 
 ! check to send to who
-         if (max(imx1,imx2).ge.l_i0.and.         &
-             max(imx1,imx2).le.l_i0+l_ni-1 .and. &
-             max(imy1,imy2).ge.l_j0.and.         &
-             max(imy1,imy2).le.l_j0+l_nj-1) then
+         if (max(imx1,imx2) >= l_i0.and.         &
+             max(imx1,imx2) <= l_i0+l_ni-1 .and. &
+             max(imy1,imy2) >= l_j0.and.         &
+             max(imy1,imy2) <= l_j0+l_nj-1) then
              do kk=1,Ptopo_numproc
-                if (i  .ge.Ptopo_gindx(1,kk).and.i  .le.Ptopo_gindx(2,kk).and. &
-                    j  .ge.Ptopo_gindx(3,kk).and.j  .le.Ptopo_gindx(4,kk))then
+                if (i >= Ptopo_gindx(1,kk).and.i <= Ptopo_gindx(2,kk).and. &
+                    j >= Ptopo_gindx(3,kk).and.j <= Ptopo_gindx(4,kk))then
                     send_len(kk)=send_len(kk)+1
                 endif
              enddo
@@ -269,26 +268,26 @@
 !
 
 ! check to collect from who
-         if (i  .ge.l_i0.and.i  .le.l_i0+l_ni-1 .and. &
-             j  .ge.l_j0.and.j  .le.l_j0+l_nj-1      ) then
+         if (i >= l_i0.and.i <= l_i0+l_ni-1 .and. &
+             j >= l_j0.and.j <= l_j0+l_nj-1      ) then
              do kk=1,Ptopo_numproc
-                if (max(imx1,imx2).ge.Ptopo_gindx(1,kk).and. &
-                    max(imx1,imx2).le.Ptopo_gindx(2,kk).and. &
-                    max(imy1,imy2).ge.Ptopo_gindx(3,kk).and. &
-                    max(imy1,imy2).le.Ptopo_gindx(4,kk) ) then
+                if (max(imx1,imx2) >= Ptopo_gindx(1,kk).and. &
+                    max(imx1,imx2) <= Ptopo_gindx(2,kk).and. &
+                    max(imy1,imy2) >= Ptopo_gindx(3,kk).and. &
+                    max(imy1,imy2) <= Ptopo_gindx(4,kk) ) then
                     recv_len(kk)=recv_len(kk)+1
                 endif
              enddo
          endif
 
 ! check to send to who
-         if (max(imx1,imx2).ge.l_i0.and.         &
-             max(imx1,imx2).le.l_i0+l_ni-1 .and. &
-             max(imy1,imy2).ge.l_j0.and.         &
-             max(imy1,imy2).le.l_j0+l_nj-1) then
+         if (max(imx1,imx2) >= l_i0.and.         &
+             max(imx1,imx2) <= l_i0+l_ni-1 .and. &
+             max(imy1,imy2) >= l_j0.and.         &
+             max(imy1,imy2) <= l_j0+l_nj-1) then
              do kk=1,Ptopo_numproc
-                if (i  .ge.Ptopo_gindx(1,kk).and.i  .le.Ptopo_gindx(2,kk).and. &
-                    j  .ge.Ptopo_gindx(3,kk).and.j  .le.Ptopo_gindx(4,kk))then
+                if (i >= Ptopo_gindx(1,kk).and.i <= Ptopo_gindx(2,kk).and. &
+                    j >= Ptopo_gindx(3,kk).and.j <= Ptopo_gindx(4,kk))then
                     send_len(kk)=send_len(kk)+1
                 endif
              enddo
@@ -308,8 +307,8 @@
         Pil_usend_all=send_len(kk)+Pil_usend_all
         Pil_urecv_all=recv_len(kk)+Pil_urecv_all
 
-        if (send_len(kk).gt.0) Pil_usendmaxproc=Pil_usendmaxproc+1
-        if (recv_len(kk).gt.0) Pil_urecvmaxproc=Pil_urecvmaxproc+1
+        if (send_len(kk) > 0) Pil_usendmaxproc=Pil_usendmaxproc+1
+        if (recv_len(kk) > 0) Pil_urecvmaxproc=Pil_urecvmaxproc+1
      enddo
 
 !
@@ -336,7 +335,7 @@
 ! Fill the lengths and addresses for selected processors to communicate
 !
      do kk=1,Ptopo_numproc
-        if (send_len(kk).gt.0) then
+        if (send_len(kk) > 0) then
             ksend=ksend+1
             Pil_usendproc(ksend)=kk
             Pil_usend_len(ksend)=send_len(kk)
@@ -344,7 +343,7 @@
             Pil_usend_adr(ksend)= Pil_usend_all
             Pil_usend_all= Pil_usend_all + Pil_usend_len(ksend)
         endif
-        if (recv_len(kk).gt.0) then
+        if (recv_len(kk) > 0) then
             krecv=krecv+1
             Pil_urecvproc(krecv)=kk
             Pil_urecv_len(krecv)=recv_len(kk)
@@ -369,14 +368,14 @@
 !
 ! Now allocate the vectors needed for sending and receiving each processor
 !
-      if (Pil_urecv_all.gt.0) then
+      if (Pil_urecv_all > 0) then
           allocate (Pil_urecv_i(Pil_urecv_all))
           allocate (Pil_urecv_j(Pil_urecv_all))
           Pil_urecv_i(:) = 0
           Pil_urecv_j(:) = 0
       endif
 
-      if (Pil_usend_all.gt.0) then
+      if (Pil_usend_all > 0) then
           allocate (Pil_usend_imx1(Pil_usend_all))
           allocate (Pil_usend_imy1(Pil_usend_all))
           allocate (Pil_usend_imx2(Pil_usend_all))
@@ -421,14 +420,14 @@
 !
 
 ! check to collect from who
-         if (i  .ge.l_i0.and.i  .le.l_i0+l_ni-1 .and. &
-             j  .ge.l_j0.and.j  .le.l_j0+l_nj-1      ) then
+         if (i >= l_i0.and.i <= l_i0+l_ni-1 .and. &
+             j >= l_j0.and.j <= l_j0+l_nj-1      ) then
              do kk=1,Pil_urecvmaxproc
                 ki=Pil_urecvproc(kk)
-                if (max(imx1,imx2).ge.Ptopo_gindx(1,ki).and. &
-                    max(imx1,imx2).le.Ptopo_gindx(2,ki).and. &
-                    max(imy1,imy2).ge.Ptopo_gindx(3,ki).and. &
-                    max(imy1,imy2).le.Ptopo_gindx(4,ki) ) then
+                if (max(imx1,imx2) >= Ptopo_gindx(1,ki).and. &
+                    max(imx1,imx2) <= Ptopo_gindx(2,ki).and. &
+                    max(imy1,imy2) >= Ptopo_gindx(3,ki).and. &
+                    max(imy1,imy2) <= Ptopo_gindx(4,ki) ) then
                     recv_len(kk)=recv_len(kk)+1
                     ii=i-l_i0+1
                     jj=j-l_j0+1
@@ -439,14 +438,14 @@
          endif
 
 ! check to send to who
-         if (max(imx1,imx2).ge.l_i0.and.         &
-             max(imx1,imx2).le.l_i0+l_ni-1 .and. &
-             max(imy1,imy2).ge.l_j0.and.         &
-             max(imy1,imy2).le.l_j0+l_nj-1) then
+         if (max(imx1,imx2) >= l_i0.and.         &
+             max(imx1,imx2) <= l_i0+l_ni-1 .and. &
+             max(imy1,imy2) >= l_j0.and.         &
+             max(imy1,imy2) <= l_j0+l_nj-1) then
              do kk=1,Pil_usendmaxproc
                 ki=Pil_usendproc(kk)
-                if (i  .ge.Ptopo_gindx(1,ki).and.i  .le.Ptopo_gindx(2,ki).and. &
-                    j  .ge.Ptopo_gindx(3,ki).and.j  .le.Ptopo_gindx(4,ki))then
+                if (i >= Ptopo_gindx(1,ki).and.i <= Ptopo_gindx(2,ki).and. &
+                    j >= Ptopo_gindx(3,ki).and.j <= Ptopo_gindx(4,ki))then
                     send_len(kk)=send_len(kk)+1
                     Pil_usend_imx1(Pil_usend_adr(kk)+send_len(kk))=imx1-l_i0+1
                     Pil_usend_imy1(Pil_usend_adr(kk)+send_len(kk))=imy1-l_j0+1
@@ -482,14 +481,14 @@
          imy2 = min(max(imy2-1,glb_pil_s+1),G_njv-glb_pil_n-3)
 !
 ! check to collect from who
-         if (i  .ge.l_i0.and.i  .le.l_i0+l_ni-1 .and. &
-             j  .ge.l_j0.and.j  .le.l_j0+l_nj-1      ) then
+         if (i >= l_i0.and.i <= l_i0+l_ni-1 .and. &
+             j >= l_j0.and.j <= l_j0+l_nj-1      ) then
              do kk=1,Pil_urecvmaxproc
                 ki=Pil_urecvproc(kk)
-                if (max(imx1,imx2).ge.Ptopo_gindx(1,ki).and. &
-                    max(imx1,imx2).le.Ptopo_gindx(2,ki).and. &
-                    max(imy1,imy2).ge.Ptopo_gindx(3,ki).and. &
-                    max(imy1,imy2).le.Ptopo_gindx(4,ki) ) then
+                if (max(imx1,imx2) >= Ptopo_gindx(1,ki).and. &
+                    max(imx1,imx2) <= Ptopo_gindx(2,ki).and. &
+                    max(imy1,imy2) >= Ptopo_gindx(3,ki).and. &
+                    max(imy1,imy2) <= Ptopo_gindx(4,ki) ) then
                     recv_len(kk)=recv_len(kk)+1
                     ii=i-l_i0+1
                     jj=j-l_j0+1
@@ -500,14 +499,14 @@
          endif
 
 ! check to send to who
-         if (max(imx1,imx2).ge.l_i0.and.         &
-             max(imx1,imx2).le.l_i0+l_ni-1 .and. &
-             max(imy1,imy2).ge.l_j0.and.         &
-             max(imy1,imy2).le.l_j0+l_nj-1) then
+         if (max(imx1,imx2) >= l_i0.and.         &
+             max(imx1,imx2) <= l_i0+l_ni-1 .and. &
+             max(imy1,imy2) >= l_j0.and.         &
+             max(imy1,imy2) <= l_j0+l_nj-1) then
              do kk=1,Pil_usendmaxproc
                 ki=Pil_usendproc(kk)
-                if (i  .ge.Ptopo_gindx(1,ki).and.i .le.Ptopo_gindx(2,ki).and. &
-                    j  .ge.Ptopo_gindx(3,ki).and.j .le.Ptopo_gindx(4,ki))then
+                if (i >= Ptopo_gindx(1,ki).and.i <= Ptopo_gindx(2,ki).and. &
+                    j >= Ptopo_gindx(3,ki).and.j <= Ptopo_gindx(4,ki))then
                     send_len(kk)=send_len(kk)+1
                     Pil_usend_imx1(Pil_usend_adr(kk)+send_len(kk))=imx1-l_i0+1
                     Pil_usend_imy1(Pil_usend_adr(kk)+send_len(kk))=imy1-l_j0+1
@@ -541,14 +540,14 @@
          imy2 = min(max(imy2-1,glb_pil_s+1),G_njv-glb_pil_n-3)
 !
 ! check to collect from who
-         if (i  .ge.l_i0.and.i  .le.l_i0+l_ni-1 .and. &
-             j  .ge.l_j0.and.j  .le.l_j0+l_nj-1      ) then
+         if (i >= l_i0.and.i <= l_i0+l_ni-1 .and. &
+             j >= l_j0.and.j <= l_j0+l_nj-1      ) then
              do kk=1,Pil_urecvmaxproc
                 ki=Pil_urecvproc(kk)
-                if (max(imx1,imx2).ge.Ptopo_gindx(1,ki).and. &
-                    max(imx1,imx2).le.Ptopo_gindx(2,ki).and. &
-                    max(imy1,imy2).ge.Ptopo_gindx(3,ki).and. &
-                    max(imy1,imy2).le.Ptopo_gindx(4,ki) ) then
+                if (max(imx1,imx2) >= Ptopo_gindx(1,ki).and. &
+                    max(imx1,imx2) <= Ptopo_gindx(2,ki).and. &
+                    max(imy1,imy2) >= Ptopo_gindx(3,ki).and. &
+                    max(imy1,imy2) <= Ptopo_gindx(4,ki) ) then
                     recv_len(kk)=recv_len(kk)+1
                     ii=i-l_i0+1
                     jj=j-l_j0+1
@@ -559,14 +558,14 @@
          endif
 
 ! check to send to who
-         if (max(imx1,imx2).ge.l_i0.and.         &
-             max(imx1,imx2).le.l_i0+l_ni-1 .and. &
-             max(imy1,imy2).ge.l_j0.and.         &
-             max(imy1,imy2).le.l_j0+l_nj-1) then
+         if (max(imx1,imx2) >= l_i0.and.         &
+             max(imx1,imx2) <= l_i0+l_ni-1 .and. &
+             max(imy1,imy2) >= l_j0.and.         &
+             max(imy1,imy2) <= l_j0+l_nj-1) then
              do kk=1,Pil_usendmaxproc
                 ki=Pil_usendproc(kk)
-                if (i  .ge.Ptopo_gindx(1,ki).and.i  .le.Ptopo_gindx(2,ki).and. &
-                    j  .ge.Ptopo_gindx(3,ki).and.j  .le.Ptopo_gindx(4,ki))then
+                if (i >= Ptopo_gindx(1,ki).and.i <= Ptopo_gindx(2,ki).and. &
+                    j >= Ptopo_gindx(3,ki).and.j <= Ptopo_gindx(4,ki))then
                     send_len(kk)=send_len(kk)+1
                     Pil_usend_imx1(Pil_usend_adr(kk)+send_len(kk))=imx1-l_i0+1
                     Pil_usend_imy1(Pil_usend_adr(kk)+send_len(kk))=imy1-l_j0+1
@@ -601,14 +600,14 @@
 !
 
 ! check to collect from who
-         if (i  .ge.l_i0.and.i  .le.l_i0+l_ni-1 .and. &
-             j  .ge.l_j0.and.j  .le.l_j0+l_nj-1      ) then
+         if (i >= l_i0.and.i <= l_i0+l_ni-1 .and. &
+             j >= l_j0.and.j <= l_j0+l_nj-1      ) then
              do kk=1,Pil_urecvmaxproc
                 ki=Pil_urecvproc(kk)
-                if (max(imx1,imx2).ge.Ptopo_gindx(1,ki).and. &
-                    max(imx1,imx2).le.Ptopo_gindx(2,ki).and. &
-                    max(imy1,imy2).ge.Ptopo_gindx(3,ki).and. &
-                    max(imy1,imy2).le.Ptopo_gindx(4,ki) ) then
+                if (max(imx1,imx2) >= Ptopo_gindx(1,ki).and. &
+                    max(imx1,imx2) <= Ptopo_gindx(2,ki).and. &
+                    max(imy1,imy2) >= Ptopo_gindx(3,ki).and. &
+                    max(imy1,imy2) <= Ptopo_gindx(4,ki) ) then
                     recv_len(kk)=recv_len(kk)+1
                     ii=i-l_i0+1
                     jj=j-l_j0+1
@@ -619,14 +618,14 @@
          endif
 
 ! check to send to who
-         if (max(imx1,imx2).ge.l_i0.and.         &
-             max(imx1,imx2).le.l_i0+l_ni-1 .and. &
-             max(imy1,imy2).ge.l_j0.and.         &
-             max(imy1,imy2).le.l_j0+l_nj-1) then
+         if (max(imx1,imx2) >= l_i0.and.         &
+             max(imx1,imx2) <= l_i0+l_ni-1 .and. &
+             max(imy1,imy2) >= l_j0.and.         &
+             max(imy1,imy2) <= l_j0+l_nj-1) then
              do kk=1,Pil_usendmaxproc
                 ki=Pil_usendproc(kk)
-                if (i  .ge.Ptopo_gindx(1,ki).and.i  .le.Ptopo_gindx(2,ki).and. &
-                    j  .ge.Ptopo_gindx(3,ki).and.j  .le.Ptopo_gindx(4,ki))then
+                if (i >= Ptopo_gindx(1,ki).and.i <= Ptopo_gindx(2,ki).and. &
+                    j >= Ptopo_gindx(3,ki).and.j <= Ptopo_gindx(4,ki))then
                     send_len(kk)=send_len(kk)+1
                     Pil_usend_imx1(Pil_usend_adr(kk)+send_len(kk))=imx1-l_i0+1
                     Pil_usend_imy1(Pil_usend_adr(kk)+send_len(kk))=imy1-l_j0+1
@@ -644,7 +643,7 @@
 !Check receive lengths from each processor
 !     do ki=1,Pil_urecvmaxproc
 !        kk=Pil_urecvproc(ki)
-!        if (Ptopo_couleur.eq.0) then
+!        if (Ptopo_couleur == 0) then
 !            kkproc = kk+Ptopo_numproc-1
 !        else
 !            kkproc = kk -1
@@ -656,7 +655,7 @@
 
 !     do ki=1,Pil_usendmaxproc
 !        kk=Pil_usendproc(ki)
-!        if (Ptopo_couleur.eq.0) then
+!        if (Ptopo_couleur == 0) then
 !            kkproc = kk+Ptopo_numproc-1
 !        else
 !            kkproc = kk -1

@@ -35,10 +35,10 @@
 !     ---------------------------------------------------------------
 !
       Vspng_niter = 0
-      if (Vspng_coeftop.lt.0.) Vspng_nk = 0
-      if (Vspng_nk.le.0) return
+      if (Vspng_coeftop < 0.) Vspng_nk = 0
+      if (Vspng_nk <= 0) return
 
-      if (Lun_out.gt.0) write (Lun_out,1001)
+      if (Lun_out > 0) write (Lun_out,1001)
 
       Vspng_nk = min(G_nk,Vspng_nk)
       pis2_8   = pi_8/2.0d0
@@ -58,7 +58,7 @@
       nutop = Vspng_coeftop*Cstv_dt_8/(Dcst_rayt_8*c_8)**2
       Vspng_niter = int(8.d0*nutop+0.9999999)
 
-      if (Lun_out.gt.0) then
+      if (Lun_out > 0) then
          write (Lun_out,2002) Vspng_coeftop,Vspng_nk,nutop,Vspng_niter
          write (Lun_out,3001)
       endif
@@ -67,7 +67,7 @@
 
       do k=1,Vspng_nk
          Vspng_coef_8(k) = weigh(k) * nutop
-         if (Lun_out.gt.0) write (Lun_out,2005) &
+         if (Lun_out > 0) write (Lun_out,2005) &
                        Vspng_coef_8(k)      ,&
                        Vspng_coef_8(k)*Cstv_dt_8/(Dcst_rayt_8*c_8)**2,&
                        exp(Ver_z_8%m(k)),k

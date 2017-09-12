@@ -60,8 +60,8 @@
       istat = gmm_shuffle(zdt_list)
       istat = gmm_shuffle( wt_list)
 
-      if (.not. Schm_hydro_L) then
-         istat = gmm_shuffle( qt_list)
+      if (.not. Schm_hydro_L .or. trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H') then
+         istat = gmm_shuffle(qt_list)
       endif
 
       do i=1,Tr3d_ntr
@@ -69,10 +69,6 @@
          tr_list(2) = 'TR/'//trim(Tr3d_name_S(i))//':P'
          istat = gmm_shuffle(tr_list)
       end do
-
-      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H') then
-         call exp_t02t1
-      end if
 
       return
       end

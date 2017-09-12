@@ -104,7 +104,7 @@
 
       if (Lun_debug_L) write(Lun_out,1000)
 
-      if ( Orh_icn .eq. 1 ) then       ! Compute RHS
+      if ( Orh_icn == 1 ) then       ! Compute RHS
 
          call timing_start2 ( 20, 'RHS', 10 )
 
@@ -137,13 +137,13 @@
 
       call timing_start2 (22, 'PRE', 10)
 
-      if ( Orh_icn.eq.1 ) then
+      if ( Orh_icn == 1 ) then
          if ( .not. Grd_yinyang_L .and. .not. Lam_ctebcs_L) then
             fis0(1:l_ni,1:l_nj)= nest_fullme(1:l_ni,1:l_nj)
             call rpn_comm_xch_halo (fis0,l_minx,l_maxx,l_miny,l_maxy,&
                l_ni,l_nj,1,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
          else
-            if (Vtopo_L .and. (Lctl_step .ge. Vtopo_start)) then
+            if (Vtopo_L .and. (Lctl_step >= Vtopo_start)) then
                gmmstat = gmm_get(gmmk_fis0_s,fis0)
                call var_topo2 (fis0, real(Lctl_step),&
                                l_minx,l_maxx,l_miny,l_maxy)

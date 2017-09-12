@@ -1,6 +1,23 @@
-#if defined (DOC)
-!
-!**comdeck yyg_blen.cdk
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+
+module yyg_bln
+   implicit none
+   public
+   save
+
 !
 !______________________________________________________________________
 !                                                                      |
@@ -31,28 +48,16 @@
 ! Bln_send_s4(*,M)   | element (s(2,2)) in matrix for polar vectors    |
 !                    | transformation                                  |
 !______________________________________________________________________|
-#endif
 !
 !Declarations for Scalar variables (on Phi grid)
-      integer  Bln_send_all, Bln_recv_all,Bln_sendmaxproc,Bln_recvmaxproc
-      integer, dimension (:  ), pointer :: &
-               Bln_sendproc, Bln_recvproc, &
-               Bln_recv_len, Bln_send_len, &
-               Bln_recv_adr, Bln_send_adr, &
-               Bln_recv_i   , Bln_recv_j   , Bln_send_imx , Bln_send_imy
+   integer  Bln_send_all, Bln_recv_all,Bln_sendmaxproc,Bln_recvmaxproc
+   integer, dimension (:  ), pointer :: &
+            Bln_sendproc, Bln_recvproc, &
+            Bln_recv_len, Bln_send_len, &
+            Bln_recv_adr, Bln_send_adr, &
+            Bln_recv_i   , Bln_recv_j   , Bln_send_imx , Bln_send_imy
 !
-      real*8,  dimension (: ), pointer :: &
-               Bln_send_xxr, Bln_send_yyr, & 
-               Bln_send_s1,  Bln_send_s2, Bln_send_s3, Bln_send_s4
-!
-      common/Bln_i/ Bln_send_all, Bln_recv_all, &
-               Bln_sendmaxproc,Bln_recvmaxproc, &
-               Bln_sendproc, Bln_recvproc, &
-               Bln_recv_len, Bln_send_len, &
-               Bln_recv_adr, Bln_send_adr, &
-               Bln_recv_i  , Bln_recv_j  , Bln_send_imx , Bln_send_imy
-
-      common/Bln_r8/ &
-               Bln_send_xxr, Bln_send_yyr, &
-               Bln_send_s1,  Bln_send_s2, Bln_send_s3, Bln_send_s4
-!
+   real*8,  dimension (: ), pointer :: &
+            Bln_send_xxr, Bln_send_yyr, &
+            Bln_send_s1,  Bln_send_s2, Bln_send_s3, Bln_send_s4
+end module yyg_bln

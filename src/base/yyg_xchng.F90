@@ -22,10 +22,13 @@
       use glb_ld
       use glb_pil
       use ptopo
+      use yyg_pil
+      use yyg_pil0
+      use yyg_pilp
       implicit none
 #include <arch_specific.hf>
 
-      character* (*) F_interpo_S
+      character(len=*)  :: F_interpo_S
       logical mono_L
       integer Minx,Maxx,Miny,Maxy, Nk
       real F_src (Minx:Maxx,Miny:Maxy,Nk)
@@ -36,14 +39,13 @@
 ! v4_60 - Qaddouri A.   - initial version
 ! v4_70 - Desgagne M.   - major revision
 
-#include "yyg_pil.cdk"
-#include "yyg_pil0.cdk"
-
       integer ierr,k,kk,kk_proc,m,mm,adr
       integer tag2,recvlen,sendlen,ireq,sendmaxproc,recvmaxproc
       integer request(Ptopo_numproc*2)
       real, dimension (:,:), allocatable :: recv_pil,send_pil
       real*8, dimension(Minx:Maxx,Miny:Maxy,Nk) :: wrk1
+
+      character(len=len_trim(adjustl(F_interpo_S))) :: interp_S
 
       integer, dimension (:  ), pointer :: &
                sendproc ,  recvproc,  recv_len,  send_len, &
@@ -56,7 +58,27 @@
       call timing_start2 ( 6, 'YYG_XCHNG', 0)
       tag2=14 ; sendlen=0 ; recvlen=0 ; ireq=0
 
-      if (trim(F_interpo_S) == 'CUBIC') then
+      interp_S = trim(adjustl(F_interpo_S))
+
+      if (trim(adjustl(F_interpo_S)) == 'PHYSI') then
+         interp_S = 'CUBIC'
+         sendmaxproc= Pilp_sendmaxproc
+         recvmaxproc= Pilp_recvmaxproc
+         send_len  => Pilp_send_len
+         recv_len  => Pilp_recv_len
+         sendproc  => Pilp_sendproc
+         send_len  => Pilp_send_len
+         send_adr  => Pilp_send_adr
+         send_imx  => Pilp_send_imx
+         send_imy  => Pilp_send_imy
+         send_xxr  => Pilp_send_xxr
+         send_yyr  => Pilp_send_yyr
+         recvproc  => Pilp_recvproc
+         recv_len  => Pilp_recv_len
+         recv_adr  => Pilp_recv_adr
+         recv_i    => Pilp_recv_i
+         recv_j    => Pilp_recv_j
+      else if (trim(adjustl(F_interpo_S)) == 'CUBIC') then
          sendmaxproc= Pil_sendmaxproc
          recvmaxproc= Pil_recvmaxproc
          send_len  => Pil_send_len
@@ -73,8 +95,7 @@
          recv_adr  => Pil_recv_adr
          recv_i    => Pil_recv_i
          recv_j    => Pil_recv_j
-      else
-! this need to be checked ...
+      else ! either Nearest or Linear
          sendmaxproc= Pil0_sendmaxproc
          recvmaxproc= Pil0_recvmaxproc
          send_len  => Pil0_send_len
@@ -103,13 +124,13 @@
       call rpn_comm_xch_halo(f_src, Minx,Maxx,Miny,Maxy,l_ni,l_nj,Nk, &
                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 
-      if (sendlen.gt.0) then
+      if (sendlen > 0) then
          allocate(send_pil(sendlen*Nk,sendmaxproc))
 !     Double the precision on all values, including inside halo
 !     If halo has undefined values, Intel will find floating invalid
          wrk1(:,:,:)= dble(F_src(:,:,:))
       endif
-      if (recvlen.gt.0) then
+      if (recvlen > 0) then
           allocate(recv_pil(recvlen*NK,recvmaxproc))
       endif
 
@@ -117,14 +138,14 @@
 
 !        For each processor (in other colour)
 
-         if (Ptopo_couleur.eq.0) then
+         if (Ptopo_couleur == 0) then
             kk_proc = sendproc(kk)+Ptopo_numproc-1
          else
             kk_proc = sendproc(kk)-1
          endif
 
 !        prepare to send to other colour processor
-         if (send_len(kk).gt.0) then
+         if (send_len(kk) > 0) then
 !            prepare something to send
 
              adr=send_adr(kk)+1
@@ -133,7 +154,7 @@
                        send_imx(adr), send_imy(adr), geomh_x_8,geomh_y_8,&
                        Minx,Maxx,Miny,Maxy,Nk,&
                        send_xxr(adr),send_yyr(adr),send_len(KK),&
-                       mono_l,F_interpo_S )
+                       mono_l,interp_S )
 
              ireq = ireq+1
              call RPN_COMM_ISend(send_pil (1,KK),send_len(kk)*NK,&
@@ -148,13 +169,13 @@
       do 200 kk= 1, recvmaxproc
 !        For each processor (in other colour)
 
-         if (Ptopo_couleur.eq.0) then
+         if (Ptopo_couleur == 0) then
              kk_proc = recvproc(kk)+Ptopo_numproc-1
          else
              kk_proc = recvproc(kk)-1
          endif
 
-         if (recv_len(kk).gt.0) then
+         if (recv_len(kk) > 0) then
 !            detect something to receive
 
             ireq = ireq+1
@@ -171,7 +192,7 @@
 
 ! Now fill my results if I have received something
 
-      if (recvlen.gt.0) then
+      if (recvlen > 0) then
 
          do 300 kk=1, recvmaxproc
            mm=0
@@ -187,8 +208,8 @@
 
       endif
 
-      if (recvlen.gt.0) deallocate(recv_pil)
-      if (sendlen.gt.0) deallocate(send_pil)
+      if (recvlen > 0) deallocate(recv_pil)
+      if (sendlen > 0) deallocate(send_pil)
       call timing_stop (6)
 !
 !----------------------------------------------------------------------

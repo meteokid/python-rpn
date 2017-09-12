@@ -35,6 +35,7 @@
       use path
       use clib_itf_mod
       use wb_itf_mod
+      use ptopo_utils, only: ptopo_io_set !#TODO: should the phyics define its own?
       implicit none
 #include <arch_specific.hf>
 
@@ -123,9 +124,10 @@
 ! Complete physics initialization (see phy_init for interface content)
 
       err= phy_init ( Path_phy_S, Step_CMCdate0, real(Cstv_dt_8), &
-                      'model/Hgrid/lclphy','model/Hgrid/lclcore', &
-                      'model/Hgrid/global','model/Hgrid/local'  , &
-                                       G_nk+1, Ver_std_p_prof%m )
+                      'model/Hgrid/lclphy', 'model/Hgrid/lclcore', &
+                      'model/Hgrid/global', 'model/Hgrid/local'  , &
+                      'model/Hgrid/glbphy', 'model/Hgrid/glbphycore', &
+                      G_nk+1, Ver_std_p_prof%m)
 
 ! Initialize filter weights for smoothing
       if (.not.WB_IS_OK(wb_get('phy/cond_smoothsig',sig))) sig=-1.
@@ -200,6 +202,8 @@
       if (Lun_out.gt.0)  write(Lun_out,1006)
 
       call heap_paint
+
+      istat = ptopo_io_set(Inp_npes)
 
 !     ---------------------------------------------------------------
  1000 format(/,'INITIALIZATION OF PHYSICS PACKAGE (S/R itf_phy_init)', &

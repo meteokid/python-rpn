@@ -29,11 +29,11 @@ module krylov
    ! Revision
    !     v4-70 - Gaudreault S.      - initial version
    !
+   use prec
    implicit none
 
    private
 
-#include "prec.cdk"
 
    public :: krylov_fbicgstab, krylov_fgmres
 

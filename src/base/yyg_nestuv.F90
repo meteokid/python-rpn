@@ -39,12 +39,10 @@
 !       none
 !
 !
-      type(gmm_metadata) :: mymeta
-      character(len=GMM_MAXNAMELENGTH) :: tr_name
 !     temp variables to manipulate winds for Yin-Yang
       real tempu   (Minx:Maxx,Miny:Maxy,  NK)
       real tempv   (Minx:Maxx,Miny:Maxy,  NK)
-      integer err,i,j,k
+      integer i,j,k
 
 !----------------------------------------------------------------------
 !

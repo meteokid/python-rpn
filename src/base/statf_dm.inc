@@ -1,7 +1,7 @@
 !
       integer i,j,k,imin,jmin,kmin,imax,jmax,kmax,err,no, &
               nijk(7,Ptopo_numproc),tnijk(7,Ptopo_numproc),nw,i0,in,j0,jn
-      integer*8 dim_L,dim_T
+      integer*8 dim_L
       real*8 sum,sumd2,moy,var,mind,maxd,fijk,npt_8, &
              minmax(3,max(3,Ptopo_numproc)),tminmax(3,max(3,Ptopo_numproc))
 !

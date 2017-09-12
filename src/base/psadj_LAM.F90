@@ -80,7 +80,7 @@
 
          istat = gmm_get('TR/HU:P',tr)
 
-!$omp parallel shared(sumq,tr,pr_p0_dry_8)
+!$omp parallel private(i,j,k) shared(sumq,tr,pr_p0_dry_8)
 !$omp do
          do k=k0,l_nk
             sumq(1:l_ni,1:l_nj,k) = sumq(1:l_ni,1:l_nj,k) + tr(1:l_ni,1:l_nj,k)
@@ -120,106 +120,106 @@
 
          g_avg_ps_dry_1_8 = g_avg_8(1) * PSADJ_scale_8
 
-  800    continue
+      do while (iteration < 4)
 
-      !---------------------
-      !Treat TIME T0
-      !---------------------
+         !---------------------
+         !Treat TIME T0
+         !---------------------
 
-         istat = gmm_get(gmmk_st0_s,st0,mymeta)
+            istat = gmm_get(gmmk_st0_s,st0,mymeta)
 
-         !Obtain pressure levels
-         !----------------------
-         call calc_pressure_8 (pr_m_8,pr_t_8,pr_p0_0_8,st0,l_minx,l_maxx,l_miny,l_maxy,l_nk)
+            !Obtain pressure levels
+            !----------------------
+            call calc_pressure_8 (pr_m_8,pr_t_8,pr_p0_0_8,st0,l_minx,l_maxx,l_miny,l_maxy,l_nk)
 
-         !Compute dry surface pressure on CORE and FLUX on NEST+CORE
-         !----------------------------------------------------------
-         call sumhydro (sumq,l_minx,l_maxx,l_miny,l_maxy,l_nk,'M')
+            !Compute dry surface pressure on CORE and FLUX on NEST+CORE
+            !----------------------------------------------------------
+            call sumhydro (sumq,l_minx,l_maxx,l_miny,l_maxy,l_nk,'M')
 
-         istat = gmm_get('TR/HU:M',tr)
+            istat = gmm_get('TR/HU:M',tr)
 
-!$omp parallel shared(sumq,tr,pr_p0_dry_8,pr_fl_dry_8)
+!$omp parallel private(i,j,k) shared(sumq,tr,pr_p0_dry_8,pr_fl_dry_8)
 !$omp do
-         do k=k0,l_nk
-            sumq(1:l_ni,1:l_nj,k) = sumq(1:l_ni,1:l_nj,k) + tr(1:l_ni,1:l_nj,k)
-         end do
+            do k=k0,l_nk
+               sumq(1:l_ni,1:l_nj,k) = sumq(1:l_ni,1:l_nj,k) + tr(1:l_ni,1:l_nj,k)
+            end do
 !$omp end do
 
 !$omp do
-         do j=1+pil_s,l_nj-pil_n
-            pr_p0_dry_8(:,j) = 0.0d0
-            do k=k0,l_nk-1
-            do i=1+pil_w,l_ni-pil_e
-               pr_p0_dry_8(i,j)= pr_p0_dry_8(i,j) + &
-                    (1.-sumq(i,j,k))*(pr_m_8(i,j,k+1) - pr_m_8(i,j,k))
-            enddo
+            do j=1+pil_s,l_nj-pil_n
+               pr_p0_dry_8(:,j) = 0.0d0
+               do k=k0,l_nk-1
+               do i=1+pil_w,l_ni-pil_e
+                  pr_p0_dry_8(i,j)= pr_p0_dry_8(i,j) + &
+                       (1.-sumq(i,j,k))*(pr_m_8(i,j,k+1) - pr_m_8(i,j,k))
+               enddo
+               end do
+               do i=1+pil_w,l_ni-pil_e
+                  pr_p0_dry_8(i,j)= pr_p0_dry_8(i,j) + &
+                       (1.-sumq(i,j,l_nk))*(pr_p0_0_8(i,j) - pr_m_8(i,j,l_nk))
+               end do
             end do
-            do i=1+pil_w,l_ni-pil_e
-               pr_p0_dry_8(i,j)= pr_p0_dry_8(i,j) + &
-                    (1.-sumq(i,j,l_nk))*(pr_p0_0_8(i,j) - pr_m_8(i,j,l_nk))
-            end do
-         end do
 !$omp enddo
 
 !$omp do
-         do j=1,l_nj
-            pr_fl_dry_8(:,j) = 0.0d0
-            do k=k0,l_nk-1
-            do i=1,l_ni
-               pr_fl_dry_8(i,j)= pr_fl_dry_8(i,j) + &
-                    (1.-sumq(i,j,k))*(pr_m_8(i,j,k+1) - pr_m_8(i,j,k))*(F_cub_i(i,j,k) - F_cub_o(i,j,k))
-            enddo
+            do j=1,l_nj
+               pr_fl_dry_8(:,j) = 0.0d0
+               do k=k0,l_nk-1
+               do i=1,l_ni
+                  pr_fl_dry_8(i,j)= pr_fl_dry_8(i,j) + &
+                       (1.-sumq(i,j,k))*(pr_m_8(i,j,k+1) - pr_m_8(i,j,k))*(F_cub_i(i,j,k) - F_cub_o(i,j,k))
+               enddo
+               end do
+               do i=1,l_ni
+                  pr_fl_dry_8(i,j)= pr_fl_dry_8(i,j) + &
+                       (1.-sumq(i,j,l_nk))*(pr_p0_0_8(i,j) - pr_m_8(i,j,l_nk))*(F_cub_i(i,j,k) - F_cub_o(i,j,k))
+               end do
             end do
-            do i=1,l_ni
-               pr_fl_dry_8(i,j)= pr_fl_dry_8(i,j) + &
-                    (1.-sumq(i,j,l_nk))*(pr_p0_0_8(i,j) - pr_m_8(i,j,l_nk))*(F_cub_i(i,j,k) - F_cub_o(i,j,k))
-            end do
-         end do
 !$omp enddo
 !$omp end parallel
 
-         !Estimate dry air mass on CORE
-         !-----------------------------
-         l_avg_8(1) = 0.0d0
+            !Estimate dry air mass on CORE
+            !-----------------------------
+            l_avg_8(1) = 0.0d0
 
-         do j=1+pil_s,l_nj-pil_n
-         do i=1+pil_w,l_ni-pil_e
+            do j=1+pil_s,l_nj-pil_n
+            do i=1+pil_w,l_ni-pil_e
 
-            l_avg_8(1) = l_avg_8(1) + pr_p0_dry_8(i,j) * geomh_area_8(i,j) * geomh_mask_8(i,j)
+               l_avg_8(1) = l_avg_8(1) + pr_p0_dry_8(i,j) * geomh_area_8(i,j) * geomh_mask_8(i,j)
 
-         enddo
-         enddo
+            enddo
+            enddo
 
-         !Estimate mass FLUX
-         !------------------
-         l_avg_8(2) = 0.0d0
+            !Estimate mass FLUX
+            !------------------
+            l_avg_8(2) = 0.0d0
 
-         do j=1,l_nj
-         do i=1,l_ni
+            do j=1,l_nj
+            do i=1,l_ni
 
-            l_avg_8(2) = l_avg_8(2) + pr_fl_dry_8(i,j) * geomh_area_8(i,j) * geomh_mask_8(i,j)
+               l_avg_8(2) = l_avg_8(2) + pr_fl_dry_8(i,j) * geomh_area_8(i,j) * geomh_mask_8(i,j)
 
-         enddo
-         enddo
+            enddo
+            enddo
 
-         call RPN_COMM_allreduce (l_avg_8,g_avg_8,2,"MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
+            call RPN_COMM_allreduce (l_avg_8,g_avg_8,2,"MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
 
-         g_avg_ps_dry_0_8 = g_avg_8(1) * PSADJ_scale_8
-         g_avg_fl_dry_0_8 = g_avg_8(2) * PSADJ_scale_8
+            g_avg_ps_dry_0_8 = g_avg_8(1) * PSADJ_scale_8
+            g_avg_fl_dry_0_8 = g_avg_8(2) * PSADJ_scale_8
 
-         !Correct surface pressure in order to preserve dry air mass on CORE when taking mass FLUX into account
-         !-----------------------------------------------------------------------------------------------------
-         pr_p0_0_8 = pr_p0_0_8 + (g_avg_ps_dry_1_8 - g_avg_ps_dry_0_8) + g_avg_fl_dry_0_8
+            !Correct surface pressure in order to preserve dry air mass on CORE when taking mass FLUX into account
+            !-----------------------------------------------------------------------------------------------------
+            pr_p0_0_8 = pr_p0_0_8 + (g_avg_ps_dry_1_8 - g_avg_ps_dry_0_8) + g_avg_fl_dry_0_8
 
-         do j=1+pil_s,l_nj-pil_n
-         do i=1+pil_w,l_ni-pil_e
-            st0(i,j)= log(pr_p0_0_8(i,j)/Cstv_pref_8)
+            do j=1+pil_s,l_nj-pil_n
+            do i=1+pil_w,l_ni-pil_e
+               st0(i,j)= log(pr_p0_0_8(i,j)/Cstv_pref_8)
+            end do
+            end do
+
+            iteration = iteration + 1
+
          end do
-         end do
-
-         iteration = iteration + 1
-
-         if (iteration<4) goto 800
 
       !---------------------
       !Diagnostics

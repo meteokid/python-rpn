@@ -49,7 +49,7 @@
 
        betax= ( Xi(i) - Geomgx(Im))*geomh_inv_hx_8
        betax1= (1.0-betax)
-       if (betax.le.betax1) then
+       if (betax <= betax1) then
            betax=0.0d0
            betax1=1.0d0
        else
@@ -59,7 +59,7 @@
 
        betay=(Yi(i) - Geomgy(Jm))*geomh_inv_hy_8
        betay1=1.0-betay
-       if (betay.le.betay1) then
+       if (betay <= betay1) then
            betay=0.0d0
            betay1=1.0d0
        else
@@ -97,7 +97,7 @@
        Jm = imy
            betax= ( Xi-Geomgx(Im))*geomh_inv_hx_8
            betax1= (1.0-betax)
-           if (betax.le.betax1) then
+           if (betax <= betax1) then
              betax=0.0d0
              betax1=1.0d0
            else
@@ -106,7 +106,7 @@
            endif
            betay=(Yi-Geomgy(Jm))*geomh_inv_hy_8
            betay1=1.0-betay
-           if (betay.le.betay1) then
+           if (betay <= betay1) then
              betay=0.0d0
              betay1=1.0d0
            else
@@ -142,7 +142,7 @@
            Jm = imy(i,j)
            betax= ( Xi(i,j)-x(Im))*geomh_inv_hx_8
            betax1= (1.0-betax)
-           if (betax.le.betax1) then
+           if (betax <= betax1) then
              betax=0.0d0
              betax1=1.0d0
            else
@@ -151,7 +151,7 @@
            endif
            betay=(Yi(i,j)-y(Jm))*geomh_inv_hy_8
            betay1=1.0-betay
-           if (betay.le.betay1) then
+           if (betay <= betay1) then
              betay=0.0d0
              betay1=1.0d0
            else

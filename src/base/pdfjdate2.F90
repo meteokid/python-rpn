@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -21,7 +21,7 @@
       real*8 jdate
       integer yyyy,mo,dd,hh,mm,ss
 
-!author 
+!author
 !    Michel Desgagne - RPN - ?????
 !
 !revision
@@ -32,7 +32,7 @@
 ! "yyyy mo dd hh mm ss" (I) - calendar date to compare with
 
 !  calculate the number of days since the first day of the year before
-!  this run was started. This can account for leap-years support, which 
+!  this run was started. This can account for leap-years support, which
 !  can be turned ON or OFF via calls to ACCEPT_LeapYear() and
 !  Ignore_LeapYear(), respectively
 !!

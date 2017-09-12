@@ -14,9 +14,9 @@ MODULE supercell
 !  SUBROUTINE supercell_test(
 !    lon,lat,p,z,zcoords,u,v,t,thetav,ps,rho,q,pert)
 !
-!  Given a point specified by: 
-!      lon    longitude (radians) 
-!      lat    latitude (radians) 
+!  Given a point specified by:
+!      lon    longitude (radians)
+!      lat    latitude (radians)
 !      p/z    pressure (Pa) / height (m)
 !  zcoords    1 if z is specified, 0 if p is specified
 !     pert    1 if thermal perturbation included, 0 if not
@@ -87,11 +87,11 @@ MODULE supercell
        uc         = 15.d0      ,      & ! coordinate reference velocity
        zs         = 5000.d0    ,      & ! lower altitude of maximum velocity
        zt         = 1000.d0             ! transition distance of velocity
- 
+
   REAL(8), PARAMETER ::               &
        pert_dtheta = 3.d0         ,   & ! perturbation magnitude
     !!!pert_lonc   = 0.d0         ,   & ! perturbation longitude
-       pert_lonc   = 180.d0       ,   & ! perturbation longitude !To be at the center of Yin panel 
+       pert_lonc   = 180.d0       ,   & ! perturbation longitude !To be at the center of Yin panel
        pert_latc   = 0.d0         ,   & ! perturbation latitude
        pert_rh     = 10000.d0 * X ,   & ! perturbation horiz. halfwidth
        pert_zc     = 1500.d0      ,   & ! perturbation center altitude
@@ -99,7 +99,7 @@ MODULE supercell
 
 !-----------------------------------------------------------------------
 !    Coefficients computed from initialization
-!----------------------------------------------------------------------- 
+!-----------------------------------------------------------------------
   INTEGER(4)                  :: initialized = 0
 
   REAL(8), DIMENSION(nphi)    :: phicoord
@@ -146,7 +146,7 @@ CONTAINS
 
     ! Buffer matrices for iteration
     REAL(8), DIMENSION(nphi, nz) :: phicoordmat, dztheta, rhs, irhs
-  
+
     ! Buffer for sampled potential temperature at equator
     REAL(8), DIMENSION(nz) :: thetaeq
 
@@ -154,13 +154,13 @@ CONTAINS
     REAL(8), DIMENSION(nz) :: exnereq, H
 
     ! Variables for calculation of equatorial profile
-    REAL(8) :: exnereqs, p, T, qvs, qv
+    REAL(8) :: exnereqs, p, T, qvs
 
     ! Error metric
-    REAL(8) :: err
+ !!!REAL(8) :: err
 
     ! Loop indices
-    INTEGER(4) :: i, k, iter, j, n 
+    INTEGER(4) :: i, k, iter, j, n
 
     ! Chebyshev nodes in the phi direction
     do i = 1, nphi
@@ -171,7 +171,7 @@ CONTAINS
     do i = 1, nphi
       inv_phicoord(i) = 1.0d0
       do j = 1, nphi
-        if (i .eq. j) then
+        if (i == j) then
           cycle
         end if
         inv_phicoord(i) = inv_phicoord(i) / (phicoord(i) - phicoord(j))
@@ -189,10 +189,10 @@ CONTAINS
       zcoord(k) = z1 + 0.5d0*(z2-z1)*(zcoord(k)+1.0d0)
     end do
 
-    do k = 1, nz 
+    do k = 1, nz
       inv_zcoord(k) = 1.0d0
-      do n = 1, nz 
-        if (k .eq. n) then
+      do n = 1, nz
+        if (k == n) then
           cycle
         end if
         inv_zcoord(k) = inv_zcoord(k) / (zcoord(k) - zcoord(n))
@@ -223,13 +223,13 @@ CONTAINS
        svdps, svdpu, nphi, svdpvt, nphi, &
        pwork, lwork, info)
 
-    if (info .ne. 0) then
+    if (info /= 0) then
       write(*,*) 'Unable to compute SVD of d/dphi matrix'
       stop
     end if
 
     do i = 1, nphi
-      if (abs(svdps(i)) .le. 1.0d-12) then
+      if (abs(svdps(i)) <= 1.0d-12) then
         call DSCAL(nphi, 0.0d0, svdpu(1,i), 1)
       else
         call DSCAL(nphi, 1.0d0 / svdps(i), svdpu(1,i), 1)
@@ -248,13 +248,13 @@ CONTAINS
        svdzs, svdzu, nz, svdzvt, nz, &
        zwork, lwork, info)
 
-    if (info .ne. 0) then
+    if (info /= 0) then
       write(*,*) 'Unable to compute SVD of d/dz matrix'
       stop
     end if
 
     do i = 1, nz
-      if (abs(svdzs(i)) .le. 1.0d-12) then
+      if (abs(svdzs(i)) <= 1.0d-12) then
         call DSCAL(nz, 0.0d0, svdzu(1,i), 1)
       else
         call DSCAL(nz, 1.0d0 / svdzs(i), svdzu(1,i), 1)
@@ -375,7 +375,7 @@ CONTAINS
 !-----------------------------------------------------------------------
   SUBROUTINE supercell_test(lon,lat,p,z,zcoords,Ver_a,Ver_b,pref,u,v,t,tv,thetav,ps,rho,q,pert,thbase) &
     BIND(c, name = "supercell_test")
- 
+
     IMPLICIT NONE
 
     !------------------------------------------------
@@ -420,11 +420,11 @@ CONTAINS
     ! Absolute latitude
     REAL(8) :: nh_lat
 
-    REAL(8) :: st1 
+    REAL(8) :: st1
 
     ! Check that we are initialized
-    if (initialized .ne. 1) then
-      call supercell_init()   
+    if (initialized /= 1) then
+      call supercell_init()
     !!write(*,*) 'supercell_init() has not been called'
     !!stop
     end if
@@ -434,7 +434,7 @@ CONTAINS
     !------------------------------------------------
 
     ! Northern hemisphere latitude
-    if (lat .le. 0.0d0) then
+    if (lat <= 0.0d0) then
       nh_lat = -lat
     else
       nh_lat = lat
@@ -445,10 +445,10 @@ CONTAINS
 
     st1 = log(ps/pref)
 
-    if (zcoords .eq. 0) p = exp(Ver_a + Ver_b*st1)
+    if (zcoords == 0) p = exp(Ver_a + Ver_b*st1)
 
     ! Calculate dependent variables
-    if (zcoords .eq. 1) then
+    if (zcoords == 1) then
       CALL supercell_z(lon, lat, z, p, thetav, rho, q, pert, fitphi, 0, fitz, 1)
     else
       CALL supercell_p(lon, lat, p, z, thetav, rho, q, pert, fitphi, 0, fitz, 1)
@@ -492,8 +492,8 @@ CONTAINS
     REAL(8), INTENT(INOUT), DIMENSION(nz)   :: fitz
 
     INTEGER, INTENT(IN)  :: &
-                do_fitphi,  & !(1) Evaluate lagrangian_polynomial_coeffs in phi 
-                do_fitz       !(1) Evaluate lagrangian_polynomial_coeffs in z 
+                do_fitphi,  & !(1) Evaluate lagrangian_polynomial_coeffs in phi
+                do_fitz       !(1) Evaluate lagrangian_polynomial_coeffs in z
 
     ! Northern hemisphere latitude
     REAL(8) :: nh_lat
@@ -512,26 +512,26 @@ CONTAINS
     INTEGER(4) :: k,n,i,j
 
     ! Northern hemisphere latitude
-    if (lat .le. 0.0d0) then
+    if (lat <= 0.0d0) then
       nh_lat = -lat
     else
       nh_lat = lat
     end if
 
-    ! Perform fit !Faster when we don't pass through subroutine 
+    ! Perform fit !Faster when we don't pass through subroutine
 
     if (do_fitz==1) then
  !!!CALL lagrangian_polynomial_coeffs(nz, zcoord, fitz, z, inv_zcoord)
     do k = 1, nz
       fitz(k) = 1.0d0
       do n = 1, nz
-        if (k .eq. n) then
+        if (k == n) then
           cycle
         end if
      !!!fitz(k) = fitz(k) * (z - zcoord(n)) / (zcoord(k) - zcoord(n))
         fitz(k) = fitz(k) * (z - zcoord(n))
       end do
-      fitz(k) = fitz(k) * inv_zcoord(k) 
+      fitz(k) = fitz(k) * inv_zcoord(k)
     end do
     endif
 
@@ -540,13 +540,13 @@ CONTAINS
     do i = 1, nphi
       fitphi(i) = 1.0d0
       do j = 1, nphi
-        if (i .eq. j) then
+        if (i == j) then
           cycle
         end if
      !!!fitphi(i) = fitphi(i) * (nh_lat - phicoord(j)) / (phicoord(i) - phicoord(j))
         fitphi(i) = fitphi(i) * (nh_lat - phicoord(j))
       end do
-      fitphi(i) = fitphi(i) * inv_phicoord(i) 
+      fitphi(i) = fitphi(i) * inv_phicoord(i)
     end do
     endif
 
@@ -570,7 +570,7 @@ CONTAINS
     rho = p / (Rd * exner * thetav)
 
     ! Modified virtual potential temperature
-    if (pert .ne. 0) then
+    if (pert /= 0) then
         thetav = thetav &
            + thermal_perturbation(lon, lat, z) * (1.d0 + 0.608d0 * q)
     end if
@@ -610,7 +610,7 @@ CONTAINS
     ! Iterate
     INTEGER(4) :: iter,max_iter
 
-    REAL(8) :: gf,dg 
+    REAL(8) :: gf,dg
 
     za = z1
     zb = z2
@@ -618,12 +618,12 @@ CONTAINS
     CALL supercell_z(lon, lat, za, pa, thetav, rho, q, pert, fitphi, do_fitphi, fitz, do_fitz)
     CALL supercell_z(lon, lat, zb, pb, thetav, rho, q, pert, fitphi, 0,         fitz, 1)
 
-    if (pa .lt. p) then
+    if (pa < p) then
       write(*,*) 'Requested pressure out of range on bottom, adjust sample interval'
       write(*,*) pa, p
       stop
     end if
-    if (pb .gt. p) then
+    if (pb > p) then
       write(*,*) 'Requested pressure out of range on top, adjust sample interval'
       write(*,*) pb, p
       stop
@@ -634,7 +634,7 @@ CONTAINS
     ! Iterate using fixed point method
     if (.false.) then
 
-    do iter = 1,max_iter 
+    do iter = 1,max_iter
 
    !!!zc = (za * (pb - p) - zb * (pa - p)) / (pb - pa)
       zc = (za * (log(pb) - log(p)) - zb * (log(pa) - log(p))) / (log(pb) - log(pa))
@@ -643,11 +643,11 @@ CONTAINS
 
       !write(*,*) pc
 
-      if (abs((pc - p) / p) .lt. 1.d-12) then
+      if (abs((pc - p) / p) < 1.d-12) then
         exit
       end if
 
-      if (pc .gt. p) then
+      if (pc > p) then
         za = zc
         pa = pc
       else
@@ -663,23 +663,23 @@ CONTAINS
 
     CALL supercell_z(lon, lat, zc, pc, thetav, rho, q, pert, fitphi, 0, fitz, 1)
 
-    do iter = 1,max_iter 
+    do iter = 1,max_iter
 
       gf = pc - p
-      dg = p0 * (cp/Rd) * (p/p0)**(1.0d0-Rd/cp) * (-grav /(cp*thetav))  
+      dg = p0 * (cp/Rd) * (p/p0)**(1.0d0-Rd/cp) * (-grav /(cp*thetav))
       zc = zc - gf/dg
 
       CALL supercell_z(lon, lat, zc, pc, thetav, rho, q, pert, fitphi, 0, fitz, 1)
 
-      if (abs((pc - p) / p) .lt. 1.d-12) then
+      if (abs((pc - p) / p) < 1.d-12) then
         exit
       end if
 
     enddo
 
-    endif 
+    endif
 
-    if (iter .eq. max_iter+1) then
+    if (iter == max_iter+1) then
       write(*,*) 'Iteration failed to converge'
       stop
     end if
@@ -709,7 +709,7 @@ CONTAINS
 
     Rtheta = sqrt((gr/pert_rh)**2 + ((z - pert_zc) / pert_rz)**2)
 
-    if (Rtheta .le. 1.d0) then
+    if (Rtheta <= 1.d0) then
       thermal_perturbation = pert_dtheta * (cos(0.5d0 * pi * Rtheta))**2
     else
       thermal_perturbation = 0.0d0
@@ -726,9 +726,9 @@ CONTAINS
 
     REAL(8), INTENT(IN) :: z, lat
 
-    if (z .le. zs - zt) then
+    if (z <= zs - zt) then
       zonal_velocity = us * (z / zs) - uc
-    elseif (abs(z - zs) .le. zt) then
+    elseif (abs(z - zs) <= zt) then
       zonal_velocity = &
         (-4.0d0/5.0d0 + 3.0d0*z/zs - 5.0d0/4.0d0*(z**2)/(zs**2)) * us - uc
     else
@@ -736,7 +736,7 @@ CONTAINS
     end if
 
     zonal_velocity = zonal_velocity * cos(lat)
-      
+
   END FUNCTION zonal_velocity
 
 !-----------------------------------------------------------------------
@@ -748,7 +748,7 @@ CONTAINS
 
     REAL(8), INTENT(IN) :: z
 
-    if (z .le. z_tr) then
+    if (z <= z_tr) then
       equator_theta = &
         theta0 + (theta_tr - theta0) * (z / z_tr)**(1.25d0)
     else
@@ -768,7 +768,7 @@ CONTAINS
 
     REAL(8), INTENT(IN) :: z
 
-    if (z .le. z_tr) then
+    if (z <= z_tr) then
       equator_relative_humidity = 1.0d0 - 0.75d0 * (z / z_tr)**(1.25d0)
     else
       equator_relative_humidity = 0.25d0
@@ -823,13 +823,13 @@ CONTAINS
     do i = 1, npts
       coeffs(i) = 1.0d0
       do j = 1, npts
-        if (i .eq. j) then
+        if (i == j) then
           cycle
         end if
       !!coeffs(i) = coeffs(i) * (xs - x(j)) / (x(i) - x(j))
         coeffs(i) = coeffs(i) * (xs - x(j))
       end do
-      coeffs(i) = coeffs(i) * inv_x(i) 
+      coeffs(i) = coeffs(i) * inv_x(i)
     end do
 
   END SUBROUTINE lagrangian_polynomial_coeffs
@@ -869,13 +869,13 @@ CONTAINS
     end do
 
     ! Equivalence detected; special treatment required
-    if (imatch .ne. (-1)) then
+    if (imatch /= (-1)) then
       do i = 1, npts
         coeffs(i) = 1.0d0
         coeffsum = 0.0d0
 
         do j = 1, npts
-          if ((j .eq. i) .or. (j .eq. imatch)) then
+          if ((j == i) .or. (j == imatch)) then
             cycle
           end if
 
@@ -883,7 +883,7 @@ CONTAINS
           coeffsum = coeffsum + 1.0 / (xs - x(j))
         end do
 
-        if (i .ne. imatch) then
+        if (i /= imatch) then
           coeffs(i) = coeffs(i)                   &
             * (1.0 + (xs - x(imatch)) * coeffsum) &
             / (x(i) - x(imatch))
@@ -899,7 +899,7 @@ CONTAINS
       do i = 1, npts
         differential = 0.0d0
         do j = 1, npts
-          if (i .eq. j) then
+          if (i == j) then
             cycle
           end if
           differential = differential + 1.0 / (xs - x(j))

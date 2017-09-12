@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -37,14 +37,14 @@
 !     ---------------------------------------------------------------
 !
       sol_transpose2= 0
-      if (Lun_out.gt.0) write (Lun_out,1000)
+      if (Lun_out > 0) write (Lun_out,1000)
 
 ! Establishing local dimensions and computing arena (data topology) for:
-!          G_ni distributed on Ptopo_npex PEs and 
+!          G_ni distributed on Ptopo_npex PEs and
 !          G_nj distributed on Ptopo_npey PEs both without halo
 
-      if (Lun_out.gt.0) then
-         if (Sol_type_S.eq.'DIRECT') then
+      if (Lun_out > 0) then
+         if (Sol_type_S == 'DIRECT') then
             write(Lun_out,1002) ' Transpose 1===>2 for SOLVER (no halo):', &
                                 ' G_ni distributed on F_npex PEs', G_ni,F_npex
          else
@@ -57,8 +57,8 @@
                     .true., .true., F_npex, lowest, F_checkparti_L, 0 ))       &
       sol_transpose2= -1
 
-      if (Lun_out.gt.0) then
-         if (Sol_type_S.eq.'DIRECT') then
+      if (Lun_out > 0) then
+         if (Sol_type_S == 'DIRECT') then
             write(Lun_out,1002) ' Transpose 1===>2 for SOLVER (no halo):', &
                                 ' G_nj distributed on F_npey PEs', G_nj,F_npey
          else
@@ -73,7 +73,7 @@
 
       trp_22n= -1
 
-      if (Sol_type_S.eq.'DIRECT') then
+      if (Sol_type_S == 'DIRECT') then
 
 ! Transpose 1===>2:Schm_nith distributed on F_npex PEs (no halo)
 !                  G_nj distributed on F_npey PEs (original layout)
@@ -81,7 +81,7 @@
 !         initial layout  : (l_minx:l_maxx,    l_miny:l_maxy    ,G_nk)
 !         transpose layout: (l_miny:l_maxy,trp_12smin:trp_12smax,G_ni)
 
-         if (Lun_out.gt.0) write(Lun_out,1002) ' Transpose 1===>2 for SOLVER (no halo):', &
+         if (Lun_out > 0) write(Lun_out,1002) ' Transpose 1===>2 for SOLVER (no halo):', &
                   ' Schm_nith distributed on F_npex PEs', Schm_nith,F_npex
 
          if (.not. decomp3 (Schm_nith, minx, maxx, n, npartiel, 0, n0, &
@@ -99,7 +99,7 @@
 !  initial layout  : (    l_miny:l_maxy    ,trp_12smin:trp_12smax,G_ni)
 !  transpose layout: (trp_12smin:trp_12smax,trp_22min :trp_22max ,G_nj)
 
-         if (Lun_out.gt.0) write(Lun_out,1002) ' Transpose 2===>2 for SOLVER (no halo):', &
+         if (Lun_out > 0) write(Lun_out,1002) ' Transpose 2===>2 for SOLVER (no halo):', &
                   ' G_ni distributed on F_npey PEs', G_ni,F_npey
 
          if (.not. decomp3 (G_ni, minx, maxx, n, npartiel, 0, n0, &
@@ -113,8 +113,8 @@
 
       endif
 
-      if (sol_transpose2.lt.0)  then
-         if  (Lun_out.gt.0) &
+      if (sol_transpose2 < 0)  then
+         if  (Lun_out > 0) &
          write(lun_out,*) 'SOL_TRANSPOSE: ILLEGAL DOMAIN PARTITIONING'
       endif
 

@@ -32,7 +32,7 @@
       implicit none
 #include <arch_specific.hf>
 
-      integer k,istat,dim,err
+      integer :: k, istat, dimens, err
       real, dimension(:,:), pointer :: topo_large_scale
       real, dimension(:,:,:), pointer :: plus,minus
 !
@@ -40,7 +40,7 @@
 !
       nullify(topo_large_scale)
 
-      if (Lun_out.gt.0) write (Lun_out,1000)
+      if (Lun_out > 0) write (Lun_out,1000)
 
       istat = gmm_get (gmmk_pw_uu_plus_s, pw_uu_plus)
       istat = gmm_get (gmmk_pw_vv_plus_s, pw_vv_plus)
@@ -59,7 +59,7 @@
 
       if ( Schm_theoc_L ) then
          call theo_data ( pw_uu_plus,pw_vv_plus,wt1,pw_tt_plus, &
-                          zdt1,st1,qt1,fis0,'TR/',':P')
+                          zdt1,st1,qt1,fis0)
       elseif ( Schm_canonical_williamson_L ) then
          call init_bar ( ut1,vt1,wt1,tt1,zdt1,st1,qt1,fis0,&
                           l_minx,l_maxx,l_miny,l_maxy,G_nk,&
@@ -67,7 +67,7 @@
       elseif ( Schm_canonical_dcmip_L ) then
          call dcmip_init( ut1,vt1,wt1,tt1,zdt1,st1,qt1,fis0,&
                            l_minx,l_maxx,l_miny,l_maxy,G_nk,&
-                         'TR/',':P',Step_runstrt_S )
+                         'TR/',':P')
       else
          call timing_start2 ( 71, 'INITIAL_input', 2)
          istat= gmm_get (gmmk_topo_low_s , topo_low )
@@ -79,14 +79,14 @@
          call get_s_large_scale (topo_large_scale,l_minx,l_maxx,l_miny,l_maxy)
 
          topo_low(1:l_ni,1:l_nj) = topo_high(1:l_ni,1:l_nj)
-         dim=(l_maxx-l_minx+1)*(l_maxy-l_miny+1)*G_nk
+         dimens=(l_maxx-l_minx+1)*(l_maxy-l_miny+1)*G_nk
 
          call inp_data ( pw_uu_plus,pw_vv_plus,wt1,pw_tt_plus,&
                          zdt1,st1,qt1,fis0               ,&
                          l_minx,l_maxx,l_miny,l_maxy,G_nk    ,&
                          .false. ,'TR/',':P',Step_runstrt_S )
          call bitflip ( pw_uu_plus, pw_vv_plus, pw_tt_plus, &
-                        perturb_nbits, perturb_npts, dim )
+                        perturb_nbits, perturb_npts, dimens )
          call timing_stop  ( 71 )
       endif
 
@@ -124,23 +124,25 @@
                           l_minx,l_maxx,l_miny,l_maxy,G_nk,.true. )
       endif
 
-      call diag_zd_w2 ( zdt1,wt1, ut1,vt1,tt1,st1   ,&
-                        l_minx,l_maxx,l_miny,l_maxy, G_nk,&
-                        .not.Inp_zd_L, .not.Inp_w_L )
+      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P') then
+         call diag_zd_w2 ( zdt1,wt1, ut1,vt1,tt1,st1   ,&
+                           l_minx,l_maxx,l_miny,l_maxy, G_nk,&
+                           .not.Inp_zd_L, .not.Inp_w_L )
+      endif
 
-      if (.not. Grd_yinyang_L) call nest_init ()
+      if (.not. Grd_yinyang_L) call nest_init()
 
-      call pw_update_GPW
-      call pw_init
+      call pw_update_GPW()
+      call pw_init()
 
-      call out_outdir
+      call out_outdir()
 
       call iau_apply2 (0)
 
 
       if ( Schm_phyms_L ) call itf_phy_step (0,Lctl_step)
 
-      call frstgss
+      call frstgss()
 
       call glbstat2 ( fis0,'ME',"indata",l_minx,l_maxx,l_miny,l_maxy, &
                       1,1, 1,G_ni,1,G_nj,1,1 )
@@ -168,7 +170,7 @@
       v_bits  = transfer(v, v_bits)
       t_bits  = transfer(t, t_bits)
 
-      if (nbits .lt. 1) return
+      if (nbits < 1) return
 
       stride = min(max(1,npts),n)
 

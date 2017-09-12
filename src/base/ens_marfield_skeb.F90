@@ -13,7 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**   s/r ens_marfield_skeb - define a markov chain field for SKEB
+!**   s/r ens_marfield_skeb if ( Step_kount == 1 ) then- define a markov chain field for SKEB
 !
 !
       subroutine ens_marfield_skeb(fgem)
@@ -30,40 +30,46 @@
       use cstv
       use lun
       use gmm_itf_mod
+      use path
       use ptopo
       implicit none
 #include <arch_specific.hf>
 
       real ,    dimension(l_ni,l_nj)        :: fgem
 !
-!author: Rabah Aider RPN-A (from ens_marfield_cg.ftn90)
+!author: Rabah Aider R.P.N-A (from ens_marfield_cg.ftn90)
 !
 !arguments     none
-!xf
+!
 #include <rmnlib_basics.hf>
 #include "ens_gmm_dim.cdk"
+
 #include "mem.cdk"
+
 !
+
        real,    external :: gasdev
        real*8  pl
 !
 ! nlat, nlon                 dimension of the Gaussian grid
 ! idum                       Semence du générateur de nombres aléatoires
 !
+      logical :: Init_mc_L
       integer :: nlat, nlon
-      integer :: l ,m, i, j, indx, ier
+      integer :: l ,m, i, j, k, indx, ier
       integer lmin,lmax
-      integer ::  gmmstat
-      integer :: gdyy, n
-      real    ::  fstd, tau
+      integer ::  gmmstat, istat
+      integer :: gdyy,  n
+      real    :: fstd, fstr, tau
       real    :: sumsp , fact,fact2
       real    :: offi,offj
-      real xfi(l_ni),yfi(l_nj)
-      real*8  ::  rad2deg_8, pri_8
+      real    :: xfi(l_ni),yfi(l_nj)
+      real*8  ::  lat, theta ,x, rad2deg_8, pri_8
       logical, save :: init_done=.false.
 !
 !
 ! paidum   pointer vers l'etat du generateur sauvegarde idum
+      type(gmm_metadata) :: meta
       integer, pointer :: paiv,paiy,paiset,pagset,paidum
 !
 !      variables et champs auxiliaires reels
@@ -71,18 +77,22 @@
 ! tau  Temps de décorrélation du champ aléatoire f(i,j) (secondes)
 ! eps  EXP(-dt/tau/2.146)
       real*8    :: dt, eps
-      real*8    :: fmax, fmin
+      real*8    :: fmax, fmin , fmean
       real*8,    dimension(:), allocatable :: pspectrum , fact1, fact1n
       real*8,    dimension(:), allocatable  :: wrk1
+      real*8,    dimension(:,:),allocatable :: wrk2
       real*8,    dimension(:,:,:),allocatable :: cc
       real  ,    dimension(:,:),allocatable :: f
       integer :: sig
-!
+      integer :: itstep_s, iperiod_iau
+      integer :: ier0,ier1,ier2,ier3,ier4,unf0,unf1,unf2,unf3,unf4
 ! Initialise les variables de Ens_nml.cdk
 !
       dt=real(Cstv_dt_8)
       rad2deg_8=180.0d0/pi_8
-!
+      itstep_s=step_dt*step_kount
+      iperiod_iau = iau_period
+
 !     Look for the spectral coefficients
 !
       gmmstat = gmm_get(gmmk_ar_s,ar_s,meta2d_ar_s)
@@ -103,32 +113,57 @@
 
 !     Valeurs initiales des composantes principales
 !
-       if (.not.init_done) then
-         if (Lun_out.gt.0) then
-            write( Lun_out,1000)
-         endif
-         init_done=.true.
-      endif
+   if (.not.init_done) then
+     if (Lun_out > 0) then
+        write( Lun_out,1000)
+     endif
+        init_done=.true.
+   endif
 
-      paiv  => dumdum( 1,1)
-      paiy  => dumdum(33,1)
-      paiset=> dumdum(34,1)
-      pagset=> dumdum(35,1)
-      paidum=> dumdum(36,1)
 
-!     Rstri_rstn_L
-     if ( Step_kount .eq. 1 ) then
+   lmin = Ens_skeb_trnl
+   lmax = Ens_skeb_trnh
+   nlat = Ens_skeb_nlat
+   nlon = Ens_skeb_nlon
+   fstd = Ens_skeb_std
+   fmin = Ens_skeb_min
+   fmax = Ens_skeb_max
+   tau  = Ens_skeb_tau/2.146
+   eps  = exp(-dt/tau)
 
-         lmin = Ens_skeb_trnl
-         lmax = Ens_skeb_trnh
-         nlon = Ens_skeb_nlon
-         nlat =Ens_skeb_nlat
+   Init_mc_L = .true.
+   if ( (Ens_iau_mc)) then
+      if ( .not. Ens_first_init_mc) Init_mc_L = .false.
+   endif
+
+
+  if ( Step_kount == 1 ) then
+
+     ! Compute Associated Legendre polynomials to use in each timestep
+     plg=0.D0
+     do l=lmin,lmax
+        fact=DSQRT((2.D0*DBLE(l)+1.D0)/(4.D0*pi_8))
+        do m=0,l
+           sig=(-1.D0)**(l+m)
+!$omp parallel private(j)  &
+!$omp shared (l,m,nlat,lmax,sig,fact)
+!$omp  do
+           do j=1,nlat/2
+              call pleg (l, m, j, nlat, pl)
+                plg(j,lmax-l+1,m+1)=pl*fact
+                plg(nlat-j+1,lmax-l+1,m+1)=pl*fact*sig
+           enddo
+!$omp enddo
+!$omp end parallel
+        enddo
+     enddo
+
+     if ( Init_mc_L ) then
          fstd=Ens_skeb_std
 
          tau = Ens_skeb_tau/2.146
          eps=exp(-dt/tau)
-
-        allocate ( pspectrum(lmin:lmax) , fact1(lmin:lmax) )
+     allocate ( pspectrum(lmin:lmax) , fact1(lmin:lmax) )
 !Bruit blanc en nombre d'ondes
          do l=lmin,lmax
            pspectrum(l)=1.D0
@@ -136,20 +171,19 @@
 !Normalisation du spectre pour que la variance du champ aléatoire soit std**2
          sumsp=0.D0
          do l=lmin,lmax
-          sumsp=sumsp+pspectrum(l)
+           sumsp=sumsp+pspectrum(l)
          enddo
-         pspectrum=pspectrum/sumsp
+           pspectrum=pspectrum/sumsp
 
          do l=lmin,lmax
-          fact1(l)=fstd*SQRT(4.*pi_8/real((2*l+1))*pspectrum(l))
+          fact1(l)=fstd*SQRT(4.*pi/real((2*l+1))*pspectrum(l))
          enddo
-
-         paiv  => dumdum( 1,1)
+         dumdum(:,1)=0
+         paiv  => dumdum(1,1)
          paiy  => dumdum(33,1)
          paiset=> dumdum(34,1)
          pagset=> dumdum(35,1)
          paidum=> dumdum(36,1)
-         dumdum(:,1)=0
          paidum=-Ens_mc_seed
 
 ! Valeurs initiales des coefficients spectraux
@@ -169,42 +203,64 @@
           enddo
         enddo
 
+     deallocate (pspectrum, fact1)
 
-! Associated Legendre polynomials
-      plg=0.D0
-     do l=lmin,lmax
-       fact=DSQRT((2.D0*DBLE(l)+1.D0)/(4.D0*pi_8))
-        do m=0,l
-          sig=(-1.D0)**(l+m)
-!$omp parallel private(j,pl)  &
-!$omp shared (l,m,nlat,lmax,sig,fact)
-!$omp  do
-          do j=1,nlat/2
-             call pleg (l, m, j, nlat, pl)
-              plg(j,lmax-l+1,m+1)=pl*fact
-              plg(nlat-j+1,lmax-l+1,m+1)=pl*fact*sig
-          enddo
-!$omp enddo
-!$omp end parallel
-       enddo
-     enddo
- deallocate (pspectrum, fact1)
+     else
+            lmin = Ens_skeb_trnl
+            lmax = Ens_skeb_trnh
+            unf0=0 ; unf1=0 ;unf2=0 ;unf3=0 ;unf4=0
 
-    endif
+            ier0 = fnom(unf0, trim(Path_input_S)//'/'// 'MRKV_RAND_PARAM_S' ,'SEQ+UNFORMATTED+OLD',0)
+            ier1 = fnom(unf1, trim(Path_input_S)//'/'// 'MRKV_AR_SKEB'  ,'SEQ+UNFORMATTED',0)
+            ier2 = fnom(unf2, trim(Path_input_S)//'/'// 'MRKV_BR_SKEB'  ,'SEQ+UNFORMATTED',0)
+            ier3 = fnom(unf3, trim(Path_input_S)//'/'// 'MRKV_AI_SKEB'  ,'SEQ+UNFORMATTED',0)
+            ier4 = fnom(unf4, trim(Path_input_S)//'/'// 'MRKV_BI_SKEB'  ,'SEQ+UNFORMATTED',0)
+
+            if (ier0 /= 0) then
+                write( Lun_out,3000)
+                stop
+            endif
+
+            if (ier1 /= 0) then
+              write( Lun_out,2500)
+              stop
+            elseif  (ier2 /= 0) then
+              write( Lun_out,2500)
+              stop
+            elseif  (ier3 /= 0) then
+              write( Lun_out,2500)
+              stop
+            elseif  (ier4 /= 0) then
+              write( Lun_out,2500)
+              stop
+            endif
+
+            if (ier0 /= 0) then
+               write( Lun_out,3000)
+               stop
+            endif
+
+            do i=1,36
+                 read(unf0),dumdum(i,1)
+            enddo
+            do l=lmin,lmax
+               do m=1,l+1
+                  read(unf1),ar_s(lmax-l+1,m)
+                  read(unf2),br_s(lmax-l+1,m)
+                  read(unf3),ai_s(lmax-l+1,m)
+                  read(unf4),bi_s(lmax-l+1,m)
+               enddo
+            enddo
+
+            close(unf0);  close(unf1); close(unf2);  close(unf3); close(unf4)
+     endif
+
+  endif
 !
 !     Begin Markov chains
 !
 
-        lmin = Ens_skeb_trnl ; nlon = Ens_skeb_nlon
-        lmax = Ens_skeb_trnh ; nlat = Ens_skeb_nlat
-        fstd = Ens_skeb_std  ; fmin = Ens_skeb_min
-        fmax = Ens_skeb_max  ;
-        tau  = Ens_skeb_tau/2.146
-
-        eps  = exp(-dt/tau)
-
 ! Spectrum choice
-
          allocate ( pspectrum(lmin:lmax) )
          allocate ( fact1(lmin:lmax),fact1n(lmin:lmax) )
 
@@ -219,11 +275,52 @@
          fact2 =(1.-eps*eps)/SQRT(1.+eps*eps)
 
 ! Random generator function
-         paiv  => dumdum( 1,1)
+         paiv  => dumdum(1,1)
          paiy  => dumdum(33,1)
-         pagset=> dumdum(35,1)
-         paiset=> dumdum(34,1)
+         pagset=> dumdum(34,1)
+         paiset=> dumdum(35,1)
          paidum=> dumdum(36,1)
+     if (itstep_s == iperiod_iau) then
+
+       if (ptopo_couleur == 0 .and. ptopo_myproc == 0) then
+            unf0=0; unf1=0; unf2=0; unf3=0; unf4=0
+            ier0 = fnom(unf0,trim(Path_output_S)//'/'//'MRKV_RAND_PARAM_S','SEQ+UNFORMATTED',0)
+            ier1 = fnom(unf1,trim(Path_output_S)//'/'//'MRKV_AR_SKEB','SEQ+UNFORMATTED',0)
+            ier2 = fnom(unf2,trim(Path_output_S)//'/'//'MRKV_BR_SKEB','SEQ+UNFORMATTED',0)
+            ier3 = fnom(unf3,trim(Path_output_S)//'/'//'MRKV_AI_SKEB','SEQ+UNFORMATTED',0)
+            ier4 = fnom(unf4,trim(Path_output_S)//'/'//'MRKV_BI_SKEB','SEQ+UNFORMATTED',0)
+
+            if (ier0 /= 0) then
+               write( Lun_out,1500)
+               stop
+            elseif  (ier1 /= 0) then
+               write( Lun_out,1500)
+               stop
+            elseif  (ier2 /= 0) then
+               write( Lun_out,1500)
+               stop
+            elseif  (ier3 /= 0) then
+               write( Lun_out,1500)
+               stop
+            elseif  (ier4 /= 0) then
+               write( Lun_out,1500)
+               stop
+            endif
+
+           do i=1,36
+             write (unf0)  dumdum(i,1)
+          enddo
+         do l=lmin,lmax
+            do m=1,l+1
+               write (unf1)ar_s(lmax-l+1,m)
+               write (unf2)br_s(lmax-l+1,m)
+               write (unf3)ai_s(lmax-l+1,m)
+               write (unf4)bi_s(lmax-l+1,m)
+            enddo
+         enddo
+            close(unf0);close(unf1);close(unf2);close(unf3);close(unf4)
+       endif
+   endif
 
        do l=lmin,lmax
           fact1n(l)=fstd*SQRT(4.*pi_8/real((2*l+1)) &
@@ -251,7 +348,7 @@ allocate(f(nlon, nlat) )
 
 !$omp parallel
 !$omp do
-   do m=1,lmax+1
+ 	do m=1,lmax+1
           do j=1,nlat
                cc(1,j,m)=0.d0
                cc(2,j,m)=0.d0
@@ -259,13 +356,12 @@ allocate(f(nlon, nlat) )
               cc(1,j,m)=cc(1,j,m) + Dot_product(plg(j,1:lmax-lmin+1,m),ar_s(1:lmax-lmin+1,m))
               cc(2,j,m)=cc(2,j,m) + Dot_product(plg(j,1:lmax-lmin+1,m),ai_s(1:lmax-lmin+1,m))
           enddo
-   enddo
+ 	enddo
 !$omp enddo
 !$omp end parallel
-
 ! Fourier Transform (inverse)
 
-            wrk1=0.0
+	    wrk1=0.0
             n=-1
             do i=1,nlat
                do j=1,lmax+1
@@ -278,12 +374,11 @@ allocate(f(nlon, nlat) )
 
         call itf_fft_set(nlon,'PERIODIC',pri_8)
         call ffft8(wrk1,1,nlon+2,nlat,1)
-
             n=0
             do j=1,nlat
                do i=1,nlon+2
                   n = n + 1
-                  if (i .le. nlon) then
+                  if (i <= nlon) then
                      f(i,j) = wrk1(n)
                   end if
                enddo
@@ -324,6 +419,15 @@ allocate(f(nlon, nlat) )
  1000 format( &
            /,'INITIALIZE SCHEMES CONTROL PARAMETERS (S/R ENS_MARFIELD_SKEB)', &
            /,'======================================================')
+1500 format(' S/R  ENS_MARFIELD_SKEB : problem with registering random parameters)', &
+              /,'======================================================')
+
+ 2500 format(' S/R  ENS_MARFIELD_SKEB : problem with opening  Markov Coeff)', &
+              /,'======================================================')
+
+ 3000 format(' S/R  ENS_MARFIELD_SKEB : problem in opening MKV_RAND_PARAM_S file)', &
+              /,'======================================================')
+
  6000 format('ens_marfield_skeb at gmm_get(',A,')')
 
       return
@@ -331,7 +435,7 @@ allocate(f(nlon, nlat) )
 contains
 
  subroutine pleg(l, m, jlat, nlat, plg )
-      implicit none
+ implicit none
 
       integer l,m ,i,j ,jlat ,nlat
       real*8   plg
@@ -387,7 +491,7 @@ contains
         real, dimension(nx,ny,nz) :: field
         mean=sum(field)/(nx*ny*nz)
         std=sqrt(sum((field-mean)**2)/(nx*ny*nz-1))
-        if (Lun_out.gt.0)write(Lun_out,99)Lctl_step,msg1,mean,std,         &
+        if (Lun_out > 0)write(Lun_out,99)Lctl_step,msg1,mean,std,         &
         minloc(field),minval(field),maxloc(field),maxval(field),msg2
  99   format (i4,a4,' Mean:',e14.7,' Std:',e14.7, &
               ' Min:[(',i3,',',i3,',',i3,')', &

@@ -27,17 +27,17 @@ module gmm_vt2
 !  ut2               | U: x component of velocity                      |
 !  vt2               | V: y component of velocity                      |
 ! zdt2               | Zdot: generalized vertical velocity             |
+!  qt2               | q: log of non-hydrostatic perturbation pressure |
 !--------------------|-------------------------------------------------|
 !
 
       real, pointer, dimension (:,:,:) :: ut2  => null()
       real, pointer, dimension (:,:,:) :: vt2  => null()
       real, pointer, dimension (:,:,:) :: zdt2 => null()
+      real, pointer, dimension (:,:,:) :: qt2 => null()
 
       integer, parameter :: MAXNAMELENGTH = 32
 
-      character(len=MAXNAMELENGTH) :: gmmk_zdt2_s, gmmk_ut2_s, gmmk_vt2_s 
-
-      common /vt2_n_gmm/ gmmk_zdt2_s, gmmk_ut2_s, gmmk_vt2_s 
+      character(len=MAXNAMELENGTH) :: gmmk_zdt2_s, gmmk_qt2_s, gmmk_ut2_s, gmmk_vt2_s
 
 end module gmm_vt2

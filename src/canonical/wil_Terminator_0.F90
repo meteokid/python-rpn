@@ -64,7 +64,7 @@
             lat   = geomh_y_8(j)
             y_a_8 = geomh_y_8(j)
 
-            if (Ptopo_couleur.eq.0) then
+            if (Ptopo_couleur == 0) then
 
                do i = 1,l_ni
 

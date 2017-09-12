@@ -13,6 +13,10 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 module bubble_options
+   use dynkernel_options
+   use grid_options
+   use gem_options
+   use tdpack
    implicit none
    public
    save
@@ -24,23 +28,17 @@ module bubble_options
    integer :: bubble_nj = 1
    namelist /bubble_cfgs/ bubble_nj
    !#
-   integer :: bubble_gnk = 99
-   namelist /bubble_cfgs/ bubble_gnk
+   integer :: bubble_nk = 100
+   namelist /bubble_cfgs/ bubble_nk
    !#
    real :: bubble_dx = 10.
    namelist /bubble_cfgs/ bubble_dx
    !#
+   real :: bubble_dz = 10.
+   namelist /bubble_cfgs/ bubble_dz
+   !#
    real :: bubble_theta = 303.16
    namelist /bubble_cfgs/  bubble_theta
-   !#
-   real :: bubble_domain_top = 1000.
-   namelist /bubble_cfgs/ bubble_domain_top
-   !#
-   real :: bubble_hyb(2000) = -1.
-   namelist /bubble_cfgs/ bubble_hyb
-   !#
-   real*8 :: bubble_pref_8 = 100000.d0
-   namelist /bubble_cfgs/ bubble_pref_8
    !#
    integer :: bubble_rad = 25
    namelist /bubble_cfgs/ bubble_rad
@@ -55,12 +53,11 @@ contains
 
       integer function bubble_nml (F_namelistf_S)
       use dcst
-      use grid_options
       use lun
-      use tdpack
       implicit none
 
-      character* (*) F_namelistf_S
+      character(len=*) F_namelistf_S
+
 
 
       integer, external :: fnom
@@ -70,16 +67,16 @@ contains
 !
       bubble_nml = -1
 
-      if ((F_namelistf_S.eq.'print').or.(F_namelistf_S.eq.'PRINT')) then
+      if ((F_namelistf_S == 'print').or.(F_namelistf_S == 'PRINT')) then
          bubble_nml = 0
-         if ( Lun_out.ge.0) write (Lun_out,nml=bubble_cfgs)
+         if ( Lun_out >= 0) write (Lun_out,nml=bubble_cfgs)
          return
       endif
 
-      if (F_namelistf_S .ne. '') then
+      if (F_namelistf_S /= '') then
 
          unf = 0
-         if (fnom (unf,F_namelistf_S, 'SEQ+OLD', 0) .ne. 0) goto 9110
+         if (fnom (unf,F_namelistf_S, 'SEQ+OLD', 0) /= 0) goto 9110
          rewind(unf)
          read (unf, nml=bubble_cfgs, end= 1000, err=9130)
 
@@ -88,7 +85,7 @@ contains
  1000 bubble_nml = 0
 
       ! establish horizontal grid configuration
-      Dcst_rayt_8 = Dcst_rayt_8 * 0.1d0 ! an accuracy problem
+      Dcst_rayt_8= Dcst_rayt_8*0.1d0 ! an accuracy problem
       Dcst_inv_rayt_8 = Dcst_inv_rayt_8 * 10.d0 ! an accuracy problem
       Grd_typ_S='LU'
       Grd_ni = bubble_ni ; Grd_nj = bubble_nj
@@ -100,13 +97,13 @@ contains
 
       goto 9999
 
- 9110 if (Lun_out.gt.0) then
+ 9110 if (Lun_out > 0) then
          write (Lun_out, 9050) trim( F_namelistf_S )
          write (Lun_out, 8000)
       endif
       goto 9999
 
- 9130 if (Lun_out.ge.0) then
+ 9130 if (Lun_out >= 0) then
          write (Lun_out, 9150) 'bubble_cfgs',trim( F_namelistf_S )
          write (Lun_out, 8000)
       endif
@@ -124,52 +121,49 @@ contains
       integer function bubble_cfg()
       use glb_ld
       use cstv
-      use gem_options
-      use grid_options
-      use tdpack
       implicit none
 #include <arch_specific.hf>
 
       integer k
-      real*8 c1_8,Exner_8,height_8,pres_8
+      real*8 c1_8,Exner_8,height_8,pres_8,pref_8,ptop_8,htop_8
 !
 !     ---------------------------------------------------------------
 !
       bubble_cfg = -1
 
-      G_nk = bubble_gnk
+      pref_8 = 1.d5
 
-      if ( hyb(1).lt.0 ) then
+      G_nk   = bubble_nk
+      htop_8 = G_nk*bubble_dz
+
+      if ( hyb(1) < 0 ) then
 
         !isentropic case
          c1_8=grav_8/(cpd_8*bubble_theta)
-         Exner_8=1.d0-c1_8*bubble_domain_top
-         Cstv_ptop_8 = Exner_8**(1.d0/cappa_8)*bubble_pref_8
+         Exner_8=1.d0-c1_8*htop_8
+         ptop_8 = Exner_8**(1.d0/cappa_8)*pref_8
 !        Uniform distribution of levels in terms of height
          do k=1,G_nk
-            height_8=bubble_domain_top*(1.d0-(dble(k)-.5d0)/G_nk)
+            height_8=htop_8*(1.d0-(dble(k)-.5d0)/G_nk)
             Exner_8=1.d0-c1_8*height_8
-            pres_8=Exner_8**(1.d0/cappa_8)*bubble_pref_8
-            hyb(k)=(pres_8-Cstv_ptop_8)/(bubble_pref_8-Cstv_ptop_8)
+            pres_8=Exner_8**(1.d0/cappa_8)*pref_8
+            hyb(k)=(pres_8-ptop_8)/(pref_8-ptop_8)
+            hyb(k) = hyb(k) + (1.-hyb(k))*ptop_8/pref_8
+            if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') hyb(k)=height_8
          enddo
-
-!        denormalize
-         do k=1,G_nk
-            hyb(k) = hyb(k) + (1.-hyb(k))*Cstv_ptop_8/bubble_pref_8
-         enddo
-         bubble_cfg = 1
 
       else
 
          do k=1024,1,-1
-            if(hyb(k).lt.0) G_nk=k-1
+            if(hyb(k) < 0) G_nk=k-1
          enddo
-         bubble_cfg = 1
 
       endif
 
       if (bubble_ictr < 0) bubble_ictr = int(float(Grd_ni-1)*0.5)+1
       if (bubble_kctr < 0) bubble_kctr = G_nk - bubble_rad - 1
+
+      bubble_cfg = 1
 
       return
       end function bubble_cfg
@@ -180,37 +174,32 @@ contains
 !**s/r bubble_data - generates initial condition for Robert's bubble
 !                  experiment (Robert 1993 JAS)
 !
-      subroutine bubble_data ( F_u, F_v, F_w, F_t, F_zd, F_s, F_topo,&
-                               F_q, pref_tr, suff_tr                ,&
+      subroutine bubble_data ( F_u, F_v, F_t, F_s, F_q, F_topo,&
                                Mminx,Mmaxx,Mminy,Mmaxy,nk )
       use gmm_geof
-      use glb_ld
-      use cstv
-      use tdpack
-      use tr3d
-      use ver
-      use type_mod
+      use geomh
       use gmm_itf_mod
+      use glb_pil
+      use glb_ld
+      use lun
+      use ptopo
+      use type_mod
+      use ver
+      use cstv
+      use metric
       implicit none
 #include <arch_specific.hf>
 
-      character* (*) pref_tr,suff_tr
       integer Mminx,Mmaxx,Mminy,Mmaxy,nk
       real F_u    (Mminx:Mmaxx,Mminy:Mmaxy,nk), &
            F_v    (Mminx:Mmaxx,Mminy:Mmaxy,nk), &
-           F_w    (Mminx:Mmaxx,Mminy:Mmaxy,nk), &
            F_t    (Mminx:Mmaxx,Mminy:Mmaxy,nk), &
-           F_zd   (Mminx:Mmaxx,Mminy:Mmaxy,nk), &
            F_s    (Mminx:Mmaxx,Mminy:Mmaxy   ), &
            F_topo (Mminx:Mmaxx,Mminy:Mmaxy   ), &
            F_q    (Mminx:Mmaxx,Mminy:Mmaxy,nk)
 
-
-      type(gmm_metadata) :: mymeta
-      character(len=GMM_MAXNAMELENGTH) :: tr_name
       integer i,j,k,istat,ii
-      real*8 pp, ex,theta
-      real, pointer, dimension(:,:,:) :: tr
+      real*8 pp,ex,theta
 !
 !     ---------------------------------------------------------------
 !
@@ -221,41 +210,64 @@ contains
       F_s   (:,:) = 0.0
       F_u (:,:,:) = 0.0
       F_v (:,:,:) = 0.0
-      F_w (:,:,:) = 0.0
-      F_zd(:,:,:) = 0.0
       F_q (:,:,:) = 0.0
 !
 !---------------------------------------------------------------------
-!     Initialize temperature and vertical motion fields
+!     Initialize temperature
 !---------------------------------------------------------------------
 !
-!---------------------------------------------------------------------
-!
-       do k=1,g_nk
-         do j=1,l_nj
+      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P') then
+
+
+         do k=1,g_nk
+            do j=1,l_nj
             do i=1,l_ni
                ii=i+l_i0-1
+               theta=bubble_theta
+               if ( (((ii)-bubble_ictr)**2 +((k)-bubble_kctr)**2) < bubble_rad**2 ) then
+                  theta=theta+0.5d0
+               end if
                pp = exp(Ver_a_8%t(k)+Ver_b_8%t(k)*F_s(i,j))
                ex = (pp/Cstv_pref_8)**cappa_8
-               theta=bubble_theta
-               if( (((ii)-bubble_ictr)**2 +((k)-bubble_kctr)**2) .lt. bubble_rad**2 ) &
-                        theta=theta+0.5d0
                F_t(i,j,k)=theta*ex
             enddo
+            enddo
          enddo
-      enddo
+
+      else if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
+
+         call set_metric
+
+         do k=1,g_nk
+            do j=1,l_nj
+            do i=1,l_ni
+               ii=i+l_i0-1
+               theta=bubble_theta
+               if ( (((ii)-bubble_ictr)**2 +((k)-bubble_kctr)**2) < bubble_rad**2 ) then
+                  theta=theta+0.5d0
+               end if
+               ex=1.d0-grav_8/(cpd_8*bubble_theta)*Ver_z_8%t(k)
+               F_t(i,j,k)=theta*ex
+            enddo
+            enddo
+         enddo
 !
-!-----------------------------------------------------------------------
-!     create tracers (humidity and MTN)
-!-----------------------------------------------------------------------
-      do k=1,Tr3d_ntr
-         if (Tr3d_name_S(k)(1:2).eq.'HU') then
-            nullify(tr)
-            tr_name = trim(pref_tr)//trim(Tr3d_name_S(k))//trim(suff_tr)
-            istat = gmm_get(tr_name,tr,mymeta)
-            tr = 0.
-         endif
-      end do
+!---------------------------------------------------------------------
+!     Initialize (horizontally uniform) pressure
+!---------------------------------------------------------------------
+!
+         do k=1,g_nk+1
+            do j=1,l_nj
+            do i=1,l_ni
+               ii=i+l_i0-1
+               ex=1.d0-grav_8/(cpd_8*bubble_theta)*Ver_z_8%m(k)
+               pp=1.d5*ex**(1.d0/cappa_8)
+               F_q(i,j,k)=rgasd_8*Cstv_Tstr_8*log(pp/1.d5)+grav_8*Ver_z_8%m(k)
+            enddo
+            enddo
+         enddo
+
+      endif
 !
  9000 format(/,'CREATING INPUT DATA FOR MOUNTAIN WAVE THEORETICAL CASE' &
             /,'======================================================')

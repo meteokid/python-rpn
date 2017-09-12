@@ -1,6 +1,23 @@
-#if defined (DOC)
-!
-!**comdeck yyg_blnu.cdk
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+
+module yyg_pilv
+   implicit none
+   public
+   save
+
 !
 !______________________________________________________________________
 !                                                                      |
@@ -27,31 +44,18 @@
 ! Pil_sendw_s2(*,M)  | element (s(1,2)) in matrix for polar vectors    |
 !                    | transformation                                  |
 !______________________________________________________________________|
-#endif
 !
+!Declarations for V variables (on V grid)
+   integer  Pil_vsend_all, Pil_vrecv_all,Pil_vsendmaxproc,Pil_vrecvmaxproc
+   integer, dimension (: ), pointer :: &
+               Pil_vsendproc, Pil_vrecvproc, &
+               Pil_vrecv_len, Pil_vsend_len, &
+               Pil_vrecv_adr, Pil_vsend_adr, &
+               Pil_vrecv_i   ,Pil_vrecv_j   ,Pil_vsend_imx1, Pil_vsend_imy1, &
+               Pil_vsend_imx2,Pil_vsend_imy2
 !
-!Declarations for U variables (on U grid)
-      integer  Bln_usend_all, Bln_urecv_all,Bln_usendmaxproc,Bln_urecvmaxproc
-      integer, dimension (: ), pointer :: &
-               Bln_usendproc, Bln_urecvproc, &
-               Bln_urecv_len, Bln_usend_len, &
-               Bln_urecv_adr, Bln_usend_adr, &
-               Bln_urecv_i   ,Bln_urecv_j   ,Bln_usend_imx1, Bln_usend_imy1, &
-               Bln_usend_imx2,Bln_usend_imy2
-!
-      real*8,  dimension (: ), pointer ::  &
-               Bln_usend_xxr,Bln_usend_yyr, & 
-               Bln_usend_s1, Bln_usend_s2
-!
-      common/Bln_ui/ &
-               Bln_usend_all, Bln_urecv_all,Bln_usendmaxproc,Bln_urecvmaxproc,&
-               Bln_usendproc, Bln_urecvproc, &
-               Bln_urecv_len, Bln_usend_len, &
-               Bln_urecv_adr, Bln_usend_adr, &
-               Bln_urecv_i   ,Bln_urecv_j   ,Bln_usend_imx1, Bln_usend_imy1, &
-               Bln_usend_imx2,Bln_usend_imy2
+   real*8,  dimension (: ), pointer ::  &
+               Pil_vsend_xxr,Pil_vsend_yyr, &
+               Pil_vsend_s1, Pil_vsend_s2
 
-      common/Bln_ur8/ &
-               Bln_usend_xxr,Bln_usend_yyr, & 
-               Bln_usend_s1, Bln_usend_s2
-
+end module yyg_pilv

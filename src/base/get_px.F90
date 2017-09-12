@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -44,7 +44,7 @@
 ! F_px           O    - 3D pressure field in Pascals
 ! F_p0           I    - incoming 2D surface pressure (P0 in Pa, or dimensionless)
 ! NN             I    - number of points in the 2D field of F_p0
-! F_a_8          I    - A 
+! F_a_8          I    - A
 ! F_b_8          I    - B
 ! NK             I    - Number of levels to the 3D pressure field
 ! F_vcode        I    - code for:
@@ -70,21 +70,21 @@
 
       if (F_logpx_L) then
 !     FOR result in LOG
-          if (F_vcode.eq.0) then
+          if (F_vcode == 0) then
 !             Pressure levels
               do k=1,NK
               do i=1,NN
                  F_px(i,k) = log(F_a_8(k)*100.)
               enddo
               enddo
-          else if (F_vcode.eq.1) then
+          else if (F_vcode == 1) then
 !             Sigma levels,p0 is in Pascals
               do k=1,NK
               do i=1,NN
                  F_px(i,k) = log(F_b_8(k)*F_p0(i))
               enddo
               enddo
-          else if (F_vcode.eq.2.or.F_vcode.eq.3.or.F_vcode.eq.4) then
+          else if (F_vcode == 2.or.F_vcode == 3.or.F_vcode == 4) then
 !             ETASEF levels
 !             ETA levels
 !             Hyb unstaggered levels,p0 is in Pascals
@@ -93,14 +93,14 @@
                  F_px(i,k) = log(F_a_8(k) + F_b_8(k)*F_p0(i))
               enddo
               enddo
-          else if (F_vcode.eq.6) then
+          else if (F_vcode == 6) then
 !             Staggered Hybrid levels (lnp-type),p0 is dimensionless
               do k=1,NK
               do i=1,NN
                  F_px(i,k) = F_a_8(k) + F_b_8(k)*F_p0(i)
               enddo
               enddo
-          else 
+          else
               print *,'Error in get_px: unrecognizable datatype: F_vcode=',F_vcode
               get_px = -1
           endif
@@ -108,21 +108,21 @@
       else
 
 !     FOR result NOT in LOG
-          if (F_vcode.eq.0) then
+          if (F_vcode == 0) then
 !             Pressure levels
               do k=1,NK
               do i=1,NN
                  F_px(i,k) = F_a_8(k)*100.0
               enddo
               enddo
-          else if (F_vcode.eq.1) then
+          else if (F_vcode == 1) then
 !             Sigma levels
               do k=1,NK
               do i=1,NN
                  F_px(i,k) = F_b_8(k)*F_p0(i)
               enddo
               enddo
-          else if (F_vcode.eq.2.or.F_vcode.eq.3.or.F_vcode.eq.4) then
+          else if (F_vcode == 2.or.F_vcode == 3.or.F_vcode == 4) then
 !             ETASEF levels
 !             ETA levels
 !             Hyb unstaggered levels
@@ -131,14 +131,14 @@
                  F_px(i,k) = F_a_8(k) + F_b_8(k)*F_p0(i)
               enddo
               enddo
-          else if (F_vcode.eq.6) then
+          else if (F_vcode == 6) then
 !             Staggered Hybrid levels (lnp-type),p0 is dimensionless
               do k=1,NK
               do i=1,NN
                  F_px(i,k) = exp(F_a_8(k) + F_b_8(k)*F_p0(i))
               enddo
               enddo
-          else 
+          else
               print *,'Error in get_px: unrecognizable datatype: F_vcode=',F_vcode
               get_px = -1
           endif

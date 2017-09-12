@@ -25,7 +25,7 @@
 
       logical F_apply_L
 
-!author 
+!author
 !     Vivian Lee   - Spring 2014
 !
 !revision

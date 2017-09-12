@@ -136,8 +136,8 @@
 !        ~~~~~~~~~
 !
 !        N.B.  Top Boundary condition:
-!                 Closed Top(k0.eq.1):  F_q(i,j,k0) = 0
-!                   Open Top(k0.ne.1):  F_q(i,j,k0t) is externally specified
+!                 Closed Top(k0 == 1):  F_q(i,j,k0) = 0
+!                   Open Top(k0 /= 1):  F_q(i,j,k0t) is externally specified
 
          if (Schm_opentop_L) then
 !$omp do
@@ -205,8 +205,8 @@
 !     ~~~~~~~~~~~~
 
 !     N.B.  Top Boundary condition:
-!              Closed Top(k0t.eq.1):  F_zd(i,j,k0t) = 0
-!                Open Top(k0t.ne.1):  F_zd(i,j,k0t) is computed
+!              Closed Top(k0t == 1):  F_zd(i,j,k0t) = 0
+!                Open Top(k0t /= 1):  F_zd(i,j,k0t) is computed
 
 !$omp do
       do k=k0t,l_nk-1

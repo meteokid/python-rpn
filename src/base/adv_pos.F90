@@ -23,11 +23,11 @@ module adv_pos
       real, pointer, dimension (:,:,:) ::  pxmu => null()
       real, pointer, dimension (:,:,:) ::  pymu => null()
       real, pointer, dimension (:,:,:) ::  pzmu => null()
-      
+
       real, pointer, dimension (:,:,:) ::  pxmv => null()
       real, pointer, dimension (:,:,:) ::  pymv => null()
       real, pointer, dimension (:,:,:) ::  pzmv => null()
-      
+
       real, pointer, dimension (:,:,:) ::  pxmu_s => null()
       real, pointer, dimension (:,:,:) ::  pymu_s => null()
       real, pointer, dimension (:,:,:) ::  pzmu_s => null()

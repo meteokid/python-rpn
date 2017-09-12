@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -26,7 +26,7 @@
       use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
-    
+
       integer Minx,Maxx,Miny,Maxy,Nk,i0,in,j0,jn
       real F_fi (Minx:Maxx,Miny:Maxy,Nk+1),F_q(Minx:Maxx,Miny:Maxy,Nk+1)
       real F_s  (Minx:Maxx,Miny:Maxy)     ,F_t(Minx:Maxx,Miny:Maxy,Nk  )
@@ -48,19 +48,19 @@
 ! F_t          I    - temperature
 ! F_fis        I    - surface geopotential
 
- 
+
       integer i,j,k,km,istat
       real*8, parameter :: one = 1.d0, half = .5d0
       real*8  qbar,w1
 !
 !     ---------------------------------------------------------------
- 
+
       istat = gmm_get (gmmk_fis0_s,fis0)
       istat = gmm_get (gmmk_sls_s ,sls )
 
 !$omp parallel private(qbar,w1,km)
 
-!$omp do 
+!$omp do
       do j=j0,jn
          do i=i0,in
             F_fi(i,j,G_nk+1)= fis0(i,j)
@@ -70,7 +70,7 @@
 
       if (Schm_hydro_L) then
 
-!$omp do 
+!$omp do
       do j=j0,jn
          do k= G_nk,1,-1
             w1= rgasd_8*Ver_dz_8%t(k)
@@ -84,7 +84,7 @@
 
       else
 
-!$omp do 
+!$omp do
       do j=j0,jn
          do k= G_nk,1,-1
             km= max(1,k-1)

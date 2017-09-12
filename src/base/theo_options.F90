@@ -13,6 +13,8 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 module theo_options
+   use bubble_options
+   use mtn_options
    implicit none
    public
    save
@@ -20,8 +22,6 @@ module theo_options
    !# Choices of theoretical case:
    !# * from Robert, JAS 1993
    !# * 'BUBBLE': uniform convective bubble
-   !# * 'BUBBLE_G': gaussian bubble
-   !# * '2_BUBBLES': 2 colliding bubbles
    !# * from Schar et al, MWR 2002
    !# * 'MTN_SCHAR': case with N=0.01
    !# * 'MTN_SCHAR2': case with N=0.01871
@@ -29,40 +29,38 @@ module theo_options
    !# * 'MTN_PINTY': linear isothermal with U=32m/s
    !# * 'MTN_PINTY2': linear isothermal with U=8m/s
    !# * 'MTN_PINTYNL': nonlinear regime
+
    character(len=15) :: Theo_case_S = 'NONE'
    namelist /theo_cfgs/ Theo_case_S
 
 contains
 
       integer function theocases_nml (F_namelistf_S,F_theo_L)
-      use glb_ld
       use lun
-      use bubble_options
-      use mtn_options
       implicit none
 
-      character* (*) F_namelistf_S
+      character(len=*) F_namelistf_S
       logical F_theo_L
 
 
       integer, external :: fnom
-      character*64 dumc_S
+      character(len=64) :: dumc_S
       integer unf
 !
 !-------------------------------------------------------------------
 !
       theocases_nml = -1
 
-      if ((F_namelistf_S.eq.'print').or.(F_namelistf_S.eq.'PRINT')) then
+      if ((F_namelistf_S == 'print').or.(F_namelistf_S == 'PRINT')) then
          theocases_nml = 0
-         if ( Lun_out.ge.0) write (Lun_out,nml=theo_cfgs)
+         if ( Lun_out >= 0) write (Lun_out,nml=theo_cfgs)
          return
       endif
 
-      if (F_namelistf_S .ne. '') then
+      if (F_namelistf_S /= '') then
 
          unf = 0
-         if (fnom (unf,F_namelistf_S, 'SEQ+OLD', 0) .ne. 0) goto 9110
+         if (fnom (unf,F_namelistf_S, 'SEQ+OLD', 0) /= 0) goto 9110
          rewind(unf)
          read (unf, nml=theo_cfgs, end= 1000, err=9130)
  1000    call fclos (unf)
@@ -72,21 +70,21 @@ contains
       call low2up (Theo_case_S ,dumc_S)
       Theo_case_S = dumc_S
 
-      if (  Theo_case_S .eq. 'NONE' ) then
+      if (  Theo_case_S == 'NONE' ) then
          theocases_nml= 0 ; F_theo_L= .false.
       else
          F_theo_L= .true.
-         if (   Theo_case_S .eq. 'MTN_SCHAR'   &
-           .or. Theo_case_S .eq. 'MTN_SCHAR2'  &
-           .or. Theo_case_S .eq. 'MTN_PINTY'   &
-           .or. Theo_case_S .eq. 'MTN_PINTY2'  &
-           .or. Theo_case_S .eq. 'MTN_PINTYNL' &
-           .or. Theo_case_S .eq. 'NOFLOW' ) then
+         if (   Theo_case_S == 'MTN_SCHAR'   &
+           .or. Theo_case_S == 'MTN_SCHAR2'  &
+           .or. Theo_case_S == 'MTN_PINTY'   &
+           .or. Theo_case_S == 'MTN_PINTY2'  &
+           .or. Theo_case_S == 'MTN_PINTYNL' &
+           .or. Theo_case_S == 'NOFLOW' ) then
            theocases_nml= mtn_nml (F_namelistf_S)
-        else if (  Theo_case_S .eq. 'BUBBLE' ) then
+        else if (  Theo_case_S == 'BUBBLE' ) then
            theocases_nml= bubble_nml (F_namelistf_S)
         else
-           if (Lun_out.gt.0) then
+           if (Lun_out > 0) then
               write (Lun_out, 9200) Theo_case_S
               write (Lun_out, 8000)
            endif
@@ -95,14 +93,14 @@ contains
 
       goto 9999
 
- 9110 if (Lun_out.gt.0) then
+ 9110 if (Lun_out > 0) then
          write (Lun_out, 9050) trim( F_namelistf_S )
          write (Lun_out, 8000)
       endif
       goto 9999
 
  9130 call fclos (unf)
-      if (Lun_out.ge.0) then
+      if (Lun_out >= 0) then
          write (Lun_out, 9150) 'theo_cfgs',trim( F_namelistf_S )
          write (Lun_out, 8000)
       endif
@@ -117,38 +115,34 @@ contains
 !-------------------------------------------------------------------
 !
       subroutine theo_cfg()
-      use glb_ld
       use lun
-      use mtn_options
-      use bubble_options
       implicit none
-
 
       integer err
 !
 !     ---------------------------------------------------------------
 !
-      if (  Theo_case_S .eq. 'NONE' ) return
+      if (  Theo_case_S == 'NONE' ) return
 
       err= -1
-      if (  Theo_case_S .eq. 'MTN_SCHAR' &
-           .or. Theo_case_S .eq. 'MTN_SCHAR2' &
-           .or. Theo_case_S .eq. 'MTN_PINTY' &
-           .or. Theo_case_S .eq. 'MTN_PINTY2' &
-           .or. Theo_case_S .eq. 'MTN_PINTYNL' &
-           .or. Theo_case_S .eq. 'NOFLOW' ) then
+      if (  Theo_case_S == 'MTN_SCHAR' &
+           .or. Theo_case_S == 'MTN_SCHAR2' &
+           .or. Theo_case_S == 'MTN_PINTY' &
+           .or. Theo_case_S == 'MTN_PINTY2' &
+           .or. Theo_case_S == 'MTN_PINTYNL' &
+           .or. Theo_case_S == 'NOFLOW' ) then
          err = mtn_cfg ()
-      else if (  Theo_case_S .eq. 'BUBBLE' ) then
+      else if (  Theo_case_S == 'BUBBLE' ) then
          err = bubble_cfg ()
       else
-         if (Lun_out.gt.0) then
+         if (Lun_out > 0) then
             write (Lun_out, 9200) Theo_case_S
          endif
       endif
 
       call gem_error (err, 'theo_cfg', Theo_case_S)
 
-      if (Lun_out.gt.0) write (Lun_out, 7050) Theo_case_S
+      if (Lun_out > 0) write (Lun_out, 7050) Theo_case_S
 
  7050 format (/' THEORETICAL CASE IS: ',a/)
  9200 format (/,' Unsupported theoretical case: ',a/)
@@ -158,36 +152,31 @@ contains
 !
 !     ---------------------------------------------------------------
 !
-      subroutine theo_data ( F_u, F_v, F_w, F_t, F_zd, F_s, F_q, F_topo,&
-                             pref_tr, suff_tr )
+      subroutine theo_data ( F_u, F_v, F_w, F_t, F_zd, F_s, F_q, F_topo)
+
       use glb_ld
-      use bubble_options
-      use mtn_options
       implicit none
 #include <arch_specific.hf>
 
-      character* (*) pref_tr,suff_tr
       real F_u(*), F_v(*), F_w (*), F_t(*), F_zd(*), &
            F_s(*), F_topo(*), F_q(*)
 
 !
 !---------------------------------------------------------------------
 !
-      if (      Theo_case_S.eq.'MTN_SCHAR'   &
-           .or. Theo_case_S.eq.'MTN_SCHAR2'  &
-           .or. Theo_case_S.eq.'MTN_PINTY'   &
-           .or. Theo_case_S.eq.'MTN_PINTY2'  &
-           .or. Theo_case_S.eq.'MTN_PINTYNL' &
-           .or. Theo_case_S.eq.'NOFLOW' ) then
+      if (      Theo_case_S == 'MTN_SCHAR'   &
+           .or. Theo_case_S == 'MTN_SCHAR2'  &
+           .or. Theo_case_S == 'MTN_PINTY'   &
+           .or. Theo_case_S == 'MTN_PINTY2'  &
+           .or. Theo_case_S == 'MTN_PINTYNL' &
+           .or. Theo_case_S == 'NOFLOW' ) then
 
-         call mtn_data ( F_u, F_v, F_w, F_t, F_zd, F_s, F_topo, &
-                         F_q, pref_tr, suff_tr, &
-                         l_minx, l_maxx, l_miny, l_maxy, Theo_case_S )
+         call mtn_data ( F_u, F_v, F_t, F_s, F_q, F_topo, &
+                         l_minx, l_maxx, l_miny, l_maxy, G_nk, Theo_case_S )
 
-      elseif ( Theo_case_S.eq.'BUBBLE' ) then
+      elseif ( Theo_case_S == 'BUBBLE' ) then
 
-         call bubble_data ( F_u, F_v, F_w, F_t, F_zd, F_s, F_topo, &
-                            F_q, pref_tr, suff_tr, &
+         call bubble_data ( F_u, F_v, F_t, F_s, F_q, F_topo, &
                             l_minx, l_maxx, l_miny, l_maxy, G_nk )
       else
 

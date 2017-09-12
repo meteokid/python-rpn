@@ -2,7 +2,7 @@
 
       subroutine ILMC_LAM (F_name_S,F_out,F_high,F_min,F_max,Minx,Maxx,Miny,Maxy,F_nk,k0,F_ILMC_min_max_L,F_ILMC_sweep_max)
 
-      use array_ILMC
+      use array_ilmc
       use gem_options
       use grid_options
       use glb_ld
@@ -137,10 +137,9 @@
          enddo
       enddo
 
-!$omp parallel do                                        &
-!$omp private(sweep,i,j,ii,ix,jx,kx,kx_m,kx_p,limit_i_L) &
+!$omp parallel private(k,sweep,i,j,ii,ix,jx,kx,kx_m,kx_p,limit_i_L) &
 !$omp shared (j1,j2,sweep_rd,il,ir,jl,jr,il_c,ir_c,jl_c,jr_c)
-
+!$omp do
       do k=k0,F_nk
 
          kx_m = k
@@ -189,7 +188,8 @@
          enddo
 
       enddo
-!$omp end parallel do
+!$omp end do
+!$omp end parallel
 
       done_L = .TRUE.
 
@@ -232,7 +232,9 @@
       !-----------------------------------------------------------
       !Recover perturbation in East-West/North-South halo of F_new
       !-----------------------------------------------------------
-!$omp parallel do private(i,j) shared(F_new,F_copy,il,ir,jl,jr,il_c,ir_c,jl_c,jr_c)
+!$omp parallel private(k,i,j) &
+!$omp shared(F_new,F_copy,il,ir,jl,jr,il_c,ir_c,jl_c,jr_c)
+!$omp do
       do k=k0,F_nk
          do j=jl,jr
             do i=il,ir
@@ -241,7 +243,8 @@
             enddo
          enddo
       enddo
-!$omp end parallel do
+!$omp end do
+!$omp end parallel
 
       F_copy = F_new
 
@@ -261,7 +264,9 @@
       !---------------------------------------
       if (F_ILMC_min_max_L) then
 
-!$omp parallel do private(i,j) shared(F_out,F_min,F_max,reset,il_c,ir_c,jl_c,jr_c)
+!$omp parallel private(k,i,j) &
+!$omp shared(F_out,F_min,F_max,reset,il_c,ir_c,jl_c,jr_c)
+!$omp do
       do k=k0,F_nk
          do j=jl_c,jr_c
          do i=il_c,ir_c
@@ -283,7 +288,8 @@
          enddo
          enddo
       enddo
-!$omp end parallel do
+!$omp end do
+!$omp end parallel
 
       endif
 

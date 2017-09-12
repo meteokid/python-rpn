@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -32,7 +32,7 @@
               F_bi_8(Minz:Maxz,Minx:Maxx,GNJ)  , &
               F_ci_8(Minz:Maxz,Minx:Maxx,GNJ)
 !
-!Author 
+!Author
 !     Abdessamad Qaddouri- JULY 1999
 !
 !revision
@@ -48,7 +48,7 @@
 ! F_yg_8       I    - latitudes  of the scalar grid in radians
 ! F_opsyp0_8   I    - north-south projection operators
 ! F_opsyp2_8   I    - north-south projection operators
-! F_xeval_8    I    - horizontal eigenvalues 
+! F_xeval_8    I    - horizontal eigenvalues
 ! F_k0         I    - the global starting index for K on PEx (Trp_12sn0)
 ! F_i0         I    - the global starting index for I on PEy (Trp_22n0)
 ! Minx1        I    - minimum index on local PEx for K (trp_12smin)
@@ -64,7 +64,7 @@
 
 
       integer k, kk, i, ii, j
-      integer l_pil_w,l_pil_e, dim
+      integer l_pil_w,l_pil_e
       real*8, parameter :: zero = 0.0, one  = 1.0
       real*8  a_8(F_nk,Minx:Maxx,GNJ), b_8(F_nk,Minx:Maxx,GNJ), &
               c_8(F_nk,Minx:Maxx,GNJ), di_8
@@ -125,7 +125,7 @@
       enddo
       enddo
       enddo
-      
+
       j= GNJ-Lam_pil_n
       do k= 1, F_nk
       do i= 1+l_pil_w, F_ni-l_pil_e

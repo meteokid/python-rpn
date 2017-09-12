@@ -15,7 +15,8 @@
 
 !**s/r out_dyn_casc - model output for cascade
 
-      subroutine out_dyn_casc
+      subroutine out_dyn_casc()
+      use dynkernel_options
       use vGrid_Descriptors, only: vgrid_descriptor,vgd_get,VGD_OK,VGD_ERROR
       use vgrid_wb, only: vgrid_wb_get
       use out_vref, only: out_vref_itf
@@ -35,7 +36,7 @@
 #include <arch_specific.hf>
 
 
-      character(len=512) name
+      character(len=512) varname
       integer k,istat,indo(G_nk+2)
       integer, dimension(:), pointer  :: ip1m
       real conv
@@ -43,9 +44,14 @@
       real, dimension(:,:  ), pointer :: tr1,tdiag,udiag,vdiag
       real, dimension(:,:,:), pointer :: tr2
       type(vgrid_descriptor) :: vcoord
+      logical :: using_qt1
+      real hybm_gnk2(1),hybt_gnk2(1),hyb0(1)
+      integer ind0(1)
 !
 !------------------------------------------------------------------
 !
+      using_qt1 = ( .not.Schm_hydro_L ) .or. (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H')
+
       nullify (pw_tt_plus,pw_uu_plus,pw_vv_plus,tdiag,udiag,vdiag)
       istat = gmm_get (gmmk_pw_tt_plus_s, pw_tt_plus)
       istat = gmm_get (gmmk_pw_uu_plus_s, pw_uu_plus)
@@ -58,7 +64,7 @@
       istat = gmm_get(gmmk_zdt1_s,zdt1)
       istat = gmm_get(gmmk_fis0_s,fis0)
       istat = gmm_get(gmmk_wt1_s ,wt1 )
-      if (.not.Schm_hydro_L) istat = gmm_get(gmmk_qt1_s,qt1)
+      if ( using_qt1 ) istat = gmm_get(gmmk_qt1_s,qt1)
 
       do k=1,G_nk+2
          indo(k) = k
@@ -69,6 +75,10 @@
       istat = vgd_get (vcoord,'VCDM - vertical coordinate (m)',hybm)
       istat = vgd_get (vcoord,'VCDT - vertical coordinate (t)',hybt)
       allocate(tr1(l_minx:l_maxx,l_miny:l_maxy))
+      hyb0(1)=0.0
+      hybm_gnk2(1)=hybm(G_nk+2)
+      hybt_gnk2(1)=hybt(G_nk+2)
+      ind0(1)=1
 
       call itf_phy_diag ()
 
@@ -79,51 +89,53 @@
       call out_vref_itf  ( etiket=Out3_etik_S )
 
       conv= -tcdk_8
-      call out_fstecr3 ( pw_tt_plus,l_minx,l_maxx,l_miny,l_maxy,hybt,'TT  ' ,1., &
-                         conv,5,-1,G_nk,indo,G_nk,32,.false. )
-      if (Out3_sfcdiag_L) &
-      call out_fstecr3 ( tdiag,l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+2), &
-                         'TT  ' ,1., conv,4,-1,1,indo,1,32,.false. )
+      call out_fstecr3 ( pw_tt_plus,l_minx,l_maxx,l_miny,l_maxy,hybt,'TT  ',1.,&
+                         conv,5,-1,G_nk,indo,G_nk,Grdc_nbits,.false. )
+      if (Out3_sfcdiag_L) then
+         call out_fstecr3 ( tdiag,l_minx,l_maxx,l_miny,l_maxy,hybt_gnk2, &
+                            'TT  ' ,1., conv,4,-1,1,ind0,1,Grdc_nbits,.false. )
+      end if
 
-      call out_fstecr3 (pw_p0_plus,l_minx,l_maxx,l_miny,l_maxy,0.0,&
-                        'P0  ',.01,0., 2,-1,1, 1, 1, 32, .false.)
+      call out_fstecr3 (pw_p0_plus,l_minx,l_maxx,l_miny,l_maxy,hyb0,&
+                        'P0  ',.01,0., 2,-1,1, ind0, 1, Grdc_nbits, .false.)
 
       call out_fstecr3 ( wt1 ,l_minx,l_maxx,l_miny,l_maxy,hybt,'WT1 ' ,1., &
-                         0.,5,-1,G_nk,indo,G_nk,32,.false. )
+                         0.,5,-1,G_nk,indo,G_nk,Grdc_nbits,.false. )
       call out_fstecr3 ( zdt1,l_minx,l_maxx,l_miny,l_maxy,hybt,'ZDT1',1., &
-                         0.,5,-1,G_nk,indo,G_nk,32,.false. )
-      if (.not.Schm_hydro_L) &
-      call out_fstecr3 ( qt1 ,l_minx,l_maxx,l_miny,l_maxy,hybm,'QT1 ' ,1., &
-                         0.,5,-1,G_nk+1,indo,G_nk+1,32,.false. )
-      call out_fstecr3 ( fis0,l_minx,l_maxx,l_miny,l_maxy,0.  ,'FIS0',1., &
-                         0.,5,-1,1,indo,1,32,.false. )
+                         0.,5,-1,G_nk,indo,G_nk,Grdc_nbits,.false. )
+      if ( using_qt1 ) then
+         call out_fstecr3 ( qt1 ,l_minx,l_maxx,l_miny,l_maxy,hybm,'QT1 ' ,1., &
+                            0.,5,-1,G_nk+1,indo,G_nk+1,Grdc_nbits,.false. )
+      end if
+      call out_fstecr3 ( fis0,l_minx,l_maxx,l_miny,l_maxy,hyb0  ,'FIS0',1., &
+                         0.,5,-1,1,ind0,1,Grdc_nbits,.false. )
 
       do k=1,Grdc_ntr
          nullify (tr2)
-         name = 'TR/'//trim(Grdc_trnm_S(k))//':P'
-         istat= gmm_get (name,tr2)
+         varname = 'TR/'//trim(Grdc_trnm_S(k))//':P'
+         istat= gmm_get (varname,tr2)
          call out_fstecr3 ( tr2 ,l_minx,l_maxx,l_miny,l_maxy,hybt, &
-                            Grdc_trnm_S(k),1.,0.,5,-1,G_nk,indo,G_nk,32,.false.)
+                            Grdc_trnm_S(k),1.,0.,5,-1,G_nk,indo,G_nk,Grdc_nbits,.false.)
          if ( Out3_sfcdiag_L ) then
             tr1 = tr2(:,:,G_nk)
             call itf_phy_sfcdiag ( tr1(l_minx,l_miny),l_minx,l_maxx, &
-                                   l_miny,l_maxy,name,istat,.true. )
+                                   l_miny,l_maxy,varname,istat,.true. )
             call out_fstecr3 ( tr1 ,l_minx,l_maxx,l_miny,l_maxy, &
-                               hybt(G_nk+2),Grdc_trnm_S(k),1.  , &
-                               0.,4,-1,1,indo,1,32,.false. )
+                               hybt_gnk2,Grdc_trnm_S(k),1.  , &
+                               0.,4,-1,1,ind0,1,Grdc_nbits,.false. )
          endif
       end do
 
       conv= 1.0 / knams_8
       call out_fstecr3 ( pw_uu_plus, l_minx,l_maxx,l_miny,l_maxy,hybm,'UU  ' ,&
-                         conv, 0., 5,-1,G_nk,indo,G_nk,32,.false. )
+                         conv, 0., 5,-1,G_nk,indo,G_nk,Grdc_nbits,.false. )
       call out_fstecr3 ( pw_vv_plus, l_minx,l_maxx,l_miny,l_maxy,hybm,'VV  ' ,&
-                         conv, 0., 5,-1,G_nk,indo,G_nk,32,.false. )
+                         conv, 0., 5,-1,G_nk,indo,G_nk,Grdc_nbits,.false. )
       if (Out3_sfcdiag_L) then
-         call out_fstecr3 ( udiag, l_minx,l_maxx,l_miny,l_maxy,hybm(G_nk+2),&
-                            'UU  ' , conv, 0., 4,-1,1,indo,1,32,.false. )
-         call out_fstecr3 ( vdiag, l_minx,l_maxx,l_miny,l_maxy,hybm(G_nk+2),&
-                            'VV  ' , conv, 0., 4,-1,1,indo,1,32,.false. )
+         call out_fstecr3 ( udiag, l_minx,l_maxx,l_miny,l_maxy,hybm_gnk2,&
+                            'UU  ' , conv, 0., 4,-1,1,ind0,1,Grdc_nbits,.false. )
+         call out_fstecr3 ( vdiag, l_minx,l_maxx,l_miny,l_maxy,hybm_gnk2,&
+                            'VV  ' , conv, 0., 4,-1,1,ind0,1,Grdc_nbits,.false. )
       endif
 
       deallocate (hybm,hybt,tr1)

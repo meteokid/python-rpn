@@ -63,7 +63,7 @@ contains
     Maxy = metadata%l(2)%high
     Minz = metadata%l(3)%low
     Maxz = metadata%l(3)%high
-    if ((Minz.eq.0) .and. (Maxz.eq.0) .and. (metadata%l(3)%n.eq.0)) then
+    if ((Minz == 0) .and. (Maxz == 0) .and. (metadata%l(3)%n == 0)) then
        Minz = 1
        Maxz = 1
     endif

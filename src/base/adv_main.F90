@@ -60,7 +60,7 @@
 !
       if (Lun_debug_L) write (Lun_out,1000)
       doAdwStat_L = .false.
-      if (Step_gstat.gt.0) then
+      if (Step_gstat > 0) then
          doAdwStat_L = (mod(Lctl_step,Step_gstat) == 0)
       end if
       doAdwStat_L = doAdwStat_L .and. (F_icn == Schm_itcn)
@@ -130,7 +130,7 @@
 
       k0 = Lam_gbpil_t+1
       k0t= k0
-      if(Lam_gbpil_t.gt.0) k0t=k0-1
+      if(Lam_gbpil_t > 0) k0t=k0-1
       k0m=max(k0t-2,1)
 
 !
@@ -165,8 +165,8 @@
       call timing_start2 (34, 'ADV_TRAP', 30) ! Compute trajectories
       call adv_traj (F_fnitraj, pxm , pym , pzm        ,&
                      a_ud, a_vd, a_wd, ua, va ,wa , wat,&
-                     xth, yth, zth, i0_e, in_e, j0_e, jn_e, &
-                     k0, k0m, k0t ,&
+                        xth, yth, zth, i0_e, in_e, j0_e, jn_e, i0u_e,&
+                        inu_e, j0v_e, jnv_e, k0, k0m, k0t ,&
                      adv_lminx, adv_lmaxx, adv_lminy, adv_lmaxy, l_ni, l_nj, l_nk )
       call timing_stop (34)
       call timing_stop (30)

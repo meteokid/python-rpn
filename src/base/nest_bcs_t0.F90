@@ -16,12 +16,13 @@
 !**s/r nest_bcs_t0 -
 !
       subroutine nest_bcs_t0 ()
-      use gmm_vt0
-      use gmm_nest
+      use dynkernel_options
       use gem_options
+      use gmm_itf_mod
+      use gmm_nest
+      use gmm_vt0
       use glb_ld
       use tr3d
-      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 !
@@ -38,9 +39,12 @@
       character(len=GMM_MAXNAMELENGTH) :: tr_name
       integer i,j,n,istat
       real, pointer, dimension(:,:,:) :: tr,tr0
+      logical :: using_qt0
 !
 !----------------------------------------------------------------------
 !
+      using_qt0 = ( .not.Schm_hydro_L ) .or. (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H')
+
       istat = gmm_get(gmmk_nest_u_s ,nest_u )
       istat = gmm_get(gmmk_nest_v_s ,nest_v )
       istat = gmm_get(gmmk_nest_t_s ,nest_t )
@@ -55,7 +59,7 @@
       istat = gmm_get(gmmk_wt0_s , wt0 )
       istat = gmm_get(gmmk_zdt0_s,zdt0 )
 
-      if (.not.Schm_hydro_L) then
+      if ( using_qt0 ) then
          istat = gmm_get(gmmk_nest_q_s,nest_q)
 
          istat = gmm_get(gmmk_qt0_s,qt0)
@@ -68,7 +72,7 @@
          st0 (1:l_ni ,l_nj-pil_n+1:l_nj) = nest_s (1:l_ni,l_nj-pil_n+1:l_nj)
          wt0 (1:l_ni ,l_nj-pil_n+1:l_nj ,1:G_nk) = nest_w (1:l_ni ,l_nj-pil_n+1:l_nj ,1:G_nk)
          zdt0(1:l_ni ,l_nj-pil_n+1:l_nj ,1:G_nk) = nest_zd(1:l_ni ,l_nj-pil_n+1:l_nj ,1:G_nk)
-         if (.not. Schm_hydro_L) then
+         if ( using_qt0 ) then
             qt0 (1:l_ni ,l_nj-pil_n+1:l_nj ,1:G_nk+1) = nest_q (1:l_ni ,l_nj-pil_n+1:l_nj ,1:G_nk+1)
          endif
       endif
@@ -80,7 +84,7 @@
          st0 (1:l_ni ,1:pil_s) = nest_s (1:l_ni,1:pil_s)
          wt0 (1:l_ni ,1:pil_s ,1:G_nk) = nest_w (1:l_ni ,1:pil_s ,1:G_nk)
          zdt0(1:l_ni ,1:pil_s ,1:G_nk) = nest_zd(1:l_ni ,1:pil_s ,1:G_nk)
-         if (.not. Schm_hydro_L) then
+         if ( using_qt0 ) then
             qt0 (1:l_ni ,1:pil_s ,1:G_nk+1) = nest_q (1:l_ni ,1:pil_s ,1:G_nk+1)
          endif
       endif
@@ -92,7 +96,7 @@
          st0 (l_ni-pil_e+1:l_ni ,1:l_nj) = nest_s (l_ni-pil_e+1:l_ni,1:l_nj)
          wt0 (l_ni-pil_e+1:l_ni ,1:l_nj ,1:G_nk) = nest_w (l_ni-pil_e+1:l_ni ,1:l_nj ,1:G_nk)
          zdt0(l_ni-pil_e+1:l_ni ,1:l_nj ,1:G_nk) = nest_zd(l_ni-pil_e+1:l_ni ,1:l_nj ,1:G_nk)
-         if (.not. Schm_hydro_L) then
+         if ( using_qt0 ) then
             qt0 (l_ni-pil_e+1:l_ni ,1:l_nj ,1:G_nk+1) = nest_q (l_ni-pil_e+1:l_ni ,1:l_nj ,1:G_nk+1)
          endif
       endif
@@ -104,7 +108,7 @@
          st0 (1:pil_w, 1:l_nj) = nest_s (1:pil_w,1:l_nj)
          wt0 (1:pil_w, 1:l_nj , 1:G_nk) = nest_w (1:pil_w, 1:l_nj , 1:G_nk)
          zdt0(1:pil_w, 1:l_nj , 1:G_nk) = nest_zd(1:pil_w, 1:l_nj , 1:G_nk)
-         if (.not. Schm_hydro_L) then
+         if ( using_qt0 ) then
             qt0 (1:pil_w, 1:l_nj, 1:G_nk+1) = nest_q (1:pil_w, 1:l_nj, 1:G_nk+1)
          endif
       endif
@@ -115,7 +119,7 @@
          tt0 (1:l_ni ,1:l_nj ,1:Lam_gbpil_t-1) = nest_t (1:l_ni ,1:l_nj ,1:Lam_gbpil_t-1)
          wt0 (1:l_ni ,1:l_nj ,1:Lam_gbpil_t-1) = nest_w (1:l_ni ,1:l_nj ,1:Lam_gbpil_t-1)
          zdt0(1:l_ni ,1:l_nj ,1:Lam_gbpil_t-1) = nest_zd(1:l_ni ,1:l_nj ,1:Lam_gbpil_t-1)
-         if (.not. Schm_hydro_L) then
+         if ( using_qt0 ) then
             qt0 (1:l_ni,1:l_nj,1:Lam_gbpil_t)     = nest_q (1:l_ni,1:l_nj,1:Lam_gbpil_t)
          endif
       endif
@@ -135,17 +139,25 @@
          tr_name = 'TR/'//trim(Tr3d_name_S(n))//':M'
          istat = gmm_get(tr_name,tr0)
 
-         if (l_north) &
-         tr0 (1:l_ni ,l_nj-pil_n+1:l_nj ,1:G_nk) = tr (1:l_ni ,l_nj-pil_n+1:l_nj ,1:G_nk)
-         if (l_east)  &
-         tr0 (l_ni-pil_e+1:l_ni ,1:l_nj ,1:G_nk) = tr (l_ni-pil_e+1:l_ni ,1:l_nj ,1:G_nk)
-         if (l_south) &
-         tr0 (1:l_ni ,1:pil_s ,1:G_nk) = tr (1:l_ni ,1:pil_s ,1:G_nk)
-         if (l_west)  &
-         tr0 (1:pil_w ,1:l_nj ,1:G_nk) = tr (1:pil_w ,1:l_nj ,1:G_nk)
+         if (l_north) then
+            tr0 (1:l_ni ,l_nj-pil_n+1:l_nj ,1:G_nk) = tr (1:l_ni ,l_nj-pil_n+1:l_nj ,1:G_nk)
+         end if
 
-         if (Schm_opentop_L) &
-         tr0 (1:l_ni, 1:l_nj, 1:Lam_gbpil_t-1) = tr (1:l_ni, 1:l_nj, 1:Lam_gbpil_t-1)
+         if (l_east) then
+            tr0 (l_ni-pil_e+1:l_ni ,1:l_nj ,1:G_nk) = tr (l_ni-pil_e+1:l_ni ,1:l_nj ,1:G_nk)
+         end if
+
+         if (l_south) then
+            tr0 (1:l_ni ,1:pil_s ,1:G_nk) = tr (1:l_ni ,1:pil_s ,1:G_nk)
+         end if
+
+         if (l_west) then
+            tr0 (1:pil_w ,1:l_nj ,1:G_nk) = tr (1:pil_w ,1:l_nj ,1:G_nk)
+         end if
+
+         if (Schm_opentop_L) then
+            tr0 (1:l_ni, 1:l_nj, 1:Lam_gbpil_t-1) = tr (1:l_ni, 1:l_nj, 1:Lam_gbpil_t-1)
+         end if
 
       enddo
 

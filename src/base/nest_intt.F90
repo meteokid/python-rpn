@@ -15,15 +15,15 @@
 
 !**s/r nest_intt -- Linear interpolation in time of nesting data
 !
-      subroutine nest_intt
-      use step_options
-      use gmm_nest
-      use gem_options
-      use glb_ld
+      subroutine nest_intt()
       use cstv
+      use gem_options
+      use gmm_itf_mod
+      use gmm_nest
+      use glb_ld
       use lun
       use tr3d
-      use gmm_itf_mod
+      use step_options
       implicit none
 #include <arch_specific.hf>
 
@@ -84,7 +84,7 @@
 
       dayfrac = Step_nesdt*rsid
 
-      if (tx .lt. Lam_tdeb) then
+      if (tx < Lam_tdeb) then
 
          Lam_current_S  = Step_runstrt_S
          Lam_previous_S = Lam_current_S
@@ -95,7 +95,7 @@
             Lam_current_S = datev
             call prsdate   (yy,mo,dd,hh,mm,ss,dum,Lam_current_S)
             call pdfjdate2 (Lam_tfin, yy,mo,dd,hh,mm,ss)
-            if (Lam_tfin.ge.tx) exit
+            if (Lam_tfin >= tx) exit
             Lam_previous_S = Lam_current_S
             Lam_tdeb       = Lam_tfin
          end do
@@ -107,7 +107,7 @@
       endif
 
       dtf = 1.0d0
-      if (tx.gt.Lam_tfin) then
+      if (tx > Lam_tfin) then
          dtf = (tx-Lam_tfin) * sid / Cstv_dt_8
          Lam_previous_S = Lam_current_S
          Lam_tdeb       = Lam_tfin
@@ -139,7 +139,7 @@
 !
 !     Temporal linear interpolation
 !
-      call timing_start2 ( 70, 'NESTINTT', 10)
+      call timing_start2 ( 28, 'NESTINTT', 10)
 
       b = (tx - Lam_tdeb) / (Lam_tfin - Lam_tdeb)
       a = one - b
@@ -165,7 +165,7 @@
          tr (1:l_ni,1:l_nj,1:G_nk) = a*tr_deb(1:l_ni,1:l_nj,1:G_nk) + b*tr_fin(1:l_ni,1:l_nj,1:G_nk)
       end do
 
-      call timing_stop ( 70 )
+      call timing_stop ( 28 )
 !
 !     ---------------------------------------------------------------
 !

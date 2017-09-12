@@ -56,7 +56,7 @@
       implicit none
 #include <arch_specific.hf>
 
-      character*(*) F_name_S
+      character(len=*) F_name_S
       integer F_cnt,minx,maxx,miny,maxy,F_ni,F_nj,F_nk
       real F_src(minx:maxx,miny:maxy,F_nk)
 
@@ -94,7 +94,7 @@
       implicit none
 #include <arch_specific.hf>
 
-      character*(*) F_type_S,F_time_S,F_comment_S
+      character(len=*) F_type_S,F_time_S,F_comment_S
       integer F_cnt,minx,maxx,miny,maxy,F_nk,F_k0,F_unout,F_couleur
       real*8 F_tracer_8
       real F_airmass(minx:maxx,miny:maxy,F_nk)
@@ -203,7 +203,7 @@
             lat   = geomh_y_8(j)
             y_a_8 = geomh_y_8(j)
 
-            if (Ptopo_couleur.eq.0) then
+            if (Ptopo_couleur == 0) then
 
                do i = 1,l_ni
 

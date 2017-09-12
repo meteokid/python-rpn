@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -23,7 +23,7 @@
       implicit none
 #include <arch_specific.hf>
 
-      character * (*) F_var_S,F_from_S
+      character(len=*) F_var_S,F_from_S
       integer Minx,Maxx,Miny,Maxy,Mink,Maxk
       integer F_i0,F_in,F_j0,F_jn,F_k0,F_kn
       real F_field (Minx:Maxx,Miny:Maxy,Mink:Maxk)
@@ -52,14 +52,14 @@
       if (Lctl_rxstat_S(1:3)=='GLB') then
 
          nk = Maxk-Mink+1
-         if (Ptopo_myproc.eq.0) then
+         if (Ptopo_myproc == 0) then
             allocate (wk1(G_ni*G_nj,Mink:Maxk))
          else
             allocate (wk1(1,1))
          endif
          call glbcolc (wk1,G_ni,G_nj,F_field,Minx,Maxx,Miny,Maxy,nk)
 
-         if (Ptopo_myproc.eq.0)  then
+         if (Ptopo_myproc == 0)  then
             call statfld3 (wk1 ,F_var_S, Lctl_step, F_from_S, &
                            1,G_ni, 1,G_nj, Mink,Maxk, &
                            F_i0,F_j0,F_k0, F_in,F_jn,F_kn,rx)

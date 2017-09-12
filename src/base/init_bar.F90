@@ -29,7 +29,7 @@
       use gmm_itf_mod
       implicit none
 
-      character* (*) F_trprefix_S, F_trsuffix_S, F_datev
+      character(len=*) F_trprefix_S, F_trsuffix_S, F_datev
       integer Mminx,Mmaxx,Mminy,Mmaxy,Nk
       real F_u (Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
            F_v (Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
@@ -48,7 +48,7 @@
 
       !---------------------------------------------------------------
 
-      integer istat
+      integer :: istat, k
       real, dimension (:,:,:), pointer :: hu
       real, dimension (Mminx:Mmaxx,Mminy:Mmaxy,Nk) :: gz_t
 
@@ -102,10 +102,10 @@
 
       pw_tt_plus = F_t
 
-      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H') then
-         call exp_init_bar ( F_u, F_v, F_w, F_t, F_zd, F_s, F_q, gz_t, F_topo,&
-                             Mminx,Mmaxx,Mminy,Mmaxy, Nk               ,&
-                             F_trprefix_S, F_trsuffix_S, F_datev )
+      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H' .and. .not.Schm_testcases_adv_L) then
+         do k=1,G_nk
+            F_q(1:l_ni ,1:l_nj, k) = max(gz_t(1:l_ni,1:l_nj,1), 0.)
+         end do
       end if
 
       return

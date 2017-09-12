@@ -17,10 +17,10 @@
 
        subroutine int_cubuv_lag ( FF, Fu_8, Fv_8,Imx,Imy, geomgx_8,geomgy_8, &
                                  Minx,Maxx,Miny,Maxy,Nk,Xi_8,Yi_8,NLEN,     &
-                                 s1_8,s2_8,s3_8,s4_8) 
+                                 s1_8,s2_8,s3_8,s4_8)
        implicit none
 #include <arch_specific.hf>
-       
+
        integer Nk,NLEN,Minx,Maxx,Miny,Maxy
        integer Imx(NLEN),Imy(NLEN)
        real    FF(NLEN*Nk*2)
@@ -28,14 +28,14 @@
                geomgx_8(Minx:Maxx),geomgy_8(Miny:Maxy),Xi_8(NLEN),Yi_8(NLEN), &
                s1_8(NLEN),s2_8(NLEN),s3_8(NLEN),s4_8(NLEN)
 !
-!author   
+!author
 !           Abdessamad Qaddouri - October 2009
 !revision
 ! v4_60 - Qaddouri A.   - initial version
 ! v4_70 - Desgagne M.   - introduce mono_L
 !
        integer k,i,Im, Jm
-       real*8  W1,W2,W3,W4,X1,XX,X2,X3,X4 
+       real*8  W1,W2,W3,W4,X1,XX,X2,X3,X4
        real*8  WW1,WW2,WW3,WW4,YY,y1,y2,y3,y4,Fi
        real*8  fx1,fx2,fx3,fx4
        real*8  fy1,fy2,fy3,fy4
@@ -116,4 +116,4 @@
 !----------------------------------------------------------------------
 !
        return
-       end 
+       end

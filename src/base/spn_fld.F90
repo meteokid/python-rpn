@@ -95,7 +95,7 @@
         spn_wt = sqrt((cos(pi_8*(float(Lctl_step)/float(no_steps))))**2)**Spn_wt_pwr
       endif
 
-      if (Fld_S.eq.'t') then
+      if (Fld_S == 't') then
 
          gmmstat = gmm_getmeta (gmmk_tt1_s, metadata)
          gmmstat = gmm_get (gmmk_tt1_s, fld3d, metadata)
@@ -112,7 +112,7 @@
 
       endif
 
-      if (Fld_S.eq.'u') then
+      if (Fld_S == 'u') then
 
          gmmstat = gmm_getmeta (gmmk_ut1_s, metadata)
          gmmstat = gmm_get (gmmk_ut1_s, fld3d, metadata)
@@ -134,7 +134,7 @@
 
       endif
 
-      if (Fld_S.eq.'v') then
+      if (Fld_S == 'v') then
 
          gmmstat = gmm_getmeta (gmmk_vt1_s, metadata)
          gmmstat = gmm_get (gmmk_vt1_s, fld3d, metadata)

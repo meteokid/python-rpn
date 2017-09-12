@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -34,16 +34,16 @@
       verbose_L = Tr_verbose/=0
 
       if (Lun_debug_L) write (Lun_out,1000) F_water_tracers_only_L
-   
+
       if ( verbose_L) then
          if (.not. F_water_tracers_only_L) &
               call stat_mass_tracers (1,"BEFORE ADVECTION")
-      endif 
+      endif
 
       if (.not. F_water_tracers_only_L) &
       Tr_do_only_once_each_timestep_L = .TRUE.
 
-      call adv_tracers (F_water_tracers_only_L)    
+      call adv_tracers (F_water_tracers_only_L)
 
       if ( verbose_L) then
          if (.not. F_water_tracers_only_L) &

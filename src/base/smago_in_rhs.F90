@@ -227,7 +227,7 @@
          fact=0.5d0*Cstv_dt_8*Cstv_invT_8/cdelta2**2/cpd_8
 !$omp do
          do k=1, nk
-            if(k.ne.nk) then
+            if(k /= nk) then
                do j=j0, jn
                do i=i0, in
                  F_dlth(i,j,k)=F_dlth(i,j,k) &

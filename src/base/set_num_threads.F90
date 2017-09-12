@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -24,16 +24,16 @@
 !
 !-------------------------------------------------------------------
 !
-      if (F_nthreads .ne. Ptopo_npeOpenMP) then
+      if (F_nthreads /= Ptopo_npeOpenMP) then
 
          call omp_set_num_threads (F_nthreads)
 
          Ptopo_npeOpenMP = F_nthreads
 
-         if ((Lun_out.gt.0).and.(kount.eq.0)) then
+         if ((Lun_out > 0).and.(kount == 0)) then
             write (Lun_out,9000) Ptopo_npeOpenMP
          endif
-         
+
       endif
 
  9000 format (/' Ptopo_npeOpenMP reset to: ',I7)

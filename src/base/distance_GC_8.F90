@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -14,12 +14,12 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/r distance_GC_8: Distance between two points based on Great Circle in horizontal
- 
+
       function distance_GC_8 (lon_a_8,lat_a_8,lon_b_8,lat_b_8)
- 
+
       implicit none
 #include <arch_specific.hf>
- 
+
       real*8 distance_GC_8,lon_a_8,lat_a_8,lon_b_8,lat_b_8
 
       !@author Monique Tanguay
@@ -47,9 +47,9 @@
 
          !Evaluate chord
          !--------------
-         chord_8 = sqrt ( (cx_b_8-cx_a_8)**2 + (cy_b_8-cy_a_8)**2 + (cz_b_8-cz_a_8)**2 ) 
+         chord_8 = sqrt ( (cx_b_8-cx_a_8)**2 + (cy_b_8-cy_a_8)**2 + (cz_b_8-cz_a_8)**2 )
 
-         !Evaluate angle 
+         !Evaluate angle
          !--------------
          angle_8 = 2. * asin (0.5*chord_8)
 

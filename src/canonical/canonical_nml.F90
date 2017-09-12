@@ -14,13 +14,13 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/r canonical_nml - Establish canonical configuration
- 
+
       integer function canonical_nml (F_namelistf_S, F_unout, F_dcmip_L, F_wil_L)
       use canonical
       implicit none
 #include <arch_specific.hf>
 
-      character* (*) F_namelistf_S
+      character(len=*) F_namelistf_S
       logical F_dcmip_L,F_wil_L
       integer F_unout
 
@@ -33,9 +33,9 @@
       canonical_nml = -1
       F_dcmip_L= .false. ; F_wil_L= .false.
 
-      if ((F_namelistf_S.eq.'print').or.(F_namelistf_S.eq.'PRINT')) then
+      if ((F_namelistf_S == 'print').or.(F_namelistf_S == 'PRINT')) then
          canonical_nml = 0
-         if ( F_unout.ge.0) then
+         if ( F_unout >= 0) then
             if (Canonical_dcmip_L) err= dcmip_nml ('print',F_unout,dum_L)
             if (Canonical_williamson_L) &
                               err= wil_nml ('print',F_unout,dum_L)
@@ -46,7 +46,7 @@
       err_dcmip= dcmip_nml (F_namelistf_S,F_unout,Canonical_dcmip_L     )
       err_wil  = wil_nml   (F_namelistf_S,F_unout,Canonical_williamson_L)
 
-      if ((err_dcmip.eq.1).and.(err_wil.eq.1)) then
+      if ((err_dcmip == 1).and.(err_wil == 1)) then
          canonical_nml = 1
          F_dcmip_L= Canonical_dcmip_L
          F_wil_L= Canonical_williamson_L

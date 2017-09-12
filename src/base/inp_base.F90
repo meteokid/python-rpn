@@ -66,7 +66,7 @@ contains
 
       inp_get= inp_read ( F_var_S, F_hgrid_S, wrkr, ip1_list, nka )
 
-      if (inp_get .lt. 0) then
+      if (inp_get < 0) then
          if (associated(ip1_list)) deallocate (ip1_list)
          if (associated(wrkr    )) deallocate (wrkr    )
          return
@@ -103,8 +103,8 @@ contains
       use hgc
       implicit none
 
-      character*(*)                     ,intent(IN)  :: F_var_S,F_hgrid_S
-      character*(*),            optional,intent(IN)  :: F_hint_S
+      character(len=*)                     ,intent(IN)  :: F_var_S,F_hgrid_S
+      character(len=*),            optional,intent(IN)  :: F_hint_S
       integer                           ,intent(OUT) :: F_nka
       integer, dimension(:    ), pointer,intent(OUT) :: F_ip1
       real   , dimension(:,:,:), pointer,intent(OUT) :: F_dest
@@ -184,7 +184,7 @@ contains
 
       if ( nomvar == '@NUL' ) return
 
-      if (Inp_iome .ge. 0) then
+      if (Inp_iome >= 0) then
          vcode= -1 ; nz= -1
          nrec= fstinl (Inp_handle, n1,n2,n3, datev,' ', &
                        ip1,-1,-1,' ', nomvar,liste,lislon,nlis)
@@ -207,7 +207,7 @@ contains
          endif
 
          allocate (F_ip1(lislon))
-         if (lislon.gt.1) then
+         if (lislon > 1) then
             call sort_ip1 (liste,F_ip1,lislon)
          else
             F_ip1(1) = p1
@@ -219,7 +219,7 @@ contains
          local_nk = lislon / Inp_npes
          irest  = lislon  - local_nk * Inp_npes
          kstart = mpx * local_nk + 1
-         if ( mpx .lt. irest ) then
+         if ( mpx < irest ) then
             local_nk   = local_nk + 1
             kstart = kstart + mpx
          else
@@ -240,7 +240,7 @@ contains
             ut1_is_urt1 = inp_is_real_wind (wk1(1,cnt),n1*n2,nomvar)
          end do
 
-         if (local_nk.gt.0) then
+         if (local_nk > 0) then
 
             if (F_hgrid_S == 'Q') then
                posx => geomh_lonQ
@@ -266,7 +266,7 @@ contains
             interp_S= 'CUBIC'
             if (present(F_hint_S)) interp_S= F_hint_S
 
-            if ( GRD .eq. 'U' ) then
+            if ( GRD == 'U' ) then
               nicore = G_ni-Glb_pil_w-Glb_pil_e
               njcore = G_nj-Glb_pil_s-Glb_pil_n
               if (n1 >= nicore .and. n2/2 >= njcore) then
@@ -309,11 +309,11 @@ contains
       call rpn_comm_allreduce ( ut1_is_urt1, Inp_ut1_is_urt1, 1, &
                                 "MPI_INTEGER", "MPI_MAX", "grid", err )
 
-      if (F_nka .gt. 0) then
+      if (F_nka > 0) then
 
          inp_read= 0
-         if (F_nka .ge. 1) then
-            if (Inp_iome .lt.0) allocate ( F_ip1(F_nka) )
+         if (F_nka >= 1) then
+            if (Inp_iome < 0) allocate ( F_ip1(F_nka) )
             call rpn_comm_bcast ( F_ip1, F_nka, "MPI_INTEGER", &
                                   Inp_iobcast, "grid", err )
          endif
@@ -341,7 +341,7 @@ contains
       else
 
          inp_read= -1
-         if (Inp_iome .ge.0) write(6,'(7a)') ' FIELD: ',trim(F_var_S),&
+         if (Inp_iome >= 0) write(6,'(7a)') ' FIELD: ',trim(F_var_S),&
                      ':',trim(nomvar),' valid: ',Inp_datev, 'NOT FOUND'
 
       endif
@@ -362,7 +362,7 @@ contains
       use hgc
       implicit none
 
-      character*(*)                     , intent(in)  :: F_target_S
+      character(len=*)                     , intent(in)  :: F_target_S
       integer                           , intent(out) :: F_nka
       integer, dimension(:    ), pointer, intent(out) :: F_ip1
       real   , dimension(:,:,:), pointer, intent(out) :: F_u, F_v
@@ -392,7 +392,7 @@ contains
       if (associated(F_v  )) deallocate (F_v  )
       nullify (F_ip1, F_u, F_v)
 
-      if (Inp_iome .ge.0) then
+      if (Inp_iome >= 0) then
          vcode= -1 ; nz= -1 ; same_rot= -1
          nrec= fstinl (Inp_handle,n1,n2,n3,Inp_cmcdate,' ',-1,-1,-1,' ',&
                        'UU',liste_u,lislon,nlis)
@@ -409,7 +409,7 @@ contains
 !                        Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro)
 
          allocate (F_ip1(lislon))
-         if (lislon.gt.1) then
+         if (lislon > 1) then
             call sort_ip1 (liste_u,F_ip1,lislon)
             call sort_ip1 (liste_v,F_ip1,lislon)
          else
@@ -422,7 +422,7 @@ contains
          local_nk = lislon / Inp_npes
          irest  = lislon  - local_nk * Inp_npes
          kstart = mpx * local_nk + 1
-         if ( mpx .lt. irest ) then
+         if ( mpx < irest ) then
             local_nk   = local_nk + 1
             kstart = kstart + mpx
          else
@@ -442,7 +442,7 @@ contains
             err= fstluk ( v(1,cnt), liste_v(i), n1,n2,n3)
          end do
 
-         if (local_nk.gt.0) then
+         if (local_nk > 0) then
 
             err = ezsetopt ('INTERP_DEGREE', 'CUBIC')
 
@@ -460,7 +460,7 @@ contains
                                                       posxu, posyu )
                err = ezdefset ( dst_gid , src_gid )
                allocate (uv(ni_dest*nj_dest,nz))
-               if (same_rot.gt.0) then
+               if (same_rot > 0) then
                   do i=1,local_nk
                      err = ezsint (wku(1,i), u(1,i))
                   end do
@@ -478,7 +478,7 @@ contains
                                                       posxv, posyv )
                err = ezdefset ( dst_gid , src_gid )
 
-               if (same_rot.gt.0) then
+               if (same_rot > 0) then
                   do i=1,local_nk
                      err = ezsint (wkv(1,i), v(1,i))
                   end do
@@ -500,7 +500,7 @@ contains
                        Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, &
                                                       posxu, posyu )
                err = ezdefset ( dst_gid , src_gid )
-               if (same_rot.gt.0) then
+               if (same_rot > 0) then
                   do i=1,local_nk
                      err = ezsint (wku(1,i), u(1,i))
                      err = ezsint (wkv(1,i), v(1,i))
@@ -532,10 +532,10 @@ contains
                            "grid", err) !NOTE: bcast lislon AND nz, samerot
       F_nka= lislon
 
-      if (F_nka .gt. 0) then
+      if (F_nka > 0) then
 
-         if (F_nka .ge. 1) then
-            if (Inp_iome .lt.0) allocate ( F_ip1(F_nka) )
+         if (F_nka >= 1) then
+            if (Inp_iome < 0) allocate ( F_ip1(F_nka) )
             call rpn_comm_bcast ( F_ip1, F_nka, "MPI_INTEGER", &
                                   Inp_iobcast, "grid", err )
          endif
@@ -565,7 +565,7 @@ contains
 
       else
 
-         if (Inp_iome .ge.0) write(6,'(3a)') &
+         if (Inp_iome >= 0) write(6,'(3a)') &
                   'Variable: UU,VV valid: ',Inp_datev, 'NOT FOUND'
          call gem_error ( -1, 'inp_read_uv', &
                   'Missing input data: horizontal winds')
@@ -582,7 +582,7 @@ contains
       subroutine inp_3dpres ( F_vgd, F_ip1, F_sfc, F_sfcL, &
                               F_dest, k0, kn, F_inlog_S)
 
-      character*(*), optional, intent(IN) :: F_inlog_S
+      character(len=*), optional, intent(IN) :: F_inlog_S
       type(vgrid_descriptor) , intent(IN) :: F_vgd
       integer                , intent(IN) :: k0,kn
       integer, dimension(:)    , pointer, intent(IN ) :: F_ip1

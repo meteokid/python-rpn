@@ -14,7 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 !**s/r set_ver_geom - initialize model vertical geometry
 
-      subroutine set_ver_geom
+      subroutine set_ver_geom()
       use gem_options
       use glb_ld
       use lun
@@ -23,21 +23,27 @@
 #include <arch_specific.hf>
 
 
-      character*8 dumc
-      integer k, pnip1
-      real height,heightp1
+      character(len=8) :: dumc
+      integer :: k, pnip1
+      real :: height,heightp1
 !
 !     ---------------------------------------------------------------
 !
-      if (Lun_out.gt.0) write (Lun_out,1000)
+      if (Lun_out > 0) write (Lun_out,1000)
 
-      if (Lun_out.gt.0) then
+      if (Lun_out > 0) then
          write (Lun_out,1005) G_nk,Hyb_rcoef
          do k=1,G_nk
-            height  =-16000./alog(10.)*alog(Ver_hyb%m(k))
-            if (k.lt.G_nk)&
-            heightp1 =-16000./alog(10.)*alog(Ver_hyb%m(k+1))
-            if (k.eq.G_nk) heightp1 = 0.
+            height  =-16000./log(10.)*log(Ver_hyb%m(k))
+
+            if (k < G_nk) then
+               heightp1 = -16000./log(10.)*log(Ver_hyb%m(k+1))
+            end if
+
+            if (k == G_nk) then
+               heightp1 = 0.
+            end if
+
             call convip(pnip1,Ver_hyb%m(k),5,1,dumc,.false.)
             write (Lun_out,1006) k,Ver_hyb%m(k),height, &
                                  height-heightp1,pnip1

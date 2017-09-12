@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -40,7 +40,7 @@
       implicit none
 #include <arch_specific.hf>
 
-      character* (*) F_trprefix_S, F_trsuffix_S, F_datev
+      character(len=*) F_trprefix_S, F_trsuffix_S, F_datev
       logical F_stag_L
       integer Mminx,Mmaxx,Mminy,Mmaxy,Nk
       real F_u (Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
@@ -73,7 +73,7 @@
 !
 !-----------------------------------------------------------------------
 !
-      if (Lun_out.gt.0) write(lun_out,9000) trim(F_datev)
+      if (Lun_out > 0) write(lun_out,9000) trim(F_datev)
 
       if (.not.Lun_debug_L) istat= fstopc ('MSGLVL','SYSTEM',.false.)
 
@@ -85,7 +85,7 @@
          deallocate (ip1_list) ; nullify (ip1_list)
       endif
 
-      if ( trim(F_datev) .eq. trim(Step_runstrt_S) ) then
+      if ( trim(F_datev) == trim(Step_runstrt_S) ) then
          if ( associated(meqr) ) then
             istat= gmm_get(gmmk_topo_low_s , topo_low )
             topo_low(1:l_ni,1:l_nj)= meqr(1:l_ni,1:l_nj,1)
@@ -103,7 +103,7 @@
       if ( Lam_blendoro_L ) then
          topo_temp(1:l_ni,1:l_nj)= meqr(1:l_ni,1:l_nj,1)
          call nest_blend ( F_topo, topo_temp, l_minx,l_maxx, &
-                           l_miny,l_maxy, 'M', level=G_nk+1 ) 
+                           l_miny,l_maxy, 'M', level=G_nk+1 )
       endif
       endif
 
@@ -114,7 +114,7 @@
       err= inp_read ( 'TEMPERATURE', 'Q', ttr ,    ip1_list, nka_tt )
       err= inp_read ( 'TR/HU'      , 'Q', hur , HU_ip1_list, nka_hu )
 
-      if (nka_tt.lt.1) &
+      if (nka_tt < 1) &
       call gem_error (-1,'inp_data','Missing field: TT - temperature TT')
 
       nka= nka_tt
@@ -178,7 +178,7 @@
          call inp_3dpres ( vgd_src, ip1_list, S_q, dummy, srclev, 1,nka )
 
          if ( associated(meqr) .and. sfcTT_L ) then
-            if (lun_out.gt.0) &
+            if (lun_out > 0) &
             write(lun_out,'(" PERFORMING surface pressure adjustment")')
             srclev(1:l_ni,1:l_nj,nka)= S_q(1:l_ni,1:l_nj)
             call adj_ss2topo2 ( ssq0, F_topo, srclev, meqr, tv  , &
@@ -186,7 +186,7 @@
                                 1,l_ni,1,l_nj )
             deallocate (meqr) ; nullify (meqr)
          else
-            if (lun_out.gt.0) &
+            if (lun_out > 0) &
             write(lun_out,'(" NO surface pressure adjustment")')
             ssq0(1:l_ni,1:l_nj)= S_q(1:l_ni,1:l_nj)
          endif

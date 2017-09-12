@@ -31,9 +31,9 @@
 
 
       integer :: i,j,k,km2, i0,j0,in,jn
-		real*8  :: xx, x1, x2, x3, x4, w1, w2, w3, w4
+		real*8  :: lag3, xx, x1, x2, x3, x4, w1, w2, w3, w4
 
-#define lag3(xx, x1, x2, x3, x4)  ((((xx) - (x2)) * ((xx) - (x3)) * ((xx) - (x4)))/( ((x1) - (x2)) * ((x1) - (x3)) * ((x1) - (x4))))
+      lag3(xx, x1, x2, x3, x4) = ((((xx) - (x2)) * ((xx) - (x3)) * ((xx) - (x4)))/( ((x1) - (x2)) * ((x1) - (x3)) * ((x1) - (x4))))
 !
 !     ---------------------------------------------------------------
 !
@@ -66,7 +66,7 @@
 ! boundary condition anyway.
          km2=max(1,k-2)
 
-         if(k.eq.2) then
+         if(k == 2) then
             w1=0.d0
          end if
 

@@ -87,9 +87,11 @@
 
       !-----------------------------------------------------------------------
 
-      if (Lun_out.gt.0) write (Lun_out,1000) X
+      if (Lun_out > 0) write (Lun_out,1000) X
 
       zcoords = 0  ! p coordinates are specified
+
+      w = 0 !Vertical Velocity is zero
 
       !Initial conditions: T,ZD,W,Q,S,TOPO
       !-----------------------------------
@@ -100,7 +102,7 @@
             lat   = geomh_y_8(j)
             y_a_8 = geomh_y_8(j)
 
-            if (Ptopo_couleur.eq.0) then
+            if (Ptopo_couleur == 0) then
 
                do i = 1,l_ni
 
@@ -175,7 +177,7 @@
             lat   = geomh_y_8(j)
             y_a_8 = geomh_y_8(j)
 
-            if (Ptopo_couleur.eq.0) then
+            if (Ptopo_couleur == 0) then
 
                do i = 1,l_niu
 
@@ -222,7 +224,7 @@
             lat   = geomh_yv_8(j)
             y_a_8 = geomh_yv_8(j)
 
-            if (Ptopo_couleur.eq.0) then
+            if (Ptopo_couleur == 0) then
 
                do i = 1,l_ni
 

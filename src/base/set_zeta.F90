@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -76,7 +76,7 @@
 !               - - - - - - - - - Ver_z_8%m(n)
 !
 !               ================= Ver_z_8%t(n)
-!               
+!
 !               sssssssssssssssss Cstv_zsrf_8=Ver_z_8%m(n+1)=Ver_z_8%x(n)
 !
 !
@@ -106,13 +106,13 @@
 !                                                     ...
 !
 !                           =========================================== Ver_z_8%x(n-1)
-!                                                   \  
-!                                                    \ 
+!                                                   \
+!                                                    \
 !                                                     \
 !                           - - - - - - - - - - - - - - Ver_dz_8%m(n)=Ver_z_8%x(n)-Ver_z_8%x(n-1)
 !                                          /          /
-!    Cstv_zsrf_8-Ver_z_8%m(n)=Ver_dz_8%t(n)          /  
-!                                          \        / 
+!    Cstv_zsrf_8-Ver_z_8%m(n)=Ver_dz_8%t(n)          /
+!                                          \        /
 !               Cstv_zsrf_8 sssssssssssssssssssssssssssssssssssssssssss Ver_z_8%x(n)
 !
 ! arguments
@@ -167,7 +167,7 @@
       Cstv_ptop_8=wk_8
 
       if (Lun_debug_L) istat = vgd_print(vcoord)
- 
+
       Cstv_Zsrf_8 = log(Cstv_pSref_8)
       Cstv_Ztop_8 = log(Cstv_ptop_8)
       Cstv_Sstar_8 = log(Cstv_pref_8/Cstv_pSref_8)
@@ -203,21 +203,21 @@
       if (vgd_get(vcoord,'VIPT - level ip1 list (t)'        ,wkpti) /= VGD_OK) istat = VGD_ERROR
       Ver_ip1%t = wkpti(1:size(Ver_ip1%t)); deallocate(wkpti); nullify(wkpti)
 
-      call handle_error_l(istat==VGD_OK,'set_zeta','retrieving coordinate info')      
+      call handle_error_l(istat==VGD_OK,'set_zeta','retrieving coordinate info')
       if(Schm_sleve_l)then
-         istat = vgd_levels(vcoord,Ver_ip1%m,std_p_prof,sfc_field=100000.,sfc_field_ls=100000.,in_log=.false.) 
+         istat = vgd_levels(vcoord,Ver_ip1%m,std_p_prof,sfc_field=100000.,sfc_field_ls=100000.,in_log=.false.)
          call handle_error_l(istat==VGD_OK,'set_zeta','problem getting standard pressure profile for m levels')
          Ver_std_p_prof%m=std_p_prof
          deallocate(std_p_prof)
-         istat = vgd_levels(vcoord,Ver_ip1%t,std_p_prof,sfc_field=100000.,sfc_field_ls=100000.,in_log=.false.)     
+         istat = vgd_levels(vcoord,Ver_ip1%t,std_p_prof,sfc_field=100000.,sfc_field_ls=100000.,in_log=.false.)
          call handle_error_l(istat==VGD_OK,'set_zeta','problem getting standard pressure profile for t levels')
          Ver_std_p_prof%t=std_p_prof
       else
-         istat = vgd_levels(vcoord,Ver_ip1%m,std_p_prof,100000.,in_log=.false.) 
+         istat = vgd_levels(vcoord,Ver_ip1%m,std_p_prof,100000.,in_log=.false.)
          call handle_error_l(istat==VGD_OK,'set_zeta','problem getting standard pressure profile for m levels')
          Ver_std_p_prof%m=std_p_prof
          deallocate(std_p_prof)
-         istat = vgd_levels(vcoord,Ver_ip1%t,std_p_prof,100000.,in_log=.false.)     
+         istat = vgd_levels(vcoord,Ver_ip1%t,std_p_prof,100000.,in_log=.false.)
          call handle_error_l(istat==VGD_OK,'set_zeta','problem getting standard pressure profile for t levels')
          Ver_std_p_prof%t=std_p_prof
       endif
@@ -241,14 +241,14 @@
       Ver_z_8%t(0) = Cstv_Ztop_8
       do k = 1, G_nk
          Ver_z_8%t(k) = Ver_a_8%t(k)-Ver_b_8%t(k)*Cstv_Sstar_8
-      enddo      
+      enddo
       if(Schm_autobar_L) Ver_z_8%t(G_nk)=Cstv_Zsrf_8
 
      !Define the positions of zeta_dot
       Ver_z_8%x(0) = Cstv_Ztop_8
       do k = 1, G_nk-1
          Ver_z_8%x(k) = Ver_a_8%t(k)-Ver_b_8%t(k)*Cstv_Sstar_8
-      enddo      
+      enddo
       Ver_z_8%x(G_nk)=Cstv_Zsrf_8
 
 !     ----------------------
@@ -265,10 +265,10 @@
           Ver_idz_8%t(k) = one/Ver_dz_8%t(k)
          Ver_dbdz_8%t(k) = (Ver_b_8%m(k+1)-Ver_b_8%m(k))*Ver_idz_8%t(k)
          Ver_dcdz_8%t(k) = (Ver_c_8%m(k+1)-Ver_c_8%m(k))*Ver_idz_8%t(k)
-         if(k.eq.1) then
+         if(k == 1) then
             Ver_dbdz_8%m(k) = (Ver_b_8%t(k)-zero)*Ver_idz_8%m(k)
             Ver_dcdz_8%m(k) = (Ver_c_8%t(k)-zero)*Ver_idz_8%m(k)
-         elseif(k.eq.G_nk) then
+         elseif(k == G_nk) then
             Ver_dbdz_8%m(k) = (one -Ver_b_8%t(k-1))*Ver_idz_8%m(k)
             Ver_dcdz_8%m(k) = (zero-Ver_c_8%t(k-1))*Ver_idz_8%m(k)
          else
@@ -285,7 +285,7 @@
       endif
 
 !     -------------------------------------------------------
-!     Compute AVERGING WEIGHTS FROM THERMO TO MOMENTUM LEVELS 
+!     Compute AVERGING WEIGHTS FROM THERMO TO MOMENTUM LEVELS
 !     -------------------------------------------------------
 
       do k=1,G_nk
@@ -303,7 +303,7 @@
       enddo
 
 !     -------------------------------------------------------
-!     Compute AVERGING WEIGHTS FROM MOMENTUM TO THERMO LEVELS 
+!     Compute AVERGING WEIGHTS FROM MOMENTUM TO THERMO LEVELS
 !     -------------------------------------------------------
 
       do k=1,G_nk-1
@@ -329,12 +329,12 @@
 !     -------------------------------------------------------
 
       do k=1,G_nk
-         if(k.eq.1) then
+         if(k == 1) then
             Ver_bzz_8(k) = Ver_wp_8%m(k)*Ver_b_8%t(k) &
                          + Ver_wm_8%m(k)*zero
             Ver_czz_8(k) = Ver_wp_8%m(k)*Ver_c_8%t(k) &
                          + Ver_wm_8%m(k)*zero
-         elseif(k.eq.G_nk) then
+         elseif(k == G_nk) then
             Ver_bzz_8(k) = Ver_wp_8%m(k)*one &
                          + Ver_wm_8%m(k)*Ver_b_8%t(k-1)
             Ver_czz_8(k) = Ver_wp_8%m(k)*zero &

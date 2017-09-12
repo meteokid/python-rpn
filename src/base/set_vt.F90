@@ -71,8 +71,8 @@
       type(gmm_metadata) :: mymeta, mymeta3d_nk_u, mymeta3d_nk_v, mymeta3d_nk_t, &
                             mymeta3d_nk_q, mymeta2d_s, mymetasc_p00
       integer :: i,istat
-      integer :: flag_n, flag_r_n,flag_r_z
-      integer*8 :: flag_m_t,flag_m_u,flag_m_v,flag_m_f,flag_t_f,flag_s_f, flag_m_z
+      integer :: flag_n, flag_r_n
+      integer*8 :: flag_m_t,flag_m_u,flag_m_v,flag_m_f,flag_s_f
       real, pointer, dimension(:,:,:) :: tr
 !
 !     ---------------------------------------------------------------
@@ -132,8 +132,9 @@
       istat = min(gmm_create(gmmk_qt1_s ,  qt1 , mymeta3d_nk_q , flag_r_n),istat)
       istat = min(gmm_create(gmmk_zdt1_s, zdt1 , mymeta3d_nk_t , flag_r_n),istat)
 
-      if (GMM_IS_ERROR(istat)) &
-           call msg(MSG_ERROR,'set_vt ERROR at gmm_create(*t0)')
+      if (GMM_IS_ERROR(istat)) then
+         call msg(MSG_ERROR,'set_vt ERROR at gmm_create(*t0)')
+      end if
 
       gmmk_xth_s = 'XTH'
       gmmk_yth_s = 'YTH'
@@ -146,16 +147,17 @@
       istat = min(gmm_create(gmmk_yth_s ,yth , mymeta        ,flag_r_n),istat)
       istat = min(gmm_create(gmmk_zth_s ,zth , mymeta        ,flag_r_n),istat)
 
-      if (GMM_IS_ERROR(istat)) &
-           call msg(MSG_ERROR,'set_vt ERROR at gmm_create(*th)')
-
+      if (GMM_IS_ERROR(istat)) then
+         call msg(MSG_ERROR,'set_vt ERROR at gmm_create(*th)')
+      end if
 
       istat = GMM_OK
 
       mymeta = SET_GMMUSR_FLAG(meta1d,flag_m_f)
 
-      if (GMM_IS_ERROR(istat)) &
-           call msg(MSG_ERROR,'set_vt ERROR at gmm_create(*t1)')
+      if (GMM_IS_ERROR(istat)) then
+         call msg(MSG_ERROR,'set_vt ERROR at gmm_create(*t1)')
+      end if
 
       istat = GMM_OK
       do i=1,Tr3d_ntr
@@ -180,23 +182,27 @@
       istat = min(gmm_create(gmmk_min_s,  fld_min , mymeta3d_nk_t,flag_r_n),istat)
       istat = min(gmm_create(gmmk_max_s,  fld_max , mymeta3d_nk_t,flag_r_n),istat)
 
-      if (GMM_IS_ERROR(istat)) &
-           call msg(MSG_ERROR,'set_vt ERROR at gmm_create(TR/*)')
+      if (GMM_IS_ERROR(istat)) then
+         call msg(MSG_ERROR,'set_vt ERROR at gmm_create(TR/*)')
+      end if
 
       !SETTLS
       !------
       gmmk_ut2_s   = 'UT2'
       gmmk_vt2_s   = 'VT2'
+      gmmk_qt2_s   = 'QT2'
       gmmk_zdt2_s  = 'ZDT2'
 
       istat = GMM_OK
 
       istat = min(gmm_create(gmmk_ut2_s , ut2 , mymeta3d_nk_u , flag_r_n),istat)
       istat = min(gmm_create(gmmk_vt2_s , vt2 , mymeta3d_nk_v , flag_r_n),istat)
+      istat = min(gmm_create(gmmk_qt2_s , qt2 , mymeta3d_nk_v , flag_r_n),istat)
       istat = min(gmm_create(gmmk_zdt2_s, zdt2, mymeta3d_nk_t , flag_r_n),istat)
 
-      if (GMM_IS_ERROR(istat)) &
-           call msg(MSG_ERROR,'set_vt ERROR at gmm_create(*t2)')
+      if (GMM_IS_ERROR(istat)) then
+         call msg(MSG_ERROR,'set_vt ERROR at gmm_create(*t2)')
+      end if
 
       gmmk_pw_uu_plus_s  = 'PW_UU:P'
       gmmk_pw_vv_plus_s  = 'PW_VV:P'
@@ -263,15 +269,15 @@
       nullify(smag)
       istat = min(gmm_create(gmmk_smag_s   ,smag  ,meta3d_nk ,flag_n),istat)
 
-      if (GMM_IS_ERROR(istat)) &
-           call msg(MSG_ERROR,'set_vt ERROR at gmm_create(PW_*)')
+      if (GMM_IS_ERROR(istat)) then
+         call msg(MSG_ERROR,'set_vt ERROR at gmm_create(PW_*)')
+      end if
 
       call canonical_cases ("SET_VT")
 
       if (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H') then
-         call exp_set_vt
+         call exp_set_vt()
       end if
-
 
 !
 !     ---------------------------------------------------------------

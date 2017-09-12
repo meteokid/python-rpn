@@ -434,14 +434,14 @@
                   if (   dist1_8 <= radius_8 .and. abs(rlon_8-rlon1_8) >= radius_8/(6.*rayt_8)) then
                       picll(i,j)  = 1.0
                   elseif(dist1_8 <= radius_8 .and. abs(rlon_8-rlon1_8) <  radius_8/(6.*rayt_8) .and.  &
-                         rlat_8-rlat1_8.lt.(-(5./12.)*radius_8)/rayt_8) then
+                         rlat_8-rlat1_8 < (-(5./12.)*radius_8)/rayt_8) then
                       picll(i,j)  = 1.0
                   endif
 
                   if (   dist2_8 <= radius_8 .and. abs(rlon_8-rlon2_8) >= radius_8/(6.*rayt_8)) then
                       picll(i,j)  = 1.0
                   elseif(dist2_8 <= radius_8 .and. abs(rlon_8-rlon2_8) <  radius_8/(6.*rayt_8) .and.  &
-                         rlat_8-rlat2_8.gt.(+(5./12.)*radius_8)/rayt_8) then
+                         rlat_8-rlat2_8 > (+(5./12.)*radius_8)/rayt_8) then
                       picll(i,j)  = 1.0
                   endif
 
@@ -480,7 +480,7 @@
                   if (   dist1_8 <= radius_8 .and. abs(rlon_8-rlon1_8) >= radius_8/(6.*rayt_8)) then
                       picll(i,j)  = 1.0
                   elseif(dist1_8 <= radius_8 .and. abs(rlon_8-rlon1_8) <  radius_8/(6.*rayt_8) .and.  &
-                         rlat_8-rlat1_8.lt.(-(5./12.)*radius_8)/rayt_8) then
+                         rlat_8-rlat1_8 < (-(5./12.)*radius_8)/rayt_8) then
                       picll(i,j)  = 1.0
                   endif
 

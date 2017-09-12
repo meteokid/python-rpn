@@ -2,7 +2,7 @@
 ! This is the "toy" chemistry module.
 !================================================================================================
 
-MODULE Terminator 
+MODULE Terminator
 !-------------------------------------------------------------------------
 !Subroutines DCMIP_2016 (https://github.com/ClimateGlobalChange/DCMIP2016)
 !-------------------------------------------------------------------------
@@ -76,7 +76,7 @@ cly = cl + 2._8* cl2
 det = sqrt( r*r + 2._8*r*cly )
 expdt = exp( -4._8*k2*det*dt )
 
-if ( abs(det * k2 * dt) .gt. 1e-16 ) then
+if ( abs(det * k2 * dt) > 1e-16 ) then
 el = (1._8 - expdt) /det /dt
 else
 el = 4._8*k2

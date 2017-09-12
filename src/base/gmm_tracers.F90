@@ -25,6 +25,6 @@ module gmm_tracers
 
       integer, parameter :: MAXNAMELENGTH = 32
 
-      character(len=MAXNAMELENGTH) :: gmmk_mono_s, gmmk_cub_s, gmmk_lin_s, gmmk_min_s, gmmk_max_s 
+      character(len=MAXNAMELENGTH) :: gmmk_mono_s, gmmk_cub_s, gmmk_lin_s, gmmk_min_s, gmmk_max_s
 
 end module gmm_tracers

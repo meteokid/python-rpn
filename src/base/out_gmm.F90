@@ -70,19 +70,23 @@
       logical periodx_L,write_diag_lev
       integer nkeys,nko,i,ii,gridset,istat,id,cid
       integer, dimension(:), allocatable::indo
-      integer, parameter :: numvars = 31 
+      integer, parameter :: numvars = 31
       real, pointer, dimension(:,:,:) :: tr3
       real, pointer, dimension(:,:  ) :: tr2
       real, pointer, dimension(:    ) :: level_type
       real, pointer, dimension(:    ), save :: hybt_w=>null()
+      real hyb0(1)
+      integer ind0(1)
 !_______________________________________________________________________
 !
-      if ( Level_typ_S(levset).eq.'P') return
+      if ( Level_typ_S(levset) == 'P') return
 
       if ( .not. associated (hybt_w) ) then
          allocate(hybt_w(G_nk))
          hybt_w(1:G_nk)= Ver_hyb%t(1:G_nk)
       endif
+      hyb0(1)=0.0
+      ind0(1)=1
 
       nkeys= gmm_nkeys()
       allocate (keylist(nkeys))
@@ -121,7 +125,7 @@
       class_var(29,1) = 'RWR'; class_var(29,2) = 'QQ' ; class_var(29,3) = 'TT'
       class_var(30,1) = 'QR' ; class_var(30,2) = 'QQ' ; class_var(30,3) = 'TT'
       class_var(31,1) = 'QE' ; class_var(31,2) = 'QQ' ; class_var(31,3) = 'TT'
-      
+
 !     Setup the indexing for output
       allocate (indo   ( min(Level_max(levset),G_nk) ))
       call out_slev2 ( Level(1,levset), Level_max(levset),G_nk,indo,nko,write_diag_lev)
@@ -129,14 +133,14 @@
       do ii=1,Outd_var_max(set)
       do  i=1,nkeys
 
-         if (Outd_varnm_S(ii,set)(1:4).eq.keylist(i)(1:4)) then
+         if (Outd_varnm_S(ii,set)(1:4) == keylist(i)(1:4)) then
             gridset = Outd_grid(set)
             id = -1
             do cid=1,numvars
                if (keylist(i)(1:2) == class_var(cid,1)) id=cid
             end do
-            if (id.lt.0) then
-               if (Lun_out.gt.0) write(Lun_out,1001) trim(keylist(i))
+            if (id < 0) then
+               if (Lun_out > 0) write(Lun_out,1001) trim(keylist(i))
                cycle
             endif
             level_type => Ver_hyb%t
@@ -161,13 +165,13 @@
 
             nullify(tr2,tr3)
             istat = gmm_getmeta(keylist(i),tmp_meta)
-            if (tmp_meta%l(3)%high.le.1) then
+            if (tmp_meta%l(3)%high <= 1) then
                istat = gmm_get(trim(keylist(i)),tr2,tmp_meta)
                call out_fstecr3 (tr2, tmp_meta%l(1)%low,tmp_meta%l(1)%high,&
                                       tmp_meta%l(2)%low,tmp_meta%l(2)%high,&
-                                       0,keylist(i),Outd_convmult(ii,set) ,&
+                                       hyb0,keylist(i),Outd_convmult(ii,set) ,&
                                        Outd_convadd(ii,set),Level_kind_ip1,&
-                                       -1,1,1,1, Outd_nbit(ii,set),.false. )
+                                       -1,1,ind0,1, Outd_nbit(ii,set),.false. )
             else
                istat = gmm_get(trim(keylist(i)),tr3,tmp_meta)
                call out_fstecr3 (tr3, tmp_meta%l(1)%low,tmp_meta%l(1)%high,&
@@ -176,7 +180,7 @@
                                       Outd_convadd(ii,set),Level_kind_ip1 ,&
                                -1,G_nk,indo,nko, Outd_nbit(ii,set),.false. )
                ! Special treatment for QT1 which is now scoping 1:G_nk+1
-               if ( (trim(keylist(i)) == 'QT1') .and. (G_nk.eq.nko) ) then
+               if ( (trim(keylist(i)) == 'QT1') .and. (G_nk == nko) ) then
                   indo(1) = G_nk+1
                   call out_fstecr3 (tr3, tmp_meta%l(1)%low,tmp_meta%l(1)%high,&
                                          tmp_meta%l(2)%low,tmp_meta%l(2)%high,&

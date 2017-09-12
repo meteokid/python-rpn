@@ -53,7 +53,7 @@
        call handle_error(istat, 'equatorial_sponge', &
             'Selected diffusion coeficients making the scheme unsatable, aborting')
 
-       if (eq_nlev .le. 0) return
+       if (eq_nlev <= 0) return
 
        eq_nlev= eq_nlev+1
 

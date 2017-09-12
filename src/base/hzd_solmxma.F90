@@ -2,19 +2,19 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r hzd_solmxma - parallel direct solution of high-order 
-!                    diffusion equation with mxma8  
+!**s/r hzd_solmxma - parallel direct solution of high-order
+!                    diffusion equation with mxma8
 
       subroutine hzd_solmxma (F_sol, F_Rhs_8, F_Xevec_8 , &
                      F_a_8, F_c_8 ,F_deltai_8, &
@@ -55,7 +55,7 @@
 ! F_a_8        I    - sub   diagonal of LU factorization
 ! F_b_8        I    -       diagonal of LU factorization
 ! F_c_8        I    - super diagonal of LU factorization
-! F_deltai_8   I    - 
+! F_deltai_8   I    -
 ! minx1        I    - minimum index on local PEx for K (trp_12dmin)
 ! maxx1        I    - maximum index on local PEx for K (trp_12dmax)
 ! minx2        I    - minimum index on local PEy for I (trp_22min)
@@ -84,9 +84,8 @@
       real*8, dimension(Miny:Maxy ,minx1:maxx1,Gni) :: fwft_8
       real*8, dimension(minx1:maxx1,minx2:maxx2,nx3+F_npey) :: fdg2_8
       real*8, dimension(minx1:maxx1,minx2:maxx2,F_pwr,nx3) ::dn3_8,sol_8
-      real*8   ZERO_8, fact_8
-      parameter( ZERO_8 = 0.0 )
-      integer dim, o1,o2,i,j,k,l_pil_w,l_pil_e
+      real*8, parameter ::  ZERO_8 = 0.d0
+      integer o1,o2,i,j,k,l_pil_w,l_pil_e
       integer kkii,  kilon, ki0, kin, pin
 !     __________________________________________________________________
 !
@@ -120,7 +119,7 @@
 !$omp enddo
 !$omp do
       do i = 1, Gni
-         do k = minx1, maxx1 
+         do k = minx1, maxx1
          do j = Miny , 0+pil_s
             fdg1_8(j,k,i)= ZERO_8
          enddo
@@ -216,7 +215,7 @@
             enddo
             enddo
             enddo
-         
+
             do o1= 1, F_pwr
             do i = ki0,pin
             do k = 1, nx1
@@ -260,7 +259,7 @@
 !
 !$omp do
       do j = 1, nx3
-         if(j.eq.nx3-Lam_pil_n) then
+         if(j == nx3-Lam_pil_n) then
             do o1= 1, F_pwr
             do i = 1+l_pil_w, nx2-l_pil_e
             do k = 1, nx1
@@ -278,7 +277,7 @@
             enddo
          endif
       enddo
-!$omp enddo 
+!$omp enddo
 !
 !$omp do
       do kkii = 1, Ptopo_npeOpenMP

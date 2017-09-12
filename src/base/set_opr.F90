@@ -29,7 +29,7 @@
       use trp
       implicit none
 #include <arch_specific.hf>
-      character*(*) F_eigen_filename_S
+      character(len=*) F_eigen_filename_S
 !
 !author
 !     michel roch - rpn - june 1993
@@ -56,7 +56,7 @@
 !
 !     ---------------------------------------------------------------
 !
-      if (Lun_out.gt.0) write(Lun_out,1000)
+      if (Lun_out > 0) write(Lun_out,1000)
 
 !     Initialize projection operators to ZERO_8
 
@@ -147,7 +147,7 @@
 
       deallocate ( wk_8, wk2_8 )
 
-      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P') then
+      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P' .or. trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
 
          dim = (trp_12smax-trp_12smin+1)*(trp_22max-trp_22min+1)*G_nj
          allocate (Sol_ai_8(dim),Sol_bi_8(dim),Sol_ci_8(dim))

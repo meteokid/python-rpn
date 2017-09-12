@@ -13,11 +13,11 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r adv_rebuild - Integral based on CODE Zerroukat et al(2002)/Mahidjiba et al(2008) (INTEGRAL_WITHIN_CV_PCM)  
+!**s/r adv_rebuild - Integral based on CODE Zerroukat et al(2002)/Mahidjiba et al(2008) (INTEGRAL_WITHIN_CV_PCM)
 
       subroutine adv_rebuild (F_psi,F_x_left,F_mass_cv,F_n,F_rebuild)
 
-      implicit none          
+      implicit none
 
       integer F_n,F_rebuild
       real*8 F_psi(F_n,4),F_x_left(0:F_n),F_mass_cv(F_n)
@@ -27,16 +27,17 @@
       !revision
       ! v4_80 - Tanguay/Qaddouri - SLICE
 
-      !Local variables 
+      !Local variables
       !---------------
       integer i
-      real*8 rho_left_all(0:F_n),slope(F_n),x1,x2,dx,rho_left,rho_right, &
-             mass_transformed,slope_transformed  
-               
-      !Compute RHO at LEFT boundary and First Derivate of RHO at CENTER cell 
+      real*8 rho_left_all(0:F_n),slope(F_n),dx,rho_left,rho_right, &
+             mass_transformed,slope_transformed
+
+      !Compute RHO at LEFT boundary and First Derivate of RHO at CENTER cell
       !---------------------------------------------------------------------
-      if (F_rebuild==3.or.F_rebuild==4) & 
-      call adv_compute_cv_LEFT_boundary_values (F_mass_cv,slope,F_x_left,rho_left_all,F_n,F_rebuild) 
+      if (F_rebuild==3 .or. F_rebuild==4) then
+         call adv_compute_cv_LEFT_boundary_values (F_mass_cv,slope,F_x_left,rho_left_all,F_n,F_rebuild)
+      end if
 
       F_psi(:,:) = 0.0
 
@@ -55,7 +56,7 @@
          !-------------------------------
          if (F_rebuild==3) then !TO BE REMOVED WITH slope_transformed = rho_right - rho_left
 
-         F_psi(i,1) = rho_left 
+         F_psi(i,1) = rho_left
          F_psi(i,2) = 2.0*(+3.*mass_transformed - 2.*rho_left - rho_right)
          F_psi(i,3) = 3.0*(-2.*mass_transformed + rho_left+rho_right)
 

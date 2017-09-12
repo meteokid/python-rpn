@@ -12,7 +12,7 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-!**s/r sol_fft_lam - parallel direct solution of an elliptic problem 
+!**s/r sol_fft_lam - parallel direct solution of an elliptic problem
 !                    for LAM grids using FFT
 
       subroutine sol_fft_lam ( sol, Rhs                        , &
@@ -76,7 +76,7 @@
 ! F_dwfft      I    - work field
 
 
-      character*4 type_fft
+      character(len=4) :: type_fft
       integer i, j, k, jr, l_pil_w, l_pil_e
       integer piece, p0, pn, plon, ptotal
       real*8  pri

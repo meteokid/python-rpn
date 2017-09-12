@@ -15,7 +15,7 @@
 !*s/r sol_lam - Solution of the elliptic problem for LAM grids
 !
       subroutine sol_lam ( F_sol_8, F_rhs_8, F_dg1, F_dg2, F_dwfft, &
-                           F_iln, F_prout, F_ni, F_nj, F_nk )
+                           F_prout, F_ni, F_nj, F_nk )
       use gem_options
       use glb_ld
       use lun
@@ -30,7 +30,7 @@
 #include <arch_specific.hf>
 
       logical F_prout
-      integer F_ni, F_nj, F_nk, F_iln
+      integer F_ni, F_nj, F_nk
       real*8 F_rhs_8(F_ni,F_nj,F_nk), F_sol_8 (F_ni,F_nj,F_nk), &
              F_dg1(*), F_dg2(*), F_dwfft(*)
 
@@ -47,10 +47,10 @@
 !
 !     ---------------------------------------------------------------
 !
-      if ( sol_type_S .eq. 'ITERATIVE_2D' ) then
+      if ( sol_type_S == 'ITERATIVE_2D' ) then
 
          NK = G_nk - Lam_gbpil_T
-         call  sol_fgmres ( F_sol_8, F_rhs_8, F_iln, l_ni, l_nj, &
+         call  sol_fgmres ( F_sol_8, F_rhs_8, l_ni, l_nj, &
                         ldnh_minx,ldnh_maxx,ldnh_miny,ldnh_maxy, &
                         G_nk, NK, F_prout, conv, its )
          if ( F_prout ) write(Lun_out,1003) conv, its

@@ -27,8 +27,7 @@
 !
 !revision
 
-
-      integer i,istat
+      integer istat
 !     _________________________________________________________________
 !
       istat = gmm_get(gmmk_ut1_s,ut1)
@@ -55,6 +54,7 @@
       use gem_options
       use glb_ld
       use gmm_itf_mod
+      use theo_dif
       implicit none
 #include <arch_specific.hf>
 
@@ -63,7 +63,6 @@
 !
 !AUTHOR    C. Girard
 !
-#include "theo_dif.cdk"
 
       integer nn, mm
       real wk1(l_minx:l_maxx,l_miny:l_maxy,Nk)
@@ -77,7 +76,7 @@
 
       nu_dif = pt25*lnr**(2.d0/pwr)
       nu_dif  = min ( nu_dif, pt25-epsilon )
-      if (nu_dif.lt.1.0e-10) return
+      if (nu_dif < 1.0e-10) return
 
       nn = pwr/2
 
@@ -88,9 +87,11 @@
 
          call theo_hdif(F_f2dif, wk1, l_minx,l_maxx,l_miny,l_maxy,&
                                                    Nk, nu_dif, mm,nn )
-         if (mm.ne.nn) &
+         if (mm /= nn) then
               call rpn_comm_xch_halo( wk1, l_minx,l_maxx,l_miny,l_maxy,&
-              l_ni,l_nj, Nk, G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+                                      l_ni,l_nj, Nk, G_halox,G_haloy,  &
+                                      G_periodx,G_periody,l_ni,0)
+         end if
 
       end do
 !     __________________________________________________________________
@@ -119,8 +120,7 @@
 
       integer i,j,k,id,jd,iff,jf,i0,in,j0,jn
       real wk(l_minx:l_maxx,l_miny:l_maxy)
-      real*8 two
-      parameter(two=2.d0)
+      real*8, parameter :: two = 2.d0
 !
 !----------------------------------------------------------------------
 !
@@ -129,32 +129,32 @@
          iff= l_ni - pil_e
          jf = l_nj - pil_n
 
-!$omp parallel private (wk)
+!$omp parallel private (i,j,k,wk,i0,j0,in,jn)
 !$omp do
       do k=1,lnk
          i0= id-1 ; in= iff+1
          j0= jd-1 ; jn= jf +1
-         if (m.eq.1) then
+         if (m == 1) then
             sfd(i0:in,j0:jn,k) = rfd(i0:in,j0:jn,k)
-         else if (m.eq.2) then
+         else if (m == 2) then
             sfd(i0:in,j0:jn,k) = rfd(i0:in,j0:jn,k) - sfd(i0:in,j0:jn,k)
          else
-            i0= i0+west  ; in= in-east
-            j0= j0+south ; jn= jn-north
+            i0 = i0+west  ; in= in-east
+            j0 = j0+south ; jn= jn-north
             sfd(i0:in,j0:jn,k) = rfd(i0:in,j0:jn,k) - sfd(i0:in,j0:jn,k)
          endif
-         if (m.eq.n) then
+         if (m == n) then
             do j=jd,jf
-            do i=id,iff
-               rfd(i,j,k)= rfd(i,j,k) +  &
-                       nu_dif*(sfd(i+1,j,k)+sfd(i-1,j,k)-two*sfd(i,j,k))
-            end do
+               do i=id,iff
+                  rfd(i,j,k)= rfd(i,j,k) +  &
+                              nu_dif*(sfd(i+1,j,k)+sfd(i-1,j,k)-two*sfd(i,j,k))
+               end do
             end do
          else
             do j=jd,jf
-            do i=id,iff
-               wk(i,j)  = nu_dif*(sfd(i+1,j,k)+sfd(i-1,j,k)-2.d0*sfd(i,j,k))
-            end do
+               do i=id,iff
+                  wk(i,j) = nu_dif*(sfd(i+1,j,k)+sfd(i-1,j,k)-2.d0*sfd(i,j,k))
+               end do
             end do
             sfd(id:iff,jd:jf,k) = rfd(id:iff,jd:jf,k) + wk(id:iff,jd:jf)
          endif

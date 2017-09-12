@@ -20,6 +20,7 @@
       use gem_options
       use geomh
       use glb_ld
+      use glb_pil
       use grid_options
       use hgc
       use hgrid_wb, only: hgrid_wb_put
@@ -31,8 +32,9 @@
 #include <arch_specific.hf>
 
       integer, external :: ezgdef_fmem,gdll
-      integer offi,offj,indx,err,dgid,hgc_array(4)
-      integer i,j,dimy,istat,ni,nj,offset
+      integer offi,offj,indx,err,dgid,hgc_array(4), nicore, njcore
+      integer gphy_i0, gphy_in, gphy_j0, gphy_jn, gphy_ni, gphy_nj, gphy_nicore, gphy_njcore
+      integer i,j,dimy,istat,ni,nj,offset, glbphy_gid, glbphycore_gid
       real xfi(0:l_ni+1),yfi(0:l_nj+1)
       real gxfi(G_ni),gyfi(G_nj)
       real*8 posx_8(1-G_halox:G_ni+G_halox+1), posy_8(1-G_haloy:G_nj+G_haloy+1)
@@ -188,7 +190,13 @@
       gyfi(1:G_nj) = posy_8(1:G_nj)
 
       Grd_global_gid = ezgdef_fmem (G_ni , G_nj , 'Z', 'E', Hgc_ig1ro, &
-                       Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, gxfi(1) , gyfi(1))
+                       Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, gxfi(1), gyfi(1))
+
+      nicore = G_ni - Glb_pil_w - Glb_pil_e
+      njcore = G_nj - Glb_pil_s - Glb_pil_n
+      Grd_glbcore_gid = ezgdef_fmem (nicore , njcore , 'Z', 'E', Hgc_ig1ro, &
+           Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, gxfi(1+Glb_pil_w), gyfi(1+Glb_pil_s))
+
       Grd_local_gid  = ezgdef_fmem (l_ni , l_nj , 'Z', 'E', Hgc_ig1ro, &
                        Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,  xfi(1) ,  yfi(1))
       Grd_lclcore_gid= ezgdef_fmem (l_ni-pil_w-pil_e, l_nj-pil_s-pil_n,&
@@ -205,16 +213,49 @@
                       Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro      , &
                       xfi(Grd_lphy_i0), yfi(Grd_lphy_j0) )
 
-      istat= hgrid_wb_put ('model/Hgrid/global' ,Grd_global_gid  , &
-                            F_lni=G_ni,F_lnj=G_nj,F_rewrite_L=.true.)
-      istat= hgrid_wb_put ('model/Hgrid/local'  ,Grd_local_gid   , &
-                            F_lni=l_ni,F_lnj=l_nj,F_rewrite_L=.true.)
-      istat= hgrid_wb_put ('model/Hgrid/lclcore',Grd_lclcore_gid , &
+      gphy_i0 = 1 + offset
+      gphy_in = G_ni - offset
+      gphy_j0 = 1 + offset
+      gphy_jn = G_nj - offset
+      gphy_ni = gphy_in - gphy_i0 + 1
+      gphy_nj = gphy_jn - gphy_j0 + 1
+      glbphy_gid= 0
+      glbphy_gid = ezgdef_fmem (gphy_ni, gphy_nj,'Z', 'E', &
+           Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, &
+           gxfi(gphy_i0), gyfi(gphy_j0))
+
+      gphy_i0 = 1 + max(offset, Glb_pil_w)
+      gphy_j0 = 1 + max(offset, Glb_pil_s)
+      gphy_nicore = gphy_ni - max(offset, Glb_pil_w) - max(offset, Glb_pil_e)
+      gphy_njcore = gphy_nj - max(offset, Glb_pil_s) - max(offset, Glb_pil_n)
+      glbphycore_gid = 0
+      glbphycore_gid = ezgdef_fmem(gphy_nicore, gphy_njcore, &
+           'Z', 'E', Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,&
+           gxfi(gphy_i0), gyfi(gphy_j0))
+
+
+      istat= hgrid_wb_put ('model/Hgrid/global', Grd_global_gid  , &
+                            F_lni=G_ni, F_lnj=G_nj, F_rewrite_L=.true.)
+
+      istat= hgrid_wb_put ('model/Hgrid/glbcore', Grd_glbcore_gid, &
+                            F_lni=nicore, F_lnj=njcore, F_rewrite_L=.true.)
+
+      istat= hgrid_wb_put ('model/Hgrid/local', Grd_local_gid   , &
+                            F_lni=l_ni, F_lnj=l_nj, F_rewrite_L=.true.)
+
+      istat= hgrid_wb_put ('model/Hgrid/lclcore', Grd_lclcore_gid , &
                   F_lni=l_ni-pil_w-pil_e, F_lnj=l_nj-pil_s-pil_n , &
-                  F_i0=1+pil_w, F_j0=1+pil_s,F_rewrite_L=.true.)
+                  F_i0=1+pil_w, F_j0=1+pil_s, F_rewrite_L=.true.)
+
       istat= hgrid_wb_put ('model/Hgrid/lclphy' ,Grd_lphy_gid    , &
                   F_lni=Grd_lphy_ni, F_lnj=Grd_lphy_nj           , &
-                  F_i0=Grd_lphy_i0, F_j0=Grd_lphy_j0,F_rewrite_L=.true.)
+                  F_i0=Grd_lphy_i0, F_j0=Grd_lphy_j0, F_rewrite_L=.true.)
+
+      istat= hgrid_wb_put ('model/Hgrid/glbphy', glbphy_gid, &
+                            F_lni=gphy_ni, F_lnj=gphy_nj, F_rewrite_L=.true.)
+
+      istat= hgrid_wb_put ('model/Hgrid/glbphycore', glbphycore_gid, &
+                            F_lni=gphy_nicore, F_lnj=gphy_njcore, F_rewrite_L=.true.)
 
       hgc_array(1)= Hgc_ig1ro
       hgc_array(2)= Hgc_ig2ro

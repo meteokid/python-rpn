@@ -23,15 +23,15 @@
 
       implicit none
 
-      integer n,cv_start,cv_finish              
+      integer n,cv_start,cv_finish
       real*8 x_start_8,x_finish_8,adv_mass_of_area_8
-      real*8 x_left_8(n+1),rho_left_8(n+1),mass_8(n),dx_8(n),slope_8(n) 
+      real*8 x_left_8(n+1),rho_left_8(n+1),mass_8(n),dx_8(n),slope_8(n)
 
       !author Tanguay/Qaddouri
       !
       !revision
       ! v4_80 - Tanguay/Qaddouri - SLICE
-                  
+
       !------------------------------------------------------
       !CAUTION: BOUNDARY AND CENTER INDEXES DIFFERED FROM GEM
       !         X_LEFT(I) < X_CENTER(I) < X_RIGHT(I+1)
@@ -42,8 +42,8 @@
       real*8 x1_8,x2_8,m1_8,m2_8,m3_8
       integer i,cv,piecewise_option
 
-      real*8   adv_integral_within_cv_pcm_8, adv_integral_within_cv_ppm_8 
-      external adv_integral_within_cv_pcm_8, adv_integral_within_cv_ppm_8 
+      real*8   adv_integral_within_cv_pcm_8, adv_integral_within_cv_ppm_8
+      external adv_integral_within_cv_pcm_8, adv_integral_within_cv_ppm_8
 
       !--------------------------------------------------------------
       ! piecewise_option=0   ! piecewise constant
@@ -54,7 +54,7 @@
       !--------------------------------------------------------------
 
       piecewise_option=2
-          
+
       m1_8 = 0.0d0
       m2_8 = 0.0d0
       m3_8 = 0.0d0
@@ -65,14 +65,14 @@
 
       if (x2_8 < x1_8-epsilon(x1_8)) then
 
-         write(*,*)' Error: x2 < x1 inside MASS_OF_AREA '                        
+         write(*,*)' Error: x2 < x1 inside MASS_OF_AREA '
          write(*,*)' x1 / x2 =',x1_8,' / ',x2_8
-         write(*,*)' CV start / finish =',cv_start,'/',cv_finish                        
-         stop                    
+         write(*,*)' CV start / finish =',cv_start,'/',cv_finish
+         stop
 
-      elseif (x2_8 >= x_finish_8) then  ! both x1 and x2 are within the same CV                
+      elseif (x2_8 >= x_finish_8) then  ! both x1 and x2 are within the same CV
 
-         x2_8 = x_finish_8                       
+         x2_8 = x_finish_8
 
          select case(piecewise_option)
 
@@ -84,15 +84,15 @@
                                                  rho_left_8(cv), rho_left_8(cv+1) )
 
 
-            case(3)  
+            case(3)
 
-            m1_8 = adv_integral_within_cv_pcm_8 ( x1_8, x2_8,                           &                        
+            m1_8 = adv_integral_within_cv_pcm_8 ( x1_8, x2_8,                           &
                                                      mass_8(cv), dx_8(cv), slope_8(cv), &
                                                    x_left_8(cv),   x_left_8(cv+1),      &
-                                                 rho_left_8(cv), rho_left_8(cv+1) )     
-         end select                                                
-                                            
-      else ! General case: a distinct cv_start 
+                                                 rho_left_8(cv), rho_left_8(cv+1) )
+         end select
+
+      else ! General case: a distinct cv_start
 
          select case(piecewise_option) ! from cv_finish with a couple in between
 
@@ -101,15 +101,15 @@
             m1_8 = adv_integral_within_cv_ppm_8( x1_8, x2_8,                       &
                                                      mass_8(cv), dx_8(cv),         &
                                                    x_left_8(cv),   x_left_8(cv+1), &
-                                                 rho_left_8(cv), rho_left_8(cv+1) )     
+                                                 rho_left_8(cv), rho_left_8(cv+1) )
 
-            case(3)  
+            case(3)
 
-            m1_8 = adv_integral_within_cv_pcm_8 ( x1_8, x2_8,                           &                        
+            m1_8 = adv_integral_within_cv_pcm_8 ( x1_8, x2_8,                           &
                                                      mass_8(cv), dx_8(cv), slope_8(cv), &
                                                    x_left_8(cv),   x_left_8(cv+1),      &
-                                                 rho_left_8(cv), rho_left_8(cv+1) )     
-         end select                                                
+                                                 rho_left_8(cv), rho_left_8(cv+1) )
+         end select
 
          x1_8 =  x_left_8(cv_finish)
          x2_8 =  x_finish_8
@@ -122,30 +122,30 @@
             m3_8 = adv_integral_within_cv_ppm_8( x1_8, x2_8,                       &
                                                      mass_8(cv), dx_8(cv),         &
                                                    x_left_8(cv),   x_left_8(cv+1), &
-                                                 rho_left_8(cv), rho_left_8(cv+1) ) 
+                                                 rho_left_8(cv), rho_left_8(cv+1) )
 
             case(3)
 
-            m3_8 = adv_integral_within_cv_pcm_8 ( x1_8, x2_8,                           &                        
+            m3_8 = adv_integral_within_cv_pcm_8 ( x1_8, x2_8,                           &
                                                      mass_8(cv), dx_8(cv), slope_8(cv), &
                                                    x_left_8(cv),   x_left_8(cv+1),      &
-                                                 rho_left_8(cv), rho_left_8(cv+1) )     
+                                                 rho_left_8(cv), rho_left_8(cv+1) )
 
 
          end select
 
 
       endif
-                   
-      if (cv_finish-1-cv_start > 0) then             
+
+      if (cv_finish-1-cv_start > 0) then
 
          do i = cv_start+1,cv_finish-1
             m2_8 = m2_8 + mass_8(i)
          enddo
 
       endif
-                         
+
       adv_mass_of_area_8 = m1_8 + m2_8 + m3_8
-                 
-      return 
+
+      return
       end

@@ -90,7 +90,7 @@
          allocate ( MU(Minx:Maxx,Miny:Maxy,l_nk) )
       endif
 
-      if(icln.gt.1) then
+      if(icln > 1) then
       call rpn_comm_xch_halo( F_u   ,l_minx,l_maxx,l_miny,l_maxy,l_niu,l_nj ,G_nk, &
                       G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
       call rpn_comm_xch_halo( F_v   ,l_minx,l_maxx,l_miny,l_maxy,l_ni ,l_njv,G_nk, &
@@ -146,7 +146,8 @@
       endif
 
 !$omp parallel private(km,w_nt,barz,barzp,ndiv, &
-!$omp dlnTstr_8,w1,w2,w3,w4,w5,qbar,t_interp,u_interp,v_interp,xtmp_8,ytmp_8)
+!$omp dlnTstr_8,w1,w2,w3,w4,w5,qbar,t_interp,u_interp,v_interp,&
+!$omp xtmp_8,ytmp_8)
       if(Schm_eulmtn_L) then
 !$omp do
          do k=1,l_nk
@@ -330,7 +331,7 @@
          end do
          end do
          call vlog ( ytmp_8, xtmp_8, nij )
-         if(Schm_opentop_L.and.k.eq.k0t) then
+         if(Schm_opentop_L.and.k == k0t) then
             do j= j0, jn
             do i= i0, in
                F_nb(i,j) = Cstv_invT_8*(ytmp_8(i,j)-xtmp_8(i,j)+one)
@@ -357,7 +358,7 @@
          end do
          end do
 
-         if(Cstv_Tstr_8.lt.0.) then
+         if(Cstv_Tstr_8 < 0.) then
             dlnTstr_8=(Ver_Tstar_8%m(k+1)-Ver_Tstar_8%m(k))*Ver_idz_8%t(k)/Ver_Tstar_8%t(k)
             do j= j0, jn
             do i= i0, in
