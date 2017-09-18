@@ -6,11 +6,13 @@
 # Copyright: LGPL 2.1
 
 """
-Python High Level Interface for BUPR files.
+Python High Level Interface for [[BURP]] files.
 
 See Also:
     rpnpy.librmn.burp
     rpnpy.librmn.burp_const
+    rpnpy.burpc.base
+    rpnpy.burpc.brpobj
     rpnpy.librmn.proto_burp
     rpnpy.librmn.base
     rpnpy.librmn.fstd98

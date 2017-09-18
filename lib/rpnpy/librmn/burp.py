@@ -7,7 +7,7 @@
 # Copyright: LGPL 2.1
 
 """
-Python interface for [[BUPR]] (Binary Universal Report Protocol) files.
+Python interface for [[BURP]] (Binary Universal Report Protocol) files.
 It Contains wrappers for ctypes functions in proto_burp and the BurpError class.
 
 BURP est depuis juin 1992 le format des bases de donnees operationnelles du
@@ -35,6 +35,8 @@ Notes:
 See Also:
     rpnpy.librmn.burp_const
     rpnpy.utils.burpfile
+    rpnpy.burpc.base
+    rpnpy.burpc.brpobj
     rpnpy.librmn.proto_burp
 """
 
@@ -419,7 +421,7 @@ def mrfvoi(funit):
     >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
     >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk_burp','2007021900.brp')
     >>> funit = rmn.fnom(filename, rmn.FILE_MODE_RO)
-    >>> nrep  = rmn.mrfvoi(funit)
+    >>> # nrep  = rmn.mrfvoi(funit)
     >>> istat = rmn.fclos(funit)
 
     See Also:
@@ -1638,7 +1640,7 @@ def _mrbcvt_dict_full_init():
                     d['e_cvt'] = 0
                 if len(item) > 84 and item[84] == 'M':
                     d['e_multi'] = 1
-                _mrbcvt_dict_full[id] = d
+                _mrbcvt_dict_full[id1] = d
 
 def mrbcvt_dict_find_id(desc, nmax=999, flags=_re.IGNORECASE):
     """
@@ -2138,11 +2140,13 @@ def mrbcvt_encode(cmcids, rval):
 
     ## rval = _np.ravel(rval, order='F') #TODO: any reason to do this, tablval would then be rank 1...
     tblval = _np.round(rval).astype(_np.int32)
+    ## tblval = rval.copy()
 
-    #rval[_np.isnan(rval)] = 1.00000002e+30  #TODO: may be needed
+    # rval[_np.isnan(rval)] = 1.00000002e+30  #TODO: may be needed
 
     istat = _rp.c_mrbcvt(cmcids, tblval, rval, nele, nval, nt,
                          _rbc.MRBCVT_ENCODE)
+    ## tblval = _np.round(tblval).astype(_np.int32)
 
     if istat != 0:
         raise BurpError('c_mrbcvt', istat)

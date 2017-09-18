@@ -16,6 +16,8 @@ See Also:
     rpnpy.burpc.base
     rpnpy.burpc.proto
     rpnpy.burpc.const
+    rpnpy.librmn.burp
+    rpnpy.utils.burpfile
 """
 import ctypes as _ct
 import numpy  as _np
