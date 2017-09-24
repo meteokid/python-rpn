@@ -6,7 +6,8 @@
 # Copyright: LGPL 2.1
 
 """
-Utility functions to read and write 3d RPNSTD fields
+Utility functions to create, read and write 3d RPNSTD fields
+along with proper metadata
 """
 
 import numpy  as _np
@@ -66,7 +67,7 @@ def get_levels_press(fileId, vGrid, shape, ip1list,
     >>> ipkeys  = fstd3d.get_levels_keys(fileId, 'TT', thermoMom='VIPT')
     >>> ip1list = [ip1 for ip1,key in ipkeys['ip1keys']]
     >>> shape   = rmn.fstinf(fileId, nomvar='TT')['shape'][0:2]
-    >>> press   = fstd3d.get_levels_press(fileId, ipkeys['v'], shape, ip1list)
+    >>> press   = fstd3d.get_levels_press(fileId, ipkeys['vgrid'], shape, ip1list)
     >>> print('# {} {} {}'.format(shape, press['rfld'].shape, press['phPa'].shape))
     # (200, 100) (200, 100) (200, 100, 80)
     >>> rmn.fstcloseall(fileId)
@@ -146,7 +147,7 @@ def get_levels_keys(fileId, nomvar, datev=-1, ip2=-1, ip3=-1,
         'ip3'    : ip3,     # user defined identifier
         'typvar' : typvar,  # type of field
         'etiket' : etiket,  # label
-        'v'      : vGrid,   # vertical grid descriptor as returned by vgd_read
+        'vgrid'  : vGrid,   # vertical grid descriptor as returned by vgd_read
         'ip1keys': vipkeys  # list of ip1 and corresponding FSTD rec key as
                             # ((ip1,key1), (ip1b, key2), ...)
         }
@@ -224,7 +225,7 @@ def get_levels_keys(fileId, nomvar, datev=-1, ip2=-1, ip3=-1,
         'ip3'    : ip3,
         'typvar' : typvar,
         'etiket' : etiket,
-        'v'      : vGrid,
+        'vgrid'  : vGrid,
         'ip1keys': vipkeys
         }
 
@@ -263,8 +264,8 @@ def fst_read_3d(fileId, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
         None if no matching record, else:
         {
             'd'    : data,       # 3d field data (numpy.ndarray), Fortran order
-            'g'    : hGridInfo,  # horizontal grid info as returned by readGrid
-            'v'    : vGridInfo,  # vertical grid info as returned by vgd_read
+            'hgrid': hGridInfo,  # horizontal grid info as returned by readGrid
+            'vgrid': vGridInfo,  # vertical grid info as returned by vgd_read
             'ip1s' : ip1List     # List of ip1 of each level (tuple of int)
             ...                  # same params list as fstprm (less ip1)
             'rfld' : rfld,       # (if getPress) 2d reference field value
@@ -316,7 +317,7 @@ def fst_read_3d(fileId, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
     vGrid = None
     tlevels = get_levels_keys(fileId, nomvar, datev, ip2, ip3, typvar, etiket,
                               vGrid=vGrid, thermoMom='VIPT', verbose=verbose)
-    vGrid = tlevels['v']
+    vGrid = tlevels['vgrid']
     mlevels = get_levels_keys(fileId, tlevels['nomvar'], tlevels['datev'],
                               tlevels['ip2'], tlevels['ip3'],
                               tlevels['typvar'], tlevels['etiket'],
@@ -354,7 +355,7 @@ def fst_read_3d(fileId, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
                     r3d['d'] = dataArray
                 else:
                     raise TypeError('Provided dataArray is not the right type or shape')
-            r3d['g'] = _rmn.readGrid(fileId, r2d)
+            r3d['hgrid'] = _rmn.readGrid(fileId, r2d)
             print("Read the horizontal grid descriptors for {nomvar}".format(**r2d))
         if r2d['d'].shape[0:2] != r3d['d'].shape[0:2]:
             raise _rmn.RMNError("Wrong shape for input data.")
@@ -370,7 +371,7 @@ def fst_read_3d(fileId, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
         'nk'    : r3d['d'].shape[2],
         'ip1'   : -1,
         'ip1s'  : ip1list,
-        'v'     : vGrid
+        'vgrid' : vGrid
          })
 
     # Read RFLD and compute pressure on levels
@@ -387,12 +388,53 @@ def fst_read_3d(fileId, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
     return r3d
 
 
+def fst_write_3d(fileId, r3d, verbose=False):
+    #TODO: mom or thermo?
+    pass
 
+
+def fst_new_3d(params=None, hgrid=None, vgrid=None, ip1list=None,
+               dtype=None, dataArray=None, verbose=False):
+    
+    r3d = _rmn.FST_RDE_META_DEFAULT.copy()
+    r3d.update(params)
+    r3d.update({
+        
+         })
+    
+    (ni, nj) = (hgrid['ni'], hgrid['nj'])
+    if isinstance(ip1list, str):
+        if ip1list.upper() == 'VIPM'
+            ip1list = _vgd._vgd.vgd_get(vgrid,'VIPM')
+        elif ip1list.upper() == 'VIPT'
+            ip1list = _vgd._vgd.vgd_get(vgrid,'VIPT')
+        else:
+            raise
+    elif not isinstance(ip1list, (list, tuple)):
+        raise
+    nk = len(ip1list)
+    
+    dtype = _rmn.dtype_fst2numpy(params['datyp'], params['nbits'])
+    if dataArray is None:
+       r3d['d'] = _np.zero((ni,nj,nk), dtype=dtype, order='FORTRAN')
+       
+    r3d.update({
+        'shape' : r3d['d'].shape,
+        'ni'    : r3d['d'].shape[0],
+        'nj'    : r3d['d'].shape[1],
+        'nk'    : r3d['d'].shape[2],
+        'ip1'   : -1,
+        'ip1s'  : ip1list,
+        'hgrid' : hgrid,
+        'vgrid' : _vgd.vgd_copy(vgrid)
+         })
+
+         
 if __name__ == "__main__":
     import doctest
-    doctest.testmod()
+    doctest.testmod()   
 
-
+    
 # -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
 # vim: set expandtab ts=4 sw=4:
 # kate: space-indent on; indent-mode cstyle; indent-width 4; mixedindent off;
