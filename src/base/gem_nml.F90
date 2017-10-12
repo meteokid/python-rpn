@@ -22,6 +22,7 @@
       use lun
       implicit none
 #include <arch_specific.hf>
+#include <clib_interface_mu.hf>
 
       character(len=*) F_namelistf_S
 
@@ -59,6 +60,7 @@
 
       call low2up (Lctl_rxstat_S ,dumc_S)
       Lctl_rxstat_S = dumc_S
+      err = clib_toupper(Schm_phycpl_S)
 
       err= canonical_nml (F_namelistf_S, Lun_out, Schm_canonical_dcmip_L,&
                                              Schm_canonical_williamson_L )

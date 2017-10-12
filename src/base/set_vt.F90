@@ -21,6 +21,7 @@
       use gmm_tracers
       use gmm_pw
       use gmm_smag
+      use gmm_phy
       use gem_options
       use glb_ld
       use lun
@@ -274,6 +275,17 @@
       end if
 
       call canonical_cases ("SET_VT")
+
+      gmmk_phy_uu_tend_s  = 'UPT'
+      gmmk_phy_vv_tend_s  = 'VPT'
+      gmmk_phy_tv_tend_s  = 'TVPT'
+      istat = min(gmm_create(gmmk_phy_uu_tend_s , phy_uu_tend , mymeta3d_nk_u , flag_r_n),istat)
+      istat = min(gmm_create(gmmk_phy_vv_tend_s , phy_vv_tend , mymeta3d_nk_v , flag_r_n),istat)
+      istat = min(gmm_create(gmmk_phy_tv_tend_s , phy_tv_tend , mymeta3d_nk_t , flag_r_n),istat)
+      if (GMM_IS_ERROR(istat)) then
+         call msg(MSG_ERROR,'set_vt ERROR at gmm_create(PHY)')
+      end if
+
 
       if (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H') then
          call exp_set_vt()

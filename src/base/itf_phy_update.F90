@@ -18,6 +18,7 @@
       use itf_phy_filter, only: ipf_smooth_tend
       use gmm_vt1
       use gmm_pw
+      use gmm_phy
       use grid_options
       use gem_options
       use glb_ld
@@ -42,7 +43,7 @@
       character(len=GMM_MAXNAMELENGTH) :: trname_S
       integer istat, i,j,k,n, cnt, iteration
       real, dimension(:,:,:), pointer :: data3d,minus,ptr3d
-      real, dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk), target :: tdu
+      real, dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk), target :: tdu,tdv,tv,pw_uu_plus0,pw_vv_plus0,pw_tt_plus0
       real,  dimension(l_ni,l_nj,G_nk) :: qw_phy,qw_dyn
       real*8,dimension(l_minx:l_maxx,l_miny:l_maxy)        :: pr_p0_8
       real*8,dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk+1) :: pr_m_dyn_8,pr_m_phy_8,pr_t_8
@@ -54,6 +55,12 @@
    ! The correction due to sources and sinks of specific humidity
    ! is applied only for the case of dry air conservation
    source_ps_L = (Schm_psadj == 2)
+
+   ! Retrieve a copy of the PW state before the physics
+   nullify(ptr3d)
+   istat = gmm_get (gmmk_pw_uu_plus_s,ptr3d); pw_uu_plus0 = ptr3d
+   istat = gmm_get (gmmk_pw_vv_plus_s,ptr3d); pw_vv_plus0 = ptr3d
+   istat = gmm_get (gmmk_pw_tt_plus_s,ptr3d); pw_tt_plus0 = ptr3d
 
    if (F_apply_L) then
 
@@ -174,6 +181,37 @@
          if (Lun_out>0) write(Lun_out,*) ''
 
          call pw_update_GPW()
+
+      endif
+
+      ! Compute tendencies and reset physical world if requested
+      if (Schm_phycpl_S == 'RHS' .or. Schm_phycpl_S == 'AVG') then
+
+         istat = gmm_get(gmmk_phy_uu_tend_s,phy_uu_tend)
+         istat = gmm_get(gmmk_phy_vv_tend_s,phy_vv_tend)
+         istat = gmm_get(gmmk_phy_tv_tend_s,phy_tv_tend)
+
+         tdu(1:l_ni,1:l_nj,1:l_nk) = pw_uu_plus(1:l_ni,1:l_nj,1:l_nk) - pw_uu_plus0(1:l_ni,1:l_nj,1:l_nk)
+         tdv(1:l_ni,1:l_nj,1:l_nk) = pw_vv_plus(1:l_ni,1:l_nj,1:l_nk) - pw_vv_plus0(1:l_ni,1:l_nj,1:l_nk)
+         call hwnd_stag(phy_uu_tend,phy_vv_tend,tdu,tdv,l_minx,l_maxx,l_miny,l_maxy,G_nk,.true.)
+         
+         istat = gmm_get(gmmk_tt1_s, tt1)
+         call tt2virt2 (tv,.true.,l_minx,l_maxx,l_miny,l_maxy,l_nk)
+         phy_tv_tend(1:l_ni,1:l_nj,1:l_nk) = tv(1:l_ni,1:l_nj,1:l_nk) - tt1(1:l_ni,1:l_nj,1:l_nk)
+         
+         phy_uu_tend = phy_uu_tend/Cstv_dt_8
+         phy_vv_tend = phy_vv_tend/Cstv_dt_8
+         phy_tv_tend = phy_tv_tend/Cstv_dt_8
+
+         RESET_PW: if (Schm_phycpl_S == 'RHS') then
+            pw_uu_plus = pw_uu_plus0
+            pw_vv_plus = pw_vv_plus0
+            pw_tt_plus = pw_tt_plus0
+         else
+            pw_uu_plus = pw_uu_plus0 + Cstv_bA_m_8*(pw_uu_plus-pw_uu_plus0)
+            pw_vv_plus = pw_vv_plus0 + Cstv_bA_m_8*(pw_vv_plus-pw_vv_plus0)
+            pw_tt_plus = pw_tt_plus0 + Cstv_bA_8*(pw_tt_plus-pw_tt_plus0)
+         endif RESET_PW
 
       endif
 

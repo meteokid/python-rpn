@@ -565,6 +565,11 @@ module gem_options
    namelist /gem_cfgs  / Schm_trapeze_L
    namelist /gem_cfgs_p/ Schm_trapeze_L
 
+   !# Physics coupling strategy
+   character(len=16) :: Schm_phycpl_S = 'split'
+   namelist /gem_cfgs  / Schm_phycpl_S
+   namelist /gem_cfgs_p/ Schm_phycpl_S
+
   !Sol
 
    !# Type of solver

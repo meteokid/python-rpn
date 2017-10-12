@@ -22,6 +22,7 @@
       use coriolis
       use grid_options
       use gem_options
+      use gmm_phy
       use geomh
       use tdpack
       use glb_ld
@@ -30,6 +31,7 @@
       use ver
       implicit none
 #include <arch_specific.hf>
+#include "gmm.hf"
 
       integer Minx,Maxx,Miny,Maxy, Nk
       real F_oru   (Minx:Maxx,Miny:Maxy,  Nk)  ,F_orv   (Minx:Maxx,Miny:Maxy,  Nk), &
@@ -65,14 +67,15 @@
       integer :: i0u, inu, i0v, inv
       integer :: j0u, jnu, j0v, jnv
 
-      integer :: i, j, k, km, kq, nij, jext
+      integer :: i, j, k, km, kq, nij, jext, istat
       real*8 :: tdiv, BsPqbarz, dlnTstr_8, barz, barzp,  &
                 u_interp, v_interp, t_interp, mu_interp, &
-                w1, w2, w3, mydelta_8
+                w1, w2, w3, mydelta_8, phy_bA_m_8, phy_bA_t_8
       real*8  xtmp_8(l_ni,l_nj), ytmp_8(l_ni,l_nj)
       real, dimension(:,:,:), pointer :: BsPq, FI, MU
       real*8, dimension(:,:,:), pointer :: Afis
       save MU
+      real, dimension(Minx:Maxx,Miny:Maxy,l_nk), target :: zero_array
       real*8, parameter :: one=1.d0, zero=0.d0, half=0.5d0 , &
                            alpha1= -1.d0/16.d0 , alpha2 =9.d0/16.d0
 !
@@ -90,6 +93,28 @@
          allocate ( MU(Minx:Maxx,Miny:Maxy,l_nk) )
       endif
 
+      zero_array = 0.
+
+      if (Schm_phycpl_S == 'RHS') then
+         istat = gmm_get(gmmk_phy_uu_tend_s,phy_uu_tend)
+         istat = gmm_get(gmmk_phy_vv_tend_s,phy_vv_tend)
+         istat = gmm_get(gmmk_phy_tv_tend_s,phy_tv_tend)
+         phy_bA_m_8 = 0d0
+         phy_bA_t_8 = 0d0
+      elseif (Schm_phycpl_S == 'AVG') then
+         istat = gmm_get(gmmk_phy_uu_tend_s,phy_uu_tend)
+         istat = gmm_get(gmmk_phy_vv_tend_s,phy_vv_tend)
+         istat = gmm_get(gmmk_phy_tv_tend_s,phy_tv_tend)
+         phy_bA_m_8 = Cstv_bA_m_8
+         phy_bA_t_8 = Cstv_bA_8
+      else
+         phy_uu_tend => zero_array
+         phy_vv_tend => zero_array
+         phy_tv_tend => zero_array
+         phy_bA_m_8 = 0d0
+         phy_bA_t_8 = 0d0
+      endif
+      
 !     Common coefficients
 
       jext = Grd_bsc_ext1 + 1
@@ -218,7 +243,8 @@
          F_oru(i,j,k) = Cstv_invT_m_8  * F_u(i,j,k) - Cstv_Beta_m_8 * ( &
                         rgasd_8 * t_interp * ( BsPq(i+1,j,k) - BsPq(i,j,k) ) * geomh_invDXMu_8(j)  &
                             + ( one + mu_interp)* (   FI(i+1,j,k) -   FI(i,j,k) ) * geomh_invDXMu_8(j)  &
-                                   - ( Cori_fcoru_8(i,j) + geomh_tyoa_8(j) * F_u(i,j,k) ) * v_interp )
+                                   - ( Cori_fcoru_8(i,j) + geomh_tyoa_8(j) * F_u(i,j,k) ) * v_interp ) + &
+                                   ((1d0-phy_bA_m_8)/Cstv_bA_m_8) * phy_uu_tend(i,j,k)
       end do
       end do
 
@@ -244,7 +270,8 @@
          F_orv(i,j,k) = Cstv_invT_m_8  * F_v(i,j,k) - Cstv_Beta_m_8 * ( &
                         rgasd_8 * t_interp * ( BsPq(i,j+1,k) - BsPq(i,j,k) ) * geomh_invDYMv_8(j) &
                             + ( one + mu_interp)* (   FI(i,j+1,k) -   FI(i,j,k) ) * geomh_invDYMv_8(j) &
-                                    + ( Cori_fcorv_8(i,j) + geomh_tyoav_8(j) * u_interp ) * u_interp )
+                                    + ( Cori_fcorv_8(i,j) + geomh_tyoav_8(j) * u_interp ) * u_interp ) + &
+                                    ((1d0-phy_bA_m_8)/Cstv_bA_m_8) * phy_vv_tend(i,j,k)
       end do
       end do
 
@@ -266,7 +293,8 @@
          w1=Ver_wpstar_8(k)*BsPq(i,j,k+1)+Ver_wmstar_8(k)*half*(BsPq(i,j,k)+BsPq(i,j,km))
          BsPqbarz = Ver_wp_8%t(k)*w1+Ver_wm_8%t(k)*BsPq(i,j,k)
          F_ort(i,j,k) = Cstv_invT_8 * ( ytmp_8(i,j) - Cstv_bar1_8 * cappa_8 * BsPqbarz ) &
-                      + Cstv_Beta_8 * cappa_8 *(Ver_wpstar_8(k)*F_zd(i,j,k)+Ver_wmstar_8(k)*F_zd(i,j,km))
+                      + Cstv_Beta_8 * cappa_8 *(Ver_wpstar_8(k)*F_zd(i,j,k)+Ver_wmstar_8(k)*F_zd(i,j,km)) + &
+                      ((1d0-phy_bA_t_8)/Cstv_bA_8) * 1./F_t(i,j,k) * phy_tv_tend(i,j,k)
       end do
       end do
 
