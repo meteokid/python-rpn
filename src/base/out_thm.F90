@@ -59,6 +59,7 @@
       integer, dimension(:), pointer     :: ip1m
 
       real  , parameter :: theta_p0 = 100000.
+      real  , parameter :: ES_MAX   = 30.
       real*8, parameter :: ZERO_8   = 0.0
 
       real w1(l_minx:l_maxx,l_miny:l_maxy), w2(l_minx:l_maxx,l_miny:l_maxy),&
@@ -441,14 +442,9 @@
             call mhuaes3 (t8,hu,tt,px_ta,satues_l, &
                                   l_ninj,nk_src,l_ninj)
 
+            t8(1:l_ni,1:l_nj,1:nk_src) = min(t8(1:l_ni,1:l_nj,1:nk_src), ES_MAX)
             if (Out3_cliph_L) then
-               do k= 1,nk_src
-                  do j= 1,l_nj
-                  do i= 1,l_ni
-                    t8(i,j,k) = max ( min( t8(i,j,k), 30. ), 0.)
-                  enddo
-                  enddo
-               enddo
+               t8(1:l_ni,1:l_nj,1:nk_src) = max(t8(1:l_ni,1:l_nj,1:nk_src), 0.)
             endif
 
             if (pnes /= 0) then
@@ -664,15 +660,9 @@
             call out_padbuf(w6,l_minx,l_maxx,l_miny,l_maxy,nko)
             call mhuaes3 (w5, hu_pres,w6, px_pres,satues_l, &
                           l_ninj, nko, l_ninj)
+            w5(1:l_ni,1:l_nj,1:nko) = min(w5(1:l_ni,1:l_nj,1:nko), ES_MAX)
             if ( Out3_cliph_L ) then
-               do k=1,nko
-                 do j= 1, l_nj
-                 do i= 1, l_ni
-                    w5(i,j,k) = min( w5(i,j,k), 30.)
-                    w5(i,j,k) = max( w5(i,j,k), 0. )
-                 enddo
-                 enddo
-               enddo
+               w5(1:l_ni,1:l_nj,1:nko) = max(w5(1:l_ni,1:l_nj,1:nko),0.)
             endif
 
             if (pntd /= 0) then
