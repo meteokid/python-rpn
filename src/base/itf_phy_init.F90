@@ -123,6 +123,7 @@
 
 ! Complete physics initialization (see phy_init for interface content)
 
+      istat = ptopo_io_set(Inp_npes) !#TODO mv this in phy... pass npes as arg
       err= phy_init ( Path_phy_S, Step_CMCdate0, real(Cstv_dt_8), &
                       'model/Hgrid/lclphy', 'model/Hgrid/lclcore', &
                       'model/Hgrid/global', 'model/Hgrid/local'  , &
@@ -202,8 +203,6 @@
       if (Lun_out.gt.0)  write(Lun_out,1006)
 
       call heap_paint
-
-      istat = ptopo_io_set(Inp_npes)
 
 !     ---------------------------------------------------------------
  1000 format(/,'INITIALIZATION OF PHYSICS PACKAGE (S/R itf_phy_init)', &

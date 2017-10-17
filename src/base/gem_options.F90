@@ -235,15 +235,28 @@ module gem_options
    namelist /gem_cfgs/ Iau_weight_S
    namelist /gem_cfgs_p/ Iau_weight_S
 
-   !# Input PE blocking along npex
+   !# IAU Input PE blocking along npex
    integer :: Iau_ninblocx = 1
    namelist /gem_cfgs/ Iau_ninblocx
    namelist /gem_cfgs_p/ Iau_ninblocx
 
-   !# Input PE blocking along npey
+   !# IAU Input PE blocking along npey
    integer :: Iau_ninblocy = 1
    namelist /gem_cfgs/ Iau_ninblocy
    namelist /gem_cfgs_p/ Iau_ninblocy
+
+   !# IAU Input TYPE
+   !# * 'OLD ' : GEM 4.8 physic's input, MPI blocking based
+   !# * 'IO  ' : new input system, RPN_COMM_IO/RPN_COMM_ezshuf_dist based
+   !# * 'BLOC' : new input system, RPN_COMM_bloc based
+   character(len=16) :: Iau_input_type_S = 'OLD'
+   namelist /gem_cfgs/ Iau_input_type_S
+   namelist /gem_cfgs_p/ Iau_input_type_S
+
+   !# IAU Input Stats
+   logical :: Iau_stats_L = .false.
+   namelist /gem_cfgs/ Iau_stats_L
+   namelist /gem_cfgs_p/ Iau_stats_L
 
 !Init
 

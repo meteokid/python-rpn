@@ -13,30 +13,35 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-subroutine iau_apply2 (F_kount)
+subroutine iau_apply2(F_kount)
    use iso_c_binding
-   use vGrid_Descriptors
-   use vgrid_wb
+
+   use clib_itf_mod, only: clib_toupper, clib_tolower
+   use gmm_itf_mod
    use input_mod, only: input_new, input_add, input_nbvar, input_set_basedir, &
         input_set_filename, input_setgridid, input_isvarstep, input_meta, input_get
    use inputio_mod, only: inputio_new, inputio_add, inputio_nbvar, &
         inputio_set_filename, inputio_nbvar, inputio_isvarstep, inputio_meta, &
         inputio_get, INPUT_FILES_ANAL, INPUTIO_T
-   use step_options
+   use mu_jdate_mod, only: jdate_from_cmc
+   use ptopo_utils, only: ptopo_io_set, PTOPO_BLOC, PTOPO_IO
+   use statfld_dm_mod, only: statfld_dm
+   use tdpack
+   use vGrid_Descriptors, only: vgrid_descriptor
+   use vgrid_wb, only: vgrid_wb_get, vgrid_wb_put
+
+   use cstv
+   use gem_options
    use gmm_vt1
    use gmm_pw
+   use glb_ld
    use grid_options, only: Grd_local_gid, Grd_lclcore_gid, Grd_global_gid, &
         Grd_glbcore_gid, Grd_yinyang_L
-   use gem_options
-   use tdpack
-   use glb_ld
-   use cstv
-   use gmm_itf_mod
-   use var_gmm
+   use inp_mod, only: Inp_comm_id
    use path
-   use clib_itf_mod
-   use mu_jdate_mod, only: jdate_from_cmc
-!!$   use inp_mod, only: Inp_comm_id
+   use step_options
+   use var_gmm
+
    implicit none
    !@params
    integer, intent(in) :: F_kount !step_kound
@@ -44,6 +49,7 @@ subroutine iau_apply2 (F_kount)
    !       R. McTaggart-Cowan - Summer 2013
    !@revision
    !       S.Chamberland, 2014-07: use input_mod, allow vinterp
+   !       S.Chamberland, 2017-09: use inputio_mod
    !@object
    !  Add an analysis increments to the model state (IAU).
 
@@ -52,6 +58,7 @@ subroutine iau_apply2 (F_kount)
 #include <msg.h>
    include "rpn_comm.inc"
 
+   integer, parameter :: STATS_PRECISION = 8
    character(len=2), parameter :: IAU_PREFIX='I_'
    character(len=6), parameter :: IAU_FILE = 'IAUREP'
    character(len=32), parameter  :: VGRID_M_S = 'ref-m'
@@ -60,7 +67,6 @@ subroutine iau_apply2 (F_kount)
    character(len=32), parameter  :: IAU_VGRID_T_S = 'iau-t'
    character(len=32), parameter  :: IAU_REFP0_S = 'IAUREFP0:P'
    character(len=32), parameter  :: IAU_REFP0_LS_S = 'IAUREFP0LS:P'
-   logical, parameter :: USE_OLD_INPUT = .true.
    logical, parameter :: UVSCAL2WGRID = .false.
    logical, parameter :: ALLOWDIR = .true.
    logical, parameter :: DO_TT2TV = .true.
@@ -84,6 +90,8 @@ subroutine iau_apply2 (F_kount)
    type(gmm_metadata) :: mymeta
    type(vgrid_descriptor) :: vgridm, vgridt
    integer, pointer :: ip1list(:), ip1listref(:)
+   logical :: input_use_old_l
+   integer :: input_iotype
    !--------------------------------------------------------------------------
 !!$   write(msg_S,'(l,i4,a,i7,a,i7)') (Cstv_dt_8*F_kount > Iau_period .or. Iau_interval<=0.),F_kount,'; t=',nint(Cstv_dt_8*F_kount),'; p=',nint(Iau_period)
 !!$   call msg(MSG_INFO,'IAU YES/NO?: '//trim(msg_S))
@@ -91,9 +99,18 @@ subroutine iau_apply2 (F_kount)
    if (Cstv_dt_8*F_kount > Iau_period .or. Iau_interval<=0.) return
    call timing_start2(50, 'IAU', 1)
 
-   if (USE_OLD_INPUT) then
-      istat = rpn_comm_bloc(Iau_ninblocx, Iau_ninblocy)
+   input_use_old_l = .true.
+   input_iotype = PTOPO_IO
+   if (Iau_input_type_S == 'IO') then
+      input_use_old_l = .false.
+      input_iotype = PTOPO_IO
+   else if (Iau_input_type_S == 'BLOC') then
+      input_use_old_l = .false.
+      input_iotype = PTOPO_BLOC
    endif
+
+   if (input_use_old_l .or. input_iotype == PTOPO_BLOC) &
+        istat = rpn_comm_bloc(Iau_ninblocx, Iau_ninblocy)
 
    call datp2f(dateo,Step_runstrt_S)
    iau_vtime = -Step_delay*Cstv_dt_8 + Iau_interval &
@@ -105,22 +122,28 @@ subroutine iau_apply2 (F_kount)
       is_init_L = .true.
 
       !# Set up input module
-      if (USE_OLD_INPUT) then
+      OLD: if (input_use_old_l) then
          inputid = input_new(dateo, nint(Cstv_dt_8))
          istat = input_setgridid(inputid, Grd_lclcore_gid)
          istat = min(input_set_basedir(inputid, Path_input_S), inputid)
          istat = min(input_set_filename(inputid, IAU_FILE, IAU_FILE, &
               ALLOWDIR, INPUT_FILES_ANAL), istat)
-      else
-         rpncomm_gridid = rpn_comm_create_2dgrid(G_ni, G_nj, 1, l_ni, 1, l_nj)
+      else !OLD
          jdateo = jdate_from_cmc(dateo)
-         istat = inputio_new(inputobj, jdateo, nint(Cstv_dt_8), &
-              F_basedir_S=Path_input_S, F_hgridid=Grd_global_gid, &
-              F_hgridcoreid=Grd_glbcore_gid, F_commgid=rpncomm_gridid)
+         if (input_iotype == PTOPO_BLOC) then
+            istat = inputio_new(inputobj, jdateo, nint(Cstv_dt_8), " ", &
+                 Path_input_S, Grd_local_gid, Grd_lclcore_gid, rpncomm_gridid, &
+                 F_li0=1, F_lin=l_ni, F_lj0=1, F_ljn=l_nj, F_iotype=input_iotype)
+         else
+            istat = ptopo_io_set(Inp_npes)
+            istat = inputio_new(inputobj, jdateo, nint(Cstv_dt_8), " ", &
+                 Path_input_S, Grd_global_gid, Grd_glbcore_gid, Inp_comm_id, &
+                 F_li0=1, F_lin=l_ni, F_lj0=1, F_ljn=l_nj, F_iotype=input_iotype)
+         endif
          if (RMN_IS_OK(istat)) &
               istat = inputio_set_filename(inputobj, IAU_FILE, IAU_FILE, &
               &                            ALLOWDIR, INPUT_FILES_ANAL)
-      endif
+      endif OLD
       step_freq  = nint(Iau_interval/Cstv_dt_8)
       step_freq2 = nint((Iau_interval/2)/Cstv_dt_8) !TODO: check
       step_0 = mod((nint(Iau_period)/nint(Iau_interval)), 2)*step_freq2
@@ -129,7 +152,7 @@ subroutine iau_apply2 (F_kount)
            '; typvar=R; hinterp=cubic; vinterp=c-cond'
       call msg(MSG_INFO, &
            '(iau_apply) add input: in=TT; levels=-1;'//trim(incfg_S))
-      if (USE_OLD_INPUT) then
+      if (input_use_old_l) then
          istat = min(istat, &
               input_add(inputid, 'in=TT; levels=-1;'//trim(incfg_S)))
       else
@@ -138,7 +161,7 @@ subroutine iau_apply2 (F_kount)
       endif
       call msg(MSG_INFO, &
            '(iau_apply) add input: in=HU; levels=-1;'//trim(incfg_S))
-      if (USE_OLD_INPUT) then
+      if (input_use_old_l) then
          istat = min(istat, &
               input_add(inputid,'in=HU; levels=-1;'//trim(incfg_S)))
       else
@@ -147,7 +170,7 @@ subroutine iau_apply2 (F_kount)
       endif
       call msg(MSG_INFO, &
            '(iau_apply) add input: in=UU; IN2=VV; levels=-1;'//trim(incfg_S))
-      if (USE_OLD_INPUT) then
+      if (input_use_old_l) then
          istat = min(istat, &
               input_add(inputid, 'in=UU; IN2=VV; levels=-1;'//trim(incfg_S)))
       else
@@ -159,7 +182,7 @@ subroutine iau_apply2 (F_kount)
            '; search=', trim(IAU_FILE), &
            '; typvar=R; hinterp=cubic'
       call msg(MSG_INFO, '(iau_apply) add input: in=P0;'//trim(incfg_S))
-      if (USE_OLD_INPUT) then
+      if (input_use_old_l) then
          istat = min(input_add(inputid, 'in=P0; '//trim(incfg_S)), istat)
       else
          istat = min(inputio_add(inputobj%cfg, 'in=P0; '//trim(incfg_S)), istat)
@@ -171,7 +194,7 @@ subroutine iau_apply2 (F_kount)
             call msg(MSG_INFO, &
                  '(iau_apply) add input: in='//trim(Iau_tracers_S(ivar))// &
                  '; levels=-1;'//trim(incfg_S))
-            if (USE_OLD_INPUT) then
+            if (input_use_old_l) then
                istat = min(istat, &
                     input_add(inputid, 'in='//trim(Iau_tracers_S(ivar))// &
                     &         '; levels=-1;'//trim(incfg_S)))
@@ -184,7 +207,7 @@ subroutine iau_apply2 (F_kount)
          ivar = ivar+1
          if (ivar > size(Iau_tracers_S)) exit
       enddo
-      if (USE_OLD_INPUT) then
+      if (input_use_old_l) then
          nbvar = input_nbvar(inputid)
       else
          nbvar = inputio_nbvar(inputobj)
@@ -194,7 +217,7 @@ subroutine iau_apply2 (F_kount)
 
       !# Create data space to save inc values between read-incr
       DO_IVAR0: do ivar = 1, nbvar
-         if (USE_OLD_INPUT) then
+         if (input_use_old_l) then
             istat = input_meta(inputid, ivar, iname0_S, iname1_S)
          else
             istat = inputio_meta(inputobj%cfg, ivar, iname0_S, iname1_S)
@@ -280,6 +303,7 @@ subroutine iau_apply2 (F_kount)
    istat = gmm_get(refp0_S, pw_p0)
    istat = gmm_get(IAU_REFP0_S, refp0)
    if (associated(refp0) .and. associated(pw_p0)) then
+      refp0 = 0
       refp0(:,:) = pw_p0(1:l_ni,1:l_nj)
    endif
 
@@ -288,13 +312,14 @@ subroutine iau_apply2 (F_kount)
       istat = gmm_get(refp0ls_S, pw_p0)
       istat = gmm_get(IAU_REFP0_LS_S, refp0)
       if (associated(refp0) .and. associated(pw_p0)) then
+         refp0 = 0
          refp0(:,:) = pw_p0(1:l_ni,1:l_nj)
       endif
    endif
 
    if (F_kount > 0) kount = F_kount+step_freq2-1
    DO_IVAR: do ivar = 1, nbvar
-      if (USE_OLD_INPUT) then
+      if (input_use_old_l) then
          istat = input_meta(inputid, ivar, iname0_S, iname1_S)
       else
          istat = inputio_meta(inputobj%cfg, ivar, iname0_S, iname1_S)
@@ -305,11 +330,11 @@ subroutine iau_apply2 (F_kount)
       if (.not.associated(data0) .or. &
            (iname1_S /= '' .and..not.associated(data1))) then
          call msg(MSG_ERROR, '(iau_apply) Problem getting ptr for: '// &
-              trim(iname0_S)//' '//trim(iname1_S))
+              trim(iname0_S)//' '//trim(iname1_S)//' -- Skipping')
          cycle DO_IVAR
       endif
 
-      if (USE_OLD_INPUT) then
+      if (input_use_old_l) then
          istat = input_isvarstep(inputid, ivar, kount)
       else
          istat = inputio_isvarstep(inputobj, ivar, kount)
@@ -324,7 +349,7 @@ subroutine iau_apply2 (F_kount)
          vgrid_S = IAU_VGRID_T_S
          if (iname0_S == 'uu') vgrid_S = IAU_VGRID_M_S
          nullify(myptr0, myptr1, myptr2d)
-         if (USE_OLD_INPUT) then
+         if (input_use_old_l) then
             istat = input_get(inputid, ivar, kount, Grd_local_gid, vgrid_S, &
                  myptr0, myptr1)
          else
@@ -337,15 +362,23 @@ subroutine iau_apply2 (F_kount)
                  trim(iname0_S)//' '//trim(iname1_S))
             istat = RMN_ERR
          endif
-         call handle_error(istat, '(iau_apply) Problem getting data for: '// &
+         call handle_error(istat, 'iau_apply', 'Problem getting data for: '// &
               trim(iname0_S)//' '//trim(iname1_S))
+
+         !# Print input fields statistics
+         if (iau_stats_L) then
+            if (associated(myptr0)) &
+                 call statfld_dm(myptr0, iname0_S, kount, 'iau_apply', STATS_PRECISION)
+            if (associated(myptr1)) &
+                 call statfld_dm(myptr1, iname1_S, kount, 'iau_apply', STATS_PRECISION)
+         endif
 
          !# Move data to grid with halos; save in GMM
          if (associated(myptr0)) then
             data0(1:l_ni,1:l_nj,:) = myptr0(1:l_ni,1:l_nj,:)
             deallocate(myptr0, stat=istat)
          endif
-         if (associated(myptr1)) then
+         if (associated(myptr1) .and. associated(data1)) then
             data1(1:l_ni,1:l_nj,:) = myptr1(1:l_ni,1:l_nj,:)
             deallocate(myptr1, stat=istat)
          endif
@@ -354,7 +387,7 @@ subroutine iau_apply2 (F_kount)
          lijk = lbound(data0) ; uijk = ubound(data0)
          if (iname0_S == 'uu') then
             data0 = data0 * knams_8
-            data1 = data1 * knams_8
+            if (associated(data1)) data1 = data1 * knams_8
          endif
          if (iname0_S == 'p0') data0 = 100.*data0
 
