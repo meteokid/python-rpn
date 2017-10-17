@@ -41,7 +41,7 @@
       logical, parameter :: SMOOTH_EXPLICIT=.false.
 
       character(len=GMM_MAXNAMELENGTH) :: trname_S
-      integer istat, i,j,k,n, cnt, iteration
+      integer istat, i,j,k,n, cnt, iteration,iend(3)
       real, dimension(:,:,:), pointer :: data3d,minus,ptr3d
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk), target :: tdu,tdv,tv,pw_uu_plus0,pw_vv_plus0,pw_tt_plus0
       real,  dimension(l_ni,l_nj,G_nk) :: qw_phy,qw_dyn
@@ -56,11 +56,13 @@
    ! is applied only for the case of dry air conservation
    source_ps_L = (Schm_psadj == 2)
 
+   iend = (/-1,-1,l_nk/)
+   
    ! Retrieve a copy of the PW state before the physics
    nullify(ptr3d)
-   istat = gmm_get (gmmk_pw_uu_plus_s,ptr3d); pw_uu_plus0 = ptr3d
-   istat = gmm_get (gmmk_pw_vv_plus_s,ptr3d); pw_vv_plus0 = ptr3d
-   istat = gmm_get (gmmk_pw_tt_plus_s,ptr3d); pw_tt_plus0 = ptr3d
+   istat = gmm_get(gmmk_pw_uu_plus_s,ptr3d); pw_uu_plus0 = ptr3d
+   istat = gmm_get(gmmk_pw_vv_plus_s,ptr3d); pw_vv_plus0 = ptr3d
+   istat = gmm_get(gmmk_pw_tt_plus_s,ptr3d); pw_tt_plus0 = ptr3d
 
    if (F_apply_L) then
 
@@ -73,7 +75,7 @@
                  (Schm_wload_L.and.Tr3d_wload(n)) )then
                ptr3d => tdu(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,1:l_nk)
                if ( phy_get (ptr3d, trim(trname_S), F_npath='V', F_bpath='D', &
-                             F_end=(/-1,-1,l_nk/), F_quiet=.true.) < 0 ) cycle
+                             F_end=iend, F_quiet=.true.) < 0 ) cycle
 !$omp parallel private(i,j,k)
 !$omp do
                do k=1, l_nk
@@ -90,7 +92,7 @@
             else
                ptr3d => data3d(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,1:l_nk)
                istat = phy_get (ptr3d, trim(trname_S), F_npath='V', F_bpath='D',&
-                                           F_end=(/-1,-1,l_nk/), F_quiet=.true. )
+                                           F_end=iend, F_quiet=.true. )
             endif
          enddo
       else
@@ -99,7 +101,7 @@
             istat = gmm_get(trim(trname_S),data3d)
             ptr3d => data3d(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,1:l_nk)
             istat = phy_get ( ptr3d, trim(trname_S), F_npath='V', F_bpath='D',&
-                              F_end=(/-1,-1,l_nk/), F_quiet=.true. )
+                              F_end=iend, F_quiet=.true. )
             if (Tr3d_name_S(k)(1:2) == 'HU' .and. SMOOTH_EXPLICIT) istat = ipf_smooth_tend(ptr3d,'SQE')
          enddo
       endif
@@ -109,13 +111,13 @@
       istat = gmm_get (gmmk_pw_tt_plus_s,pw_tt_plus)
 
       ptr3d => pw_uu_plus(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,1:l_nk)
-      istat = phy_get(ptr3d,gmmk_pw_uu_plus_s,F_npath='V',F_bpath='D',F_end=(/-1,-1,l_nk/))
+      istat = phy_get(ptr3d,gmmk_pw_uu_plus_s,F_npath='V',F_bpath='D',F_end=iend)
 
       ptr3d => pw_vv_plus(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,1:l_nk)
-      istat = phy_get(ptr3d,gmmk_pw_vv_plus_s,F_npath='V',F_bpath='D',F_end=(/-1,-1,l_nk/))
+      istat = phy_get(ptr3d,gmmk_pw_vv_plus_s,F_npath='V',F_bpath='D',F_end=iend)
 
       ptr3d => pw_tt_plus(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,1:l_nk)
-      istat = phy_get(ptr3d,gmmk_pw_tt_plus_s,F_npath='V',F_bpath='D',F_end=(/-1,-1,l_nk/))
+      istat = phy_get(ptr3d,gmmk_pw_tt_plus_s,F_npath='V',F_bpath='D',F_end=iend)
       if (SMOOTH_EXPLICIT) istat = ipf_smooth_tend(ptr3d,'STE')
 
       if (source_ps_L) then
@@ -226,7 +228,7 @@
          istat = gmm_get(trim(trname_S),data3d)
          ptr3d => data3d(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,1:l_nk)
          if ( phy_get ( ptr3d, trim(trname_S), F_npath='V', F_bpath='D',&
-                        F_end=(/-1,-1,l_nk/), F_quiet=.true. ) < 0 ) cycle
+                        F_end=iend, F_quiet=.true. ) < 0 ) cycle
          trname_S = 'TR/'//trim(Tr3d_name_S(k))//':M'
          if (Grd_yinyang_L) &
          call yyg_xchng (data3d, l_minx,l_maxx,l_miny,l_maxy, &

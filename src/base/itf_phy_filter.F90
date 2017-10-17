@@ -123,6 +123,7 @@ contains
       real, dimension(:,:,:), pointer :: tend
       real, dimension(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,G_nk), target :: tends
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk), target :: data_tend
+      integer :: iend(3)
 
       ! Initialize return status
       F_status = RMN_ERR
@@ -136,7 +137,8 @@ contains
       ! Retrieve selected physics tendency
       data_tend = 0.
       tend => data_tend(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,1:l_nk)
-      F_status = phy_get(tend,F_name,F_npath='V',F_bpath='V',F_end=(/-1,-1,l_nk/),F_quiet=.false.)
+      iend = (/-1,-1,l_nk/)
+      F_status = phy_get(tend,F_name,F_npath='V',F_bpath='V',F_end=iend,F_quiet=.false.)
       if (F_status < 0) return
 
       ! Remove selected tendency from total phyics tendency

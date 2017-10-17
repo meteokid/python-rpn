@@ -32,13 +32,15 @@
 
 
       real, dimension(:,:,:), pointer :: ptr3d
+      integer :: lijk(3), uijk(3)
 !
 !-----------------------------------------------------------------
 !
       ptr3d => F_dest(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,:)
-
+      lijk = (/-1,-1,l_nk+1/)
+      uijk = (/-1,-1,l_nk+1/)
       F_status = phy_get (ptr3d, F_var_S, F_npath='VO', F_bpath='D'    ,&
-                       F_start=(/-1,-1,l_nk+1/), F_end=(/-1,-1,l_nk+1/),&
+                       F_start=lijk, F_end=uijk, &
                        F_quiet=F_quiet_L)
 !
 !-----------------------------------------------------------------

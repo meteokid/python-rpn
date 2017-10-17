@@ -45,7 +45,7 @@
 #include <rmnlib_basics.hf>
 
       character(len=4), save :: mode= "SAVE"
-      integer k,istat
+      integer k,istat,iend(3)
       real, allocatable, dimension(:,:,:) :: dummy
       real, dimension(:,:,:), pointer :: ptr3d
       real, allocatable, dimension(:,:,:) :: ug, vg, ug_s, vg_s
@@ -74,10 +74,11 @@
             if(Ens_skeb_gwd)then
 
                ptr3d => ugwdt1(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,:)
-               istat = phy_get(ptr3d,'phytd_ugwd',F_npath='V',F_bpath='V',F_end=(/-1,-1,l_nk/))
+               iend = (/-1,-1,l_nk/)
+               istat = phy_get(ptr3d,'phytd_ugwd',F_npath='V',F_bpath='V',F_end=iend)
                if (.not.RMN_IS_OK(istat))write(*,6000)'ugwdt1-s'
                   ptr3d => vgwdt1(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,:)
-                  istat = phy_get(ptr3d,'phytd_vgwd',F_npath='V',F_bpath='V',F_end=(/-1,-1,l_nk/))
+                  istat = phy_get(ptr3d,'phytd_vgwd',F_npath='V',F_bpath='V',F_end=iend)
                   allocate(ug(l_minx:l_maxx,l_miny:l_maxy,l_nk) , vg(l_minx:l_maxx,l_miny:l_maxy,l_nk) )
                   allocate(ug_s(l_minx:l_maxx,l_miny:l_maxy,l_nk) , vg_s(l_minx:l_maxx,l_miny:l_maxy,l_nk) )
                   do k= 1, G_nk

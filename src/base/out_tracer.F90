@@ -54,7 +54,7 @@
       real, dimension(:,:,:), pointer :: tr1,ptr3d
       logical :: write_diag_lev,near_sfc_L,outvar_L
       real hybt_gnk2(1)
-      integer ind0(1)
+      integer ind0(1), lijk(3), uijk(3)
 !
 !----------------------------------------------------------------------
 !
@@ -120,8 +120,10 @@
                   else
                      t4(:,:,G_nk+1) = tr1(:,:,G_nk)
                      ptr3d => t4(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,G_nk+1:G_nk+1)
+                     lijk = (/-1,-1,l_nk+1/)
+                     uijk = (/-1,-1,l_nk+1/)
                      istat = phy_get (ptr3d, trim(fullname), F_npath='VO', F_bpath='D',&
-                                      F_start=(/-1,-1,l_nk+1/), F_end=(/-1,-1,l_nk+1/),&
+                                      F_start=lijk, F_end=uijk,&
                                       F_quiet=.true.)
                   endif
                   if (istat == 0) then
@@ -185,8 +187,10 @@
                   else
                      t5(:,:,G_nk+1) = tr1(:,:,G_nk)
                      ptr3d => t5(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,G_nk+1:G_nk+1)
+                     lijk = (/-1,-1,l_nk+1/)
+                     uijk = (/-1,-1,l_nk+1/)
                      istat = phy_get (ptr3d, trim(fullname), F_npath='VO', F_bpath='D',&
-                                      F_start=(/-1,-1,l_nk+1/), F_end=(/-1,-1,l_nk+1/),&
+                                      F_start=lijk, F_end=uijk,&
                                       F_quiet=.true.)
                   endif
                else

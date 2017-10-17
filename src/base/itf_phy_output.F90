@@ -190,7 +190,7 @@
 
                   if (Level_typ_S(levset) == 'M') then
 
-                     if (pmeta%stag == 1) then ! thermo
+                     if (pmeta%stag > 0) then ! thermo
                         call out_fstecr3 (data3d                       ,&
                                  1,l_ni, 1,l_nj, hybt                  ,&
                                  Outp_var_S(ii,kk),Outp_convmult(ii,kk),&
@@ -221,7 +221,7 @@
                   elseif (Level_typ_S(levset) == 'P') then
 
                      lnpres => wlnpi_m
-                     if ( pmeta%stag == 1 ) lnpres => wlnpi_t
+                     if ( pmeta%stag > 0 ) lnpres => wlnpi_t
 
                      call vertint2 ( buso_pres, cible, nko_pres, data3d,&
                                      lnpres, G_nk, 1,l_ni, 1,l_nj      ,&
