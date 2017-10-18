@@ -2,6 +2,7 @@
 !$omp            a1, a2, a3, a4, b1, b2, b3, b4,&
 !$omp            c1, c2, c3, c4, d1, d2, d3, d4,&
 !$omp            p1, p2, p3, p4, ra, rb, rc, rd,&
+!$omp            o1, o2, o3, o4, &
 !$omp            prf1,prf2,capx,capy,capz,&
 !$omp            prmin,prmax) &
 !$omp          shared (p_bsz_8,p_zbc_8,p_zabcd_8, &
