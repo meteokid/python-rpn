@@ -229,6 +229,15 @@
              else
                 Grd_jref = Grd_nj / 2 + Grd_extension + 1
              endif
+         else
+             Grd_iref = Grd_iref +   Grd_extension
+             Grd_jref = Grd_jref +   Grd_extension
+             if (Grd_iref.lt.1.or.Grd_iref.gt.Grd_ni.or. &
+                 Grd_jref.lt.1.or.Grd_jref.gt.Grd_nj) then
+                 if (Lun_out.gt.0) write(Lun_out,1002) &
+                              Grd_ni,Grd_nj,Grd_iref,Grd_jref
+                  goto 9999
+             endif
          endif
          Grd_ni   = Grd_ni   + 2*Grd_extension
          Grd_nj   = Grd_nj   + 2*Grd_extension
@@ -336,6 +345,8 @@
 
  1001 format(/,' WRONG LAM GRID CONFIGURATION --- ABORT ---'/, &
                ' Grd_x0,Grd_y0,Grd_xl,Grd_yl:'/4f10.3/)
+ 1002 format(/,' WRONG LAM GRID CONFIGURATION --- ABORT ---'/, &
+               ' Grd_ni,Grd_nj,Grd_iref,Grd_jref:'/4I8/)
  1004 format (1x,'Numerical equator: ',2('(',f9.4,',',f9.4,') ')/&
                 21x,'IG1-4: ',4i8)
  1100 FORMAT (1X,'FINAL HORIZONTAL GRID CONFIGURATION: UNIFORM RESOLUTION: ',a, &
