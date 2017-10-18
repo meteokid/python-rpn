@@ -303,7 +303,6 @@ subroutine iau_apply2(F_kount)
    istat = gmm_get(refp0_S, pw_p0)
    istat = gmm_get(IAU_REFP0_S, refp0)
    if (associated(refp0) .and. associated(pw_p0)) then
-      refp0 = 0
       refp0(:,:) = pw_p0(1:l_ni,1:l_nj)
    endif
 
@@ -312,7 +311,6 @@ subroutine iau_apply2(F_kount)
       istat = gmm_get(refp0ls_S, pw_p0)
       istat = gmm_get(IAU_REFP0_LS_S, refp0)
       if (associated(refp0) .and. associated(pw_p0)) then
-         refp0 = 0
          refp0(:,:) = pw_p0(1:l_ni,1:l_nj)
       endif
    endif
