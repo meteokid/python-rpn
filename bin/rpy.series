@@ -44,7 +44,7 @@ def get_data_serie(fileId, xy, ll,
             ip1   in (None, -1 , meta['ip1'])   and \
             ip3   in (None, -1 , meta['ip3'])   and \
             typvar in (None, '' , ' ', meta['typvar'])  and \
-            etiket in (None, '' , ' ', meta['etiket']):
+            etiket in (None, '' , ' ', meta['etiket'].strip()):
             ip1   = int(meta['ip1'])
             dateo = int(meta['dateo'])
             rlist[float(meta['npas']*meta['deet'])/3600.] = key
