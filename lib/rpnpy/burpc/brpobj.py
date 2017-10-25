@@ -677,11 +677,19 @@ class BurpcBlk(_BurpcObjBase):
             raise AttributeError(self.__class__.__name__+" object cannot set derived attribute '"+name+"'")
         ## elif isinstance(name, _integer_types): #TODO:
         ## elif name is None or isinstance(name, (BurpcEle, dict)): #TODO:
+        ## elif name is None and isinstance(value, BurpcEle):
+        ##     #check if bloc big enough
+        ##     #check if type match
+        ##     #check if other meta match
+        ##     #add lstele or dlstele+encode
+        ##     #add tblval or ?rval?+encode
+        ##     #TODO: option to replace an element (name != none)
         else:
             return super(self.__class__, self).__setattr__(name, value)
 
     def append(self, value):
-        self.put(None, value)
+        self._putelem(None, value)
+
     #TODO: add list type operators: count?, extend?, index?, insert?, pop?, remove?, reverse?, sort?... see help([]) for other __?__ operators
 
     def reset_arrays(self):
@@ -763,20 +771,39 @@ class BurpcBlk(_BurpcObjBase):
             params['e_tblval'] = self.tblval[index,:,:]
         return BurpcEle(params)
 
-    def putelem(self, index, values): #TODO: merge into put()
+    def _putelem(self, index, values): #TODO: merge into put()
         """indexing from 0 to nele-1"""
-        if not(index is None or instance(index, _integer_types)):
+        if not(index is None or isinstance(index, _integer_types)):
             raise TypeError('Provided index should be of type int')
-        if (instance(index, _integer_types) and 
+        if (isinstance(index, _integer_types) and 
             index < 0 or index >= self.nele):
             raise IndexError
         else:
-            pass #TODO increase size, adjust nele?
-        if not instance(values, BurpcEle):
+            index = max(0, self.nele)
+        if not isinstance(values, BurpcEle):
             try:
                 values = BurpcEle(values)
             except:
                 raise TypeError('Provided value should be of type BurpcEle')
+        if self.nele > 0 and self.__ptr[0].strore_type != values.store_type:
+                raise TypeError('Provided value should be of type: {}, got: {}'
+                                .format(self.__ptr[0].strore_type,
+                                        values.store_type))
+        shape = (max(index+1, self.nele), max(values.nval, self.nval), max(values.nt, self.nt))
+        if shape != (self.nele, self.nval, self.nt):
+            if self.nele <= 0:
+                _bp.c_brp_allocblk(self.__ptr, shape[0], shape[1], shape[2])
+                self.__ptr[0].strore_type = values.store_type
+            else:
+                _bp.c_brp_resizeblk(self.__ptr, shape[0], shape[1], shape[2])
+        print repr(values)
+        self.__ptr[0].lstele[index]  = values.e_bufrid #TODO: check
+        self.__ptr[0].dlstele[index] = values.e_cmcid
+        self.__ptr[0].tblval[index, 0:values.nval, 0:values.nt] = \
+            values.e_tblval[0:values.nval, 0:values.nt]
+        #TODO: check type
+        #TODO: set rval, drval, charval according to type
+        #TODO: check with charval... dims may be different
         raise BurpcError('Not yet implemented')
         #TODO: check if type match
         #TODO: check if dims match
@@ -939,6 +966,11 @@ class BurpcEle(_BurpcObjBase):
             if self.__ptr['shape'] != self.__ptr[name].shape:
                 self.reshape(self.__ptr['shape'])
             self.__ptr['shape'] = self.__ptr[name].shape
+            #TODO: encode to tblval... may want to strictly use burpc fn (create fake BurpcBlk, put id+rval, brp.c_brp_convertblk(br, brp.BRP_MKSA_to_BUFR), extract tblval
+            ## if name != 'e_tblval':
+            ##     tblval = _rmn.mrbcvt_encode(self.__ptr['e_cmcid'],
+            ##                                 self.__ptr[name])
+            ##     self.put('e_tblval', tblval)
         elif name in self.__class__.__attrlist:
             self.__derived = None
             #TODO: check type

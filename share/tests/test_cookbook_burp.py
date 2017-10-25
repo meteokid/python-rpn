@@ -45,32 +45,9 @@ RPNPY_NOLONGTEST = os.getenv('RPNPY_NOLONGTEST', None)
 
 class RpnPyBurpcTests(unittest.TestCase):
 
-    def _filecmp(self, file1name, file2name):
-        import os
-        import time
-        import difflib
-        with open(file1name, 'r') as f:
-            file1lines = f.readlines()
-        with open(file2name, 'r') as f:
-            file2lines = f.readlines()
-        file1time = time.ctime(os.stat(file1name).st_mtime)
-        file2time = time.ctime(os.stat(file2name).st_mtime)
-        result = list(difflib.unified_diff(file1lines, file2lines,
-                                           file1name,  file2name,
-                                           file1time,  file2time, n=0))
-        if len(result) > 0:
-            return False
-        return True
-        ## d = difflib.Differ()
-        ## result = d.compare(file1lines, file2lines)
-        ## result = list(result)
-        ## print len(file1lines), len(file2lines), len(result)
-        ## from pprint import pprint
-        ## pprint(result)
-
     #==== Example 1 =============================================
 
-    def _test_ex1_read1(self, logfile="tmp/test_ex1_read1.log"):
+    def sub_test_ex1_read1(self, logfile="tmp/test_ex1_read1.log"):
         """burplib_c iweb doc example 1"""
         import os, sys
         import rpnpy.librmn.all as rmn
@@ -102,7 +79,7 @@ class RpnPyBurpcTests(unittest.TestCase):
         if logfid != sys.stdout: logfid.close()
 
 
-    def _test_ex1_read1_py(self, logfile="tmp/test_ex1_read1_py.log"):
+    def sub_test_ex1_read1_py(self, logfile="tmp/test_ex1_read1_py.log"):
         """burplib_c iweb doc example 1"""
         import os, sys
         import rpnpy.librmn.all as rmn
@@ -123,17 +100,18 @@ class RpnPyBurpcTests(unittest.TestCase):
     def test_ex1_read1_cmp(self):
         """burplib_c iweb doc example 1, compare results from 2 itf"""
         import sys
+        import filecmp
         if len(testlist) > 0 and not '1' in testlist:
             return
         logfile1 = "tmp/test_ex1_read1.log"
         logfile2 = "tmp/test_ex1_read1_py.log"
-        self._test_ex1_read1(logfile=logfile1)
-        self._test_ex1_read1_py(logfile=logfile2)
-        self.assertTrue(self._filecmp(logfile1, logfile2))
+        self.sub_test_ex1_read1(logfile=logfile1)
+        self.sub_test_ex1_read1_py(logfile=logfile2)
+        self.assertTrue(filecmp.cmp(logfile1, logfile2))
 
     #==== Example 2 =============================================
 
-    def _test_ex2_readburp(self, infile=None,
+    def sub_test_ex2_readburp(self, infile=None,
                           logfile="tmp/test_ex2_readburp.log"):
         """burplib_c iweb doc example 2"""
         import os, sys
@@ -194,7 +172,7 @@ bdesc  ={:6d}  btyp   ={:6d}  nbit   ={:6d}  datyp  ={:6d}  bfam   ={:6d}\n
         if logfid != sys.stdout: logfid.close()
 
 
-    def _test_ex2_readburp_py(self, infile=None,
+    def sub_test_ex2_readburp_py(self, infile=None,
                              logfile="tmp/test_ex2_readburp.log"):
         """burplib_c iweb doc example 2"""
         import os, sys
@@ -257,19 +235,21 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
     def test_ex2_readburp_cmp(self):
         """burplib_c iweb doc example 1, compare results from 2 itf"""
         import sys
+        import filecmp
         if len(testlist) > 0 and not '2' in testlist:
             return
         if RPNPY_NOLONGTEST:
+            print("RPNPY_NOLONGTEST: Skipping test_ex2_readburp_cmp")
             return
         logfile1 = "tmp/test_ex2_readburp.log"
         logfile2 = "tmp/test_ex2_readburp_py.log"
-        self._test_ex2_readburp(logfile=logfile1)
-        self._test_ex2_readburp_py(logfile=logfile2)
-        self.assertTrue(self._filecmp(logfile1, logfile2))
+        self.sub_test_ex2_readburp(logfile=logfile1)
+        self.sub_test_ex2_readburp_py(logfile=logfile2)
+        self.assertTrue(filecmp.cmp(logfile1, logfile2))
 
     #==== Example 3 =============================================
 
-    def _test_ex3_obs(self, logfile="tmp/test_ex3_obs.log"):
+    def sub_test_ex3_obs(self, logfile="tmp/test_ex3_obs.log"):
         """burplib_c iweb doc example 3"""
         import os, sys
         import rpnpy.burpc.all as brp
@@ -320,7 +300,7 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
         if logfid != sys.stdout: logfid.close()
 
 
-    def _test_ex3_obs_py(self, logfile="tmp/test_ex3_obs_py.log"):
+    def sub_test_ex3_obs_py(self, logfile="tmp/test_ex3_obs_py.log"):
         """burplib_c iweb doc example 3"""
         import os, sys
         import rpnpy.librmn.all as rmn
@@ -369,13 +349,13 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
             return
         logfile1 = "tmp/test_ex3_obs.log"
         logfile2 = "tmp/test_ex3_obs_py.log"
-        self._test_ex3_obs(logfile=logfile1)
-        self._test_ex3_obs_py(logfile=logfile2)
+        self.sub_test_ex3_obs(logfile=logfile1)
+        self.sub_test_ex3_obs_py(logfile=logfile2)
         self.assertTrue(filecmp.cmp(logfile1, logfile2))
 
     #==== Example 4 =============================================
 
-    def _test_ex4_elements(self, logfile="tmp/test_ex4_elements.log"):
+    def sub_test_ex4_elements(self, logfile="tmp/test_ex4_elements.log"):
         """burplib_c iweb doc example 4"""
         import os, sys
         import rpnpy.librmn.all as rmn
@@ -406,7 +386,7 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
             logfid.write("{} {}\n".format(v, repr(rmn.mrbcvt_dict(v, False))))
         if logfid != sys.stdout: logfid.close()
 
-    def _test_ex4_elements_py(self, logfile="tmp/test_ex4_elements_py.log"):
+    def sub_test_ex4_elements_py(self, logfile="tmp/test_ex4_elements_py.log"):
         """burplib_c iweb doc example 4"""
         import os, sys
         import rpnpy.librmn.all as rmn
@@ -442,13 +422,13 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
             return
         logfile1 = "tmp/test_ex4_elements.log"
         logfile2 = "tmp/test_ex4_elements_py.log"
-        self._test_ex4_elements(logfile=logfile1)
-        self._test_ex4_elements_py(logfile=logfile2)
+        self.sub_test_ex4_elements(logfile=logfile1)
+        self.sub_test_ex4_elements_py(logfile=logfile2)
         self.assertTrue(filecmp.cmp(logfile1, logfile2))
 
     #==== Example 5 =============================================
 
-    def _test_ex5_write1(self, logfile="tmp/test_ex5_write1.log"):
+    def sub_test_ex5_write1(self, logfile="tmp/test_ex5_write1.log"):
         """burplib_c iweb doc example 5"""
         import os, sys
         import rpnpy.burpc.all as brp
@@ -474,10 +454,10 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
         istat = brp.c_brp_close(ounit)
         brp.brp_free(bs, br, rs, rr)
         # Print out content of created file for camparison
-        self._test_ex2_readburp(infile=outfile, logfile=logfile)
+        self.sub_test_ex2_readburp(infile=outfile, logfile=logfile)
 
 
-    def _test_ex5_write1_py(self, logfile="tmp/test_ex5_write1_py.log"):
+    def sub_test_ex5_write1_py(self, logfile="tmp/test_ex5_write1_py.log"):
         """burplib_c iweb doc example 5"""
         import os, sys
         import rpnpy.librmn.all as rmn
@@ -501,7 +481,7 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
                 bfileo.append(rr)
                 ## print 'len bfileo=', len(bfileo)
         # Print out content of created file for camparison
-        self._test_ex2_readburp_py(infile=outfile, logfile=logfile)
+        self.sub_test_ex2_readburp_py(infile=outfile, logfile=logfile)
 
 
     def test_ex5_write1_cmp(self):
@@ -511,21 +491,20 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
             return
         logfile1 = "tmp/test_ex5_write1.log"
         logfile2 = "tmp/test_ex5_write1_py.log"
-        self._test_ex5_write1(logfile=logfile1)
-        self._test_ex5_write1_py(logfile=logfile2)
+        self.sub_test_ex5_write1(logfile=logfile1)
+        self.sub_test_ex5_write1_py(logfile=logfile2)
         self.assertTrue(filecmp.cmp(logfile1, logfile2, shallow=False))
 
     #==== Example 6 =============================================
 
-    def _test_ex6_write2(self, logfile="tmp/test_ex6_write2_py.log"):
+    def sub_test_ex6_write2(self, logfile="tmp/test_ex6_write2_py.log"):
         """burplib_c iweb doc example 6"""
         import os, sys
         import rpnpy.burpc.all as brp
-        sys.stdout = open("tmp/test_ex6_write2.log", "w")
         outfile = 'tmp/test_ex6_write2.brp'
         ounit = 20
         istat = brp.c_brp_SetOptChar("MSGLVL", "FATAL")
-        istat = brp.c_brp_open(ounit, outfile, "a")
+        istat = brp.c_brp_open(ounit, outfile, "w")
 
         rr, tmp = brp.c_brp_newrpt(), brp.c_brp_newblk()
         br, br2 = brp.c_brp_newblk(), brp.c_brp_newblk()
@@ -547,7 +526,7 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
         # allouer espace pour l'enregistremen pour ajouter des blocs
         brp.c_brp_allocrpt(rr, 10000)
         brp.c_brp_resizerpt(rr, 20000) # on peut reallouer + espace
-        print("rr apres resize: "+ str(brp.RPT_NSIZE(rr)))
+        #print("rr apres resize: "+ str(brp.RPT_NSIZE(rr)))
 
         # on peut mettre le contenu du rapport a 0, cela n'affecte pas le header
         brp.c_brp_clrrpt(rr)
@@ -560,7 +539,7 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
         # Ici on indique que l'on desire remplir, le bloc br de valueurs reelles
         brp.BLK_SetSTORE_TYPE(br, brp.BRP_STORE_FLOAT)
 
-        # setter les params du bloc BFAM,BDESC et BTYP
+        # setter les params du bloc BFAM, BDESC et BTYP
         brp.BLK_SetBFAM(br,  0)
         brp.BLK_SetBDESC(br, 0)
         brp.BLK_SetBTYP(br,  64)
@@ -641,71 +620,72 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
         # liberer ressources
         brp.brp_free(rr, br, br2, tmp)
 
-        self._test_ex2_readburp_py(infile=outfile, logfile=logfile)
+        self.sub_test_ex2_readburp_py(infile=outfile, logfile=logfile)
 
 
-    def _test_ex6_write2_py(self, logfile="tmp/test_ex6_write2_py.log"):
+    def sub_test_ex6_write2_py(self, logfile="tmp/test_ex6_write2_py.log"):
         """burplib_c iweb doc example 6"""
         import os, sys
         import rpnpy.librmn.all as rmn
         import rpnpy.burpc.all as brp
-        sys.stdout = open("tmp/test_ex6_write2_py.log", "w")
         outfile = 'test_ex6_write2_py.brp'
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
 
-        ## rpt = brp.BurpcRpt({
-        ##     'temps'  : 1200,
-        ##     'flgs'   : 0,        #todo
-        ##     'stnid'  : '74724',
-        ##     'idtype' : rmn.BURP_IDTYP_IDX['PILOT'],  ## 32
-        ##     'lati'   : rmn.BRP_RLAT2ILAT(50.23),     ## 14023
-        ##     'longi'  : rmn.BRP_RLON2ILON(270.23),    ## 27023
-        ##     'dx'     : rmn.BRP_RDX2IDX(0.),  ## 0
-        ##     'dy'     : rmn.BRP_RDY2IDY(0.),  ## 0
-        ##     'elev'   : 0,  #todo: rmn.BRP_RELEV2IELEV(0.)
-        ##     'drnd'   : 0,
-        ##     'date'   : 20050317,
-        ##     'oars'   : 0,
-        ##     })
+        rpt = brp.BurpcRpt({
+            'temps'  : 1200,
+            'flgs'   : 0,        #todo
+            'stnid'  : '74724',
+            'idtype' : rmn.BURP_IDTYP_IDX['PILOT'],  ## 32
+            'lati'   : rmn.BRP_RLAT2ILAT(50.23),     ## 14023
+            'longi'  : rmn.BRP_RLON2ILON(270.23),    ## 27023
+            'dx'     : rmn.BRP_RDX2IDX(0.),  ## 0
+            'dy'     : rmn.BRP_RDY2IDY(0.),  ## 0
+            'elev'   : 0,  #todo: rmn.BRP_RELEV2IELEV(0.)
+            'drnd'   : 0,
+            'date'   : 20050317,
+            'oars'   : 0,
+            })
 
-        ## bknat_multi = rmn.BURP_BKNAT_MULTI_IDX['uni']
-        ## bknat_kind  = rmn.BURP_BKNAT_KIND_IDX['data']
-        ## bknat       = rmn.mrbtyp_encode_bknat(bknat_multi, bknat_kind)
-        ## bktyp_alt   = rmn.BURP_BKTYP_ALT_IDX['surf']
-        ## bktyp_kind  = 4  ## See BURP_BKTYP_KIND_DESC, 'derived data, entry to the OA at surface, global model',
-        ## bktyp       = rmn.mrbtyp_encode_bktyp(bktyp_alt, bktyp_kind)
-        ## bkstp       = 0  ## See BURP_BKSTP_DESC
-        ## btyp        = rmn. mrbtyp_encode(bknat, bktyp, bkstp)
+        bknat_multi = rmn.BURP_BKNAT_MULTI_IDX['uni']
+        bknat_kind  = rmn.BURP_BKNAT_KIND_IDX['data']
+        bknat       = rmn.mrbtyp_encode_bknat(bknat_multi, bknat_kind)
+        bktyp_alt   = rmn.BURP_BKTYP_ALT_IDX['surf']
+        bktyp_kind  = 4  ## See BURP_BKTYP_KIND_DESC, 'derived data, entry to the OA at surface, global model',
+        bktyp       = rmn.mrbtyp_encode_bktyp(bktyp_alt, bktyp_kind)
+        bkstp       = 0  ## See BURP_BKSTP_DESC
+        btyp        = rmn. mrbtyp_encode(bknat, bktyp, bkstp)
 
-        ## blk = brp.BurpcBlk({
-        ##     'store_type' : brp.BRP_STORE_FLOAT,
-        ##     'bfam'   : 0,
-        ##     'bdesc'  : 0,
-        ##     'btyp'   : btyp,  ## 64
-        ##     ## 'bknat'  : bknat,
-        ##     ## 'bktyp'  : bktyp,
-        ##     ## 'bkstp'  : bkstp,
-        ##     ## 'datyp'  : rmn.BURP_DATYP_LIST['float'], #TODO: link to BRP_STORE_FLOAT
-        ##     })
+        blk = brp.BurpcBlk({
+            'store_type' : brp.BRP_STORE_FLOAT,
+            'bfam'   : 0,
+            'bdesc'  : 0,
+            'btyp'   : btyp,  ## 64
+            ## 'bknat'  : bknat,
+            ## 'bktyp'  : bktyp,
+            ## 'bkstp'  : bkstp,
+            ## 'datyp'  : rmn.BURP_DATYP_LIST['float'], #TODO: link to BRP_STORE_FLOAT
+            })
 
-        ## #TODO: add elements
-        ## blk.putele({
-        ##     'e_burpid' : 7004,
-        ##     'e_rval'   : [10.]
-        ##     })
-        ## blk.putele({
-        ##     'e_burpid' : 11001,
-        ##     'e_rval'   : [20.]
-        ##     })
+        print repr(brp.BurpcEle({
+            'e_bufrid' : 7004,
+            'e_rval'   : [10.]
+            }))
 
-        ## #TODO: add blk to rpt
-        ## rpt.put(blk)
+        blk.append(brp.BurpcEle({
+            'e_bufrid' : 7004,
+            'e_rval'   : [10.]
+            }))
+        blk.append(brp.BurpcEle({
+            'e_bufrid' : 11001,
+            'e_rval'   : [20.]
+            }))
+        sys.exit(0)
 
-        ## rpt2 = rpt.copy()
+        rpt.append(blk)
 
-        ## with brp.BurpcFile(outfile, rmn.BURP_MODE_APPEND) as bfileo:
-        ##     #TODO: add rpt to file
-        ##     bfileo.put(rpt)
+        with brp.BurpcFile(outfile, rmn.BURP_MODE_APPEND) as bfileo:
+            bfileo.append(rpt)
+            bfileo.append(rpt.copy())
 
 
         ## # allouer espace pour l'enregistremen pour ajouter des blocs
@@ -788,7 +768,7 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
         ## if brp.c_brp_writerpt(ounit, rr, brp.BRP_END_BURP_FILE) < 0:
         ##     sys.exit(1)
 
-        ## self._test_ex2_readburp_py(infile=outfile, logfile=logfile)
+        ## self.sub_test_ex2_readburp_py(infile=outfile, logfile=logfile)
 
 
     def test_ex6_write2_cmp(self):
@@ -798,8 +778,8 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
             return
         logfile1 = "tmp/test_ex6_write2.log"
         logfile2 = "tmp/test_ex6_write2_py.log"
-        self._test_ex6_write2(logfile=logfile1)
-        self._test_ex6_write2_py(logfile=logfile2)
+        self.sub_test_ex6_write2(logfile=logfile1)
+        self.sub_test_ex6_write2_py(logfile=logfile2)
         self.assertTrue(filecmp.cmp(logfile1, logfile2, shallow=False))
 
     #==== Example 7 =============================================
@@ -1023,7 +1003,7 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
 
 
 
-    def toto_test_ex2_readburp_c(self):
+    def totosub_test_ex2_readburp_c(self):
         """burplib_c iweb doc example 2"""
         infile = self.knownValues[0][0]
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
@@ -1069,7 +1049,7 @@ bdesc  ={:6d}  btyp   ={:6d}  nbit   ={:6d}  datyp  ={:6d}  bfam   ={:6d}
 
         del bfile
 
-##     def _test_ex2_readburp_e(self):
+##     def sub_test_ex2_readburp_e(self):
 ##         """burplib_c iweb doc example 2"""
 ##         infile = self.knownValues[0][0]
 ##         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
@@ -1086,9 +1066,9 @@ bdesc  ={:6d}  btyp   ={:6d}  nbit   ={:6d}  datyp  ={:6d}  bfam   ={:6d}
 ##                 for br in rr:
 
 
-    #TODO: def _test_ex2_readburp_e(self):
+    #TODO: def sub_test_ex2_readburp_e(self):
 
-    def todo_test_ex3_obs(self):
+    def todosub_test_ex3_obs(self):
         """burplib_c iweb doc example 3"""
         infile, itype, iunit = self.knownValues[0]
         istat = brp.c_brp_SetOptChar("MSGLVL", "FATAL")
@@ -1132,7 +1112,7 @@ bdesc  ={:6d}  btyp   ={:6d}  nbit   ={:6d}  datyp  ={:6d}  bfam   ={:6d}
         print("     \tTotal   \t{}".format(total))
 
 
-    def todo_test_ex3_obs_c(self):
+    def todosub_test_ex3_obs_c(self):
         """burplib_c iweb doc example 3"""
         infile, itype, iunit = self.knownValues[0]
         istat = brp.c_brp_SetOptChar("MSGLVL", "FATAL")
@@ -1175,7 +1155,7 @@ bdesc  ={:6d}  btyp   ={:6d}  nbit   ={:6d}  datyp  ={:6d}  bfam   ={:6d}
         print("     \tTotal   \t{}".format(total))
 
 
-    #TODO: def _test_ex3_obs_e(self):
+    #TODO: def sub_test_ex3_obs_e(self):
 
 
 testlist = []
