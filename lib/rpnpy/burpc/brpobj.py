@@ -35,6 +35,12 @@ from rpnpy import integer_types as _integer_types
 class _BurpcObjBase(object):
     """
     Base class for BurpFiles, BurpRpt, BurpBlk, BurpEle
+
+    See Also:
+        BurpFiles
+        BurpRpt
+        BurpBlk
+        BurpEle
     """
     def __repr__(self):
         return self.__class__.__name__+'('+ repr(self.todict())+')'
@@ -145,7 +151,9 @@ class BurpcFile(_BurpcObjBase):
     >>> print('# nrep = '+str(len(bfile)))
     # nrep = 47544
     >>>
-    >>> rpt = bfile[0]  #get the first report in file
+    >>> #get the first report in file
+    >>> rpt = bfile[0]
+    >>>
     >>> # Get 1st report matching stnid 'A********'
     >>> rpt = bfile.get({'stnid' : 'A********'})
     >>> print('# stnid={stnid}, handle={handle}'.format(**rpt.todict()))
@@ -158,8 +166,8 @@ class BurpcFile(_BurpcObjBase):
     >>>
     >>> # Loop over all report and print info
     >>> for rpt in bfile:
-    ...     print('# stnid=' + repr(rpt.stnid))
-    ...     break
+    ...     if rpt.stnid.strip() == '71915':
+    ...        print('# stnid=' + repr(rpt.stnid))
     # stnid='71915    '
     >>>
     >>> # Close the file
@@ -167,6 +175,7 @@ class BurpcFile(_BurpcObjBase):
     >>>
     >>> # Open file in read only mode
     >>> bfile = brp.BurpcFile(filename)
+    >>>
     >>> # Open file in write mode with auto file closing and error handling
     >>> with brp.BurpcFile('tmpburpfile.brp', brp.BRP_FILE_WRITE) as bfileout:
     ...     # Copy report with stnid GOES11 to the new file
@@ -234,6 +243,8 @@ class BurpcFile(_BurpcObjBase):
     def next(self):  # Python 2
         """
         Get the next item in the iterator, Internal function for python 2 iter
+
+        Do not call explictly, this will be used in 'for loops' and other iterators.
         """
         if _bp.c_brp_findrpt(self.funit, self.__iteridx.getptr()) >= 0:
             if _bp.c_brp_getrpt(self.funit, self.__iteridx.handle,
@@ -253,19 +264,24 @@ class BurpcFile(_BurpcObjBase):
     ## def del(self, search): #TODO: __delitem__
     ##     raise Error
 
-    def get(self, search=None, rpt=None):
+    def get(self, key=None, rpt=None):
         """
         Find a report and get its meta + data
 
+        rpt = burpfile.get(report_number)
+        rpt = burpfile.get(rpt)
+        rpt = burpfile.get(rptdict)
+
         Args:
-            search : Search criterions
-                     if int, return the ith ([0, nrep[) report in file
-                     if dict or BurpcRpt, search report matching given params
-            rpt    : (optional) BurpcRpt use to put the result to recycle memory
+            key : Search criterions
+                  if int, return the ith ([0, nrep[) report in file
+                  if dict or BurpcRpt, search report matching given params
+            rpt : (optional) BurpcRpt used to put the result to recycle memory
         Return:
-            BurpcRpt if a report match the search
+            BurpcRpt if a report match the search key
             None otherwise
         Raises:
+            KeyError   on not not found key
             TypeError  on not supported types or args
             IndexError on out of range index
             BurpcError on any other error
@@ -273,36 +289,39 @@ class BurpcFile(_BurpcObjBase):
         #TODO: review rpt recycling
         ## rpt = BurpcRpt()
         rpt = rpt if isinstance(rpt, BurpcRpt) else BurpcRpt(rpt)
-        if search is None or isinstance(search, (BurpcRpt, dict)):
-            search = search if isinstance(search, BurpcRpt) else BurpcRpt(search)
-            if _bp.c_brp_findrpt(self.funit, search.getptr()) >= 0:
-                if _bp.c_brp_getrpt(self.funit, search.handle,
+        if key is None or isinstance(key, (BurpcRpt, dict)):
+            key = key if isinstance(key, BurpcRpt) else BurpcRpt(key)
+            if _bp.c_brp_findrpt(self.funit, key.getptr()) >= 0:
+                if _bp.c_brp_getrpt(self.funit, key.handle,
                                     rpt.getptr()) >= 0:
                     return rpt
             return None
-        elif isinstance(search, _integer_types):
-            if search < 0 or search >= self.nrep:
+        elif isinstance(key, _integer_types):
+            if key < 0 or key >= self.nrep:
                 raise IndexError('Index out of range: [0:{}['.format(self.nrep))
-            if search >= len(self.__handles):
+            if key >= len(self.__handles):
                 i0 = len(self.__handles)
-                search1 = BurpcRpt()
+                key1 = BurpcRpt()
                 if i0 > 0:
-                    search1.handle = self.__handles[-1]
-                for i in range(i0, search+1):
-                    if _bp.c_brp_findrpt(self.funit, search1.getptr()) >= 0:
-                        self.__handles.append(search1.handle)
+                    key1.handle = self.__handles[-1]
+                for i in range(i0, key+1):
+                    if _bp.c_brp_findrpt(self.funit, key1.getptr()) >= 0:
+                        self.__handles.append(key1.handle)
                     else:
                         break
-            if _bp.c_brp_getrpt(self.funit, self.__handles[search],
+            if _bp.c_brp_getrpt(self.funit, self.__handles[key],
                                 rpt.getptr()) >= 0:
                 return rpt
         else:
             raise TypeError("For Name: {}, Not Supported Type: {}".
-                            format(repr(search), str(type(search))))
+                            format(repr(key), str(type(key))))
 
     def put(self, where, rpt):
         """
         Write a report to the burp file
+
+        burpfile.put(BRP_END_BURP_FILE, rpt)
+        burpfile.put(rpt.handle, rpt)
 
         Args:
             where : location to write report to
@@ -312,6 +331,7 @@ class BurpcFile(_BurpcObjBase):
         Return:
             None
         Raises:
+            KeyError   on not not found key
             TypeError  on not supported types or args
             IndexError on out of range index
             BurpcError on any other error
@@ -341,6 +361,8 @@ class BurpcFile(_BurpcObjBase):
         """
         Append a report to the burp file
 
+        burpfile.append(rpt)
+
         Args:
             rpt : BurpcRpt to write
         Return:
@@ -358,10 +380,76 @@ class BurpcRpt(_BurpcObjBase):
     Python Class equivalent of the burp_c's BURP_RPT C structure to hold
     the BURP report data
 
-    TODO: constructor examples
+    rpt1 = BurpcRpt()
+    rpt2 = BurpcRpt(rpt1)
+    rpt3 = BurpcRpt({
+                    'stnid' : stnid,
+                    'lati'  : lati,
+                    'longi' : longi,
+                    'date'  : date,
+                    'temps' : temps
+                    })
 
     Attributes:
-        TODO
+        handle : Report handle
+        nsize  : report data size
+        temps  : Observation time/hour (HHMM)
+        flgs   : Global flags
+                 (24 bits, Bit 0 is the right most bit of the word)
+                 See BURP_FLAGS_IDX_NAME for Bits/flags desc.
+        stnid  : Station ID
+                 If it is a surface station, STNID = WMO number.
+                 The name is aligned at left and filled with
+                 spaces. In the case of regrouped data,
+                 STNID contains blanks.
+        idtype : Report Type
+        lati   : Station latitude (1/100 of degrees)
+                 with respect to the south pole. (0 to 1800)
+                 (100*(latitude+90)) of a station or the
+                 lower left corner of a box.
+        longi  : Station longitude (1/100 of degrees)
+                 (0 to 36000) of a station or lower left corner of a box.
+        dx     : Width of a box for regrouped data (degrees)
+        dy     : Height of a box for regrouped data (degrees)
+        elev   : Station altitude (metres)
+        drnd   : Reception delay: difference between the
+                 reception time at CMC and the time of observation
+                 (TIME). For the regrouped data, DRND indicates
+                 the amount of data. DRND = 0 in other cases.
+        date   : Report valid date (YYYYMMDD)
+        oars   : Reserved for the Objective Analysis. (0-->65535)
+        runn   : Operational pass identification.
+        nblk   : number of blocks
+        lngr   : 
+        time   : Observation time/hour (HHMM)
+        timehh : Observation time hour part (HH)
+        timemm : Observation time minutes part (MM)
+        flgsl  : Global flags as a list of int
+                 See BURP_FLAGS_IDX for Bits/flags desc.
+        flgsd  : Description of set flgs, comma separated
+        idtyp  : Report Type
+        idtypd : Report Type description
+        ilat   : lati
+        lat    : Station latitude (degrees)
+        ilon   : longi
+        lon    : Station longitude (degrees)
+        idx    : Width of a box for regrouped data
+                 (delta lon, 1/10 of degrees)
+        rdx    : Width of a box for regrouped data (degrees)
+        idy    : Height of a box for regrouped data
+                 (delta lat, 1/10 of degrees)
+        rdy    : Height of a box for regrouped data (degrees)
+        ielev  : Station altitude (metres + 400.) (0 to 8191)
+        relev  : Station altitude (metres)
+        dateyy : Report valid date (YYYY)
+        datemm : Report valid date (MM)
+        datedd : Report valid date (DD)
+        sup    : supplementary primary keys array
+                 (reserved for future expansion).
+        nsup   : number of sup
+        xaux   : supplementary auxiliary keys array
+                 (reserved for future expansion).
+        nxaux  : number of xaux
 
     Examples:
     >>> import os, os.path
@@ -371,6 +459,29 @@ class BurpcRpt(_BurpcObjBase):
     >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
     >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk_burp','2007021900.brp')
     >>>
+    >>> # Open file in read only mode
+    >>> bfile = brp.BurpcFile(filename)
+    >>>
+    >>> # get the first report in file and print some info
+    >>> rpt = bfile[0]
+    >>> print("# report date={}, time={}".format(rpt.date, rpt.time))
+    # report date=20070219, time=0
+    >>>
+    >>> # get the first block in report
+    >>> blk = rpt[0]
+    >>> print("# block bkno = {}, {}, {}".format(blk.bkno, blk.bknat_kindd, blk.bktyp_kindd))
+    # block bkno = 1, data, data seen by OA at altitude, global model
+    >>>
+    >>> # get first block matching btyp == 15456
+    >>> blk = rpt.get({'btyp':15456})
+    >>> print("# block bkno = {}, {}, {}".format(blk.bkno, blk.bknat_kindd, blk.bktyp_kindd))
+    # block bkno = 6, flags, data seen by OA at altitude, global model
+    >>>
+    >>> # Loop over all blocks in report and print info for last one
+    >>> for blk in rpt:
+    ...     pass  # Do something with the block
+    >>> print("# block bkno = {}, {}, {}".format(blk.bkno, blk.bknat_kindd, blk.bktyp_kindd))
+    # block bkno = 12, data, data seen by OA at altitude, global model
 
     See Also:
         BurpcFile
@@ -428,6 +539,8 @@ class BurpcRpt(_BurpcObjBase):
     def next(self): # Python 2:
         """
         Get the next item in the iterator, Internal function for python 2 iter
+
+        Do not call explictly, this will be used in 'for loops' and other iterators.
         """
         if self.__bkno >= self.nblk:
             self.__bkno = 0
@@ -440,53 +553,54 @@ class BurpcRpt(_BurpcObjBase):
         self.__bkno += 1
         return self.__blk
 
-    def get(self, name=None, blk=None):
+    def get(self, key=None, blk=None):
         """
         Find a block and get its meta + data
 
-        blk.get(attr_name)
-        blk.get(item_number)
-        blk.get(blk)
-        blk.get(blkdict)
+        value = rpt.get(attr_name)
+        blk   = rpt.get(item_number)
+        blk   = rpt.get(blk)
+        blk   = rpt.get(blkdict)
 
         Args:
-            name   : Attribute name or Search criterions
-                     if str, return the attribute value
-                     if int, return the ith ([0, nrep[) report in file
-                     if dict or BurpcBlk, search block matching given params
-            blk    : (optional) BurpcBlk use to put the result to recycle memory
+            key : Attribute name or Search criterions
+                  if str, return the attribute value
+                  if int, return the ith ([0, nblk[) block in file
+                  if dict or BurpcBlk, search block matching given params
+            blk : (optional) BurpcBlk use to put the result to recycle memory
         Return:
             Attribute value or
             BurpcBlk if a report match the search
             None otherwise
         Raises:
+            KeyError   on not not found key
             TypeError  on not supported types or args
             IndexError on out of range index
             BurpcError on any other error
         """
-        if name in self.__class__.__attrlist:
-            v = getattr(self.__ptr[0], name)  #TODO: use proto fn?
+        if key in self.__class__.__attrlist:
+            v = getattr(self.__ptr[0], key)  #TODO: use proto fn?
             if isinstance(v, bytes):
                 v = _C_CHAR2WCHAR(v)
             return v
-        elif name in self.__class__.__attrlist2:
+        elif key in self.__class__.__attrlist2:
             try:
-                name2 = self.__attrlist2names[name]
+                key2 = self.__attrlist2names[key]
             except KeyError:
-                name2 = name
-            return self.derived_attr()[name2]
-        elif isinstance(name, _integer_types):
-            name += 1
-            if name < 1 or name > self.nblk:
+                key2 = key
+            return self.derived_attr()[key2]
+        elif isinstance(key, _integer_types):
+            key += 1
+            if key < 1 or key > self.nblk:
                 raise IndexError('Index out of range: [0:{}['.format(self.nblk))
             #TODO: review blk recycling
             ## blk = blk if isinstance(blk, BurpcBlk) else BurpcBlk(blk)
             blk = BurpcBlk()
-            if _bp.c_brp_getblk(name, blk.getptr(), self.getptr()) < 0:
+            if _bp.c_brp_getblk(key, blk.getptr(), self.getptr()) < 0:
                 raise BurpcError('Problem in c_brp_getblk')
             return blk
-        elif name is None or isinstance(name, (BurpcBlk, dict)):
-            search = name if isinstance(name, BurpcBlk) else BurpcBlk(name)
+        elif key is None or isinstance(key, (BurpcBlk, dict)):
+            search = key if isinstance(key, BurpcBlk) else BurpcBlk(key)
             if _bp.c_brp_findblk(search.getptr(), self.getptr()) >= 0:
                 #TODO: review blk recycling
                 ## blk = blk if isinstance(blk, BurpcBlk) else BurpcBlk(blk)
@@ -496,38 +610,71 @@ class BurpcRpt(_BurpcObjBase):
                     return blk
             return None
         raise KeyError("{} object has no such key: {}"
-                       .format(self.__class__.__name__, repr(name)))
+                       .format(self.__class__.__name__, repr(key)))
 
-    def __setattr__(self, name, value): #TODO: move to super class
-        return self.put(name, value)
+    def __setattr__(self, key, value): #TODO: move to super class
+        return self.put(key, value)
 
-    def put(self, name, value):
+    def put(self, key, value):
         """
+        Add a block to the report or set attribute value
+
+        rpt.put(attr_name, value)
+        rpt.put(bkno, blk)
+        rpt.put(blk0, blk)
+        rpt.put(blkdict, blk)
+
+        Args:
+            key   : Attribute name or Search criterions
+                    if str, set the attribute value
+                    if int, set the ith ([0, nblk[) block in report
+                    if dict or BurpcBlk, replace block matching given params
+            value : Value to set or blk object to set
+        Return:
+            None
+        Raises:
+            KeyError   on not not found key
+            TypeError  on not supported types or args
+            BurpcError on any other error
         """
-        if name == 'stnid':
+        if key == 'stnid':
             self.__derived = None
             _bp.c_brp_setstnid(self.__ptr, _C_WCHAR2CHAR(value))
-        elif name in self.__class__.__attrlist:
+        elif key in self.__class__.__attrlist:
             self.__derived = None
-            setattr(self.__ptr[0], name, value)  #TODO: use proto fn?
+            setattr(self.__ptr[0], key, value)  #TODO: use proto fn?
             return
-        elif name in self.__class__.__attrlist2:
+        elif key in self.__class__.__attrlist2:
             #TODO: encode other items on the fly
             raise AttributeError(self.__class__.__name__+
                                  " object cannot set derived attribute '"+
-                                 name+"'")
-        ## elif isinstance(name, _integer_types): #TODO:
-        ## elif name is None or isinstance(name, (BurpcBlk, dict)): #TODO:
+                                 key+"'")
+        ## elif isinstance(key, _integer_types): #TODO:
+        ## elif key is None or isinstance(key, (BurpcBlk, dict)): #TODO:
         else:
-            return super(self.__class__, self).__setattr__(name, value)
-            ## raise AttributeError(self.__class__.__name__+" object has not attribute '"+name+"'")
+            return super(self.__class__, self).__setattr__(key, value)
+            ## raise AttributeError(self.__class__.__name__+" object has not attribute '"+key+"'")
 
-    def append(self, value):
+    def append(self, blk):
         """
+        Append a block to report
+
+        rpt.append(blk)
+
+        Args:
+            blk : BurpcBlk to append
+        Return:
+            None
+        Raises:
+            TypeError  on not supported types or args
+            BurpcError on any other error
         """
-        self.put(None, value)
+        self.put(None, blk)
 
     def derived_attr(self): #TODO: remove/hide?
+        """
+        TODO: doc
+        """
         if not self.__derived:
             self.__derived = self.__derived_attr()
         return self.__derived.copy()
@@ -588,16 +735,125 @@ class BurpcRpt(_BurpcObjBase):
 ##     """
 ##     """
 
+ 
 class BurpcBlk(_BurpcObjBase):
     """
     Python Class equivalent of the burp_c's BURP_BLK C structure to hold
     the BURP block data
 
-    TODO: constructor examples
+    blk1 = BurpcBlk()
+    blk2 = BurpcBlk(blk1)
+    blk3 = BurpcBlk({
+                    'bfam' : bfam,
+                    'btyp' : btyp
+                    })
 
     Attributes:
-        TODO:
-    """
+        bkno  : block number
+        nele  : Number of meteorological elements in a block.
+                1st dimension of the array TBLVAL(block). (0-127)
+        nval  : Number of values per element.
+                2nd dimension of TBLVAL(block). (0-255)
+        nt    : Number of groups of NELE by NVAL values in a block.
+                3rd dimension of TBLVAL(block).
+        bfam  : Family block descriptor. (0-31)
+        bdesc : Block descriptor. (0-2047) (not used)
+        btyp  : Block type (0-2047), made from 3 components:
+                BKNAT: kind component of Block type
+                BKTYP: Data-type component of Block type
+                BKSTP: Sub data-type component of Block type
+        nbit  : Number of bits per value.
+                When we add a block, we should insure that the number of bits
+                specified is large enough to represent the biggest value
+                contained in the array of values in TBLVAL.
+                The maximum number of bits is 32.
+        bit0  : Number of the first right bit from block,
+                calculated automatically by the software.
+                (0-->2**26-1) (always a multiple of 64 minus 1)
+        datyp : Data type (for packing/unpacking).
+                See rpnpy.librmn.burp_const BURP_DATYP_LIST and BURP_DATYP2NUMPY_LIST
+                0 = string of bits (bit string)
+                2 = unsigned integers
+                3 = characters (NBIT must be equal to 8)
+                4 = signed integers
+                5 = uppercase characters (the lowercase characters
+                    will be converted to uppercase during the read.
+                    (NBIT must be equal to 8)
+                6 = real*4 (ie: 32bits)
+                7 = real*8 (ie: 64bits)
+                8 = complex*4 (ie: 2 times 32bits)
+                9 = complex*8 (ie: 2 times 64bits)
+                Note: Type 3 and 5 are processed like strings of bits thus,
+                      the user should do the data compression himself.
+        store_type : Type of data in table val, one of:
+                     BRP_STORE_INTEGER, BRP_STORE_FLOAT,
+                     BRP_STORE_DOUBLE, BRP_STORE_CHAR
+        max_nval : 
+        max_nele : 
+        max_nt : 
+        max_len : 
+        lstele  : list of coded elements (CMCID)
+        dlstele : list of decoded elements (BUFRID)
+        tblval  : table of coded values
+                  or table of decoded int values (BRP_STORE_INTEGER)
+        rval    : table of decoded values of type real/float (BRP_STORE_FLOAT)
+        drval   : table of decoded values of type real/float double (BRP_STORE_DOUBLE)
+        charval : table of decoded values of type char (BRP_STORE_CHAR)
+        bknat : block type, kind component
+        bknat_multi : block type, kind component, uni/multi bit
+                                  0=uni, 1=multi
+        bknat_kind : block type, kind component, kind value
+                                  See BURP_BKNAT_KIND_DESC
+        bknat_kindd : desc of bknat_kind
+        bktyp : block type, Data-type component
+        bktyp_alt : block type, Data-type component, surf/alt bit
+                                  0=surf, 1=alt
+        bktyp_kind : block type, Data-type component, flags
+                                  See BURP_BKTYP_KIND_DESC
+        bktyp_kindd : desc of bktyp_kind
+        bkstp : block type, Sub data-type component
+        bkstpd : desc of bktyp_kindd
+        datypd : Data type name/desc
+
+    Examples:
+    >>> import os, os.path
+    >>> import rpnpy.burpc.all as brp
+    >>> import rpnpy.librmn.all as rmn
+    >>> m = brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk_burp','2007021900.brp')
+    >>>
+    >>> # Open file in read only mode
+    >>> bfile = brp.BurpcFile(filename)
+    >>>
+    >>> # get the first report in file and print some info
+    >>> rpt = bfile[0]
+    >>>
+    >>> # get the first block in report
+    >>> blk = rpt[0]
+    >>>
+    >>> # get the first element in blk
+    >>> ele = blk[0]
+    >>> print("# {}: {}, (units={}), shape=[{}, {}] : value={}".format(ele.e_bufrid, ele.e_desc, ele.e_units, ele.nval, ele.nt, ele.e_rval[0,0]))
+    # 10004: PRESSURE, (units=PA), shape=[1, 1] : value=100.0
+    >>>
+    >>> # Loop over all elements in block and print info for last one
+    >>> for ele in blk:
+    ...     pass  # Do something with the element
+    >>> print("# {}: {}, (units={}), shape=[{}, {}] : value={}".format(ele.e_bufrid, ele.e_desc, ele.e_units, ele.nval, ele.nt, ele.e_rval[0,0]))
+    # 13220: NATURAL LOG SFC SPEC HUMIDITY (2M), (units=LN(KG/KG)), shape=[1, 1] : value=1.00000001505e+30
+
+    See Also:
+        BurpcFile
+        BurpcRpt
+        BurpcEle
+        rpnpy.burpc.base.brp_newblk
+        rpnpy.burpc.base.brp_freeblk
+        rpnpy.burpc.base.brp_findblk
+        rpnpy.burpc.base.brp_getblk
+        rpnpy.burpc.base
+        rpnpy.burpc.const
+   """
     __attrlist = ("bkno", "nele", "nval", "nt", "bfam", "bdesc", "btyp",
                   "bknat", "bktyp", "bkstp", "nbit", "bit0", "datyp",
                   "store_type",
@@ -647,6 +903,8 @@ class BurpcBlk(_BurpcObjBase):
     def next(self): # Python 2
         """
         Get the next item in the iterator, Internal function for python 2 iter
+
+        Do not call explictly, this will be used in 'for loops' and other iterators.
         """
         if self.__eleno >= self.nele:
             self.__eleno = 0
@@ -655,62 +913,123 @@ class BurpcBlk(_BurpcObjBase):
         self.__eleno += 1
         return ele
 
-    def get(self, name):
+    def get(self, key):
         """
-        """
-        ## print 'getattr:', name
-        if name in self.__class__.__attrlist_np_1d:
-            if self.__arr[name] is None:
-                v = getattr(self.__ptr[0], name)
-                self.__arr[name] = _np.ctypeslib.as_array(v, (self.nele,))
-            return self.__arr[name]
-        elif name in self.__class__.__attrlist_np_3d:
-            if self.__arr[name] is None:
-                v = getattr(self.__ptr[0], name)
-                self.__arr[name] = _np.ctypeslib.as_array(v,
+        Get a block attribute or Element
+
+        value = blk.get(attr_name)
+        ele   = blk.get(element_number)
+
+        Args:
+            key : Attribute name or Search criterions
+                  if str, return the attribute value
+                  if int, return the ith ([0, nblk[) block in file
+                  if dict or BurpcBlk, search block matching given params
+        Return:
+            Attribute value or
+            BurpcEle if a report match the search
+            None otherwise
+        Raises:
+            KeyError   on not not found key
+            TypeError  on not supported types or args
+            IndexError on out of range index
+            BurpcError on any other error
+       """
+        ## print 'getattr:', key
+        if key in self.__class__.__attrlist_np_1d:
+            if self.__arr[key] is None:
+                v = getattr(self.__ptr[0], key)
+                self.__arr[key] = _np.ctypeslib.as_array(v, (self.nele,))
+            return self.__arr[key]
+        elif key in self.__class__.__attrlist_np_3d:
+            if self.__arr[key] is None:
+                v = getattr(self.__ptr[0], key)
+                self.__arr[key] = _np.ctypeslib.as_array(v,
                                         (self.nt, self.nval, self.nele)).T
-            return self.__arr[name]
-        elif name in self.__class__.__attrlist:
-            return getattr(self.__ptr[0], name)  #TODO: use proto fn?
-        elif name in self.__class__.__attrlist2:
+            return self.__arr[key]
+        elif key in self.__class__.__attrlist:
+            return getattr(self.__ptr[0], key)  #TODO: use proto fn?
+        elif key in self.__class__.__attrlist2:
             if not self.__derived:
                 self.__derived = self.derived_attr()
-            return self.__derived[name]
-        elif isinstance(name, _integer_types):
-            return self._getelem(name)
+            return self.__derived[key]
+        elif isinstance(key, _integer_types):
+            return self._getelem(key)
+        #TODO: isinstance(key, BurpcEle)
+        #TODO: isinstance(key, dict)
         else:
             raise KeyError("{} object has no such key: {}"
-                           .format(self.__class__.__name__, repr(name)))
+                           .format(self.__class__.__name__, repr(key)))
 
-    def __setattr__(self, name, value): #TODO: move to super class
-        return self.put(name, value)
+    def __setattr__(self, key, value): #TODO: move to super class
+        return self.put(key, value)
 
-    def put(self, name, value):
+    def put(self, key, value):
         """
-        """
-        ## print 'setattr:', name
-        if name in self.__class__.__attrlist:
+        Add an element to the block or set attribute value
+
+        blk.put(attr_name, value)
+        blk.put(eleno, ele)
+        blk.put(ele0, ele)
+        blk.put(eledict, ele)
+
+        Args:
+            key   : Attribute name or Search criterions
+                    if str, set the attribute value
+                    if int, set the ith ([0, nblk[) element in block
+                    if dict or BurpcBlk, replace element matching given params
+            value : Value to set or blk object to set
+        Return:
+            None
+        Raises:
+            KeyError   on not not found key
+            TypeError  on not supported types or args
+            BurpcError on any other error
+         """
+        ## print 'setattr:', key
+        if key in self.__class__.__attrlist:
             self.__derived = None
-            return setattr(self.__ptr[0], name, value) #TODO: use proto fn?
-        elif name in self.__class__.__attrlist2:
+            return setattr(self.__ptr[0], key, value) #TODO: use proto fn?
+        elif key in self.__class__.__attrlist2:
             #TODO: encode other items on the fly
             raise AttributeError(self.__class__.__name__+
                                  " object cannot set derived attribute '"+
-                                 name+"'")
-        ## elif isinstance(name, _integer_types): #TODO:
-        ## elif name is None or isinstance(name, (BurpcEle, dict)): #TODO:
+                                 key+"'")
+        ## elif isinstance(key, _integer_types): #TODO:
+        ## elif key is None or isinstance(key, (BurpcEle, dict)): #TODO:
         else:
-            return super(self.__class__, self).__setattr__(name, value)
+            return super(self.__class__, self).__setattr__(key, value)
 
-    def append(self, value):
+    def append(self, ele):
         """
+        Append an element to the block
+
+        blk.append(ele)
+
+        Args:
+            ele : BurpcEle to append
+        Return:
+            None
+        Raises:
+            TypeError  on not supported types or args
+            BurpcError on any other error
         """
-        self.put(None, value)
+        self.put(None, ele)
     #TODO: add list type operators: count?, extend?, index?, insert?, pop?, remove?, reverse?, sort?... see help([]) for other __?__ operators
 
     def reset_arrays(self):
         """
-        """
+        Clear data tables
+
+        blk.reset_arrays()
+
+        Args:
+            None
+        Return:
+            None
+        Raises:
+            None
+       """
         ## print "reset array"
         self.__arr = {
             "lstele"  : None,
@@ -722,7 +1041,9 @@ class BurpcBlk(_BurpcObjBase):
             }
 
     def derived_attr(self): #TODO: remove/hide?
-        """ """
+        """
+        TODO: doc
+        """
         if not self.__derived:
             self.__derived = self.__derived_attr()
         return self.__derived.copy()
@@ -823,7 +1144,69 @@ class BurpcEle(_BurpcObjBase):
     TODO: constructor examples
 
     Attributes:
-        TODO:
+        e_cmcid    : Element CMC code name (lstele)
+        e_bufrid   : Element BUFR code as found in BUFR table B (dlstele)
+        e_bufrid_F : Type part of Element code (e.g. F=0 for obs)
+        e_bufrid_X : Class part of Element code
+        e_bufrid_Y : Class specific Element code part of Element code
+        e_cvt      : Flag for conversion (1=need units conversion)
+        e_desc     : Element description
+        e_units    : Units desciption
+        e_scale    : Scaling factor for element value conversion
+        e_bias     : Bias for element value conversion
+        e_nbits    : nb of bits for encoding value
+        e_multi    : 1 means descriptor is of the "multi" or
+                     repeatable type (layer, level, etc.) and
+                     it can only appear in a "multi" block of data
+        e_error    : 0 if bufrid found in BURP table B, -1 otherwise
+        nval       : Number of values per element.
+                     1st dimension of e_tblval, e_rval, e_drval
+        nt         : Number of groups of NVAL values in an element.
+                     2nd dimension of e_tblval, e_rval, e_drval
+        shape      : (nval, nt)
+        store_type : Type of data in table val, one of:
+                     BRP_STORE_INTEGER, BRP_STORE_FLOAT,
+                     BRP_STORE_DOUBLE, BRP_STORE_CHAR
+        ptrkey     : 
+        e_tblval   : table of decoded int values (BRP_STORE_INTEGER)
+        e_rval     : table of decoded values of type real/float (BRP_STORE_FLOAT)
+        e_drval    : table of decoded values of type real/float double (BRP_STORE_DOUBLE)
+        e_charval  : table of decoded values of type char (BRP_STORE_CHAR)
+
+    Examples:
+    >>> import os, os.path
+    >>> import rpnpy.burpc.all as brp
+    >>> import rpnpy.librmn.all as rmn
+    >>> m = brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk_burp','2007021900.brp')
+    >>>
+    >>> # Open file in read only mode
+    >>> bfile = brp.BurpcFile(filename)
+    >>>
+    >>> # get the first report in file and print some info
+    >>> rpt = bfile[0]
+    >>>
+    >>> # get the first block in report
+    >>> blk = rpt[0]
+    >>>
+    >>> # get the first element in blk
+    >>> ele = blk[0]
+    >>> print("# {}: {}, (units={}), shape=[{}, {}] : value={}".format(ele.e_bufrid, ele.e_desc, ele.e_units, ele.nval, ele.nt, ele.e_rval[0,0]))
+    # 10004: PRESSURE, (units=PA), shape=[1, 1] : value=100.0
+    >>>
+    >>> # Loop over all elements in block and print info for last one
+    >>> for ele in blk:
+    ...     pass  # Do something with the element
+    >>> print("# {}: {}, (units={}), shape=[{}, {}] : value={}".format(ele.e_bufrid, ele.e_desc, ele.e_units, ele.nval, ele.nt, ele.e_rval[0,0]))
+    # 13220: NATURAL LOG SFC SPEC HUMIDITY (2M), (units=LN(KG/KG)), shape=[1, 1] : value=1.00000001505e+30
+
+    See Also:
+        BurpcFile
+        BurpcRpt
+        BurpcBlk
+        rpnpy.burpc.base
+        rpnpy.burpc.const
     """
     __attrlist = ('e_bufrid', 'e_cmcid', 'store_type', 'shape', 'ptrkey',
                   'e_tblval', 'e_rval', 'e_drval', 'e_charval')
@@ -867,25 +1250,39 @@ class BurpcEle(_BurpcObjBase):
     ## def next(self):
     ##     raise Error #TODO
 
-    def get(self, name): #TODO: if int (or slice any indexing, refer to tblval)
+    def get(self, key): #TODO: if int (or slice any indexing, refer to tblval)
         """
         Get Burpc Element meta or data
+
+        value = ele.get(attr_name)
+
+        Args:
+             key : Attribute name or Search criterions
+                   if str, get the attribute value
+                   if int, get the ith ([0, nval[) val in the element
+        Return:
+             Attribute value
+        Raises:
+            KeyError   on not not found key
+            TypeError  on not supported types or args
+            BurpcError on any other error
         """
-        ## if name == 'e_tblval' : #TODO: special case if ptrkey!=e_tblval
-        ## elif name == 'e_rval' :
-        ## elif name == 'e_drval' :
-        ## elif name == 'e_charval':
+        ## if key == 'e_tblval' : #TODO: special case if ptrkey!=e_tblval
+        ## elif key == 'e_rval' :
+        ## elif key == 'e_drval' :
+        ## elif key == 'e_charval':
         #TODO: allow e_val: automatic type selection
-        if name in self.__class__.__attrlist:
-            return self.__ptr[name]
-        elif name in self.__class__.__attrlist2:
-            return self.derived_attr()[name]
-        ## elif isinstance(name, _integer_types):
+        if key in self.__class__.__attrlist:
+            return self.__ptr[key]
+        elif key in self.__class__.__attrlist2:
+            return self.derived_attr()[key]
+        ## elif isinstance(key, _integer_types):
         raise KeyError("{} object has no such key: {}"
-                       .format(self.__class__.__name__, repr(name)))
+                       .format(self.__class__.__name__, repr(key)))
 
     def reshape(self, shape=None):
         """
+        TODO: doc
         """
         if shape is None:
             self.__ptr['shape'] = None
@@ -910,82 +1307,99 @@ class BurpcEle(_BurpcObjBase):
                             shape, order='F')
         self.__ptr['shape'] = shape
 
-    def put(self, name, value):
+    def put(self, key, value):
         """
+        Set Burpc Element meta or data
+
+        ele.put(key, value)
+
+        Args:
+            key   : Attribute name
+                    if str, set the attribute value
+                    if int, set the ith ([0, nval[) val in the element
+            value : Value to set
+        Return:
+            None
+        Raises:
+            KeyError   on not not found key
+            TypeError  on not supported types or args
+            BurpcError on any other error
         """
-        if name == 'ptrkey':
+        if key == 'ptrkey':
             raise KeyError('{}: Cannot set: {}'
                              .format(self.__class__.__name__,
-                                     repr(name)))
-        elif name == 'e_bufrid':
+                                     repr(key)))
+        elif key == 'e_bufrid':
             self.__derived = None
-            self.__ptr[name] = value
+            self.__ptr[key] = value
             self.__ptr['e_cmcid'] = _rmn.mrbcol(value)
-        elif name == 'e_cmcid':
+        elif key == 'e_cmcid':
             self.__derived = None
-            self.__ptr[name] = value
+            self.__ptr[key] = value
             self.__ptr['e_bufrid'] = _rmn.mrbdcl(value)
-        elif name == 'store_type':
+        elif key == 'store_type':
             if value is None:
                 return
             if value in _bc.BRP_STORE_TYPE2NUMPY.keys():
-                if (self.__ptr[name] is None or
-                    ## self.__ptr[name] == _bc.BRP_STORE_INTEGER or
-                    self.__ptr[name] == value):
-                    self.__ptr[name] = value
+                if (self.__ptr[key] is None or
+                    ## self.__ptr[key] == _bc.BRP_STORE_INTEGER or
+                    self.__ptr[key] == value):
+                    self.__ptr[key] = value
                 else:
                     raise BurpcError('{}: Cannot change: {}'
                                      .format(self.__class__.__name__,
-                                             repr(name)))
+                                             repr(key)))
             else:
                 raise ValueError('Store type ({}) can only be one of: {}'
                                  .format(repr(value),
                                          repr(_bc.BRP_STORE_TYPE2NUMPY.keys())))
-        elif name == 'shape':
+        elif key == 'shape':
             if value is None:
                 self.__ptr['shape'] = None
             else:
                 self.reshape(value)
-        elif name in ('e_tblval', 'e_rval', 'e_drval', 'e_charval'):
+        elif key in ('e_tblval', 'e_rval', 'e_drval', 'e_charval'):
             #TODO: use e_ival for int instead of e_tblval (alias)
             #TODO: allow e_val: automatic type selection
             self.__derived = None
             if value is None:
                 return
-            if not (self.__ptr['ptrkey'] is None or self.__ptr['ptrkey'] == name):
+            if not (self.__ptr['ptrkey'] is None or self.__ptr['ptrkey'] == key):
                 raise BurpcError('{}: Cannot change store type'
                                  .format(self.__class__.__name__))
-            self.__ptr['ptrkey'] = name
-            if name != 'e_tblval':
-                self.__ptr['store_type'] = self.__PTRKEY2STORE_TYPE[name]
-            dtype = self.__PTRKEY2NUMPY[name]
-            self.__ptr[name] = _np.array(value, order='F', dtype=dtype)
-            if len(self.__ptr[name].shape) == 1:
-                self.__ptr[name] = _np.reshape(self.__ptr[name],
-                            (self.__ptr[name].shape[0], 1), order='F')
-            elif len(self.__ptr[name].shape) > 2:
+            self.__ptr['ptrkey'] = key
+            if key != 'e_tblval':
+                self.__ptr['store_type'] = self.__PTRKEY2STORE_TYPE[key]
+            dtype = self.__PTRKEY2NUMPY[key]
+            self.__ptr[key] = _np.array(value, order='F', dtype=dtype)
+            if len(self.__ptr[key].shape) == 1:
+                self.__ptr[key] = _np.reshape(self.__ptr[key],
+                            (self.__ptr[key].shape[0], 1), order='F')
+            elif len(self.__ptr[key].shape) > 2:
                 raise BurpcError('{}: Array shape must be 2d: {}'
                                  .format(self.__class__.__name__,
-                                         repr(self.__ptr[name].shape)))
-            if self.__ptr['shape'] != self.__ptr[name].shape:
+                                         repr(self.__ptr[key].shape)))
+            if self.__ptr['shape'] != self.__ptr[key].shape:
                 self.reshape(self.__ptr['shape'])
-            self.__ptr['shape'] = self.__ptr[name].shape
-        elif name in self.__class__.__attrlist:
+            self.__ptr['shape'] = self.__ptr[key].shape
+        elif key in self.__class__.__attrlist:
             self.__derived = None
             #TODO: check type
-            self.__ptr[name] = value
-            ## return setattr(self.__ptr, name, value) #TODO: use proto fn?
+            self.__ptr[key] = value
+            ## return setattr(self.__ptr, key, value) #TODO: use proto fn?
         else:
-            return super(self.__class__, self).__setattr__(name, value)
+            return super(self.__class__, self).__setattr__(key, value)
         ## else:
         ##     raise KeyError #TODO
 
-    ## def delete(self, name):
+    ## def delete(self, key):
     ##     raise BurpcError('{}: Cannot delete: {}'
-    ##                      .format(self.__class__.__name__, repr(name)))
+    ##                      .format(self.__class__.__name__, repr(key)))
 
     def derived_attr(self): #TODO: remove/hide?
-        """ """
+        """
+        TODO: doc
+        """
         if not self.__derived:
             self.__derived = self.__derived_attr()
         return self.__derived.copy()

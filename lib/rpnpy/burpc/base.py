@@ -223,11 +223,11 @@ def BLK_SetNELE(blk, val):
     _BLKPTR(blk)[0].nele = val
 # Set burp block NVAL
 def BLK_SetNVAL(blk, val):
-    """ """
+    """Set burp block NVAL"""
     _BLKPTR(blk)[0].nval = val
 # Set burp block NT
 def BLK_SetNT(blk, val):
-    """ """
+    """Set burp block NT"""
     _BLKPTR(blk)[0].nt = val
 
 def BLK_SetBKNO(blk, val):
@@ -298,6 +298,7 @@ def BLK_SetSTORE_TYPE(blk, val):
     _BLKPTR(blk)[0].store_type = _C_WCHAR2CHAR(val)
 
 
+#TODO: apparently c_brp_SetOptFloat(BURPOP_MISSING, value) is not working
 def brp_SetOptFloat(name, value):
     """
     Set BURP file float option (alias to brp_opt)
@@ -313,6 +314,11 @@ def brp_SetOptFloat(name, value):
         KeyError   on unknown name
         TypeError  on wrong input arg types
         BurpError  on any other error
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> import rpnpy.burpc.all as brp
+    >>> brp.brp_SetOptFloat(rmn.BURPOP_MISSING, -1.)
 
     See Also:
         brp_opt
@@ -339,6 +345,11 @@ def brp_SetOptChar(name, value):
         TypeError  on wrong input arg types
         BurpError  on any other error
 
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> import rpnpy.burpc.all as brp
+    >>> brp.brp_SetOptChar(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_FATAL)
+
     See Also:
         brp_opt
         rpnpy.librmn.burp.mrfopt
@@ -350,7 +361,7 @@ def brp_SetOptChar(name, value):
 
 def brp_msngval():
     """
-    return the floating point constant used for missing values
+    Return the floating point constant used for missing values
 
     missingVal = brp_msngval()
 
@@ -358,6 +369,10 @@ def brp_msngval():
         None
     Returns:
         float, constant used for missing values
+
+    Examples:
+    >>> import rpnpy.burpc.all as brp
+    >>> missingVal = brp.brp_msngval()
 
     See Also:
         brp_opt
@@ -455,6 +470,7 @@ def brp_open(filename, filemode=_bc.BRP_FILE_READ, funit=0, getnbr=False):
     >>> import rpnpy.burpc.all as brp
     >>> filename = 'tmpburpfile.brp'
     >>> funit = brp.brp_open(filename, brp.BRP_FILE_WRITE)
+    >>> #...
     >>> brp.brp_close(funit)
 
     See Also:
@@ -463,7 +479,11 @@ def brp_open(filename, filemode=_bc.BRP_FILE_READ, funit=0, getnbr=False):
         rpnpy.burpc.const
     """
     fstmode, brpmode, brpcmode = _bp.brp_filemode(filemode)
-    #TODO: Check format/existence of file depending on mode as in burp_open
+    if filename.strip() == '':
+        raise ValueError("brp_open: must provide a valid filename")
+    if brpmode != _rmn.BURP_MODE_CREATE:
+        if not _rmn.isBURP(filename):
+            raise BurpError('Not a burp file: {0}'.format(filename))
     if not funit:
         try:
             funit = _rmn.get_funit(filename, fstmode)
@@ -529,8 +549,13 @@ def brp_newrpt():
     Returns:
         ctypes.POINTER(BURP_RPT)
 
+    Examples:
+    >>> import rpnpy.burpc.all as brp
+    >>> rpt = brp.brp_newrpt()
+
     See Also:
         brp_free
+        brp_allocrpt
         rpnpy.burpc.brpobj.BurpcRpt
     """
     return _bp.c_brp_newrpt()
@@ -547,8 +572,13 @@ def brp_newblk():
     Returns:
         ctypes.POINTER(BURP_BLK)
 
+    Examples:
+    >>> import rpnpy.burpc.all as brp
+    >>> blk = brp.brp_newblk()
+
     See Also:
         brp_free
+        brp_allocblk
         rpnpy.burpc.brpobj.BurpcBlk
     """
     return _bp.c_brp_newblk()
@@ -717,6 +747,13 @@ def brp_freerpt(rpt):
     Raises:
         TypeError on not supported types or args
 
+    Examples:
+    >>> import rpnpy.burpc.all as brp
+    >>> rpt = brp.brp_newrpt()
+    >>> rpt = brp.brp_allocrpt(rpt, 999)
+    >>> # ...
+    >>> brp.brp_freerpt(rpt)
+
     See Also:
         brp_free
         brp_newrpt
@@ -738,6 +775,13 @@ def brp_freeblk(blk):
         None
     Raises:
         TypeError on not supported types or args
+
+    Examples:
+    >>> import rpnpy.burpc.all as brp
+    >>> blk = brp.brp_newblk()
+    >>> blk = brp.brp_allocblk(blk, 5, 1, 1)
+    >>> # ...
+    >>> brp.brp_freeblk(blk)
 
     See Also:
         brp_free
@@ -762,6 +806,15 @@ def brp_free(*args):
     Raises:
         TypeError on not supported types or args
 
+    Examples:
+    >>> import rpnpy.burpc.all as brp
+    >>> rpt = brp.brp_newrpt()
+    >>> rpt = brp.brp_allocrpt(rpt, 999)
+    >>> blk = brp.brp_newblk()
+    >>> blk = brp.brp_allocblk(blk, 5, 1, 1)
+    >>> # ...
+    >>> brp.brp_free(rpt, blk)
+
     See Also:
         brp_free
         brp_newrpt
@@ -785,9 +838,9 @@ def brp_free(*args):
 def brp_clrrpt(rpt):
     """
     Init report data buffer before adding blocks.
-    Needs to be followd by a call to brp_putrpthdr.
+    Needs to be followed by a call to brp_putrpthdr.
 
-    brp_clrrpt(rpt)
+    rpt = brp_clrrpt(rpt)
 
     Args:
         rpt : pointer to BURP_RPT structure [ctypes.POINTER(BURP_RPT)]
@@ -797,8 +850,16 @@ def brp_clrrpt(rpt):
     Raises:
         TypeError on not supported types or args
 
+    Examples:
+    >>> import rpnpy.burpc.all as brp
+    >>> rpt = brp.brp_newrpt()
+    >>> rpt = brp.brp_allocrpt(rpt, 999)
+    >>> rpt = brp.c_brp_clrrpt(rpt)
+    >>> # ...
+
     See Also:
         brp_newrpt
+        brp_allocrpt
         brp_resetrpthdr
         brp_putrpthdr
     """
@@ -813,7 +874,7 @@ def brp_clrblkv(blk, val=None):
     """
     Init block data with provided value
 
-    brp_clrblkv(blk, val)
+    blk = brp_clrblkv(blk, val)
 
     Args:
         blk : pointer to BURP_BLK structure [ctypes.POINTER(BURP_BLK)]
@@ -824,9 +885,16 @@ def brp_clrblkv(blk, val=None):
     Raises:
         TypeError on not supported types or args
 
+    Examples:
+    >>> import rpnpy.burpc.all as brp
+    >>> blk = brp.brp_newblk()
+    >>> blk = brp.brp_allocblk(blk, 5, 1, 1)
+    >>> blk = brp.brp_clrblkv(blk, -99.)
+
     See Also:
         brp_clrblk
         brp_resetblkhdr
+        brp_allocblk
         brp_newblk
     """
     pblk = _BLKPTR(blk)
@@ -843,7 +911,7 @@ def brp_clrblk(blk):
     """
     Init block data with missing value
 
-    brp_clrblkv(blk, val)
+    blk = brp_clrblkv(blk, val)
 
     Args:
         blk : pointer to BURP_BLK structure [ctypes.POINTER(BURP_BLK)]
@@ -854,9 +922,16 @@ def brp_clrblk(blk):
     Raises:
         TypeError on not supported types or args
 
+    Examples:
+    >>> import rpnpy.burpc.all as brp
+    >>> blk = brp.brp_newblk()
+    >>> blk = brp.brp_allocblk(blk, 5, 1, 1)
+    >>> blk = brp.brp_clrblk(blk)
+
     See Also:
         brp_clrblkv
         brp_resetblkhdr
+        brp_allocblk
         brp_newblk
         brp_msngval
     """
@@ -867,7 +942,7 @@ def brp_resetrpthdr(rpt):
     """
     Reset report header info
 
-    brp_resetrpthdr(rpt)
+    rpt = brp_resetrpthdr(rpt)
 
     Args:
         rpt : pointer to BURP_RPT structure [ctypes.POINTER(BURP_RPT)]
@@ -876,6 +951,10 @@ def brp_resetrpthdr(rpt):
         Reseted rpt provided as input [ctypes.POINTER(BURP_RPT)]
     Raises:
         TypeError on not supported types or args
+
+    Examples:
+    >>> import rpnpy.burpc.all as brp
+    >>> #TODO
 
     See Also:
         brp_clrrpt
@@ -892,7 +971,7 @@ def brp_resetblkhdr(blk):
     """
     Reset report header info
 
-    brp_resetblkhdr(blk)
+    blk = brp_resetblkhdr(blk)
 
     Args:
         blk : pointer to BURP_BLK structure [ctypes.POINTER(BURP_BLK)]
@@ -901,6 +980,10 @@ def brp_resetblkhdr(blk):
         Reseted blk provided as input [ctypes.POINTER(BURP_RPT)]
     Raises:
         TypeError on not supported types or args
+
+    Examples:
+    >>> import rpnpy.burpc.all as brp
+    >>> #TODO
 
     See Also:
         brp_clrblk
@@ -919,7 +1002,7 @@ def brp_encodeblk(blk):
     Encode block elements (dlstele) into lstele
     To be used after fill block elements code with BLK_SetDLSTELE
 
-    brp_encodeblk(blk)
+    blk = brp_encodeblk(blk)
 
     Args:
         blk : pointer to BURP_BLK structure [ctypes.POINTER(BURP_BLK)]
@@ -960,7 +1043,7 @@ def brp_convertblk(blk, mode=_bc.BRP_MKSA_to_BUFR):
     Convert block's element encoded values there real counterpart
     or the reverse operation depending on mode
 
-    brp_encodeblk(blk)
+    blk = brp_encodeblk(blk)
 
     Args:
         blk : pointer to BURP_BLK structure [ctypes.POINTER(BURP_BLK)]
@@ -1009,7 +1092,7 @@ def brp_safe_convertblk(blk, mode=_bc.BRP_MKSA_to_BUFR):
     Convert block's element encoded values there real counterpart
     or the reverse operation depending on mode
 
-    brp_safe_encodeblk(blk)
+    blk = brp_safe_encodeblk(blk)
 
     Args:
         blk : pointer to BURP_BLK structure [ctypes.POINTER(BURP_BLK)]
@@ -1058,6 +1141,8 @@ def brp_findrpt(funit, rpt=None): #TODO: rpt are search keys, change name
     """
     Find, in a burp file, a report matching criterions set in rpt
 
+    rpt = brp_findrpt(funit, rpt)
+
     Args:
         funit : opened burp file unit number of open/obtained with brp_open()
         rpt   : (optional) search criterions
@@ -1073,13 +1158,20 @@ def brp_findrpt(funit, rpt=None): #TODO: rpt are search keys, change name
         BurpcError on any other error
 
     Examples:
+    >>> import os
     >>> import rpnpy.burpc.all as brp
-    >>> #TODO
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES, 'bcmk_burp', '2007021900.brp')
+    >>> funit = brp.brp_open(filename, brp.BRP_FILE_READ)
+    >>> rpt = brp.brp_findrpt(funit)
+    >>> #...
+    >>> brp.brp_close(funit)
 
     See Also:
         brp_open
         brp_newrpt
         brp_getrpt
+        brp_findblk
     """
     funit = funit.funit if isinstance(funit, _bo.BurpcFile) else funit
     if not rpt:
@@ -1101,6 +1193,8 @@ def brp_findblk(blk, rpt): #TODO: blk are search keys, change name
     """
     Find, in burp report rpt, a block matching criterions set in blk
 
+    blk = brp_findblk(blk, rpt)
+
     Args:
         blk   : search criterions
                 if None, will match the first block in rpt (equivalent to 0)
@@ -1117,8 +1211,17 @@ def brp_findblk(blk, rpt): #TODO: blk are search keys, change name
         BurpcError on any other error
 
     Examples:
+    >>> import os
     >>> import rpnpy.burpc.all as brp
-    >>> #TODO
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES, 'bcmk_burp', '2007021900.brp')
+    >>> funit = brp.brp_open(filename, brp.BRP_FILE_READ)
+    >>> rpt = brp.brp_findrpt(funit)
+    >>> rpt = brp.brp_getrpt(funit, rpt)
+    >>> blk0 = brp_findblk(None, rpt)
+    >>> blk1 = brp_findblk(6, rpt)
+    >>> #...
+    >>> brp.brp_close(funit)
 
     See Also:
         brp_open
@@ -1149,19 +1252,32 @@ def brp_searchdlste(code, blk):
     """
     Find elements matching code in block
 
+    idx = brp_searchdlste(code, blk)
+
     Args:
         code  : burp code to search for in block
         blk   : block to look into [ctypes.POINTER(BURP_BLK)]
                 blk must have been previously read with brp_getblk()
     Return:
-        TODO:
+        int, index of the matching element in block
+        None, if no match was found
     Raises:
         TypeError on not supported types or args
         BurpcError on any other error
 
     Examples:
+    >>> import os
     >>> import rpnpy.burpc.all as brp
-    >>> #TODO
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES, 'bcmk_burp', '2007021900.brp')
+    >>> funit = brp.brp_open(filename, brp.BRP_FILE_READ)
+    >>> rpt = brp.brp_findrpt(funit)
+    >>> rpt = brp.brp_getrpt(funit, rpt)
+    >>> blk = brp.brp_findblk(None, rpt)
+    >>> blk = brp.brp_getblk(brp.BLK_BKNO(blk), rpt=rpt)
+    >>> idx = brp.brp_searchdlste(11011, blk)
+    >>> #...
+    >>> brp.brp_close(funit)
 
     See Also:
         brp_open
@@ -1174,7 +1290,10 @@ def brp_searchdlste(code, blk):
     pblk = _BLKPTR(blk)
     if not isinstance(pblk, _ct.POINTER(_bp.BURP_BLK)):
         raise TypeError('Cannot use blk or type={}'+str(type(blk)))
-    return _bp.c_brp_searchdlste(code, pblk)
+    idx = _bp.c_brp_searchdlste(code, pblk)
+    if idx >= 0:
+        return idx
+    return None
 
 ##---- read in data -----------------------------------------------------
 
@@ -1197,8 +1316,15 @@ def brp_getrpt(funit, handle=0, rpt=None):
         BurpcError on any other error
 
     Examples:
+    >>> import os
     >>> import rpnpy.burpc.all as brp
-    >>> #TODO
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES, 'bcmk_burp', '2007021900.brp')
+    >>> funit = brp.brp_open(filename, brp.BRP_FILE_READ)
+    >>> rpt = brp.brp_findrpt(funit)
+    >>> rpt = brp.brp_getrpt(funit, rpt)
+    >>> #...
+    >>> brp.brp_close(funit)
 
     See Also:
         brp_open
@@ -1244,8 +1370,17 @@ def brp_getblk(bkno, blk=None, rpt=None):
         BurpcError on any other error
 
     Examples:
+    >>> import os
     >>> import rpnpy.burpc.all as brp
-    >>> #TODO
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES, 'bcmk_burp', '2007021900.brp')
+    >>> funit = brp.brp_open(filename, brp.BRP_FILE_READ)
+    >>> rpt = brp.brp_findrpt(funit)
+    >>> rpt = brp.brp_getrpt(funit, rpt)
+    >>> blk = brp.brp_findblk(None, rpt)
+    >>> blk = brp.brp_getblk(brp.BLK_BKNO(blk), rpt=rpt)
+    >>> #...
+    >>> brp.brp_close(funit)
 
     See Also:
         brp_open
@@ -1295,8 +1430,17 @@ def brp_safe_getblk(bkno, blk=None, rpt=None):
         BurpcError on any other error
 
     Examples:
+    >>> import os
     >>> import rpnpy.burpc.all as brp
-    >>> #TODO
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES, 'bcmk_burp', '2007021900.brp')
+    >>> funit = brp.brp_open(filename, brp.BRP_FILE_READ)
+    >>> rpt = brp.brp_findrpt(funit)
+    >>> rpt = brp.brp_getrpt(funit, rpt)
+    >>> blk = brp.brp_findblk(None, rpt)
+    >>> blk = brp.brp_safe_getblk(brp.BLK_BKNO(blk), rpt=rpt)
+    >>> #...
+    >>> brp.brp_close(funit)
 
     See Also:
         brp_open
@@ -1347,8 +1491,17 @@ def brp_readblk(bkno, blk=None, rpt=None, cvt=False):
         BurpcError on any other error
 
     Examples:
+    >>> import os
     >>> import rpnpy.burpc.all as brp
-    >>> #TODO
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES, 'bcmk_burp', '2007021900.brp')
+    >>> funit = brp.brp_open(filename, brp.BRP_FILE_READ)
+    >>> rpt = brp.brp_findrpt(funit)
+    >>> rpt = brp.brp_getrpt(funit, rpt)
+    >>> blk = brp.brp_findblk(None, rpt)
+    >>> blk = brp.brp_readblk(brp.BLK_BKNO(blk), rpt=rpt, cvt=True)
+    >>> #...
+    >>> brp.brp_close(funit)
 
     See Also:
         brp_open
@@ -1400,8 +1553,15 @@ def brp_rdrpthdr(handle=0, rpt=None):
         BurpcError on any other error
 
     Examples:
+    >>> import os
     >>> import rpnpy.burpc.all as brp
-    >>> #TODO
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES, 'bcmk_burp', '2007021900.brp')
+    >>> funit = brp.brp_open(filename, brp.BRP_FILE_READ)
+    >>> rpt = brp.brp_findrpt(funit)
+    >>> rpt = brp.brp_rdrpthdr(brp.RPT_HANDLE(rpt))
+    >>> #...
+    >>> brp.brp_close(funit)
 
     See Also:
         brp_open
@@ -1447,8 +1607,17 @@ def brp_rdblkhdr(bkno, blk=None, rpt=None):
         BurpcError on any other error
 
     Examples:
+    >>> import os
     >>> import rpnpy.burpc.all as brp
-    >>> #TODO
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES, 'bcmk_burp', '2007021900.brp')
+    >>> funit = brp.brp_open(filename, brp.BRP_FILE_READ)
+    >>> rpt = brp.brp_findrpt(funit)
+    >>> rpt = brp.brp_getrpt(funit, rpt)
+    >>> blk = brp.brp_findblk(None, rpt)
+    >>> blk = brp.brp_rdblkhdr(brp.BLK_BKNO(blk), rpt=rpt)
+    >>> #...
+    >>> brp.brp_close(funit)
 
     See Also:
         brp_open
@@ -1499,7 +1668,11 @@ def brp_initrpthdr(funit, rpt):
         BurpcError on any other error
 
     Examples:
+    >>> import os
     >>> import rpnpy.burpc.all as brp
+    >>> TMPDIR = os.getenv('TMPDIR').strip()
+    >>> filename = os.path.join(TMPDIR, 'testfile.brp')
+    >>> funit = brp.brp_open(filename, brp.BRP_FILE_WRITE)
     >>> #TODO
 
     See Also:
@@ -1535,7 +1708,11 @@ def brp_putrpthdr(funit, rpt):
         BurpcError on any other error
 
     Examples:
+    >>> import os
     >>> import rpnpy.burpc.all as brp
+    >>> TMPDIR = os.getenv('TMPDIR').strip()
+    >>> filename = os.path.join(TMPDIR, 'testfile.brp')
+    >>> funit = brp.brp_open(filename, brp.BRP_FILE_WRITE)
     >>> #TODO
 
     See Also:
@@ -1571,7 +1748,11 @@ def brp_updrpthdr(funit, rpt):
         BurpcError on any other error
 
     Examples:
+    >>> import os
     >>> import rpnpy.burpc.all as brp
+    >>> TMPDIR = os.getenv('TMPDIR').strip()
+    >>> filename = os.path.join(TMPDIR, 'testfile.brp')
+    >>> funit = brp.brp_open(filename, brp.BRP_FILE_WRITE)
     >>> #TODO
 
     See Also:
@@ -1609,13 +1790,48 @@ def brp_writerpt(funit, rpt, where=_bc.BRP_END_BURP_FILE):
         BurpcError on any other error
 
     Examples:
+    >>> import os
     >>> import rpnpy.burpc.all as brp
-    >>> #TODO
+    >>> TMPDIR = os.getenv('TMPDIR').strip()
+    >>> filename = os.path.join(TMPDIR, 'testfile.brp')
+    >>> funit = brp.brp_open(filename, brp.BRP_FILE_WRITE)
+    >>> rpt = brp.brp_newrpt()
+    >>> brp.RPT_SetTEMPS(rpt , 1200    )
+    >>> brp.RPT_SetFLGS( rpt , 0       )
+    >>> brp.RPT_SetSTNID(rpt , "74724")
+    >>> brp.RPT_SetIDTYP(rpt , 32      )
+    >>> brp.RPT_SetLATI( rpt , 14023   )
+    >>> brp.RPT_SetLONG( rpt , 27023   )
+    >>> brp.RPT_SetDX(   rpt , 0       )
+    >>> brp.RPT_SetDY(   rpt , 0       )
+    >>> brp.RPT_SetELEV( rpt , 0       )
+    >>> brp.RPT_SetDRND( rpt , 0       )
+    >>> brp.RPT_SetDATE( rpt , 20050317)
+    >>> brp.RPT_SetOARS( rpt , 0       )
+    >>> rpt = brp.brp_allocrpt(rpt, 20000)
+    >>> rpt = brp.brp_clrrpt(rpt)
+    >>> rpt = brp.brp_putrpthdr(funit, rpt)
+    >>> blk = brp.brp_newblk()
+    >>> brp.BLK_SetSTORE_TYPE(blk, brp.BRP_STORE_FLOAT)
+    >>> brp.BLK_SetBFAM(blk,  0)
+    >>> brp.BLK_SetBDESC(blk, 0)
+    >>> brp.BLK_SetBTYP(blk,  64)
+    >>> blk = brp.brp_allocblk(blk, 2, 1, 1)
+    >>> brp.BLK_SetDLSTELE(blk, 0, 7004)
+    >>> brp.BLK_SetDLSTELE(blk, 1, 11001)
+    >>> blk = brp.brp_encodeblk(blk)
+    >>> brp.BLK_SetRVAL(blk, 0, 0, 0, 10.0)  # for 7004
+    >>> brp.BLK_SetRVAL(blk, 1, 0, 0, 20.0)  # for 11001
+    >>> blk = brp.brp_convertblk(blk, brp.BRP_MKSA_to_BUFR)
+    >>> rpt = brp.brp_putblk(rpt, blk)
+    >>> rpt = brp.brp_writerpt(funit, rpt, brp.BRP_END_BURP_FILE)
 
     See Also:
         brp_open
         brp_newrpt
         brp_initrpthdr
+        brp_allocrpt
+        brp_clrrpt
         brp_putrpthdr
         brp_updrpthdr
     """
@@ -1668,7 +1884,7 @@ def brp_putblk(rpt, blk):
         raise BurpcError('Problem in c_brp_putblk')
     return rpt
 
-##---- utilisites -------------------------------------------------------
+##---- Utilities -------------------------------------------------------
 
 def brp_copyrpthdr(dst_rpt, src_rpt=None):
     """
@@ -1689,8 +1905,16 @@ def brp_copyrpthdr(dst_rpt, src_rpt=None):
         BurpcError on any other error
 
     Examples:
+    >>> import os
     >>> import rpnpy.burpc.all as brp
-    >>> #TODO
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES, 'bcmk_burp', '2007021900.brp')
+    >>> funit = brp.brp_open(filename, brp.BRP_FILE_READ)
+    >>> rpt = brp.brp_findrpt(funit)
+    >>> rpt = brp.brp_getrpt(funit, rpt)
+    >>> rpt2 = brp.brp_copyrpthdr(rpt)
+    >>> #...
+    >>> brp.brp_close(funit)
 
     See Also:
         brp_open
@@ -1731,8 +1955,16 @@ def brp_copyrpt(dst_rpt, src_rpt=None):
         BurpcError on any other error
 
     Examples:
+    >>> import os
     >>> import rpnpy.burpc.all as brp
-    >>> #TODO
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES, 'bcmk_burp', '2007021900.brp')
+    >>> funit = brp.brp_open(filename, brp.BRP_FILE_READ)
+    >>> rpt = brp.brp_findrpt(funit)
+    >>> rpt = brp.brp_getrpt(funit, rpt)
+    >>> rpt2 = brp.brp_copyrpt(rpt)
+    >>> #...
+    >>> brp.brp_close(funit)
 
     See Also:
         brp_open
@@ -1773,8 +2005,18 @@ def brp_copyblk(dst_blk, src_blk=None):
         BurpcError on any other error
 
     Examples:
+    >>> import os
     >>> import rpnpy.burpc.all as brp
-    >>> #TODO
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES, 'bcmk_burp', '2007021900.brp')
+    >>> funit = brp.brp_open(filename, brp.BRP_FILE_READ)
+    >>> rpt = brp.brp_findrpt(funit)
+    >>> rpt = brp.brp_getrpt(funit, rpt)
+    >>> blk = brp.brp_findblk(None, rpt)
+    >>> blk = brp.brp_getblk(brp.BLK_BKNO(blk), rpt=rpt)
+    >>> blk2 = brp.brp_copyblk(blk)
+    >>> #...
+    >>> brp.brp_close(funit)
 
     See Also:
         brp_open

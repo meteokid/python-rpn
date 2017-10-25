@@ -25,7 +25,7 @@ linkPrefix = 'Python-RPN/2.1/'
 tmpl = {}
 tmpl['head'] = """
 [[Category:python]]
-__NOTITLE__ 
+__NOTITLE__
 = Python RPN: @MODULE@ =
 {{:Python-RPN/2.1/navbox}}
 {| style='background-color:white; border: 0px #fff solid; width=82%;'>
@@ -182,8 +182,8 @@ def get_seealso(mystr, allSymbols=[]):
             else:
                 s += '* ' + x + '\n'
     return s
-    
-    
+
+
 def get_indent(myline, mychars=' '):
     return len(myline) - len(myline.lstrip(mychars))
 
@@ -252,7 +252,7 @@ class MyDocFileDataDesc(dict):
             'details'  : 'Details:',
             }
         self[''] = mystr
-        self['short'] = mystr.strip()
+        self['short'] = mystr.strip('# ')
         self['long']  = ''
         for k in self.sections.keys():
             self[k] = ''
@@ -263,9 +263,9 @@ class MyDocFileDataDesc(dict):
         for k in d.keys():
             d[k] = '\n'.join([x for x in d[k] if not re.match('[ ]*----[-]*[ ]*^', x)])
         l = re.split('\n[ ]*\n', d[''], 1)
-        d['short'] = l[0].strip()
+        d['short'] = l[0].strip('# ')
         try:
-            d['long'] = l[1].strip()
+            d['long'] = l[1].strip('# ')
         except:
             d['long'] = ''
         self.update(d)
@@ -273,7 +273,7 @@ class MyDocFileDataDesc(dict):
     def toWiki(self, allSymbols=[]):
         s = tmpl['desc']
         for k in self.keys():
-            s = s.replace('@'+k.upper()+'@', self[k].rstrip())
+            s = s.replace('@'+k.upper()+'@', self[k].rstrip('# '))
         return s
 
 
@@ -290,12 +290,12 @@ class MyDocFileDict(dict):
                     self[a['name']] = a
 
     def __repr__(self):
-        mystr = self.__class__.__name__ + '(' 
+        mystr = self.__class__.__name__ + '('
         ## mystr += repr(super(self.__class__, self))
         mystr += dict.__repr__(dict(self))
         mystr += ')'
         return mystr
-    
+
     def toWiki(self, allSymbols=[], tmpl='', inClass=False):
         if not len(self):
             return ''
@@ -312,16 +312,16 @@ class MyDocFileDict(dict):
 
 
 class MyDocFileDataDict(MyDocFileDict):
-    
+
     def __init__(self, mystr):
         super(self.__class__, self).__init__(mystr, MyDocFileData)
 
     def toWiki(self, allSymbols=[], tmpl=tmpl['datalist'], inClass=False):
         return super(self.__class__, self).toWiki(allSymbols, tmpl=tmpl, inClass=inClass)
-        
+
 
 class MyDocFileFunctionDict(MyDocFileDict):
-    
+
     def __init__(self, mystr):
         super(self.__class__, self).__init__(mystr, MyDocFileFunction)
 
@@ -332,11 +332,11 @@ class MyDocFileFunctionDict(MyDocFileDict):
             o = self[x]
             s += '|-\n'
             s += "| [[#%s|%s]] || %s \n" % (o['name'], o['name'], o['desc']['short'].strip())
-        return mystr.replace('@SUMMARY@', s.rstrip(' \n'))
+        return mystr.replace('@SUMMARY@', s.rstrip(' \n#'))
 
 
 class MyDocFileClassDict(MyDocFileDict):
-    
+
     def __init__(self, mystr):
         super(self.__class__, self).__init__(mystr, MyDocFileClass, 'class ')
 
@@ -356,7 +356,7 @@ class MyDocFileObj(dict):
         mystr += dict.__repr__(dict(self))
         mystr += ')'
         return mystr
-    
+
     def toWiki(self, allSymbols=[], inClass=False):
         return repr(self)+'<br>\n'
 
@@ -365,7 +365,7 @@ class MyDocFileObj(dict):
 
 
 class MyDocFileData(MyDocFileObj):
-    
+
     def __init__(self, mystr, dummy=''):
         l = mystr.strip().split('=', 1)
         self['name'] = l[0].strip()
@@ -377,7 +377,7 @@ class MyDocFileData(MyDocFileObj):
 
 
 class MyDocFileFunction(MyDocFileObj):
-    
+
     def __init__(self, myhead, mystr):
         self['name'] = myhead.strip().split('(', 1)[0]
         if self['name'] == myhead.strip():
@@ -398,19 +398,19 @@ class MyDocFileFunction(MyDocFileObj):
         s = tmpl['func']
         if inClass:
             s = tmpl['method']
-        
+
         return s\
             .replace('@NAME@', self['name'])\
-            .replace('@ARGS@', self['args'])\
+            .replace('@ARGS@', self['args'].replace('lambda ',''))\
             .replace('@DESC@', do_indent(self['desc'].toWiki(allSymbols).strip()))\
-            .replace('@SHORT@', self['desc']['short'].strip())\
+            .replace('@SHORT@', self['desc']['short'].strip('# '))\
             .replace('@EXAMPLE@', get_example(self['desc']['example']))\
             .replace('@NOTES@', get_warning(self['desc']['warning']) + get_notes(self['desc']['notes']))\
             .replace('@SEEALSO@', get_seealso(self['desc']['seealso'], allSymbols))
         ## return "%s(%s)\n%s\n" % (self['name'], self['args'], self['desc'].toWiki(allSymbols))
 
 class MyDocFileClass(MyDocFileObj):
-    
+
     def __init__(self, myhead, mystr):
         class_sec_head = {
             'methods'  : 'Methods defined here:',
@@ -546,7 +546,7 @@ class MyDocFile(MyDocFileObj):
             d['@NOTES@'] = get_warning(self['desc']['warning']) + get_notes(self['desc']['notes'])
         if self['desc']['seealso']:
             d['@SEEALSO@'] = get_seealso(self['desc']['seealso'], allSymbols)
-        
+
         s = tmpl['head']
         ## pp.pprint(d)
         for k in d.keys():
@@ -587,8 +587,8 @@ if __name__ == "__main__":
         'rpnpy.utils.fstd3d',
         'rpnpy.utils.burpfile',
         'rpnpy.utils.llacar',
-        'rpnpy.utils.thermoconsts',
-        'rpnpy.utils.thermofunc',
+        'rpnpy.utils.tdpack',
+        'rpnpy.utils.tdpack_consts',
         'rpnpy.librmn.proto',
         'rpnpy.librmn.proto_burp',
         'rpnpy.vgd',
@@ -599,6 +599,7 @@ if __name__ == "__main__":
         'rpnpy.burpc',
         'rpnpy.burpc.all',
         'rpnpy.burpc.base',
+        'rpnpy.burpc.brpobj',
         'rpnpy.burpc.const',
         'rpnpy.burpc.proto',
         ]

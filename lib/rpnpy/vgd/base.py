@@ -895,6 +895,7 @@ def vgd_get(vgd_ptr, key, quiet=1):
         ok = _vp.c_vgd_get_char(vgd_ptr, key2b, v1, quiet)
         if ok == _vc.VGD_OK:
             v1 = _C_CHAR2WCHAR(v1.value).strip()
+        #TODO: what if RFLD returns an error...
     elif key2 in _vc.VGD_OPR_KEYS['get_int']:
         v1 = _ct.c_int(0)
         ok = _vp.c_vgd_get_int(vgd_ptr, key2b, _ct.byref(v1), quiet)

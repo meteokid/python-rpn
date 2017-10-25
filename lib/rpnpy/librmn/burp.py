@@ -976,7 +976,7 @@ def mrbprm(rpt, blkno):
                                   See BURP_BKTYP_KIND_DESC
             'bktyp_kindd' : (str) desc of bktyp_kind
             'bkstp'       : (int) block type, Sub data-type component
-            'bkstpd'      : (str)  desc of bktyp_kindd
+            'bkstpd'      : (str) desc of bktyp_kindd
             'nbit'  : (int) Number of bits per value.
                             When we add a block, we should insure that the
                             number of bits specified is large enough to

@@ -23,11 +23,6 @@
      rpnpy.librmn.grids
 """
 
-#TODO: burp
-#TODO: rdiag
-#TODO: modelutil's tdpack
-#TODO: modelutil's ???
-
 from rpnpy.version import *
 
 __SUBMODULES__ = ['proto', 'const', 'base', 'fstd98', 'interp', 'grids',
@@ -71,7 +66,7 @@ def loadRMNlib(rmn_version=None):
        RMN_VERSION (str)  : loaded librmn version
        RMN_LIBPATH (str)  : path to loaded librmn shared lib
        librmn      (CDLL) : ctypes library object for librmn.so
-       
+
     Library 'librmnsharedVERSION.so' is searched into the Env.Var. paths:
        PYTHONPATH, EC_LD_LIBRARY_PATH, LD_LIBRARY_PATH
     """
@@ -110,7 +105,7 @@ def loadRMNlib(rmn_version=None):
     return (RMN_VERSION, RMN_LIBPATH, librmn)
 
 (RMN_VERSION, RMN_LIBPATH, librmn) = loadRMNlib()
-    
+
 if __name__ == "__main__":
     import doctest
     doctest.testmod()

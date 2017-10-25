@@ -19,7 +19,7 @@ import rpnpy.utils.thermoconsts as _cst
 
 #TODO: fst_read_3d_sample points
 #TODO: fst_write_3d
-
+#TODO: fst_new_3d
 
 def get_levels_press(fileId, vGrid, shape, ip1list,
                      datev=-1, ip2=-1, ip3=-1, typvar=' ', etiket=' ',
@@ -388,53 +388,56 @@ def fst_read_3d(fileId, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
     return r3d
 
 
-def fst_write_3d(fileId, r3d, verbose=False):
-    #TODO: mom or thermo?
-    pass
+## def fst_write_3d(fileId, r3d, verbose=False):
+##     """
+##     #TODO: doc
+##     """
+##     #TODO: mom or thermo?
+##     pass
 
 
-def fst_new_3d(params=None, hgrid=None, vgrid=None, ip1list=None,
-               dtype=None, dataArray=None, verbose=False):
-    
-    r3d = _rmn.FST_RDE_META_DEFAULT.copy()
-    r3d.update(params)
-    r3d.update({
-        
-         })
-    
-    (ni, nj) = (hgrid['ni'], hgrid['nj'])
-    if isinstance(ip1list, str):
-        if ip1list.upper() == 'VIPM'
-            ip1list = _vgd._vgd.vgd_get(vgrid,'VIPM')
-        elif ip1list.upper() == 'VIPT'
-            ip1list = _vgd._vgd.vgd_get(vgrid,'VIPT')
-        else:
-            raise
-    elif not isinstance(ip1list, (list, tuple)):
-        raise
-    nk = len(ip1list)
-    
-    dtype = _rmn.dtype_fst2numpy(params['datyp'], params['nbits'])
-    if dataArray is None:
-       r3d['d'] = _np.zero((ni,nj,nk), dtype=dtype, order='FORTRAN')
-       
-    r3d.update({
-        'shape' : r3d['d'].shape,
-        'ni'    : r3d['d'].shape[0],
-        'nj'    : r3d['d'].shape[1],
-        'nk'    : r3d['d'].shape[2],
-        'ip1'   : -1,
-        'ip1s'  : ip1list,
-        'hgrid' : hgrid,
-        'vgrid' : _vgd.vgd_copy(vgrid)
-         })
+## def fst_new_3d(params=None, hgrid=None, vgrid=None, ip1list=None,
+##                dtype=None, dataArray=None, verbose=False):
+##     """
+##     #TODO: doc
+##     """
+##     r3d = _rmn.FST_RDE_META_DEFAULT.copy()
+##     r3d.update(params)
+##     r3d.update({
+##         #TODO
+##          })
+##     (ni, nj) = (hgrid['ni'], hgrid['nj'])
+##     if isinstance(ip1list, str):
+##         if ip1list.upper() == 'VIPM':
+##             ip1list = _vgd._vgd.vgd_get(vgrid,'VIPM')
+##         elif ip1list.upper() == 'VIPT':
+##             ip1list = _vgd._vgd.vgd_get(vgrid,'VIPT')
+##         else:
+##             raise
+##     elif not isinstance(ip1list, (list, tuple)):
+##         raise
+##     nk = len(ip1list)
 
-         
+##     dtype = _rmn.dtype_fst2numpy(params['datyp'], params['nbits'])
+##     if dataArray is None:
+##        r3d['d'] = _np.zero((ni,nj,nk), dtype=dtype, order='FORTRAN')
+
+##     r3d.update({
+##         'shape' : r3d['d'].shape,
+##         'ni'    : r3d['d'].shape[0],
+##         'nj'    : r3d['d'].shape[1],
+##         'nk'    : r3d['d'].shape[2],
+##         'ip1'   : -1,
+##         'ip1s'  : ip1list,
+##         'hgrid' : hgrid,
+##         'vgrid' : _vgd.vgd_copy(vgrid)
+##          })
+
+
 if __name__ == "__main__":
     import doctest
-    doctest.testmod()   
+    doctest.testmod()
 
-    
 # -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
 # vim: set expandtab ts=4 sw=4:
 # kate: space-indent on; indent-mode cstyle; indent-width 4; mixedindent off;
