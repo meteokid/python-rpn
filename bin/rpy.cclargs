@@ -2,8 +2,33 @@
 # -*- coding: utf-8 -*-
 # Author: Stephane Chamberland <stephane.chamberland@canada.ca>
 # Copyright: LGPL 2.1
-"""
-Parse list of args for bash
+r"""
+Parse list of args for bash/ksh ''a la'' [[cclargs]].
+
+   eval `rpy.cclargs [-D DELIM] [--desc DESC] [--epilog EPILOG] $0 \
+         [[-opt DEFVAL1 DEFVAL2 DESC] ...] \
+         ++ $*`
+
+Options:
+   -D         : argument values delimiter wehn providing multiple values
+   --desc     : Script Description
+   --epilog   : Second part of description to print at the end
+   -h, --help : Print help and exit
+   $0         : script name
+
+Example:
+   #!/bin/ksh
+   arguments=$*
+   eval `rpy.cclargs \
+     -D " " \
+     --desc "desc of script" \
+     --epilog "some epilog" \
+     $0 \
+     -opt1  "opt1default1"  "opt1default2"  "[Opt1 description]"\
+     -opt2  "opt2default1"  "opt2default2"  "[Opt2 description]"\
+     ++ $arguments`
+   echo opt1=$opt1
+   echo opt2=$opt2
 """
 
 if __name__ == "__main__":
@@ -40,10 +65,10 @@ if __name__ == "__main__":
                         help="Delimiter for multi arg values")
     parser.add_argument("--desc", dest="desc",
                         type=str, default="",
-                        help="")
+                        help="Script's description")
     parser.add_argument("--epilog", dest="epilog",
                         type=str, default="",
-                        help="")
+                        help="Script's help epilog")
     (args, unknown) = parser.parse_known_args()
     sys.argv = unknown
 
