@@ -1601,14 +1601,14 @@ def _mrbcvt_dict_full_init():
     """
     if not len(_mrbcvt_dict_full.keys()):
         AFSISIO = os.getenv('AFSISIO', '')
-        if not AFSISIO:
-            AFSISIO = os.getenv('rpnpy', '/')
-            mypath = os.path.join(AFSISIO.strip(), 'share',
-                                  _rbc.BURP_TABLE_B_FILENAME)
-        else:
-            mypath = os.path.join(AFSISIO.strip(), 'datafiles/constants',
+        mypath = os.path.join(AFSISIO.strip(), 'datafiles/constants',
+                              _rbc.BURP_TABLE_B_FILENAME)
+        if not (AFSISIO and os.path.isfile(mypath)):
+            AFSISIO2 = os.getenv('rpnpy', '/')
+            mypath = os.path.join(AFSISIO2.strip(), 'share',
                                   _rbc.BURP_TABLE_B_FILENAME)
         try:
+            ## print('_mrbcvt_dict_full_init: '+mypath) #TODO: print this in verbose mode
             fd = open(mypath, "r")
             try: rawdata = fd.readlines()
             finally: fd.close()
@@ -1763,7 +1763,7 @@ def mrbcvt_dict(cmcid, raise_error=True):
     """
     Extract BUFR table B info for cmcid
 
-    cvtdict = mrbcvt_dict(bufrid)
+    cvtdict = mrbcvt_dict(cmcid)
 
     Args:
         cmcid       : Element CMC code name
