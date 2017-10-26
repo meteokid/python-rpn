@@ -22,6 +22,8 @@ Details:
 ## import numpy  as _np
 ## import numpy.ctypeslib as _npc
 
+#TODO: add support for Vcode 5100 (SLEVE pressure) and Vcode 5999 (hyb unstaggered of unspecified origin e.g. ECMWF)
+
 ##DETAILS_START
 #== Constants Details ==
 #<source lang="python">
@@ -96,8 +98,8 @@ VGD_VCODE_NEED_RFLD = {
     }
 
 VGD_OPR_KEYS = {
-    'get_char'      : ["ETIK", "NAME", "RFLD"],
-    'put_char'      : ["ETIK", "NAME", "RFLD"],
+    'get_char'      : ["ETIK", "NAME", "RFLD", "RFLS"],
+    'put_char'      : ["ETIK", "NAME", "RFLD", "RFLS"],
     'get_int'       : ["NL_M", "NL_T", "KIND", "VERS", "DATE", "IG_1", "IG_2",
                        "IG_3", "IG_4", "IP_1", "IP_2", "DIPM", "DIPT", "MIPG",
                        "LOGP"],

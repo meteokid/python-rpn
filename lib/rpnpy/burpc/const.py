@@ -24,6 +24,8 @@ Details:
 import numpy  as _np
 ## import numpy.ctypeslib as _npc
 import rpnpy.librmn.all as _rmn
+## from rpnpy import C_WCHAR2CHAR as _C_WCHAR2CHAR
+## from rpnpy import C_CHAR2WCHAR as _C_CHAR2WCHAR
 
 ##DETAILS_START
 #== Constants Details ==

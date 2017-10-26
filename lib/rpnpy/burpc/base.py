@@ -483,7 +483,7 @@ def brp_open(filename, filemode=_bc.BRP_FILE_READ, funit=0, getnbr=False):
         raise ValueError("brp_open: must provide a valid filename")
     if brpmode != _rmn.BURP_MODE_CREATE:
         if not _rmn.isBURP(filename):
-            raise BurpError('Not a burp file: {0}'.format(filename))
+            raise BurpcError('Not a burp file: {0}'.format(filename))
     if not funit:
         try:
             funit = _rmn.get_funit(filename, fstmode)

@@ -672,37 +672,37 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
         bkstp       = 0  ## See BURP_BKSTP_DESC
         btyp        = rmn. mrbtyp_encode(bknat, bktyp, bkstp)
 
-        blk = brp.BurpcBlk({
-            'store_type' : brp.BRP_STORE_FLOAT,
-            'bfam'   : 0,
-            'bdesc'  : 0,
-            'btyp'   : btyp,  ## 64
-            ## 'bknat'  : bknat,
-            ## 'bktyp'  : bktyp,
-            ## 'bkstp'  : bkstp,
-            ## 'datyp'  : rmn.BURP_DATYP_LIST['float'], #TODO: link to BRP_STORE_FLOAT
-            })
+        ## blk = brp.BurpcBlk({
+        ##     'store_type' : brp.BRP_STORE_FLOAT,
+        ##     'bfam'   : 0,
+        ##     'bdesc'  : 0,
+        ##     'btyp'   : btyp,  ## 64
+        ##     ## 'bknat'  : bknat,
+        ##     ## 'bktyp'  : bktyp,
+        ##     ## 'bkstp'  : bkstp,
+        ##     ## 'datyp'  : rmn.BURP_DATYP_LIST['float'], #TODO: link to BRP_STORE_FLOAT
+        ##     })
 
-        print repr(brp.BurpcEle({
-            'e_bufrid' : 7004,
-            'e_rval'   : [10.]
-            }))
+        ## print(repr(brp.BurpcEle({
+        ##     'e_bufrid' : 7004,
+        ##     'e_rval'   : [10.]
+        ##     })))
 
-        blk.append(brp.BurpcEle({
-            'e_bufrid' : 7004,
-            'e_rval'   : [10.]
-            }))
-        blk.append(brp.BurpcEle({
-            'e_bufrid' : 11001,
-            'e_rval'   : [20.]
-            }))
-        sys.exit(0)
+        ## blk.append(brp.BurpcEle({
+        ##     'e_bufrid' : 7004,
+        ##     'e_rval'   : [10.]
+        ##     }))
+        ## blk.append(brp.BurpcEle({
+        ##     'e_bufrid' : 11001,
+        ##     'e_rval'   : [20.]
+        ##     }))
+        ## sys.exit(0)
 
-        rpt.append(blk)
+        ## rpt.append(blk)
 
-        with brp.BurpcFile(outfile, rmn.BURP_MODE_APPEND) as bfileo:
-            bfileo.append(rpt)
-            bfileo.append(rpt.copy())
+        ## with brp.BurpcFile(outfile, rmn.BURP_MODE_APPEND) as bfileo:
+        ##     bfileo.append(rpt)
+        ##     bfileo.append(rpt.copy())
 
 
         ## # allouer espace pour l'enregistremen pour ajouter des blocs

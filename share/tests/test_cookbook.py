@@ -348,7 +348,7 @@ class rpnpyCookbook(unittest.TestCase):
         # Open file
         fdate    = datetime.date.today().strftime('%Y%m%d') + '00_048'
         CMCGRIDF = os.getenv('CMCGRIDF').strip()
-        fileName  = os.path.join(CMCGRIDF, 'prog', 'regpres', fdate)
+        fileName  = os.path.join(CMCGRIDF, 'prog', 'regeta', fdate)
         try:
             fileId = rmn.fstopenall(fileName, rmn.FST_RO)
         except:
@@ -410,7 +410,7 @@ class rpnpyCookbook(unittest.TestCase):
         # Open file
         fdate     = datetime.date.today().strftime('%Y%m%d') + '00_048'
         CMCGRIDF  = os.getenv('CMCGRIDF').strip()
-        fileName  = os.path.join(CMCGRIDF, 'prog', 'regpres', fdate)
+        fileName  = os.path.join(CMCGRIDF, 'prog', 'regeta', fdate)
         try:
             fileId = rmn.fstopenall(fileName, rmn.FST_RO)
         except:
