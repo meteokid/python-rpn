@@ -523,7 +523,8 @@ class RpnPyLibrmnBurp(unittest.TestCase):
                         print('b2',repr(blkdata))
                         print('b3',repr(rmn.mrbcvt_dict(e_cmcids)))
                         print('b4',repr(rmn.mrbcvt_dict_bufr(e_cmcids, raise_error=False)))
-                        print('rv',repr(e_rval.ravel()), blkparams['datyp'])
+                        print('rf',repr(e_rval.ravel()), blkparams['datyp'])
+                        print('rv',repr(_np.round(e_rval).astype(_np.int32).ravel()), blkparams['datyp'])
                         print('t0',repr(e_tblval0.ravel()))
                         print('t1',repr(e_tblval1.ravel()))
                     #TODO: problem w/ values < 0: decode int as is... but encode shift values by -1
