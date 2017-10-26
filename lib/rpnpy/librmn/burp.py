@@ -890,14 +890,16 @@ def mrbhdr(rpt):
         }
 
 
-def flags_decode(iflgs):
+def flags_decode(iflgs, raise_error=True):
     """
     Decode report header flags information.
 
     flags_dict = flags_decode(flgs)
 
     Args:
-        flgs : integer value of the flags
+        flgs        : integer value of the flags
+        raise_error : (optional) if True rais an error when convertin error occurs
+                      otherwise return a dict with defaults (default=False)
     Returns:
         {
             'flgs'  : (int)   Global flags
@@ -920,7 +922,18 @@ def flags_decode(iflgs):
         mrfhdr
         rpnpy.librmn.burp_const
     """
-    flgsl = _rbc.BURP2BIN2LIST(iflgs, len(_rbc.BURP_FLAGS_IDX_NAME))
+    try:
+        flgsl = _rbc.BURP2BIN2LIST(iflgs, len(_rbc.BURP_FLAGS_IDX_NAME))
+    except:
+        if raise_error:
+            raise TypeError('Invalid flags')
+        else:
+            return {
+                'flgs'  : iflgs,
+                'flgsl' : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0,
+                           0, 0, 0, 0, 0, 0, 0],
+                'flgsd' : 'Error While decoding flags'
+            }
     try:
         flgs_desc = "".join(
         [_rbc.BURP_FLAGS_IDX_NAME[i] + ", " if flgsl[i] else ""
@@ -934,7 +947,7 @@ def flags_decode(iflgs):
     return {
             'flgs'  : iflgs,
             'flgsl' : flgsl,
-            'flgsd' : flgs_desc,
+            'flgsd' : flgs_desc
             }
 
 
