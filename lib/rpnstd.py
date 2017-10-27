@@ -425,7 +425,7 @@ class RPNFile:
                 # a contiguous, Fortran-ordered copy for writing.
                 if value.flags.f_contiguous == False:
                     value = numpy.array(value, order='F')
-                    Fstdc.fstecr(value, self.iun, index.nom, index.type,
+                Fstdc.fstecr(value, self.iun, index.nom, index.type,
                                  index.etiket, index.ip1, index.ip2, index.ip3,
                                  index.dateo, index.grtyp, index.ig1,
                                  index.ig2, index.ig3, index.ig4, index.deet,
