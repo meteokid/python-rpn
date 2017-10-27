@@ -7,7 +7,7 @@
 
 #TODO: add ax, ax optional arg to ZE, dE, ZL, dL, U
 #TODO: add fucntions to convert between Z, # and Y grids
-#TODO: add fucntions to define YE, YL grids
+#TODO: add fucntions to define YE grids
 
 """
 Librmn Fstd grid helper functions

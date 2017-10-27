@@ -2017,7 +2017,7 @@ def mrb_prm_xtr_dcl_cvt(rpt, blkno):
         blkno : block number (int > 0)
     Returns
         {
-            #TODO: full list of returned parameters
+            #TODO: full list of returned parameters, see mrbprm, mrbdcl
             'cmcids' : (array) List of element names in the report in numeric
                                BUFR codes. (Size: NELE; type: int)
                                NELE: Number of meteorological elements in a
@@ -2218,11 +2218,11 @@ def mrbini(funit, rpt, time, flgs, stnid, idtp, lat, lon, dx, dy, elev, drnd,
 
 
 #TODO: review
+#TODO: should accept a dict as input for all args
 def mrbadd(rpt, blkno, nele, nval, nt, bfam, bdesc, btyp, nbit, bit0, datyp,
            cmcids, tblval): #TODO change cmcids for consistency (more explict name)
     """
     Adds a block to a report.
-    #TODO: should accept a dict as input for all args
 
     Args:
         #TODO:

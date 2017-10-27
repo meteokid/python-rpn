@@ -308,7 +308,7 @@ BURP_IDTYP_IDX = dict([(v, int(k)) for k, v in BURP_IDTYP_DESC.items()])
 
 #==== Data types ====
 
-## BURP valid code for data types
+#BURP valid code for data types
 #<source lang=python>
 BURP_DATYP_LIST = { #TODO: review
     'binary'  : 0,  # 0 = string of bits (bit string)
@@ -330,7 +330,7 @@ BURP_DATYP_LIST = { #TODO: review
 BURP_DATYP_NAMES = dict([(v, k) for k, v in BURP_DATYP_LIST.items()])
 #</source>
 
-## Numpy versus BURP data type equivalence
+#Numpy versus BURP data type equivalence
 #<source lang=python>
 BURP_DATYP2NUMPY_LIST = { #TODO: review
     0: _np.uint32,    # binary, transparent
@@ -343,15 +343,15 @@ BURP_DATYP2NUMPY_LIST = { #TODO: review
     8: _np.complex64, # complex IEEE        #TODO: review
     9: _np.complex128 # double complex IEEE #TODO: review
 }
-## BURP_NUMPY2DATYP2_LIST = { #TODO: review
-##     _np.uint32 : (0, 2),  # binary, transparent || unsigned integer
-##     _np.uint8 : (3, 5),   # character string || character string (uppercase)
-##     _np.int32 : (4,),     # signed integer
-##     _np.float32 : (6,),   # floating point      #TODO: review
-##     _np.float64 : (7,),   # double precision    #TODO: review
-##     _np.complex64 : (8,), # complex IEEE        #TODO: review
-##     _np.complex128 : (9,) # double complex IEEE #TODO: review
-## }
+BURP_NUMPY2DATYP_LIST = { #TODO: review
+    _np.uint32 : (0, 2),  # binary, transparent || unsigned integer
+    _np.uint8 : (3, 5),   # character string || character string (uppercase)
+    _np.int32 : (4,),     # signed integer
+    _np.float32 : (6,),   # floating point      #TODO: review
+    _np.float64 : (7,),   # double precision    #TODO: review
+    _np.complex64 : (8,), # complex IEEE        #TODO: review
+    _np.complex128 : (9,) # double complex IEEE #TODO: review
+}
 ## Note: Type 3 and 5 are processed like strings of bits thus,
 ##       the user should do the data compression himself.
 #</source>

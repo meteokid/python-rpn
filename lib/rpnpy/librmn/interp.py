@@ -176,7 +176,6 @@ def ezqkdef(ni, nj=None, grtyp=None, ig1=None, ig2=None, ig3=None, ig4=None,
             iunit = gridParams['iunit']
         except:
             iunit = 0
-            #TODO: if needed raise error
     if (type(ni), type(nj), type(grtyp), type(ig1), type(ig2), type(ig3),
         type(ig4), type(iunit)) != (int, int, str, int, int, int, int, int):
         raise TypeError('ezqkdef: wrong input data type')

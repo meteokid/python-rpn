@@ -277,7 +277,7 @@ Details:
         Args:
             buf    (array) : (I) vector containing the report data
             bkno   (int)   : (I) block number
-            lstele (array) : (O) list of nele meteorogical elements (array of int) #TODO: CMC or BUFR codes?
+            lstele (array) : (O) list of nele meteorogical elements (array of int)
             tblval (array) : (O) array of values to write (nele*nval*nt)
                                  (array of int or float)
         Returns:

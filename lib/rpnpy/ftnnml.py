@@ -13,7 +13,8 @@ set/rename vat values, create new namelist, delete values or namelists, ...
 ## TODO: option to switch derived type form to list form (vice versa)
 ## TODO: trim too long list...  with repeated values?
 ##       take into account fixed length string list (no commas or quote when write)
-## TOTO: catch value format like: kfctrig4=2*0.0000000E+00  , 2*5.0000001E-02
+## TODO: catch value format like: kfctrig4=2*0.0000000E+00  , 2*5.0000001E-02
+## TODO: Make Logicals format consistent (F/false/.f./.false.)
 
 import re
 import sys

@@ -270,7 +270,7 @@ def fstopenall(paths, filemode=_rc.FST_RO, verbose=None):
         else:
             filelist.append(mypath)
     if filemode != _rc.FST_RO and len(paths) > 1:
-        return None #TODO: print error msg
+        raise ValueError("fstopenall: Cannot open multiple files at once in write or append mode: {}".format(repr(paths)))
     iunitlist = []
     for myfile in filelist:
         funit = None

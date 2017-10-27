@@ -32,7 +32,7 @@ import numpy  as _np
 #=== primitives ===
 #<source lang=python>
 ## Python dict with wkoffit file type codes
-WKOFFIT_TYPE_LIST = { #TODO:
+WKOFFIT_TYPE_LIST = {
     'INEXISTANT' : -3,
     'VIDE' : -2,
     'INCONNU' : -1,

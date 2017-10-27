@@ -455,13 +455,13 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
         istat = brp.c_brp_open(ounit, _C_WCHAR2CHAR(outfile), _C_WCHAR2CHAR("w"))
         bs, br = brp.c_brp_newblk(), brp.c_brp_newblk()
         rs, rr = brp.c_brp_newrpt(), brp.c_brp_newrpt()
-        brp.RPT_SetHANDLE(rs, 0 )
-        brp.RPT_SetTEMPS(rs,2300)
-        brp.RPT_SetIDTYP(rs,32)
+        brp.RPT_SetHANDLE(rs, 0)
+        brp.RPT_SetTEMPS(rs, 2300)
+        brp.RPT_SetIDTYP(rs, 32)
         while brp.c_brp_findrpt(iunit, rs) >= 0:
             if brp.c_brp_getrpt(iunit, brp.RPT_HANDLE(rs), rr) < 0:
                 continue
-            brp.RPT_SetTEMPS(rr,2200)
+            brp.RPT_SetTEMPS(rr, 2200)
             brp.c_brp_updrpthdr(ounit, rr)
             brp.c_brp_writerpt(ounit, rr, brp.BRP_END_BURP_FILE)
         istat = brp.c_brp_close(iunit)

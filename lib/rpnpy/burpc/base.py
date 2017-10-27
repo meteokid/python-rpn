@@ -954,7 +954,8 @@ def brp_resetrpthdr(rpt):
 
     Examples:
     >>> import rpnpy.burpc.all as brp
-    >>> #TODO
+    >>> rpt = brp.brp_newrpt()
+    >>> rpt = brp.brp_resetrpthdr(rpt)
 
     See Also:
         brp_clrrpt
@@ -983,7 +984,8 @@ def brp_resetblkhdr(blk):
 
     Examples:
     >>> import rpnpy.burpc.all as brp
-    >>> #TODO
+    >>> blk = brp.brp_newblk()
+    >>> blk = brp.brp_resetblkhdr(blk)
 
     See Also:
         brp_clrblk
@@ -1713,7 +1715,26 @@ def brp_putrpthdr(funit, rpt):
     >>> TMPDIR = os.getenv('TMPDIR').strip()
     >>> filename = os.path.join(TMPDIR, 'testfile.brp')
     >>> funit = brp.brp_open(filename, brp.BRP_FILE_WRITE)
-    >>> #TODO
+    >>> rpt = brp.brp_newrpt()
+    >>> brp.RPT_SetTEMPS(rpt , 1200    )
+    >>> brp.RPT_SetFLGS( rpt , 0       )
+    >>> brp.RPT_SetSTNID(rpt , "74724")
+    >>> brp.RPT_SetIDTYP(rpt , 32      )
+    >>> brp.RPT_SetLATI( rpt , 14023   )
+    >>> brp.RPT_SetLONG( rpt , 27023   )
+    >>> brp.RPT_SetDX(   rpt , 0       )
+    >>> brp.RPT_SetDY(   rpt , 0       )
+    >>> brp.RPT_SetELEV( rpt , 0       )
+    >>> brp.RPT_SetDRND( rpt , 0       )
+    >>> brp.RPT_SetDATE( rpt , 20050317)
+    >>> brp.RPT_SetOARS( rpt , 0       )
+    >>> rpt = brp.brp_allocrpt(rpt, 10000)
+    >>> rpt = brp.brp_clrrpt(rpt)
+    >>> rpt = brp.brp_putrpthdr(funit, rpt)
+    >>> # ... Add blocks to report ...
+    >>> rpt = brp.brp_writerpt(funit, rpt, brp.BRP_END_BURP_FILE)
+    >>> brp.brp_close(funit)
+    >>> brp.brp_free(rpt)
 
     See Also:
         brp_open
@@ -1749,11 +1770,30 @@ def brp_updrpthdr(funit, rpt):
 
     Examples:
     >>> import os
+    >>> import rpnpy.librmn.all as rmn
     >>> import rpnpy.burpc.all as brp
     >>> TMPDIR = os.getenv('TMPDIR').strip()
-    >>> filename = os.path.join(TMPDIR, 'testfile.brp')
-    >>> funit = brp.brp_open(filename, brp.BRP_FILE_WRITE)
-    >>> #TODO
+    >>> infile = os.path.join(os.getenv('ATM_MODEL_DFILES').strip(),
+    ...                       'bcmk_burp', '2007021900.brp')
+    >>> outfile = os.path.join(TMPDIR, 'testfile.brp')
+    >>> optvalue = brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
+    >>> iunit = brp.brp_open(infile)
+    >>> ounit = brp.brp_open(outfile, brp.BRP_FILE_WRITE)
+    >>> rpt0, rpt1 = brp.brp_newrpt(), brp.brp_newrpt()
+    >>> brp.RPT_SetHANDLE(rpt0, 0)
+    >>> brp.RPT_SetTEMPS(rpt0, 2300)
+    >>> brp.RPT_SetIDTYP(rpt0, 32)
+    >>> while brp.brp_findrpt(iunit, rpt0):
+    ...    try:
+    ...        rpt1 = brp.brp_getrpt(iunit, brp.RPT_HANDLE(rpt0), rpt1)
+    ...    except:
+    ...        continue
+    ...    brp.RPT_SetTEMPS(rpt1, 2200)
+    ...    rpt1 = brp.brp_updrpthdr(ounit, rpt1)
+    ...    rpt1 = brp.brp_writerpt(ounit, rpt1, brp.BRP_END_BURP_FILE)
+    >>> brp.brp_close(ounit)
+    >>> brp.brp_close(iunit)
+    >>> brp.brp_free(rpt0, rpt1)
 
     See Also:
         brp_open
@@ -1785,6 +1825,82 @@ def brp_writerpt(funit, rpt, where=_bc.BRP_END_BURP_FILE):
                  (default: BRP_END_BURP_FILE)
     Return:
         burp report, ctypes.POINTER(BURP_RPT)
+    Raises:
+        TypeError on not supported types or args
+        BurpcError on any other error
+
+    Examples:
+    >>> import os
+    >>> import rpnpy.librmn.all as rmn
+    >>> import rpnpy.burpc.all as brp
+    >>> TMPDIR = os.getenv('TMPDIR').strip()
+    >>> filename = os.path.join(TMPDIR, 'testfile.brp')
+    >>> optvalue = brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
+    >>> funit = brp.brp_open(filename, brp.BRP_FILE_WRITE)
+    >>> rpt = brp.brp_newrpt()
+    >>> brp.RPT_SetTEMPS(rpt , 1200    )
+    >>> brp.RPT_SetFLGS( rpt , 0       )
+    >>> brp.RPT_SetSTNID(rpt , "74724")
+    >>> brp.RPT_SetIDTYP(rpt , 32      )
+    >>> brp.RPT_SetLATI( rpt , 14023   )
+    >>> brp.RPT_SetLONG( rpt , 27023   )
+    >>> brp.RPT_SetDX(   rpt , 0       )
+    >>> brp.RPT_SetDY(   rpt , 0       )
+    >>> brp.RPT_SetELEV( rpt , 0       )
+    >>> brp.RPT_SetDRND( rpt , 0       )
+    >>> brp.RPT_SetDATE( rpt , 20050317)
+    >>> brp.RPT_SetOARS( rpt , 0       )
+    >>> rpt = brp.brp_allocrpt(rpt, 20000)
+    >>> rpt = brp.brp_clrrpt(rpt)
+    >>> rpt = brp.brp_putrpthdr(funit, rpt)
+    >>> blk = brp.brp_newblk()
+    >>> brp.BLK_SetSTORE_TYPE(blk, brp.BRP_STORE_FLOAT)
+    >>> brp.BLK_SetBFAM(blk,  0)
+    >>> brp.BLK_SetBDESC(blk, 0)
+    >>> brp.BLK_SetBTYP(blk,  64)
+    >>> blk = brp.brp_allocblk(blk, 2, 1, 1)
+    >>> brp.BLK_SetDLSTELE(blk, 0, 7004)
+    >>> brp.BLK_SetDLSTELE(blk, 1, 11001)
+    >>> blk = brp.brp_encodeblk(blk)
+    >>> brp.BLK_SetRVAL(blk, 0, 0, 0, 10.0)  # for 7004
+    >>> brp.BLK_SetRVAL(blk, 1, 0, 0, 20.0)  # for 11001
+    >>> blk = brp.brp_convertblk(blk, brp.BRP_MKSA_to_BUFR)
+    >>> rpt = brp.brp_putblk(rpt, blk)
+    >>> rpt = brp.brp_writerpt(funit, rpt, brp.BRP_END_BURP_FILE)
+    >>> brp.brp_close(funit)
+    >>> brp.brp_free(rpt, blk)
+
+    See Also:
+        brp_open
+        brp_newrpt
+        brp_initrpthdr
+        brp_allocrpt
+        brp_clrrpt
+        brp_putrpthdr
+        brp_updrpthdr
+    """
+    funit = funit.funit if isinstance(funit, _bo.BurpcFile) else funit
+    prpt = _RPTPTR(rpt)
+    if not isinstance(prpt, _ct.POINTER(_bp.BURP_RPT)):
+        raise TypeError('Cannot use rpt or type={}'+str(type(rpt)))
+    if _bp.c_brp_writerpt(funit, prpt, where) < 0:
+        raise BurpcError('Problem in brp_writerpt')
+    return rpt
+
+
+def brp_putblk(rpt, blk):
+    """
+    Add a new block into a burp report
+
+    rpt = brp_putblk(rpt, blk)
+
+    Args:
+        rpt : burp report to be updated (ctypes.POINTER(BURP_RPT))
+              empty rpt can be obtained from brp_newrpt()
+        blk : block data and meta to put in report (ctypes.POINTER(BURP_BLK))
+              empty blk can be obtained from brp_newblk()
+    Return:
+        updated burp report, ctypes.POINTER(BURP_RPT)
     Raises:
         TypeError on not supported types or args
         BurpcError on any other error
@@ -1825,45 +1941,8 @@ def brp_writerpt(funit, rpt, where=_bc.BRP_END_BURP_FILE):
     >>> blk = brp.brp_convertblk(blk, brp.BRP_MKSA_to_BUFR)
     >>> rpt = brp.brp_putblk(rpt, blk)
     >>> rpt = brp.brp_writerpt(funit, rpt, brp.BRP_END_BURP_FILE)
-
-    See Also:
-        brp_open
-        brp_newrpt
-        brp_initrpthdr
-        brp_allocrpt
-        brp_clrrpt
-        brp_putrpthdr
-        brp_updrpthdr
-    """
-    funit = funit.funit if isinstance(funit, _bo.BurpcFile) else funit
-    prpt = _RPTPTR(rpt)
-    if not isinstance(prpt, _ct.POINTER(_bp.BURP_RPT)):
-        raise TypeError('Cannot use rpt or type={}'+str(type(rpt)))
-    if _bp.c_brp_writerpt(funit, prpt, where) < 0:
-        raise BurpcError('Problem in brp_writerpt')
-    return rpt
-
-
-def brp_putblk(rpt, blk):
-    """
-    Add a new block into a burp report
-
-    rpt = brp_putblk(rpt, blk)
-
-    Args:
-        rpt : burp report to be updated (ctypes.POINTER(BURP_RPT))
-              empty rpt can be obtained from brp_newrpt()
-        blk : block data and meta to put in report (ctypes.POINTER(BURP_BLK))
-              empty blk can be obtained from brp_newblk()
-    Return:
-        updated burp report, ctypes.POINTER(BURP_RPT)
-    Raises:
-        TypeError on not supported types or args
-        BurpcError on any other error
-
-    Examples:
-    >>> import rpnpy.burpc.all as brp
-    >>> #TODO
+    >>> brp.brp_close(funit)
+    >>> brp.brp_free(rpt, blk)
 
     See Also:
         brp_open
