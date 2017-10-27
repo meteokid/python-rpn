@@ -31,6 +31,8 @@ See Also:
     rpnpy.burpc.brpobj
     rpnpy.burpc.base
     rpnpy.burpc.const
+    rpnpy.librmn.burp
+    rpnpy.librmn.burp_const
 
 Details:
     See Source Code
@@ -57,21 +59,45 @@ import ctypes as _ct
 #import numpy  as _np
 #import numpy.ctypeslib as _npc
 
-from . import libburpc
+from rpnpy.burpc import libburpc
 from rpnpy.burpc import const as _cst
 
 def brp_filemode(filemode='r'):
     """
-    #TODO: desc
+    Convert between RPNSTD/FST, BURP and BURP_C file modes
+
+    fstmode, brpmode, burpcmode = brp_filemode(filemode)
+
+    Args:
+        filemode: any file mode of type FST, BURP or BURP_C
+    Returns:
+        (fstmode, brpmode, burpcmode)
+    Raises:
+        ValueError on invalid input arg value
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> import rpnpy.burpc.all as brp
+    >>> fstmode, brpmode, burpcmode = brp_filemode(rmn.FST_RO)
+    >>> print('# fstmode={}, brpmode={}, burpcmode={}'.format(fstmode, brpmode, burpcmode))
+    # fstmode=RND+R/O, brpmode=READ, burpcmode=r
+    >>> fstmode, brpmode, burpcmode = brp_filemode(rmn.BURP_MODE_READ)
+    >>> print('# fstmode={}, brpmode={}, burpcmode={}'.format(fstmode, brpmode, burpcmode))
+    # fstmode=RND+R/O, brpmode=READ, burpcmode=r
+    >>> fstmode, brpmode, burpcmode = brp_filemode(brp.BRP_FILE_READ)
+    >>> print('# fstmode={}, brpmode={}, burpcmode={}'.format(fstmode, brpmode, burpcmode))
+    # fstmode=RND+R/O, brpmode=READ, burpcmode=r
     """
-    if filemode in _cst.BRP_FILEMODE2FST_INV.keys():
-        filemode = _cst.BRP_FILEMODE2FST_INV[filemode]
+    if filemode in _cst.BRP_FILEMODE2FST_INV0.keys():
+        filemode = _cst.BRP_FILEMODE2FST_INV0[filemode]
+    elif filemode in _cst.BRP_FILEMODE2FST_INV1.keys():
+        filemode = _cst.BRP_FILEMODE2FST_INV1[filemode]
     try:
         fstmode, brpmode = _cst.BRP_FILEMODE2FST[filemode]
     except:
         raise ValueError('Unknown filemode: "{}", should be one of: {}'
                         .format(filemode, repr(_cst.BRP_FILEMODE2FST.keys())))
-    return fstmode, brpmode, _cst.BRP_FILEMODE2FST_INV[brpmode]
+    return fstmode, brpmode, _cst.BRP_FILEMODE2FST_INV1[brpmode]
 
 
 class BURP_RPT(_ct.Structure):
@@ -548,7 +574,8 @@ c_brp_msngval = libburpc.brp_msngval
 
 
 if __name__ == "__main__":
-    pass #print burpc version
+    import doctest
+    doctest.testmod()
 
 # -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
 # vim: set expandtab ts=4 sw=4:

@@ -41,7 +41,10 @@ BRP_FILEMODE2FST = {
     'w' : (_rmn.FST_RW,     _rmn.BURP_MODE_CREATE),
     'a' : (_rmn.FST_RW_OLD, _rmn.BURP_MODE_APPEND)
     }
-BRP_FILEMODE2FST_INV = dict([
+BRP_FILEMODE2FST_INV0 = dict([
+    (v[0], k) for k, v in BRP_FILEMODE2FST.items()
+    ])
+BRP_FILEMODE2FST_INV1 = dict([
     (v[1], k) for k, v in BRP_FILEMODE2FST.items()
     ])
 
