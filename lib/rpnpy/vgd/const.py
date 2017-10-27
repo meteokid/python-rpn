@@ -99,7 +99,7 @@ VGD_VCODE_NEED_RFLD = {
 
 VGD_OPR_KEYS = {
     'get_char'      : ["ETIK", "NAME", "RFLD", "RFLS"],
-    'put_char'      : ["ETIK", "NAME", "RFLD", "RFLS"],
+    'put_char'      : ["ETIK"],
     'get_int'       : ["NL_M", "NL_T", "KIND", "VERS", "DATE", "IG_1", "IG_2",
                        "IG_3", "IG_4", "IP_1", "IP_2", "DIPM", "DIPT", "MIPG",
                        "LOGP"],
@@ -108,7 +108,7 @@ VGD_OPR_KEYS = {
     'get_float'     : ["RC_1", "RC_2", "DHM", "DHT"],
     'get_int_1d'    : ["VIP1", "VIPM", "VIPT"],
     'get_float_1d'  : ["VCDM", "VIPM", "VCDT", "VIPT"],
-    'put_double'    : ["PTOP", "PREF", "RC_1", "RC_2"],
+    'put_double'    : [],
     'get_double'    : ["PTOP", "PREF", "RC_1", "RC_2"],
     'get_double_1d' : ["CA_M", "COFA", "CB_M", "COFB", "CA_T", "CB_T"],
     'get_double_3d' : ["VTBL"],

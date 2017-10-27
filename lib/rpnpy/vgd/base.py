@@ -999,8 +999,8 @@ def vgd_put(vgd_ptr, key, value):
         ok = _vp.c_vgd_put_char(vgd_ptr, key2b, v1)
     elif key2 in _vc.VGD_OPR_KEYS['put_int']:
         ok = _vp.c_vgd_put_int(vgd_ptr, key2b, value)
-    elif key2 in _vc.VGD_OPR_KEYS['put_double']:
-        ok = _vp.c_vgd_put_double(vgd_ptr, key2b, value)
+    ## elif key2 in _vc.VGD_OPR_KEYS['put_double']: #removed from vgd 6.2.1
+    ##     ok = _vp.c_vgd_put_double(vgd_ptr, key2b, value)
     else:
         raise KeyError('Problem setting val, invalid key (key={0})'.
                         format(key))

@@ -358,16 +358,6 @@ Details:
        quiet
     Returns:
        int : Status VGD_OK or VGD_ERROR
-
- c_vgd_put_double(self, key, value_put):
-    Set scalar double attribute of vgrid descriptor
-    Proto:
-       int Cvgd_put_double(vgrid_descriptor **self, char *key, double value_put);
-    Args:
-       self (VGridDescriptor ref) : (I/O)
-
-    Returns:
-       int : Status VGD_OK or VGD_ERROR
 </source>
 ##DETAILS_END
 """
@@ -724,12 +714,12 @@ libvgd.Cvgd_putopt_int.restype = _ct.c_int
 c_vgd_putopt_int = libvgd.Cvgd_putopt_int
 
 
-libvgd.Cvgd_put_double.argtypes = (
-    _ct.POINTER(_ct.POINTER(VGridDescriptor)),
-    _ct.c_char_p,
-    _ct.c_double)
-libvgd.Cvgd_put_double.restype = _ct.c_int
-c_vgd_put_double = libvgd.Cvgd_put_double
+## libvgd.Cvgd_put_double.argtypes = ( #removed from v6.2.1
+##     _ct.POINTER(_ct.POINTER(VGridDescriptor)),
+##     _ct.c_char_p,
+##     _ct.c_double)
+## libvgd.Cvgd_put_double.restype = _ct.c_int
+## c_vgd_put_double = libvgd.Cvgd_put_double
 
 
 ## int Cvgd_print_desc(vgrid_descriptor *self, int sout, int convip);
