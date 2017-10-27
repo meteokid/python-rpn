@@ -362,12 +362,14 @@ class rpnpyCookbook(unittest.TestCase):
             # Get Some info about the vgrid
             vkind    = vgd.vgd_get(v, 'KIND')
             vver     = vgd.vgd_get(v, 'VERS')
-            ip1diagt = vgd.vgd_get(v, 'DIPT')
             tlvl     = vgd.vgd_get(v, 'VIPT')
-            
+            try:
+                ip1diagt = vgd.vgd_get(v, 'DIPT')
+            except:
+                ip1diagt = 0
+            (ldiagval, ldiagkind) = rmn.convertIp(rmn.CONVIP_DECODE, ip1diagt)
             VGD_KIND_VER_INV = dict((v, k) for k, v in vgd.VGD_KIND_VER.items())
             vtype = VGD_KIND_VER_INV[(vkind,vver)]
-            (ldiagval, ldiagkind) = rmn.convertIp(rmn.CONVIP_DECODE, ip1diagt)
             print("CB14: Found vgrid type=%s (kind=%d, vers=%d) with %d levels and diag level=%7.2f%s (ip1=%d)" %
                 (vtype, vkind, vver, len(tlvl), ldiagval, rmn.kindToString(ldiagkind), ip1diagt))
         except:

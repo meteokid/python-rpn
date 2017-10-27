@@ -24,7 +24,7 @@ class VGDBaseTests(unittest.TestCase):
         vgd.vgd_put_opt('ALLOW_SIGMA', vgd.VGD_ALLOW_SIGMA)
         v2 = vgd.vgd_get_opt('ALLOW_SIGMA')
         self.assertEqual(v2,vgd.VGD_ALLOW_SIGMA)
-        
+
     def testNewRead(self):
         vgd0ptr = self._newReadBcmk()
         ## self.assertEqual(vgd0ptr[0].kind,vgd.VGD_HYB_KIND)
@@ -32,10 +32,10 @@ class VGDBaseTests(unittest.TestCase):
 
     def testNewReadGetInt(self):
         vgd0ptr = self._newReadBcmk()
-       
+
         vkind = vgd.vgd_get(vgd0ptr, 'KIND')
         self.assertEqual(vkind,vgd.VGD_HYB_KIND)
-        
+
         vvers = vgd.vgd_get(vgd0ptr, 'VERS')
         self.assertEqual(vvers,vgd.VGD_HYB_VER)
 
@@ -48,7 +48,7 @@ class VGDBaseTests(unittest.TestCase):
 
     def testNewReadGetFloat(self):
         vgd0ptr = self._newReadBcmk()
-        
+
         v1 = vgd.vgd_get(vgd0ptr, 'RC_1')
         self.assertEqual(int(v1*100),160)
 
@@ -57,36 +57,36 @@ class VGDBaseTests(unittest.TestCase):
 
     def testNewReadGetDouble(self):
         vgd0ptr = self._newReadBcmk()
-        
+
         v1 = vgd.vgd_get(vgd0ptr, 'PREF')
         self.assertEqual(int(v1*100.),8000000)
-        
+
         v2 = vgd.vgd_get(vgd0ptr, 'PTOP')
         self.assertEqual(int(v2*100.),1000)
 
     def testNewReadGetChar(self):
         vgd0ptr = self._newReadBcmk()
-       
+
         v1 = vgd.vgd_get(vgd0ptr, 'RFLD')
         self.assertEqual(v1.strip(),'P0')
 
     def testNewReadGetInt1D(self):
         vgd0ptr = self._newReadBcmk()
-        
+
         v1 = vgd.vgd_get(vgd0ptr, 'VIPM')
         self.assertEqual(len(v1),158)
         self.assertEqual(v1[0:3],[97642568, 97690568, 97738568])
 
     def testNewReadGetFloat1D(self):
         vgd0ptr = self._newReadBcmk()
-        
+
         v1 = vgd.vgd_get(vgd0ptr, 'VCDM')
         self.assertEqual(len(v1),158)
         self.assertEqual([int(x*10000000) for x in v1[0:3]],[1250, 1729, 2209])
 
     def testNewReadGetDouble1D(self):
         vgd0ptr = self._newReadBcmk()
-        
+
         v1 = vgd.vgd_get(vgd0ptr, 'CA_M')
         self.assertEqual(len(v1),158)
         self.assertEqual(int(v1[0]*100.),1000)
@@ -95,38 +95,38 @@ class VGDBaseTests(unittest.TestCase):
 
     def testNewReadGetDouble3D(self):
         vgd0ptr = self._newReadBcmk()
-        
+
         v1 = vgd.vgd_get(vgd0ptr, 'VTBL')
         self.assertEqual([int(x*100.) for x in v1[:,0:3,0].T.flatten()],
                          [500, 100, 300, 1000, 8000000, 160, 0, 0, 0])
-        
+
     def testNewReadPutChar(self):
         vgd0ptr = self._newReadBcmk()
 
         v1 = 'PRES'
-        vgd.vgd_put(vgd0ptr, 'RFLD', v1)
-        v2 = vgd.vgd_get(vgd0ptr, 'RFLD')
+        vgd.vgd_put(vgd0ptr, 'ETIK', v1)
+        v2 = vgd.vgd_get(vgd0ptr, 'ETIK')
         self.assertEqual(v2.strip(),v1)
 
     def testNewReadPutInt(self):
         vgd0ptr = self._newReadBcmk()
-        
+
         v1 = 6
         vgd.vgd_put(vgd0ptr, 'IG_1', v1)
         v2 = vgd.vgd_get(vgd0ptr, 'IG_1')
         self.assertEqual(v1,v2)
 
-    def testNewReadPutDouble(self):
-        vgd0ptr = self._newReadBcmk()
-        
-        v1 = 70000.
-        vgd.vgd_put(vgd0ptr, 'PREF', v1)
-        v2 = vgd.vgd_get(vgd0ptr, 'PREF')
-        self.assertEqual(int(v2*100.),int(v1*100.))
+    ## def testNewReadPutDouble(self): #Removed from vgd 6.2.1
+    ##     vgd0ptr = self._newReadBcmk()
+
+    ##     v1 = 70000.
+    ##     vgd.vgd_put(vgd0ptr, 'PREF', v1)
+    ##     v2 = vgd.vgd_get(vgd0ptr, 'PREF')
+    ##     self.assertEqual(int(v2*100.),int(v1*100.))
 
     def testFree(self):
         vgd0ptr = self._newReadBcmk()
-        
+
         vgd.vgd_free(vgd0ptr)
         try:
             v1 = vgd.vgd_get(vgd0ptr, 'RFLD')
@@ -138,13 +138,13 @@ class VGDBaseTests(unittest.TestCase):
     def testCmp(self):
         vgd0ptr = self._newReadBcmk()
         vgd1ptr = self._newReadBcmk()
-        
+
         ok = vgd.vgd_cmp(vgd0ptr,vgd1ptr)
         self.assertTrue(ok)
-        
-        vgd.vgd_put(vgd0ptr, 'RFLD', 'PRES')
-        ok = vgd.vgd_cmp(vgd0ptr,vgd1ptr)
-        self.assertFalse(ok)
+
+    ##     vgd.vgd_put(vgd0ptr, 'ETIK', 'PRES')#TODO: find a way to modify a vgd so it is different
+    ##     ok = vgd.vgd_cmp(vgd0ptr,vgd1ptr)
+    ##     self.assertFalse(ok)
 
     fname = '__rpnstd__testfile__.fst'
     def _erase_testfile(self):
@@ -180,7 +180,7 @@ class VGDBaseTests(unittest.TestCase):
                0.8791828, 0.8983018, 0.9159565, 0.9322280, 0.9471967, 0.9609448,
                0.9735557, 0.9851275, 0.9950425)
     MB2PA = 100.
-  
+
     def testNewSigm(self):
         sigma = (0.011000, 0.027000, 0.051000, 0.075000, 0.101000, 0.127000,
                  0.155000, 0.185000, 0.219000, 0.258000, 0.302000, 0.351000,
@@ -188,15 +188,15 @@ class VGDBaseTests(unittest.TestCase):
                  0.744000, 0.796000, 0.842000, 0.884000, 0.922000, 0.955000,
                  0.980000, 0.993000, 1.000000)
         vgd0ptr = vgd.vgd_new_sigm(sigma)
-        vkind = vgd.vgd_get(vgd0ptr, 'KIND')        
+        vkind = vgd.vgd_get(vgd0ptr, 'KIND')
         vvers = vgd.vgd_get(vgd0ptr, 'VERS')
         self.assertEqual((vkind,vvers),vgd.VGD_KIND_VER['sigm'])
-        
+
     def testNewPres(self):
         # pres = [x*self.MB2PA for x in (500.,850.,1000.)]
         pres = (500.,850.,1000.)
         vgd0ptr = vgd.vgd_new_pres(pres)
-        vkind = vgd.vgd_get(vgd0ptr, 'KIND')        
+        vkind = vgd.vgd_get(vgd0ptr, 'KIND')
         vvers = vgd.vgd_get(vgd0ptr, 'VERS')
         self.assertEqual((vkind,vvers),vgd.VGD_KIND_VER['pres'])
 
@@ -209,7 +209,7 @@ class VGDBaseTests(unittest.TestCase):
                0.980,   0.993,    1.000)
         ptop = 10. * self.MB2PA
         vgd0ptr = vgd.vgd_new_eta(hyb, ptop)
-        vkind = vgd.vgd_get(vgd0ptr, 'KIND')        
+        vkind = vgd.vgd_get(vgd0ptr, 'KIND')
         vvers = vgd.vgd_get(vgd0ptr, 'VERS')
         self.assertEqual((vkind,vvers),vgd.VGD_KIND_VER['eta'])
 
@@ -218,7 +218,7 @@ class VGDBaseTests(unittest.TestCase):
     ##     ptop = 8.05 * self.MB2PA
     ##     pref = 1000. * self.MB2PA
     ##     vgd0ptr = vgd.vgd_new_hybn(self.hyblist, rcoef1, ptop, pref)
-    ##     vkind = vgd.vgd_get(vgd0ptr, 'KIND')        
+    ##     vkind = vgd.vgd_get(vgd0ptr, 'KIND')
     ##     vvers = vgd.vgd_get(vgd0ptr, 'VERS')
     ##     self.assertEqual((vkind,vvers),vgd.VGD_KIND_VER['hybn'])
 
@@ -233,7 +233,7 @@ class VGDBaseTests(unittest.TestCase):
         ptop = 10. * self.MB2PA
         pref = 800. * self.MB2PA
         vgd0ptr = vgd.vgd_new_hyb(hyb, rcoef1, ptop, pref)
-        vkind = vgd.vgd_get(vgd0ptr, 'KIND')        
+        vkind = vgd.vgd_get(vgd0ptr, 'KIND')
         vvers = vgd.vgd_get(vgd0ptr, 'VERS')
         self.assertEqual((vkind,vvers),vgd.VGD_KIND_VER['hyb'])
 
@@ -243,7 +243,7 @@ class VGDBaseTests(unittest.TestCase):
         ptop = 8.05 * self.MB2PA
         pref = 1000. * self.MB2PA
         vgd0ptr = vgd.vgd_new_hybs(self.hyblist, rcoef1, rcoef2, ptop, pref)
-        vkind = vgd.vgd_get(vgd0ptr, 'KIND')        
+        vkind = vgd.vgd_get(vgd0ptr, 'KIND')
         vvers = vgd.vgd_get(vgd0ptr, 'VERS')
         self.assertEqual((vkind,vvers),vgd.VGD_KIND_VER['hybs'])
 
@@ -253,7 +253,7 @@ class VGDBaseTests(unittest.TestCase):
         ptop = 10. * self.MB2PA
         pref = 1000. * self.MB2PA
         vgd0ptr = vgd.vgd_new_hybt(self.hyblist, rcoef1, rcoef2, ptop, pref)
-        vkind = vgd.vgd_get(vgd0ptr, 'KIND')        
+        vkind = vgd.vgd_get(vgd0ptr, 'KIND')
         vvers = vgd.vgd_get(vgd0ptr, 'VERS')
         self.assertEqual((vkind,vvers),vgd.VGD_KIND_VER['hybt'])
 
@@ -263,7 +263,7 @@ class VGDBaseTests(unittest.TestCase):
         pref = 1000. * self.MB2PA
         ptop = -1. # -2.
         vgd0ptr = vgd.vgd_new_hybm(self.hyblist, rcoef1, rcoef2, ptop, pref)
-        vkind = vgd.vgd_get(vgd0ptr, 'KIND')        
+        vkind = vgd.vgd_get(vgd0ptr, 'KIND')
         vvers = vgd.vgd_get(vgd0ptr, 'VERS')
         self.assertEqual((vkind,vvers),vgd.VGD_KIND_VER['hybm'])
 
@@ -275,7 +275,7 @@ class VGDBaseTests(unittest.TestCase):
         dht = 2.
         vgd0ptr = vgd.vgd_new_hybmd(self.hyblist, rcoef1, rcoef2, pref,
                                 dhm, dht)
-        vkind = vgd.vgd_get(vgd0ptr, 'KIND')        
+        vkind = vgd.vgd_get(vgd0ptr, 'KIND')
         vvers = vgd.vgd_get(vgd0ptr, 'VERS')
         self.assertEqual((vkind,vvers),vgd.VGD_KIND_VER['hybmd'])
 
@@ -313,19 +313,19 @@ class VGDBaseTests(unittest.TestCase):
     ##              0.227561997481228, 0.648350006620964, 0.878891216792279,
     ##              0.963738779730914, 0.994233214440677, 1. ,1.)
     ##     cb_t_8 = np.asarray(b_t_8, dtype=np.float64)
-        
+
     ##     (nl_m, nl_t) = (len(a_m_8), len(a_t_8))
-        
+
     ##     ok = vgd.c_vgd_new_build_vert(vgd0ptr,
     ##                                   kind, version,
-    ##                                   nk, ip1, ip2, 
+    ##                                   nk, ip1, ip2,
     ##                                   ct.byref(ptop),   ct.byref(pref),
     ##                                   ct.byref(rcoef1), ct.byref(rcoef2),
     ##                                   ca_m_8, cb_m_8, ca_t_8,
     ##                                   cb_t_8, cip1_m, cip1_t,
     ##                                   nl_m, nl_t)
     ##     self.assertEqual(ok,vgd.VGD_OK)
-        
+
     ##     vkind = ct.c_int(0)
     ##     vvers = ct.c_int(0)
     ##     quiet = ct.c_int(0)
@@ -341,17 +341,17 @@ class VGDBaseTests(unittest.TestCase):
         vgd1ptr = vgd.vgd_fromlist(vgdtbl)
         ok = vgd.vgd_cmp(vgd0ptr,vgd1ptr)
         self.assertTrue(ok)
-        
-    def testNewCopy(self):
+
+    def testNewCopy(self): 
         vgd0ptr = self._newReadBcmk()
         vgd1ptr = vgd.vgd_copy(vgd0ptr)
         ok = vgd.vgd_cmp(vgd0ptr,vgd1ptr)
         self.assertTrue(ok)
-        vgd.vgd_put(vgd1ptr, 'RFLD', 'PRES')
-        ok = vgd.vgd_cmp(vgd0ptr,vgd1ptr)
-        self.assertFalse(ok)
+        ## vgd.vgd_put(vgd1ptr, 'ETIK', 'PRES') #TODO: find a way to change a vdg so that it is different
+        ## ok = vgd.vgd_cmp(vgd0ptr,vgd1ptr)
+        ## self.assertFalse(ok)
 
-        
+
     def testLevels_prof(self):
         vgd0ptr = self._newReadBcmk()
         MB2PA = 100.
@@ -399,7 +399,7 @@ class VGDBaseTests(unittest.TestCase):
                          [100000, 138425, 176878, 241408, 305980])
         self.assertEqual(len(levels8.shape),3)
         self.assertEqual(levels8.dtype,np.float64)
-        
+
 
 if __name__ == "__main__":
     ## print vgd.VGD_LIBPATH
