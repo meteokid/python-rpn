@@ -182,6 +182,8 @@ def ezqkdef(ni, nj=None, grtyp=None, ig1=None, ig2=None, ig3=None, ig4=None,
         raise TypeError('ezqkdef: wrong input data type')
     if grtyp.strip() in ('', 'X'):
         raise EzscintError('ezqkdef: Grid type {0} Not supported'.format(grtyp))
+    if iunit <= 0 and grtyp.strip() in ('Z', '#', 'Y', 'U'):
+        raise EzscintError('ezqkdef: A valid opened file unit ({0}) is needed for Grid type {1}'.format(iunit, grtyp))
     gdid = _rp.c_ezqkdef(ni, nj, _C_WCHAR2CHAR(grtyp), ig1, ig2, ig3, ig4, iunit)
     if gdid >= 0:
         return gdid

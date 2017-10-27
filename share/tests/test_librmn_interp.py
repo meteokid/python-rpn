@@ -168,6 +168,30 @@ class Librmn_interp_Test(unittest.TestCase):
         self.assertEqual(a['nomvary'].strip(),'^^')
         rmn.gdrls(gid1)
 
+    def test_ezqkdef_file_error(self):
+        funit = -1
+        (ni,nj) = (201,100)
+        gp = {
+            'shape' : (ni,nj),
+            'ni' : ni,
+            'nj' : nj,
+            'grtyp' : 'Z',
+            'ig1'   : 2002,
+            'ig2'   : 1000,
+            'ig3'   : 0,
+            'ig4'   : 0,
+            'grref' : 'E',
+            'ig1ref' : 900,
+            'ig2ref' : 0,
+            'ig3ref' : 43200,
+            'ig4ref' : 43200,
+            'iunit'  : funit
+            }
+        try:
+            gid1 = rmn.ezqkdef(gp)
+            self.assertTrue(False, 'ezqkdef should raise a error with ref grid and invalid file unit')
+        except rmn.EzscintError:
+            pass
 
     def test_ezqkdef_ezgxprm(self):
         gp = self.getGridParams_L()
@@ -184,7 +208,7 @@ class Librmn_interp_Test(unittest.TestCase):
         for k in gprm.keys():
             self.assertEqual(gp[k],gprm[k])
         rmn.gdrls(gid1)
-    
+
     def test_ezgkdef_fmem_ezgxprm(self):
         gp = self.getGridParams_ZE()
         gid1 = rmn.ezgdef_fmem(gp['ni'],gp['nj'],gp['grtyp'],gp['grref'],
