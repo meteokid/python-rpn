@@ -145,7 +145,7 @@ def isBURP(filename):
     See Also:
        rpnpy.librmn.base.wkoffit
     """
-    if not type(filename) == str:
+    if not isinstance(filename, str):
         raise TypeError("isBURP: Expecting arg of type str, Got {0}"\
                         .format(type(filename)))
     if filename.strip() == '':

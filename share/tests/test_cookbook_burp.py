@@ -480,7 +480,6 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
                               'bcmk_burp/2007021900.brp')
         outfile = "tmp/test_ex5_write1_py.brp"
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
-        elems = set()
         idtyp = rmn.BURP_IDTYP_IDX['PILOT']  ## 32
         bfilei = brp.BurpcFile(infile)
         with brp.BurpcFile(outfile, rmn.BURP_MODE_CREATE) as bfileo:

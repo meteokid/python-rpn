@@ -4,7 +4,7 @@
 # Copyright: LGPL 2.1
 
 """
-Module burpc.const defines constants for the burpc module
+Module burpc.const defines constants for the [[Python-RPN/2.1/rpnpy/burpc|burpc]] module
 
 Notes:
     This module is a very close ''port'' from the original

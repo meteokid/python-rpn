@@ -19,7 +19,8 @@ Warning:
     as such with appropriate argument typing and dereferencing.
     It is highly advised in a python program to prefer the use of the
     python wrapper found in
-    * rpnpy.burpc.base
+    * [[Python-RPN/2.1/rpnpy/burpc/base|rpnpy.burpc.base]]
+    * [[Python-RPN/2.1/rpnpy/burpc/brpobj|rpnpy.burpc.brpobj]]
 
 Notes:
     The functions described below are a very close ''port'' from the original
@@ -34,25 +35,6 @@ See Also:
     rpnpy.librmn.burp
     rpnpy.librmn.burp_const
 
-Details:
-    See Source Code
-
-##DETAILS_START
-== Functions C Prototypes ==
-
-<source lang="python">
-
- ## c_vgd_construct():
- ##    Returns a NOT fully initialized VGridDescriptor instance
- ##    Proto:
- ##       vgrid_descriptor* c_vgd_construct();
- ##    Args:
- ##       None
- ##    Returns:
- ##       POINTER(VGridDescriptor) : a pointer to a new VGridDescriptor object
-
-</source>
-##DETAILS_END
 """
 
 import ctypes as _ct

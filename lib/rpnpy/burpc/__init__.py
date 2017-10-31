@@ -8,19 +8,28 @@
 #                /ssm/net/cmdn/tests/vgrid/6.0.0-a3/intel13sp1u2
 
 """
- Module burpc is a ctypes import of burp_c's library (libburp_c_shared.so)
+Module burpc is a ctypes import of [[CMDA]]'s [[Cmda_tools#Librairies.2FAPI_BURP_CMDA|burp_c]] library (libburp_c_shared.so)
 
- The burp_c_shared library is provided with the CMDA Libraries
- developed at CMC/CMDA
+{{roundboxtop}}
+The functions described below are a very close ''port'' from the original
+[[Cmda_tools#Librairies.2FAPI_BURP_CMDA|burp_c]] package.<br>
+You may want to refer to the [[Cmda_tools#Librairies.2FAPI_BURP_CMDA|burp_c]]
+documentation for more details.
 
- The burpc python module includes
- - python wrapper to main burp_c's C functions
- - helper functions
- - prototypes for burp_c's C functions
- - pre-defined constants
- - along with comprenhensive inline documentation
+This module is new in version 2.1.b2
+{{roundboxbot}}
 
- See also:
+The burp_c_shared library is provided with the [[CMDA]] Libraries developed at [[CMC]]/[[CMDA]]
+
+The burpc python module includes
+* python wrapper to main burp_c's C functions
+* helper functions
+* prototypes for burp_c's C functions
+* Object model for [[BURP]] elements
+* pre-defined constants
+* along with comprenhensive inline documentation
+
+See also:
     rpnpy.burpc.brpobj
     rpnpy.burpc.base
     rpnpy.burpc.const

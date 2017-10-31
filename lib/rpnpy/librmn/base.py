@@ -358,7 +358,7 @@ def cxgaig(grtyp, xg1, xg2=0., xg3=0., xg4=0.):
     """
     Encode real grid descriptors into ig1, ig2, ig3, ig4
 
-    (ig1, ig2, ig3, ig4) = cxgaig(grtyp, gx1, xg2, xg3, xg4)
+    (ig1, ig2, ig3, ig4) = cxgaig(grtyp, xg1, xg2, xg3, xg4)
     (ig1, ig2, ig3, ig4) = cxgaig(grtyp, xg1234)
 
     Args:
@@ -737,7 +737,7 @@ def newdate(imode, idate1, idate2=0):
           odate1 : DATE OF THE PRINTABLE DATE (YYYYMMDD)
           odate2 : TIME OF THE PRINTABLE DATE (HHMMSSHH)
 
-    Note:
+    Notes:
         Old Style Date Array is composed of 14 elements:
         0 : Day of the week (1=Sunday, ..., 7=Saturday
         1 : Month (1=Jan, ..., 12=Dec)
