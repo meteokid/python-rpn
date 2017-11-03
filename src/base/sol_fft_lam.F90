@@ -80,7 +80,7 @@
       integer i, j, k, jr, l_pil_w, l_pil_e
       integer piece, p0, pn, plon, ptotal
       real*8  pri
-      real*8, parameter :: zero=0.0
+      real*8, parameter :: zero = 0.d0
 !     __________________________________________________________________
 !
                          type_fft = 'QCOS'
@@ -100,7 +100,8 @@
                                 1, F_t1nks, F_gnk, F_dwfft, 1, 2 )
 
 !     projection ( wfft = x transposed * g )
-!$omp parallel private(jr,p0,pn,piece) shared(plon,ptotal)
+!$omp parallel private(i,j,k,jr,p0,pn,piece) &
+!$omp          shared(plon,ptotal,l_pil_w,l_pil_e,pri)
 !$omp do
       do i= 1,F_gni
          F_dwfft(F_t0nj+1-pil_n:F_t0njs,        1:F_t1nk ,i)= zero

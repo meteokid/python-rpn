@@ -16,26 +16,25 @@
 !**s/r grid_nml - Default configuration and reading namelist grid
 !
       integer function grid_nml3 (F_namelistf_S)
-      use grid_options
       use gem_options
       use glb_ld
-      use lun
       use glb_pil
+      use grid_options
       use hgc
-      use ptopo
+      use lun
       implicit none
 #include <arch_specific.hf>
 
-      character(len=*) F_namelistf_S
-
+      character(len=*), intent(in) :: F_namelistf_S
 
       integer, external ::  fnom, yyg_checkrot
 
       character(len=120) :: dumc
-      integer unf
-      real*8 epsilon,a_8,b_8,c_8,d_8,xyz1_8(3),xyz2_8(3), delta_8
-      real*8 yan_xlat1_8, yan_xlon1_8, yan_xlat2_8, yan_xlon2_8
-      parameter (epsilon = 1.0d-5)
+      integer :: unf
+      real*8 :: a_8,b_8,c_8,d_8,xyz1_8(3),xyz2_8(3), delta_8
+      real*8 :: yan_xlat1_8, yan_xlon1_8, yan_xlat2_8, yan_xlon2_8
+      real*8, parameter :: epsilon = 1.0d-5
+      logical :: almost_zero
 !
 !-------------------------------------------------------------------
 !
@@ -68,7 +67,7 @@
       goto 9999
 
  9000 call low2up (Grd_typ_S,dumc)
-      Grd_typ_S= dumc
+      Grd_typ_S = dumc(1:2)
 
       ! basic global lateral boundary conditions depth
       Grd_bsc_base = 5
@@ -187,7 +186,7 @@
 
       case ('L')                             ! Limited area grid
 
-         if (Grd_dx*Grd_dy == 0) then
+         if ( almost_zero(Grd_dx*Grd_dy) ) then
             if (Lun_out > 0) then
                write(Lun_out,*) 'VERIFY Grd_DX & Grd_DY IN NAMELIST grid'
             end if
@@ -230,17 +229,18 @@
                 Grd_jref = Grd_nj / 2 + Grd_extension + 1
              endif
          else
-             Grd_iref = Grd_iref +   Grd_extension
-             Grd_jref = Grd_jref +   Grd_extension
-             if (Grd_iref.lt.1.or.Grd_iref.gt.Grd_ni.or. &
-                 Grd_jref.lt.1.or.Grd_jref.gt.Grd_nj) then
-                 if (Lun_out.gt.0) write(Lun_out,1002) &
-                              Grd_ni,Grd_nj,Grd_iref,Grd_jref
-                  goto 9999
-             endif
+            Grd_iref = Grd_iref + Grd_extension
+            Grd_jref = Grd_jref + Grd_extension
+            if (Grd_iref < 1 .or. Grd_iref > Grd_ni .or. &
+                Grd_jref < 1 .or. Grd_jref > Grd_nj) then
+               if (Lun_out > 0) then
+                  write(Lun_out,1002) Grd_ni,Grd_nj,Grd_iref,Grd_jref
+               end if
+               goto 9999
+            endif
          endif
-         Grd_ni   = Grd_ni   + 2*Grd_extension
-         Grd_nj   = Grd_nj   + 2*Grd_extension
+         Grd_ni   = Grd_ni + 2*Grd_extension
+         Grd_nj   = Grd_nj + 2*Grd_extension
          Grd_x0_8 = dble(Grd_lonr) - dble(Grd_iref-1) * dble(Grd_dx)
          Grd_y0_8 = dble(Grd_latr) - dble(Grd_jref-1) * dble(Grd_dy)
          Grd_xl_8 = Grd_x0_8 + dble(Grd_ni  -1) * dble(Grd_dx)

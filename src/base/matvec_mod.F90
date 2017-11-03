@@ -38,7 +38,7 @@ contains
       xxx = - Cstv_hco2_8
       yyy = - Cstv_hco1_8
 
-!$omp parallel private (i,j,k,jj,ii,di_8)
+!$omp parallel private (i,j,k,jj,ii,di_8) shared(xxx, yyy)
 !$omp do
       do k=1, l_nk
          do j=1+sol_pil_s, l_nj-sol_pil_n
@@ -88,7 +88,7 @@ contains
       vector = 0.0d0
       prod = 0.0d0
 
-!$omp parallel private (i,j,k)
+!$omp parallel private (i,j,k) shared(vector, prod)
 !$omp do
       do k = 1, l_nk
          vector(:,:,k) = 0.0d0

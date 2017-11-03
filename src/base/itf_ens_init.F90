@@ -53,8 +53,7 @@
 
       call handle_error (err,'itf_ens_init','Problem with ens_nml')
 
-      call ens_setmem (l_minx,l_maxx,G_halox,l_ni, &
-                       l_miny,l_maxy,G_haloy,l_nj,l_nk,Lun_out)
+      call ens_setmem (l_ni, l_nj, l_nk, Lun_out)
 
  1000 format(/,'INITIALIZATION OF ENSEMBLES (S/R ITF_ENS_INIT)'/(46('=')))
  1010 format(/,'NO ENSEMBLES REQUIRED       (S/R ITF_ENS_INIT)'/(46('=')))

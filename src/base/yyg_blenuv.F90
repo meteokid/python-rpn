@@ -52,7 +52,7 @@
       tempu = 0.
       tempv = 0.
 !
-!$omp parallel private(i,j)
+!$omp parallel private(i,j,k) shared(tempu,tempv)
 !$omp do
        do k= 1, NK
         do j= 1, l_nj

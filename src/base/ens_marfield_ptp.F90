@@ -19,7 +19,7 @@
       subroutine ens_marfield_ptp
 !
       use phy_itf, only : phy_put
-
+      use ens_gmm_dim
       use step_options
       use ens_gmm_var
       use ens_options
@@ -43,8 +43,6 @@
 !
 
 #include <rmnlib_basics.hf>
-#include "ens_gmm_dim.cdk"
-#include "mem.cdk"
 
 !
        real,    external ::  gasdev
@@ -55,7 +53,7 @@
 ! idum                       Semence du générateur de nombres aléatoires
 !
       integer :: nlat, nlon
-      integer :: l ,m, nc,np, i, j, k, indx, ier
+      integer :: l ,m, nc,np, i, j, indx, ier
       integer lmin,lmax
       integer ::  gmmstat, istat
       integer :: gdyy, n
@@ -66,11 +64,8 @@
       real*8  :: rad2deg_8,  pri_8
       logical, save :: init_done=.false.
       logical :: Init_mc_L
-! placer les chaines de Markov dans perbus
-      integer, save :: mrk2
 !
 ! paidum   pointer vers l'etat du generateur sauvegarde idum
-      type(gmm_metadata) :: meta
       integer, pointer :: paiv,paiy,paiset,pagset,paidum
 !
 !      variables et champs auxiliaires reels

@@ -25,6 +25,7 @@
       use adv_grid
       use adv_interp
       use outgrid
+      use lun
       implicit none
 
 #include <arch_specific.hf>
@@ -44,7 +45,12 @@
       ! v5_00 - Tanguay M.        - Adjust extension
 
 
-#include "adv_precompute_flux.cdk"
+      integer nind_o,nind_i
+      integer nind_w_o,nind_s_o,nind_e_o,nind_n_o,nind_w_i,nind_s_i,nind_e_i,nind_n_i
+      integer,save,pointer,dimension(:) :: ii_w_o =>null(), ii_s_o =>null(), ii_e_o =>null(), ii_n_o =>null(), &
+                                           ii_w_i =>null(), ii_s_i =>null(), ii_e_i =>null(), ii_n_i =>null()
+      integer,     pointer,dimension(:) :: ii_o   =>null(), ii_i   =>null()
+      common /precompute_I/ nind_w_o,nind_s_o,nind_e_o,nind_n_o,nind_w_i,nind_s_i,nind_e_i,nind_n_i
 
       logical :: zcubic_L
 
@@ -52,7 +58,7 @@
       real*8, dimension(:),pointer :: p_bsz_8, p_zbc_8, p_zabcd_8
       real*8, dimension(:),pointer :: p_zbacd_8, p_zcabd_8, p_zdabc_8
 
-      integer jext
+      integer jext,err
 
       integer :: n0,nx,ny,nz,m1,id,n,kkmax,o1,o2,o3,o4, &
                  i0_e,in_e,j0_e,jn_e
@@ -77,6 +83,7 @@
                       i0_e_i,in_e_i,j0_e_i,jn_e_i,i0_e_o,in_e_o,j0_e_o,jn_e_o, &
                       i0_n_i,in_n_i,j0_n_i,jn_n_i,i0_n_o,in_n_o,j0_n_o,jn_n_o
 
+      integer :: g_narrow_i_e,g_narrow_j_n,narrow_i_e,narrow_j_n
 !
 !---------------------------------------------------------------------
 !
@@ -100,7 +107,7 @@
          p_zcabd_8 => adv_zcabd_8%t
          p_zdabc_8 => adv_zdabc_8%t
          p_zbc_8   => adv_zbc_8%t
-		else if (F_lev_S == 'x') then
+      else if (F_lev_S == 'x') then
          p_lcz     => adv_lcz%x
          p_bsz_8   => adv_bsz_8%x
          p_zabcd_8 => adv_zabcd_8%x
@@ -114,9 +121,41 @@
       !------------------------------------------------
       call adv_get_ij0n_ext (i0_e,in_e,j0_e,jn_e)
 
-      jext = Grd_maxcfl
+      jext = Grd_maxcfl + 1
 
       if (.NOT.done_L) then
+
+         !Check if PEs at EAST/NORTH boundaries are too narrow to calculate FLUX_in
+         !-------------------------------------------------------------------------
+         narrow_i_e = 0
+         narrow_j_n = 0
+
+         if (l_east) then
+
+            i0_e_i = l_ni-pil_e-jext
+
+            if (i0_e_i < 1) narrow_i_e = 1
+
+         endif
+
+         if (l_north) then
+
+            j0_n_i = l_nj-pil_n-jext
+
+            if (j0_n_i < 1) narrow_j_n = 1
+
+         endif
+
+         call rpn_comm_ALLREDUCE(narrow_i_e,g_narrow_i_e,1,"MPI_INTEGER","MPI_MAX","GRID",err)
+         call rpn_comm_ALLREDUCE(narrow_j_n,g_narrow_j_n,1,"MPI_INTEGER","MPI_MAX","GRID",err)
+
+         if (Lun_out>0) then
+            if (g_narrow_i_e/=0) write(Lun_out,*) 'ADV_BC_LAM_FLUX: PEs  EAST are too narrow: Reduce NPEX'
+            if (g_narrow_j_n/=0) write(Lun_out,*) 'ADV_BC_LAM_FLUX: PEs NORTH are too narrow: Reduce NPEY'
+         endif
+
+         if (g_narrow_i_e/=0) call handle_error(-1,'ADV_BC_LAM_FLUX:','PEs  EAST are too narrow: Reduce NPEX')
+         if (g_narrow_j_n/=0) call handle_error(-1,'ADV_BC_LAM_FLUX:','PEs NORTH are too narrow: Reduce NPEY')
 
          if (l_west) then
 

@@ -13,40 +13,15 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r  sol_pre_diago -  call diagonal Preconditionner
-!
+module ens_gmm_dim
+   use gmm_itf_mod
+   implicit none
+   public
+   save
 
-!
-!
-      subroutine  sol_pre_diago ( wk22, wk11, Minx,Maxx,Miny,Maxy,nil,njl)
-      use gem_options
-      use sol
-      implicit none
-#include <arch_specific.hf>
-!
-      integer Minx,Maxx,Miny,Maxy,nil,njl
-      real*8  wk11(*),wk22(*)
-!
-! author    Abdessamad Qaddouri -  December 2006
-!
-!revision
-! v3_30 - Qaddouri A.       - initial version
-!
+   type(gmm_metadata) :: meta3d_sh2 ! sans hallo
+   type(gmm_metadata) :: meta3d_ar_p,meta2d_ar_s,meta3d_ai_p,meta2d_ai_s
+   type(gmm_metadata) :: meta3d_br_p,meta2d_br_s,meta3d_bi_p,meta2d_bi_s
+   type(gmm_metadata) :: meta2d_dum,meta3d_plg
 
-      real*8 wint_8 (Minx:Maxx,Miny:Maxy,Schm_nith)
-!
-!     ---------------------------------------------------------------
-!
-      call  tab_vec  ( wint_8 , Minx,Maxx,Miny,Maxy,Schm_nith, &
-                       wk11   , sol_i0,sol_in,sol_j0,sol_jn, -1 )
-!
-      call pre_diago ( wint_8 , wint_8, Minx, Maxx, Miny, Maxy,nil, &
-                          njl,Schm_nith )
-!
-      call  tab_vec  ( wint_8 , Minx,Maxx,Miny,Maxy,Schm_nith, &
-                       wk22   , sol_i0,sol_in,sol_j0,sol_jn, +1 )
-!
-!     ---------------------------------------------------------------
-!
-      return
-      end
+end module ens_gmm_dim

@@ -73,7 +73,7 @@
          istat= gmm_get (gmmk_topo_low_s , topo_low )
          istat= gmm_get (gmmk_topo_high_s, topo_high)
          allocate(topo_large_scale(l_minx:l_maxx,l_miny:l_maxy))
-         call get_topo3 ( topo_high, topo_large_scale, &
+         call get_topo ( topo_high, topo_large_scale, &
                           l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj )
 
          call get_s_large_scale (topo_large_scale,l_minx,l_maxx,l_miny,l_maxy)
@@ -142,7 +142,10 @@
 
       if ( Schm_phyms_L ) call itf_phy_step (0,Lctl_step)
 
-      call frstgss()
+      if ( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P' .or. &
+           trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H' ) then
+         call frstgss()
+      end if
 
       call glbstat2 ( fis0,'ME',"indata",l_minx,l_maxx,l_miny,l_maxy, &
                       1,1, 1,G_ni,1,G_nj,1,1 )

@@ -19,7 +19,7 @@
 
 
 !
-      subroutine calomeg_w2 (F_ww,F_st1,F_sl,F_wt1,F_tt1,Minx,Maxx,Miny,Maxy,Nk)
+      subroutine calomeg_w (F_ww,F_st1,F_sl,F_wt1,F_tt1,Minx,Maxx,Miny,Maxy,Nk)
 !
       use gem_options
       use tdpack
@@ -30,16 +30,17 @@
       implicit none
 #include <arch_specific.hf>
 !
-      integer Minx,Maxx,Miny,Maxy, Nk
-      real F_ww(Minx:Maxx,Miny:Maxy,Nk),F_st1(Minx:Maxx,Miny:Maxy)
-      real F_wt1(Minx:Maxx,Miny:Maxy,Nk),F_tt1(Minx:Maxx,Miny:Maxy,Nk)
-      real F_sl(Minx:Maxx,Miny:Maxy)
+      integer, intent(in) :: Minx,Maxx,Miny,Maxy, Nk
+      real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(out) :: F_ww
+      real, dimension(Minx:Maxx,Miny:Maxy),    intent(in)  :: F_st1
+      real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(in)  :: F_wt1, F_tt1
+      real, dimension(Minx:Maxx,Miny:Maxy),    intent(in)  :: F_sl
 !
 !author
 !     Claude Girard et Andre Plante avril 2008.
 !
 !revision
-! v4.0.4 Andre Plante Nov. 1008 ajout de vsexp.
+! v4.0.4 Andre Plante Nov. 2008 ajout de vsexp.
 !
 !object
 !	compute vertical velocity in hydrostatic pressure coordinates
@@ -60,12 +61,12 @@
 !
 
 
-      integer i,j,k
+      integer :: i,j,k
       real, dimension(l_ni,l_nj) :: t1,t2
 !     __________________________________________________________________
 !
 
-!$omp parallel private(t1,t2)
+!$omp parallel private(t1,t2,i,j,k)
 !$omp do
       do k=1,l_nk
          do j=1,l_nj
@@ -87,8 +88,3 @@
 !
       return
       end
-
-subroutine calomeg_w
-   print*,'Called stub calomeg_w, please update to calomeg_w_2'
-   stop
-end subroutine calomeg_w

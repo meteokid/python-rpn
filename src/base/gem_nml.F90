@@ -59,7 +59,7 @@
       endif
 
       call low2up (Lctl_rxstat_S ,dumc_S)
-      Lctl_rxstat_S = dumc_S
+      Lctl_rxstat_S = dumc_S(1:6)
       err = clib_toupper(Schm_phycpl_S)
 
       err= canonical_nml (F_namelistf_S, Lun_out, Schm_canonical_dcmip_L,&

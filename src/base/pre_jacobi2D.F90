@@ -21,7 +21,7 @@
 !
       integer Ni,Nj,Nk
       real*8 Rhs(Ni,Nj,Nk),Sol(Ni,Nj,Nk)
-      real*8  ai(Ni,Nj,Nk), bi(Ni,Nj,Nk), ci(Ni,Nj,Nk)
+      real*8 ai(Ni,Nj,Nk), bi(Ni,Nj,Nk), ci(Ni,Nj,Nk)
       real*8 evec_local(Ni,Ni)
 !
 !author
@@ -35,7 +35,7 @@
 !
 !     ---------------------------------------------------------------
 !
-!$omp parallel private(j,jr,i)
+!$omp parallel private(i,j,k,jr) shared(fdg)
 !$omp do
       do k=1,Nk
          call dgemm('T','N',Ni,Nj,Ni,1.0d0,evec_local,Ni, &
@@ -43,24 +43,24 @@
 
          Do j =2, Nj
             jr =  j - 1
-            Do i=1,Ni
+            do i=1,Ni
                Fdg(i,j,k) = Fdg(i,j,k) - ai(i,j,k)*Fdg(i,jr,k)
-            Enddo
-         Enddo
+            enddo
+         enddo
          j = Nj
-         Do i=1,Ni
+         do i=1,Ni
             Fdg(i,j,k) = Fdg(i,j,k)/bi(i,j,k)
-         Enddo
-         Do j = Nj-1, 1, -1
+         enddo
+         do j = Nj-1, 1, -1
             jr =  j + 1
-            Do i=1 , Ni
+            do i=1 , Ni
             Fdg(i,j,k)=(Fdg(i,j,k)-ci(i,j,k)*Fdg(i,jr,k))/bi(i,j,k)
-            Enddo
-         Enddo
+            enddo
+         enddo
 
          call dgemm('N','N',Ni,Nj,Ni,1.0d0,evec_local,Ni, &
                         Fdg(1,1,k),Ni,0.d0,Sol(1,1,k),Ni)
-      Enddo
+      enddo
 !$omp enddo
 !$omp end parallel
 !

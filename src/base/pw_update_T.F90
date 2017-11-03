@@ -15,10 +15,10 @@
 
 !**s/r pw_update_T - Update physical quantities TT
 
-      subroutine pw_update_T
-      use gmm_pw
+      subroutine pw_update_T()
       use glb_ld
       use gmm_itf_mod
+      use gmm_pw
       implicit none
 #include <arch_specific.hf>
 
@@ -28,8 +28,7 @@
 !revision
 ! v4_14 - Desgagne, M.     - Initial revision
 
-
-      integer istat
+      integer :: istat
       real, pointer, dimension (:,:,:)  :: pw_tt  => null()
 !     ________________________________________________________________
 !

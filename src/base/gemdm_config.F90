@@ -18,6 +18,7 @@
 #include <msg.h>
 
       integer function gemdm_config ( )
+      use dynkernel_options
       use timestr_mod, only: timestr_parse,timestr2step,timestr2sec
       use mu_jdate_mod, only: mu_set_leap_year, MU_JDATE_LEAP_IGNORED
       use step_options
@@ -58,9 +59,10 @@
       endif
 
       if ( (Step_nesdt <= 0) .and. (Grd_typ_S(1:1) == 'L') &
-                               .and. (.not. Lam_ctebcs_L ) ) then
-         if (Lun_out > 0) write(Lun_out,*)  &
-                    ' Fcst_nesdt_S must be specified in namelist &step'
+                             .and. (.not. Lam_ctebcs_L ) ) then
+         if (Lun_out > 0) then
+            write(Lun_out,*)  ' Fcst_nesdt_S must be specified in namelist &step'
+         end if
          return
       endif
       if (.not.Step_leapyears_L) then
@@ -145,14 +147,19 @@
          if (hyb(k) < 0.) exit
          G_nk = k
       enddo
-      if (lun_out>0) &
-      write(lun_out,'(2x,"hyb="/5(f12.9,","))') hyb(1:g_nk)
+      if (lun_out>0) then
+         write(lun_out,'(2x,"hyb="/5(f12.9,","))') hyb(1:g_nk)
+      end if
 
       if (Schm_autobar_L) Schm_phyms_L= .false.
 
       call set_zeta2( hyb, G_nk )
 
       Schm_nith = G_nk
+
+      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H') then
+         call exp_H()
+      end if
 
       err= 0
       err= min( timestr2step (Grdc_ndt,   Grdc_nfe    , Step_dt), err)

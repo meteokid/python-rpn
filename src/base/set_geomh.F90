@@ -39,18 +39,13 @@
       real gxfi(G_ni),gyfi(G_nj)
       real*8 posx_8(1-G_halox:G_ni+G_halox+1), posy_8(1-G_haloy:G_nj+G_haloy+1)
       real*8 rad2deg_8,deg2rad_8,x0,xl,y0,yl
-      real*8 ZERO_8, HALF_8, ONE_8, TWO_8, CLXXX_8
       real*8 scale_factor, scale_factor_v
       real*8 Del_xg , Del_yg
-      parameter( ZERO_8  = 0.0 )
-      parameter( HALF_8  = 0.5 )
-      parameter( ONE_8   = 1.0 )
-      parameter( TWO_8   = 2.0 )
-      parameter( CLXXX_8 = 180.0 )
+      real*8, parameter :: HALF_8  = 0.5, ONE_8   = 1.0, CLXXX_8 = 180.0
 !
 !     ---------------------------------------------------------------
 !
-      if (Lun_out.gt.0) write (Lun_out,1000)
+      if (Lun_out > 0) write (Lun_out,1000)
 
       rad2deg_8 = CLXXX_8/pi_8
       deg2rad_8 = acos( -ONE_8 )/CLXXX_8
@@ -81,6 +76,10 @@
 
       G_xg_8(1-G_halox:G_ni+G_halox+1) = posx_8(1-G_halox:G_ni+G_halox+1)*deg2rad_8
       G_yg_8(1-G_haloy:G_nj+G_haloy+1) = posy_8(1-G_haloy:G_nj+G_haloy+1)*deg2rad_8
+      if (posy_8(1-G_haloy) <= -90.0.or.posy_8(G_nj+G_haloy+1) >= 90.0) then
+          if (Lun_out > 0) write (Lun_out,1001) posy_8(1-G_haloy),posy_8(G_nj+G_haloy+1)
+          call gem_error ( -1,'set_geomh','' )
+      endif
 
       geomh_lonQ(1-G_halox:G_ni+G_halox) = posx_8(1-G_halox:G_ni+G_halox)
       geomh_latQ(1-G_haloy:G_nj+G_haloy) = posy_8(1-G_haloy:G_nj+G_haloy)
@@ -267,7 +266,7 @@
       err = gdll (Grd_local_gid, geomh_latrx, geomh_lonrx)
       do j=1,l_nj
       do i=1,l_ni
-         if (geomh_lonrx(i,j).ge.180.0) geomh_lonrx(i,j)=geomh_lonrx(i,j)-360.0
+         if (geomh_lonrx(i,j) >= 180.0) geomh_lonrx(i,j)=geomh_lonrx(i,j)-360.0
       enddo
       enddo
 
@@ -287,6 +286,9 @@
 
  1000 format(/,'INITIALIZATION OF MODEL HORIZONTAL GEOMETRY (S/R set_geomh)', &
              /'===============================================')
+ 1001 format(/,'ERROR in (S/R set_geomh) Y AXIS in grid touch the poles', &
+             /,'from:',F14.5,' to: ',F14.5, &
+             /'======== Delta Y    is too large  =============')
 !
 !     ---------------------------------------------------------------
 !

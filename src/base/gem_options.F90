@@ -68,7 +68,7 @@ module gem_options
    namelist /gem_cfgs  / G_haloy
    namelist /gem_cfgs_p/ G_haloy
 
-   !# Heap memory will be painted ti NaN using an array wrk01(G_ni,G_nj,Heap_nk)
+   !# Heap memory will be painted to NaN using an array wrk01(G_ni,G_nj,Heap_nk)
    integer :: Heap_nk = -1
    namelist /gem_cfgs  / Heap_nk
    namelist /gem_cfgs_p/ Heap_nk
@@ -85,11 +85,6 @@ module gem_options
 
    !# Horizontal diffusion if activated, will be applied to the following
    !# variables  : Horizontal winds, ZDot, W, tracers (_tr var)
-
-   !# Compute horizontal diffusion within RHS
-   logical :: Hzd_in_rhs_L = .false.
-   namelist /gem_cfgs  / Hzd_in_rhs_L
-   namelist /gem_cfgs_p/ Hzd_in_rhs_L
 
    !# Background 2 delta-x removal ratio - range(0.0-1.0)
    real :: Hzd_lnR = -1.
@@ -124,7 +119,7 @@ module gem_options
    namelist /gem_cfgs_p/ Hzd_pwr_tr
 
    !# Fraction of the maximum divergence damping - range(0.0-1.0)
-   integer :: Hzd_div_damp = -1
+   real :: Hzd_div_damp = -1.
    namelist /gem_cfgs  / Hzd_div_damp
    namelist /gem_cfgs_p/ Hzd_div_damp
 
@@ -633,7 +628,7 @@ module gem_options
    namelist /gem_cfgs  / Sol3D_precond_S
    namelist /gem_cfgs_p/ Sol3D_precond_S
 
-   !# Krylov method for 3d iterative solver
+   !# Krylov method for 3d iterative solver (FGMRES or FBICGSTAB)
    character(len=26) :: Sol3D_krylov_S = 'FGMRES'
    namelist /gem_cfgs  / Sol3D_krylov_S
    namelist /gem_cfgs_p/ Sol3D_krylov_S

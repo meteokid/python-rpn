@@ -42,7 +42,7 @@
 !
 !     ---------------------------------------------------------------
 !
-      if ( Schm_psadj == 0 ) then
+      if ( Schm_psadj == 0 .or. .not.Grd_yinyang_L ) then
          if ( Schm_psadj_print_L ) goto 999
          return
       endif

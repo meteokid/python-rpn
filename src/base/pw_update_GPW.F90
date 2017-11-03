@@ -15,13 +15,13 @@
 
 !**s/r pw_update - Update physical quantities WZ, GZ, PM and PT
 !
-      subroutine pw_update_GPW
-      use gmm_vt1
-      use gmm_pw
+      subroutine pw_update_GPW()
       use gmm_geof
-      use glb_ld
-      use ver
       use gmm_itf_mod
+      use glb_ld
+      use gmm_pw
+      use gmm_vt1
+      use ver
       implicit none
 #include <arch_specific.hf>
 
@@ -31,9 +31,8 @@
 !revision
 ! v4_14 - Desgagne, M.     - Initial revision
 
-
-      integer k, istat
-      real fi(l_minx:l_maxx,l_miny:l_maxy,G_nk+1)
+      integer :: k, istat
+      real, dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk+1) :: fi
 !     ________________________________________________________________
 !
       call timing_start2 ( 5, 'PW_UPDATE', 0)
@@ -59,15 +58,16 @@
       call calc_pressure ( pw_pm_plus, pw_pt_plus, pw_p0_plus, st1, &
                            l_minx,l_maxx, l_miny,l_maxy, G_nk )
 
-!$omp parallel
+!$omp parallel private(k) shared(fi)
 !$omp do
       do k=1,l_nk
          pw_wz_plus(:,:,k) = wt1(:,:,k)
          pw_gz_plus(1:l_ni,1:l_nj,k)= fi(1:l_ni,1:l_nj,k)
          pw_log_pm (1:l_ni,1:l_nj,k)= log(pw_pm_plus(1:l_ni,1:l_nj,k))
          pw_log_pt (1:l_ni,1:l_nj,k)= log(pw_pt_plus(1:l_ni,1:l_nj,k))
-         if (k == 1) &
-         pw_me_plus(1:l_ni,1:l_nj)= fis0(1:l_ni,1:l_nj)
+         if (k == 1) then
+            pw_me_plus(1:l_ni,1:l_nj)= fis0(1:l_ni,1:l_nj)
+         end if
          if (k == l_nk) then
             pw_log_pm(1:l_ni,1:l_nj,l_nk+1)= log(pw_p0_plus(1:l_ni,1:l_nj))
             pw_log_pt(1:l_ni,1:l_nj,l_nk+1)= pw_log_pm(1:l_ni,1:l_nj,l_nk+1)

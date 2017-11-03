@@ -84,9 +84,12 @@
              adr=Bln_send_adr(kk)+1
 
              call yyg_interp1(send_pil(1,KK),tab_src_8, &
-                      Bln_send_imx(adr),Bln_send_imy(adr), &
+                      Bln_send_imx(adr:adr+Bln_send_len(kk)), &
+                      Bln_send_imy(adr:adr+Bln_send_len(kk)), &
                       geomh_x_8,geomh_y_8,l_minx,l_maxx,l_miny,l_maxy,NK, &
-                      Bln_send_xxr(adr),Bln_send_yyr(adr),Bln_send_len(kk),&
+                      Bln_send_xxr(adr:adr+Bln_send_len(kk)), &
+                      Bln_send_yyr(adr:adr+Bln_send_len(kk)), &
+                      Bln_send_len(kk),                       &
                       mono_L,interp_S)
 
              ireq = ireq+1

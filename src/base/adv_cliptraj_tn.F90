@@ -44,7 +44,7 @@
 
       character(len=MSG_MAXLEN) :: msg_S
       integer :: n, i,j, cnt, sum_cnt, err, totaln
-      real :: minposx,maxposx,minposy,maxposy, posxmin,posxmax,posymin,posymax
+      real :: minposx,maxposx,minposy,maxposy
 !
 !---------------------------------------------------------------------
 !
@@ -63,9 +63,9 @@
       cnt=0
 
 !- Clipping to processor boundary
-         do j=j0,jn
-            do i=i0,in
-               if ( (F_x(i,j)<minposx).or.(F_x(i,j)>maxposx).or. &
+      do j=j0,jn
+         do i=i0,in
+            if ( (F_x(i,j)<minposx).or.(F_x(i,j)>maxposx).or. &
                (F_y(i,j)<minposy).or.(F_y(i,j)>maxposy) ) then
                cnt=cnt+1
             endif

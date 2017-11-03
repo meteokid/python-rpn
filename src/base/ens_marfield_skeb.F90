@@ -19,7 +19,7 @@
       subroutine ens_marfield_skeb(fgem)
 !
       use phy_itf, only : phy_put
-
+      use ens_gmm_dim
       use step_options
       use ens_gmm_var
       use ens_options
@@ -42,9 +42,6 @@
 !arguments     none
 !
 #include <rmnlib_basics.hf>
-#include "ens_gmm_dim.cdk"
-
-#include "mem.cdk"
 
 !
 
@@ -56,20 +53,19 @@
 !
       logical :: Init_mc_L
       integer :: nlat, nlon
-      integer :: l ,m, i, j, k, indx, ier
-      integer lmin,lmax
-      integer ::  gmmstat, istat
+      integer :: l ,m, i, j, indx, ier
+      integer :: lmin,lmax
+      integer :: gmmstat
       integer :: gdyy,  n
-      real    :: fstd, fstr, tau
+      real    :: fstd, tau
       real    :: sumsp , fact,fact2
       real    :: offi,offj
       real    :: xfi(l_ni),yfi(l_nj)
-      real*8  ::  lat, theta ,x, rad2deg_8, pri_8
+      real*8  :: rad2deg_8, pri_8
       logical, save :: init_done=.false.
 !
 !
 ! paidum   pointer vers l'etat du generateur sauvegarde idum
-      type(gmm_metadata) :: meta
       integer, pointer :: paiv,paiy,paiset,pagset,paidum
 !
 !      variables et champs auxiliaires reels
@@ -77,10 +73,9 @@
 ! tau  Temps de décorrélation du champ aléatoire f(i,j) (secondes)
 ! eps  EXP(-dt/tau/2.146)
       real*8    :: dt, eps
-      real*8    :: fmax, fmin , fmean
+      real*8    :: fmax, fmin
       real*8,    dimension(:), allocatable :: pspectrum , fact1, fact1n
       real*8,    dimension(:), allocatable  :: wrk1
-      real*8,    dimension(:,:),allocatable :: wrk2
       real*8,    dimension(:,:,:),allocatable :: cc
       real  ,    dimension(:,:),allocatable :: f
       integer :: sig

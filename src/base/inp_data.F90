@@ -114,8 +114,9 @@
       err= inp_read ( 'TEMPERATURE', 'Q', ttr ,    ip1_list, nka_tt )
       err= inp_read ( 'TR/HU'      , 'Q', hur , HU_ip1_list, nka_hu )
 
-      if (nka_tt < 1) &
-      call gem_error (-1,'inp_data','Missing field: TT - temperature TT')
+      if (nka_tt < 1) then
+         call gem_error (-1,'inp_data','Missing field: TT - temperature TT')
+      end if
 
       nka= nka_tt
       allocate (tv(l_minx:l_maxx,l_miny:l_maxy,nka))
@@ -178,23 +179,26 @@
          call inp_3dpres ( vgd_src, ip1_list, S_q, dummy, srclev, 1,nka )
 
          if ( associated(meqr) .and. sfcTT_L ) then
-            if (lun_out > 0) &
-            write(lun_out,'(" PERFORMING surface pressure adjustment")')
+            if (lun_out > 0) then
+               write(lun_out,'(" PERFORMING surface pressure adjustment")')
+            end if
             srclev(1:l_ni,1:l_nj,nka)= S_q(1:l_ni,1:l_nj)
             call adj_ss2topo2 ( ssq0, F_topo, srclev, meqr, tv  , &
                                 l_minx,l_maxx,l_miny,l_maxy, nka, &
                                 1,l_ni,1,l_nj )
             deallocate (meqr) ; nullify (meqr)
          else
-            if (lun_out > 0) &
-            write(lun_out,'(" NO surface pressure adjustment")')
+            if (lun_out > 0) then
+               write(lun_out,'(" NO surface pressure adjustment")')
+            end if
             ssq0(1:l_ni,1:l_nj)= S_q(1:l_ni,1:l_nj)
          endif
       endif
 
-      if (.not.associated(S_q)) &
-      call gem_error ( -1, 'inp_data', &
-          'Missing input data: surface pressure')
+      if (.not.associated(S_q)) then
+         call gem_error ( -1, 'inp_data', &
+                          'Missing input data: surface pressure')
+      end if
 
       call rpn_comm_xch_halo ( ssq0, l_minx,l_maxx,l_miny,l_maxy,&
            l_ni,l_nj,1,G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
@@ -293,6 +297,7 @@
 
       allocate (ip1_w(1:G_nk))
       ip1_w(1:G_nk)= Ver_ip1%t(1:G_nk)
+      if (.not. Schm_trapeze_L) ip1_w(G_nk)=Ver_ip1%t(G_nk+1)
       err= inp_get ('WT1',  'Q', ip1_w            ,&
                     vgd_src,vgd_dst,S_q,ssq0,p0lsq0,F_w ,&
                     l_minx,l_maxx,l_miny,l_maxy,G_nk)
@@ -319,34 +324,38 @@
       err= inp_get ( 'URT1', 'U', Ver_ip1%m       ,&
                      vgd_src,vgd_dst,S_u,ssu0,p0lsu0,F_u,&
                      l_minx,l_maxx,l_miny,l_maxy,G_nk )
-      if ( err == 0 ) &
-      err= inp_get ( 'VRT1', 'V', Ver_ip1%m       ,&
-                     vgd_src,vgd_dst,S_v,ssv0,p0lsv0,F_v,&
-                     l_minx,l_maxx,l_miny,l_maxy,G_nk )
+      if ( err == 0 ) then
+         err= inp_get ( 'VRT1', 'V', Ver_ip1%m       ,&
+                        vgd_src,vgd_dst,S_v,ssv0,p0lsv0,F_v,&
+                        l_minx,l_maxx,l_miny,l_maxy,G_nk )
+      end if
       urt1_L= ( err == 0 )
 
       if (.not. urt1_L) then
          err= inp_get ( 'UT1', 'U', Ver_ip1%m        ,&
                         vgd_src,vgd_dst,S_u,ssu0,p0lsu0,F_u,&
                         l_minx,l_maxx,l_miny,l_maxy,G_nk )
-         if ( err == 0 ) &
-         err= inp_get ( 'VT1', 'V', Ver_ip1%m        ,&
-                        vgd_src,vgd_dst,S_v,ssv0,p0lsv0,F_v,&
-                        l_minx,l_maxx,l_miny,l_maxy,G_nk )
+         if ( err == 0 ) then
+            err= inp_get ( 'VT1', 'V', Ver_ip1%m        ,&
+                           vgd_src,vgd_dst,S_v,ssv0,p0lsv0,F_v,&
+                           l_minx,l_maxx,l_miny,l_maxy,G_nk )
+         end if
          ut1_L= ( err == 0 )
          ! Remove the .and. part of this test by 2021
-         if ( ut1_L .and. Inp_ut1_is_urt1 == -1 ) &
+         if ( ut1_L .and. Inp_ut1_is_urt1 == -1 ) then
               call image_to_real_winds ( F_u,F_v, l_minx,l_maxx,&
                                          l_miny,l_maxy, G_nk )
+         end if
 
       endif
       endif
 
-      if ((.not. urt1_L) .and. (.not. ut1_L)) &
+      if ((.not. urt1_L) .and. (.not. ut1_L)) then
          call inp_hwnd2 ( F_u,F_v, vgd_src,vgd_dst, F_stag_L,&
                           S_q,S_u,S_v, ssq0,ssu0,ssv0       ,&
                           p0lsq0,p0lsu0,p0lsv0              ,&
                           l_minx,l_maxx,l_miny,l_maxy,G_nk )
+      end if
 
       deallocate (S_q,S_u,S_v,ssq0,ssu0,ssv0)
       nullify    (S_q,S_u,S_v,ssq0,ssu0,ssv0)

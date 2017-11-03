@@ -17,31 +17,30 @@
 !            save the results for next iteration in the o's
 !
       subroutine rhs ( F_oru, F_orv, F_orc, F_ort, F_orw, F_orf, &
-                       F_u,F_v,F_w,F_t,F_s,F_zd,F_q, &
-                       F_sl,  F_fis, Minx,Maxx,Miny,Maxy, Nk )
+                       F_u, F_v, F_w, F_t, F_s, F_zd, F_q, &
+                       F_sl, F_fis, Minx, Maxx, Miny, Maxy, Nk )
       use coriolis
-      use grid_options
-      use gem_options
-      use gmm_phy
-      use geomh
-      use tdpack
-      use glb_ld
       use cstv
+      use gem_options
+      use geomh
+      use glb_ld
+      use gmm_itf_mod
+      use gmm_phy
+      use grid_options
       use lun
+      use tdpack
       use ver
       implicit none
 #include <arch_specific.hf>
-#include "gmm.hf"
 
-      integer Minx,Maxx,Miny,Maxy, Nk
-      real F_oru   (Minx:Maxx,Miny:Maxy,  Nk)  ,F_orv   (Minx:Maxx,Miny:Maxy,  Nk), &
-           F_orc   (Minx:Maxx,Miny:Maxy,  Nk)  ,F_ort   (Minx:Maxx,Miny:Maxy,  Nk), &
-           F_orw   (Minx:Maxx,Miny:Maxy,  Nk)  ,F_orf   (Minx:Maxx,Miny:Maxy,  Nk), &
-           F_u     (Minx:Maxx,Miny:Maxy,  Nk)  ,F_v     (Minx:Maxx,Miny:Maxy,  Nk), &
-           F_w     (Minx:Maxx,Miny:Maxy,  Nk)  ,F_t     (Minx:Maxx,Miny:Maxy,  Nk), &
-           F_s     (Minx:Maxx,Miny:Maxy)       ,F_zd    (Minx:Maxx,Miny:Maxy,  Nk), &
-           F_q     (Minx:Maxx,Miny:Maxy,  Nk+1),F_fis   (Minx:Maxx,Miny:Maxy)     , &
-           F_sl    (Minx:Maxx,Miny:Maxy)
+      integer, intent(in) :: Minx, Maxx, Miny, Maxy, Nk
+      real, dimension(Minx:Maxx,Miny:Maxy), intent(inout) :: F_s
+      real, dimension(Minx:Maxx,Miny:Maxy), intent(in) :: F_fis, F_sl
+      real, dimension(Minx:Maxx,Miny:Maxy,  Nk), intent(in)    :: F_w, F_zd
+      real, dimension(Minx:Maxx,Miny:Maxy,  Nk), intent(inout) :: F_u, F_v, F_t
+      real, dimension(Minx:Maxx,Miny:Maxy,  Nk), intent(out)   :: F_oru, F_orv, F_orc, F_ort, F_orw, F_orf
+      real, dimension(Minx:Maxx,Miny:Maxy,  Nk+1), intent(inout) :: F_q
+
 
 !author
 !     Alain Patoine
@@ -59,10 +58,9 @@
 ! v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
 ! v4_40 - Qaddouri/Lee      - Exchange and interp winds between Yin, Yang
 ! v4.70 - Gaudreault S.     - Reformulation in terms of real winds (removing wind images)
-!                           - Explicit integration of metric terms (optional)
+!                           - Explicit integration of metric terms
 
 
-      logical, save :: done_MU=.false.
       integer :: i0,  in,  j0,  jn
       integer :: i0u, inu, i0v, inv
       integer :: j0u, jnu, j0v, jnv
@@ -70,11 +68,11 @@
       integer :: i, j, k, km, kq, nij, jext, istat
       real*8 :: tdiv, BsPqbarz, dlnTstr_8, barz, barzp,  &
                 u_interp, v_interp, t_interp, mu_interp, &
-                w1, w2, w3, mydelta_8, phy_bA_m_8, phy_bA_t_8
+                w1, w2, w3, phy_bA_m_8, phy_bA_t_8
       real*8  xtmp_8(l_ni,l_nj), ytmp_8(l_ni,l_nj)
-      real, dimension(:,:,:), pointer :: BsPq, FI, MU
-      real*8, dimension(:,:,:), pointer :: Afis
-      save MU
+      real, dimension(Minx:Maxx,Miny:Maxy,l_nk+1) :: BsPq, FI
+      real*8, dimension(Minx:Maxx,Miny:Maxy,l_nk) :: Afis
+      real, dimension(Minx:Maxx,Miny:Maxy,l_nk) :: MU
       real, dimension(Minx:Maxx,Miny:Maxy,l_nk), target :: zero_array
       real*8, parameter :: one=1.d0, zero=0.d0, half=0.5d0 , &
                            alpha1= -1.d0/16.d0 , alpha2 =9.d0/16.d0
@@ -83,24 +81,14 @@
 !
       if (Lun_debug_L) write (Lun_out,1000)
 
-      nullify  ( BsPq, FI, Afis )
-      allocate ( BsPq(Minx:Maxx,Miny:Maxy,l_nk+1), &
-                   FI(Minx:Maxx,Miny:Maxy,l_nk+1), &
-                   Afis(Minx:Maxx,Miny:Maxy,l_nk)  )
-
-      if (.not.done_MU) then
-         nullify  ( MU )
-         allocate ( MU(Minx:Maxx,Miny:Maxy,l_nk) )
-      endif
-
       zero_array = 0.
 
       if (Schm_phycpl_S == 'RHS') then
          istat = gmm_get(gmmk_phy_uu_tend_s,phy_uu_tend)
          istat = gmm_get(gmmk_phy_vv_tend_s,phy_vv_tend)
          istat = gmm_get(gmmk_phy_tv_tend_s,phy_tv_tend)
-         phy_bA_m_8 = 0d0
-         phy_bA_t_8 = 0d0
+         phy_bA_m_8 = 0.d0
+         phy_bA_t_8 = 0.d0
       elseif (Schm_phycpl_S == 'AVG') then
          istat = gmm_get(gmmk_phy_uu_tend_s,phy_uu_tend)
          istat = gmm_get(gmmk_phy_vv_tend_s,phy_vv_tend)
@@ -111,16 +99,13 @@
          phy_uu_tend => zero_array
          phy_vv_tend => zero_array
          phy_tv_tend => zero_array
-         phy_bA_m_8 = 0d0
-         phy_bA_t_8 = 0d0
+         phy_bA_m_8 = 0.d0
+         phy_bA_t_8 = 0.d0
       endif
-      
+
 !     Common coefficients
 
       jext = Grd_bsc_ext1 + 1
-
-      mydelta_8 = zero
-      if(Schm_capa_var_L) mydelta_8 = 0.233d0
 
 !     Exchanging halos for derivatives & interpolation
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -172,18 +157,18 @@
                     i0u,inu+1,j0v,jnv+1)
 
       if (Schm_hydro_L) then
-         if (.not.done_MU) then
-            MU= 0.
-            done_MU= .true.
-         endif
+         MU = 0.
       else
          call diag_mu(MU, F_q, F_s, F_sl, l_minx,l_maxx,l_miny,l_maxy, l_nk, &
                     i0u,inu+1,j0v,jnv+1)
       endif
 
-!$omp parallel private(km,kq,barz,barzp,w1,w2,w3, &
-!$omp     u_interp,v_interp,t_interp,mu_interp, &
-!$omp     dlnTstr_8,BsPqbarz,tdiv,xtmp_8,ytmp_8)
+!$omp parallel private(i,j,k,km,kq,barz,barzp,w1,w2,w3, &
+!$omp                  u_interp,v_interp,t_interp,mu_interp, &
+!$omp                  dlnTstr_8,BsPqbarz,tdiv,xtmp_8,ytmp_8) &
+!$omp shared(BsPq,FI,MU,Afis,i0,in,j0,jn,i0u, &
+!$omp        inu,j0u,jnu,i0v,inv,j0v,jnv,nij,&
+!$omp        phy_bA_m_8, phy_bA_t_8)
 
       if(Schm_eulmtn_L) then
 !$omp do
@@ -318,7 +303,7 @@
       end do
       end do
 
-      if(Schm_eulmtn_L) then
+      if (Schm_eulmtn_L) then
          w1=one/(Rgasd_8*Ver_Tstar_8%m(l_nk))
          do j = j0, jn
          do i = i0, in
@@ -366,24 +351,16 @@
    end do
 !$omp enddo
 
-!$omp  end parallel
+!$omp end parallel
 
-      if(hzd_div_damp > 0.) then
+      if (hzd_div_damp > 0.0) then
          call hz_div_damp ( F_oru, F_orv, F_u, F_v, &
                             i0u,inu,j0u,jnu,i0v,inv,j0v,jnv, &
                             l_minx,l_maxx,l_miny,l_maxy,G_nk )
       endif
-      if(hzd_in_rhs_L) then
-         call hzd_in_rhs ( F_oru, F_orv, F_orw, F_ort, F_u, F_v, F_w, F_t, F_s, &
-                           i0u,inu,j0u,jnu,i0v,inv,j0v,jnv, &
-                           i0,in,j0,jn,l_minx,l_maxx,l_miny,l_maxy,G_nk )
-      endif
 
       call smago_in_rhs ( F_oru, F_orv, F_orw, F_ort, F_u, F_v, F_w, F_t, F_s, &
                           l_minx,l_maxx,l_miny,l_maxy,G_nk )
-
-      deallocate ( BsPq, FI, Afis )
-      if (.not.Schm_hydro_L) deallocate ( MU )
 
 1000  format(3X,'COMPUTE THE RIGHT-HAND-SIDES: (S/R RHS)')
 !

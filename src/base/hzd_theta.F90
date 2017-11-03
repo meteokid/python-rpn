@@ -56,7 +56,7 @@
 
       call hzd_ctrl4 ( th, 'S_THETA', l_minx,l_maxx,l_miny,l_maxy, G_nk )
 
-!$omp parallel shared (pres_t,th)
+!$omp parallel private(k) shared (pres_t,th)
 !$omp do
       do k=1,G_nk
          tt1(1:l_ni,1:l_nj,k) = th    (1:l_ni,1:l_nj,k) / &

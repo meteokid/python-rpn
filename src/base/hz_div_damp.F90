@@ -18,11 +18,10 @@
       subroutine hz_div_damp ( F_du,F_dv, F_u, F_v, &
                               i0u,inu,j0u,jnu,i0v,inv,j0v,jnv, &
                               Minx,Maxx,Miny,Maxy,Nk )
+      use cstv
       use dcst
       use gem_options
       use geomh
-      use tdpack
-      use cstv
       implicit none
 #include <arch_specific.hf>
 
@@ -34,13 +33,13 @@
 !   Claude Girard
 !
 
-      integer i,j,k
-      real div(Minx:Maxx,Miny:Maxy,Nk)
-      real*8 kdiv_damp,kdiv_damp_max
+      integer :: i,j,k
+      real, dimension(Minx:Maxx,Miny:Maxy,Nk) :: div
+      real*8 :: kdiv_damp,kdiv_damp_max
 !
 !     ---------------------------------------------------------------
 !
-      kdiv_damp_max=0.25*(Dcst_rayt_8*geomh_hx_8)**2/Cstv_dt_8
+      kdiv_damp_max=0.25d0*(Dcst_rayt_8*geomh_hx_8)**2/Cstv_dt_8
       kdiv_damp=Hzd_div_damp*kdiv_damp_max/Cstv_bA_m_8
 
       do k=1,Nk

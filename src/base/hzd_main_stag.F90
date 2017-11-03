@@ -63,9 +63,6 @@
       switch_on_vrtspng_W   = Vspng_nk      >=1
       switch_on_eqspng      = Eq_nlev       > 1
 
-      if(hzd_in_rhs_L)      switch_on_THETA       =.false.
-      if(hzd_in_rhs_L)      switch_on_UVW         =.false.
-
       istat = gmm_get(gmmk_ut1_s,ut1)
       istat = gmm_get(gmmk_vt1_s,vt1)
       istat = gmm_get(gmmk_zdt1_s,zdt1)
@@ -200,8 +197,9 @@
           endif
 
          yyblend= (Schm_nblendyy > 0)
-         if (yyblend) &
-         call yyg_blend (mod(Step_kount,Schm_nblendyy) == 0)
+         if (yyblend) then
+            call yyg_blend (mod(Step_kount,Schm_nblendyy) == 0)
+         end if
 
       endif
 

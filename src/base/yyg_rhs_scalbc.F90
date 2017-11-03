@@ -103,10 +103,12 @@
 
              adr=Rhsx_send_adr(kk)+1
              call int_cub_lag8(send_Rhsx_8,tab_src_8,              &
-                             Rhsx_send_imx(adr),Rhsx_send_imy(adr), &
+                             Rhsx_send_imx(adr:adr+Rhsx_send_len(kk)), &
+                             Rhsx_send_imy(adr:adr+Rhsx_send_len(kk)), &
                              geomh_x_8,geomh_y_8,l_minx,            &
                              l_maxx,l_miny,l_maxy, NK,              &
-                             Rhsx_send_xxr(adr),Rhsx_send_yyr(adr), &
+                             Rhsx_send_xxr(adr:adr+Rhsx_send_len(kk)), &
+                             Rhsx_send_yyr(adr:adr+Rhsx_send_len(kk)), &
                              Rhsx_send_len(kk))
 
              mm=0

@@ -302,7 +302,7 @@
       endif
 
       if (pnww /= 0) then
-         call calomeg_w2(myomega,st1,sls,wt1,tt1,l_minx,l_maxx,l_miny,l_maxy,G_nk)
+         call calomeg_w(myomega,st1,sls,wt1,tt1,l_minx,l_maxx,l_miny,l_maxy,G_nk)
       endif
 
       if (pnth /= 0) then
@@ -334,6 +334,7 @@
             allocate(hybt_w(G_nk))
             ! For vertical motion quantities, we place level NK at the surface
             hybt_w(1:G_nk)= hybt(1:G_nk)
+            if (.not. Schm_trapeze_L) hybt_w(G_nk)= 1.
          endif
          hybt_gnk1(1)=hybt(G_nk+1)
          hybt_gnk2(1)=hybt(G_nk+2)

@@ -24,7 +24,7 @@
        integer Nk,NLEN,Minx,Maxx,Miny,Maxy
        integer Imx(NLEN),Imy(NLEN)
        real    FF(NLEN*Nk*2)
-       real*8  Fu_8(Minx:Maxx,Miny:Maxy,Nk),Fv_8(Minx:Maxx,Miny:Maxy,Nk), &
+       real*8, intent(in) :: Fu_8(Minx:Maxx,Miny:Maxy,Nk),Fv_8(Minx:Maxx,Miny:Maxy,Nk), &
                geomgx_8(Minx:Maxx),geomgy_8(Miny:Maxy),Xi_8(NLEN),Yi_8(NLEN), &
                s1_8(NLEN),s2_8(NLEN),s3_8(NLEN),s4_8(NLEN)
 !

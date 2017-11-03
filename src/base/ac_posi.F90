@@ -54,12 +54,14 @@
       rad2deg_8 = 180.0d0/pi_8
       xpx = xp * rad2deg_8
       ypx = yp * rad2deg_8
-!
+
       Grdc_gid = 0
       Grdc_gjd = 0
       Grdc_gif = 0
       Grdc_gjf = 0
-!
+
+      flag_hu = .false.
+
       if ( (Grdc_ndt < 0) .or. (Grd_yinyang_S == 'YAN') .or. &
            (Grdc_ni == 0) .or. (Grdc_nj == 0) .or. (Grdc_dx < 0.) ) then
          Grdc_ndt = -1
@@ -74,18 +76,18 @@
       y0   = Grdc_latr - (Grdc_jref-1) * Grdc_dy
       xl   = x0 + (Grdc_ni  -1) * Grdc_dx
       yl   = y0 + (Grdc_nj  -1) * Grdc_dy
-!
+
       if (x0 < 0.0)x0=x0+360.0
       if (xl < 0.0)xl=xl+360.0
-!
+
       ierx = stretch_axis2 ( ac_xp, Grdc_dx, x0, xl, dum1, Grdc_ni, &
                  Grdc_ni, dum, .false.,Lun_debug_L,360., dum2, .false.)
       ierx = stretch_axis2 ( ac_yp, Grdc_dy, y0, yl, dum1, Grdc_nj, &
                  Grdc_nj, dum, .false.,Lun_debug_L,180., dum2, .false.)
-!
+
       Grdc_xp1 = ac_xp(1)
       Grdc_yp1 = ac_yp(1)
-!
+
       do i=1,dimgx
          if (xpx(i) <= ac_xp(1)      ) Grdc_gid=i
          if (xpx(i) <= ac_xp(Grdc_ni)) Grdc_gif=i
@@ -119,8 +121,9 @@
            (Grdc_gif > dimgx).or.(Grdc_gjf > dimgy) ) Grdc_ndt = -1
 
       if (Grdc_ndt > 0) then
-         if ((prout).and.(.not.Rstri_rstn_L)) &
-         write (6,1006) Grdc_gid,Grdc_gif,Grdc_gjd,Grdc_gjf,Grdc_ndt,Grdc_start,Grdc_end
+         if ((prout).and.(.not.Rstri_rstn_L)) then
+            write (6,1006) Grdc_gid,Grdc_gif,Grdc_gjd,Grdc_gjf,Grdc_ndt,Grdc_start,Grdc_end
+         end if
          !#TODO: update since out_sgrid is no longuer avail.
 !!$         call out_sgrid2 (Grdc_gid, Grdc_gif, Grdc_gjd, Grdc_gjf, &
 !!$                                            0, 0, .false., 1, '')

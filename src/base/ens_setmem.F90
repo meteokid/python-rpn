@@ -15,8 +15,9 @@
 
 !**s/r ens_setmem - initialize ensemble prevision system
 !
-      subroutine ens_setmem (l_minx,l_maxx,G_halox,l_ni,     &
-                                 l_miny,l_maxy,G_haloy,l_nj,l_nk,Lun_out)
+      subroutine ens_setmem (l_ni, l_nj, l_nk, Lun_out)
+      use ens_param
+      use ens_gmm_dim
       use ens_gmm_var
       use ens_options
       use gmm_itf_mod
@@ -24,8 +25,7 @@
       implicit none
 #include <arch_specific.hf>
 !
-      integer l_minx,l_maxx,G_halox,l_ni
-      integer l_miny,l_maxy,G_haloy,l_nj,l_nk,Lun_out
+      integer, intent(in) :: l_ni, l_nj, l_nk, Lun_out
 !
 !     author
 !     Lubos Spacek - February 2010
@@ -35,8 +35,8 @@
 ! v_4.1.3 - N. Gagnon      - Change name of most parameters in the NAMELIST
 !
 
-#include "ens_gmm_dim.cdk"
-#include "ens_param.cdk"
+!#include "ens_gmm_dim.cdk"
+!#include "ens_param.cdk"
 
       integer :: istat
 !-------------------------------------------------------------------
