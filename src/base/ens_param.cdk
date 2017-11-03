@@ -1,3 +1,0 @@
-
-      integer Ens_skeb_l,Ens_skeb_m
-      common / Ens_i / Ens_skeb_l, Ens_skeb_m

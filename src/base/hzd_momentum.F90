@@ -34,8 +34,6 @@
 !
 !-------------------------------------------------------------------
 !
-      if(hzd_in_rhs_L) return
-
       if (Schm_hzdadw_L .and. switch_on_hzd) then
           if (Lun_debug_L) write (Lun_out,1000)
 

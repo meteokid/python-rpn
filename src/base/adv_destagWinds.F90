@@ -35,7 +35,7 @@
 
       integer :: i,j,k,i0,in,j0,jn,i0u,inu,j0v,jnv,jext
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,l_nk) :: uu, vv
-      real*8, parameter ::  alpha1=-1.d0/16.d0 , alpha2=9.d0/16.d0
+      real*8, parameter :: alpha1=-1.d0/16.d0 , alpha2=9.d0/16.d0
 !
 !---------------------------------------------------------------------
 !
@@ -54,11 +54,11 @@
       j0v = 0
       jnv = l_nj
 
-         jext=2
-         if (l_west)  i0u = 1    + jext
-         if (l_east)  inu = l_ni - jext
-         if (l_south) j0v = 1    + jext
-         if (l_north) jnv = l_nj - jext
+      jext=2
+      if (l_west)  i0u = 1    + jext
+      if (l_east)  inu = l_ni - jext
+      if (l_south) j0v = 1    + jext
+      if (l_north) jnv = l_nj - jext
 
        !- Interpolate advection winds to geopotential grid
 

@@ -24,3 +24,12 @@ end
 subroutine exp_set_vt()
 return
 end
+
+subroutine exp_out_gmm (levset,set)
+integer levset,set
+return
+end
+
+subroutine exp_H()
+return
+end

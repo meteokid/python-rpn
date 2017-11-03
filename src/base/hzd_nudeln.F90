@@ -78,7 +78,7 @@
       c2 = nu**2
       c3 = nu*four*(nu-one)
 
-!$omp parallel private (k,wk,i0,j0,in,jn) &
+!$omp parallel private (i,j,k,wk,i0,j0,in,jn) &
 !$omp shared(c1,c2,c3,id,jd,iff,jf)
 !$omp do
       do k=1,lnk

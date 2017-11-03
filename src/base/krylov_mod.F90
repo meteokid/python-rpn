@@ -26,9 +26,6 @@ module krylov
    ! Author
    !     Stéphane Gaudreault -- June 2014
    !
-   ! Revision
-   !     v4-70 - Gaudreault S.      - initial version
-   !
    use prec
    implicit none
 
@@ -140,8 +137,11 @@ contains
             beta = (rho / rho_old) * (alpha / omega)
          end if
 
-!$omp parallel
-!$omp do private (i,j,k)
+!$omp parallel private (i,j,k) &
+!$omp          shared(pp, residual, alpha, beta, omega, &
+!$omp                  vv, ss, tt, x, pp_prec, ss_prec)
+
+!$omp do
          do k=1,nk
             do j=j0,jl
                do i=i0,il
@@ -150,8 +150,8 @@ contains
             end do
          end do
 !$omp enddo
-!$omp single
 
+!$omp single
          select case(precond_S)
             case ('JACOBI')
                call pre_jacobi3D (pp_prec(i0:il,j0:jl,:), pp(i0:il,j0:jl,:), Prec_xevec_8, &
@@ -173,9 +173,9 @@ contains
          else
             alpha = rho / tau
          end if
-
 !$omp end single
-!$omp do private (i,j,k)
+
+!$omp do
          do k=1,nk
             do j=j0,jl
                do i=i0,il
@@ -184,8 +184,8 @@ contains
             end do
          end do
 !$omp enddo
-!$omp single
 
+!$omp single
          select case(precond_S)
             case ('JACOBI')
                   call pre_jacobi3D (ss_prec(i0:il,j0:jl,:), ss(i0:il,j0:jl,:), Prec_xevec_8, &
@@ -209,9 +209,9 @@ contains
 
          rho_old = rho
          rho = -omega * (dist_dotproduct(hatr0, tt, minx, maxx, miny, maxy, i0, il, j0, jl, nk))
-
 !$omp end single
-!$omp do private (i,j,k)
+
+!$omp do
          do k=1,nk
             do j=j0,jl
                do i=i0,il
@@ -391,8 +391,11 @@ contains
 
             ! Modified Gram-Schmidt orthogonalisation
 
-!$omp parallel
-!$omp do private (it,i,j,k,dotprod)
+!$omp parallel private(it,i,j,k,dotprod) &
+!$omp          shared(vv, nextit, initer, &
+!$omp                 dotprod_local, hessenberg)
+
+!$omp do
             do it=1,initer
                 dotprod = 0.0d0
                 do k=1,nk
@@ -410,7 +413,7 @@ contains
             call RPN_COMM_allreduce(dotprod_local(:), hessenberg(:,initer), initer, "MPI_double_precision", "MPI_sum", "grid", ierr)
 !$omp end single
 
-!$omp do private (i,j,k,it)
+!$omp do
             do it=1,initer
                do k=1,nk
                   do j=j0,jl
@@ -428,7 +431,7 @@ contains
             ! Watch out for happy breakdown
             if (.not. almost_zero( hessenberg(nextit,initer) )) then
                nu = 1.d0 / hessenberg(nextit,initer)
-!$omp parallel private (i,j,k)
+!$omp parallel private (i,j,k) shared(vv, nextit, nu)
 !$omp do
                do k=1,nk
                   do j=j0,jl
@@ -472,7 +475,6 @@ contains
          enddo
 
          ! updating solution
-
          do it = initer,1,-1
             nu = xh(it)
             do k=1,nk

@@ -37,12 +37,16 @@ contains
 
       character(len=*), intent(IN) :: F_type_S
       integer      , intent(IN) :: Minx,Maxx,Miny,Maxy,Nk
+      integer                   :: Pow
       real, dimension(Minx:Maxx,Miny:Maxy,Nk),&
                      intent (INOUT) :: F_f2hzd
 !
 !-------------------------------------------------------------------
 !
-      if (Hzd_pwr > 2) then
+      Pow=Hzd_pwr
+      if (F_type_S == 'S_THETA') Pow=Hzd_pwr_theta
+      if (F_type_S == 'S_TR')    Pow=Hzd_pwr_tr
+      if (Pow > 2) then
           call hzd_exp_visco2 (F_f2hzd, F_type_S, l_minx,l_maxx,l_miny,l_maxy,&
                                Nk)
       else

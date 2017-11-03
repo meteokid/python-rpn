@@ -24,25 +24,26 @@
       subroutine pre ( F_ru, F_rv, F_fis, F_rc, F_rt, &
                        F_rw, F_rf, F_rb, F_nest_t, Minx, Maxx, Miny, Maxy, &
                        i0, j0, in, jn, k0, nk )
-      use gmm_nest
-      use grid_options
+
+      use cstv
       use gem_options
       use geomh
-      use tdpack
       use glb_ld
-      use cstv
-      use lun
-      use ver
       use gmm_itf_mod
+      use gmm_nest
+      use grid_options
+      use lun
+      use tdpack
+      use ver
       implicit none
 #include <arch_specific.hf>
 
-      integer, intent(in) :: Minx,Maxx,Miny,Maxy, i0, j0, in, jn, k0, nk
-      real F_ru    (Minx:Maxx,Miny:Maxy,Nk)  ,F_rv    (Minx:Maxx,Miny:Maxy,Nk)  , &
-           F_rc    (Minx:Maxx,Miny:Maxy,Nk)  ,F_rt    (Minx:Maxx,Miny:Maxy,Nk)  , &
-           F_rw    (Minx:Maxx,Miny:Maxy,Nk)  ,F_rf    (Minx:Maxx,Miny:Maxy,Nk)  , &
-           F_rb    (Minx:Maxx,Miny:Maxy)     ,F_nest_t(Minx:Maxx,Miny:Maxy,Nk)  , &
-           F_fis   (Minx:Maxx,Miny:Maxy)
+      integer, intent(in) :: Minx, Maxx, Miny, Maxy, i0, j0, in, jn, k0, nk
+      real, dimension(Minx:Maxx,Miny:Maxy), intent(in) :: F_fis
+      real, dimension(Minx:Maxx,Miny:Maxy), intent(out) :: F_rb
+      real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(inout) :: F_ru, F_rv, F_rt, F_rf
+      real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(out) :: F_rc
+      real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(in) ::  F_rw, F_nest_t
 
 !author
 !     Alain Patoine
@@ -70,7 +71,7 @@
 !
       if (Lun_debug_L) write (Lun_out,1000)
 
-      k0t= k0
+      k0t = k0
       if(Schm_opentop_L) k0t= k0-1
 
       call rpn_comm_xch_halo( F_ru, l_minx,l_maxx,l_miny,l_maxy, l_niu, l_nj,G_nk, &
@@ -82,7 +83,8 @@
 ! Combination of governing equations *
 !*************************************
 
-!$omp parallel private(km,rdiv,w1,w2,w3,w4,w5,w_rt)
+!$omp parallel private(i,j,k,km,rdiv,w1,w2,w3,w4,w5,w_rt) &
+!$omp          shared(k0t)
 
 !$omp do
       do k=k0, l_nk

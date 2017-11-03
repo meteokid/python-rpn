@@ -20,6 +20,7 @@ subroutine adv_trilin_ijk ( F_x, F_y, F_z, F_capz, F_ii, F_jj, F_kk,        &
       use glb_ld
       use adv_grid
       use adv_interp
+      use ver
       use outgrid
    implicit none
 #include "arch_specific.hf"
@@ -45,17 +46,19 @@ subroutine adv_trilin_ijk ( F_x, F_y, F_z, F_capz, F_ii, F_jj, F_kk,        &
    ! v3_20 -Valin & Tanguay -  initial version
    ! v3_21 -Tanguay M.      -  evaluate min-max vertical CFL as function of k
    ! v4_10 -Plante A.       -  Replace single locator vector with 3 vectors.
+   ! v5.0.a12-Aider R.      -  Adapted to height vertical coordinate
 
 
-   integer :: n, n0
-   integer :: i, j, k, ii, jj, kk
-   real    :: capx, capy, capz
+   integer :: i, j, k, ii, jj, kk, n, n0, sig
+   real    :: capz
    real*8  :: rri, rrj, rrk
 
    !---------------------------------------------------------------------
 
-!$omp parallel do private(i,j,k,n,n0,ii,jj,kk,rri,rrj,rrk, &
-!$omp               capx,capy,capz)
+! Vertical variable type:  Height--> sig <0 , Pressure --> sig >0
+    sig=int((Ver_z_8%m(l_nk)-Ver_z_8%m(1))/(abs(  Ver_z_8%m(l_nk)-Ver_z_8%m(1) )))
+
+!$omp parallel do private(i,j,k,n,n0,ii,jj,kk,rri,rrj,rrk,capz)
     do k=k0,F_nk
        do j=j0,jn
 
@@ -64,26 +67,26 @@ subroutine adv_trilin_ijk ( F_x, F_y, F_z, F_capz, F_ii, F_jj, F_kk,        &
             n = n0 + i
 
             rri= F_x(n)
-            ii = (rri - adv_x00_8) * adv_ovdx_8
+            ii = int((rri - adv_x00_8) * adv_ovdx_8)
             ii = F_lcx(ii+1) + 1
             if (rri < F_bsx_8(ii)) ii = ii - 1
             F_ii(n) = max(1,min(ii,F_iimax))
 
             rrj= F_y(n)
-            jj = (rrj - adv_y00_8) * adv_ovdy_8
+            jj = int((rrj - adv_y00_8) * adv_ovdy_8)
             jj = F_lcy(jj+1) + 1
             if (rrj < F_bsy_8(jj)) jj = jj - 1
             F_jj(n) = max(adv_haloy,min(jj,adv_jjmax))
 
             rrk= F_z(n)
-            kk = (rrk - F_z00_8) * adv_ovdz_8
+            kk = int((rrk - F_z00_8) * adv_ovdz_8*sig)
             kk = F_lcz(kk+1)
 
             rrk = rrk - F_bsz_8(kk)
-            if (rrk < 0.) kk = kk - 1
+            if (real(sig)*rrk < 0.) kk = kk - 1
 
             capz = rrk * F_diz_8(kk)
-            if (rrk < 0.) capz = 1. + capz
+            if (real(sig)*rrk < 0.) capz = 1. + capz
 
             !- We keep F_capz, otherwise we would need rrk
             F_capz(n) = capz

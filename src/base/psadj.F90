@@ -54,6 +54,9 @@
 !
 !     ---------------------------------------------------------------
 !
+      if ( Grd_yinyang_L ) then
+      !------------------------
+
       if ( Schm_psadj == 0 ) then
          if ( Schm_psadj_print_L ) goto 999
          return
@@ -63,12 +66,29 @@
          if ( Cstv_dt_8*F_kount <= Iau_period ) goto 999
       endif
 
-      if ( .not.Grd_yinyang_L ) then
+      elseif ( .not.Grd_yinyang_L .and. Schm_psadj == 0 ) then
+      !-------------------------------------------------------
+
+         if ( Schm_psadj_print_L ) goto 999
+         return
+
+      else
+      !---
+
          if ( Rstri_rstn_L ) call gem_error(-1,'psadj', &
                         'PSADJ NOT AVAILABLE FOR LAMs in RESTART mode')
-         call adv_psadj_LAM_0
+
+         if ( Cstv_dt_8*F_kount <= Iau_period ) call gem_error(-1,'psadj', &
+                        'PSADJ NOT AVAILABLE FOR LAMs in Iau period')
+
+         if (.not.Init_mode_L) call adv_psadj_LAM_0
+
+         if ( Schm_psadj_print_L ) goto 999
+
          return
+
       endif
+      !----
 
       communicate_S = "GRID"
       if (Grd_yinyang_L) communicate_S = "MULTIGRID"

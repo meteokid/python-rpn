@@ -44,7 +44,7 @@
       include "rpn_comm.inc"
 
       logical wrapit_L, iope_L
-      integer  nz, err, ni, nis, njs, k, kk
+      integer  nz, err, ni, nis, njs, k, kk, wk_njs
       integer, dimension (:)    , pointer     :: zlist
       real   , dimension (:,:  ), pointer     :: guwrap
       real   , dimension (:,:,:), pointer     :: wk, wk_glb
@@ -81,10 +81,13 @@
 
       if ( (iope_L) .and. (nz>0) ) then
          if ((Grd_yinyang_L) .and. (Ptopo_couleur == 0)) then
-            allocate (wk(nis,njs*2,nz))
+            wk_njs = njs*2
          else
-            allocate (wk(nis,njs,nz))
+            wk_njs = njs
          endif
+
+         allocate (wk(nis,wk_njs,nz))
+
          wk(1:nis,1:njs,1:nz) = wk_glb(g_id:g_if,g_jd:g_jf,1:nz)
 !!$         do k= 1, nz
 !!$            if (zlist(k) > 0) then
@@ -115,10 +118,10 @@
 
                if ( (Grd_yinyang_L) .and. (.not.Out_reduc_l) ) then
 
-                  call out_mergeyy (wk(1,1,k), nis*njs)
+                  call out_mergeyy (wk, k, nis, wk_njs, nz, nis*njs)
 
                   if (Ptopo_couleur == 0) then
-                     err = fstecr ( wk(1,1,k),wk,-meta(kk)%nbits,Out_unf, &
+                     err = fstecr ( wk(:,:,k),wk,-meta(kk)%nbits,Out_unf, &
                                     Out_dateo,Out_deet,Out_npas,nis,2*njs,1, &
                                     meta(kk)%ip1,meta(kk)%ip2,meta(kk)%ip3 , &
                                     Out_typvar_S,meta(kk)%nv,Out_etik_S,'U', &

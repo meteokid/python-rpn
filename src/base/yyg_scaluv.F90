@@ -88,11 +88,16 @@
              adr=Pil_send_adr(kk)+1
 
              call int_cubuv_lag(send_pil(1,KK),tabu_src_8,tabv_src_8,  &
-                  Pil_send_imx(adr),Pil_send_imy(adr),                 &
+                  Pil_send_imx(adr:adr+Pil_send_len(kk)),              &
+                  Pil_send_imy(adr:adr+Pil_send_len(kk)),              &
                   geomh_x_8,geomh_y_8,l_minx,l_maxx,l_miny,l_maxy,NK,  &
-                  Pil_send_xxr(adr),Pil_send_yyr(adr),Pil_send_len(kk),&
-                  Pil_send_s1(adr),Pil_send_s2(adr),                   &
-                  Pil_send_s3(adr),Pil_send_s4(adr)            )
+                  Pil_send_xxr(adr:adr+Pil_send_len(kk)),              &
+                  Pil_send_yyr(adr:adr+Pil_send_len(kk)),              &
+                  Pil_send_len(kk),                                    &
+                  Pil_send_s1(adr:adr+Pil_send_len(kk)),               &
+                  Pil_send_s2(adr:adr+Pil_send_len(kk)),               &
+                  Pil_send_s3(adr:adr+Pil_send_len(kk)),               &
+                  Pil_send_s4(adr:adr+Pil_send_len(kk))            )
 
              ireq = ireq+1
 !            print *,'scaluv: sending',Pil_send_len(kk)*NK*2,' to ',kk_proc

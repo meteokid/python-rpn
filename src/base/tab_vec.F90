@@ -20,8 +20,9 @@
       implicit none
 #include <arch_specific.hf>
 !
-      integer Minx,Maxx,Miny,Maxy,nk,i0,in,j0,jn,idir
-      real*8  tab(Minx:Maxx,Miny:Maxy,nk),vec(*)
+      integer, intent(in) :: Minx,Maxx,Miny,Maxy,nk,i0,in,j0,jn,idir
+      real*8, dimension(Minx:Maxx,Miny:Maxy,nk) :: tab
+      real*8, dimension(*) :: vec(*)
 !
 ! author    Abdessamad Qaddouri - December 2006
 !
@@ -35,7 +36,7 @@
       nij=(in-i0+1)*(jn-j0+1)
 !
       if (idir == 1) then
-!$omp parallel private(i,j,iloc)
+!$omp parallel private(i,j,iloc) shared(nij)
 !$omp do
          do k = 1  , nk
 !           iloc=iloc+1
@@ -43,16 +44,16 @@
             iloc=(k-1)*nij
 !           call dcopy(nij,tab(i0,j0,k),1,vec(iloc),1)
             do j=j0,jn
-            do i=i0,in
-               iloc=iloc+1
-               vec(iloc) = tab(i,j,k)
-            enddo
+               do i=i0,in
+                  iloc=iloc+1
+                  vec(iloc) = tab(i,j,k)
+               enddo
             enddo
          enddo
 !$omp enddo
 !$omp end parallel
       else if (idir == (-1)) then
-!$omp parallel private(i,j,iloc)
+!$omp parallel private(i,j,iloc)  shared(nij)
 !$omp do
          do k = 1  , nk
 !           iloc=iloc+1
@@ -60,10 +61,10 @@
             iloc=(k-1)*nij
 !           call dcopy(nij,vec(iloc),1,tab(i0,j0,k),1)
             do j=j0,jn
-            do i=i0,in
-               iloc=iloc+1
-               tab(i,j,k)=vec(iloc)
-            enddo
+               do i=i0,in
+                  iloc=iloc+1
+                  tab(i,j,k)=vec(iloc)
+               enddo
             enddo
          enddo
 !$omp enddo

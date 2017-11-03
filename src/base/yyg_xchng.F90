@@ -150,10 +150,14 @@
 
              adr=send_adr(kk)+1
 
-             call yyg_interp1( send_pil(1,KK), wrk1, &
-                       send_imx(adr), send_imy(adr), geomh_x_8,geomh_y_8,&
-                       Minx,Maxx,Miny,Maxy,Nk,&
-                       send_xxr(adr),send_yyr(adr),send_len(KK),&
+             call yyg_interp1( send_pil(1,KK), wrk1,  &
+                       send_imx(adr:adr+send_len(kk)),&
+                       send_imy(adr:adr+send_len(kk)),&
+                       geomh_x_8,geomh_y_8           ,&
+                       Minx,Maxx,Miny,Maxy,Nk        ,&
+                       send_xxr(adr:adr+send_len(kk)),&
+                       send_yyr(adr:adr+send_len(kk)),&
+                       send_len(KK)                  ,&
                        mono_l,interp_S )
 
              ireq = ireq+1

@@ -81,16 +81,20 @@
          if (Bln_vsend_len(kk) > 0) then
 !            prepare something to send
 
-                adr=Bln_vsend_adr(kk)+1
+             adr=Bln_vsend_adr(kk)+1
 
              call int_cubvec_lag(send_pil(1,KK),tabu_src_8,tabv_src_8, &
-                             Bln_vsend_imx1(adr),Bln_vsend_imy1(adr),  &
-                             Bln_vsend_imx2(adr),Bln_vsend_imy2(adr),  &
+                             Bln_vsend_imx1(adr:adr+Bln_vsend_len(kk)),&
+                             Bln_vsend_imy1(adr:adr+Bln_vsend_len(kk)),&
+                             Bln_vsend_imx2(adr:adr+Bln_vsend_len(kk)),&
+                             Bln_vsend_imy2(adr:adr+Bln_vsend_len(kk)),&
                              geomh_xu_8,geomh_y_8,geomh_x_8,geomh_yv_8,&
                              l_minx,l_maxx,l_miny,l_maxy, Nk,          &
-                             Bln_vsend_xxr(adr),Bln_vsend_yyr(adr),    &
+                             Bln_vsend_xxr(adr:adr+Bln_vsend_len(kk)), &
+                             Bln_vsend_yyr(adr:adr+Bln_vsend_len(kk)), &
                              Bln_vsend_len(kk) ,                       &
-                             Bln_vsend_s1(adr) ,Bln_vsend_s2(adr) )
+                             Bln_vsend_s1(adr:adr+Bln_vsend_len(kk)) , &
+                             Bln_vsend_s2(adr:adr+Bln_vsend_len(kk)) )
 
              ireq = ireq+1
 !            print *,'vecbc2: sending',Bln_vsend_len(kk)*NK,' to ',kk_proc

@@ -16,16 +16,15 @@
 !**s/r pw_update_UV - Update physical unstaggered horizonal wind
 !                     components pw_uu_plus and pw_vv_plus
 
-      subroutine pw_update_UV
-      use gmm_vt1
-      use gmm_pw
+      subroutine pw_update_UV()
       use glb_ld
       use gmm_itf_mod
+      use gmm_pw
+      use gmm_vt1
       implicit none
 #include <arch_specific.hf>
 
-
-      integer istat
+      integer :: istat
 !     ________________________________________________________________
 !
       call timing_start2 ( 5, 'PW_UPDATE', 0)

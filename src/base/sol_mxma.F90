@@ -77,9 +77,9 @@
 ! F_dwfft      I    - work field
 
 
-      integer i,j,k, jr,l_pil_w,l_pil_e
+      integer i,j,k,jr,l_pil_w,l_pil_e
       integer piece, p0, pn, ptotal, plon
-      real*8, parameter :: zero= 0.0, one= 1.0
+      real*8, parameter :: zero= 0.d0, one= 1.d0
 !     __________________________________________________________________
 !
       l_pil_w=0
@@ -90,7 +90,8 @@
       call rpn_comm_transpose( Rhs, 1, F_t0nis, F_gni, (F_t0njs-1+1),&
                                        1, F_t1nks, F_gnk, F_dg1, 1,2 )
 
-!$omp parallel private(p0,pn,piece,jr) shared(ptotal,plon)
+!$omp parallel private(i,j,k,p0,pn,piece,jr) &
+!$omp          shared(ptotal,plon,l_pil_w,l_pil_e)
 
 !$omp do
       do i= 1,F_gni

@@ -15,7 +15,7 @@
 
 !**s/r out_gmm - output GMM fields
 !
-      subroutine out_gmm2 (levset,set)
+      subroutine out_gmm (levset,set)
       use gem_options
       use glb_ld
       use lun
@@ -66,7 +66,7 @@
 
       type(gmm_metadata) :: tmp_meta
       character(len=GMM_MAXNAMELENGTH), dimension(:), pointer :: keylist
-      character(len=2) class_var(100,3)
+      character(len=4) class_var(100,3)
       logical periodx_L,write_diag_lev
       integer nkeys,nko,i,ii,gridset,istat,id,cid
       integer, dimension(:), allocatable::indo
@@ -84,6 +84,7 @@
       if ( .not. associated (hybt_w) ) then
          allocate(hybt_w(G_nk))
          hybt_w(1:G_nk)= Ver_hyb%t(1:G_nk)
+         if (.not. Schm_trapeze_L) hybt_w(G_nk)=1.
       endif
       hyb0(1)=0.0
       ind0(1)=1
@@ -125,9 +126,9 @@
       class_var(29,1) = 'RWR'; class_var(29,2) = 'QQ' ; class_var(29,3) = 'TT'
       class_var(30,1) = 'QR' ; class_var(30,2) = 'QQ' ; class_var(30,3) = 'TT'
       class_var(31,1) = 'QE' ; class_var(31,2) = 'QQ' ; class_var(31,3) = 'TT'
-      class_var(32,1) = 'UPT'; class_var(31,2) = 'UU' ; class_var(31,3) = 'MM'
-      class_var(33,1) = 'VPT'; class_var(31,2) = 'VV' ; class_var(31,3) = 'MM'
-      class_var(34,1) = 'TVPT';class_var(31,2) = 'QQ' ; class_var(31,3) = 'TT'
+      class_var(32,1) = 'UPT'; class_var(32,2) = 'UU' ; class_var(32,3) = 'MM'
+      class_var(33,1) = 'VPT'; class_var(33,2) = 'VV' ; class_var(33,3) = 'MM'
+      class_var(34,1) = 'TVPT';class_var(34,2) = 'QQ' ; class_var(34,3) = 'TT'
 
 
 !     Setup the indexing for output
@@ -141,18 +142,18 @@
             gridset = Outd_grid(set)
             id = -1
             do cid=1,numvars
-               if (keylist(i)(1:2) == class_var(cid,1)) id=cid
+               if (trim(keylist(i)(1:4)) == trim(class_var(cid,1))) id=cid
             end do
             if (id < 0) then
                if (Lun_out > 0) write(Lun_out,1001) trim(keylist(i))
                cycle
             endif
             level_type => Ver_hyb%t
-            if (class_var(id,3) == 'MM') level_type => Ver_hyb%m
-            if (class_var(id,3) == 'MQ') level_type => Ver_hyb%m
-            if (class_var(id,3) == 'TW') level_type => hybt_w
+            if (trim(class_var(id,3)) == 'MM') level_type => Ver_hyb%m
+            if (trim(class_var(id,3)) == 'MQ') level_type => Ver_hyb%m
+            if (trim(class_var(id,3)) == 'TW') level_type => hybt_w
 
-            select case (class_var(id,2))
+            select case (trim(class_var(id,2)))
             case('UU')
                call out_href3 ( 'U_point', &
                     OutGrid_x0 (gridset), OutGrid_x1 (gridset), 1, &

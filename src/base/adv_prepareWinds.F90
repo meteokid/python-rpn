@@ -17,12 +17,12 @@
                                      ut0, vt0, zdt0, ut1, vt1 , zdt1          , &
                                      F_minx, F_maxx, F_miny, F_maxy , F_ni ,F_nj, F_nk )
       use dcst
-      use gmm_vt2
-      use gmm_pw
       use gem_options
-      use tdpack
       use glb_ld
       use gmm_itf_mod
+      use gmm_pw
+      use gmm_vt2
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 
@@ -44,54 +44,99 @@
 !     ---------------------------------------------------------------
 !
 
-      if(Schm_trapeze_L) then
+      if (Schm_trapeze_L) then
 
-         uh = ut0
-         vh = vt0
+!$omp parallel private(i,j,k) shared(uh,vh,wm)
+!$omp do
+         do k = 1,F_nk
+            do j = F_miny,F_maxy
+               do i = F_minx,F_maxx
+                  uh(i,j,k) = ut0(i,j,k)
+                  vh(i,j,k) = vt0(i,j,k)
+                  wm(i,j,k) = 0.0
+               end do
+            end do
+         end do
+
+!$omp enddo
+!$omp end parallel
 
          call adv_destagWinds (uh,vh,F_minx,F_maxx,F_miny,F_maxy,F_nk)
 
-         wm = 0.
-
-         call adv_thermo2mom  (wm,zdt0,F_ni,F_nj,F_nk,F_minx,F_maxx,F_miny,F_maxy)
+         call adv_thermo2mom (wm,zdt0,F_ni,F_nj,F_nk,F_minx,F_maxx,F_miny,F_maxy)
 
 !     Unstaggered arrival winds
-         F_ua = uh(1:F_ni,1:F_nj,1:F_nk)
-         F_va = vh(1:F_ni,1:F_nj,1:F_nk)
-         F_wa = wm(1:F_ni,1:F_nj,1:F_nk)
-         F_wat= zdt0(1:F_ni,1:F_nj,1:F_nk)
+
+!$omp parallel private(i,j,k)  shared(uh,vh,wm)
+!$omp do
+         do k = 1,F_nk
+            do j = 1,F_nj
+               do i = 1,F_ni
+                  F_ua(i,j,k)  = uh(i,j,k)
+                  F_va(i,j,k)  = vh(i,j,k)
+                  F_wa(i,j,k)  = wm(i,j,k)
+                  F_wat(i,j,k) = zdt0(i,j,k)
+               enddo
+            enddo
+         enddo
+!$omp enddo
+!$omp end parallel
 
 ! DEPARTURE WINDS: NO DESTAGRING
          err = gmm_get (gmmk_pw_uu_moins_s, pw_uu_moins)
          err = gmm_get (gmmk_pw_vv_moins_s, pw_vv_moins)
 
+!$omp parallel private(i,j,k) shared(uh,vh,wh)
+!$omp do
          do k = 1,l_nk
             do j = 1,l_nj
-            do i = 1,l_ni
-               uh(i,j,k) = Dcst_inv_rayt_8 * pw_uu_moins(i,j,k)
-               vh(i,j,k) = Dcst_inv_rayt_8 * pw_vv_moins(i,j,k)
-            enddo
+               do i = 1,l_ni
+                  uh(i,j,k) = Dcst_inv_rayt_8 * pw_uu_moins(i,j,k)
+                  vh(i,j,k) = Dcst_inv_rayt_8 * pw_vv_moins(i,j,k)
+                  wh(i,j,k) = zdt1(i,j,k)
+               enddo
             enddo
          enddo
-
-         wh = zdt1
+!$omp enddo
+!$omp end parallel
 
       else
 
-         uh (:,:,:) = .5*( ut1(:,:,:) + ut0(:,:,:) )
-         vh (:,:,:) = .5*( vt1(:,:,:) + vt0(:,:,:) )
-         wh (:,:,:) = .5*(zdt1(:,:,:) +zdt0(:,:,:) )
+!$omp parallel private(i,j,k) shared(uh,vh,wh)
+!$omp do
+         do k = 1,l_nk
+            do j = 1,l_nj
+               do i = 1,l_ni
+                  uh(i,j,k) = 0.5d0 * ( ut1(i,j,k) + ut0(i,j,k) )
+                  vh(i,j,k) = 0.5d0 * ( vt1(i,j,k) + vt0(i,j,k) )
+                  wh(i,j,k) = 0.5d0 * (zdt1(i,j,k) + zdt0(i,j,k))
+               enddo
+            enddo
+         enddo
+!$omp enddo
+!$omp end parallel
 
          call adv_destagWinds (uh,vh,F_minx,F_maxx,F_miny,F_maxy,F_nk)
 
       endif
 
-      call adv_thermo2mom  (wm,wh,F_ni,F_nj,F_nk,F_minx,F_maxx,F_miny,F_maxy)
+      call adv_thermo2mom (wm,wh,F_ni,F_nj,F_nk,F_minx,F_maxx,F_miny,F_maxy)
 
 !     Destag departure winds
-      F_ud=uh
-      F_vd=vh
-      F_wd=wm
+
+!$omp parallel private(i,j,k) shared(uh,vh,wm)
+!$omp do
+      do k = 1,l_nk
+         do j = 1,l_nj
+            do i = 1,l_ni
+               F_ud(i,j,k) = uh(i,j,k)
+               F_vd(i,j,k) = vh(i,j,k)
+               F_wd(i,j,k) = wm(i,j,k)
+            enddo
+         enddo
+      enddo
+!$omp enddo
+!$omp end parallel
 
 !
 !     ---------------------------------------------------------------

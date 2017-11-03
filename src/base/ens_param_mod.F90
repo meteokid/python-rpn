@@ -1,4 +1,3 @@
-!COMP_ARCH=xlf13 ; -suppress=-qflttrap=.*nanq.* ; -add=-qflttrap=ov:zerodivide:enable:imp
 !---------------------------------- LICENCE BEGIN -------------------------------
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
@@ -14,35 +13,11 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r heap_paint - Paint a heap region with Nan (AIX only for now)
+module ens_param
+   implicit none
+   public
+   save
 
-      subroutine heap_paint()
-      use gem_options
-      use glb_ld
-      implicit none
-#include <arch_specific.hf>
+   integer Ens_skeb_l,Ens_skeb_m
 
-      integer :: i,j,k
-      real*4, dimension (:,:,:), pointer :: wrk01
-!
-!     ---------------------------------------------------------------
-!
-      if (Heap_nk > 0) then
-         Heap_nk=200
-         nullify (wrk01)
-         allocate (wrk01(G_ni,G_nj,Heap_nk))
-         do k=1,Heap_nk
-            do i=1,G_ni
-               do j=1,G_nj
-                  wrk01(i,j,k) = transfer(-1,wrk01(i,j,k))
-               enddo
-            enddo
-         enddo
-         deallocate (wrk01)
-         nullify    (wrk01)
-      endif
-!
-!     ---------------------------------------------------------------
-!
-      return
-      end
+end module ens_param

@@ -81,16 +81,20 @@
          if (Bln_usend_len(kk) > 0) then
 !            prepare something to send
 
-                adr=Bln_usend_adr(kk)+1
+             adr=Bln_usend_adr(kk)+1
 
              call int_cubvec_lag(send_pil(1,KK),tabu_src_8, tabv_src_8,  &
-                             Bln_usend_imx1(adr),Bln_usend_imy1(adr),    &
-                             Bln_usend_imx2(adr),Bln_usend_imy2(adr),    &
+                             Bln_usend_imx1(adr:adr+Bln_usend_len(kk)),  &
+                             Bln_usend_imy1(adr:adr+Bln_usend_len(kk)),  &
+                             Bln_usend_imx2(adr:adr+Bln_usend_len(kk)),  &
+                             Bln_usend_imy2(adr:adr+Bln_usend_len(kk)),  &
                              geomh_xu_8,geomh_y_8,geomh_x_8,geomh_yv_8,  &
                              l_minx,l_maxx,l_miny,l_maxy,Nk,             &
-                             Bln_usend_xxr(adr),Bln_usend_yyr(adr),      &
+                             Bln_usend_xxr(adr:adr+Bln_usend_len(kk)),   &
+                             Bln_usend_yyr(adr:adr+Bln_usend_len(kk)),   &
                              Bln_usend_len(kk) ,                         &
-                             Bln_usend_s1(adr) ,Bln_usend_s2(adr) )
+                             Bln_usend_s1(adr:adr+Bln_usend_len(kk)) ,   &
+                             Bln_usend_s2(adr:adr+Bln_usend_len(kk)) )
 
              ireq = ireq+1
 !            print *,'blenu: sending',Bln_usend_len(kk)*NK, ' to ',kk_proc

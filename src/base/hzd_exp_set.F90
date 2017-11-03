@@ -50,8 +50,9 @@
          if((Hzd_smago_param <= 0.).and.(Hzd_smago_lnr(2) == 0.)) then
             if (Lun_out > 0) write(Lun_out,1003)
          else
-            if (Lun_out > 0) write(Lun_out,1004) &
-                              Hzd_smago_param,100*Hzd_smago_lnr(2)
+            if (Lun_out > 0) then
+               write(Lun_out,1004) Hzd_smago_param,100*Hzd_smago_lnr(2)
+            end if
          endif
       endif
 
@@ -66,47 +67,6 @@
               ,'  PARAMETER =',f5.2,'  BACKGROUND =',f4.1,' %/TIMESTEP')
 !
 !     ---------------------------------------------------------------
-!
-      return
-      end
-
-      subroutine sorthzdexp (F_lvl,F_pwr,F_lnr,nk)
-      use glb_ld
-      use cstv
-      use lun
-      use ver
-      implicit none
-#include <arch_specific.hf>
-
-      integer nk
-      integer F_lvl(nk),F_pwr(nk)
-      real    F_lnr(nk)
-
-      integer k,i,m,j,n,x1
-      real x2
-!
-!----------------------------------------------------------------------
-!
-      n = nk
-      do i = 1, n-1
-         k = i
-         do j = i+1, n
-            if (F_lvl(k) > F_lvl(j))  k=j
-         enddo
-         if (k /= i) then
-            x2     = F_lnr(k)
-            x1     = F_lvl(k)
-            m      = F_pwr(k)
-            F_lvl(k) = F_lvl(i)
-            F_pwr(k) = F_pwr(i)
-            F_lnr(k) = F_lnr(i)
-            F_lvl(i) = x1
-            F_pwr(i) = m
-            F_lnr(i) = x2
-         endif
-      enddo
-!
-!----------------------------------------------------------------------
 !
       return
       end

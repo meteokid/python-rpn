@@ -20,31 +20,31 @@
       subroutine nli ( F_nu , F_nv , F_nt   , F_nc , F_nw , F_nf  , &
                        F_u  , F_v  , F_t    , F_s  , F_zd , F_q   , &
                        F_rhs, F_rc , F_sl   , F_fis, F_nb , F_hu  , &
-                       Minx,Maxx,Miny,Maxy, Nk , ni,nj, i0,j0,in,jn,k0, icln )
+                       Minx, Maxx, Miny, Maxy, Nk , ni, nj,         &
+                       i0, j0, in, jn, k0, icln )
       use coriolis
       use cstv
       use dcst
       use gem_options
-      use grid_options
       use geomh
       use glb_ld
+      use grid_options
       use lun
       use tdpack
       use ver
       implicit none
 #include <arch_specific.hf>
 
-      integer Minx,Maxx,Miny,Maxy, Nk,ni,nj,i0,j0,in,jn,k0, icln
-      real    F_nu   (Minx:Maxx,Miny:Maxy,Nk)    ,F_nv   (Minx:Maxx,Miny:Maxy,Nk)    , &
-              F_nt   (Minx:Maxx,Miny:Maxy,Nk)    ,F_nc   (Minx:Maxx,Miny:Maxy,Nk)    , &
-              F_nw   (Minx:Maxx,Miny:Maxy,Nk)    ,F_nf   (Minx:Maxx,Miny:Maxy,Nk)    , &
-              F_u    (Minx:Maxx,Miny:Maxy,Nk)    ,F_v    (Minx:Maxx,Miny:Maxy,Nk)    , &
-              F_t    (Minx:Maxx,Miny:Maxy,Nk)    ,F_s    (Minx:Maxx,Miny:Maxy)       , &
-              F_zd   (Minx:Maxx,Miny:Maxy,Nk)    ,F_hu   (Minx:Maxx,Miny:Maxy,Nk)    , &
-              F_q    (Minx:Maxx,Miny:Maxy,Nk+1)  ,F_rc   (Minx:Maxx,Miny:Maxy,Nk)    , &
-              F_fis  (Minx:Maxx,Miny:Maxy)       ,F_nb   (Minx:Maxx,Miny:Maxy)       , &
-              F_sl   (Minx:Maxx,Miny:Maxy)
-      real*8  F_rhs  (ni,nj,Nk)
+      integer, intent(in) :: Minx, Maxx, Miny, Maxy, Nk, ni, nj, i0, j0, in, jn, k0, icln
+
+      real, dimension(Minx:Maxx,Miny:Maxy), intent(inout) :: F_s
+      real, dimension(Minx:Maxx,Miny:Maxy), intent(in)    :: F_fis, F_sl
+      real, dimension(Minx:Maxx,Miny:Maxy), intent(out)   :: F_nb
+      real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(inout)   :: F_u, F_v, F_t
+      real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(in)      :: F_zd, F_hu, F_rc
+      real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(out)     :: F_nu, F_nv, F_nt, F_nc, F_nw, F_nf
+      real, dimension(Minx:Maxx,Miny:Maxy,Nk+1), intent(inout) :: F_q
+      real*8, dimension(ni,nj,Nk), intent(out) :: F_rhs
 
 !author
 !     Alain Patoine - split from nli.ftn
@@ -62,9 +62,8 @@
 ! v4_05 - Girard C.         - Open top
 ! v4_40 - Lee/Qaddouri      - Adjust range of calculation for Yin-Yang
 ! v4.70 - Gaudreault S.     - Reformulation in terms of real winds (removing wind images)
-!                           - Explicit integration of metric terms (optional)
+!                           - Explicit integration of metric terms
 
-      logical, save :: done=.false.
       integer :: i, j, k, km, i0u, inu, j0v, jnv, nij, k0t, onept
       real    :: w_nt
       real*8  :: c1,qbar,ndiv,w1,w2,w3,w4,w5,barz,barzp,MUlin,dlnTstr_8, &
@@ -72,36 +71,28 @@
       real*8 , dimension(i0:in,j0:jn) :: xtmp_8, ytmp_8
       real*8, parameter :: one=1.d0, half=0.5d0, &
                            alpha1=-1.d0/16.d0 , alpha2=9.d0/16.d0
-      real, dimension(:,:,:), pointer :: BsPq, BsPrq, FI, MU
-      real*8, dimension(:,:,:), pointer :: Afis
-      save MU
+      real, dimension(Minx:Maxx,Miny:Maxy,l_nk) :: MU
+      real*8, dimension(Minx:Maxx,Miny:Maxy,l_nk) :: Afis
+      real, dimension(Minx:Maxx,Miny:Maxy,l_nk+1) :: BsPq, BsPrq, FI
 !     __________________________________________________________________
 !
-      if (Lun_debug_L)  write(Lun_out,1000)
+      if (Lun_debug_L) then
+         write(Lun_out,1000)
+      end if
 
-      nullify  ( BsPq, BsPrq, FI, Afis )
-      allocate (  BsPq(Minx:Maxx,Miny:Maxy,l_nk+1), &
-                 BsPrq(Minx:Maxx,Miny:Maxy,l_nk+1), &
-                    FI(Minx:Maxx,Miny:Maxy,l_nk+1), &
-                  Afis(Minx:Maxx,Miny:Maxy,l_nk) )
-
-      if (.not.done) then
-         nullify  ( MU )
-         allocate ( MU(Minx:Maxx,Miny:Maxy,l_nk) )
-      endif
-
-      if(icln > 1) then
-      call rpn_comm_xch_halo( F_u   ,l_minx,l_maxx,l_miny,l_maxy,l_niu,l_nj ,G_nk, &
-                      G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      call rpn_comm_xch_halo( F_v   ,l_minx,l_maxx,l_miny,l_maxy,l_ni ,l_njv,G_nk, &
-                      G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      call rpn_comm_xch_halo( F_t   ,l_minx,l_maxx,l_miny,l_maxy,l_ni ,l_nj ,G_nk, &
-                      G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      call rpn_comm_xch_halo( F_s   ,l_minx,l_maxx,l_miny,l_maxy,l_ni ,l_nj ,1   , &
-                      G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      if (.not.Schm_hydro_L) &
-           call rpn_comm_xch_halo( F_q,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,G_nk+1, &
-                      G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      if (icln > 1) then
+         call rpn_comm_xch_halo( F_u   ,l_minx,l_maxx,l_miny,l_maxy,l_niu,l_nj ,G_nk, &
+                                 G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+         call rpn_comm_xch_halo( F_v   ,l_minx,l_maxx,l_miny,l_maxy,l_ni ,l_njv,G_nk, &
+                                 G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+         call rpn_comm_xch_halo( F_t   ,l_minx,l_maxx,l_miny,l_maxy,l_ni ,l_nj ,G_nk, &
+                                 G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+         call rpn_comm_xch_halo( F_s   ,l_minx,l_maxx,l_miny,l_maxy,l_ni ,l_nj ,1   , &
+                                 G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+         if (.not.Schm_hydro_L) then
+            call rpn_comm_xch_halo( F_q,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,G_nk+1, &
+                                    G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+         end if
       endif
 
       c1 = Dcst_rayt_8**2
@@ -136,18 +127,17 @@
                                                l_nk, i0u, inu+1, j0v, jnv+1 )
 
       if (Schm_hydro_L) then
-         if (.not.done) then
-            MU= 0.
-            done= .true.
-         endif
+         MU = 0.
       else
          call diag_mu ( MU, F_q, F_s, F_sl, l_minx,l_maxx,l_miny,l_maxy, l_nk,&
                                                  i0u, inu+1, j0v, jnv+1 )
       endif
 
-!$omp parallel private(km,w_nt,barz,barzp,ndiv, &
+!$omp parallel private(i,j,k,km,w_nt,barz,barzp,ndiv, &
 !$omp dlnTstr_8,w1,w2,w3,w4,w5,qbar,t_interp,u_interp,v_interp,&
-!$omp xtmp_8,ytmp_8)
+!$omp xtmp_8,ytmp_8,mu_interp,MUlin) &
+!$omp shared(BsPq,BsPrq,FI,MU,Afis,i0u,inu,j0v,jnv,nij,k0t, &
+!$omp c1,mydelta_8)
       if(Schm_eulmtn_L) then
 !$omp do
          do k=1,l_nk
@@ -509,9 +499,6 @@
 !$omp enddo
 
 !$omp end parallel
-
-      deallocate ( BsPq, BsPrq, FI, Afis)
-      if (.not.Schm_hydro_L) deallocate ( MU )
 
 1000 format(/,5X,'COMPUTE NON-LINEAR RHS: (S/R NLI)')
 !     __________________________________________________________________

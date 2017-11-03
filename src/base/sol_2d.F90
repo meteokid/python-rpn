@@ -29,9 +29,10 @@
       implicit none
 #include <arch_specific.hf>
 
-      logical F_print_L
-      integer F_ni,F_nj,F_nk,F_offi, F_offj
-      real*8  F_rhs_sol (F_ni,F_nj,F_nk), F_lhs_sol (F_ni,F_nj,F_nk)
+      logical, intent(in) :: F_print_L
+      integer, intent(in) :: F_ni,F_nj,F_nk,F_offi, F_offj
+      real*8, dimension(F_ni,F_nj,F_nk), intent(in) :: F_rhs_sol
+      real*8, dimension(F_ni,F_nj,F_nk), intent(inout) :: F_lhs_sol
 !
 !author
 !     Michel Desgagne / Abdessamad Qaddouri -- January 2014
@@ -53,7 +54,7 @@
       nij  = (ldnh_maxy-ldnh_miny+1)*(ldnh_maxx-ldnh_minx+1)
       wk1=0.0 ; wk2=0.0
 
-!$omp parallel private (i,j,k) shared (F_offi,F_offj,ni,nij)
+!$omp parallel private (i,j,k) shared (F_offi,F_offj,ni,nij,wk1)
 !$omp do
       do j=1+pil_s,ldnh_nj-pil_n
          call dgemm ('N','N', ni, G_nk, G_nk, 1.0D0, F_rhs_sol(1+pil_w,j,1), &
@@ -88,7 +89,7 @@
                         F_print_L, F_ni, F_nj, F_nk )
       endif
 
-!$omp parallel private (j) shared ( g_nk )
+!$omp parallel private (j) shared (g_nk, wk2)
 !$omp do
       do j=1+pil_s,ldnh_nj-pil_n
          call dgemm ('N','T', ni, G_nk, G_nk, 1.0D0, wk2(1+pil_w,j,1), &

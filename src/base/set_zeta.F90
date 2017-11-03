@@ -242,7 +242,7 @@
       do k = 1, G_nk
          Ver_z_8%t(k) = Ver_a_8%t(k)-Ver_b_8%t(k)*Cstv_Sstar_8
       enddo
-      if(Schm_autobar_L) Ver_z_8%t(G_nk)=Cstv_Zsrf_8
+      if( .not.Schm_trapeze_L .or. Schm_autobar_L ) Ver_z_8%t(G_nk)=Cstv_Zsrf_8
 
      !Define the positions of zeta_dot
       Ver_z_8%x(0) = Cstv_Ztop_8
@@ -318,7 +318,7 @@
       Ver_wmstar_8 = zero
       Ver_wpstar_8 = one
 
-      if(.not.Schm_autobar_L) then
+      if(Schm_trapeze_L .and. .not.Schm_autobar_L ) then
          Ver_wmstar_8(G_nk)=half*Ver_dz_8%t(G_nk)/Ver_dz_8%m(G_nk)
          Ver_wpstar_8(G_nk)=one-Ver_wmstar_8(G_nk)
          Ver_wp_8%m(G_nk) = Ver_wpstar_8(G_nk) * Ver_wpA_8(G_nk)

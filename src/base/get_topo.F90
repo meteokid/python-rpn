@@ -15,7 +15,7 @@
 
 !**s/r get_topo - Obtain topography from geophysical file
 
-      subroutine get_topo3 ( F_topo, F_topo_ls, Minx,Maxx,Miny,Maxy, i0,in,j0,jn)
+      subroutine get_topo ( F_topo, F_topo_ls, Minx,Maxx,Miny,Maxy, i0,in,j0,jn)
       use grid_options
       use gem_options
       use tdpack
@@ -82,8 +82,3 @@
 !
       return
       end
-
-subroutine get_topo2
-   print*,'Called a stub, please update to get_topo3'
-   stop
-end subroutine get_topo2

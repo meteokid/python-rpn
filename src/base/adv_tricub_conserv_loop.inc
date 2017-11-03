@@ -1,16 +1,48 @@
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+
+      subroutine adv_tricub_conserv_loop()
+
+      integer :: n0, nx, ny, nz, m1, o1, o2, o3, o4 , &
+                 kkmax, n, id
+      real*8  :: a1, a2, a3, a4, b1, b2, b3, b4, &
+                 c1, c2, c3, c4, d1, d2, d3, d4, &
+                 p1, p2, p3, p4
+      real*8  :: ra, rb, rc, rd
+      real*8  :: prf1, prf2, capx, capy, capz
+      real    :: prmin, prmax
+      logical :: zcubic_L
+
+      real*8 :: triprd,zb,zc,zd
+      real :: za
+      triprd(za,zb,zc,zd)=(za-zb)*(za-zc)*(za-zd)
+
+      kkmax   = F_nk - 1
+
 !$omp parallel private(id,n,n0,nx,ny,nz,m1,zcubic_L,&
 !$omp            a1, a2, a3, a4, b1, b2, b3, b4,&
 !$omp            c1, c2, c3, c4, d1, d2, d3, d4,&
 !$omp            p1, p2, p3, p4, ra, rb, rc, rd,&
-!$omp            o1, o2, o3, o4, &
-!$omp            prf1,prf2,capx,capy,capz,&
+!$omp            o1, o2, o3, o4, prf1,prf2,capx,capy,capz,&
 !$omp            prmin,prmax) &
 !$omp          shared (p_bsz_8,p_zbc_8,p_zabcd_8, &
 !$omp            p_zbacd_8,p_zcabd_8,p_zdabc_8,kkmax)
 
 !$omp do
 
-   do id=1,F_nind
+      do id=1,F_nind
 
             m1=id*4
             n0=m1-3
@@ -49,10 +81,8 @@
             o3 = o3 + adv_nijag
             o4 = o4 + adv_nijag
 
-#ifdef ADV_MONO
             prmax = max(F_in(o2),F_in(o2+1),F_in(o3),F_in(o3+1))
             prmin = min(F_in(o2),F_in(o2+1),F_in(o3),F_in(o3+1))
-#endif
 
             b1 = p1 * F_in(o1-1) + p2 * F_in(o1) + p3 * F_in(o1+1) + p4 * F_in(o1+2)
             b2 = p1 * F_in(o2-1) + p2 * F_in(o2) + p3 * F_in(o2+1) + p4 * F_in(o2+2)
@@ -64,10 +94,9 @@
             o3 = o3 + adv_nijag
             o4 = o4 + adv_nijag
 
-#ifdef ADV_MONO
             prmax = max(prmax,F_in(o2),F_in(o2+1),F_in(o3),F_in(o3+1))
             prmin = min(prmin,F_in(o2),F_in(o2+1),F_in(o3),F_in(o3+1))
-#endif
+
             c1 = p1 * F_in(o1-1) + p2 * F_in(o1) + p3 * F_in(o1+1) + p4 * F_in(o1+2)
             c2 = p1 * F_in(o2-1) + p2 * F_in(o2) + p3 * F_in(o2+1) + p4 * F_in(o2+2)
             c3 = p1 * F_in(o3-1) + p2 * F_in(o3) + p3 * F_in(o3+1) + p4 * F_in(o3+2)
@@ -119,8 +148,6 @@
                F_cub(n) = p2 * b1 + p3 * c1
             endif
 
-#ifdef ADV_CONSERV
-
             capx = (F_x(n)-adv_bsx_8(ii(nx))) * adv_xbc_8
             capy = (F_y(n)-adv_bsy_8(ii(ny))) * adv_ybc_8
             capz = (F_z(n)-  p_bsz_8(ii(nz))) * p_zbc_8(ii(nz)+1)
@@ -139,22 +166,12 @@
 
             F_lin (n) = max((1. - capz) * prf1 + capz * prf2,0.0d0)
 
-#ifdef ADV_MONO
             F_mono(n) = max(prmin , min(prmax,F_cub(n)))
             F_min (n) = prmin
             F_max (n) = prmax
-#endif
-#else
-#ifdef ADV_MONO
-            F_cub(n) = max(prmin , min(prmax,F_cub(n)))
-#endif
-#endif
 
-
-   enddo
-
+      enddo
 !$omp enddo
 !$omp end parallel
 
-
-
+      end subroutine adv_tricub_conserv_loop

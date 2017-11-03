@@ -17,6 +17,7 @@
 !
       integer function ens_nml (F_namelist_S, F_Grdtyp_S, F_unout)
       use ens_options
+      use ens_param
       implicit none
 #include <arch_specific.hf>
 !
@@ -47,11 +48,10 @@
 !-----------------------------------------------------------------------
 !
 #include <WhiteBoard.hf>
-#include "ens_param.cdk"
 
       integer, external :: fnom,wkoffit
       logical found_namelist_ok, stochphy_L
-      integer i, ier,err,err_open,unf,nrec,ios,ncha
+      integer i, ier,err,err_open,unf,nrec,ios
 
 !
 !--------------------------------------------------------------------
@@ -113,7 +113,7 @@
          if (ens_nml < 0) return
 
          Ens_skeb_conf   =  Ens_skeb_conf.and.Ens_conf
-	 Ens_skeb_l      =  Ens_skeb_trnh-Ens_skeb_trnl+1
+         Ens_skeb_l      =  Ens_skeb_trnh-Ens_skeb_trnl+1
          Ens_skeb_m      =  Ens_skeb_trnh+1
          Ens_skeb_div    =  Ens_skeb_div .and.Ens_conf
          Ens_stat        =  Ens_stat.and.Ens_conf
@@ -133,7 +133,7 @@
             write(F_unout,'(a,i5)' )'Ens_ptp_lmax = ',Ens_ptp_lmax
             write(F_unout,'(a,10i5)')'Ens_ptp_m     = ',Ens_ptp_m
             write(F_unout,'(a,i5)' )'Ens_ptp_mmax = ',Ens_ptp_mmax
-	    write(F_unout,'(a,10i5)')'Ens_skeb_l     = ',Ens_skeb_l
+            write(F_unout,'(a,10i5)')'Ens_skeb_l     = ',Ens_skeb_l
             write(F_unout,'(a,10i5)')'Ens_skeb_m     = ',Ens_skeb_m
             write(F_unout,'(a,l5)' )'Ens_stochphy_L = ',stochphy_L
             write(F_unout,'(a,i5)' )'Ens_imrkv2     = ',Ens_ptp_ncha
