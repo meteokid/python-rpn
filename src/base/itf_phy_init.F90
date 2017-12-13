@@ -132,7 +132,7 @@
 
 ! Initialize filter weights for smoothing
       if (.not.WB_IS_OK(wb_get('phy/cond_infilter',cond_sig))) cond_sig=-1.
-      if (.not.WB_IS_OK(wb_get('phy/gwd_tdfilter',gwd_sig))) gwd_sig=-1.
+      if (.not.WB_IS_OK(wb_get('phy/sgo_tdfilter',gwd_sig))) gwd_sig=-1.
       err= min(ipf_init(F_sig=cond_sig, F_sig2=gwd_sig), err)
 
 ! Retrieve the heights of the diagnostic levels (thermodynamic
