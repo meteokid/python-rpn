@@ -76,9 +76,6 @@
       if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P' .or. trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
          err(7) = gem_nml (Path_nml_S)
          err(8) = adv_nml (Path_nml_S)
-      else if (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H') then
-         err(7) = gem_nml (Path_nml_S) ! TODO : avoid reading FISL stuff
-         err(8) = exp_nml (Path_nml_S)
       else
          if (lun_out > 0) then
             write (lun_out,1010) trim(Dynamics_Kernel_S)
@@ -111,9 +108,7 @@
       err(1) = gem_nml       ('print')
 
       if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P' .or. trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
-         call adv_nml_print ()
-      else if (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H') then
-         err(1) = exp_nml       ('print')
+         call adv_nml_print()
       end if
 
 ! Establish domain decomposition (mapping subdomains and processors)

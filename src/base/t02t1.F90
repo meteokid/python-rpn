@@ -16,7 +16,6 @@
 !**s/r t02t1 -  Rename time level t0 -> t1
 !
       subroutine t02t1
-      use dynkernel_options
       use gmm_vt1
       use gmm_vt0
       use gem_options
@@ -60,7 +59,7 @@
       istat = gmm_shuffle(zdt_list)
       istat = gmm_shuffle( wt_list)
 
-      if (.not. Schm_hydro_L .or. trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H') then
+      if (.not. Schm_hydro_L) then
          istat = gmm_shuffle(qt_list)
       endif
 

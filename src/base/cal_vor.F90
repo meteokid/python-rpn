@@ -19,7 +19,6 @@
                            F_filtqq, F_coefqq, F_absvor_L, &
                            Minx,Maxx,Miny,Maxy,Nk )
       use dcst
-      use dynkernel_options
       use geomh
       use glb_ld
       implicit none
@@ -43,13 +42,6 @@
 !
 !----------------------------------------------------------------------
 !
-      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H') then
-         call exp_cal_vor(F_QR,F_QQ, F_uu,F_vv,            &
-                           F_filtqq, F_coefqq, F_absvor_L, &
-                           Minx,Maxx,Miny,Maxy,Nk )
-         return
-      end if
-
       i0 = 1
       in = l_niu
       j0 = 1

@@ -15,20 +15,17 @@
 
 !**s/r dynstep -  Control of the dynamical timestep of the model
 
-      subroutine dynstep
-      use dynkernel_options
-      use step_options
-      use gmm_vt1
-      use gmm_orh
-      use grid_options
+      subroutine dynstep()
       use gem_options
       use glb_ld
-      use lun
-      use tr3d
       use gmm_itf_mod
+      use gmm_orh
+      use grid_options
+      use lun
+      use step_options
+      use tr3d
       implicit none
 #include <arch_specific.hf>
-
 
       character(len=GMM_MAXNAMELENGTH) :: tr_name
       logical first_L
@@ -37,11 +34,6 @@
 !
 !     ---------------------------------------------------------------
 !
-
-      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H') then
-         call exp_dynstep
-         return
-      end if
 
       if (Lun_debug_L) write(Lun_out,1000)
       call timing_start2 ( 10, 'DYNSTEP', 1 )
@@ -62,8 +54,8 @@
          if ( first_L) then
             call pospers ()
             itraj = max( 5, Schm_itraj )
-         endif
-      endif
+         end if
+      end if
 
       if (Lun_debug_L) write(Lun_out,1005) Schm_itcn-1
 
@@ -74,7 +66,8 @@
          call tstpdyn (itraj)
          itraj = Schm_itraj
 
-         call hzd_momentum
+         call hzd_momentum()
+         call hzd_smago_momentum()
 
       end do
 
@@ -96,7 +89,7 @@
 !     C        variables at time level t0 -> t1 for the next timestep
 !     ------------------------------------------------------------
 
-      call t02t1 ()
+      call t02t1()
 
       if (Grd_yinyang_L) then
          do n= 1, Tr3d_ntr
@@ -105,21 +98,19 @@
             call yyg_xchng (tr1 , l_minx,l_maxx,l_miny,l_maxy, G_nk,&
                             .true., 'CUBIC')
          end do
-         !yyblend= (Schm_nblendyy > 0)
-         !if (yyblend) &
-         !call yyg_blend (mod(Step_kount,Schm_nblendyy) == 0)
       else
-         call nest_gwa
-         call spn_main
-      endif
+         call nest_gwa()
+         call spn_main()
+      end if
 
       call canonical_cases ("RAYLEIGH")
 
-      call hzd_main_stag
+      call hzd_main_stag()
+      call hzd_smago_main()
 
-      call pw_update_GPW
-      call pw_update_UV
-      call pw_update_T
+      call pw_update_GPW()
+      call pw_update_UV()
+      call pw_update_T()
 
       if ( Lctl_step-Vtopo_start == Vtopo_ndt) Vtopo_L = .false.
 

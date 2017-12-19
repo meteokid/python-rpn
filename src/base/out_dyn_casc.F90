@@ -16,7 +16,6 @@
 !**s/r out_dyn_casc - model output for cascade
 
       subroutine out_dyn_casc()
-      use dynkernel_options
       use vGrid_Descriptors, only: vgrid_descriptor,vgd_get,VGD_OK,VGD_ERROR
       use vgrid_wb, only: vgrid_wb_get
       use out_vref, only: out_vref_itf
@@ -50,7 +49,7 @@
 !
 !------------------------------------------------------------------
 !
-      using_qt1 = ( .not.Schm_hydro_L ) .or. (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H')
+      using_qt1 = .not.Schm_hydro_L
 
       nullify (pw_tt_plus,pw_uu_plus,pw_vv_plus,tdiag,udiag,vdiag)
       istat = gmm_get (gmmk_pw_tt_plus_s, pw_tt_plus)

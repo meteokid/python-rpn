@@ -1,4 +1,4 @@
-!---------------------------------- LICENCE BEGIN -------------------------------
+!i---------------------------------- LICENCE BEGIN -------------------------------
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
@@ -15,30 +15,31 @@
 
 !**s/r smago_in_rhs - Applies horizontal Smagorinsky-type nonlinear diffusion
 !
-      subroutine smago_in_rhs (F_du, F_dv, F_dw, F_dlth, F_u, F_v, F_w, F_t, F_s, &
-                               F_sl,lminx, lmaxx, lminy, lmaxy, nk)
+      subroutine hzd_smago_in_split (F_u, F_v, F_w, F_t, F_zd, &
+                               F_s, F_sls, lminx, lmaxx, lminy, lmaxy, &
+                               nk, smago_momentum_L)
       use cstv
       use dcst
-      use grid_options
       use gem_options
-      use glb_ld
+      use geomh
       use gmm_itf_mod
       use gmm_smag
-      use geomh
+      use glb_ld
+      use grid_options
       use hzd_mod
       use tdpack
       use tr3d
       use ver
+
       implicit none
 #include <arch_specific.hf>
 
       integer, intent(in) :: lminx,lmaxx,lminy,lmaxy, nk
-      real, dimension(lminx:lmaxx,lminy:lmaxy,nk), intent(inout) :: F_du, F_dv, F_dw, F_dlth
-      real, dimension(lminx:lmaxx,lminy:lmaxy,nk), intent(in) :: F_u, F_v, F_w, F_t
-      real, dimension(lminx:lmaxx,lminy:lmaxy),    intent(in) :: F_s, F_sl
+      real, dimension(lminx:lmaxx,lminy:lmaxy,nk), intent(inout) :: F_u, F_v, F_w, F_t,F_zd
+      real, dimension(lminx:lmaxx,lminy:lmaxy),    intent(in) :: F_s, F_sls
 !
 !author
-!     Claude Girard
+!     Claude Girard and Syed Husain
 !
 !revision
 ! v5_0 - Girard C.    - initial version based on hzd_smago by S. Gaudreault
@@ -51,30 +52,62 @@
       integer :: i, j, k, istat, i0, in, j0, jn
       real, dimension(lminx:lmaxx,lminy:lmaxy) :: tension, shear_z, kt, kz
       real, dimension(lminx:lmaxx,lminy:lmaxy) :: smagcoef_z, smagcoef_u, smagcoef_v
-      real, dimension(lminx:lmaxx,lminy:lmaxy) :: smagcoef_uo,smagcoef_vo
-      real, dimension(lminx:lmaxx,lminy:lmaxy) :: mypi, th
+      real, dimension(lminx:lmaxx,lminy:lmaxy) :: smagcoef_uo,smagcoef_vo, F_du,F_dv
       real, dimension(lminx:lmaxx,lminy:lmaxy) :: tension_u, shear_u, tension_v, shear_v
+      real, dimension(lminx:lmaxx,lminy:lmaxy,G_nk) :: th
+      real, dimension(lminx:lmaxx,lminy:lmaxy) :: hutmp, pres_t
       real, pointer, dimension (:,:,:) :: hu
       real, dimension(nk) :: base_coefM, base_coefT
       real :: cdelta2, tension_z, shear
       real :: fact, smagparam, ismagprandtl, ismagprandtl_hu
       real :: crit_coef
-      logical :: switch_on_THETA, switch_on_hu, switch_on_fric_heat, switch_on_wzd
+      logical :: switch_on_THETA, switch_on_hu, switch_on_fric_heat
+      logical :: switch_on_W, smago_momentum_L, switch_on_wzd
+
+      real, parameter :: p_naught=100000., eps=1.0e-5
 
       if( (hzd_smago_param <= 0.) .and. (hzd_smago_lnr(2) <=0.) ) return
+      switch_on_wzd   = (Hzd_lnr <= 0.)
+
       smagparam= hzd_smago_param
+      switch_on_THETA = Hzd_smago_prandtl > 0. .and. &
+                        (.not. smago_momentum_L) .and. (switch_on_wzd)
+      switch_on_hu    = (Hzd_smago_prandtl_hu > 0.) .and. &
+                        (.not. smago_momentum_L) .and. (switch_on_wzd)
+      switch_on_fric_heat = (Hzd_smago_fric_heat > 0.) .and. (.not. smago_momentum_L)
+      switch_on_W = (.not. smago_momentum_L) .and. (switch_on_wzd)
 
-      switch_on_wzd   = (Hzd_lnr <= 0.  .and. switch_on_wzd)
-      switch_on_THETA = (Hzd_smago_prandtl > 0. .and. switch_on_wzd)
-      switch_on_hu    = (Hzd_smago_prandtl_hu > 0..and. switch_on_wzd)
-      switch_on_fric_heat = (Hzd_smago_fric_heat > 0.)
 
-      if (switch_on_THETA) ismagprandtl = 1./Hzd_smago_prandtl
-      if (switch_on_hu) then
-         ismagprandtl_hu = 1./Hzd_smago_prandtl_hu
-         istat = gmm_get('TR/'//trim(Tr3d_name_S(1))//':P' ,hu)
-         call rpn_comm_xch_halo( hu , l_minx,l_maxx,l_miny,l_maxy,l_ni ,l_nj ,G_nk, &
+      if (Grd_yinyang_L) then
+         call yyg_nestuv(F_u, F_v, l_minx, l_maxx, l_miny, l_maxy, G_nk)
+         call yyg_xchng(F_zd, l_minx, l_maxx, l_miny, l_maxy, G_nk, .false., 'CUBIC')
+      endif
+      call rpn_comm_xch_halo( F_u, l_minx,l_maxx,l_miny,l_maxy,l_niu,l_nj, G_nk, &
                               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call rpn_comm_xch_halo( F_v, l_minx,l_maxx,l_miny,l_maxy,l_ni ,l_njv, G_nk, &
+                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call rpn_comm_xch_halo( F_zd, l_minx,l_maxx,l_miny,l_maxy,l_ni ,l_nj, G_nk, &
+                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+
+      if (switch_on_theta) then
+         call yyg_xchng(F_t, l_minx, l_maxx, l_miny, l_maxy, G_nk, .false., 'CUBIC')
+         call rpn_comm_xch_halo( F_t, l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj, G_nk, &
+                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+         ismagprandtl    = 1./Hzd_smago_prandtl
+      endif
+
+      if (switch_on_W) then
+         call yyg_xchng(F_w, l_minx, l_maxx, l_miny, l_maxy, G_nk, .false., 'CUBIC')
+         call rpn_comm_xch_halo( F_w, l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj, G_nk, &
+                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      endif
+
+      if (switch_on_hu)  then
+         istat = gmm_get('TR/'//trim(Tr3d_name_S(1))//':P' ,hu)
+         call yyg_xchng(hu, l_minx, l_maxx, l_miny, l_maxy, G_nk, .false., 'CUBIC')
+         call rpn_comm_xch_halo( hu, l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj, G_nk, &
+                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+         ismagprandtl_hu = 1./Hzd_smago_prandtl_hu
       endif
 
       cdelta2 = (smagparam * Dcst_rayt_8 * geomh_hy_8)**2
@@ -91,11 +124,12 @@
 
 !$omp parallel private(i,j,k,tension_z,shear,tension_u,shear_u,&
 !$omp tension, shear_z, smagcoef_u, smagcoef_v, kt, kz, &
-!$omp tension_v, shear_v, smagcoef_z, &
-!$omp smagcoef_uo, smagcoef_vo) &
+!$omp tension_v, shear_v, smagcoef_z, pres_t, th, hutmp, &
+!$omp smagcoef_uo, smagcoef_vo, F_du, F_dv) &
 !$omp shared(base_coefM, base_coefT, smag, hu, cdelta2, ismagprandtl,&
 !$omp        ismagprandtl_hu, crit_coef, switch_on_THETA, &
-!$omp        switch_on_hu, switch_on_fric_heat,switch_on_wzd)
+!$omp        switch_on_hu, switch_on_fric_heat,switch_on_W, &
+!$omp        switch_on_wzd)
 
 !$omp do
       do k=1,nk
@@ -112,17 +146,17 @@
 
                tension(i,j) = ((F_u(i,j,k) - F_u(i-1,j,k)) * geomh_invDX_8(j)) &
                             - ((F_v(i,j,k) * geomh_invcyv_8(j) - F_v(i,j-1,k) * geomh_invcyv_8(j-1)) &
-                              * geomh_invDY_8 * geomh_cy_8(j))
+                                 * geomh_invDY_8 * geomh_cy_8(j))
 
                shear_z(i,j) = ((F_v(i+1,j,k) - F_v(i,j,k)) * geomh_invDXv_8(j)) &
                             + ((F_u(i,j+1,k) * geomh_invcy_8(j+1) - F_u(i,j,k) * geomh_invcy_8(j)) &
-                              * geomh_invDY_8 * geomh_cyv_8(j))
+                                 * geomh_invDY_8 * geomh_cyv_8(j))
             end do
          end do
 
          if(hzd_smago_param <= 0. ) then
             do j=j0-1, jn+1
-              do i=i0-1, in+1
+               do i=i0-1, in+1
 
                   smagcoef_u(i,j) = base_coefT(k) * geomh_invDX_8(j)
                   smagcoef_v(i,j) = base_coefT(k) * geomh_cyv_8(j) * geomh_invDY_8
@@ -132,6 +166,7 @@
 
                   smagcoef_uo(i,j)= base_coefM(k)
                   smagcoef_vo(i,j)= base_coefM(k)
+
                end do
             end do
          else
@@ -163,11 +198,11 @@
             end do
          endif
 
-         fact=Cstv_dt_8*Cstv_invT_m_8
+         fact=Cstv_dt_8
          do j=j0, jn
             do i=i0, in
 
-               F_du (i,j,k) = F_du(i,j,k) + fact * smagcoef_uo(i,j) *     (    &
+               F_du(i,j) = F_u(i,j,k) + fact * smagcoef_uo(i,j) *      (       &
                               ( (F_u(i+1,j,k)-F_u(i,j,k))*geomh_invDX_8(j)  -  &
                                 (F_u(i,j,k)-F_u(i-1,j,k))*geomh_invDX_8(j)) *  &
                                 geomh_invDXv_8(j)       &
@@ -192,7 +227,7 @@
                                  geomh_invDY_8)*0.05d0*shear_u(i,j)    )
 
 
-               F_dv(i,j,k) = F_dv(i,j,k) + fact * smagcoef_vo(i,j) *     (        &
+               F_dv(i,j) = F_v(i,j,k) + fact * smagcoef_vo(i,j) *      (          &
                               ( (F_v(i+1,j,k)-F_v(i,j,k))*geomh_invDXv_8(j)     - &
                                 (F_v(i,j,k)-F_v(i-1,j,k))*geomh_invDXv_8(j))    * &
                                 geomh_invDX_8(j)        &
@@ -216,68 +251,77 @@
                                 (smagcoef_vo(i,j)-smagcoef_vo(i,j-1))*            &
                                  geomh_invDY_8)*0.05d0*tension_v(i,j)  )
 
+               F_u(i,j,k)=F_du(i,j)
+               F_v(i,j,k)=F_dv(i,j)
+
             end do
          end do
 
-
-         if (.not.Schm_hydro_L .and. switch_on_wzd) then
-
-            fact=Cstv_dt_8*Cstv_invT_nh_8
+         if (switch_on_wzd) then
             do j=j0, jn
-              do i=i0, in
-
-                  F_dw(i,j,k) = F_dw(i,j,k) + fact * ( &
-                       geomh_invDXMu_8(j)*((smagcoef_u(i,j)   * (F_w(i+1,j,k) - F_w(i,j,k))) - &
-                                           (smagcoef_u(i-1,j) * (F_w(i,j,k) - F_w(i-1,j,k))) ) &
-                     + geomh_invcy_8(j)*geomh_invDYMv_8(j) &
-                                         *((smagcoef_v(i,j)   * (F_w(i,j+1,k) - F_w(i,j,k))) - &
-                                           (smagcoef_v(i,j-1) * (F_w(i,j,k) - F_w(i,j-1,k))) ) )
+               do i=i0, in
+                  F_zd(i,j,k) = F_zd(i,j,k) + fact * ( &
+                       geomh_invDXMu_8(j)*((smagcoef_u(i,j)   * (F_zd(i+1,j,k) - F_zd(i,j,k))) -   &
+                                           (smagcoef_u(i-1,j) * (F_zd(i,j,k  ) - F_zd(i-1,j,k))) ) &
+                     + geomh_invcy_8(j)*geomh_invDYMv_8(j)                                         &
+                                         *((smagcoef_v(i,j)   * (F_zd(i,j+1,k) - F_zd(i,j,k))) -   &
+                                           (smagcoef_v(i,j-1) * (F_zd(i,j,k  ) - F_zd(i,j-1,k))) ) )
                end do
             end do
+         endif
 
+         if (switch_on_W) then
+            do j=j0, jn
+               do i=i0, in
+                  F_w(i,j,k) = F_w(i,j,k) + fact * ( &
+                       geomh_invDXMu_8(j)*((smagcoef_u(i,j)   * (F_w(i+1,j,k) - F_w(i,j,k))) -   &
+                                           (smagcoef_u(i-1,j) * (F_w(i  ,j,k) - F_w(i-1,j,k))) ) &
+                     + geomh_invcy_8(j)*geomh_invDYMv_8(j)                                       &
+                                         *((smagcoef_v(i,j)   * (F_w(i,j+1,k) - F_w(i,j,k))) -   &
+                                           (smagcoef_v(i,j-1) * (F_w(i,j  ,k) - F_w(i,j-1,k))) ) )
+              end do
+           end do
          endif
 
          if (switch_on_THETA) then
-
             do j=j0-1, jn+1
                do i=i0-1, in+1
-                  mypi(i,j)=exp(cappa_8*(Ver_a_8%t(k)+Ver_b_8%t(k)*&
-                             (F_s(i,j)+Cstv_Sstar_8)+Ver_c_8%m(k)*&
-                             (F_sl(i,j)+Cstv_Sstar_8)))
-                  th(i,j)=F_t(i,j,k)/mypi(i,j)
+                  pres_t(i,j) = (p_naught/exp(Ver_a_8%t(k)+Ver_b_8%t(k)*F_s(i,j)&
+                                + Ver_c_8%t(k) * F_sls(i,j)))**cappa_8
+                  th(i,j,k)=F_t(i,j,k)*pres_t(i,j)
                end do
             end do
 
-            fact=Cstv_dt_8*Cstv_invT_8*ismagprandtl
+            fact=Cstv_dt_8*ismagprandtl
             do j=j0, jn
                do i=i0, in
-
-                  F_dlth(i,j,k) = F_dlth(i,j,k) + fact / th(i,j) * ( &
-                       geomh_invDXMu_8(j)*((smagcoef_u(i,j)   * (th(i+1,j) - th(i,j))) - &
-                                        (smagcoef_u(i-1,j) * (th(i,j) - th(i-1,j))) ) &
+                  th(i,j,k) = th(i,j,k) + fact *  ( &
+                       geomh_invDXMu_8(j)*((smagcoef_u(i,j)   * (th(i+1,j,k) - th(i,j,k))) - &
+                                           (smagcoef_u(i-1,j) * (th(i,j,k) - th(i-1,j,k))) ) &
                      + geomh_invcy_8(j)*geomh_invDYMv_8(j) &
-                                         *((smagcoef_v(i,j)   * (th(i,j+1) - th(i,j))) - &
-                                           (smagcoef_v(i,j-1) * (th(i,j) - th(i,j-1))) ) )
+                                         *((smagcoef_v(i,j)   * (th(i,j+1,k) - th(i,j,k))) - &
+                                           (smagcoef_v(i,j-1) * (th(i,j,k) - th(i,j-1,k))) ) )
+
+                  F_t(i,j,k) = th(i,j,k)/pres_t(i,j)
                end do
             end do
-
          end if
 
          if (switch_on_hu) then
             fact=Cstv_dt_8*ismagprandtl_hu
             do j=j0, jn
                do i=i0, in
-                  th(i,j)=fact * ( &
-                    geomh_invDXMu_8(j)*((smagcoef_u(i,j)   * (hu(i+1,j,k) - hu(i,j,k))) - &
+                  hutmp(i,j)=fact * ( &
+                          geomh_invDXMu_8(j)*((smagcoef_u(i,j)   * (hu(i+1,j,k) - hu(i,j,k))) - &
                                         (smagcoef_u(i-1,j) * (hu(i,j,k) - hu(i-1,j,k))) ) &
-                     + geomh_invcy_8(j)*geomh_invDYMv_8(j) &
+                        + geomh_invcy_8(j)*geomh_invDYMv_8(j) &
                                       *((smagcoef_v(i,j)   * (hu(i,j+1,k) - hu(i,j,k))) - &
                                         (smagcoef_v(i,j-1) * (hu(i,j,k) - hu(i,j-1,k))) ) )
+                  end do
                end do
-            end do
             do j=j0, jn
                do i=i0, in
-                  hu(i,j,k)=hu(i,j,k)+th(i,j)
+                  hu(i,j,k)=hu(i,j,k)+hutmp(i,j)
                end do
             end do
          endif
@@ -286,28 +330,28 @@
 !$omp enddo
 
       if (switch_on_fric_heat) then
-         fact=Cstv_dt_8*Cstv_invT_8/cdelta2**2/cpd_8
+         fact=Cstv_dt_8/cdelta2**2/cpd_8
 !$omp do
          do k=1, nk
             if(k /= nk) then
                do j=j0, jn
                   do i=i0, in
-                     F_dlth(i,j,k)=F_dlth(i,j,k) &
-                         +fact/F_t(i,j,k)*((0.5d0*(smag(i,j,k+1)+smag(i,j,k)))**3)
+                     F_t(i,j,k)=F_t(i,j,k) &
+                               +fact*((0.5d0*(smag(i,j,k+1)+smag(i,j,k)))**3)
                   end do
                end do
             else
                do j=j0, jn
                   do i=i0, in
-                     F_dlth(i,j,k)=F_dlth(i,j,k) &
-                         +fact/F_t(i,j,k)*smag(i,j,k)**3
+                     F_t(i,j,k)=F_t(i,j,k) + fact*smag(i,j,k)**3
                   end do
                end do
             endif
          end do
 !$omp enddo
       endif
+
 !$omp end parallel
 
       return
-      end subroutine smago_in_rhs
+      end subroutine hzd_smago_in_split

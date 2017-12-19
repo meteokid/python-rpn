@@ -15,7 +15,7 @@
 
 !**s/r out_gmm - output GMM fields
 !
-      subroutine out_gmm (levset,set)
+      subroutine out_gmm (levset, set)
       use gem_options
       use glb_ld
       use lun
@@ -28,7 +28,7 @@
       implicit none
 #include <arch_specific.hf>
 
-      integer levset,set
+      integer, intent(in) :: levset,set
 
 !author
 !     Lee V.                    - rpn July 2009 (from output VMM)
@@ -142,7 +142,9 @@
             gridset = Outd_grid(set)
             id = -1
             do cid=1,numvars
-               if (trim(keylist(i)(1:4)) == trim(class_var(cid,1))) id=cid
+               if (trim(keylist(i)(1:4)) == trim(class_var(cid,1)).or. &
+                   trim(keylist(i)(1:3)) == trim(class_var(cid,1)).or. &
+                   trim(keylist(i)(1:2)) == trim(class_var(cid,1))) id=cid
             end do
             if (id < 0) then
                if (Lun_out > 0) write(Lun_out,1001) trim(keylist(i))

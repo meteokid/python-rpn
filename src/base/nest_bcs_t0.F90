@@ -16,7 +16,6 @@
 !**s/r nest_bcs_t0 -
 !
       subroutine nest_bcs_t0 ()
-      use dynkernel_options
       use gem_options
       use gmm_itf_mod
       use gmm_nest
@@ -43,7 +42,7 @@
 !
 !----------------------------------------------------------------------
 !
-      using_qt0 = ( .not.Schm_hydro_L ) .or. (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H')
+      using_qt0 = .not.Schm_hydro_L
 
       istat = gmm_get(gmmk_nest_u_s ,nest_u )
       istat = gmm_get(gmmk_nest_v_s ,nest_v )
