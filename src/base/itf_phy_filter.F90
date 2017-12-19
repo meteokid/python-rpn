@@ -75,8 +75,9 @@ contains
       ! Set filter half-width
       hw = min(G_halox,G_haloy)
 
-      call ipf_init1(mysig1, wt_gauss1)
-      call ipf_init1(mysig2, wt_gauss2)
+      ! Initialize all filters
+      call ipf_init_stencil(mysig1, wt_gauss1)
+      call ipf_init_stencil(mysig2, wt_gauss2)
 
       ! End of subprogram
       F_status = RMN_OK
@@ -84,7 +85,7 @@ contains
    end function ipf_init
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   subroutine ipf_init1(F_sig, F_weigth)
+   subroutine ipf_init_stencil(F_sig, F_weight)
       use geomh
       use glb_ld
       use cstv
@@ -93,17 +94,17 @@ contains
 
       ! Argument declaration
       real, intent(in) :: F_sig               !Standard deviation of Gaussian filter (increase for more smoothing) [1 gridpoint]
-      real, pointer :: F_weigth(:,:,:)
+      real, pointer :: F_weight(:,:,:)        !Filter weight stencil
 
       ! Local variables
       integer :: i,j,ii,jj,cnt
       real :: d_euclid,d_sphere,sigm,wt_sum
 
-      nullify(F_weigth)
+      nullify(F_weight)
       if (F_sig <= 0.) return
 
       ! Create space for filter weights
-      allocate(F_weigth(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,(2*hw+1)**2))
+      allocate(F_weight(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,(2*hw+1)**2))
 
       ! Apply smoothing
       sigm = F_sig*geomh_hy_8*Dcst_rayt_8       !standard deviation converted to meters
@@ -115,16 +116,16 @@ contains
                   d_euclid = Dcst_rayt_8*sqrt((geomh_x_8(i)-geomh_x_8(i+ii))**2+(geomh_y_8(j)-geomh_y_8(j+jj))**2)
                   d_sphere = Dcst_rayt_8*asin(d_euclid/(2.*Dcst_rayt_8**2)*sqrt(4.*Dcst_rayt_8**2-d_euclid**2))
                   cnt = cnt+1
-                  F_weigth(i,j,cnt) = exp(-d_sphere**2/(2.*sigm**2))
-                  wt_sum = wt_sum + F_weigth(i,j,cnt)
+                  F_weight(i,j,cnt) = exp(-d_sphere**2/(2.*sigm**2))
+                  wt_sum = wt_sum + F_weight(i,j,cnt)
                enddo
             enddo
-            F_weigth(i,j,:) = F_weigth(i,j,:) / wt_sum
+            F_weight(i,j,:) = F_weight(i,j,:) / wt_sum
          enddo
       enddo
 
       return
-   end subroutine ipf_init1
+   end subroutine ipf_init_stencil
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    integer function ipf_smooth_tend(F_data,F_name,F_fid) result(F_status)
@@ -141,7 +142,7 @@ contains
       ! Argument declaration
       real, dimension(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,G_nk), intent(inout) :: F_data    !Full physics tendency on physics grid
       character(len=*), intent(in) :: F_name                                                            !Name of V-bus tendency variable to smooth
-      integer, intent(in), optional :: F_fid  !Filter id, 1 or 2
+      integer, intent(in), optional :: F_fid                                                            !Filter ID (currently 1 or 2)
 
       ! Local variables
       real, dimension(:,:,:), pointer :: tend
@@ -153,6 +154,7 @@ contains
       ! Initialize return status
       F_status = RMN_ERR
 
+      ! Check for a valid stencil
       fid = 1
       if (present(F_fid)) fid = F_fid
       apply_filter = .false.
@@ -206,7 +208,7 @@ contains
       ! Argument declaration
       character(len=*), intent(in) :: F_iname                   !Name of the field to smooth
       character(len=*), intent(in) :: F_oname                   !Name of the field in which to store smoothed result
-      integer, intent(in), optional :: F_fid  !Filter id, 1 or 2
+      integer, intent(in), optional :: F_fid                    !Filter ID (currently 1 or 2)
 
       ! Local variables
       real, dimension(:,:,:), pointer :: fld
@@ -218,6 +220,7 @@ contains
       ! Initialize return status
       F_status = RMN_ERR
 
+      ! Check for a valid stencil
       fid = 1
       if (present(F_fid)) fid = F_fid
       apply_filter = .false.
@@ -269,10 +272,10 @@ contains
       ! Argument declaration
       real, dimension(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,G_nk), intent(out) :: F_ofld !Smoothed output field
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk), intent(in) :: F_ifld                      !Input field to smooth
-      integer, intent(in), optional :: F_fid  !Filter id, 1 or 2
+      integer, intent(in) :: F_fid                                                                 !Filter ID (currently 1 or 2)
 
       ! Local variables
-      integer :: i,j,k,ii,jj,cnt,fid
+      integer :: i,j,k,ii,jj,cnt
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk) :: ifld
       real, dimension(:,:,:), pointer :: wt_gauss
 
@@ -286,11 +289,10 @@ contains
          return
       endif
 
-      fid = 1
-      if (present(F_fid)) fid = F_fid
+      ! Check for a valid stencil
       nullify(wt_gauss)
-      if (fid == 1 .and. associated(wt_gauss1)) wt_gauss => wt_gauss1
-      if (fid == 2 .and. associated(wt_gauss2)) wt_gauss => wt_gauss2
+      if (F_fid == 1 .and. associated(wt_gauss1)) wt_gauss => wt_gauss1
+      if (F_fid == 2 .and. associated(wt_gauss2)) wt_gauss => wt_gauss2
 
       ! Only apply smoothing if necessary
       if (.not.associated(wt_gauss)) then
