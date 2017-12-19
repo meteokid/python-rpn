@@ -10,7 +10,7 @@ endif
 #    $(error Not found: $(gemdyn)/VERSION)
 # endif
 # GEMDYN_VERSION0  = $(shell cat $(gemdyn)/VERSION | sed 's|x/||')
-GEMDYN_VERSION0  = x/5.0.b1
+GEMDYN_VERSION0  = x/5.0.b2
 GEMDYN_VERSION   = $(notdir $(GEMDYN_VERSION0))
 GEMDYN_VERSION_X = $(dir $(GEMDYN_VERSION0))
 
@@ -89,6 +89,7 @@ $(BINDIR)/$(mainprgemnml):  | $(GEMDYN_VFILES)
 	export ATM_MODEL_VERSION="$(GEMDYN_VERSION)" ;\
 	export RBUILD_LIBAPPL="$(GEMDYN_LIBS_V) $(GEMDYN_LIBS_DEP)" ;\
 	export RBUILD_COMM_STUBS=$(LIBCOMM_STUBS) ;\
+	export RBUILD_EXTRA_OBJ=`ls prgemnml.o 2>/dev/null` ;\
 	$(RBUILD4NOMPI)
 	ls $@
 
