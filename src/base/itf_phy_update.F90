@@ -39,6 +39,7 @@
 ! v4_XX - Tanguay M.       - SOURCE_PS: REAL*8 with iterations
 
       logical, parameter :: SMOOTH_EXPLICIT=.false.
+      integer, parameter :: SMOOTH_GWD=2
 
       character(len=GMM_MAXNAMELENGTH) :: trname_S
       integer istat, i,j,k,n, cnt, iteration,iend(3)
@@ -113,8 +114,12 @@
       ptr3d => pw_uu_plus(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,1:l_nk)
       istat = phy_get(ptr3d,gmmk_pw_uu_plus_s,F_npath='V',F_bpath='D',F_end=iend)
 
+      istat = ipf_smooth_tend(ptr3d,'ugwd_td1',SMOOTH_GWD)
+
       ptr3d => pw_vv_plus(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,1:l_nk)
       istat = phy_get(ptr3d,gmmk_pw_vv_plus_s,F_npath='V',F_bpath='D',F_end=iend)
+
+      istat = ipf_smooth_tend(ptr3d,'vgwd_td1',SMOOTH_GWD)
 
       ptr3d => pw_tt_plus(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,1:l_nk)
       istat = phy_get(ptr3d,gmmk_pw_tt_plus_s,F_npath='V',F_bpath='D',F_end=iend)

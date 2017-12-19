@@ -53,7 +53,7 @@
       type(vgrid_descriptor) :: vcoord, vcoordt
       integer err,zuip,ztip,vtype
       integer, dimension(:), pointer :: ip1m, ip1t
-      real :: zu,zt,sig
+      real :: zu,zt,cond_sig,gwd_sig
       real, dimension(:,:), pointer :: ptr2d
 
       integer,parameter :: tlift= 0
@@ -131,8 +131,9 @@
                       G_nk+1, Ver_std_p_prof%m)
 
 ! Initialize filter weights for smoothing
-      if (.not.WB_IS_OK(wb_get('phy/cond_smoothsig',sig))) sig=-1.
-      err= min(ipf_init(F_sig=sig), err)
+      if (.not.WB_IS_OK(wb_get('phy/cond_infilter',cond_sig))) cond_sig=-1.
+      if (.not.WB_IS_OK(wb_get('phy/gwd_tdfilter',gwd_sig))) gwd_sig=-1.
+      err= min(ipf_init(F_sig=cond_sig, F_sig2=gwd_sig), err)
 
 ! Retrieve the heights of the diagnostic levels (thermodynamic
 ! and momentum) from the physics ( zero means NO diagnostic level)

@@ -1,4 +1,4 @@
-!---------------------------------- LICENCE BEGIN -------------------------------
+!---------------------------------- LICENCE BEGIN -----------------------------
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
@@ -11,7 +11,7 @@
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-!---------------------------------- LICENCE END ---------------------------------
+!---------------------------------- LICENCE END -------------------------------
 !/@*
 module itf_phy_filter
    use grid_options, only: Grd_lphy_i0,Grd_lphy_in,Grd_lphy_j0,Grd_lphy_jn
@@ -22,9 +22,10 @@ module itf_phy_filter
 #include <msg.h>
 
    ! Module variables
-   integer :: hw                                        !Filter half-width (gridpoints)
-   real, dimension(:,:,:), pointer :: wt_gauss          !Filter weights for each point
-   logical :: initialized=.false.,apply_filter=.true.   !Status indicators for package
+   integer, save :: hw = 0                           !Filter half-width (gridpoints)
+   real, pointer, save :: wt_gauss1(:,:,:) => NULL() !Filter weights for each point
+   real, pointer, save :: wt_gauss2(:,:,:) => NULL() !Filter weights for each point
+   logical, save :: initialized = .false.            !Status indicators for package
 
    ! Public API
    public :: ipf_init
@@ -34,12 +35,8 @@ module itf_phy_filter
 contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   integer function ipf_init(F_sig) result(F_status)
+   integer function ipf_init(F_sig, F_sig2) result(F_status)
       use gem_options, only: G_halox,G_haloy
-      use geomh
-      use glb_ld
-      use cstv
-      use dcst
       ! Prepare filter weights for smoothing
       implicit none
 
@@ -48,17 +45,19 @@ contains
 
       ! Argument declaration
       real, intent(in), optional :: F_sig               !Standard deviation of Gaussian filter (increase for more smoothing) [1 gridpoint]
+      real, intent(in), optional :: F_sig2              !Standard deviation of Gaussian filter (increase for more smoothing) [1 gridpoint]
 
       ! Local variables
-      integer :: i,j,ii,jj,cnt
-      real :: d_euclid,d_sphere,sigm,mysig,wt_sum
+      real :: mysig1, mysig2
 
       ! Initialize return status
       F_status = RMN_ERR
 
       ! Handle optional arguments
-      mysig = 1.
-      if (present(F_sig)) mysig = F_sig
+      mysig1 = 1.
+      if (present(F_sig)) mysig1 = F_sig
+      mysig2 = -1.
+      if (present(F_sig2)) mysig2 = F_sig2
 
       ! Confirm package initialization status
       if (initialized) then
@@ -68,8 +67,7 @@ contains
       initialized = .true.
 
       ! No weighting if no smoothing is to be done
-      if (mysig <= 0.) then
-         apply_filter = .false.
+      if (mysig1 <= 0. .and. mysig2 <= 0.) then
          F_status = RMN_OK
          return
       endif
@@ -77,11 +75,38 @@ contains
       ! Set filter half-width
       hw = min(G_halox,G_haloy)
 
+      call ipf_init1(mysig1, wt_gauss1)
+      call ipf_init1(mysig2, wt_gauss2)
+
+      ! End of subprogram
+      F_status = RMN_OK
+      return
+   end function ipf_init
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   subroutine ipf_init1(F_sig, F_weigth)
+      use geomh
+      use glb_ld
+      use cstv
+      use dcst !#TODO: use TDPACK?
+      implicit none
+
+      ! Argument declaration
+      real, intent(in) :: F_sig               !Standard deviation of Gaussian filter (increase for more smoothing) [1 gridpoint]
+      real, pointer :: F_weigth(:,:,:)
+
+      ! Local variables
+      integer :: i,j,ii,jj,cnt
+      real :: d_euclid,d_sphere,sigm,wt_sum
+
+      nullify(F_weigth)
+      if (F_sig <= 0.) return
+
       ! Create space for filter weights
-      allocate(wt_gauss(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,(2*hw+1)**2))
+      allocate(F_weigth(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,(2*hw+1)**2))
 
       ! Apply smoothing
-      sigm = mysig*geomh_hy_8*Dcst_rayt_8       !standard deviation converted to meters
+      sigm = F_sig*geomh_hy_8*Dcst_rayt_8       !standard deviation converted to meters
       do j=Grd_lphy_j0,Grd_lphy_jn
          do i=Grd_lphy_i0,Grd_lphy_in
             wt_sum = 0.; cnt = 0
@@ -90,21 +115,19 @@ contains
                   d_euclid = Dcst_rayt_8*sqrt((geomh_x_8(i)-geomh_x_8(i+ii))**2+(geomh_y_8(j)-geomh_y_8(j+jj))**2)
                   d_sphere = Dcst_rayt_8*asin(d_euclid/(2.*Dcst_rayt_8**2)*sqrt(4.*Dcst_rayt_8**2-d_euclid**2))
                   cnt = cnt+1
-                  wt_gauss(i,j,cnt) = exp(-d_sphere**2/(2.*sigm**2))
-                  wt_sum = wt_sum + wt_gauss(i,j,cnt)
+                  F_weigth(i,j,cnt) = exp(-d_sphere**2/(2.*sigm**2))
+                  wt_sum = wt_sum + F_weigth(i,j,cnt)
                enddo
             enddo
-            wt_gauss(i,j,:) = wt_gauss(i,j,:) / wt_sum
+            F_weigth(i,j,:) = F_weigth(i,j,:) / wt_sum
          enddo
       enddo
 
-      ! End of subprogram
-      F_status = RMN_OK
       return
-   end function ipf_init
+   end subroutine ipf_init1
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   integer function ipf_smooth_tend(F_data,F_name) result(F_status)
+   integer function ipf_smooth_tend(F_data,F_name,F_fid) result(F_status)
       use phy_itf, only: phy_get,phy_put
       use grid_options
       use glb_ld
@@ -118,17 +141,25 @@ contains
       ! Argument declaration
       real, dimension(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,G_nk), intent(inout) :: F_data    !Full physics tendency on physics grid
       character(len=*), intent(in) :: F_name                                                            !Name of V-bus tendency variable to smooth
+      integer, intent(in), optional :: F_fid  !Filter id, 1 or 2
 
       ! Local variables
       real, dimension(:,:,:), pointer :: tend
       real, dimension(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,G_nk), target :: tends
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk), target :: data_tend
-      integer :: iend(3)
+      integer :: iend(3), fid
+      logical :: apply_filter
 
       ! Initialize return status
       F_status = RMN_ERR
 
-     ! Only apply smoothing if necessary
+      fid = 1
+      if (present(F_fid)) fid = F_fid
+      apply_filter = .false.
+      if (fid == 1 .and. associated(wt_gauss1)) apply_filter = .true.
+      if (fid == 2 .and. associated(wt_gauss2)) apply_filter = .true.
+
+      ! Only apply smoothing if necessary
       if (.not.apply_filter) then
          F_status = RMN_OK
          return
@@ -142,17 +173,17 @@ contains
       if (F_status < 0) return
 
       ! Remove selected tendency from total phyics tendency
-      F_data = F_data - tend*Cstv_dt_8
+      F_data = F_data - tend*Cstv_dt_8  !#TODO: use TDMASK
 
       ! Apply smoothing operator
-      if (gaussian_filter(tends,data_tend) /= RMN_OK) then
+      if (gaussian_filter(tends,data_tend,fid) /= RMN_OK) then
          call msg(MSG_WARNING,'(itf_phy_filter::ipf_smooth_tend) Call to gaussian_filter failed')
          F_data = F_data + tend*Cstv_dt_8
          return
       endif
 
       ! Add smoothed tendency to total physics tendency
-      F_data = F_data + tends*Cstv_dt_8
+      F_data = F_data + tends*Cstv_dt_8  !#TODO: use TDMASK
       tend => tends
       F_status = phy_put(tend,F_name,F_npath='V',F_bpath='VP',F_end=(/-1,-1,l_nk/))
 
@@ -162,7 +193,7 @@ contains
    end function ipf_smooth_tend
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   integer function ipf_smooth_fld(F_iname,F_oname) result(F_status)
+   integer function ipf_smooth_fld(F_iname,F_oname,F_fid) result(F_status)
       use phy_itf, only: phy_get,phy_put
       use grid_options
       use glb_ld
@@ -175,14 +206,23 @@ contains
       ! Argument declaration
       character(len=*), intent(in) :: F_iname                   !Name of the field to smooth
       character(len=*), intent(in) :: F_oname                   !Name of the field in which to store smoothed result
+      integer, intent(in), optional :: F_fid  !Filter id, 1 or 2
 
       ! Local variables
       real, dimension(:,:,:), pointer :: fld
       real, dimension(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,G_nk), target :: flds
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk), target :: ifld
+      integer :: iend(3), fid
+      logical :: apply_filter
 
       ! Initialize return status
       F_status = RMN_ERR
+
+      fid = 1
+      if (present(F_fid)) fid = F_fid
+      apply_filter = .false.
+      if (fid == 1 .and. associated(wt_gauss1)) apply_filter = .true.
+      if (fid == 2 .and. associated(wt_gauss2)) apply_filter = .true.
 
       ! Only apply smoothing if necessary
       if (.not.apply_filter) then
@@ -193,25 +233,26 @@ contains
       ! Retrieve selected input field
       ifld = 0.
       fld => ifld(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,1:l_nk)
-      F_status = phy_get(fld,F_iname,F_npath='V',F_bpath='PVD',F_end=(/-1,-1,l_nk/),F_quiet=.false.)
+      iend = (/-1,-1,l_nk/)
+      F_status = phy_get(fld,F_iname,F_npath='V',F_bpath='PVD',F_end=iend,F_quiet=.false.)
       if (F_status < 0) return
 
       ! Apply smoothing operator
-      if (gaussian_filter(flds,ifld) /= RMN_OK) then
+      if (gaussian_filter(flds,ifld,fid) /= RMN_OK) then
          call msg(MSG_WARNING,'(itf_phy_filter::ipf_smooth_fld) Call to gaussian_filter failed')
          return
       endif
 
       ! Post result to output field
       fld => flds
-      F_status = phy_put(fld,F_oname,F_npath='V',F_bpath='PDV',F_end=(/-1,-1,l_nk/))
+      F_status = phy_put(fld,F_oname,F_npath='V',F_bpath='PDV',F_end=iend)
 
       ! End of subprogram
       F_status = RMN_OK
    end function ipf_smooth_fld
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   integer function gaussian_filter(F_ofld,F_ifld) result(F_status)
+   integer function gaussian_filter(F_ofld,F_ifld,F_fid) result(F_status)
       use gem_options
       use grid_options
       use geomh
@@ -228,10 +269,12 @@ contains
       ! Argument declaration
       real, dimension(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,G_nk), intent(out) :: F_ofld !Smoothed output field
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk), intent(in) :: F_ifld                      !Input field to smooth
+      integer, intent(in), optional :: F_fid  !Filter id, 1 or 2
 
       ! Local variables
-      integer :: i,j,k,ii,jj,cnt
+      integer :: i,j,k,ii,jj,cnt,fid
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk) :: ifld
+      real, dimension(:,:,:), pointer :: wt_gauss
 
       ! Initialize return status
       F_status = RMN_ERR
@@ -243,8 +286,14 @@ contains
          return
       endif
 
+      fid = 1
+      if (present(F_fid)) fid = F_fid
+      nullify(wt_gauss)
+      if (fid == 1 .and. associated(wt_gauss1)) wt_gauss => wt_gauss1
+      if (fid == 2 .and. associated(wt_gauss2)) wt_gauss => wt_gauss2
+
       ! Only apply smoothing if necessary
-      if (.not.apply_filter) then
+      if (.not.associated(wt_gauss)) then
          F_ofld = F_ifld(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,:)
          F_status = RMN_OK
          return
