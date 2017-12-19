@@ -16,7 +16,6 @@
 !**s/r out_dyn - perform dynamic output
 
       subroutine out_dyn ( F_reg_out, F_casc_L )
-      use dynkernel_options
       use step_options
       use grdc_options
       use gem_options
@@ -101,11 +100,7 @@
 
             call out_dq     (levset, kk)
 
-            if (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H') then
-               call exp_out_gmm(levset, kk)
-            else
-               call out_gmm(levset, kk)
-            endif
+            call out_gmm    (levset, kk)
 
             flag_clos= .true.
             if (jj < outd_sorties(0,Lctl_step)) then

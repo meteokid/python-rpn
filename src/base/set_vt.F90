@@ -13,7 +13,6 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
       subroutine set_vt()
-      use dynkernel_options
       use gmm_vt1
       use gmm_vt0
       use gmm_vt2
@@ -285,12 +284,6 @@
       if (GMM_IS_ERROR(istat)) then
          call msg(MSG_ERROR,'set_vt ERROR at gmm_create(PHY)')
       end if
-
-
-      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H') then
-         call exp_set_vt()
-      end if
-
 !
 !     ---------------------------------------------------------------
       return

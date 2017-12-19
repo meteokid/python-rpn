@@ -76,6 +76,7 @@
       real, dimension(Minx:Maxx,Miny:Maxy,l_nk), target :: zero_array
       real*8, parameter :: one=1.d0, zero=0.d0, half=0.5d0 , &
                            alpha1= -1.d0/16.d0 , alpha2 =9.d0/16.d0
+      logical :: smago_in_rhs_L
 !
 !     ---------------------------------------------------------------
 !
@@ -102,6 +103,8 @@
          phy_bA_m_8 = 0.d0
          phy_bA_t_8 = 0.d0
       endif
+
+      smago_in_rhs_L=.false.
 
 !     Common coefficients
 
@@ -359,8 +362,10 @@
                             l_minx,l_maxx,l_miny,l_maxy,G_nk )
       endif
 
-      call smago_in_rhs ( F_oru, F_orv, F_orw, F_ort, F_u, F_v, F_w, F_t, F_s, &
-                          l_minx,l_maxx,l_miny,l_maxy,G_nk )
+      if (smago_in_rhs_L) then
+         call smago_in_rhs ( F_oru, F_orv, F_orw, F_ort, F_u, F_v, F_w, F_t, F_s, &
+                          F_sl,l_minx,l_maxx,l_miny,l_maxy,G_nk )
+      endif
 
 1000  format(3X,'COMPUTE THE RIGHT-HAND-SIDES: (S/R RHS)')
 !

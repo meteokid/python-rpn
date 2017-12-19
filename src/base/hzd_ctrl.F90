@@ -16,7 +16,7 @@
 module hzd_ctrl
   use hzd_exp
   use gem_options
-      use glb_ld
+  use glb_ld
   implicit none
 #include <arch_specific.hf>
   private
@@ -27,7 +27,6 @@ module hzd_ctrl
      module procedure hzd_ctrl_vector
   end interface
 
-
 contains
 
       subroutine hzd_ctrl_scalar ( F_f2hzd, F_type_S, &
@@ -35,32 +34,21 @@ contains
       use glb_ld
       implicit none
 
-      character(len=*), intent(IN) :: F_type_S
-      integer      , intent(IN) :: Minx,Maxx,Miny,Maxy,Nk
-      integer                   :: Pow
-      real, dimension(Minx:Maxx,Miny:Maxy,Nk),&
-                     intent (INOUT) :: F_f2hzd
+      character(len=*), intent(in) :: F_type_S
+      integer      , intent(in) :: Minx,Maxx,Miny,Maxy,Nk
+      real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent (inout) :: F_f2hzd
 !
 !-------------------------------------------------------------------
 !
-      Pow=Hzd_pwr
-      if (F_type_S == 'S_THETA') Pow=Hzd_pwr_theta
-      if (F_type_S == 'S_TR')    Pow=Hzd_pwr_tr
-      if (Pow > 2) then
-          call hzd_exp_visco2 (F_f2hzd, F_type_S, l_minx,l_maxx,l_miny,l_maxy,&
-                               Nk)
-      else
-          call hzd_exp_deln ( F_f2hzd, 'M', l_minx,l_maxx,l_miny,l_maxy,&
-                          Nk, F_type_S=F_type_S )
-      endif
+         call hzd_exp_visco2 (F_f2hzd, F_type_S, &
+              l_minx,l_maxx,l_miny,l_maxy, Nk)
 !
 !-------------------------------------------------------------------
 !
       return
       end subroutine hzd_ctrl_scalar
 
-      subroutine hzd_ctrl_vector ( F_u, F_v, &
-                                   Minx,Maxx,Miny,Maxy,Nk )
+      subroutine hzd_ctrl_vector ( F_u, F_v, Minx,Maxx,Miny,Maxy,Nk )
       use glb_ld
       implicit none
 
@@ -70,15 +58,10 @@ contains
 !
 !-------------------------------------------------------------------
 !
-      if (Hzd_pwr > 2) then
          call hzd_exp_visco2( F_u, 'U', &
                      l_minx,l_maxx,l_miny,l_maxy, Nk )
          call hzd_exp_visco2( F_v, 'V', &
                      l_minx,l_maxx,l_miny,l_maxy, Nk )
-      else
-          call hzd_exp_deln ( F_u, 'U', l_minx,l_maxx,l_miny,l_maxy, &
-                          Nk, F_VV=F_v )
-      endif
 !
 !-------------------------------------------------------------------
 !

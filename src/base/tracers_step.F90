@@ -15,7 +15,7 @@
 
 !**s/r tracers_step
 
-      subroutine tracers_step (F_water_tracers_only_L)
+      subroutine tracers_step (F_before_psadj_L)
       use gem_options
       use glb_ld
       use lun
@@ -23,7 +23,7 @@
       implicit none
 #include <arch_specific.hf>
 
-      logical, intent(IN) :: F_water_tracers_only_L
+      logical, intent(in) :: F_before_psadj_L
 
 
 ! local variables
@@ -33,22 +33,19 @@
 
       verbose_L = Tr_verbose/=0
 
-      if (Lun_debug_L) write (Lun_out,1000) F_water_tracers_only_L
+      if (Lun_debug_L) write (Lun_out,1000) F_before_psadj_L
 
-      if ( verbose_L) then
-         if (.not. F_water_tracers_only_L) &
-              call stat_mass_tracers (1,"BEFORE ADVECTION")
-      endif
+      if (verbose_L .and. .not.F_before_psadj_L) & 
+         call stat_mass_tracers (1,"BEFORE ADVECTION") 
 
-      if (.not. F_water_tracers_only_L) &
-      Tr_do_only_once_each_timestep_L = .TRUE.
+      if (.not.F_before_psadj_L) & 
+         Tr_do_only_once_each_timestep_L = .TRUE.
 
-      call adv_tracers (F_water_tracers_only_L)
+      call adv_tracers (F_before_psadj_L)
 
-      if ( verbose_L) then
-         if (.not. F_water_tracers_only_L) &
-              call stat_mass_tracers (0,"AFTER ADVECTION")
-      endif
+      if (verbose_L .and. .not.F_before_psadj_L) & 
+         call stat_mass_tracers (0,"AFTER ADVECTION") 
+
 1000  format(3X,'ADVECT TRACERS: (S/R TRACERS_STEP) H2O only=',L2)
 !     _________________________________________________________________
 !

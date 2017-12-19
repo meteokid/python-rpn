@@ -196,7 +196,7 @@ contains
            F_t    (Mminx:Mmaxx,Mminy:Mmaxy,nk), &
            F_s    (Mminx:Mmaxx,Mminy:Mmaxy   ), &
            F_topo (Mminx:Mmaxx,Mminy:Mmaxy   ), &
-           F_q    (Mminx:Mmaxx,Mminy:Mmaxy,nk)
+           F_q    (Mminx:Mmaxx,Mminy:Mmaxy,nk+1)
 
       integer i,j,k,istat,ii
       real*8 pp,ex,theta

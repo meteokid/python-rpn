@@ -16,7 +16,6 @@
 !**s/r out_tracer - output tracer
 
       subroutine out_tracer (levset, set)
-      use dynkernel_options
       use vertical_interpolation, only: vertint2
       use vGrid_Descriptors, only: vgrid_descriptor,vgd_get,VGD_OK,VGD_ERROR
       use vgrid_wb, only: vgrid_wb_get
@@ -82,11 +81,7 @@
             do n=1,Tr3d_ntr
                if (Outd_var_S(ii,set) == trim(Tr3d_name_S(n))) then
                   nullify (tr1)
-                  if (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H') then
-                     fullname= 'TR/'//trim(Tr3d_name_S(n))//':M'
-                  else
-                     fullname= 'TR/'//trim(Tr3d_name_S(n))//':P'
-                  end if
+                  fullname= 'TR/'//trim(Tr3d_name_S(n))//':P'
                   indxtr=n
                   istat = gmm_get(fullname,tr1)
                   if (.not.GMM_IS_ERROR(istat)) outvar_L=.true.
@@ -166,12 +161,8 @@
             outvar_L=.false.
             do n=1,Tr3d_ntr
                if (Outd_var_S(ii,set) == trim(Tr3d_name_S(n))) then
-                nullify (tr1)
-                if (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H') then
-                     fullname= 'TR/'//trim(Tr3d_name_S(n))//':M'
-                  else
-                     fullname= 'TR/'//trim(Tr3d_name_S(n))//':P'
-                  end if
+                  nullify (tr1)
+                  fullname= 'TR/'//trim(Tr3d_name_S(n))//':P'
                   indxtr=n
                   istat = gmm_get(fullname,tr1)
                   if (.not.GMM_IS_ERROR(istat)) outvar_L=.true.

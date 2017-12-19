@@ -19,7 +19,7 @@
       use nest_blending, only: nest_blend
       use gem_options
       use mtn_options
-      use theo_dif
+!      use theo_dif
       use theo_options
       implicit none
 #include <arch_specific.hf>
@@ -39,7 +39,7 @@
 
       if ( Schm_theoc_L ) then
 
-         if ( hdif_lnr > 0. ) call theo_hdif_main()
+!         if ( hdif_lnr > 0. ) call theo_hdif_main()
          if ( mtn_zblen_thk > 0. ) call height_sponge()
 
          call slabsym()

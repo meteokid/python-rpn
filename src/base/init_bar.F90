@@ -18,7 +18,6 @@
       subroutine init_bar ( F_u, F_v, F_w, F_t, F_zd, F_s, F_q, F_topo,&
                             Mminx,Mmaxx,Mminy,Mmaxy, Nk               ,&
                             F_trprefix_S, F_trsuffix_S, F_datev )
-      use dynkernel_options
       use gmm_geof
       use inp_mod
       use gmm_pw
@@ -101,12 +100,6 @@
                        Mminx,Mmaxx,Mminy,Mmaxy,Nk,.false. )
 
       pw_tt_plus = F_t
-
-      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H' .and. .not.Schm_testcases_adv_L) then
-         do k=1,G_nk
-            F_q(1:l_ni ,1:l_nj, k) = max(gz_t(1:l_ni,1:l_nj,1), 0.)
-         end do
-      end if
 
       return
 

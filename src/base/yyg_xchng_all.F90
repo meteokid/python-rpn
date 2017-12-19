@@ -16,7 +16,6 @@
 !**s/r yyg_xchng_all - Exchanges all Yin-Yang boundary conditions
 
       subroutine yyg_xchng_all
-      use dynkernel_options
       use gmm_vt1
       use gmm_pw
       use gem_options
@@ -38,10 +37,6 @@
 !
 !----------------------------------------------------------------------
 !
-      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H') then
-         return
-      end if
-
       do n= 1, Tr3d_ntr
          tr_name = 'TR/'//trim(Tr3d_name_S(n))//':P'
          istat = gmm_get(tr_name, tr1)

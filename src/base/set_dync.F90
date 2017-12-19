@@ -17,7 +17,6 @@
 
       subroutine set_dync (F_check_and_stop_L, F_errcode)
       use dcst
-      use dynkernel_options
       use matvec, only: matvec_init
       use gmm_vt1
       use grid_options
@@ -43,10 +42,6 @@
       real*8, parameter :: zero=0.d0, one=1.d0, half=.5d0
 !
 !     ---------------------------------------------------------------
-
-      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H') then
-         return
-      end if
 
       if( Cstv_Tstr_8 < 0. ) then
          ! TSTAR variable in the vertical

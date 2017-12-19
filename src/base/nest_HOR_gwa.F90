@@ -16,7 +16,6 @@
 !**s/r nest_HOR_gwa
 !
       subroutine nest_HOR_gwa()
-      use dynkernel_options
       use gem_options
       use gmm_itf_mod
       use gmm_nest
@@ -44,7 +43,7 @@
 !
       if ( (Lam_blend_Hx <= 0).and.(Lam_blend_Hy <= 0) ) return
 
-      using_qt1 = ( .not.Schm_hydro_L ) .or. (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H')
+      using_qt1 = .not.Schm_hydro_L
 !
 ! Blending main dynamics variables + tracers
 !

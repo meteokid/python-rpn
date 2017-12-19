@@ -13,7 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 !
-      subroutine adv_tracers (F_water_tracers_only_L)
+      subroutine adv_tracers (F_before_psadj_L)
       use adv_pos
       use grid_options
       use gem_options
@@ -25,7 +25,7 @@
       implicit none
 #include <arch_specific.hf>
 
-      logical, intent(IN) :: F_water_tracers_only_L
+      logical, intent(in) :: F_before_psadj_L
 
    !@author  Michel Desgagne
    !@revisions
@@ -34,7 +34,7 @@
    !@objective Perform advection of all tracers
 
 
-      logical qw_L
+      logical qw_L,tr_not_before_psadj_L,tr_not_after_psadj_L
       integer  n,count,jext,err
       integer nind, nind_s , num
       integer i0,j0,in,jn,k0        ! scope of advection operations
@@ -75,15 +75,27 @@
       Adv_component_S = 'INTP_TR'
       call timing_start2 (27, 'ADV_INTP_TR', 10)
 
-      if (.NOT.F_water_tracers_only_L) Adv_done_precompute_L = .FALSE.
+      if (.NOT.F_before_psadj_L) Adv_done_precompute_L = .FALSE.
 
       do n=1,Tr3d_ntr
 
          qw_L= Tr3d_wload(n) .or. Tr3d_name_S(n)(1:2) == 'HU'
-         if (F_water_tracers_only_L) then
-            if (.not. qw_L) cycle
+
+         if (qw_L .and. Schm_psadj==2 .and. (Tr3d_mono(n)>1 .or. Tr3d_mass(n)>0)) &
+            call handle_error (-1,'ADV_TRACERS','CAUTION: Conservation TRACER (Water) + PSADJ DRY')
+
+         if (F_before_psadj_L) then
+
+            tr_not_before_psadj_L= .not.qw_L .or. (qw_L .and. Schm_psadj/=2)
+
+            if (tr_not_before_psadj_L) cycle
+
          else
-            if (qw_L) cycle
+
+            tr_not_after_psadj_L= qw_L .and. Schm_psadj==2
+
+            if (tr_not_after_psadj_L) cycle
+
          endif
 
          err= gmm_get('TR/'//trim(Tr3d_name_S(n))//':P' ,fld_in ,mymeta)

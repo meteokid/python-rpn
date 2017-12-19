@@ -18,7 +18,6 @@
 #include <msg.h>
 
       integer function gemdm_config ( )
-      use dynkernel_options
       use timestr_mod, only: timestr_parse,timestr2step,timestr2sec
       use mu_jdate_mod, only: mu_set_leap_year, MU_JDATE_LEAP_IGNORED
       use step_options
@@ -157,10 +156,6 @@
 
       Schm_nith = G_nk
 
-      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H') then
-         call exp_H()
-      end if
-
       err= 0
       err= min( timestr2step (Grdc_ndt,   Grdc_nfe    , Step_dt), err)
       err= min( timestr2step (Grdc_start, Grdc_start_S, Step_dt), err)
@@ -218,13 +213,6 @@
             end if
             return
          endif
-      end if
-
-      if ((Hzd_smago_prandtl > 0.) .and. (Hzd_smago_param <= 0.)) then
-         if (lun_out>0) then
-            write (Lun_out, *) 'ABORT: Hzd_smago_param must be set to a positive value', Hzd_smago_param
-         end if
-         return
       end if
 
       if (Hzd_smago_param > 0. .or. Hzd_smago_lnr(2) > 0.) then
