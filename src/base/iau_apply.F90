@@ -24,7 +24,7 @@ subroutine iau_apply2(F_kount)
         inputio_set_filename, inputio_nbvar, inputio_isvarstep, inputio_meta, &
         inputio_get, INPUT_FILES_ANAL, INPUTIO_T
    use mu_jdate_mod, only: jdate_from_cmc
-   use ptopo_utils, only: ptopo_io_set, PTOPO_BLOC, PTOPO_IO
+   use ptopo_utils, only: ptopo_io_set, ptopo_iotype, PTOPO_BLOC, PTOPO_IO
    use statfld_dm_mod, only: statfld_dm
    use tdpack
    use vGrid_Descriptors, only: vgrid_descriptor
@@ -100,14 +100,15 @@ subroutine iau_apply2(F_kount)
    call timing_start2(50, 'IAU', 1)
 
    input_use_old_l = .true.
-   input_iotype = PTOPO_IO
-   if (Iau_input_type_S == 'IO') then
+   input_iotype = PTOPO_BLOC
+   if (Iau_input_type_S == 'DIST') then
       input_use_old_l = .false.
       input_iotype = PTOPO_IO
    else if (Iau_input_type_S == 'BLOC') then
       input_use_old_l = .false.
       input_iotype = PTOPO_BLOC
    endif
+   ptopo_iotype = input_iotype
 
    if (input_use_old_l .or. input_iotype == PTOPO_BLOC) &
         istat = rpn_comm_bloc(Iau_ninblocx, Iau_ninblocy)
