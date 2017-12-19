@@ -25,6 +25,7 @@ subroutine prgemnml()
    call nml_adv()
    call nml_gem()
    call nml_theo()
+   call nml_ens()
    close(FILEID)
    return
 end subroutine prgemnml
@@ -71,3 +72,10 @@ subroutine nml_theo()
    write(FILEID, nml=mtn_cfgs)
    return
 end subroutine nml_theo
+
+subroutine nml_ens()
+   use ens_options
+   implicit none
+   write(FILEID, nml=ensembles)
+   return
+end subroutine nml_ens
