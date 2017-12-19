@@ -87,7 +87,7 @@
       call rpn_comm_barrier (RPN_COMM_ALLGRIDS, err)
       call timing_stop  ( 46 )
 
-!      call gem_error (err_step,'itf_phy_step','Problem with phy_step')
+      call gem_error (err_step,'itf_phy_step','Problem with phy_step')
 
       call set_num_threads ( Ptopo_nthreads_dyn, F_step_kount )
 
