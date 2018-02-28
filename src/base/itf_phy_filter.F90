@@ -133,6 +133,7 @@ contains
       use grid_options
       use glb_ld
       use cstv
+      use gmm_itf_mod
       ! Smooth selected scheme-based tendency from full physics tendency.
       implicit none
 
@@ -145,10 +146,11 @@ contains
       integer, intent(in), optional :: F_fid                                                            !Filter ID (currently 1 or 2)
 
       ! Local variables
+      real, dimension(:,:), pointer :: tdmask,tdmask1
       real, dimension(:,:,:), pointer :: tend
       real, dimension(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,G_nk), target :: tends
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk), target :: data_tend
-      integer :: iend(3), fid
+      integer :: iend(3), fid, k
       logical :: apply_filter
 
       ! Initialize return status
@@ -167,6 +169,15 @@ contains
          return
       endif
 
+      ! Retrieve tendency mask
+      nullify(tdmask, tdmask1)
+      F_status = gmm_get('TDMASK',tdmask)
+      if (F_status < 0 .or. .not.associated(tdmask)) then
+         call msg(MSG_WARNING,'(itf_phy_filter::ipf_smooth_tend) Problem getting TDMASK - Call to gaussian_filter failed')
+         return
+      endif
+      tdmask1 => tdmask(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn)
+
       ! Retrieve selected physics tendency
       data_tend = 0.
       tend => data_tend(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,1:l_nk)
@@ -174,18 +185,24 @@ contains
       F_status = phy_get(tend,F_name,F_npath='V',F_bpath='V',F_end=iend,F_quiet=.false.)
       if (F_status < 0) return
 
-      ! Remove selected tendency from total phyics tendency
-      F_data = F_data - tend*Cstv_dt_8  !#TODO: use TDMASK
+      ! Remove selected tendency from total physics tendency
+      do k=1,G_nk
+         F_data(:,:,k) = F_data(:,:,k) - tend(:,:,k)*Cstv_dt_8*tdmask1(:,:)
+      enddo
 
       ! Apply smoothing operator
       if (gaussian_filter(tends,data_tend,fid) /= RMN_OK) then
          call msg(MSG_WARNING,'(itf_phy_filter::ipf_smooth_tend) Call to gaussian_filter failed')
-         F_data = F_data + tend*Cstv_dt_8
+         do k=1,G_nk
+            F_data(:,:,k) = F_data(:,:,k) + tend(:,:,k)*Cstv_dt_8*tdmask1(:,:)
+         enddo
          return
       endif
 
       ! Add smoothed tendency to total physics tendency
-      F_data = F_data + tends*Cstv_dt_8  !#TODO: use TDMASK
+      do k=1,G_nk
+         F_data(:,:,k) = F_data(:,:,k) + tends(:,:,k)*Cstv_dt_8*tdmask1(:,:)
+      enddo
       tend => tends
       F_status = phy_put(tend,F_name,F_npath='V',F_bpath='VP',F_end=(/-1,-1,l_nk/))
 
