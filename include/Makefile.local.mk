@@ -79,17 +79,19 @@ gemdyn_version.h:
 .PHONY: prgemnml gemgrid checkdmpart split3df toc2nml monitor sometools allbin allbincheck
 
 mainprgemnml=gemprnml_$(BASE_ARCH).Abs
+mainprgemnmldep = prgemnml.o bubble_options.o ens_options.o gem_options.o grdc_options.o grid_options.o mtn_options.o step_options.o theo_options.o
+mainprgemnmldepfiles = $(foreach item,$(mainprgemnmldep),$(BUILDOBJ)/$(item))
 prgemnml: | prgemnml_rm $(BINDIR)/$(mainprgemnml)
 	ls -l $(BINDIR)/$(mainprgemnml)
 prgemnml_rm:
 	rm -f $(BINDIR)/$(mainprgemnml)
-$(BINDIR)/$(mainprgemnml):  | $(GEMDYN_VFILES)
+$(BINDIR)/$(mainprgemnml): $(mainprgemnmldep) | $(GEMDYN_VFILES)
 	export MAINSUBNAME="prgemnml" ;\
 	export ATM_MODEL_NAME="$${MAINSUBNAME} $(BUILDNAME)" ;\
 	export ATM_MODEL_VERSION="$(GEMDYN_VERSION)" ;\
 	export RBUILD_LIBAPPL="$(GEMDYN_LIBS_V) $(GEMDYN_LIBS_DEP)" ;\
 	export RBUILD_COMM_STUBS=$(LIBCOMM_STUBS) ;\
-	export RBUILD_EXTRA_OBJ=`ls prgemnml.o 2>/dev/null` ;\
+	export RBUILD_EXTRA_OBJ="$(mainprgemnmldepfiles)" ;\
 	$(RBUILD4NOMPI)
 	ls $@
 
