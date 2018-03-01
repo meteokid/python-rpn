@@ -35,6 +35,7 @@
       use out_mod
       use gmm_itf_mod
       use ptopo
+      use str_mod, only: str_encode_num
       implicit none
 #include <arch_specific.hf>
 
@@ -44,9 +45,9 @@
 
       type(phymeta) :: pmeta
       type(vgrid_descriptor) :: vcoord
-      character(len=15) prefix
+      character(len=15) prefix, outname_S
       integer i,ii,jj,kk,levset,nko,nko_pres,cnt,istat,&
-              gridset,mult, knd ,&
+              gridset,mult, knd ,icat, &
               p_li0,p_li1,p_lj0,p_lj1,last_timestep
       integer grille_x0,grille_x1,grille_y0,grille_y1
       integer, dimension(:), allocatable :: indo_pres,indo,irff
@@ -57,10 +58,11 @@
       real, dimension(:), pointer    :: hybm,hybt
       real, dimension(:), allocatable:: prprlvl,rff
       real, dimension(:,:,:), pointer :: lnpres,ptr3d
+      real, dimension(:,:,:,:), pointer :: ptr4d
       real, dimension(:,:,:), allocatable         :: buso_pres,cible
-      real, dimension(:,:,:), allocatable, target :: data3d, zero
+      real, dimension(:,:,:,:), allocatable, target :: data4d, zero
       real hybt_gnk2(1),hybm_gnk2(1)
-      integer ind0(1)
+      integer ind0(1), istart(4), iend(4)
 !
 !----------------------------------------------------------------------
 !
@@ -80,9 +82,9 @@
       p_lj0= Grd_lphy_j0 ; p_lj1=Grd_lphy_jn
 
 !     setup domain extent to retrieve physics data
-      allocate ( data3d(l_ni,l_nj,G_nk+1), zero(p_li0:p_li1,p_lj0:p_lj1,G_nk+1), &
+      allocate ( data4d(l_ni,l_nj,G_nk+1,1), zero(p_li0:p_li1,p_lj0:p_lj1,G_nk+1,1), &
                  rff(Outp_multxmosaic), irff(Outp_multxmosaic))
-      data3d= 0. ; zero= 0.
+      data4d= 0. ; zero= 0.
 
       istat= gmm_get(gmmk_pw_log_pm_s, pw_log_pm)
       istat= gmm_get(gmmk_pw_log_pt_s, pw_log_pt)
@@ -166,79 +168,93 @@
                   endif
                   cnt= pmeta%fmul
 
-                  ptr3d => data3d(p_li0:p_li1,p_lj0:p_lj1,1:cnt)
+                  ptr3d => data4d(p_li0:p_li1,p_lj0:p_lj1,1:cnt,1)
                   istat = phy_get ( ptr3d, Outp_var_S(ii,kk), &
                                     F_npath='O', F_bpath='PVED')
-                  if (Outp_avg_L(kk)) data3d = data3d*avgfact
-                  call out_fstecr3 ( data3d, 1,l_ni, 1,l_nj, rff  ,&
+                  if (Outp_avg_L(kk)) data4d = data4d*avgfact
+                  call out_fstecr3 ( data4d, 1,l_ni, 1,l_nj, rff  ,&
                           Outp_var_S(ii,kk),Outp_convmult(ii,kk)  ,&
                           Outp_convadd(ii,kk), knd, last_timestep,&
                           cnt,irff,cnt,Outp_nbit(ii,kk),.false. )
 
                   if (accum_L) then
-                      ptr3d => zero(:,:,1:cnt)
+                      ptr3d => zero(:,:,1:cnt,1)
                       istat = phy_put ( ptr3d, Outp_var_S(ii,kk),&
                                         F_npath='O', F_bpath='PV')
                   endif
 
                else ! 3D field
 
-                  ptr3d => data3d(p_li0:p_li1,p_lj0:p_lj1,:)
-                  istat = phy_get (ptr3d,Outp_var_S(ii,kk),F_npath='O', &
-                                   F_bpath='PVD')
-                  if (Outp_avg_L(kk)) data3d = data3d*avgfact
+                  DO_ICAT: do icat = 1,pmeta%fmul
+                     !#TODO: allow not to output all categories
 
-                  if (Level_typ_S(levset) == 'M') then
-
-                     if (pmeta%stag > 0) then ! thermo
-                        call out_fstecr3 (data3d                       ,&
-                                 1,l_ni, 1,l_nj, hybt                  ,&
-                                 Outp_var_S(ii,kk),Outp_convmult(ii,kk),&
-                                 Outp_convadd(ii,kk),Level_kind_ip1,last_timestep,&
-                                 G_nk,indo,nko,Outp_nbit(ii,kk),.false. )
-                        if (write_diag_lev) then
-                           call out_fstecr3 (data3d(1,1,G_nk+1)        ,&
-                                 1,l_ni, 1,l_nj, hybt_gnk2             ,&
-                                 Outp_var_S(ii,kk),Outp_convmult(ii,kk),&
-                                 Outp_convadd(ii,kk),Level_kind_diag,last_timestep,&
-                                 1,ind0,1,Outp_nbit(ii,kk),.false. )
-                        endif
-                     else  ! momentum
-                        call out_fstecr3 (data3d                       ,&
-                                 1,l_ni, 1,l_nj, hybm                  ,&
-                                 Outp_var_S(ii,kk),Outp_convmult(ii,kk),&
-                                 Outp_convadd(ii,kk),Level_kind_ip1,last_timestep,&
-                                 G_nk,indo,nko,Outp_nbit(ii,kk),.false. )
-                        if (write_diag_lev) then
-                           call out_fstecr3 (data3d(1,1,G_nk+1)        ,&
-                                 1,l_ni, 1,l_nj, hybm_gnk2             ,&
-                                 Outp_var_S(ii,kk),Outp_convmult(ii,kk),&
-                                 Outp_convadd(ii,kk),Level_kind_diag,last_timestep,&
-                                 1,ind0,1,Outp_nbit(ii,kk),.false. )
-                        endif
+                     outname_S = Outp_var_S(ii,kk)
+                     istart = (/-1,-1,-1,-1/)
+                     iend = (/-1,-1,-1,-1/)
+                     if (pmeta%fmul > 1) then
+                        outname_S = trim(outname_S)//trim(str_encode_num(icat))
+                        istart = (/-1,-1,-1,icat/)
+                        iend = (/-1,-1,-1,icat/)
                      endif
 
-                  elseif (Level_typ_S(levset) == 'P') then
+                     ptr4d => data4d(p_li0:p_li1,p_lj0:p_lj1,:,1:1)
+                     istat = phy_get (ptr4d,Outp_var_S(ii,kk),F_npath='O', &
+                          F_bpath='PVD',F_start=istart,F_end=iend)
+                     if (Outp_avg_L(kk)) data4d = data4d*avgfact
 
-                     lnpres => wlnpi_m
-                     if ( pmeta%stag > 0 ) lnpres => wlnpi_t
+                     if (Level_typ_S(levset) == 'M') then
 
-                     call vertint2 ( buso_pres, cible, nko_pres, data3d,&
-                                     lnpres, G_nk, 1,l_ni, 1,l_nj      ,&
+                        if (pmeta%stag > 0) then ! thermo
+                           call out_fstecr3 (data4d                       ,&
+                                1,l_ni, 1,l_nj, hybt                  ,&
+                                outname_S,Outp_convmult(ii,kk),&
+                                Outp_convadd(ii,kk),Level_kind_ip1,last_timestep,&
+                                G_nk,indo,nko,Outp_nbit(ii,kk),.false. )
+                           if (write_diag_lev) then
+                              call out_fstecr3 (data4d(1,1,G_nk+1,1)        ,&
+                                   1,l_ni, 1,l_nj, hybt_gnk2             ,&
+                                   outname_S,Outp_convmult(ii,kk),&
+                                   Outp_convadd(ii,kk),Level_kind_diag,last_timestep,&
+                                   1,ind0,1,Outp_nbit(ii,kk),.false. )
+                           endif
+                        else  ! momentum
+                           call out_fstecr3 (data4d                       ,&
+                                1,l_ni, 1,l_nj, hybm                  ,&
+                                outname_S,Outp_convmult(ii,kk),&
+                                Outp_convadd(ii,kk),Level_kind_ip1,last_timestep,&
+                                G_nk,indo,nko,Outp_nbit(ii,kk),.false. )
+                           if (write_diag_lev) then
+                              call out_fstecr3 (data4d(1,1,G_nk+1,1)        ,&
+                                   1,l_ni, 1,l_nj, hybm_gnk2             ,&
+                                   outname_S,Outp_convmult(ii,kk),&
+                                   Outp_convadd(ii,kk),Level_kind_diag,last_timestep,&
+                                   1,ind0,1,Outp_nbit(ii,kk),.false. )
+                           endif
+                        endif
+
+                     elseif (Level_typ_S(levset) == 'P') then
+
+                        lnpres => wlnpi_m
+                        if ( pmeta%stag > 0 ) lnpres => wlnpi_t
+
+                        call vertint2 ( buso_pres, cible, nko_pres, data4d,&
+                             lnpres, G_nk, 1,l_ni, 1,l_nj      ,&
                              1,l_ni, 1,l_nj, inttype=Out3_vinterp_type_S)
 
-                     call out_fstecr3 ( buso_pres, 1,l_ni, 1,l_nj      ,&
-                           level(1,levset),Outp_var_S(ii,kk)           ,&
-                           Outp_convmult(ii,kk),Outp_convadd(ii,kk),2,last_timestep,&
-                           nko_pres,indo_pres,nko_pres,Outp_nbit(ii,kk),&
-                           .false. )
+                        call out_fstecr3 ( buso_pres, 1,l_ni, 1,l_nj      ,&
+                             level(1,levset),outname_S           ,&
+                             Outp_convmult(ii,kk),Outp_convadd(ii,kk),2,last_timestep,&
+                             nko_pres,indo_pres,nko_pres,Outp_nbit(ii,kk),&
+                             .false. )
 
-                  endif
-                  if (accum_L) then
-                      ptr3d => zero
-                      istat = phy_put (ptr3d,Outp_var_S(ii,kk),F_npath='O', &
-                                       F_bpath='PV')
-                  endif
+                     endif
+                     if (accum_L) then
+                        ptr4d => zero
+                        istat = phy_put(ptr4d,Outp_var_S(ii,kk),F_npath='O', &
+                             F_bpath='PV',F_start=istart,F_end=iend)
+                     endif
+
+                  enddo DO_ICAT
                endif FIELD_SHAPE
             endif WRITE_FIELD
          end do PHYSICS_VARS
@@ -256,7 +272,7 @@
 
       end do
 
-      deallocate(rff,irff,data3d,zero)
+      deallocate(rff,irff,data4d,zero)
       deallocate(hybm,hybt); nullify(hybm,hybt)
 
       istat = fstopc('MSGLVL','INFORM',.false.)

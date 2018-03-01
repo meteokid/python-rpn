@@ -50,7 +50,7 @@
 
       if (Schm_phyms_L.and.Dcmip_case/=162) call handle_error(-1,'SET_DCMIP','SET_DCMIP: Turn OFF GEM physics')
 
-      if (Schm_phyms_L.and.Dcmip_case==162.and.(Dcmip_prec_type/=-1.or.Dcmip_pbl_type/=-1)) &
+      if (Schm_phyms_L.and.Dcmip_case==162.and.(Dcmip_prec_type/=-1.or.Dcmip_pbl_type/=-1)) & 
          call handle_error(-1,'SET_DCMIP','SET_DCMIP: T162: GEM physics + DCMIP2016 physics not allowed')
 
       !-----------------------------------
