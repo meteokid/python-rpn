@@ -82,36 +82,45 @@
          call yyg_nestuv(F_u, F_v, l_minx, l_maxx, l_miny, l_maxy, G_nk)
          call yyg_xchng(F_zd, l_minx, l_maxx, l_miny, l_maxy, G_nk, .false., 'CUBIC')
       endif
+
       call rpn_comm_xch_halo( F_u, l_minx,l_maxx,l_miny,l_maxy,l_niu,l_nj, G_nk, &
                               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+
       call rpn_comm_xch_halo( F_v, l_minx,l_maxx,l_miny,l_maxy,l_ni ,l_njv, G_nk, &
                               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+
       call rpn_comm_xch_halo( F_zd, l_minx,l_maxx,l_miny,l_maxy,l_ni ,l_nj, G_nk, &
                               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 
       if (switch_on_theta) then
-         call yyg_xchng(F_t, l_minx, l_maxx, l_miny, l_maxy, G_nk, .false., 'CUBIC')
+         if(Grd_yinyang_L)then
+            call yyg_xchng(F_t, l_minx, l_maxx, l_miny, l_maxy, G_nk, .false., 'CUBIC')
+         endif
          call rpn_comm_xch_halo( F_t, l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj, G_nk, &
-                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+                                 G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
          ismagprandtl    = 1./Hzd_smago_prandtl
       endif
 
       if (switch_on_W) then
-         call yyg_xchng(F_w, l_minx, l_maxx, l_miny, l_maxy, G_nk, .false., 'CUBIC')
+         if(Grd_yinyang_L) then
+            call yyg_xchng(F_w, l_minx, l_maxx, l_miny, l_maxy, G_nk, .false., 'CUBIC')
+         endif
          call rpn_comm_xch_halo( F_w, l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj, G_nk, &
-                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+                           G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
       endif
 
-      if (switch_on_hu)  then
+      if (switch_on_hu) then
          istat = gmm_get('TR/'//trim(Tr3d_name_S(1))//':P' ,hu)
-         call yyg_xchng(hu, l_minx, l_maxx, l_miny, l_maxy, G_nk, .false., 'CUBIC')
+         if (Grd_yinyang_L)then
+            call yyg_xchng(hu, l_minx, l_maxx, l_miny, l_maxy, G_nk, .false., 'CUBIC')
+         endif
          call rpn_comm_xch_halo( hu, l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj, G_nk, &
-                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+                           G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
          ismagprandtl_hu = 1./Hzd_smago_prandtl_hu
       endif
 
       cdelta2 = (smagparam * Dcst_rayt_8 * geomh_hy_8)**2
-      crit_coef = 0.25*(Dcst_rayt_8*geomh_hy_8)**2/Cstv_dt_8
+      crit_coef = 0.25d0*(Dcst_rayt_8*geomh_hy_8)**2/Cstv_dt_8
 
       i0  = 1    + pil_w
       in  = l_ni - pil_e

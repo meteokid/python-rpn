@@ -46,8 +46,8 @@
       logical flag_hu
       integer i,k,cnt,ierx,dum1,dum2
       real x0, xl, y0, yl, dum
-      real*8 ac_xp(max(1,Grdc_ni)), ac_yp(max(1,Grdc_nj)), &
-             xpx(dimgx), ypx(dimgy), rad2deg_8
+      real*8, dimension(:), allocatable:: ac_xp,ac_yp
+      real*8 xpx(dimgx), ypx(dimgy), rad2deg_8
 !
 !---------------------------------------------------------------------
 !
@@ -69,6 +69,38 @@
       endif
 
       if (Grdc_dy < 0) Grdc_dy = Grdc_dx
+
+!     Calculate the rest of Grdc parameters in here like grid_nml
+
+      Grdc_pil = Grdc_maxcfl + Grd_bsc_base + Grd_bsc_ext1
+      if ((Grdc_iref==-1) .and. (Grdc_jref==-1)) then
+         Grdc_iref = Grdc_ni / 2 + Grdc_pil
+         if (mod(Grdc_ni,2)==0) then
+            Grdc_lonr = dble(Grdc_lonr) - dble(Grdc_dx)/2.d0
+         else
+            Grdc_iref = Grdc_iref + 1
+         endif
+         Grdc_jref = Grdc_nj / 2 + Grdc_pil
+         if (mod(Grdc_nj,2)==0) then
+            Grdc_latr = dble(Grdc_latr) - dble(Grdc_dy)/2.d0
+         else
+            Grdc_jref = Grdc_nj / 2 + Grdc_pil + 1
+         endif
+      else
+         Grdc_iref = Grdc_iref + Grdc_pil
+         Grdc_jref = Grdc_jref + Grdc_pil
+         if (Grdc_iref < 1 .or. Grdc_iref > Grdc_ni .or. &
+            Grdc_jref < 1 .or. Grdc_jref > Grdc_nj) then
+            if (prout) then
+               write (6,1002)Grdc_ni,Grdc_nj,Grdc_iref,Grdc_jref
+            end if
+            Grdc_ndt = -1
+            return
+         endif
+      endif
+      Grdc_ni = Grdc_ni + 2*Grdc_pil
+      Grdc_nj = Grdc_nj + 2*Grdc_pil
+      allocate(ac_xp(Grdc_ni),ac_yp(Grdc_nj))
 !
 !     *** Positional parameters for f and q points
 !
@@ -97,14 +129,14 @@
          if (ypx(i) <= ac_yp(1)      ) Grdc_gjd=i
          if (ypx(i) <= ac_yp(Grdc_nj)) Grdc_gjf=i
       enddo
+      deallocate(ac_xp,ac_yp)
 
       ! Tests if same grid
-      if(&
-           Grdc_iref == Grd_iref.and.&
-           Grdc_jref == Grd_jref.and.&
-           abs(Grdc_latr-Grd_latr)<1.e-6.and.&
-           abs(Grdc_lonr-Grd_lonr)<1.e-6.and.&
-           abs(Grdc_dx-Grd_dx)/Grd_dx<1.e-6)then
+      if( Grdc_iref == Grd_iref.and.&
+          Grdc_jref == Grd_jref.and.&
+          abs(Grdc_latr-Grd_latr)<1.e-6.and.&
+          abs(Grdc_lonr-Grd_lonr)<1.e-6.and.&
+          abs(Grdc_dx-Grd_dx)/Grd_dx<1.e-6) then
          write (6,1007)
          Grdc_gid=1
          Grdc_gif=dimgx
@@ -117,16 +149,22 @@
          Grdc_gjf = Grdc_gjf + 3
       endif
 
-      if ( (Grdc_gid < 1    ).or.(Grdc_gjd < 1    ).or. &
-           (Grdc_gif > dimgx).or.(Grdc_gjf > dimgy) ) Grdc_ndt = -1
+      if ( (Grdc_gid <  1       ).or.(Grdc_gjd <  1       ) .or. &
+           (Grdc_gid >= Grdc_gif).or.(Grdc_gjd >= Grdc_gjf) .or. &
+           (Grdc_gif >  dimgx   ).or.(Grdc_gjf > dimgy    ) ) Grdc_ndt = -1
 
       if (Grdc_ndt > 0) then
          if ((prout).and.(.not.Rstri_rstn_L)) then
-            write (6,1006) Grdc_gid,Grdc_gif,Grdc_gjd,Grdc_gjf,Grdc_ndt,Grdc_start,Grdc_end
+            write (6,1005) Grdc_gid,Grdc_gif,Grdc_gjd,Grdc_gjf,Grdc_ndt,Grdc_start,Grdc_end
+            write (6,1006) Grdc_gif-Grdc_gid+1,xpx(Grdc_gid),xpx(Grdc_gif),&
+                           Grdc_gjf-Grdc_gjd+1,ypx(Grdc_gjd),ypx(Grdc_gjf)
+
+            write(6,1100) 'LU', &
+                          Grdc_ni, x0, xl, &
+                          Grdc_nj, y0, yl,'LU', &
+                          Grdc_dx ,Grdc_dy , &
+                          Grdc_dx*40000./360.,Grdc_dy*40000./360.
          end if
-         !#TODO: update since out_sgrid is no longuer avail.
-!!$         call out_sgrid2 (Grdc_gid, Grdc_gif, Grdc_gjd, Grdc_gjf, &
-!!$                                            0, 0, .false., 1, '')
       else
          if (prout) write (6,1004)
          return
@@ -165,12 +203,23 @@
       endif
 
  1001 format ( ' Cascade grid: Tracers to be written for cascade run are: ')
- 1004 format (/' Cascade grid: Is too large, NO SELF CASCADE DATA will be produced')
- 1006 format (/'################ SELF CASCADE DATA WILL BE PRODUCED ################'/&
+ 1002 format(/,' Cascade grid: Wrong configuration: ', &
+               ' Grd_ni,Grd_nj,Grd_iref,Grd_jref:'/4I8/)
+ 1004 format (/' Cascade grid: insufficient, NO SELF CASCADE DATA will be produced')
+ 1005 format (/'################ SELF CASCADE DATA WILL BE PRODUCED ################'/&
                ' Cascade grid: Grdc_gid,Grdc_gif=',2I5, ';    Grdc_gjd,Grdc_gjf=',2I5/&
                ' Cascade grid: Grdc_ndt,Grdc_start,Grdc_end=',3i5)
+ 1006 format (/'CASCADE OUTPUT DIMENSIONS: ',&
+        /1X,' NI=',I5,' FROM x0=',F11.5,' TO xl=',F11.5,' DEGREES' &
+        /1X,' NJ=',I5,' FROM y0=',F11.5,' TO yl=',F11.5,' DEGREES'/)
+
  1007 format ( ' This is an acid test' )
  1010 format ( '####################################################################')
+ 1100 FORMAT (1X,'TARGET CASCADE GRID CONFIGURATION: UNIFORM RESOLUTION: ',a, &
+        /1X,' NI=',I5,' FROM x0=',F11.5,' TO xl=',F11.5,' DEGREES' &
+        /1X,' NJ=',I5,' FROM y0=',F11.5,' TO yl=',F11.5,' DEGREES' &
+        /1X,' GRIDTYPE= ',a,'     DX= ',F11.5,'   DY= ',F11.5,' degrees' &
+        /14X,               '     DX= ',F11.5,'   DY= ',F11.5 ' km'/)
 !--------------------------------------------------------------------
       return
       end

@@ -124,7 +124,7 @@
          end do
       endif
 
-      call ac_posi (G_xg_8,G_yg_8,G_ni,G_nj,Lun_out > 0)
+      call ac_posi (G_xg_8(1),G_yg_8(1),G_ni,G_nj,Lun_out > 0)
 
  1001 format (/' Final list of tracers:'/3x,' Name   Wload  Hzd   Mono  Mass    Min')
  1002 format (4x,a4,2l6,2i6,3x,e10.3)

@@ -36,6 +36,7 @@
       use clib_itf_mod
       use wb_itf_mod
       use ptopo_utils, only: ptopo_io_set !#TODO: should the phyics define its own?
+      use dcmip_options, only: dcmip_case
       implicit none
 #include <arch_specific.hf>
 
@@ -120,6 +121,7 @@
       err= min(wb_put('itf_phy/VSTAG'       , .true.       , WB_REWRITE_AT_RESTART), err)
       err= min(wb_put('itf_phy/TLIFT'       , tlift        , WB_REWRITE_AT_RESTART), err)
       err= min(wb_put('itf_phy/DYNOUT'      , Out3_accavg_L, WB_REWRITE_AT_RESTART), err)
+      err= min(wb_put('itf_phy/dcmip_case'  , dcmip_case   , WB_REWRITE_AT_RESTART), err)
 
 ! Complete physics initialization (see phy_init for interface content)
 

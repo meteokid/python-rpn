@@ -167,13 +167,8 @@
       if (Grdc_end   <  0) Grdc_end  = Step_total
 
       Grdc_maxcfl = max(1,Grdc_maxcfl)
-      Grdc_pil    = Grdc_maxcfl + Grd_bsc_base + Grd_bsc_ext1
-      if ((Grdc_iref==-1) .and. (Grdc_jref==-1)) then
-           Grdc_iref   = Grdc_ni / 2 + Grdc_pil
-           Grdc_jref   = Grdc_nj / 2 + Grdc_pil
-      endif
-      Grdc_ni     = Grdc_ni   + 2*Grdc_pil
-      Grdc_nj     = Grdc_nj   + 2*Grdc_pil
+
+      !Calculations and verifications for Grdc dimensions are in ac_posi
 
       call low2up  (Lam_hint_S ,dumc_S)
       Lam_hint_S= dumc_S

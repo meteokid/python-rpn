@@ -189,7 +189,7 @@
             end do
             do i=1,l_ni
                pr_fl_w_8(i,j)= pr_fl_w_8(i,j) + &
-                    (1.-sumq(i,j,F_nk))*(pr_p0_0_8(i,j) - pr_m_8(i,j,F_nk))*(F_cub_i(i,j,k) - F_cub_o(i,j,k))
+                    (1.-sumq(i,j,F_nk))*(pr_p0_0_8(i,j) - pr_m_8(i,j,F_nk))*(F_cub_i(i,j,F_nk) - F_cub_o(i,j,F_nk))
             end do
          end do
 !$omp end parallel do
