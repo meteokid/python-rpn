@@ -41,6 +41,9 @@ module gmm_pw
       real, pointer, dimension (:,:  ) :: pw_me_moins => null()
       real, pointer, dimension (:,:  ) :: pw_p0_moins => null()
 
+      real, pointer, dimension (:,:  ) :: pw_uslt     => null()
+      real, pointer, dimension (:,:  ) :: pw_vslt     => null()
+
       real, pointer, dimension (:,:,:) :: pw_uu_copy  => null()
       real, pointer, dimension (:,:,:) :: pw_vv_copy  => null()
 
@@ -58,6 +61,7 @@ module gmm_pw
          gmmk_pw_uu_copy_s, gmmk_pw_vv_copy_s ,&
          gmmk_pw_me_plus_s, gmmk_pw_me_moins_s,&
          gmmk_pw_p0_plus_s, gmmk_pw_p0_moins_s,&
-         gmmk_pw_p0_ls_s
+         gmmk_pw_p0_ls_s  , gmmk_pw_uslt_s    ,&
+         gmmk_pw_vslt_s
 
 end module gmm_pw

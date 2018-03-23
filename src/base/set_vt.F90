@@ -225,6 +225,9 @@
       gmmk_pw_me_moins_s = 'PW_ME:M'
       gmmk_pw_p0_moins_s = 'PW_P0:M'
 
+      gmmk_pw_uslt_s     = 'PW_USLT'
+      gmmk_pw_vslt_s     = 'PW_VSLT'
+
       gmmk_pw_uu_copy_s  = 'PW_UU_COPY'
       gmmk_pw_vv_copy_s  = 'PW_VV_COPY'
 
@@ -261,6 +264,9 @@
       istat = min(gmm_create(gmmk_pw_me_moins_s ,pw_me_moins ,meta2d    ,flag_r_n),istat)
       istat = min(gmm_create(gmmk_pw_p0_moins_s ,pw_p0_moins ,meta2d    ,flag_r_n),istat)
       istat = min(gmm_create(gmmk_pw_p0_ls_s    ,pw_p0_ls    ,meta2d    ,flag_n  ),istat)
+
+      istat = min(gmm_create(gmmk_pw_uslt_s     ,pw_uslt     ,meta2d    ,flag_n  ),istat)
+      istat = min(gmm_create(gmmk_pw_vslt_s     ,pw_vslt     ,meta2d    ,flag_n  ),istat)
 
       istat = min(gmm_create(gmmk_pw_uu_copy_s  ,pw_uu_copy  ,meta3d_nk ,flag_r_n),istat)
       istat = min(gmm_create(gmmk_pw_vv_copy_s  ,pw_vv_copy  ,meta3d_nk ,flag_r_n),istat)

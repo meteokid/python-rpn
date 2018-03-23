@@ -67,12 +67,11 @@
 
       if (.not.associated(pxt)) then
          allocate (pxt(l_ni,l_nj,l_nk), pyt(l_ni,l_nj,l_nk), &
-                   pzt(l_ni,l_nj,l_nk), pxtn(l_ni,l_nj), &
-                   pytn(l_ni,l_nj), pztn(l_ni,l_nj), &
+                   pzt(l_ni,l_nj,l_nk), &
                    pxmu(l_ni,l_nj,l_nk), pymu(l_ni,l_nj,l_nk), &
                    pzmu(l_ni,l_nj,l_nk), pxmv(l_ni,l_nj,l_nk), &
                    pymv(l_ni,l_nj,l_nk), pzmv(l_ni,l_nj,l_nk)  )
-         pxt=0.;pyt=0.;pzt=0.;pxtn=0.;pytn=0.;pztn=0.;pxmu=0.
+         pxt=0.;pyt=0.;pzt=0.;pxmu=0.
          pymu=0.;pzmu=0.;pxmv=0.;pymv=0.;pzmv=0.
       endif
 
@@ -194,9 +193,6 @@
                       nm, ii, i0, in, j0, jn, k0, 'm', 0, 0 )
 
 !  RHS Interpolation: l_nk thermo levels
-      pxt(:,:,l_nk)=pxtn(:,:)
-      pyt(:,:,l_nk)=pytn(:,:)
-      pzt(:,:,l_nk)=pztn(:,:)
 
       call adv_get_indices(ii,  pxt, pyt, pzt, num, nt, i0, in, j0, jn, k0t, l_nk, 't')
 

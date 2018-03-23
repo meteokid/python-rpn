@@ -13,23 +13,26 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 !
-      subroutine adv_int_vert_t ( F_xt, F_yt, F_zt, F_xtn, F_ytn, F_ztn, F_xm, F_ym, F_zm, &
+      subroutine adv_int_vert_t ( F_xt, F_yt, F_zt, F_xm, F_ym, F_zm, &
                                   F_wat, F_wdm, F_ni,F_nj, F_nk     , &
                                   F_k0, i0,in,j0,jn, F_cubic_L )
       use grid_options
       use gem_options
+      use adv_options, only: adv_slt_winds
       use glb_ld
       use cstv
       use ver
       use adv_grid
       use outgrid
+      use gmm_itf_mod
+      use gmm_pw, only: gmmk_pw_uslt_s, gmmk_pw_vslt_s, pw_uslt, pw_vslt
+      use dcst, only: Dcst_inv_rayt_8
       implicit none
 #include <arch_specific.hf>
 
       integer, intent(in) :: F_ni,F_nj, F_nk,F_k0
       integer, intent(in) :: i0,in,j0,jn
       real, dimension(F_ni,F_nj,F_nk), intent(out) :: F_xt,F_yt,F_zt
-      real, dimension(F_ni,F_nj), intent(out)      :: F_xtn,F_ytn,F_ztn
       real, dimension(F_ni,F_nj,F_nk), intent(in) :: F_xm,F_ym,F_zm
       real, dimension(F_ni,F_nj,F_nk), intent(in) :: F_wat,F_wdm
       logical, intent(in) :: F_cubic_L
@@ -57,10 +60,10 @@
 
 #include "constants.h"
 
-      integer :: i,j,k,k00
+      integer :: i,j,k,k00,err
       real*8, dimension(2:F_nk-2) :: w1, w2, w3, w4
       real*8, dimension(i0:in,F_nk) :: wdt
-      real*8 :: lag3, hh, x, x1, x2, x3, x4, ww, wp, wm
+      real*8 :: lag3, hh, x, x1, x2, x3, x4, ww, wp, wm, inv_cy_8
       real :: zmin_bound, zmax_bound, z_bottom
       real*8, parameter :: two = 2.0d0, half=0.5d0
 
@@ -111,6 +114,15 @@
            F_zt(i,j,k)=0.0
          end do
       enddo
+      inv_cy_8 = 1d0 / adv_cy_8(j)
+
+!     Retrieve wind information at the lowest thermodynamic level if available
+!     from the surface layer scheme
+      nullify(pw_uslt,pw_vslt)
+      if (adv_slt_winds) then
+         err = gmm_get(gmmk_pw_uslt_s, pw_uslt)
+         err = gmm_get(gmmk_pw_vslt_s, pw_vslt)
+      endif
 
       do k=k00,F_nk-1
          if(F_cubic_L.and.k >= 2.and.k <= F_nk-2)then
@@ -158,31 +170,30 @@
             enddo
           enddo
 
-        !for the last level when at the surface
-          wp=(Ver_z_8%m(F_nk+1)-Ver_z_8%m(F_nk-1))*Ver_idz_8%t(F_nk-1)
-          wm=1.d0-wp
+          ! The lowest thermodynamic level is half way between the surface
+          ! and the lowest momentum level
+          if (associated(pw_uslt) .and. associated(pw_vslt)) then
+             ! Use surface layer winds for horizontal displacements
+             do i=i0,in
+                F_xt(i,j,F_nk) = adv_xx_8(i) - Dcst_inv_rayt_8 * Cstv_dt_8 * pw_uslt(i,j)*inv_cy_8
+                F_yt(i,j,F_nk) = adv_yy_8(j) - Dcst_inv_rayt_8 * Cstv_dt_8 * pw_vslt(i,j)
+             enddo
+          else
+             ! Extrapolate horizontal positions downwards
+             ww=Ver_wmstar_8(F_nk)
+             wp=(Ver_z_8%t(F_nk  )-Ver_z_8%m(F_nk-1))*Ver_idz_8%t(F_nk-1)
+             wm=1.d0-wp
+             do i=i0,in
+                F_xt(i,j,F_nk)=wp*F_xm(i,j,F_nk)+wm*F_xm(i,j,F_nk-1)
+                F_yt(i,j,F_nk)=wp*F_ym(i,j,F_nk)+wm*F_ym(i,j,F_nk-1)
+             enddo
+          endif
+          ! Interpolate vertical positions
           do i=i0,in
-            !extrapolating horizontal positions downward
-             F_xt(i,j,F_nk)  = wp*F_xm(i,j,F_nk)+wm*F_xm(i,j,F_nk-1)
-             F_yt(i,j,F_nk)  = wp*F_ym(i,j,F_nk)+wm*F_ym(i,j,F_nk-1)
-
-            !vertical position
-             F_zt(i,j,F_nk)= z_bottom
-          enddo
-          !for the last level when half way between surface and last momentum level
-          ww=Ver_wmstar_8(F_nk)
-          wp=(Ver_z_8%t(F_nk  )-Ver_z_8%m(F_nk-1))*Ver_idz_8%t(F_nk-1)
-          wm=1.d0-wp
-          do i=i0,in
-             !extrapolating horizontal positions downward
-             F_xtn(i,j)=wp*F_xm(i,j,F_nk)+wm*F_xm(i,j,F_nk-1)
-             F_ytn(i,j)=wp*F_ym(i,j,F_nk)+wm*F_ym(i,j,F_nk-1)
-
-             !interpolating vertical positions
-             F_ztn(i,j)= Ver_z_8%t(F_nk)-ww*(Cstv_dtD_8*  wdt(i,  F_nk-1) &
-                                        +Cstv_dtA_8*F_wat(i,j,F_nk-1))
-             F_ztn(i,j)= min(F_ztn(i,j),zmax_bound)
-             F_ztn(i,j)= max(F_ztn(i,j),zmin_bound)
+             F_zt(i,j,F_nk)= Ver_z_8%t(F_nk)-ww*(Cstv_dtD_8*  wdt(i,  F_nk-1) &
+                  +Cstv_dtA_8*F_wat(i,j,F_nk-1))
+             F_zt(i,j,F_nk)= min(F_zt(i,j,F_nk),zmax_bound)
+             F_zt(i,j,F_nk)= max(F_zt(i,j,F_nk),zmin_bound)
           enddo
 
       else
@@ -213,9 +224,6 @@
              F_xt(i,j,F_nk) = F_xm(i,j,F_nk)
              F_yt(i,j,F_nk) = F_ym(i,j,F_nk)
              F_zt(i,j,F_nk) = z_bottom
-             F_xtn(i,j) = F_xm(i,j,F_nk)
-             F_ytn(i,j) = F_ym(i,j,F_nk)
-             F_ztn(i,j) = z_bottom
           enddo
 
       endif

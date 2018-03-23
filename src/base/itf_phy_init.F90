@@ -22,6 +22,7 @@
       use itf_phy_filter, only: ipf_init
       use step_options
       use gem_options
+      use adv_options, only: adv_slt_winds
       use glb_ld
       use cstv
       use lun
@@ -32,6 +33,7 @@
       use gmm_itf_mod
       use rstr
       use var_gmm
+      use gmm_pw, only: gmmk_pw_uslt_s, gmmk_pw_vslt_s
       use path
       use clib_itf_mod
       use wb_itf_mod
@@ -62,6 +64,7 @@
       character(len=9) :: BUS_LIST_S(NBUS) = &
                   (/'Entry    ', 'Permanent', 'Volatile ', 'Dynamics'/)
       character(len=GMM_MAXNAMELENGTH) :: diag_prefix
+      logical :: have_slt_winds
 
 !For sorting the output
       integer istat, iverb
@@ -167,6 +170,12 @@
          err = min(vgrid_wb_put(VGRID_T_S,vcoordt,ip1t,refp0_S,refp0ls_S,F_overwrite_L=.true.), err)
       endif
       call gem_error ( err,'itf_phy_init','setting diagnostic level in vertical descriptor' )
+
+! Determine whether winds on the lowest thermodynamic level are available for advection
+      have_slt_winds = (phy_getmeta(pmeta,gmmk_pw_uslt_s,F_npath='V',F_bpath='V') > 0 .and. &
+           phy_getmeta(pmeta,gmmk_pw_vslt_s,F_npath='V',F_bpath='V') > 0)
+      if (adv_slt_winds .and. .not.have_slt_winds) &
+           call gem_error ( err,'itf_phy_init','use of surface layer winds requeseted without physics support' )
 
 ! Print table of variables requested for output
 

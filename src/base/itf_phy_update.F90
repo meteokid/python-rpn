@@ -14,13 +14,14 @@
 !---------------------------------- LICENCE END ---------------------------------
 !/@*
       subroutine itf_phy_update3 (F_apply_L)
-      use phy_itf, only: phy_get
+      use phy_itf, only: phy_get, phymeta, phy_getmeta
       use itf_phy_filter, only: ipf_smooth_tend
       use gmm_vt1
       use gmm_pw
       use gmm_phy
       use grid_options
       use gem_options
+      use adv_options, only: adv_slt_winds
       use glb_ld
       use cstv
       use lun
@@ -41,14 +42,17 @@
       logical, parameter :: SMOOTH_EXPLICIT=.false.
       integer, parameter :: SMOOTH_GWD=2
 
-      character(len=GMM_MAXNAMELENGTH) :: trname_S
+      character(len=GMM_MAXNAMELENGTH) :: trname_S, uslt_S, vslt_S
       integer istat, i,j,k,n, cnt, iteration,iend(3)
+      real, dimension(:,:), pointer :: ptr2d
       real, dimension(:,:,:), pointer :: data3d,minus,ptr3d
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk), target :: tdu,tdv,tv,pw_uu_plus0,pw_vv_plus0,pw_tt_plus0
       real,  dimension(l_ni,l_nj,G_nk) :: qw_phy,qw_dyn
       real*8,dimension(l_minx:l_maxx,l_miny:l_maxy)        :: pr_p0_8
       real*8,dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk+1) :: pr_m_dyn_8,pr_m_phy_8,pr_t_8
       logical :: source_ps_L
+      type(phymeta) :: pmeta
+
 !
 !-----------------------------------------------------------------
 !
@@ -59,6 +63,16 @@
 
    iend = (/-1,-1,l_nk/)
    
+   ! Make diagnosed winds at the lowest thermodynamic level available for advection
+   if (adv_slt_winds) then
+      istat = gmm_get (gmmk_pw_uslt_s,pw_uslt)
+      ptr2d => pw_uslt(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn)
+      istat = phy_get(ptr2d,gmmk_pw_uslt_S,F_npath='V',F_bpath='V')
+      istat = gmm_get (gmmk_pw_vslt_s,pw_vslt)
+      ptr2d => pw_vslt(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn)
+      istat = phy_get(ptr2d,gmmk_pw_vslt_S,F_npath='V',F_bpath='V')  
+   endif
+
    ! Retrieve a copy of the PW state before the physics
    nullify(ptr3d)
    istat = gmm_get(gmmk_pw_uu_plus_s,ptr3d); pw_uu_plus0 = ptr3d
@@ -107,24 +121,24 @@
          enddo
       endif
 
+      ! Apply horizontal filtering on tendencies if requeted
       istat = gmm_get (gmmk_pw_uu_plus_s,pw_uu_plus)
       istat = gmm_get (gmmk_pw_vv_plus_s,pw_vv_plus)
       istat = gmm_get (gmmk_pw_tt_plus_s,pw_tt_plus)
 
       ptr3d => pw_uu_plus(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,1:l_nk)
       istat = phy_get(ptr3d,gmmk_pw_uu_plus_s,F_npath='V',F_bpath='D',F_end=iend)
-
       istat = ipf_smooth_tend(ptr3d,'ugwd_td1',SMOOTH_GWD)
 
       ptr3d => pw_vv_plus(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,1:l_nk)
       istat = phy_get(ptr3d,gmmk_pw_vv_plus_s,F_npath='V',F_bpath='D',F_end=iend)
-
       istat = ipf_smooth_tend(ptr3d,'vgwd_td1',SMOOTH_GWD)
 
       ptr3d => pw_tt_plus(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,1:l_nk)
       istat = phy_get(ptr3d,gmmk_pw_tt_plus_s,F_npath='V',F_bpath='D',F_end=iend)
       if (SMOOTH_EXPLICIT) istat = ipf_smooth_tend(ptr3d,'STE')
 
+      ! Compute moisture sources for dry air conservation
       if (source_ps_L) then
 
          iteration = 1

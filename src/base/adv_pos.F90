@@ -36,8 +36,4 @@ module adv_pos
       real, pointer, dimension (:,:,:) ::  pymv_s => null()
       real, pointer, dimension (:,:,:) ::  pzmv_s => null()
 
-      real, pointer, dimension (:,:)    :: pxtn => null()
-      real, pointer, dimension (:,:)    :: pytn => null()
-      real, pointer, dimension (:,:)    :: pztn => null()
-
 end module adv_pos

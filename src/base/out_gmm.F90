@@ -70,7 +70,7 @@
       logical periodx_L,write_diag_lev
       integer nkeys,nko,i,ii,gridset,istat,id,cid
       integer, dimension(:), allocatable::indo
-      integer, parameter :: numvars = 34
+      integer, parameter :: numvars = 48
       real, pointer, dimension(:,:,:) :: tr3
       real, pointer, dimension(:,:  ) :: tr2
       real, pointer, dimension(:    ) :: level_type
@@ -129,7 +129,20 @@
       class_var(32,1) = 'UPT'; class_var(32,2) = 'UU' ; class_var(32,3) = 'MM'
       class_var(33,1) = 'VPT'; class_var(33,2) = 'VV' ; class_var(33,3) = 'MM'
       class_var(34,1) = 'TVPT';class_var(34,2) = 'QQ' ; class_var(34,3) = 'TT'
-
+      class_var(35,1) = 'ORHT';class_var(35,2) = 'QQ' ; class_var(35,3) = 'TT'
+      class_var(36,1) = 'RHST';class_var(36,2) = 'QQ' ; class_var(36,3) = 'TT'
+      class_var(37,1) = 'ORHU';class_var(37,2) = 'UU' ; class_var(37,3) = 'MM'
+      class_var(38,1) = 'RHSU';class_var(38,2) = 'UU' ; class_var(38,3) = 'MM'
+      class_var(39,1) = 'ORHV';class_var(39,2) = 'VV' ; class_var(39,3) = 'MM'
+      class_var(40,1) = 'RHSV';class_var(40,2) = 'VV' ; class_var(40,3) = 'MM'
+      class_var(41,1) = 'ORHC';class_var(41,2) = 'QQ' ; class_var(41,3) = 'TT'
+      class_var(42,1) = 'RHSC';class_var(42,2) = 'QQ' ; class_var(42,3) = 'TT'
+      class_var(43,1) = 'ORHF';class_var(43,2) = 'QQ' ; class_var(43,3) = 'TT'
+      class_var(44,1) = 'RHSF';class_var(44,2) = 'QQ' ; class_var(44,3) = 'TT'
+      class_var(45,1) = 'ORHW';class_var(45,2) = 'QQ' ; class_var(45,3) = 'TT'
+      class_var(46,1) = 'RHSW';class_var(46,2) = 'QQ' ; class_var(46,3) = 'TT'
+      class_var(47,1) = 'ORHB';class_var(47,2) = 'QQ' ; class_var(47,3) = 'TT'
+      class_var(48,1) = 'RHSB';class_var(48,2) = 'QQ' ; class_var(48,3) = 'TT'
 
 !     Setup the indexing for output
       allocate (indo   ( min(Level_max(levset),G_nk) ))

@@ -230,14 +230,13 @@
      call adv_int_horiz_m_slice (pxmu_s, pymu_s, pzmu_s, pxmv_s, pymv_s, pzmv_s, pxm, pym, pzm, &
                            F_ni,F_nj,F_nk,k0, i0, in, j0, jn, i0u_e, inu_e, j0v_e, jnv_e)
      endif
-     call adv_int_vert_t (pxt,pyt,pzt,pxtn,pytn,pztn,pxm,pym,pzm,F_wat,wdm, &
+     call adv_int_vert_t (pxt,pyt,pzt,pxm,pym,pzm,F_wat,wdm, &
                           F_ni,F_nj,F_nk,k0t,i0,in,j0,jn, .true.)
 
 !     Clipping trajectories
      call adv_cliptraj (pxmu,pymu,F_ni,F_nj,F_nk,i0u,inu,j0,jn,k0,'INTERP '//trim('m'))
      call adv_cliptraj (pxmv,pymv,F_ni,F_nj,F_nk,i0,in,j0v,jnv,k0,'INTERP '//trim('m'))
      call adv_cliptraj (pxt,pyt,F_ni,F_nj,F_nk,i0,in,j0,jn,k0,'INTERP '//trim('t'))
-     call adv_cliptraj_tn (pxtn,pytn,F_ni,F_nj,i0,in,j0,jn,'INTERP '//trim('tn'))
 
      if (Tr_slice_L) then
       call adv_cliptraj (pxmu_s,pymu_s,F_ni,F_nj,F_nk,i0u_e,inu_e,j0,jn,k0,'INTERP '//trim('m'))

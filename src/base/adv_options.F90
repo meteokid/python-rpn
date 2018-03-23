@@ -79,6 +79,10 @@ module adv_options
    integer :: adv_scaling = 1
    namelist /adv_cfgs/ adv_scaling
 
+   !# Use surface layer winds for advection of lowest thermodynamic level
+   logical :: adv_slt_winds = .false.
+   namelist /adv_cfgs/ adv_slt_winds
+
 contains
 
    function adv_options_init() result(F_istat)
