@@ -42,8 +42,8 @@
       smago_in_rhs_L=.false.
       if( (hzd_smago_param <= 0.) .and. (hzd_smago_lnr(2) <=0.) .and. (.not. smago_in_rhs_L)) return
 
-      switch_on_THETA = (Hzd_smago_prandtl > 0.) .and. (Hzd_lnr <= 0.)
-      switch_on_hu    = (Hzd_smago_prandtl_hu > 0.) .and. (Hzd_lnr <= 0.)
+      switch_on_THETA = (Hzd_smago_prandtl > 0.) .and. (Hzd_lnr_theta <= 0.)
+      switch_on_hu    = (Hzd_smago_prandtl_hu > 0.) .and. (Hzd_lnr_tr <= 0.)
       switch_on_wzd   = (Hzd_lnr <= 0.)
 
 

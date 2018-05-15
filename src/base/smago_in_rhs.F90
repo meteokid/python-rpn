@@ -65,8 +65,8 @@
       smagparam= hzd_smago_param
 
       switch_on_wzd   = (Hzd_lnr <= 0.  .and. switch_on_wzd)
-      switch_on_THETA = (Hzd_smago_prandtl > 0. .and. switch_on_wzd)
-      switch_on_hu    = (Hzd_smago_prandtl_hu > 0..and. switch_on_wzd)
+      switch_on_THETA = (Hzd_smago_prandtl > 0. .and. Hzd_lnr_theta <= 0.)
+      switch_on_hu    = (Hzd_smago_prandtl_hu > 0..and. Hzd_lnr_tr <= 0.)
       switch_on_fric_heat = (Hzd_smago_fric_heat > 0.)
 
       if (switch_on_THETA) ismagprandtl = 1./Hzd_smago_prandtl
@@ -92,7 +92,7 @@
 !$omp parallel private(i,j,k,tension_z,shear,tension_u,shear_u,&
 !$omp tension, shear_z, smagcoef_u, smagcoef_v, kt, kz, &
 !$omp tension_v, shear_v, smagcoef_z, &
-!$omp smagcoef_uo, smagcoef_vo) &
+!$omp smagcoef_uo, smagcoef_vo, fact) &
 !$omp shared(base_coefM, base_coefT, smag, hu, cdelta2, ismagprandtl,&
 !$omp        ismagprandtl_hu, crit_coef, switch_on_THETA, &
 !$omp        switch_on_hu, switch_on_fric_heat,switch_on_wzd)
