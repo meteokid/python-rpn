@@ -99,7 +99,16 @@
 
       k00=max(F_k0-1,1)
 
-!$omp parallel private(i,j,k,wdt,ww,wp,wm) &
+
+!     Retrieve wind information at the lowest thermodynamic level if available
+!     from the surface layer scheme
+      nullify(pw_uslt,pw_vslt)
+      if (adv_slt_winds) then
+         err = gmm_get(gmmk_pw_uslt_s, pw_uslt)
+         err = gmm_get(gmmk_pw_vslt_s, pw_vslt)
+      endif
+
+!$omp parallel private(i,j,k,wdt,ww,wp,wm,inv_cy_8) &
 !$omp          shared(k00, w1, w2, w3, w4, &
 !$omp                 zmin_bound,zmax_bound,z_bottom)
 !$omp do
@@ -114,15 +123,6 @@
            F_zt(i,j,k)=0.0
          end do
       enddo
-      inv_cy_8 = 1d0 / adv_cy_8(j)
-
-!     Retrieve wind information at the lowest thermodynamic level if available
-!     from the surface layer scheme
-      nullify(pw_uslt,pw_vslt)
-      if (adv_slt_winds) then
-         err = gmm_get(gmmk_pw_uslt_s, pw_uslt)
-         err = gmm_get(gmmk_pw_vslt_s, pw_vslt)
-      endif
 
       do k=k00,F_nk-1
          if(F_cubic_L.and.k >= 2.and.k <= F_nk-2)then
@@ -169,6 +169,8 @@
               F_zt(i,j,k)=min(F_zt(i,j,k),zmax_bound)
             enddo
           enddo
+
+          inv_cy_8 = 1d0 / adv_cy_8(j)
 
           ! The lowest thermodynamic level is half way between the surface
           ! and the lowest momentum level
