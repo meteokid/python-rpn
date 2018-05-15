@@ -83,9 +83,6 @@
          call gem_error ( -1,'set_world_view','' )
       endif
 
-      err(9) = wb_put( 'model/Hgrid/grdtyp', Grd_typ_S ,&
-                       WB_REWRITE_NONE+WB_IS_LOCAL )
-
       call gem_error ( minval(err(:)),'set_world_view',&
                        'Error reading nml or with wb_put' )
       call theo_cfg()
