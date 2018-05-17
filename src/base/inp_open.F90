@@ -43,8 +43,9 @@
 
       if (Inp_iome >= 0) then
          root=trim(Path_input_S)//'/MODEL_INREP/VALID_'//trim(F_datev)
-         err= clib_fileexist (trim(root)//'/content')
-         if (err < 0) root=trim(Path_input_S)//'/MODEL_ANALYSIS/VALID_'//trim(F_datev)
+         if (clib_fileexist (trim(root)//'/content') == CLIB_ERROR) &
+              root=trim(Path_input_S)//'/MODEL_ANALYSIS/VALID_'//trim(F_datev)
+         if (clib_fileexist (trim(root)//'/content') == CLIB_ERROR) goto 33
          fn = trim(root)//'/content'
          unf= 0
          if (fnom( unf,trim(fn),'SEQ+FMT+OLD',0 ) /= 0) unf= 0
@@ -79,7 +80,7 @@
       endif
 
       call gem_error ( err_code, 'inp_open', &
-                       'Problems opening input files' )
+                       'Problems opening input files under '//trim(Path_input_S) )
 
       call rpn_comm_bcast ( n123, 3, "MPI_INTEGER", Inp_iobcast, &
                             "grid", err )
