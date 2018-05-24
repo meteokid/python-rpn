@@ -10,7 +10,7 @@ endif
 #    $(error Not found: $(gemdyn)/VERSION)
 # endif
 # GEMDYN_VERSION0  = $(shell cat $(gemdyn)/VERSION | sed 's|x/||')
-GEMDYN_VERSION0  = x/5.0.b5
+GEMDYN_VERSION0  = x/5.0.b6
 GEMDYN_VERSION   = $(notdir $(GEMDYN_VERSION0))
 GEMDYN_VERSION_X = $(dir $(GEMDYN_VERSION0))
 
@@ -79,20 +79,17 @@ gemdyn_version.h:
 .PHONY: prgemnml gemgrid checkdmpart split3df toc2nml monitor sometools allbin allbincheck
 
 mainprgemnml=gemprnml_$(BASE_ARCH).Abs
-mainprgemnmldep = prgemnml.o bubble_options.o ens_options.o gem_options.o grdc_options.o grid_options.o mtn_options.o step_options.o theo_options.o
-mainprgemnmldepfiles = $(foreach item,$(mainprgemnmldep),$(BUILDOBJ)/$(item))
 prgemnml: | prgemnml_rm $(BINDIR)/$(mainprgemnml)
 	ls -l $(BINDIR)/$(mainprgemnml)
 prgemnml_rm:
 	rm -f $(BINDIR)/$(mainprgemnml)
-$(BINDIR)/$(mainprgemnml): $(mainprgemnmldep) | $(GEMDYN_VFILES)
+$(BINDIR)/$(mainprgemnml): | $(GEMDYN_VFILES)
 	export MAINSUBNAME="prgemnml" ;\
 	export ATM_MODEL_NAME="$${MAINSUBNAME} $(BUILDNAME)" ;\
 	export ATM_MODEL_VERSION="$(GEMDYN_VERSION)" ;\
 	export RBUILD_LIBAPPL="$(GEMDYN_LIBS_V) $(GEMDYN_LIBS_DEP)" ;\
-	export RBUILD_COMM_STUBS=$(LIBCOMM_STUBS) ;\
-	export RBUILD_EXTRA_OBJ="$(mainprgemnmldepfiles)" ;\
-	$(RBUILD4NOMPI)
+	export RBUILD_COMM_STUBS="$(LIBCOMM_STUBS) $(MODELUTILS_DUMMYMPISTUBS)";\
+	$(RBUILD4objNOMPI)
 	ls $@
 
 maingemgrid=gemgrid_$(BASE_ARCH).Abs
@@ -141,7 +138,7 @@ $(BINDIR)/toc2nml: | $(GEMDYN_VFILES)
 	export ATM_MODEL_NAME="$${MAINSUBNAME} $(BUILDNAME)" ;\
 	export ATM_MODEL_VERSION="$(GEMDYN_VERSION)" ;\
 	export RBUILD_LIBAPPL="$(GEMDYN_LIBS_V) $(GEMDYN_LIBS_DEP)" ;\
-	export RBUILD_COMM_STUBS=$(LIBCOMM_STUBS) ;\
+	export RBUILD_COMM_STUBS="$(LIBCOMM_STUBS) $(MODELUTILS_DUMMYMPISTUBS)";\
 	$(RBUILD4objNOMPI)
 
 gem_monitor_end: $(BINDIR)/gem_monitor_end
