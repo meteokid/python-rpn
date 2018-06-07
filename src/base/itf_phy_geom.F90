@@ -33,7 +33,7 @@
 #include <msg.h>
 
    logical :: nest_it
-   integer :: i,j,istat
+   integer :: i,j,istat,flag_r_n
    real, pointer :: wrk1(:,:)
    real*8 :: deg2rad_8
    real :: w1(l_minx:l_maxx,l_miny:l_maxy,2),&
@@ -47,6 +47,8 @@
    mymeta = GMM_NULL_METADATA
    mymeta%l(1) = gmm_layout(1,l_ni,0,0,l_ni)
    mymeta%l(2) = gmm_layout(1,l_nj,0,0,l_nj)
+
+   flag_r_n = GMM_FLAG_RSTR+GMM_FLAG_IZER
 
    deg2rad_8 = acos(-1.D0)/180.D0
 
@@ -86,7 +88,7 @@
    endif
 
    nullify(wrk1)
-   istat = gmm_create('TDMASK',wrk1,mymeta)
+   istat = gmm_create('TDMASK',wrk1,mymeta,flag_r_n)
    if (RMN_IS_OK(istat)) then
       w1 = 1.
       nest_it = ( Lam_0ptend_L .and. &
