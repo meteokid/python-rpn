@@ -312,7 +312,8 @@
       endif
 
       if (Lctl_debug_L) then
-         call msg_set_minMessageLevel(MSG_INFOPLUS)
+         call msg_set_minMessageLevel(MSG_INFOPLUS) !#TODO: should it be MSG_DEBUG?
+         call msg_set_can_write(.true.)
 !        istat = gmm_verbosity(GMM_MSG_DEBUG)
 !        istat = wb_verbosity(WB_MSG_DEBUG)
 !        call msg_set_minMessageLevel(MSG_DEBUG)

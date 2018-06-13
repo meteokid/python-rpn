@@ -126,6 +126,7 @@
 
          if (F_rstrt_L) exit
 
+         call msg_buffer_reset()
       end do
 
  999  seconds_since= model_timeout_alarm(Step_alarm)

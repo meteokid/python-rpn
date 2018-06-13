@@ -17,6 +17,7 @@ use iso_c_binding
                                "MPI_MIN",RPN_COMM_MULTIGRID,err)
 
       if (errcode < 0) then
+         call msg_buffer_flush()
          if (Lun_out > 0) write(Lun_out,2000) F_FromSubName, F_Message
          call rpn_comm_FINALIZE(err)
          stop
