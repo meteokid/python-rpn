@@ -108,12 +108,27 @@
       endif
 
       nullify (ssqr,ssur,ssvr,ttr,hur,p0lsq0,p0lsu0,p0lsv0,dummy)
-      err= inp_read ( 'SFCPRES'    , 'Q', ssqr,    ip1_list, nka    )
-      err= inp_read ( 'SFCPRES'    , 'U', ssur,    ip1_list, nka    )
-      err= inp_read ( 'SFCPRES'    , 'V', ssvr,    ip1_list, nka    )
-      err= inp_read ( 'TEMPERATURE', 'Q', ttr ,    ip1_list, nka_tt )
-      err= inp_read ( 'TR/HU'      , 'Q', hur , HU_ip1_list, nka_hu )
 
+      err = inp_read ( 'SFCPRES'    , 'Q', ssqr,    ip1_list, nka    )
+
+      if (associated(ssqr)) then
+         err = inp_read ( 'SFCPRES'    , 'U', ssur,    ip1_list, nka    )
+         if (nka < 1) then
+            call gem_error (-1,'inp_data','Missing field: SFCPRES on hgrid U')
+         end if
+
+         err = inp_read ( 'SFCPRES'    , 'V', ssvr,    ip1_list, nka    )
+         if (nka < 1) then
+            call gem_error (-1,'inp_data','Missing field: SFCPRES on hgrid V')
+         end if
+      end if
+
+      err = inp_read ( 'TR/HU'      , 'Q', hur , HU_ip1_list, nka_hu )
+      if (nka_hu < 1) then
+         call gem_error (-1,'inp_data','Missing field: TR/HU - humidity TR/HU')
+      end if
+
+      err = inp_read ( 'TEMPERATURE', 'Q', ttr ,    ip1_list, nka_tt )
       if (nka_tt < 1) then
          call gem_error (-1,'inp_data','Missing field: TT - temperature TT')
       end if
