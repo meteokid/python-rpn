@@ -44,10 +44,11 @@
       include "rpn_comm.inc"
 
       logical wrapit_L, iope_L
-      integer  nz, err, ni, nis, njs, k, kk, wk_njs
+      integer  nz, err, ni, nis, njs, k, kk, wk_njs,tag,stat
       integer, dimension (:)    , pointer     :: zlist
       real   , dimension (:,:  ), pointer     :: guwrap
       real   , dimension (:,:,:), pointer     :: wk, wk_glb
+      real   , dimension (:,:)  , pointer     :: vec1, vec2
 !
 !----------------------------------------------------------------------
 !
@@ -86,7 +87,7 @@
             wk_njs = njs
          endif
 
-         allocate (wk(nis,wk_njs,nz))
+         allocate (wk(nis,wk_njs,nz),vec1(nis*njs,1),vec2(nis*njs,2))
 
          wk(1:nis,1:njs,1:nz) = wk_glb(g_id:g_if,g_jd:g_jf,1:nz)
 !!$         do k= 1, nz
@@ -118,15 +119,26 @@
 
                if ( (Grd_yinyang_L) .and. (.not.Out_reduc_l) ) then
 
-                  call out_mergeyy (wk, k, nis, wk_njs, nz, nis*njs)
+                  !Merge from Yang (couleur 1) to Yin (couleur 0)
+                  !reshape must have equal elements in src and destination
 
+                  tag=401
                   if (Ptopo_couleur == 0) then
+                     vec2 = reshape(wk(:,:,k), (/nis*njs,2/))
+                     call RPN_COMM_recv ( vec2(1,2), nis*njs, 'MPI_REAL', 1, &
+                                               tag, 'GRIDPEERS', stat, err )
+                     wk(:,:,k) = reshape(vec2, (/nis, wk_njs/))
                      err = fstecr ( wk(:,:,k),wk,-meta(kk)%nbits,Out_unf, &
                                     Out_dateo,Out_deet,Out_npas,nis,2*njs,1, &
                                     meta(kk)%ip1,meta(kk)%ip2,meta(kk)%ip3 , &
                                     Out_typvar_S,meta(kk)%nv,Out_etik_S,'U', &
                                     meta(kk)%ig1,meta(kk)%ig2,meta(kk)%ig3 , &
                                     Out_ig4,meta(kk)%dtyp,Out_rewrit_L )
+                  else
+                     vec1 = reshape(wk(:,:,k), (/nis*njs,1/))
+                     call RPN_COMM_send ( vec1     , nis*njs, 'MPI_REAL', 0, &
+                                              tag, 'GRIDPEERS',         err )
+
                   end if
                else
 
@@ -152,6 +164,8 @@
 
          if (wrapit_L) deallocate (guwrap)
          if (associated(wk)) deallocate (wk)
+         if (associated(vec1)) deallocate (vec1)
+         if (associated(vec2)) deallocate (vec2)
          if (associated(zlist)) deallocate (zlist)
 
       endif
