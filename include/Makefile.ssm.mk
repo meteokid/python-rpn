@@ -96,6 +96,7 @@ gemdyn_install:
 	fi
 	cd $(SSM_DEPOT_DIR) ;\
 	rdessm-install -v \
+			--git \
 			--dest=$(GEMDYN_SSM_BASE_DOM)/gemdyn_$(GEMDYN_VERSION) \
 			--bndl=$(GEMDYN_SSM_BASE_BNDL)/$(GEMDYN_VERSION).bndl \
 			--pre=$(gemdyn)/ssmusedep.bndl \
