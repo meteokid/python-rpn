@@ -1,6 +1,6 @@
 ifneq (,$(DEBUGMAKE))
 $(info ## ====================================================================)
-$(info ## File: $$gemdyn/include/Makefile.local.mk)
+$(info ## File: $$gemdyn/include/Makefile.local.gemdyn.mk)
 $(info ## )
 endif
 
@@ -14,42 +14,35 @@ GEMDYN_VERSION0  = x/5.0.b7
 GEMDYN_VERSION   = $(notdir $(GEMDYN_VERSION0))
 GEMDYN_VERSION_X = $(dir $(GEMDYN_VERSION0))
 
+GEMDYN_SFX = $(RDE_LIBS_SFX)
 
 ## Some Shortcut/Alias to Lib Names
 GEMDYN_LIBS_DEP = $(RPNPHY_LIBS_V) $(MODELUTILS_LIBS_V) $(MODELUTILS_LIBS_DEP)
-GEMDYN_LIBS_SHARED_DEP = $(RPNPHY_LIBS_SHARED_V) $(MODELUTILS_LIBS_SHARED_V) $(MODELUTILS_LIBS_DEP)
 
-LIBCPLPATH  =
-LIBCPL      =
+LIBCPLPATH   =
+LIBCPL       =
 LIBCANONICAL =
 
+GEMDYN_LIB_MERGED_NAME_0 = gemdyn0
 GEMDYN_LIBS_MERGED_0 = gemdyn_main gemdyn_base gemdyn_canonical
 GEMDYN_LIBS_OTHER_0  = $(LIBCPL) $(LIBCANONICAL)
+GEMDYN_LIBS_ALL_0    = $(GEMDYN_LIBS_MERGED_0) $(GEMDYN_LIBS_OTHER_0)
+GEMDYN_LIBS_0        = $(GEMDYN_LIB_MERGED_NAME_0) $(GEMDYN_LIBS_OTHER_0)
 
-GEMDYN_SFX=$(RDE_BUILDDIR_SFX)
+GEMDYN_LIB_MERGED_NAME = $(foreach item,$(GEMDYN_LIB_MERGED_NAME_0),$(item)$(GEMDYN_SFX))
 GEMDYN_LIBS_MERGED = $(foreach item,$(GEMDYN_LIBS_MERGED_0),$(item)$(GEMDYN_SFX))
-GEMDYN_LIBS_OTHER  = $(foreach item,$(GEMDYN_LIBS_OTHER_0),$(item)$(GEMDYN_SFX))
-
-GEMDYN_LIBS_ALL_0  = $(GEMDYN_LIBS_MERGED_0) $(GEMDYN_LIBS_OTHER_0)
+GEMDYN_LIBS_OTHER  = $(LIBCPL) $(LIBCANONICAL)
 GEMDYN_LIBS_ALL    = $(GEMDYN_LIBS_MERGED) $(GEMDYN_LIBS_OTHER)
+GEMDYN_LIBS        = $(GEMDYN_LIB_MERGED_NAME) $(GEMDYN_LIBS_OTHER)
 
-GEMDYN_LIBS_0      = gemdyn$(GEMDYN_SFX)
-GEMDYN_LIBS        = $(GEMDYN_LIBS_0) $(GEMDYN_LIBS_OTHER)
-GEMDYN_LIBS_V      = $(GEMDYN_LIBS_0)_$(GEMDYN_VERSION) $(GEMDYN_LIBS_OTHER)
+GEMDYN_LIB_MERGED_NAME_V = $(foreach item,$(GEMDYN_LIB_MERGED_NAME),$(item)_$(GEMDYN_VERSION))
+GEMDYN_LIBS_MERGED_V = $(foreach item,$(GEMDYN_LIBS_MERGED),$(item)_$(GEMDYN_VERSION))
+GEMDYN_LIBS_OTHER_V  = $(LIBCPL) $(LIBCANONICAL)
+GEMDYN_LIBS_ALL_V    = $(GEMDYN_LIBS_MERGED_V) $(GEMDYN_LIBS_OTHER_V)
+GEMDYN_LIBS_V        = $(GEMDYN_LIB_MERGED_NAME_V) $(GEMDYN_LIBS_OTHER_V)
 
-ifeq (,$(MAKE_NO_LIBSO))
-GEMDYN_LIBS_SHARED_ALL = $(foreach item,$(GEMDYN_LIBS_ALL),$(item)-shared)
-GEMDYN_LIBS_SHARED_0   = $(GEMDYN_LIBS_0)-shared
-GEMDYN_LIBS_SHARED     = $(GEMDYN_LIBS_SHARED_0) $(GEMDYN_LIBS_OTHER)
-GEMDYN_LIBS_SHARED_V   = $(GEMDYN_LIBS_SHARED_0)_$(GEMDYN_VERSION) $(GEMDYN_LIBS_OTHER)
-endif
-
-GEMDYN_LIBS_OTHER_FILES = $(foreach item,$(GEMDYN_LIBS_OTHER),$(LIBDIR)/lib$(item).a)
-GEMDYN_LIBS_ALL_FILES   = $(foreach item,$(GEMDYN_LIBS_ALL),$(LIBDIR)/lib$(item).a)
-ifeq (,$(MAKE_NO_LIBSO))
-GEMDYN_LIBS_SHARED_FILES   = $(LIBDIR)/lib$(GEMDYN_LIBS_SHARED_0).so
-endif
-GEMDYN_LIBS_ALL_FILES_PLUS = $(LIBDIR)/lib$(GEMDYN_LIBS_0).a $(GEMDYN_LIBS_SHARED_FILES) $(GEMDYN_LIBS_ALL_FILES)
+GEMDYN_LIBS_ALL_FILES      = $(foreach item,$(GEMDYN_LIBS_ALL),$(LIBDIR)/lib$(item).a)
+GEMDYN_LIBS_ALL_FILES_PLUS = $(LIBDIR)/lib$(GEMDYN_LIB_MERGED_NAME).a $(GEMDYN_LIBS_ALL_FILES)
 
 OBJECTS_MERGED_gemdyn = $(foreach item,$(GEMDYN_LIBS_MERGED_0),$(OBJECTS_$(item)))
 
@@ -62,6 +55,14 @@ GEMDYN_ABS_FILES  = $(BINDIR)/gem_monitor_output $(BINDIR)/gem_monitor_end $(BIN
 #MODEL3_LIBAPPL = $(GEMDYN_LIBS_V)
 MODEL3_LIBPATH = $(LIBCPLPATH)
 
+## System-wide definitions
+
+RDE_LIBS_USER_EXTRA := $(RDE_LIBS_USER_EXTRA) $(GEMDYN_LIBS_ALL_FILES_PLUS)
+RDE_BINS_USER_EXTRA := $(RDE_BINS_USER_EXTRA) $(GEMDYN_ABS_FILES)
+
+ifeq (1,$(RDE_LOCAL_LIBS_ONLY))
+   GEMDYN_ABS_DEP = $(GEMDYN_LIBS_ALL_FILES_PLUS) $(RPNPHY_ABS_DEP)
+endif
 
 ##
 .PHONY: gemdyn_vfiles
@@ -82,8 +83,10 @@ mainprgemnml=gemprnml_$(BASE_ARCH).Abs
 prgemnml: | prgemnml_rm $(BINDIR)/$(mainprgemnml)
 	ls -l $(BINDIR)/$(mainprgemnml)
 prgemnml_rm:
-	rm -f $(BINDIR)/$(mainprgemnml)
-$(BINDIR)/$(mainprgemnml): | $(GEMDYN_VFILES)
+	if [[ "x$(GEMDYN_ABS_DEP)" == "x" ]] ; then \
+		rm -f $(BINDIR)/$(mainprgemnml) ; \
+	fi
+$(BINDIR)/$(mainprgemnml): $(GEMDYN_ABS_DEP) | $(GEMDYN_VFILES)
 	export MAINSUBNAME="prgemnml" ;\
 	export ATM_MODEL_NAME="$${MAINSUBNAME} $(BUILDNAME)" ;\
 	export ATM_MODEL_VERSION="$(GEMDYN_VERSION)" ;\
@@ -96,8 +99,10 @@ maingemgrid=gemgrid_$(BASE_ARCH).Abs
 gemgrid: | gemgrid_rm $(BINDIR)/$(maingemgrid)
 	ls -l $(BINDIR)/$(maingemgrid)
 gemgrid_rm:
-	rm -f $(BINDIR)/$(maingemgrid)
-$(BINDIR)/$(maingemgrid): | $(GEMDYN_VFILES)
+	if [[ "x$(GEMDYN_ABS_DEP)" == "x" ]] ; then \
+		rm -f $(BINDIR)/$(maingemgrid) ; \
+	fi
+$(BINDIR)/$(maingemgrid): $(GEMDYN_ABS_DEP) | $(GEMDYN_VFILES)
 	export MAINSUBNAME="gemgrid" ;\
 	export ATM_MODEL_NAME="$${MAINSUBNAME} $(BUILDNAME)" ;\
 	export ATM_MODEL_VERSION="$(GEMDYN_VERSION)" ;\
@@ -108,8 +113,10 @@ maincheckdmpart=checkdmpart_$(BASE_ARCH).Abs
 checkdmpart: | checkdmpart_rm $(BINDIR)/$(maincheckdmpart)
 	ls -lL $(BINDIR)/checkdmpart_$(BASE_ARCH).Abs
 checkdmpart_rm:
-	rm -f $(BINDIR)/$(maincheckdmpart)
-$(BINDIR)/$(maincheckdmpart): | $(GEMDYN_VFILES)
+	if [[ "x$(GEMDYN_ABS_DEP)" == "x" ]] ; then \
+		rm -f $(BINDIR)/$(maincheckdmpart) ; \
+	fi
+$(BINDIR)/$(maincheckdmpart): $(GEMDYN_ABS_DEP) | $(GEMDYN_VFILES)
 	export MAINSUBNAME="checkdmpart" ;\
 	export ATM_MODEL_NAME="$${MAINSUBNAME} $(BUILDNAME)" ;\
 	export ATM_MODEL_VERSION="$(GEMDYN_VERSION)" ;\
@@ -120,8 +127,10 @@ mainsplit3df=split3df_$(BASE_ARCH).Abs
 split3df: | split3df_rm $(BINDIR)/$(mainsplit3df)
 	ls -lL $(BINDIR)/$(mainsplit3df)
 split3df_rm:
-	rm -f $(BINDIR)/$(mainsplit3df)
-$(BINDIR)/$(mainsplit3df): | $(GEMDYN_VFILES)
+	if [[ "x$(GEMDYN_ABS_DEP)" == "x" ]] ; then \
+		rm -f $(BINDIR)/$(mainsplit3df) ; \
+	fi
+$(BINDIR)/$(mainsplit3df): $(GEMDYN_ABS_DEP) | $(GEMDYN_VFILES)
 	export MAINSUBNAME="split3df" ;\
 	export ATM_MODEL_NAME="$${MAINSUBNAME} $(BUILDNAME)" ;\
 	export ATM_MODEL_VERSION="$(GEMDYN_VERSION)" ;\
@@ -132,8 +141,10 @@ $(BINDIR)/$(mainsplit3df): | $(GEMDYN_VFILES)
 toc2nml: | toc2nml_rm $(BINDIR)/toc2nml
 	ls -lL $(BINDIR)/toc2nml
 toc2nml_rm:
-	rm -f $(BINDIR)/toc2nml
-$(BINDIR)/toc2nml: | $(GEMDYN_VFILES)
+	if [[ "x$(GEMDYN_ABS_DEP)" == "x" ]] ; then \
+		rm -f $(BINDIR)/toc2nml ; \
+	fi
+$(BINDIR)/toc2nml: $(GEMDYN_ABS_DEP) | $(GEMDYN_VFILES)
 	export MAINSUBNAME="toc2nml" ;\
 	export ATM_MODEL_NAME="$${MAINSUBNAME} $(BUILDNAME)" ;\
 	export ATM_MODEL_VERSION="$(GEMDYN_VERSION)" ;\
@@ -187,22 +198,22 @@ gemdyn_libs: $(OBJECTS_gemdyn) $(GEMDYN_LIBS_ALL_FILES_PLUS) | $(GEMDYN_VFILES)
 $(foreach item,$(GEMDYN_LIBS_ALL_0),$(eval $(call gemdyn_LIB_template1,$(item),$(item)$(GEMDYN_SFX),GEMDYN)))
 $(foreach item,$(GEMDYN_LIBS_ALL),$(eval $(call LIB_template2,$(item),GEMDYN)))
 
-$(LIBDIR)/lib$(GEMDYN_LIBS_0)_$(GEMDYN_VERSION).a: $(OBJECTS_gemdyn) | $(GEMDYN_VFILES)
+$(LIBDIR)/lib$(GEMDYN_LIB_MERGED_NAME)_$(GEMDYN_VERSION).a: $(OBJECTS_MERGED_gemdyn) | $(GEMDYN_VFILES)
 	rm -f $@ $@_$$$$; ar r $@_$$$$ $(OBJECTS_MERGED_gemdyn); mv $@_$$$$ $@
-$(LIBDIR)/lib$(GEMDYN_LIBS_0).a: $(LIBDIR)/lib$(GEMDYN_LIBS_0)_$(GEMDYN_VERSION).a
+$(LIBDIR)/lib$(GEMDYN_LIB_MERGED_NAME).a: $(LIBDIR)/lib$(GEMDYN_LIB_MERGED_NAME)_$(GEMDYN_VERSION).a
 	cd $(LIBDIR) ; rm -f $@ ;\
-	ln -s lib$(GEMDYN_LIBS_0)_$(GEMDYN_VERSION).a $@
+	ln -s lib$(GEMDYN_LIB_MERGED_NAME)_$(GEMDYN_VERSION).a $@
 
-$(LIBDIR)/lib$(GEMDYN_LIBS_SHARED_0)_$(GEMDYN_VERSION).so: $(OBJECTS_gemdyn) $(GEMDYN_LIBS_OTHER_FILES) | $(GEMDYN_VFILES)
-	export RBUILD_EXTRA_OBJ="$(OBJECTS_MERGED_gemdyn)" ;\
-	export RBUILD_LIBAPPL="$(GEMDYN_LIBS_OTHER) $(GEMDYN_LIBS_DEP)" ;\
-	$(RBUILD4MPI_SO)
-	ls -l $@
-$(LIBDIR)/lib$(GEMDYN_LIBS_SHARED_0).so: $(LIBDIR)/lib$(GEMDYN_LIBS_SHARED_0)_$(GEMDYN_VERSION).so
-	cd $(LIBDIR) ; rm -f $@ ;\
-	ln -s lib$(GEMDYN_LIBS_SHARED_0)_$(GEMDYN_VERSION).so $@
-	ls -l $@ ; ls -lL $@
+# $(LIBDIR)/lib$(GEMDYN_LIBS_SHARED_0)_$(GEMDYN_VERSION).so: $(OBJECTS_gemdyn) $(GEMDYN_LIBS_OTHER_FILES) | $(GEMDYN_VFILES)
+# 	export RBUILD_EXTRA_OBJ="$(OBJECTS_MERGED_gemdyn)" ;\
+# 	export RBUILD_LIBAPPL="$(GEMDYN_LIBS_OTHER) $(GEMDYN_LIBS_DEP)" ;\
+# 	$(RBUILD4MPI_SO)
+# 	ls -l $@
+# $(LIBDIR)/lib$(GEMDYN_LIBS_SHARED_0).so: $(LIBDIR)/lib$(GEMDYN_LIBS_SHARED_0)_$(GEMDYN_VERSION).so
+# 	cd $(LIBDIR) ; rm -f $@ ;\
+# 	ln -s lib$(GEMDYN_LIBS_SHARED_0)_$(GEMDYN_VERSION).so $@
+# 	ls -l $@ ; ls -lL $@
 
 ifneq (,$(DEBUGMAKE))
-$(info ## ==== $$gemdyn/include/Makefile.local.mk [END] =====================)
+$(info ## ==== $$gemdyn/include/Makefile.local.gemdyn.mk [END] =====================)
 endif
