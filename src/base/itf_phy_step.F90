@@ -26,6 +26,7 @@
       use path
       use wb_itf_mod
       use ptopo
+      use physics_objects, only: phyobj_displace,phyobj_expand,PHYOBJ_OK
       implicit none
 #include <arch_specific.hf>
 
@@ -43,6 +44,7 @@
       integer,external :: itf_phy_prefold_opr
 
       integer err_geom, err_input, err_step, err_smooth, err
+      logical :: cloudobj
 !
 !     ---------------------------------------------------------------
 !
@@ -79,6 +81,14 @@
            ipf_smooth_fld('TR/HU:P','HUPS') &
            )
       call gem_error (err_smooth,'itf_phy_step','Problem with ipf_smooth_fld')
+
+      ! Advect cloud objects
+      if (.not.WB_IS_OK(wb_get('phy/deep_cloudobj',cloudobj))) cloudobj = .false.
+      if (cloudobj .and. F_lctl_step > 0) then
+         if (phyobj_displace() /= PHYOBJ_OK) call gem_error (-1,'itf_phy_step','Problem with object displacement')
+!!$         if (phyobj_expand(20000., 2700.) /= PHYOBJ_OK) call gem_error (-1,'itf_phy_step','Problem with object expansion')
+      endif
+
 
       call set_num_threads ( Ptopo_nthreads_phy, F_step_kount )
 

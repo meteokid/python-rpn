@@ -287,7 +287,7 @@ module gem_options
    namelist /gem_cfgs_p/ Inp_npes
 
    !# List of variables to NOT process during input
-   character(len=4), dimension(MAX_BLACKLIST) :: Inp_blacklist_S = ' '
+   character(len=32), dimension(MAX_BLACKLIST) :: Inp_blacklist_S = ' '
    namelist /gem_cfgs/ Inp_blacklist_S
 
    !# Type of vertical interpolation scheme
