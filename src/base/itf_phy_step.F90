@@ -75,8 +75,8 @@
 
       ! Smooth the thermodynamic state variables on request
       err_smooth = min(&
-           ipf_smooth_fld('PW_TT:M','TTMS'), &
-           ipf_smooth_fld('TR/HU:M','HUMS'), &
+           ipf_smooth_fld('TPOSTCND','TTMS'), &
+           ipf_smooth_fld('HUPOSTCND','HUMS'), &
            ipf_smooth_fld('PW_TT:P','TTPS'), &
            ipf_smooth_fld('TR/HU:P','HUPS') &
            )
