@@ -26,7 +26,7 @@
       use path
       use wb_itf_mod
       use ptopo
-      use physics_objects, only: phyobj_displace,phyobj_expand,PHYOBJ_OK
+      use cloud_objects, only: cldobj_displace,cldobj_expand,CLDOBJ_OK
       implicit none
 #include <arch_specific.hf>
 
@@ -85,8 +85,8 @@
       ! Advect cloud objects
       if (.not.WB_IS_OK(wb_get('phy/deep_cloudobj',cloudobj))) cloudobj = .false.
       if (cloudobj .and. F_lctl_step > 0) then
-         if (phyobj_displace() /= PHYOBJ_OK) call gem_error (-1,'itf_phy_step','Problem with object displacement')
-!!$         if (phyobj_expand(20000., 2700.) /= PHYOBJ_OK) call gem_error (-1,'itf_phy_step','Problem with object expansion')
+         if (cldobj_displace() /= CLDOBJ_OK) &
+              call gem_error (-1,'itf_phy_step','Problem with cloud object displacement')
       endif
 
 
