@@ -55,7 +55,7 @@
  1000 format(/,'INITIALIZATION OF MODEL VERTICAL GEOMETRY (S/R set_ver_geom)', &
              /'===============================================')
  1005 format (/'STAGGERED VERTICAL LAYERING ON',I4,' MOMENTUM HYBRID LEVELS WITH ', &
-               'Grd_rcoef= ',2f7.2,':'/ &
+               'Grd_rcoef= ',4f7.2,':'/ &
                2x,'level',10x,'HYB',8x,'~HEIGHTS',5x,'~DELTA_Z',7x,'IP1')
  1006 format (1x,i4,3x,es15.5,2(6x,f6.0),4x,i10)
 

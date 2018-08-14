@@ -79,7 +79,7 @@ module gem_options
 
    !# pair of coefficients (min,max) to control the flattenning of the
    !# vertical coordinate
-   real, dimension(2):: Hyb_rcoef = (/1., 1./)
+   real, dimension(4):: Hyb_rcoef = (/1., 1., -1., -1./)
    namelist /gem_cfgs  / Hyb_rcoef
    namelist /gem_cfgs_p/ Hyb_rcoef
 
@@ -522,8 +522,6 @@ module gem_options
 
    !# True-> use SLEVE vertical coordinate
    logical :: Schm_sleve_L = .false.
-   namelist /gem_cfgs  / Schm_sleve_L
-   namelist /gem_cfgs_P/ Schm_sleve_L
 
    !# True-> averaging B and C in SLEVE scheme
    logical :: Schm_bcavg_L = .true.

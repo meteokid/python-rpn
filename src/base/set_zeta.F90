@@ -160,12 +160,25 @@
       Ver_code    = 6
 
       ! Construct vertical coordinate
-      istat = vgd_new ( vcoord, kind=5, version=Level_version, hyb=F_hybuser    , &
-                        rcoef1=Hyb_rcoef(1), rcoef2=Hyb_rcoef(2)                , &
-                        ptop_out_8=wk_8, pref_8=Cstv_pref_8                     , &
-                        dhm=0., dht=0. , avg_L=Schm_bcavg_L)
-
-      call handle_error_l(istat==VGD_OK,'set_zeta','coordinate construction failed')
+      schm_sleve_L = .true.
+      if( Hyb_rcoef(3) == -1 .or. Hyb_rcoef(4) == -1 )then
+         if( Hyb_rcoef(3) /= -1 .or. Hyb_rcoef(4) /= -1 )then
+            call handle_error_l(istat==.true.,'set_zeta','Incorrect rcoef 3 and/or 4')
+         endif
+          Schm_sleve_L = .false.
+      endif
+      if(schm_sleve_L)then
+         istat = vgd_new ( vcoord, kind=5, version=100, hyb=F_hybuser    , &
+              rcoef1=Hyb_rcoef(1), rcoef2=Hyb_rcoef(2)                , &
+              rcoef3=Hyb_rcoef(3), rcoef4=Hyb_rcoef(4)                , &
+              ptop_out_8=wk_8, pref_8=Cstv_pref_8,  &
+              dhm=0., dht=0. , avg_L=Schm_bcavg_L)
+      else
+         istat = vgd_new ( vcoord, kind=5, version=5, hyb=F_hybuser    , &
+              rcoef1=Hyb_rcoef(1), rcoef2=Hyb_rcoef(2)                , &
+              ptop_out_8=wk_8, pref_8=Cstv_pref_8,  &
+              dhm=0., dht=0. , avg_L=Schm_bcavg_L)
+      endif
 
       Cstv_ptop_8=wk_8
 
@@ -176,6 +189,8 @@
       Cstv_Sstar_8 = log(Cstv_pref_8/Cstv_pSref_8)
       Ver_zmin_8 = Cstv_Ztop_8
       Ver_zmax_8 = Cstv_Zsrf_8
+
+      call handle_error_l(istat==VGD_OK,'set_zeta','coordinate construction failed')
 
       ! Retrieve information required to fill model arrays
       nullify(wkpt,wkpti,wkpt8)
