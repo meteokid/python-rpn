@@ -13,7 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-module cloud_objects
+module itf_phy_cloud_objects
    private
 #include <rmnlib_basics.hf>
 
@@ -31,7 +31,7 @@ contains
    integer function cldobj_displace () result (F_status)
       use glb_ld, only: l_minx,l_maxx,l_miny,l_maxy
       use grid_options, only: Grd_lphy_i0,Grd_lphy_in,Grd_lphy_j0,Grd_lphy_jn
-      use dcst, only: Dcst_inv_rayt_8 
+      use dcst, only: Dcst_inv_rayt_8
       use geomh, only: geomh_invcy_8,geomh_y_8,geomh_hy_8,geomh_x_8,geomh_hx_8,geomh_yv_8,geomh_xu_8
       use cstv, only: Cstv_dt_8
       use phy_itf, only: phy_get,phy_put
@@ -43,7 +43,6 @@ contains
       real :: newrlat,newrlon
       real, dimension(l_minx:l_maxx,l_miny:l_maxy), target :: srci,srcj,merged,rlat,rlon,xrnd,yrnd
       real, dimension(l_minx:l_maxx,l_miny:l_maxy), target :: uadv,vadv,objrlat,objrlon,objage,objmerge,objzlcl
-      real, dimension(:,:), pointer :: fld
       logical :: newsrc
 
       ! Set error return status
@@ -111,7 +110,7 @@ contains
             endif
          enddo
       enddo
-      
+
       ! Retrieve object property fields
       if (get_obj_property(objzlcl,'cozlcl') /= CLDOBJ_OK) return
 
@@ -145,7 +144,7 @@ contains
       use glb_ld, only: l_minx,l_maxx,l_miny,l_maxy,l_nk
       use grid_options, only: Grd_lphy_i0,Grd_lphy_in,Grd_lphy_j0,Grd_lphy_jn
       use dcst, only: Dcst_rayt_8,Dcst_inv_rayt_8
-      use geomh, only: geomh_invcy_8,geomh_cy_8,geomh_y_8,geomh_hy_8,geomh_x_8,geomh_hx_8,geomh_yv_8,geomh_xu_8
+      use geomh, only: geomh_invcy_8,geomh_cy_8,geomh_y_8,geomh_hy_8,geomh_x_8,geomh_hx_8
       use cstv, only: Cstv_dt_8
       use phy_itf, only: phy_get,phy_put
       implicit none
@@ -157,14 +156,13 @@ contains
 
       ! Local parameters
       real, parameter :: NRAD=2.                                !Multiple of radius to which to extend calculations
-      real, parameter :: WLCL_SCALE=0.005                         !Multiplicative scaling of wlcl -> wklcl 
+      real, parameter :: WLCL_SCALE=0.005                         !Multiplicative scaling of wlcl -> wklcl
 
       ! Local variable declarations
       integer :: i,j,k,is,js,i0,in,j0,jn,hw_i,hw_j
       real :: rad,di,dj,dist
       real, dimension(l_minx:l_maxx,l_miny:l_maxy), target :: objrlat,objrlon,objage,objwlcl,wklcl_adj
       real, dimension(:,:,:), pointer :: wklcl
-      logical :: newsrc
 
       ! Set error return status
       F_status = CLDOBJ_ERROR
@@ -344,4 +342,4 @@ contains
       F_status = CLDOBJ_OK
    end function domain_bounds
 
-end module cloud_objects
+end module itf_phy_cloud_objects

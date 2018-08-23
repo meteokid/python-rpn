@@ -18,6 +18,7 @@
       subroutine itf_phy_step ( F_step_kount, F_lctl_step )
       use iso_c_binding
       use phy_itf, only: phy_input,phy_step,phy_snapshot
+      use itf_phy_cloud_objects, only: cldobj_displace,cldobj_expand,CLDOBJ_OK
       use itf_phy_filter, only: ipf_smooth_fld
       use gem_options
       use lun
@@ -26,7 +27,6 @@
       use path
       use wb_itf_mod
       use ptopo
-      use cloud_objects, only: cldobj_displace,cldobj_expand,CLDOBJ_OK
       implicit none
 #include <arch_specific.hf>
 
