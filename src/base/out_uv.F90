@@ -17,7 +17,7 @@
 
       subroutine out_uv (levset, set)
       use vertical_interpolation, only: vertint2
-      use vGrid_Descriptors, only: vgrid_descriptor,vgd_get,VGD_OK,VGD_ERROR
+      use vGrid_Descriptors, only: vgrid_descriptor,vgd_get,vgd_free,VGD_OK,VGD_ERROR
       use vgrid_wb, only: vgrid_wb_get
       use gmm_vt1
       use gmm_pw
@@ -94,6 +94,7 @@
             istat = vgrid_wb_get('ref-m',vcoord,ip1m)
             deallocate(ip1m); nullify(ip1m)
             if (vgd_get(vcoord,'VCDM - vertical coordinate (m)',hybm) /= VGD_OK) istat = VGD_ERROR
+            istat = vgd_free(vcoord)
          endif
          hybm_gnk2(1)=hybm(G_nk+2)
          ind0(1)=1

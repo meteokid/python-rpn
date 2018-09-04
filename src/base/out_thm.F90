@@ -17,7 +17,7 @@
 
       subroutine out_thm ( levset, set )
       use vertical_interpolation, only: vertint2
-      use vGrid_Descriptors, only: vgrid_descriptor,vgd_get,VGD_OK,VGD_ERROR
+      use vGrid_Descriptors, only: vgrid_descriptor,vgd_get,vgd_free,VGD_OK,VGD_ERROR
       use vgrid_wb, only: vgrid_wb_get
       use geomh
       use gmm_vt1
@@ -331,6 +331,7 @@
             deallocate(ip1m); nullify(ip1m)
             if (vgd_get(vcoord,'VCDM - vertical coordinate (m)',hybm) /= VGD_OK) istat = VGD_ERROR
             if (vgd_get(vcoord,'VCDT - vertical coordinate (t)',hybt) /= VGD_OK) istat = VGD_ERROR
+            istat = vgd_free(vcoord)
             allocate(hybt_w(G_nk))
             ! For vertical motion quantities, we place level NK at the surface
             hybt_w(1:G_nk)= hybt(1:G_nk)

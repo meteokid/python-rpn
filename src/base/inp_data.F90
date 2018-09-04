@@ -378,6 +378,8 @@
          deallocate (p0lsu0,p0lsv0)
          nullify    (p0lsq0,p0lsu0,p0lsv0)
       endif
+      err = vgd_free(vgd_dst)
+!!$      err = vgd_free(vgd_src) !#TODO: should it be done here?
 
       call inp_close ()
 

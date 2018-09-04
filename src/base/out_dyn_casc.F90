@@ -16,7 +16,7 @@
 !**s/r out_dyn_casc - model output for cascade
 
       subroutine out_dyn_casc()
-      use vGrid_Descriptors, only: vgrid_descriptor,vgd_get,VGD_OK,VGD_ERROR
+      use vGrid_Descriptors, only: vgrid_descriptor,vgd_get,vgd_free,VGD_OK,VGD_ERROR
       use vgrid_wb, only: vgrid_wb_get
       use out_vref, only: out_vref_itf
       use gmm_vt1
@@ -73,6 +73,7 @@
       deallocate(ip1m); nullify(ip1m)
       istat = vgd_get (vcoord,'VCDM - vertical coordinate (m)',hybm)
       istat = vgd_get (vcoord,'VCDT - vertical coordinate (t)',hybt)
+      istat = vgd_free(vcoord)
       allocate(tr1(l_minx:l_maxx,l_miny:l_maxy))
       hyb0(1)=0.0
       hybm_gnk2(1)=hybm(G_nk+2)

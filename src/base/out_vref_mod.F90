@@ -32,7 +32,7 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   subroutine out_vrefel(ig1,ig2,etiket)
-    use vGrid_Descriptors, only: vgrid_descriptor,vgd_put,vgd_write,vgd_print,VGD_OK,vgd_get
+    use vGrid_Descriptors, only: vgrid_descriptor,vgd_put,vgd_write,vgd_print,VGD_OK,vgd_get,vgd_free
     use vgrid_wb, only: vgrid_wb_get
     ! Write the vertical coordinate descriptor (model levels)
 
@@ -79,6 +79,7 @@ contains
 
        if (report(Out_ig1,Out_ig2)) err = vgd_print(vgd,Lun_out)
        err = vgd_write(vgd,unit=Out_unf,format='fst')
+       err = vgd_free(vgd)
 
     endif
 
@@ -88,7 +89,7 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   subroutine out_vref_pres(F_rf,ig1,ig2,etiket)
-    use vGrid_Descriptors, only: vgrid_descriptor,vgd_new,vgd_put,vgd_write,vgd_print,VGD_OK
+    use vGrid_Descriptors, only: vgrid_descriptor,vgd_new,vgd_put,vgd_write,vgd_print,VGD_OK,vgd_free
     ! Write the vertical coordinate descriptor (pressure levels)
 
     use lun
@@ -148,6 +149,7 @@ contains
        if (report(Out_ig1,Out_ig2)) err = vgd_print(vgd,Lun_out)
        err = vgd_write(vgd,unit=Out_unf,format='fst')
        ! there should be en error trapping
+       err = vgd_free(vgd)
 
     endif
 

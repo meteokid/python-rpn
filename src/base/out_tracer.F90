@@ -17,7 +17,7 @@
 
       subroutine out_tracer (levset, set)
       use vertical_interpolation, only: vertint2
-      use vGrid_Descriptors, only: vgrid_descriptor,vgd_get,VGD_OK,VGD_ERROR
+      use vGrid_Descriptors, only: vgrid_descriptor,vgd_get,vgd_free,VGD_OK,VGD_ERROR
       use vgrid_wb, only: vgrid_wb_get
       use phy_itf, only: phy_get
       use gmm_pw
@@ -72,6 +72,7 @@
             istat = vgrid_wb_get('ref-t',vcoord,ip1t)
             deallocate(ip1t); nullify(ip1t)
             if (vgd_get(vcoord,'VCDT - vertical coordinate (t)',hybt) /= VGD_OK) istat = VGD_ERROR
+            istat = vgd_free(vcoord)
          endif
          hybt_gnk2(1)=hybt(G_nk+2)
          ind0(1)=1

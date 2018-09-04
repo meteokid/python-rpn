@@ -27,7 +27,7 @@ subroutine iau_apply2(F_kount)
    use ptopo_utils, only: ptopo_io_set, ptopo_iotype, PTOPO_BLOC, PTOPO_IO
    use statfld_dm_mod, only: statfld_dm
    use tdpack
-   use vGrid_Descriptors, only: vgrid_descriptor
+   use vGrid_Descriptors, only: vgrid_descriptor, vgd_free
    use vgrid_wb, only: vgrid_wb_get, vgrid_wb_put
 
    use cstv
@@ -278,15 +278,19 @@ subroutine iau_apply2(F_kount)
       ip1listref => ip1list(1:G_nk)
       istat = vgrid_wb_put(IAU_VGRID_M_S, vgridm, ip1listref, IAU_REFP0_S, &
               refp0ls_S, F_overwrite_L=.true.)
+      istat = vgd_free(vgridm)
+      if (associated(ip1list)) deallocate(ip1list,stat=istat)
       nullify(ip1list)
       istat = vgrid_wb_get(VGRID_T_S, vgridt, ip1list, F_sfcfld2_S=refp0ls_S)
       if (refp0ls_S /= '') refp0ls_S = IAU_REFP0_LS_S
       ip1listref => ip1list(1:G_nk)
       istat = vgrid_wb_put(IAU_VGRID_T_S, vgridt, ip1listref, IAU_REFP0_S, &
               refp0ls_S, F_overwrite_L=.true.)
-         mymeta = GMM_NULL_METADATA
-         mymeta%l(1) = gmm_layout(1,l_ni,0,0,l_ni)
-         mymeta%l(2) = gmm_layout(1,l_nj,0,0,l_nj)
+      istat = vgd_free(vgridt)
+      if (associated(ip1list)) deallocate(ip1list,stat=istat)
+      mymeta = GMM_NULL_METADATA
+      mymeta%l(1) = gmm_layout(1,l_ni,0,0,l_ni)
+      mymeta%l(2) = gmm_layout(1,l_nj,0,0,l_nj)
       nullify(refp0)
       istat = gmm_create(IAU_REFP0_S, refp0, mymeta)
       if (refp0ls_S /= '') then
@@ -299,6 +303,7 @@ subroutine iau_apply2(F_kount)
    !# Update reference surface field for vgrid
    istat = vgrid_wb_get(VGRID_M_S, vgridm, F_sfcfld_S=refp0_S, &
         F_sfcfld2_S=refp0ls_S)
+   istat = vgd_free(vgridm)
 
    nullify(pw_p0, refp0)
    istat = gmm_get(refp0_S, pw_p0)

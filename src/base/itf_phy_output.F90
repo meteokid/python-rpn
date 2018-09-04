@@ -17,7 +17,7 @@
 
       subroutine itf_phy_output2 (stepno)
       use vertical_interpolation, only: vertint2
-      use vGrid_Descriptors, only: vgrid_descriptor,vgd_get,VGD_OK,VGD_ERROR
+      use vGrid_Descriptors, only: vgrid_descriptor,vgd_get,vgd_free,VGD_OK,VGD_ERROR
       use vgrid_wb, only: vgrid_wb_get
       use out_vref, only: out_vref_itf
       use phy_itf, only: phy_get,phymeta,phy_getmeta,phy_put
@@ -97,6 +97,7 @@
       deallocate(ip1m); nullify(ip1m)
       if (vgd_get(vcoord,'VCDM - vertical coordinate (m)',hybm) /= VGD_OK) istat = VGD_ERROR
       if (vgd_get(vcoord,'VCDT - vertical coordinate (t)',hybt) /= VGD_OK) istat = VGD_ERROR
+      istat = vgd_free(vcoord)
       hybt_gnk2(1)= hybt(G_nk+2)
       hybm_gnk2(1)= hybm(G_nk+2)
       ind0(1) = 1

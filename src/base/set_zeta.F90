@@ -18,7 +18,7 @@
 !
       subroutine set_zeta2( F_hybuser, Nk )
       use vGrid_Descriptors, only: vgrid_descriptor,vgd_new,vgd_get,vgd_put,&
-                                   vgd_levels,VGD_OK,VGD_ERROR,vgd_print
+                                   vgd_levels,VGD_OK,VGD_ERROR,vgd_print,vgd_free
       use vgrid_wb, only: vgrid_wb_put
       use gmm_pw
       use grid_options
@@ -380,6 +380,7 @@
            REFP0_S, REFP0_LS_S, F_overwrite_L=.true.)
       istat = vgrid_wb_put(VGRID_T_S, vcoord, Ver_ip1%t,  &
            REFP0_S, REFP0_LS_S, F_overwrite_L=.true.)
+      istat = vgd_free(vcoord)
 
       options_readwrite = WB_IS_LOCAL
       options_readonly = options_readwrite + WB_REWRITE_NONE
