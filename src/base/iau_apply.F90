@@ -438,16 +438,17 @@ subroutine iau_apply2(F_kount)
             istat = gmm_get('TR/'//trim(iname0_S)//':P', myptr0)
          end select
 
+         !#TODO: option for global stats
          write(msg_S, '(a,i6,3(a,f12.6))') '; step=', F_kount, '; w=', &
               weight(F_kount), '; min=', minval(data0(1:ni1,1:l_nj,:)), &
               '; max=', maxval(data0(1:ni1,1:l_nj,:))
-         call msg(MSG_INFO, '(iau_apply) Add increments: '//trim(iname0_S)// &
-              trim(msg_S))
+         call msg(MSG_INFO, '(iau_apply) Add increments (PE0): '// &
+              trim(iname0_S)//trim(msg_S))
          if (associated(data1)) then
             write(msg_S, '(a,i6,3(a,f12.6))') '; step=', F_kount, '; w=', &
                  weight(F_kount), '; min=', minval(data1(1:ni1,1:l_nj,:)), &
                  '; max=', maxval(data1(1:ni1,1:l_nj,:))
-            call msg(MSG_INFO, '(iau_apply) Add increments: '// &
+            call msg(MSG_INFO, '(iau_apply) Add increments (PE0): '// &
                  trim(iname1_S)//trim(msg_S))
          endif
 
