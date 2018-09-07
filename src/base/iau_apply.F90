@@ -77,19 +77,20 @@ subroutine iau_apply2(F_kount)
    integer, save :: kount = 0
    integer, save :: rpncomm_gridid = -1
    type(INPUTIO_T), save :: inputobj
-   real, pointer, save :: weight(:)
-   real, pointer, dimension(:,:) :: refp0, pw_p0
+   real, pointer, contiguous, save :: weight(:)
+   real, pointer, dimension(:,:), contiguous :: refp0, pw_p0
    character(len=256) :: incfg_S, vgrid_S, msg_S
    character(len=32)  :: refp0_S, refp0ls_S
    character(len=16)  :: iname0_S, iname1_S, datev_S
    integer :: istat, dateo, datev, iau_vtime, step_freq, ivar, ni1, nj1, &
         i, j, n, nw, add, lijk(3), uijk(3), step_0
    integer(IDOUBLE) :: jdateo
-   real, pointer, dimension(:,:,:) :: data0, data1, myptr0, myptr1
-   real, pointer, dimension(:,:) :: myptr2d
+   real, pointer, dimension(:,:,:), contiguous :: data0, data1
+   real, pointer, dimension(:,:,:) :: myptr0, myptr1  !#TODO: contiguous?
+   real, pointer, dimension(:,:), contiguous :: myptr2d
    type(gmm_metadata) :: mymeta
    type(vgrid_descriptor) :: vgridm, vgridt
-   integer, pointer :: ip1list(:), ip1listref(:)
+   integer, pointer, contiguous :: ip1list(:), ip1listref(:)
    logical :: input_use_old_l
    integer :: input_iotype
    !--------------------------------------------------------------------------
