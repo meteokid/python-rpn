@@ -16,3 +16,5 @@ if [[ -d ${_RPNPY_AFSISIO_ENV_HOME0} ]] ; then
    export AFSISIO_ENV_HOME=${AFSISIO_ENV_HOME:-${_RPNPY_AFSISIO_ENV_HOME0}}
 fi
 unset _RPNPY_AFSISIO_ENV_HOME0
+
+export VGRID_SAMPLE_FILES=${VGRID_SAMPLE_FILES:-/users/dor/afsg/src/ords/datafiles/constants/cmdn/vgrid_sample/v_1.0.0/low_res}

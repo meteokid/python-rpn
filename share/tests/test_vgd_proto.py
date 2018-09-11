@@ -17,14 +17,21 @@ from rpnpy import C_MKSTR
 
 class VGDProtoTests(unittest.TestCase):
 
-    def _newReadBcmk(self):
-        ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
-        fileName = os.path.join(ATM_MODEL_DFILES,'bcmk_toctoc','2009042700_000')
-        fileId = rmn.fstopenall(fileName, rmn.FST_RO)
+    def _newReadBcmk(self, vcode_name=None):
+        if vcode_name is None:
+            ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+            fileName = os.path.join(ATM_MODEL_DFILES,'bcmk_toctoc',
+                                    '2009042700_000')
+        else:
+            fileName = os.path.join(os.getenv('VGRID_SAMPLE_FILES').strip(),
+                                    vcode_name)
+        try:
+            fileId = rmn.fstopenall(fileName, rmn.FST_RO)
+        except Exception as e:
+            print(e)
+            raise RuntimeError("Invalid file name " + fileName)
         vgd0ptr = vgd.c_vgd_construct()
         ok = vgd.c_vgd_new_read(vgd0ptr,fileId,-1,-1,-1,-1)
-        ## vgd1ptr = vgd.c_vgd_construct()
-        ## ok = vgd.c_vgd_new_read(vgd1ptr,fileId,-1,-1,-1,-1)
         rmn.fstcloseall(fileId)
         return vgd0ptr
 
@@ -274,6 +281,41 @@ class VGDProtoTests(unittest.TestCase):
         self.assertEqual(vkind.value,vgd.VGD_HYBS_KIND)
         self.assertEqual(vvers.value,vgd.VGD_HYBS_VER)
 
+    def testNewGen2(self):
+        hyb = (30968.,  24944., 20493., 16765., 13525., 10814.,  8026., 5477.,
+               3488., 1842., 880., 0.)
+        nhyb = len(hyb)
+        chyb = np.asarray(hyb, dtype=np.float32)
+        (rcoef1, rcoef2, rcoef3, rcoef4) = (ct.c_float(0.), ct.c_float(5.), 
+                                            ct.c_float(0.), ct.c_float(100.))
+        p_ptop  = ct.POINTER(ct.c_double)()
+        p_pref  = ct.POINTER(ct.c_double)()
+        p_ptop_out = ct.POINTER(ct.c_double)()
+        (kind, version) = (vgd.VGD_HYBHLS_KIND, vgd.VGD_HYBHLS_VER)
+        (ip1, ip2, avg) = (0, 0, 0)
+        dhm = ct.c_float(10.)
+        dht = ct.c_float(2.)
+        dhw = ct.c_float(10.)
+        vgd0ptr = vgd.c_vgd_construct()
+        ok = vgd.c_vgd_new_gen2(vgd0ptr,
+                               kind, version,
+                               chyb, nhyb,
+                               ct.byref(rcoef1), ct.byref(rcoef2),
+                               ct.byref(rcoef3), ct.byref(rcoef4),
+                               p_ptop, p_pref, p_ptop_out,
+                               ip1, ip2, 
+                               ct.byref(dhm), ct.byref(dht), ct.byref(dhw), avg)
+        self.assertEqual(ok,vgd.VGD_OK)
+
+        vkind = ct.c_int(0)
+        vvers = ct.c_int(0)
+        quiet = ct.c_int(0)
+        ok = vgd.c_vgd_get_int(vgd0ptr, _C_WCHAR2CHAR('KIND'), ct.byref(vkind), quiet)
+        ok = vgd.c_vgd_get_int(vgd0ptr, _C_WCHAR2CHAR('VERS'), ct.byref(vvers), quiet)
+        self.assertEqual(ok,vgd.VGD_OK)
+        self.assertEqual(vkind.value,vgd.VGD_HYBHLS_KIND)
+        self.assertEqual(vvers.value,vgd.VGD_HYBHLS_VER)
+
     def testNewBuildVert(self):
         vgd0ptr = vgd.c_vgd_construct()
         (kind, version) = (vgd.VGD_HYBS_KIND, vgd.VGD_HYBS_VER)
@@ -327,6 +369,80 @@ class VGDProtoTests(unittest.TestCase):
         self.assertEqual(ok,vgd.VGD_OK)
         self.assertEqual(vkind.value,vgd.VGD_HYBS_KIND)
         self.assertEqual(vvers.value,vgd.VGD_HYBS_VER)
+
+    def testNewBuildVert2(self):
+        vgd0ptr = vgd.c_vgd_construct()
+        (kind, version) = (vgd.VGD_HYBHLS_KIND, vgd.VGD_HYBHLS_VER)
+        (ip1, ip2) = (0, 0)
+        p_ptop  = ct.POINTER(ct.c_double)()
+        p_pref  = ct.POINTER(ct.c_double)()
+        p_ptop_out = ct.POINTER(ct.c_double)()
+        (rcoef1, rcoef2) = (ct.c_float(0.), ct.c_float(1.))
+        (rcoef3, rcoef4) = (ct.c_float(0.), ct.c_float(5.))
+
+        ip1_m =(85095624, 85065817, 86890841, 86530977, 86332098, 86167510,
+                87911659, 93423364, 75597472)
+        nk = len(ip1_m) - 2 #why -2!!!
+        cip1_m = np.asarray(ip1_m, dtype=np.int32)
+
+        a_m_8 = (16096.822266, 13116.121094, 9076.089844, 5477.454102,
+                 3488.660400, 1842.784424, 879.851318, 0.000000, 10.000000)
+        ca_m_8 = np.asarray(a_m_8, dtype=np.float64)
+        b_m_8 = (0.000000, 0.001038, 0.096399, 0.492782, 0.767428, 0.932772,
+                 0.984755, 1.000000, 1.000000)
+        cb_m_8 = np.asarray(b_m_8, dtype=np.float64)
+        c_m_8 = (0.000000, 0.252011, 0.529947, 0.375240, 0.181007, 0.053405,
+                 0.012177, 0.000000, 0.000000)
+        cc_m_8 = np.asarray(c_m_8, dtype=np.float64)
+        ip1_t = (85095624, 85065817, 86890841, 86530977, 86332098, 86167510,
+                 87911659, 93423364, 76696048)
+        cip1_t = np.asarray(ip1_t, dtype=np.int32)
+        a_t_8 = (16096.822266, 13116.121094, 9076.089844, 5477.454102,
+                 3488.660400, 1842.784424, 879.851318, 0.000000, 1.500000)
+        ca_t_8 = np.asarray(a_t_8, dtype=np.float64)
+        b_t_8 = (0.000000, 0.001038, 0.096399, 0.492782, 0.767428, 0.932772,
+                 0.984755, 1.000000, 1.000000)
+        cb_t_8 = np.asarray(b_t_8, dtype=np.float64)
+        c_t_8 = (0.000000, 0.252011, 0.529947, 0.375240, 0.181007, 0.053405,
+                 0.012177, 0.000000, 0.000000)
+        cc_t_8 = np.asarray(c_t_8, dtype=np.float64)
+        ip1_w = (85080721, 85045617, 86710909, 86431538, 86249804, 86119364,
+                 93423364, 93423364, 82837504)
+        cip1_w = np.asarray(ip1_w, dtype=np.int32)
+        a_w_8 = (14606.471680, 11096.105469, 7276.771973, 4483.057251,
+                 2665.722412, 1361.317871, 0.000000, 0.000000, 0.000000)
+        ca_w_8 = np.asarray(a_w_8, dtype=np.float64)
+        b_w_8 = (0.000519, 0.048718, 0.294591, 0.630105, 0.850100, 0.958764,
+                 1.000000, 1.000000, 1.000000)
+        cb_w_8 = np.asarray(b_w_8, dtype=np.float64)
+        c_w_8 = (0.126005, 0.390979, 0.452594, 0.278124, 0.117206, 0.032791,
+                 0.000000, 0.000000, 0.000000)
+        cc_w_8 = np.asarray(c_w_8, dtype=np.float64)
+        
+
+        (nl_m, nl_t, nl_w) = (len(a_m_8), len(a_t_8), len(a_w_8))
+
+        ok = vgd.c_vgd_new_build_vert2(vgd0ptr,
+                                      kind, version,
+                                      nk, ip1, ip2,
+                                      p_ptop,   p_pref,
+                                      ct.byref(rcoef1), ct.byref(rcoef2),
+                                      ct.byref(rcoef3), ct.byref(rcoef4),
+                                      ca_m_8, cb_m_8, cc_m_8,
+                                      ca_t_8, cb_t_8, cc_t_8,
+                                      ca_w_8, cb_w_8, cc_w_8,
+                                      cip1_m, cip1_t, cip1_w,
+                                      nl_m, nl_t, nl_w)
+        self.assertEqual(ok,vgd.VGD_OK)
+
+        vkind = ct.c_int(0)
+        vvers = ct.c_int(0)
+        quiet = ct.c_int(0)
+        ok = vgd.c_vgd_get_int(vgd0ptr, _C_WCHAR2CHAR('KIND'), ct.byref(vkind), quiet)
+        ok = vgd.c_vgd_get_int(vgd0ptr, _C_WCHAR2CHAR('VERS'), ct.byref(vvers), quiet)
+        self.assertEqual(ok,vgd.VGD_OK)
+        self.assertEqual(vkind.value,vgd.VGD_HYBHLS_KIND)
+        self.assertEqual(vvers.value,vgd.VGD_HYBHLS_VER)
 
     def testNewFromTable(self):
         vgd0ptr = self._newReadBcmk()
@@ -528,6 +644,153 @@ class VGDProtoTests(unittest.TestCase):
         self.assertEqual([int(x) for x in levels8[ni//2,nj//2,0:5]*10000.],
                          [100000, 138425, 176878, 241408, 305980])
 
+    def testStda76_temp(self):
+        vgd0ptr = self._newReadBcmk()
+        ip1list = ct.POINTER(ct.c_int)()
+        nip1 = ct.c_int(0)
+        quiet = ct.c_int(0)
+        ok = vgd.c_vgd_get_int_1d(vgd0ptr, _C_WCHAR2CHAR('VIPM'),
+                                  ct.byref(ip1list), ct.byref(nip1), quiet)
+        temp = np.empty(nip1.value, dtype=np.float32, order='FORTRAN')        
+        ok = vgd.c_vgd_stda76_temp(vgd0ptr, ip1list, nip1, temp)
+        self.assertEqual(ok,vgd.VGD_OK)
+
+    def testStda76_pres(self):
+        vgd0ptr = self._newReadBcmk(vcode_name="21002_SLEVE")
+        ip1list = ct.POINTER(ct.c_int)()
+        nip1 = ct.c_int(0)
+        quiet = ct.c_int(0)
+        ok = vgd.c_vgd_get_int_1d(vgd0ptr, _C_WCHAR2CHAR('VIPM'),
+                                  ct.byref(ip1list), ct.byref(nip1), quiet)
+        pres = np.empty(nip1.value, dtype=np.float32, order='FORTRAN')        
+        (p_sfc_temp, p_sfc_pres) = (None, None)
+        ok = vgd.c_vgd_stda76_pres(vgd0ptr, ip1list, nip1, pres, p_sfc_temp,
+                                   p_sfc_pres)
+        self.assertEqual(ok,vgd.VGD_OK)
+        sfc_temp = ct.c_float(273.15)
+        ok = vgd.c_vgd_stda76_pres(vgd0ptr, ip1list, nip1, pres, sfc_temp,
+                                   p_sfc_pres)
+        self.assertEqual(ok,vgd.VGD_OK)
+        sfc_pres = ct.c_float(100000.)
+        ok = vgd.c_vgd_stda76_pres(vgd0ptr, ip1list, nip1, pres, p_sfc_temp,
+                                   sfc_pres)
+        self.assertEqual(ok,vgd.VGD_OK)
+
+    def testStda76_hgts_from_pres_list(self):
+        # Value obtained from vgrid test c_standard_atmosphere_hgts_from_pres
+        pres = (105000., 95005.25, 5813.071777, 20104.253906, 10.)
+        sol  = (-301.530579, 539.898010, 19620.611328, 11751.479492,
+                64949.402344)
+        cpres = np.asarray(pres, dtype=np.float32)
+        csol = np.asarray(sol, dtype=np.float32)
+        chgts = np.empty(cpres.size, dtype=np.float32)
+        ok = vgd.c_vgd_stda76_hgts_from_pres_list(chgts, cpres, cpres.size)
+        self.assertEqual(ok,vgd.VGD_OK)        
+        # TODO put a python loop
+        self.assertAlmostEqual(chgts[0], csol[0], places=6, msg=None,
+                               delta=None)
+        self.assertAlmostEqual(chgts[1], csol[1], places=6, msg=None,
+                               delta=None)
+        self.assertAlmostEqual(chgts[2], csol[2], places=6, msg=None,
+                               delta=None)
+        self.assertAlmostEqual(chgts[3], csol[3], places=6, msg=None,
+                               delta=None)
+        self.assertAlmostEqual(chgts[4], csol[4], places=6, msg=None,
+                               delta=None)
+
+    def testStda76_pres_from_hgts_list(self):
+        # Value obtained from vgrid test c_standard_atmosphere_hgts_from_pres
+        sol  = (105000., 95005.25, 5813.071777, 20104.253906, 10.)
+        hgts = (-301.530579, 539.898010, 19620.611328, 11751.479492,
+                64949.402344)
+        chgts = np.asarray(hgts, dtype=np.float32)
+        csol = np.asarray(sol, dtype=np.float32)
+        cpres = np.empty(chgts.size, dtype=np.float32)
+        ok = vgd.c_vgd_stda76_pres_from_hgts_list(cpres, chgts, chgts.size)
+        self.assertEqual(ok,vgd.VGD_OK)        
+        # TODO put a python loop
+        self.assertAlmostEqual(cpres[0], csol[0], places=1, msg=None,
+                               delta=None)
+        self.assertAlmostEqual(cpres[1], csol[1], places=1, msg=None,
+                               delta=None)
+        self.assertAlmostEqual(cpres[2], csol[2], places=1, msg=None,
+                               delta=None)
+        self.assertAlmostEqual(cpres[3], csol[3], places=1, msg=None,
+                               delta=None)
+        self.assertAlmostEqual(cpres[4], csol[4], places=1, msg=None,
+                               delta=None)
+
+    def testPrint_desc(self):
+        vgd0ptr = self._newReadBcmk(vcode_name="21002_SLEVE")
+        ip1list = ct.POINTER(ct.c_int)()
+        nip1 = ct.c_int(0)
+        quiet = ct.c_int(0)
+        ok = vgd.c_vgd_get_int_1d(vgd0ptr, _C_WCHAR2CHAR('VIPM'),
+                                  ct.byref(ip1list), ct.byref(nip1), quiet)
+        pres = np.empty(nip1.value, dtype=np.float32, order='FORTRAN')        
+        (p_sfc_temp, p_sfc_pres) = (None, None)
+        ok = vgd.c_vgd_stda76_pres(vgd0ptr, ip1list, nip1, pres, p_sfc_temp,
+                                   p_sfc_pres)
+        self.assertEqual(ok,vgd.VGD_OK)
+        sfc_temp = ct.c_float(273.15)
+        ok = vgd.c_vgd_stda76_pres(vgd0ptr, ip1list, nip1, pres, sfc_temp,
+                                   p_sfc_pres)
+        self.assertEqual(ok,vgd.VGD_OK)
+        sfc_pres = ct.c_float(100000.)
+        ok = vgd.c_vgd_stda76_pres(vgd0ptr, ip1list, nip1, pres, p_sfc_temp,
+                                   sfc_pres)
+        self.assertEqual(ok,vgd.VGD_OK)
+
+    def testStda76_hgts_from_pres_list(self):
+        # Value obtained from vgrid test c_standard_atmosphere_hgts_from_pres
+        pres = (105000., 95005.25, 5813.071777, 20104.253906, 10.)
+        sol  = (-301.530579, 539.898010, 19620.611328, 11751.479492,
+                64949.402344)
+        cpres = np.asarray(pres, dtype=np.float32)
+        csol = np.asarray(sol, dtype=np.float32)
+        chgts = np.empty(cpres.size, dtype=np.float32)
+        ok = vgd.c_vgd_stda76_hgts_from_pres_list(chgts, cpres, cpres.size)
+        self.assertEqual(ok,vgd.VGD_OK)        
+        # TODO put a python loop
+        self.assertAlmostEqual(chgts[0], csol[0], places=6, msg=None,
+                               delta=None)
+        self.assertAlmostEqual(chgts[1], csol[1], places=6, msg=None,
+                               delta=None)
+        self.assertAlmostEqual(chgts[2], csol[2], places=6, msg=None,
+                               delta=None)
+        self.assertAlmostEqual(chgts[3], csol[3], places=6, msg=None,
+                               delta=None)
+        self.assertAlmostEqual(chgts[4], csol[4], places=6, msg=None,
+                               delta=None)
+
+    def testStda76_pres_from_hgts_list(self):
+        # Value obtained from vgrid test c_standard_atmosphere_hgts_from_pres
+        sol  = (105000., 95005.25, 5813.071777, 20104.253906, 10.)
+        hgts = (-301.530579, 539.898010, 19620.611328, 11751.479492,
+                64949.402344)
+        chgts = np.asarray(hgts, dtype=np.float32)
+        csol = np.asarray(sol, dtype=np.float32)
+        cpres = np.empty(chgts.size, dtype=np.float32)
+        ok = vgd.c_vgd_stda76_pres_from_hgts_list(cpres, chgts, chgts.size)
+        self.assertEqual(ok,vgd.VGD_OK)        
+        # TODO put a python loop
+        self.assertAlmostEqual(cpres[0], csol[0], places=1, msg=None,
+                               delta=None)
+        self.assertAlmostEqual(cpres[1], csol[1], places=1, msg=None,
+                               delta=None)
+        self.assertAlmostEqual(cpres[2], csol[2], places=1, msg=None,
+                               delta=None)
+        self.assertAlmostEqual(cpres[3], csol[3], places=1, msg=None,
+                               delta=None)
+        self.assertAlmostEqual(cpres[4], csol[4], places=1, msg=None,
+                               delta=None)
+
+    def testPrint_desc(self):
+        my_vgd = self._newReadBcmk(vcode_name="21002_SLEVE")
+        sout = ct.c_int(-1)
+        convip = ct.c_int(1)
+        ok = vgd.c_vgd_print_desc(my_vgd, sout, convip)
+        self.assertEqual(ok,vgd.VGD_OK)
 
 if __name__ == "__main__":
     ## print vgd.VGD_LIBPATH

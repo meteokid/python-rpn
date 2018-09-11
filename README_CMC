@@ -19,8 +19,7 @@
 ## ==== Developing code ======================================================
 
 ## Basic setup
-# git clone ssh://localhost/~armnenv/GitDepots/python-rpn.git rpnpy
-git clone git@github.com:meteokid/python-rpn.git rpnpy
+git clone git@gitlab.science.gc.ca:MIG/python-rpn.git rpnpy
 
 cd rpnpy
 # git checkout -b mybranch python-rpn_VERSION
