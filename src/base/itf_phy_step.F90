@@ -21,12 +21,15 @@
       use itf_phy_cloud_objects, only: cldobj_displace,cldobj_expand,CLDOBJ_OK
       use itf_phy_filter, only: ipf_smooth_fld
       use gem_options
+      use step_options, only: Step_CMCdate0
+      use cstv, only: Cstv_dt_8
       use lun
       use tr3d
       use rstr
       use path
       use wb_itf_mod
       use ptopo
+      use mu_jdate_mod, only: jdate_to_print, jdate_from_cmc
       implicit none
 #include <arch_specific.hf>
 
@@ -52,7 +55,9 @@
 
       call timing_start2 ( 40, 'PHYSTEP', 1 )
 
-      if (Lun_out > 0) write (Lun_out,1001) F_lctl_step
+      if (Lun_out > 0) write (Lun_out,1001) F_lctl_step, F_step_kount, &
+           jdate_to_print( &
+           jdate_from_cmc(Step_CMCdate0)+nint(F_step_kount*Cstv_dt_8))
 
       if (F_step_kount == 0) then
          call itf_phy_geom4 (err_geom)
@@ -119,7 +124,7 @@
 
       call timing_stop ( 40 )
 
- 1001 format(/,'PHYSICS : PERFORMING TIMESTEP #',I9, &
+ 1001 format(/,'PHYSICS : PERFORMING TIMESTEP #',I9,'[',I9,', ',a,']', &
              /,'========================================')
 !
 !     ---------------------------------------------------------------
