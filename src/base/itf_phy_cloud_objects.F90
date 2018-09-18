@@ -88,11 +88,11 @@ contains
             newrlat = objrlat(i,j) + vadv(i,j)*Cstv_dt_8*Dcst_inv_rayt_8
             newrlon = objrlon(i,j) + uadv(i,j)*Cstv_dt_8*Dcst_inv_rayt_8*geomh_invcy_8(j)
             newj = j0
-            do while (newj <= jn .and. newrlat > geomh_yv_8(newj))
+            do while (newj < jn .and. newrlat > geomh_yv_8(newj))
                newj = newj + 1
             enddo
             newi = i0
-            do while (newi <= in .and. newrlon > geomh_xu_8(newi))
+            do while (newi < in .and. newrlon > geomh_xu_8(newi))
                newi = newi + 1
             enddo
             newsrc = .false.
