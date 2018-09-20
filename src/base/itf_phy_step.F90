@@ -55,9 +55,10 @@
 
       call timing_start2 ( 40, 'PHYSTEP', 1 )
 
-      if (Lun_out > 0) write (Lun_out,1001) F_lctl_step, F_step_kount, &
-           jdate_to_print( &
-           jdate_from_cmc(Step_CMCdate0)+nint(F_step_kount*Cstv_dt_8))
+!!$      if (Lun_out > 0) write (Lun_out,1002) F_lctl_step, F_step_kount, &
+!!$           jdate_to_print( &
+!!$           jdate_from_cmc(Step_CMCdate0)+nint(F_step_kount*Cstv_dt_8))
+      if (Lun_out > 0) write (Lun_out,1001) F_lctl_step
 
       if (F_step_kount == 0) then
          call itf_phy_geom4 (err_geom)
@@ -124,7 +125,9 @@
 
       call timing_stop ( 40 )
 
- 1001 format(/,'PHYSICS : PERFORMING TIMESTEP #',I9,'[',I9,', ',a,']', &
+ 1001 format(/,'PHYSICS : PERFORMING TIMESTEP #',I9, &
+             /,'========================================')
+ 1002 format(/,'PHYSICS : PERFORMING TIMESTEP #',I9,'[',I9,', ',a,']', &
              /,'========================================')
 !
 !     ---------------------------------------------------------------
