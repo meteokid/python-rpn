@@ -461,7 +461,8 @@ subroutine iau_apply2(F_kount)
          if (associated(myptr2d)) then
             if (iname0_S == 'p0') then
                myptr2d(1:l_ni,1:l_nj) = myptr2d(1:l_ni,1:l_nj) + &
-                    log(1 + weight(F_kount)*data0(1:l_ni,1:l_nj,1)/Cstv_pref_8)
+                    log( 1 + weight(F_kount)*data0(1:l_ni,1:l_nj,1) / &
+                    (Cstv_pref_8*exp(myptr2d(1:l_ni,1:l_nj))) )
             else
                myptr2d(1:l_ni,1:l_nj) = myptr2d(1:l_ni,1:l_nj) + &
                     weight(F_kount) * data0(1:l_ni,1:l_nj,1)
