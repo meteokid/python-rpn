@@ -137,13 +137,13 @@
                       G_nk+1, Ver_std_p_prof%m)
 
 ! Option consistency check
-      if (.not.WB_IS_OK(wb_get('phy/input_type', input_type_S))) &
-           input_type_S = ''
-      istat = clib_toupper(input_type_S)
-      if (Iau_interval >0. .and. input_type_S /= Iau_input_type_S) then
-         err = RMN_ERR
-         call msg(MSG_ERROR, '(itf_phy_init) input_type for IAU ('//trim(Iau_input_type_S)//') and physics ('//trim(input_type_S)//') must be the same.')
-      endif
+      if (WB_IS_OK(wb_get('phy/input_type', input_type_S))) then
+         istat = clib_toupper(input_type_S)
+         if (Iau_interval >0. .and. input_type_S /= Iau_input_type_S) then
+            err = RMN_ERR
+            call msg(MSG_ERROR, '(itf_phy_init) input_type for IAU ('//trim(Iau_input_type_S)//') and physics ('//trim(input_type_S)//') must be the same.')
+         endif
+      end if
 
 ! Initialize filter weights for smoothing
       if (.not.WB_IS_OK(wb_get('phy/cond_infilter',cond_sig))) cond_sig=-1.
