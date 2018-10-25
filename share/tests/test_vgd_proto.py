@@ -2,6 +2,7 @@
 
 #from __future__ import division
 
+import sys
 import os
 import datetime
 import unittest
@@ -23,8 +24,8 @@ class VGDProtoTests(unittest.TestCase):
             fileName = os.path.join(ATM_MODEL_DFILES,'bcmk_toctoc',
                                     '2009042700_000')
         else:
-            fileName = os.path.join(os.getenv('VGRID_SAMPLE_FILES').strip(),
-                                    vcode_name)
+            fileName = (os.getenv('ATM_MODEL_DFILES').strip()+ '/bcmk_vgrid/'
+                         + vcode_name.strip())
         try:
             fileId = rmn.fstopenall(fileName, rmn.FST_RO)
         except Exception as e:
