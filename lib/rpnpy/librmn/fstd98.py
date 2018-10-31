@@ -25,6 +25,7 @@ See Also:
 import os
 import sys
 import ctypes as _ct
+import glob as _glob
 import numpy  as _np
 import numpy.ctypeslib as _npc
 from rpnpy.librmn import proto as _rp
@@ -213,6 +214,7 @@ def fstopenall(paths, filemode=_rc.FST_RO, verbose=None):
         paths    : path/name of the file to open
                    if paths is a list, open+link all files
                    if path is a dir, open+link all fst files in dir
+                   A pattern can be used to match existing names
         filemode : a string with the desired filemode (see librmn doc)
                    or one of these constants: FST_RW, FST_RW_OLD, FST_RO
     Returns:
@@ -233,6 +235,10 @@ def fstopenall(paths, filemode=_rc.FST_RO, verbose=None):
     >>> #...
     >>> rmn.fstcloseall(funit1)
     >>> rmn.fstcloseall(funit2)
+    >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk_toctoc','2009*')
+    >>> funit3 = rmn.fstopenall(filename, rmn.FST_RO)
+    >>> #...
+    >>> rmn.fstcloseall(funit3)
     >>> os.unlink('newfile.fst')  # Remove test file
 
     See Also:
@@ -243,19 +249,27 @@ def fstopenall(paths, filemode=_rc.FST_RO, verbose=None):
        rpnpy.librmn.const
        FSTDError
     """
-    #TODO: accepte pattern, use glob
     paths = [paths] if isinstance(paths, str) else paths
     if not isinstance(paths, (list, tuple)):
         raise TypeError("fstopenall: Expecting arg of type list, Got {0}"\
                         .format(type(paths)))
-    filelist = []
+    paths2 = []
     for mypath in paths:
         if not isinstance(mypath, str):
             raise TypeError("fstopenall: Expecting arg of type str, Got {0}"\
                             .format(type(mypath)))
         if mypath.strip() == '':
             raise ValueError("fstopenall: must provide a valid path")
-        if os.path.isdir(mypath):
+        paths3 = _glob.glob(mypath)
+        if paths3:
+            paths2.extend(paths3)
+        else:
+            paths2.append(mypath)
+    filelist = []
+    for mypath in paths2:
+        if not os.path.isdir(mypath):
+            filelist.append(mypath)
+        else:
             for paths_dirs_files in os.walk(mypath):
                 for myfile in paths_dirs_files[2]:
                     if isFST(os.path.join(mypath, myfile)):
@@ -267,8 +281,6 @@ def fstopenall(paths, filemode=_rc.FST_RO, verbose=None):
                         print("(fstopenall) Ignoring non FST file: {0}"\
                               .format(os.path.join(mypath, myfile)))
                 break
-        else:
-            filelist.append(mypath)
     if filemode != _rc.FST_RO and len(paths) > 1:
         raise ValueError("fstopenall: Cannot open multiple files at once in write or append mode: {}".format(repr(paths)))
     iunitlist = []
