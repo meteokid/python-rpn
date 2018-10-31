@@ -613,6 +613,10 @@ def writeGrid(funit, params):
     rec['ig3'] = params['ig3ref']
     rec['ig4'] = params['ig4ref']
     try:
+        rec['datyp'] = params['datyp']
+    except KeyError:
+        rec['datyp'] = _rc.FST_DATYP_LIST['float_IEEE']
+    try:
         rec['nbits'] = params['nbits']
     except KeyError:
         rec['nbits'] = 32
