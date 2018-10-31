@@ -1,61 +1,36 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # Author: Stephane Chamberland <stephane.chamberland@canada.ca>
 # Copyright: LGPL 2.1
-r"""
-Parse list of args for bash/ksh ''a la'' [[cclargs]].
-
-   eval `rpy.cclargs [-D DELIM] [--desc DESC] [--epilog EPILOG] $0 \
-         [[-opt DEFVAL1 DEFVAL2 DESC] ...] \
-         ++ $*`
-
-Options:
-   -D         : argument values delimiter wehn providing multiple values
-   --desc     : Script Description
-   --epilog   : Second part of description to print at the end
-   -h, --help : Print help and exit
-   $0         : script name
-
-Example:
-   #!/bin/ksh
-   arguments=$*
-   eval `rpy.cclargs \
-     -D " " \
-     --desc "desc of script" \
-     --epilog "some epilog" \
-     $0 \
-     -opt1  "opt1default1"  "opt1default2"  "[Opt1 description]"\
-     -opt2  "opt2default1"  "opt2default2"  "[Opt2 description]"\
-     ++ $arguments`
-   echo opt1=$opt1
-   echo opt2=$opt2
+"""
+Parse list of args for bash
 """
 
 if __name__ == "__main__":
     import sys
     import argparse
-    desc = ""
-    usage = "%(prog)s [-h] [positional] [options]"
-    epilog = ""
-
-
     desc = "Parse list of args for bash"
+    usage = "%(prog)s [-h] [positional] [options]"
     epilog = r"""Example:
 
-    eval `cclargs.py \
+    eval $(rpy.cclargs \
            -D ":" \
-           -desc "Script desctiption" \
-           -epilog "Help Epilog message" \
-           $0 \
+           --desc       "Script description" \
+           --epilog     "Help Epilog message" \
+           --positional "Positional args description" \
+           ${0##*/} \
            "-opt1" "val1"   "val2" "[desc]" \
            "-opt2" "=-val1" "val2" "[desc]" \
            ....
-           ++ $*`
+           ++ $*)
+
+    In the above example '--positional "..."' is optional
     """
-    if sys.argv[1] in ('-h', '--help'):
-        print("\n"+desc+"\n\n"+epilog)
+    if len(sys.argv) < 2 or sys.argv[1] in ('-h', '--help'):
+        sys.stderr.write(desc + "\n\n" + epilog + "\n")
         sys.exit(1)
 
+    #TODO: support desc and epilog with a single '-'
     parser = argparse.ArgumentParser(
         description=desc,
         epilog=epilog,
@@ -65,10 +40,13 @@ if __name__ == "__main__":
                         help="Delimiter for multi arg values")
     parser.add_argument("--desc", dest="desc",
                         type=str, default="",
-                        help="Script's description")
+                        help="")
     parser.add_argument("--epilog", dest="epilog",
                         type=str, default="",
-                        help="Script's help epilog")
+                        help="")
+    parser.add_argument("--positional", dest="positionaldesc",
+                        type=str, default='NONE',
+                        help="")
     (args, unknown) = parser.parse_known_args()
     sys.argv = unknown
 
@@ -76,7 +54,8 @@ if __name__ == "__main__":
     delimiter = args.delimiter
     desc = args.desc
     epilog = args.epilog
-    name0 = "?"
+    positionaldesc = args.positionaldesc
+    name0 = "???"
     if sys.argv[0][0] != '-':
         name0 = sys.argv.pop(0)
 
@@ -104,6 +83,8 @@ if __name__ == "__main__":
                 dd = dd[:-1]
         options.append([v[1:].strip(), d1, d2, dd.strip()])
 
+    usage = "%(prog)s [-h] [positional] [options]"
+
     parser = argparse.ArgumentParser(
         prog=name0,
         description=desc,
@@ -113,7 +94,8 @@ if __name__ == "__main__":
 
     parser.add_argument("positional",
                         nargs='*', type=str, default=None,
-                        help="Positional arguments")
+                        help=positionaldesc)
+
     parser.add_argument("-h", "--help", dest="help",
                         action="store_true",
                         help="Print this help/usage message")
@@ -126,12 +108,19 @@ if __name__ == "__main__":
             parser.add_argument("-"+nn, dest=dest,
                                 nargs='*', type=str, default=None,
                                 metavar='',
-                                help=dd+' ['+v1+':'+v2+']')
+                                help=dd+' ["'+v1+'"|"'+v2+'"]')
         else:
             parser.add_argument("--"+nn, dest=dest,
                                 nargs='*', type=str, default=None,
                                 metavar='',
-                                help=dd+' ['+v1+':'+v2+']')
+                                help=dd+' ["'+v1+'"|"'+v2+'"]')
+
+    ## convert from -name=val to --name val (or --name =-val)
+    sys.argv = [a.split('=',1) if a.startswith('-') else (a,)
+                for a in sys.argv]
+    sys.argv = [(a[0], '='+a[1]) if (len(a) > 1 and a[1].startswith('-')) else a
+                for a in sys.argv]
+    sys.argv = [b for a in sys.argv for b in a ]
 
     ## convert from - to --
     sys.argv = ['-'+a if (len(a) > 2 and a[0] == '-' and a[1] != '-') else a for a in sys.argv]
