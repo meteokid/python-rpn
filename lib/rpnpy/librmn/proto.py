@@ -1288,11 +1288,105 @@ Details:
         Frees a previously allocated grid
         ier = c_gdrls(gdid)
         Proto:
-        wordint c_gdrls(wordint gdin)
+            wordint c_gdrls(wordint gdin)
         Args:
-        gid (int) : grid id to be released
+            gid (int) : grid id to be released
         Returns:
-        int, 0 on success, -1 on error
+            int, 0 on success, -1 on error
+
+    c_ez_calcdist(distance, lat1, lon1, lat2, lon2)
+        This function computes the distance between 2 latlon points on the sphere.
+        Source of the formula : http://mathworld.wolfram.com/GreatCircle.html
+        c_ez_calcdist(distance, lat1, lon1, lat2, lon2)
+        Proto:
+            void c_ez_calcdist(float *distance, float lat1, float lon1,
+                               float lat2, float lon2)
+        Args:
+            distance (float*) : distance on the sphere between the 
+                                2 specified points [m] (output)
+            lat1     (float)  : latitude of the first point [deg]
+            lon1     (float)  : longitude of the first point [deg]
+            lat2     (float)  : latitude of the second point [deg]
+            lon2     (float)  : longitude of the second point [deg]
+        Returns:
+           None
+
+    c_ez_calcdist2(distance, lat1, lon1, lat2, lon2)
+        This function computes the distance between 2 latlon points
+        on the sphere (double precision).
+        Source of the formula : http://mathworld.wolfram.com/GreatCircle.html
+        c_ez_calcdist(distance, lat1, lon1, lat2, lon2)
+        Proto:
+            void c_ez_calcdist2(double *distance, float lat1, float lon1,
+                                float lat2, float lon2)
+        Args:
+            distance (double*) : distance on the sphere between the
+                                 2 specified points [m] (output)
+            lat1     (float)   : latitude of the first point [deg]
+            lon1     (float)   : longitude of the first point [deg]
+            lat2     (float)   : latitude of the second point [deg]
+            lon2     (float)   : longitude of the second point [deg]
+        Returns:
+           None
+
+
+    c_ez_calcarea_rect(area, lat1, lon1, lat2, lon2)
+         This function computes the area of the solid rectangle formed by
+         2 latlon points on the sphere.
+         Source of the formula :
+             http://mathworld.wolfram.com/GreatCircle.html
+             http://mathworld.wolfram.com/SphericalTrigonometry.html
+             http://mathworld.wolfram.com/SphericalTriangle.html
+         The computation is done by splitting the solid rectangle formed
+         by the latlon points into 2 triangles, compute the area of each
+         triangle and add the two areas
+        Proto:
+            void c_ez_calcarea_rect(float *area, float lat1, float lon1,
+                                    float lat2, float lon2)
+        Args:
+            area (float*) : "rectagle" area between 2 corners
+                            on the sphere [m^2] (output)
+            lat1 (float)  : latitude of the lower-left-corner [deg]
+            lon1 (float)  : longitude of the lower-left-corner [deg]
+            lat2 (float)  : latitude of the upper-right-corner [deg]
+            lon2 (float)  : longitude of the upper-right-corner [deg]
+        Returns:
+           None
+
+    c_ez_calcarea(area, lats, lons)
+         This function computes the area of the solid polygon formed by
+         4 latlon points on the sphere.
+         Source of the formula :
+             http://mathworld.wolfram.com/GreatCircle.html
+             http://mathworld.wolfram.com/SphericalTrigonometry.html
+             http://mathworld.wolfram.com/SphericalTriangle.html
+        Proto:
+            void c_ez_calcarea(float *area, float lats[], float lons[])
+        Args:
+            area (float*) : "polygon" area between 4 latlon points
+                             on the sphere [m^2] (output)
+            lats (float*) : latitudes of the 4 points [deg] (size 4)
+            lons (float*) : longitudes of the 4 points [deg] (size 4)
+        Returns:
+           None
+
+    c_ez_calcarea2(area, lats, lons)
+         This function computes the area of the solid polygon formed by
+         4 latlon points on the sphere (double precision).
+         Source of the formula :
+             http://mathworld.wolfram.com/GreatCircle.html
+             http://mathworld.wolfram.com/SphericalTrigonometry.html
+             http://mathworld.wolfram.com/SphericalTriangle.html
+        Proto:
+            void c_ez_calcarea2(double *area, float lats[], float lons[])
+        Args:
+            area (double*) : "polygon" area between 4 latlon points
+                              on the sphere [m^2] (output)
+            lats (float*)  : latitudes of the 4 points [deg] (size 4)
+            lons (float*)  : longitudes of the 4 points [deg] (size 4)
+        Returns:
+           None
+
 </source>
 ##DETAILS_END
 
@@ -2128,6 +2222,40 @@ librmn.c_gdgxpndaxes.argtypes = (_ct.c_int,
                                  _npc.ndpointer(dtype=_np.float32))
 librmn.c_gdgxpndaxes.restype  = _ct.c_int
 c_gdgxpndaxes = librmn.c_gdgxpndaxes
+
+
+## void c_ez_calcdist(float *distance, float lat1, float lon1, float lat2, float lon2)
+librmn.c_ez_calcdist.argtypes = (_ct.POINTER(_ct.c_float),
+                                 _ct.c_float, _ct.c_float,
+                                 _ct.c_float, _ct.c_float,)
+c_ez_calcdist = librmn.c_ez_calcdist
+
+
+## void c_ez_calcdist2(double *distance, float lat1, float lon1, float lat2, float lon2)
+librmn.c_ez_calcdist2.argtypes = (_ct.POINTER(_ct.c_double),
+                                  _ct.c_float, _ct.c_float,
+                                  _ct.c_float, _ct.c_float,)
+c_ez_calcdist2 = librmn.c_ez_calcdist2
+
+
+## void c_ez_calcarea_rect(float *area, float lat1, float lon1, float lat2, float lon2)
+librmn.c_ez_calcarea_rect.argtypes = (_ct.POINTER(_ct.c_float),
+                                      _ct.c_float, _ct.c_float,
+                                      _ct.c_float, _ct.c_float,)
+c_ez_calcarea_rect = librmn.c_ez_calcarea_rect
+
+
+## void c_ez_calcarea(float *area, float lats[], float lons[])
+librmn.c_ez_calcarea.argtypes = (_ct.POINTER(_ct.c_float),
+                                 _npc.ndpointer(dtype=_np.float32),
+                                 _npc.ndpointer(dtype=_np.float32))
+c_ez_calcarea = librmn.c_ez_calcarea
+
+## void c_ez_calcarea2(double *area, float lats[], float lons[])
+librmn.c_ez_calcarea2.argtypes = (_ct.POINTER(_ct.c_double),
+                                  _npc.ndpointer(dtype=_np.float32),
+                                  _npc.ndpointer(dtype=_np.float32))
+c_ez_calcarea2 = librmn.c_ez_calcarea2
 
 
 #Note: Not in librmn at the moment

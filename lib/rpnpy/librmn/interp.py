@@ -1868,6 +1868,95 @@ def gdrls(gdid):
             raise EzscintError()
     return None
 
+
+def ezcalcdist(lat1, lon1, lat2, lon2):
+    """
+    This function computes the distance between 2 latlon points
+    on the sphere (double precision).
+
+    Source of the formula :
+        http://mathworld.wolfram.com/GreatCircle.html
+
+    dist = ezcalcdist(lat1, lon1, lat2, lon2)
+
+    Args:
+        lat1, lon1 : latitude, longitude of the first point [deg]
+        lat2, lon2 : latitude, longitude of second point [deg]
+    Returns:
+        float, distance on the sphere between the points [m]
+    Raises:
+        TypeError on wrong input arg types
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> dist = rmn.ezcalcdist(45, 270, 45, 271)
+    >>> print("dist = {}".format(int(dist)))
+    dist = 78626
+
+    See Also:
+        ezcalcarea
+    """
+    (clat1, clon1, clat2, clon2) = (_ct.c_float(lat1), _ct.c_float(lon1),
+                                    _ct.c_float(lat2), _ct.c_float(lon2))
+    dist = 0
+    cdist = _ct.c_double(dist)
+    _rp.c_ez_calcdist2(_ct.byref(cdist), clat1, clon1, clat2, clon2)
+    return cdist.value
+
+
+def ezcalcarea(lats, lons):
+    """
+    This function computes the area on the sphere of
+    the solid polygon formed by 2 or 4 latlon points.
+
+    Source of the formula :
+        http://mathworld.wolfram.com/GreatCircle.html
+        http://mathworld.wolfram.com/SphericalTrigonometry.html
+        http://mathworld.wolfram.com/SphericalTriangle.html
+
+    area = ezcalcarea(lats, lons)
+
+    Args:
+        lats : latitudes of 2/4 points defining the rectangle/polygone [deg]
+        lons : longitude of 2/4 points defining the rectangle/polygone [deg]
+    Returns:
+        float, area on the sphere [m^2]
+    Raises:
+        TypeError   on wrong input arg types
+        ValueError  on wrong number of inputs values
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> area = rmn.ezcalcarea((45,46),(270,271))
+    >>> print("area = {}".format(int(area)))
+    area = 8666027008
+    >>> area = rmn.ezcalcarea((45,45,46,46),(270,271,270,271))
+    >>> print("area = {}".format(int(area)))
+    area = 8666027008
+
+    See Also:
+        ezcalcdist
+    """
+    if len(lats) != len(lons):
+        raise ValueError("ezcalcarea: should provide same number of lats and lons")
+    area = 0
+    if len(lats) == 2:
+        (clat1, clon1, clat2, clon2) = (_ct.c_float(lats[0]),
+                                        _ct.c_float(lons[0]),
+                                        _ct.c_float(lats[1]),
+                                        _ct.c_float(lons[1]))
+        carea = _ct.c_float(area)
+        _rp.c_ez_calcarea_rect(_ct.byref(carea), clat1, clon1, clat2, clon2)
+    elif len(lats) == 4:
+        clats = _ftnf32(_list2ftnf32(lats))
+        clons = _ftnf32(_list2ftnf32(lons))
+        carea = _ct.c_double(area)
+        _rp.c_ez_calcarea2(_ct.byref(carea), clats, clons)
+    else:
+        raise ValueError("ezcalcarea: should provide 2 or 4 lats,lons pairs")
+    return carea.value
+
+
 #TODO:    c_gduvfwd(gdid, uuout, vvout, spdin, wdin, lat, lon, n)
 #TODO:    c_gdwdfuv(gdid, spdout, wdout, uuin, vvin, lat, lon, n)
 

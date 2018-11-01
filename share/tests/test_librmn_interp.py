@@ -11,7 +11,7 @@ import numpy as np
 class Librmn_interp_Test(unittest.TestCase):
 
     epsilon = 0.0005
-    
+
     def setIG_L(self,gp):
         ig1234 = rmn.cxgaig(gp['grtyp'],gp['lat0'],gp['lon0'],
                             gp['dlat'],gp['dlon'])
@@ -20,7 +20,7 @@ class Librmn_interp_Test(unittest.TestCase):
         gp['ig3'] = ig1234[2]
         gp['ig4'] = ig1234[3]
         return gp
-    
+
     def setIG_ZE(self,gp,offx=0):
         ig1234 = rmn.cxgaig(gp['grref'],gp['xlat1'],gp['xlon1'],
                             gp['xlat2'],gp['xlon2'])
@@ -38,7 +38,7 @@ class Librmn_interp_Test(unittest.TestCase):
         ## gp['ig3'] = 312+offx
         ## gp['ig4'] = 0
         return gp
-        
+
     def getGridParams_L(self,offx=0):
         (ni,nj) = (90,180)
         if offx:
@@ -55,7 +55,7 @@ class Librmn_interp_Test(unittest.TestCase):
             'lon0' : 273.+offx
             }
         return self.setIG_L(gp)
-        
+
     def getGridParams_ZE(self):
         (ni,nj) = (50,30)
         gp = {
@@ -80,7 +80,7 @@ class Librmn_interp_Test(unittest.TestCase):
         for j in range(nj):
             gp['ay'][0,j] = gp['lat0']+float(j)*gp['dlat']
         return self.setIG_ZE(gp)
-        
+
     def getGridParams_ZEYY(self,YY=0):
         nj = 31
         ni = (nj-1)*3 + 1
@@ -122,7 +122,7 @@ class Librmn_interp_Test(unittest.TestCase):
             rmn.ezsetopt(o,v)
             v1 = rmn.ezgetopt(o,vtype=type(v))
             self.assertEqual(v1,v)
-    
+
     def test_ezqkdef_ezgprm(self):
         gp = self.getGridParams_L()
         gid1 = rmn.ezqkdef(gp)
@@ -429,7 +429,7 @@ class Librmn_interp_Test(unittest.TestCase):
         gp2 = self.getGridParams_ZEYY(1)
         gid1 = rmn.ezgdef_fmem(gp1['ni'],gp1['nj'],gp1['grtyp'],gp1['grref'],
                                gp1['ig1ref'],gp1['ig2ref'],gp1['ig3ref'],gp1['ig4ref'],
-                               gp1['ax'],gp1['ay'])        
+                               gp1['ax'],gp1['ay'])
         gid2 = rmn.ezgdef_fmem(gp2['ni'],gp2['nj'],gp2['grtyp'],gp2['grref'],
                                gp2['ig1ref'],gp2['ig2ref'],gp2['ig3ref'],gp2['ig4ref'],
                                gp2['ax'],gp2['ay'])
