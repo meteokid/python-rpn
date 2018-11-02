@@ -70,7 +70,7 @@ def get_funit(filename, filemode=_rc.FST_RW, iunit=0):
 
     funit = get_unit(filename, filemode, iunit=0)
 
-     Args:
+    Args:
         filename : path/name of the file to open
         filemode : a string with the desired filemode (see librmn doc)
                    or one of these constants: FST_RW, FST_RW_OLD, FST_RO
@@ -84,11 +84,11 @@ def get_funit(filename, filemode=_rc.FST_RW, iunit=0):
         RMNBaseError on any other error
 
     Notes:
-       New function in version 2.1.b2
+        New function in version 2.1.b2
 
     See also:
-       fnom
-       fclos
+        fnom
+        fclos
     """
     iunit = 0 if iunit is None else iunit
     funit = fnom(filename, filemode, iunit)
@@ -358,7 +358,7 @@ def cxgaig(grtyp, xg1, xg2=0., xg3=0., xg4=0.):
     """
     Encode real grid descriptors into ig1, ig2, ig3, ig4
 
-    (ig1, ig2, ig3, ig4) = cxgaig(grtyp, gx1, xg2, xg3, xg4)
+    (ig1, ig2, ig3, ig4) = cxgaig(grtyp, xg1, xg2, xg3, xg4)
     (ig1, ig2, ig3, ig4) = cxgaig(grtyp, xg1234)
 
     Args:
@@ -737,7 +737,7 @@ def newdate(imode, idate1, idate2=0):
           odate1 : DATE OF THE PRINTABLE DATE (YYYYMMDD)
           odate2 : TIME OF THE PRINTABLE DATE (HHMMSSHH)
 
-    Note:
+    Notes:
         Old Style Date Array is composed of 14 elements:
         0 : Day of the week (1=Sunday, ..., 7=Saturday
         1 : Month (1=Jan, ..., 12=Dec)

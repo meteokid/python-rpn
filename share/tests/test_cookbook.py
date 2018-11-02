@@ -489,7 +489,7 @@ class rpnpyCookbook(unittest.TestCase):
         rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)
         fdate     = datetime.date.today().strftime('%Y%m%d') + '00_048'
         CMCGRIDF  = os.getenv('CMCGRIDF').strip()
-        fileId = rmn.fstopenall(CMCGRIDF+'/prog/regpres/'+fdate, rmn.FST_RO)
+        fileId = rmn.fstopenall(CMCGRIDF+'/prog/regeta/'+fdate, rmn.FST_RO)
         v = vgd.vgd_read(fileId)
         (tlvlkeys, rshape) = ([], None)
         for ip1 in vgd.vgd_get(v, 'VIPT'):

@@ -587,6 +587,8 @@ if __name__ == "__main__":
         'rpnpy.utils.fstd3d',
         'rpnpy.utils.burpfile',
         'rpnpy.utils.llacar',
+        'rpnpy.utils.thermoconsts',
+        'rpnpy.utils.thermofunc',
         'rpnpy.utils.tdpack',
         'rpnpy.utils.tdpack_consts',
         'rpnpy.librmn.proto',

@@ -66,8 +66,8 @@ Details:
        c_vgd_construct
        c_vgd_free
 
- c_vgd_new_gen(self, kind, version, hyb, rcoef1, rcoef2, ptop_8, pref_8,
-               ptop_out_8, ip1, ip2, dhm, dht):
+ c_vgd_new_gen(self, kind, version, hyb, size_hyb, rcoef1, rcoef2, ptop_8,
+               pref_8, ptop_out_8, ip1, ip2, dhm, dht):
     Build a VGridDescriptor instance initialized with provided info
     Proto:
        int Cvgd_new_gen(vgrid_descriptor **self, int kind, int version,
@@ -94,6 +94,45 @@ Details:
     Returns:
        int : Status VGD_OK or VGD_ERROR
     See Also:
+       c_vgd_new_gen2
+       c_vgd_construct
+       c_vgd_free
+
+ c_vgd_new_gen2(self, kind, version, hyb, size_hyb, rcoef1, rcoef2, rcoef3,
+                rcoef4, ptop_8, pref_8, ptop_out_8, ip1, ip2, dhm, dht ,dhw,
+                avg):
+    Build a VGridDescriptor instance initialized with provided info
+    Proto:
+       int Cvgd_new_gen2(vgrid_descriptor **self, int kind, int version,
+                         float *hyb, int size_hyb, float *rcoef1, float *rcoef2,
+                         float *rcoef3, float *rcoef4, double *ptop_8,
+                         double *pref_8, double *ptop_out_8, int ip1, int ip2,
+                         float *dhm, float *dht, float *dhw, int avg);
+    Args:
+       self (POINTER(POINTER(VGridDescriptor))):
+               A VGridDescriptor obj to be filled provided vgrid values (I/O)
+               This is obtained with c_vgd_construct
+       kind     (int) : vgrid kind (I)
+       version  (int) : vgrid version (I)
+       hyb      (float array) :
+       size_hyb (int) :
+       rcoef1   (float ptr) :
+       rcoef2   (float ptr) :
+       rcoef3   (float ptr) :
+       rcoef4   (float ptr) :
+       ptop_8   (double ptr) :
+       pref_8   (double ptr) :
+       ptop_out_8 (double ptr) :
+       ip1      (int) :
+       ip2      (int) :
+       dhm      (float ptr) :
+       dht      (float ptr) :
+       dhw      (float ptr) :
+       avg      (int) :
+    Returns:
+       int : Status VGD_OK or VGD_ERROR
+    See Also:
+       c_vgd_new_gen
        c_vgd_construct
        c_vgd_free
 
@@ -116,6 +155,36 @@ Details:
     Returns:
        int : Status VGD_OK or VGD_ERROR
     See Also:
+       c_vgd_new_build_vert2
+       c_vgd_construct
+       c_vgd_free
+
+ c_vgd_new_build_vert2(delf, kind, version, nk, ip1, ip2, ptop_8, pref_8,
+                       rcoef1, rcoef2, rcoef3, *rcoef4,
+                       a_m_8, b_m_8, c_m_8, a_t_8, b_t_8, c_t_8, a_w_8, b_w_8,
+                       c_w_8, ip1_m, ip1_t, iip1_w, nl_m, nl_t, nl_w)
+    Build a vgrid descriptor from the building blocks e.g. list of A, B, C, ip1 rcoef etc
+    Proto:
+       int Cvgd_new_build_vert2(vgrid_descriptor **self, int kind, int version,
+                                int nk, int ip1, int ip2, double *ptop_8,
+                                double *pref_8,
+                                float *rcoef1, float *rcoef2, float *rcoef3,
+                                float *rcoef4,
+                                double *a_m_8, double *b_m_8, double *c_m_8,
+                                double *a_t_8, double *b_t_8, double *c_t_8,
+                                double *a_w_8, double *b_w_8, double *c_w_8,
+                                int *ip1_m, int *ip1_t, int *ip1_w,
+                                int nl_m, int nl_t, int nl_w)
+
+    Args:
+       self (POINTER(POINTER(VGridDescriptor))):
+               A VGridDescriptor obj to be filled with provided vgrid values (I/O)
+               This is obtained with c_vgd_construct
+       ...
+    Returns:
+       int : Status VGD_OK or VGD_ERROR
+    See Also:
+       c_vgd_new_build_vert
        c_vgd_construct
        c_vgd_free
 
@@ -205,6 +274,32 @@ Details:
     Returns:
        int : Status VGD_OK or VGD_ERROR
 
+ c_vgd_levels_2ref(self, ni, nj, nk, ip1_list, levels, sfc_field, sfc_field_ls,
+                   in_log):
+    Compute level positions (pressure) for the given ip1 list and surface fields
+    Proto:
+       int Cvgd_levels(vgrid_descriptor *self, int ni, int nj, int nk,
+                       int *ip1_list, float *levels, float *sfc_field,
+                       float *sfc_field_ls, int in_log);
+    Args:
+       self (VGridDescriptor ref) : (I/O)
+
+    Returns:
+       int : Status VGD_OK or VGD_ERROR
+
+ c_vgd_levels_2ref_8(self, ni, nj, nk, ip1_list, levels_8, sfc_field_8,
+                     sfc_field_ls_8, in_log):
+    Compute level positions (pressure) for the given ip1 list and surface fields
+    Proto:
+       int Cvgd_levels_8(vgrid_descriptor *self, int ni, int nj, int nk,
+                         int *ip1_list, double *levels_8, double *sfc_field_8,
+                         double *sfc_field_ls_8, int in_log);
+    Args:
+       self (VGridDescriptor ref) : (I/O)
+
+    Returns:
+       int : Status VGD_OK or VGD_ERROR
+
  c_vgd_diag_withref(self, ni, nj, nk, ip1_list, levels, sfc_field, in_log, dpidpis):
     Compute level positions (pressure) for the given ip1 list and surface field
     Proto:
@@ -228,6 +323,95 @@ Details:
 
     Returns:
        int : Status VGD_OK or VGD_ERROR
+
+ c_vgd_diag_withref_2ref(self, ni, nj, nk, ip1_list, levels, sfc_field,
+                         sfc_field_ls, in_log, dpidpis):
+    Compute level positions (pressure) for the given ip1 list and surface fields
+    Proto:
+       int Cvgd_diag_withref_2ref(vgrid_descriptor *self, int ni, int nj,
+                       int nk, int *ip1_list, float *levels, float *sfc_field,
+                       float *sfc_field_ls, int in_log, int dpidpis);
+    Args:
+       self (VGridDescriptor ref) : (I/O)
+
+    Returns:
+       int : Status VGD_OK or VGD_ERROR
+
+ c_vgd_diag_withref_2ref_8(self, ni, nj, nk, ip1_list, levels_8, sfc_field_8,
+                      sfc_field_ls_8, in_log, dpidpis):
+    Compute level positions (pressure) for the given ip1 list and surface fields
+    Proto:
+       int Cvgd_diag_withref_2ref_8(vgrid_descriptor *self, int ni, int nj,
+                         int nk, int *ip1_list, double *levels_8,
+                         double *sfc_field_8, double *sfc_field_2ref_8,
+                         int in_log, int dpidpis);
+    Args:
+       self (VGridDescriptor ref) : (I/O)
+
+    Returns:
+       int : Status VGD_OK or VGD_ERROR
+
+ c_vgd_stda76_temp(self, i_val, size_i_val, temp)
+    Get standard atmosphere temperature for the given vertical structure.
+    Proto:
+        int Cvgd_stda76_temp(vgrid_descriptor *self, int *i_val, int nl_t,
+                             float *temp);
+    Args:
+       self (VGridDescriptor ref) : (I/O)
+       i_val      (POINTER(int)) : ip1 list to get temperature for
+       size_i_val (int) : size of array i_val
+       temp       (POINTER(float)) : list of temperature
+    Returns:
+       int : Status VGD_OK or VGD_ERROR
+    See Also:
+       c_vgd_stda76_pres
+       c_vgd_stda76_hgts_from_pres_list
+       c_vgd_stda76_pres_from_hgts_list
+
+ c_vgd_stda76_pres(self, i_val, size_i_val, pres, sfc_temp, sfc_pres)
+    Get standard atmosphere pressure for the given vertical structure.
+    Proto:
+        int Cvgd_stda76_pres(vgrid_descriptor *self, int *i_val, int nl_t,
+                             float *pres, float *sfc_temp, float *sfc_pres);
+    Args:
+       self (VGridDescriptor ref) : (I/O)
+       i_val      (POINTER(int)) : ip1 list to get pressure for
+       size_i_val (int) : size of array i_val
+       pres       (POINTER(float)) : list of pressure
+       sfc_temp   (POINTER(float)) : optional surface temperature
+       sfc_pres   (POINTER(float)) : optional surface pressure
+    Returns:
+       int : Status VGD_OK or VGD_ERROR
+    See Also:
+       c_vgd_stda76_temp
+       c_vgd_stda76_hgts_from_pres_list
+       c_vgd_stda76_pres_from_hgts_list
+
+ c_vgd_stda76_hgts_from_pres_list(hgts, pres, nb)
+    Compute standard atmosphere 1976 heights from a list of pressure values
+    Proto:
+       int c_vgd_stda76_hgts_from_pres_list(float *hgts, float *pres, int nb)
+    Args:
+       See Proto
+    Returns:
+       int : Status VGD_OK or VGD_ERROR
+    See Also:
+       c_vgd_stda76_temp
+       c_vgd_stda76_pres
+       c_vgd_stda76_pres_from_hgts_list
+
+ c_vgd_stda76_pres_from_hgts_list(hgts, pres, nb)
+    Compute standard atmosphere 1976 pressure from a list of heights values
+    Proto:
+       int c_vgd_stda76_pres_from_hgts_list(float *pres, float *hgts, int nb)
+    Args:
+       See Proto
+    Returns:
+       int : Status VGD_OK or VGD_ERROR
+    See Also:
+       c_vgd_stda76_temp
+       c_vgd_stda76_pres
+       c_vgd_stda76_hgts_from_pres_list
 
  c_vgd_get_int(self, key, value, quiet):
     Get scalar integer attribute of vgrid descriptor
@@ -358,18 +542,19 @@ Details:
        quiet
     Returns:
        int : Status VGD_OK or VGD_ERROR
+
+ c_vgd_print_desc(self, sout, convip):
+    Print informations on vgrid descriptor
+    Proto:
+       int Cvgd_print_desc(vgrid_descriptor *self, int sout, int convip);
+    Args:
+       self (VGridDescriptor ref) : (I/O)
+    Returns:
+       int,
+
 </source>
 ##DETAILS_END
 """
- ## c_vgd_print_desc(self, sout, convip):
- ##    Print informations on vgrid descriptor
- ##    Proto:
- ##       int Cvgd_print_desc(vgrid_descriptor *self, int sout, int convip);
- ##    Args:
- ##       self (VGridDescriptor ref) : (I/O)
-
- ##    Returns:
- ##       int,
 
  ## c_vgd_print_vcode_description(vcode):
  ##    Print the description of a Vcode e.g. 5005
@@ -462,7 +647,6 @@ libvgd.Cvgd_new_read.argtypes = (
 libvgd.Cvgd_new_read.restype = _ct.c_int
 c_vgd_new_read = libvgd.Cvgd_new_read
 
-
 ## int Cvgd_new_gen(vgrid_descriptor **self, int kind, int version,
 ##                  float *hyb, int size_hyb, float *rcoef1, float *rcoef2,
 ##                  double *ptop_8, double *pref_8, double *ptop_out_8,
@@ -486,12 +670,40 @@ libvgd.Cvgd_new_gen.restype = _ct.c_int
 c_vgd_new_gen = libvgd.Cvgd_new_gen
 
 
+## int Cvgd_new_gen2(vgrid_descriptor **self, int kind, int version, float *hyb,
+##                   int size_hyb, float *rcoef1, float *rcoef2, float *rcoef3,
+##                   float *rcoef4, double *ptop_8, double *pref_8,
+##                   double *ptop_out_8, int ip1, int ip2, float *dhm, float *dht,
+##                   float *dhw, int avg);
+libvgd.Cvgd_new_gen2.argtypes = (
+    _ct.POINTER(_ct.POINTER(VGridDescriptor)), # vgrid_descriptor **self
+    _ct.c_int, #int kind
+    _ct.c_int, #int version
+    _npc.ndpointer(dtype=_np.float32), #float *hyb
+    _ct.c_int, #int size_hyb,
+    _ct.POINTER(_ct.c_float), #float *rcoef1,
+    _ct.POINTER(_ct.c_float), #float *rcoef2,
+    _ct.POINTER(_ct.c_float), #float *rcoef3,
+    _ct.POINTER(_ct.c_float), #float *rcoef4,
+    _ct.POINTER(_ct.c_double), #double *ptop_8,
+    _ct.POINTER(_ct.c_double), #double *pref_8,
+    _ct.POINTER(_ct.c_double), #double *ptop_out_8
+    _ct.c_int, #int ip1
+    _ct.c_int, #int ip2
+    _ct.POINTER(_ct.c_float), #float *dhm
+    _ct.POINTER(_ct.c_float), #float *dht
+    _ct.POINTER(_ct.c_float), #float *dhw
+    _ct.c_int) #int avg
+libvgd.Cvgd_new_gen2.restype = _ct.c_int
+c_vgd_new_gen2 = libvgd.Cvgd_new_gen2
+
+
 ## int Cvgd_new_build_vert(vgrid_descriptor **self, int kind, int version,
 ##                         int nk, int ip1, int ip2, double *ptop_8,
-##                         double *pref_8, float *rcoef1, float *rcoef2,
+##                         double *pref_8,float *rcoef1, float *rcoef2,
 ##                         double *a_m_8, double *b_m_8, double *a_t_8,
 ##                         double *b_t_8, int *ip1_m, int *ip1_t,
-##                         int nl_m, int nl_t);
+##                         int nl_m, int nl_t)
 libvgd.Cvgd_new_build_vert.argtypes = (
     _ct.POINTER(_ct.POINTER(VGridDescriptor)), # vgrid_descriptor **self
     _ct.c_int, #int kind
@@ -503,17 +715,59 @@ libvgd.Cvgd_new_build_vert.argtypes = (
     _ct.POINTER(_ct.c_double), #double *pref_8,
     _ct.POINTER(_ct.c_float), #float *rcoef1,
     _ct.POINTER(_ct.c_float), #float *rcoef2,
-     _npc.ndpointer(dtype=_np.float64), #a_m_8
-     _npc.ndpointer(dtype=_np.float64), #b_m_8
-     _npc.ndpointer(dtype=_np.float64), #a_t_8
-     _npc.ndpointer(dtype=_np.float64), #b_t_8
-     _npc.ndpointer(dtype=_np.int32), #a_t_8
-     _npc.ndpointer(dtype=_np.int32), #b_t_8
+    _npc.ndpointer(dtype=_np.float64), #a_m_8
+    _npc.ndpointer(dtype=_np.float64), #b_m_8
+    _npc.ndpointer(dtype=_np.float64), #a_t_8
+    _npc.ndpointer(dtype=_np.float64), #b_t_8
+    _npc.ndpointer(dtype=_np.int32), #ip1_m
+    _npc.ndpointer(dtype=_np.int32), #ip1_t
     _ct.c_int, #int nl_m
     _ct.c_int) #int nl_t
-
 libvgd.Cvgd_new_build_vert.restype = _ct.c_int
 c_vgd_new_build_vert = libvgd.Cvgd_new_build_vert
+
+
+## int Cvgd_new_build_vert2(vgrid_descriptor **self, int kind, int version,
+##                          int nk, int ip1, int ip2, double *ptop_8,
+##                          double *pref_8,
+##                          float *rcoef1, float *rcoef2, float *rcoef3,
+##                          float *rcoef4,
+##                          double *a_m_8, double *b_m_8, double *c_m_8,
+##                          double *a_t_8, double *b_t_8, double *c_t_8,
+##                          double *a_w_8, double *b_w_8, double *c_w_8,
+##                          int *ip1_m, int *ip1_t, int *ip1_w,
+##                          int nl_m, int nl_t, int nl_w)
+libvgd.Cvgd_new_build_vert2.argtypes = (
+    _ct.POINTER(_ct.POINTER(VGridDescriptor)), # vgrid_descriptor **self
+    _ct.c_int, #int kind
+    _ct.c_int, #int version
+    _ct.c_int, #int nk,
+    _ct.c_int, #int ip1
+    _ct.c_int, #int ip2
+    _ct.POINTER(_ct.c_double), #double *ptop_8,
+    _ct.POINTER(_ct.c_double), #double *pref_8,
+    _ct.POINTER(_ct.c_float), #float *rcoef1,
+    _ct.POINTER(_ct.c_float), #float *rcoef2,
+    _ct.POINTER(_ct.c_float), #float *rcoef3,
+    _ct.POINTER(_ct.c_float), #float *rcoef4,
+    _npc.ndpointer(dtype=_np.float64), #a_m_8
+    _npc.ndpointer(dtype=_np.float64), #b_m_8
+    _npc.ndpointer(dtype=_np.float64), #c_m_8
+    _npc.ndpointer(dtype=_np.float64), #a_t_8
+    _npc.ndpointer(dtype=_np.float64), #b_t_8
+    _npc.ndpointer(dtype=_np.float64), #c_t_8
+    _npc.ndpointer(dtype=_np.float64), #a_w_8
+    _npc.ndpointer(dtype=_np.float64), #b_w_8
+    _npc.ndpointer(dtype=_np.float64), #c_w_8
+    _npc.ndpointer(dtype=_np.int32), #ip1_m
+    _npc.ndpointer(dtype=_np.int32), #ip1_t
+    _npc.ndpointer(dtype=_np.int32), #ip1_w
+    _ct.c_int, #int nl_m
+    _ct.c_int, #int nl_t
+    _ct.c_int) #int nl_w
+libvgd.Cvgd_new_build_vert2.restype = _ct.c_int
+c_vgd_new_build_vert2 = libvgd.Cvgd_new_build_vert2
+
 
 ## int Cvgd_new_from_table(vgrid_descriptor **self, double *table,
 ##                         int ni, int nj, int nk);
@@ -526,6 +780,7 @@ libvgd.Cvgd_new_from_table.argtypes = (
 libvgd.Cvgd_new_from_table.restype = _ct.c_int
 c_vgd_new_from_table = libvgd.Cvgd_new_from_table
 
+
 ## int Cvgd_write_desc(vgrid_descriptor *self, int unit);
 libvgd.Cvgd_write_desc.argtypes = (
     _ct.POINTER(VGridDescriptor),
@@ -534,11 +789,13 @@ libvgd.Cvgd_write_desc.argtypes = (
 libvgd.Cvgd_write_desc.restype = _ct.c_int
 c_vgd_write_desc = libvgd.Cvgd_write_desc
 
+
 ## void Cvgd_free(vgrid_descriptor **self);
 libvgd.Cvgd_free.argtypes = (
     _ct.POINTER(_ct.POINTER(VGridDescriptor)),
     )
 c_vgd_free = libvgd.Cvgd_free
+
 
 ## int Cvgd_vgdcmp(vgrid_descriptor *vgd1, vgrid_descriptor *vgd2);
 libvgd.Cvgd_vgdcmp.argtypes = (
@@ -546,6 +803,7 @@ libvgd.Cvgd_vgdcmp.argtypes = (
     _ct.POINTER(VGridDescriptor))
 libvgd.Cvgd_vgdcmp.restype = _ct.c_int
 c_vgd_vgdcmp = libvgd.Cvgd_vgdcmp
+
 
 ## int Cvgd_levels(vgrid_descriptor *self, int ni, int nj, int nk,
 ##                 int *ip1_list, float *levels, float *sfc_field,
@@ -560,6 +818,7 @@ libvgd.Cvgd_levels.argtypes = (
     )
 libvgd.Cvgd_levels.restype = _ct.c_int
 c_vgd_levels = libvgd.Cvgd_levels
+
 
 ## int Cvgd_levels_8(vgrid_descriptor *self, int ni, int nj, int nk,
 ##                   int *ip1_list, double *levels_8, double *sfc_field_8,
@@ -576,6 +835,38 @@ libvgd.Cvgd_levels_8.restype = _ct.c_int
 c_vgd_levels_8 = libvgd.Cvgd_levels_8
 
 
+## int Cvgd_levels_2ref(vgrid_descriptor *self, int ni, int nj, int nk,
+##                      int *ip1_list, float *levels, float *sfc_field,
+##                      float *sfc_field_ls, int in_log);
+libvgd.Cvgd_levels_2ref.argtypes = (
+    _ct.POINTER(VGridDescriptor),
+    _ct.c_int, _ct.c_int, _ct.c_int,
+    _ct.POINTER(_ct.c_int),
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _ct.c_int
+    )
+libvgd.Cvgd_levels_2ref.restype = _ct.c_int
+c_vgd_levels_2ref = libvgd.Cvgd_levels_2ref
+
+
+## int Cvgd_levels_2ref_8(vgrid_descriptor *self, int ni, int nj, int nk,
+##                        int *ip1_list, double *levels_8, double *sfc_field_8,
+##                        double *sfc_field_ls_8, int in_log);
+libvgd.Cvgd_levels_2ref_8.argtypes = (
+    _ct.POINTER(VGridDescriptor),
+    _ct.c_int, _ct.c_int, _ct.c_int,
+    _ct.POINTER(_ct.c_int),
+    _npc.ndpointer(dtype=_np.float64),
+    _npc.ndpointer(dtype=_np.float64),
+    _npc.ndpointer(dtype=_np.float64),
+    _ct.c_int
+    )
+libvgd.Cvgd_levels_2ref_8.restype = _ct.c_int
+c_vgd_levels_2ref_8 = libvgd.Cvgd_levels_2ref_8
+
+
 ## int Cvgd_diag_withref(vgrid_descriptor *self, int ni, int nj, int nk,
 ##                       int *ip1_list, float *levels, float *sfc_field,
 ##                       int in_log, int dpidpis)
@@ -590,6 +881,7 @@ libvgd.Cvgd_diag_withref.argtypes = (
 libvgd.Cvgd_diag_withref.restype = _ct.c_int
 c_vgd_diag_withref = libvgd.Cvgd_diag_withref
 
+
 ## int Cvgd_diag_withref_8(vgrid_descriptor *self, int ni, int nj, int nk,
 ##                         int *ip1_list, double *levels_8,
 ##                         double *sfc_field_8, int in_log, int dpidpis)
@@ -603,6 +895,80 @@ libvgd.Cvgd_diag_withref_8.argtypes = (
     )
 libvgd.Cvgd_diag_withref_8.restype = _ct.c_int
 c_vgd_diag_withref_8 = libvgd.Cvgd_diag_withref_8
+
+
+## int Cvgd_diag_withref_2ref(vgrid_descriptor *self, int ni, int nj, int nk,
+##                       int *ip1_list, float *levels, float *sfc_field,
+##                       float *sfc_field_ls, int in_log, int dpidpis)
+libvgd.Cvgd_diag_withref_2ref.argtypes = (
+    _ct.POINTER(VGridDescriptor),
+    _ct.c_int, _ct.c_int, _ct.c_int,
+    _ct.POINTER(_ct.c_int),
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _ct.c_int, _ct.c_int
+    )
+libvgd.Cvgd_diag_withref_2ref.restype = _ct.c_int
+c_vgd_diag_withref_2ref = libvgd.Cvgd_diag_withref_2ref
+
+
+## int Cvgd_diag_withref_2ref_8(vgrid_descriptor *self, int ni, int nj, int nk,
+##                         int *ip1_list, double *levels_8, double *sfc_field_8,
+##                         double *sfc_field_ls_8, int in_log, int dpidpis)
+libvgd.Cvgd_diag_withref_2ref_8.argtypes = (
+    _ct.POINTER(VGridDescriptor),
+    _ct.c_int, _ct.c_int, _ct.c_int,
+    _ct.POINTER(_ct.c_int),
+    _npc.ndpointer(dtype=_np.float64),
+    _npc.ndpointer(dtype=_np.float64),
+    _npc.ndpointer(dtype=_np.float64),
+    _ct.c_int, _ct.c_int
+    )
+libvgd.Cvgd_diag_withref_2ref_8.restype = _ct.c_int
+c_vgd_diag_withref_2ref_8 = libvgd.Cvgd_diag_withref_2ref_8
+
+
+## int Cvgd_stda76_temp(vgrid_descriptor *self, int *i_val, int nl_t,
+##                      float *temp)
+libvgd.Cvgd_stda76_temp.argtypes = (
+    _ct.POINTER(VGridDescriptor),
+    _ct.POINTER(_ct.c_int),
+    _ct.c_int,
+    _npc.ndpointer(dtype=_np.float32))
+libvgd.Cvgd_stda76_temp.restype = _ct.c_int
+c_vgd_stda76_temp = libvgd.Cvgd_stda76_temp
+
+
+## int Cvgd_stda76_pres(vgrid_descriptor *self, int *i_val, int nl_t,
+##                      float *pres, float *sfc_temp, float *sfc_pres);
+libvgd.Cvgd_stda76_pres.argtypes = (
+    _ct.POINTER(VGridDescriptor),
+    _ct.POINTER(_ct.c_int),
+    _ct.c_int,
+    _npc.ndpointer(dtype=_np.float32),
+    _ct.POINTER(_ct.c_float),
+    _ct.POINTER(_ct.c_float))
+libvgd.Cvgd_stda76_pres.restype = _ct.c_int
+c_vgd_stda76_pres = libvgd.Cvgd_stda76_pres
+
+
+## int Cvgd_stda76_hgts_from_pres_list(float *hgts, float *pres, int nb)
+libvgd.Cvgd_stda76_hgts_from_pres_list.argtypes = (
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _ct.c_int)
+libvgd.Cvgd_stda76_hgts_from_pres_list.restype = _ct.c_int
+c_vgd_stda76_hgts_from_pres_list = libvgd.Cvgd_stda76_hgts_from_pres_list
+
+
+## int Cvgd_stda76_pres_from_hgts_list(float *pres, float *hgts, int nb)
+libvgd.Cvgd_stda76_pres_from_hgts_list.argtypes = (
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _ct.c_int)
+libvgd.Cvgd_stda76_pres_from_hgts_list.restype = _ct.c_int
+c_vgd_stda76_pres_from_hgts_list = libvgd.Cvgd_stda76_pres_from_hgts_list
 
 
 libvgd.Cvgd_get_char.argtypes = (
@@ -714,6 +1080,13 @@ libvgd.Cvgd_putopt_int.restype = _ct.c_int
 c_vgd_putopt_int = libvgd.Cvgd_putopt_int
 
 
+libvgd.Cvgd_print_desc.argtypes = (
+    _ct.POINTER(VGridDescriptor),
+    _ct.c_int, _ct.c_int)
+libvgd.Cvgd_print_desc.restype = _ct.c_int
+c_vgd_print_desc = libvgd.Cvgd_print_desc
+
+
 ## libvgd.Cvgd_put_double.argtypes = ( #removed from v6.2.1
 ##     _ct.POINTER(_ct.POINTER(VGridDescriptor)),
 ##     _ct.c_char_p,
@@ -730,8 +1103,10 @@ c_vgd_putopt_int = libvgd.Cvgd_putopt_int
 
 ## int Cvgd_set_vcode(vgrid_descriptor *VGrid);
 
+
 if __name__ == "__main__":
     pass #print vgd version
+
 
 # -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
 # vim: set expandtab ts=4 sw=4:

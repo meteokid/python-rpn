@@ -4,13 +4,14 @@
 # Copyright: LGPL 2.1
 
 """
-Module utils.thermoconsts (TDpack) defines constants used in RPN Physics
+Module rpnpy.utils.thermoconsts (TDpack) defines constants used in RPN Physics
  
 See Also:
+    rpnpy.utils.tdpack_const
     rpnpy.utils.thermofunc
 
 Details:
-    See Source Code    
+    See Source Code
 """
 from math import pi as _pi
 import scipy.constants as _scipy_cst

@@ -12,7 +12,7 @@ Notes:
     You may want to refer to the [[Cmda_tools#Librairies.2FAPI_BURP_CMDA|burp_c]]
     documentation for more details.
 
-    For an OO API to burp files, see: rpnpy.burpc.brpobj
+    For an OO API to burp files, see: [[Python-RPN/2.1/rpnpy/burpc/brpobj|rpnpy.burpc.brpobj]]
 
     This module is new in version 2.1.b2
 
