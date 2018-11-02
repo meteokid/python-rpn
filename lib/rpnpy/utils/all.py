@@ -9,8 +9,8 @@ Short hand to load all rpnpy.utils submodules in the same namespace
      rpnpy.utils
      rpnpy.utils.fstd3d
      rpnpy.utils.burpfile
-     rpnpy.utils.thermoconsts
-     rpnpy.utils.thermofunc
+     rpnpy.utils.tdpack_consts
+     rpnpy.utils.tdpack
      rpnpy.utils.llacar
 
 """
@@ -18,6 +18,6 @@ Short hand to load all rpnpy.utils submodules in the same namespace
 from . import *
 from .fstd3d import *
 from .burpfile import *
-from .thermoconsts import *
-from .thermofunc import *
+from .tdpack_consts import *
+from .tdpack import *
 from .llacar import *
