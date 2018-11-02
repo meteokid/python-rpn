@@ -38,6 +38,12 @@ class RPNDate(object):
     Raises:
         TypeError  if parameters are wrong type
         ValueError if myRPNMeta
+    Attibutes:
+        dateo : Date of origin [CMC date time stamp format]
+        datev : Date of validity [CMC date time stamp format]
+        stamp : Date of validity [CMC date time stamp format]
+        dt    : Time step [seconds]
+        nstep : Step number [int]
 
     Examples:
     >>> d1 = RPNDate(20030423, 11453500)
@@ -49,6 +55,8 @@ class RPNDate(object):
     >>> d2 += 48
     >>> print('# {0}'.format(repr(d2)))
     # RPNDate(20030425, 11453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    48.0)
+    >>> print('# {} = {} + {} * {}'.format(d2.datev, d2.dateo, d2.dt, d2.nstep))
+    # 307134583 = 307091383 + 3600.0 * 48.0
     >>> print('# {0}'.format(repr(d1-d2)))
     # -48.0
     >>> utc = pytz.timezone("UTC")
@@ -302,6 +310,11 @@ class RPNDateRange(object):
         Delta     Increment of the range iterator, hours, real
     Raises:
         TypeError if parameters are wrong type
+    Attibutes:
+        dateDebut : Range start date
+        now       : Present date in the iterator
+        delta     : Date iterator increment
+        dateFin   : Range end date
 
     Examples:
     >>> d1 = RPNDate(20030423, 11453500)
@@ -317,6 +330,8 @@ class RPNDateRange(object):
     >>> x = dr.next() #1
     >>> print('# {0}'.format(repr(x)))
     # RPNDate(20030423, 17453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=     6.0)
+    >>> print('# from:{}; to:{}; now:{}; delta:{}'.format(dr.dateDebut.datev, dr.dateFin.datev, dr.now.datev, dr.delta))
+    # from:307091383; to:307134583; now:307096783; delta:6
     >>> print('# {0}'.format(repr([d1, d2])))
     # [RPNDate(20030423, 11453500), RPNDate(20030425, 11453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    48.0)]
     >>> dr = RPNDateRange(d1, d2, 36)

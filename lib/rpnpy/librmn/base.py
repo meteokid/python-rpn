@@ -70,7 +70,7 @@ def get_funit(filename, filemode=_rc.FST_RW, iunit=0):
 
     funit = get_unit(filename, filemode, iunit=0)
 
-     Args:
+    Args:
         filename : path/name of the file to open
         filemode : a string with the desired filemode (see librmn doc)
                    or one of these constants: FST_RW, FST_RW_OLD, FST_RO
@@ -84,11 +84,11 @@ def get_funit(filename, filemode=_rc.FST_RW, iunit=0):
         RMNBaseError on any other error
 
     Notes:
-       New function in version 2.1.b2
+        New function in version 2.1.b2
 
     See also:
-       fnom
-       fclos
+        fnom
+        fclos
     """
     iunit = 0 if iunit is None else iunit
     funit = fnom(filename, filemode, iunit)

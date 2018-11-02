@@ -16,7 +16,7 @@ import rpnpy.librmn.all as _rmn
 import rpnpy.vgd.all as _vgd
 import rpnpy.utils.thermoconsts as _cst
 
-
+#TODO: fst_read_3d for arbitrary levels (no vgrid)
 #TODO: fst_read_3d_sample points
 #TODO: fst_write_3d
 #TODO: fst_new_3d

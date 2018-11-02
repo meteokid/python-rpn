@@ -1080,6 +1080,8 @@ def vgd_get_opt(key, quiet=1):
     ...     allow_signma = vgd.vgd_get_opt('ALLOW_SIGMA')
     ... except:
     ...     sys.stderr.write("There was a problem getting vgd gloabl option")
+    >>> print("allow_signma={}".format(allow_signma))
+    allow_signma=0
 
     See Also:
         rpnpy.vgd.const.VGD_KEYS
