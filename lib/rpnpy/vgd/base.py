@@ -506,11 +506,9 @@ def vgd_new_hybh(hyb, rcoef1, rcoef2, dhm, dht, ip1=-1, ip2=-1):
         vgd_free
     """
     (kind, version) = _vc.VGD_KIND_VER['hybh']
-    rcoef3 = -1
-    rcoef4 = -1
     return vgd_new(kind, version, hyb=hyb,
-                   rcoef1=rcoef1, rcoef2=rcoef2, rcoef3=rcoef3, rcoef4=rcoef4,
-                   dhm=dhm, dht=dht, ip1=ip1, ip2=ip2)
+                   rcoef1=rcoef1, rcoef2=rcoef2, dhm=dhm, dht=dht, ip1=ip1,
+                   ip2=ip2)
 vgd_new_21001 = vgd_new_hybh
 
 
@@ -609,11 +607,9 @@ def vgd_new_hybhl(hyb, rcoef1, rcoef2, dhm, dht, dhw, ip1=-1, ip2=-1):
         vgd_free
     """
     (kind, version) = _vc.VGD_KIND_VER['hybhl']
-    rcoef3 = -1
-    rcoef4 = -1
     return vgd_new(kind, version, hyb=hyb,
-                   rcoef1=rcoef1, rcoef2=rcoef2, rcoef3=rcoef3, rcoef4=rcoef4,
-                   dhm=dhm, dht=dht, dhw=dhw, ip1=ip1, ip2=ip2)
+                   rcoef1=rcoef1, rcoef2=rcoef2, dhm=dhm, dht=dht, dhw=dhw,
+                   ip1=ip1, ip2=ip2)
 vgd_new_21002 = vgd_new_hybhl
 
 
@@ -769,14 +765,10 @@ def vgd_new2(kind, version, hyb,
         rcoef1 = _ct.POINTER(_ct.c_float)(_ct.c_float(rcoef1))
     if not rcoef2 is None:
         rcoef2 = _ct.POINTER(_ct.c_float)(_ct.c_float(rcoef2))
-    p_rcoef3 = None
     if not rcoef3 is None:
         rcoef3 = _ct.POINTER(_ct.c_float)(_ct.c_float(rcoef3))
-        p_rcoef3 = rcoef3
-    p_rcoef4 = None
     if not rcoef4 is None:
         rcoef4 = _ct.POINTER(_ct.c_float)(_ct.c_float(rcoef4))
-        p_rcoef4 = rcoef4
     if not ptop is None:
         ptop = _ct.POINTER(_ct.c_double)(_ct.c_double(ptop))
     if not pref is None:
@@ -796,7 +788,7 @@ def vgd_new2(kind, version, hyb,
             ptop_out = 100.
             p_ptop_out = _ct.POINTER(_ct.c_double)(_ct.c_double(ptop_out))
     ok = _vp.c_vgd_new_gen2(vgd_ptr, kind, version, hyb, hyb.size, rcoef1,
-                            rcoef2, p_rcoef3, p_rcoef4, ptop, pref, p_ptop_out,
+                            rcoef2, rcoef3, rcoef4, ptop, pref, p_ptop_out,
                             ip1, ip2, dhm, dht, dhw, avg)
     if ok != _vc.VGD_OK:
         raise VGDError('Problem building VGD (kind={0}, version={1}): Error={2})'.
