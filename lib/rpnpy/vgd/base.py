@@ -506,11 +506,9 @@ def vgd_new_hybh(hyb, rcoef1, rcoef2, dhm, dht, ip1=-1, ip2=-1):
         vgd_free
     """
     (kind, version) = _vc.VGD_KIND_VER['hybh']
-    rcoef3 = -1
-    rcoef4 = -1
     return vgd_new(kind, version, hyb=hyb,
-                   rcoef1=rcoef1, rcoef2=rcoef2, rcoef3=rcoef3, rcoef4=rcoef4,
-                   dhm=dhm, dht=dht, ip1=ip1, ip2=ip2)
+                   rcoef1=rcoef1, rcoef2=rcoef2, dhm=dhm, dht=dht, ip1=ip1,
+                   ip2=ip2)
 vgd_new_21001 = vgd_new_hybh
 
 
@@ -609,11 +607,9 @@ def vgd_new_hybhl(hyb, rcoef1, rcoef2, dhm, dht, dhw, ip1=-1, ip2=-1):
         vgd_free
     """
     (kind, version) = _vc.VGD_KIND_VER['hybhl']
-    rcoef3 = -1
-    rcoef4 = -1
     return vgd_new(kind, version, hyb=hyb,
-                   rcoef1=rcoef1, rcoef2=rcoef2, rcoef3=rcoef3, rcoef4=rcoef4,
-                   dhm=dhm, dht=dht, dhw=dhw, ip1=ip1, ip2=ip2)
+                   rcoef1=rcoef1, rcoef2=rcoef2, dhm=dhm, dht=dht, dhw=dhw,
+                   ip1=ip1, ip2=ip2)
 vgd_new_21002 = vgd_new_hybhl
 
 
