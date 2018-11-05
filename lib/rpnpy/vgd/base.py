@@ -30,7 +30,7 @@ from rpnpy import C_MKSTR as _C_MKSTR
 
 _MB2PA = 100.
 
-## VGD_TYPE_CODE(king, version): Compute VGD type code from kind and version.
+## VGD_TYPE_CODE(kind, version): Compute VGD type code from kind and version.
 VGD_TYPE_CODE = lambda k,v: int(k)*1000 + int(v)
 
 
@@ -1578,8 +1578,8 @@ def vgd_levels2(vgd_ptr, rfld=None, rfls=None, ip1list='VIPM',
 
 def vgd_stda76_temp(vgd_ptr, ip1list='VIPM'):
     """
-    Get the standard atmosphere 1976 temperature for the given vertical
-    vertcal structure.
+    Get the standard atmosphere 1976 temperature
+    for the given vertical structure.
 
     Args:
         vgd_ptr (VGridDescriptor ref): Reference/Pointer to the VGridDescriptor
@@ -1643,8 +1643,8 @@ def vgd_stda76_temp(vgd_ptr, ip1list='VIPM'):
 
 def vgd_stda76_pres(vgd_ptr, ip1list='VIPM', sfc_temp=None, sfc_pres=None):
     """
-    Get the standard atmosphere 1976 pressure for the given height vertical
-    vertcal structure.
+    Get the standard atmosphere 1976 pressure
+    for the given height vertical structure.
 
     Args:
         vgd_ptr (VGridDescriptor ref): Reference/Pointer to the VGridDescriptor
@@ -1815,7 +1815,8 @@ def vgd_stda76_pres_from_hgts_list(hgts=None):
 
 def vgd_print_desc(vgd0ptr, convip=-1):
     """
-    Print vgrid descriptor parametres to standard outpout, a debugging tool.
+    Print vgrid descriptor parameters to standard output, a debugging tool.
+
     Args:
         vgd_ptr (VGridDescriptor ref): Reference/Pointer to the VGridDescriptor
         convip  (int)                : use convip>0 to convert ip1, -1 otherwise
