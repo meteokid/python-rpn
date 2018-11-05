@@ -106,7 +106,7 @@ https://wiki.cmc.ec.gc.ca/images/9/9e/RPNPhy_Thermodynamic_functions_brunet.pdf
 https://wiki.cmc.ec.gc.ca/images/4/4c/RPNPhy_Thermodynamic_functions.pdf
 """
 import numpy as _np
-from rpnpy.utils.thermoconsts import *
+from rpnpy.utils.tdpack_consts import *
 
 _DSIGN  = lambda V,S: V * _np.sign(S)
 _DABS   = lambda X: _np.absolute(X)

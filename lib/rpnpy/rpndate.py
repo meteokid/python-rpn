@@ -41,7 +41,7 @@ class RPNDate(object):
     Attibutes:
         dateo : Date of origin [CMC date time stamp format]
         datev : Date of validity [CMC date time stamp format]
-        stamp : Date of validity [CMC date time stamp format]
+        stamp : Date of validity [CMC date time stamp format] (alias to datev)
         dt    : Time step [seconds]
         nstep : Step number [int]
 

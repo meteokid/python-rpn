@@ -19,7 +19,7 @@ Warning:
     as such with appropriate argument typing and dereferencing.
     It is highly advised in a python program to prefer the use of the
     python wrapper found in
-    * rpnpy.vgd.base
+    * [[Python-RPN/2.1/rpnpy/vgd/base|rpnpy.vgd.base]]
 
 Notes:
     The functions described below are a very close ''port'' from the original
