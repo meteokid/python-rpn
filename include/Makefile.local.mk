@@ -41,22 +41,24 @@ RPNPY_VERSION_X = $(dir $(RPNPY_VERSION0))
 ## Base Libpath and libs with placeholders for abs specific libs
 ##MODEL1_LIBAPPL = $(RPNPY_LIBS_V)
 
-#STATIC_COMPILER = -static -static-intel
-STATIC_COMPILER = -static
-#STATIC_COMPILER = -static-intel
+# STATIC_COMPILER = -static -static-intel
+# STATIC_COMPILER = -static
+# STATIC_COMPILER = -static-intel
 
 ##
 .PHONY: rpnpy_vfiles rpnpy_version.inc rpnpy_version.h rpnpy_version.py
-RPNPY_VFILES = rpnpy_version.inc rpnpy_version.h rpnpy_version.py
+#RPNPY_VFILES = rpnpy_version.inc rpnpy_version.h rpnpy_version.py
+RPNPY_VFILES = $(rpnpy)/lib/rpnpy/version.py
 rpnpy_vfiles: $(RPNPY_VFILES)
 rpnpy_version.inc:
-	.rdemkversionfile "rpnpy" "$(RPNPY_VERSION)" $(ROOT)/include f
+	.rdemkversionfile "rpnpy" "$(RPNPY_VERSION)" $(rpnpy)/include f
 rpnpy_version.h:
-	.rdemkversionfile "rpnpy" "$(RPNPY_VERSION)" $(ROOT)/include c
+	.rdemkversionfile "rpnpy" "$(RPNPY_VERSION)" $(rpnpy)/include c
 LASTUPDATE = $(shell date '+%Y-%m-%d %H:%M %Z')
-rpnpy_version.py:
-	echo "__VERSION__ = '$(RPNPY_VERSION)'" > $(ROOT)/lib/rpnpy/version.py
-	echo "__LASTUPDATE__ = '$(LASTUPDATE)'" >> $(ROOT)/lib/rpnpy/version.py
+rpnpy_version.py: $(rpnpy)/lib/rpnpy/version.py
+$(rpnpy)/lib/rpnpy/version.py:
+	echo "__VERSION__ = '$(RPNPY_VERSION)'" > $(rpnpy)/lib/rpnpy/version.py
+	echo "__LASTUPDATE__ = '$(LASTUPDATE)'" >> $(rpnpy)/lib/rpnpy/version.py
 
 
 #---- ARCH Specific overrides -----------------------------------------
@@ -64,12 +66,12 @@ rpnpy_version.py:
 # LIBMASSWRAP = rpnpy_massvp7_wrap
 # endif
 
-RDE_MKL=
+# RDE_MKL=
 
 #---- Abs targets -----------------------------------------------------
-.PHONY: sharedlibs_cp sharedlibs extlibdotfile
-sharedlibs_cp: $(LIBDIR)/librmnshared_rpnpy_cp.so $(LIBDIR)/libdescripshared_rpnpy.so
-sharedlibs: $(LIBDIR)/librmnshared_rpnpy.so $(LIBDIR)/libdescripshared_rpnpy.so
+# .PHONY: sharedlibs_cp sharedlibs extlibdotfile
+# sharedlibs_cp: $(LIBDIR)/librmnshared_rpnpy_cp.so $(LIBDIR)/libdescripshared_rpnpy.so
+# sharedlibs: $(LIBDIR)/librmnshared_rpnpy.so $(LIBDIR)/libdescripshared_rpnpy.so
 
 forced_extlibdotfile: 
 	rm -f $(rpnpy)/.setenv.__extlib__.${ORDENV_PLAT}.dot
@@ -95,41 +97,41 @@ $(rpnpy)/.setenv.__extlib__.${ORDENV_PLAT}.dot:
 	echo "export LD_LIBRARY_PATH=\$${RPNPY_RMN_LIBPATH}:\$${LD_LIBRARY_PATH}" >> $@ ;\
 	echo "export LIBPATH=\$${RPNPY_RMN_LIBPATH}:\$${LIBPATH}" >> $@
 
-$(LIBDIR)/librmnshared_rpnpy_cp.so:
-	libfullpath=`rdefind $(EC_LD_LIBRARY_PATH)  --maxdepth 0 --name librmnshared*.so | head -1`;\
-	cp $$libfullpath $@ ;\
-	cd $(LIBDIR) ;\
-	rm -rf librmnshared_rpnpy.so;\
-	ln -s $(notdir $@) librmnshared_rpnpy.so
+# $(LIBDIR)/librmnshared_rpnpy_cp.so:
+# 	libfullpath=`rdefind $(EC_LD_LIBRARY_PATH)  --maxdepth 0 --name librmnshared*.so | head -1`;\
+# 	cp $$libfullpath $@ ;\
+# 	cd $(LIBDIR) ;\
+# 	rm -rf librmnshared_rpnpy.so;\
+# 	ln -s $(notdir $@) librmnshared_rpnpy.so
 
-$(LIBDIR)/librmnshared_rpnpy.so:
-	libfullpath=`rdefind $(EC_LD_LIBRARY_PATH)  --maxdepth 0 --name librmn.a | head -1`;\
-	mytmpdir=librmnshared_rpnpy.so_dir_$$  ;\
-	mkdir $$mytmpdir 2> /dev/null ;\
-	cd $$mytmpdir ;\
-	rm -f *.o ;\
-	ar x $$libfullpath ;\
-	rm -rf vpow_ibm.o whiteboard_omp.o whiteboard_st.o *ccard*.o *ccard* \
-		fmain2cmain.o resident_time.o non_preempt_clock.o ;\
-	$(BUILDFC_NOMPI) -shared -openmp $(STATIC_COMPILER) -o $@ *.o ;\
-	cd .. ; rm -rf $$mytmpdir
-	#rde.f90_ld $(VERBOSEVL) -shared -L$(LIBDIR)  -o $@ *.o
-	#rde.f90_ld $(VERBOSEVL) -shared -openmp -static -static-intel -l -o $@ *.o
-	#$(BUILDFC_NOMPI) -shared -openmp -static -static-intel -o $@ *.o
+# $(LIBDIR)/librmnshared_rpnpy.so:
+# 	libfullpath=`rdefind $(EC_LD_LIBRARY_PATH)  --maxdepth 0 --name librmn.a | head -1`;\
+# 	mytmpdir=librmnshared_rpnpy.so_dir_$$  ;\
+# 	mkdir $$mytmpdir 2> /dev/null ;\
+# 	cd $$mytmpdir ;\
+# 	rm -f *.o ;\
+# 	ar x $$libfullpath ;\
+# 	rm -rf vpow_ibm.o whiteboard_omp.o whiteboard_st.o *ccard*.o *ccard* \
+# 		fmain2cmain.o resident_time.o non_preempt_clock.o ;\
+# 	$(BUILDFC_NOMPI) -shared -openmp $(STATIC_COMPILER) -o $@ *.o ;\
+# 	cd .. ; rm -rf $$mytmpdir
+# 	#rde.f90_ld $(VERBOSEVL) -shared -L$(LIBDIR)  -o $@ *.o
+# 	#rde.f90_ld $(VERBOSEVL) -shared -openmp -static -static-intel -l -o $@ *.o
+# 	#$(BUILDFC_NOMPI) -shared -openmp -static -static-intel -o $@ *.o
 
-$(LIBDIR)/libdescripshared_rpnpy.so: $(LIBDIR)/librmnshared_rpnpy.so
-	libfullpath=`rdefind $(EC_LD_LIBRARY_PATH)  --maxdepth 0 --name libdescrip.a | head -1`;\
-	mytmpdir=librmnshared_rpnpy.so_dir_$$  ;\
-	mkdir $$mytmpdir 2> /dev/null ;\
-	cd $$mytmpdir ;\
-	rm -f *.o ;\
-	ar x $$libfullpath ;\
-	export EC_INCLUDE_PATH="" ;\
-	$(RDEF90_LD) -shared $(RDEALL_LIBPATH) $(STATIC_COMPILER) -L$(LIBDIR) -lrmnshared_rpnpy $(foreach item,$(RDEALL_LIBPATH_NAMES),-Wl,-rpath,$(item)) -o $@ *.o ;\
-	cd .. ; rm -rf $$mytmpdir
-	#rde.f90_ld $(VERBOSEVL) -shared -L$(LIBDIR) -lrmnshared_rpnpy -o $@ *.o
-	#$(BUILDFC_NOMPI) -shared -openmp -static -static-intel -lrmnshared_rpnpy -o $@ *.o
-	#$(BUILDFC_NOMPI) -shared -openmp $(STATIC_COMPILER) -L$(LIBDIR) -lrmnshared_rpnpy -o $@ *.o ;\
+# $(LIBDIR)/libdescripshared_rpnpy.so: $(LIBDIR)/librmnshared_rpnpy.so
+# 	libfullpath=`rdefind $(EC_LD_LIBRARY_PATH)  --maxdepth 0 --name libdescrip.a | head -1`;\
+# 	mytmpdir=librmnshared_rpnpy.so_dir_$$  ;\
+# 	mkdir $$mytmpdir 2> /dev/null ;\
+# 	cd $$mytmpdir ;\
+# 	rm -f *.o ;\
+# 	ar x $$libfullpath ;\
+# 	export EC_INCLUDE_PATH="" ;\
+# 	$(RDEF90_LD) -shared $(RDEALL_LIBPATH) $(STATIC_COMPILER) -L$(LIBDIR) -lrmnshared_rpnpy $(foreach item,$(RDEALL_LIBPATH_NAMES),-Wl,-rpath,$(item)) -o $@ *.o ;\
+# 	cd .. ; rm -rf $$mytmpdir
+# 	#rde.f90_ld $(VERBOSEVL) -shared -L$(LIBDIR) -lrmnshared_rpnpy -o $@ *.o
+# 	#$(BUILDFC_NOMPI) -shared -openmp -static -static-intel -lrmnshared_rpnpy -o $@ *.o
+# 	#$(BUILDFC_NOMPI) -shared -openmp $(STATIC_COMPILER) -L$(LIBDIR) -lrmnshared_rpnpy -o $@ *.o ;\
 
 #---- Lib target - automated ------------------------------------------
 
