@@ -95,8 +95,8 @@
       nullify(ip1m,hybm,hybt)
       istat = vgrid_wb_get('ref-m',vcoord,ip1m)
       deallocate(ip1m); nullify(ip1m)
-      if (vgd_get(vcoord,'VCDM - vertical coordinate (m)',hybm) /= VGD_OK) istat = VGD_ERROR
-      if (vgd_get(vcoord,'VCDT - vertical coordinate (t)',hybt) /= VGD_OK) istat = VGD_ERROR
+      if (vgd_get(vcoord,'VCDM - vertical coordinate (m)',hybm, quiet=.true.) /= VGD_OK) istat = VGD_ERROR
+      if (vgd_get(vcoord,'VCDT - vertical coordinate (t)',hybt, quiet=.true.) /= VGD_OK) istat = VGD_ERROR
       istat = vgd_free(vcoord)
       hybt_gnk2(1)= hybt(G_nk+2)
       hybm_gnk2(1)= hybm(G_nk+2)
