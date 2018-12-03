@@ -12,6 +12,7 @@ Short hand to load all rpnpy.utils submodules in the same namespace
      rpnpy.utils.tdpack_consts
      rpnpy.utils.tdpack
      rpnpy.utils.llacar
+     rpnpy.utils.fstd_extras
 
 """
 
@@ -21,3 +22,4 @@ from .burpfile import *
 from .tdpack_consts import *
 from .tdpack import *
 from .llacar import *
+from .fstd_extras import stamp2datetime, decode_ip1, all_params, maybeFST
