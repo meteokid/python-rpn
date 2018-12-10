@@ -20,6 +20,7 @@
       use grid_options
       use glb_ld
       use lun
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 
@@ -58,8 +59,15 @@
 
       if (.not.F_checkparti_L) call glbpos
 
+      if (Lctl_debug_L ) write(Lun_out,2000) Ptopo_myrow,Ptopo_mycol,&
+                          l_ni,l_nj,l_i0,l_i0+l_ni-1,l_j0,l_j0+l_nj-1
  1000 format (/' DOMAIN_DECOMP: checking partitionning of G_ni and G_nj'/&
                2(i6,' in ',i6,' subdomains',5x)/)
+ 2000 format (/' PROCESSOR GRID and DOMAIN_DECOMP: '/&
+               ' (myrow,mycolum)= (',i4,',',i4,')'  /&
+               ' (L_ni,L_nj)= ('    ,i5,',',i5,')'  /&
+               ' (G_I0,G_IN)= ('    ,i5,',',i5,')'  /&
+               ' (G_J0,G_JN)= ('    ,i5,',',i5,')'  /)
 !
 !-------------------------------------------------------------------
 !
