@@ -74,6 +74,10 @@
          err = clib_remove('gmm_restart')
       endif
 
+      err= clib_remove(trim(Path_nml_S))
+      err= clib_remove(trim(Path_outcfg_S))
+      err= clib_remove(trim(Path_phyincfg_S))
+
       call gemtim4 ( Lun_out, 'END OF RUN', .true. )
       call memusage ( Lun_out )
 
