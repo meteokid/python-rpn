@@ -38,6 +38,9 @@ RPNPY_VERSION_X = $(dir $(RPNPY_VERSION0))
 # RPNPY_ABS        = yyencode yydecode yy2global time2sec_main
 # RPNPY_ABS_FILES  = $(foreach item,$(RPNPY_ABS),$(BINDIR)/$(item).Abs )
 
+RPNPY_ABS = forced_extlibdotfile
+RPNPY_ABS_FILES = $(rpnpy)/.setenv.__extlib__.${ORDENV_PLAT}.dot
+
 ## Base Libpath and libs with placeholders for abs specific libs
 ##MODEL1_LIBAPPL = $(RPNPY_LIBS_V)
 
