@@ -24,6 +24,7 @@ See Also:
 
 import ctypes as _ct
 import numpy  as _np
+import zlib   as _zl
 from rpnpy.librmn import proto as _rp
 from rpnpy.librmn import const as _rc
 from rpnpy.librmn import RMNError
@@ -298,7 +299,7 @@ def crc32(crc, buf):
     """
     if not (buf.dtype == _np.uint32 and buf.flags['F_CONTIGUOUS']):
         buf = _np.asfortranarray(buf, dtype=_np.uint32)
-    return _rp.c_crc32(crc, buf, buf.size*4)
+    return _zl.crc32(buf, crc) & 0xffffffff
 
 #--- base -----------------------------------------------------------
 

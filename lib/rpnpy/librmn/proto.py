@@ -76,19 +76,6 @@ Details:
            l1   (int) : (I) length of nom
         Returns:
            int, file type code
-
-    c_crc32():
-        Compute the Cyclic Redundancy Check (CRC)
-        Proto:
-           unsigned int crc32(unsigned int crc, const unsigned char *buf,
-                              unsigned int lbuf)
-        Args:
-           crc  (int) : (I) initial crc
-           buf        : (I) list of params to compute updated crc
-                            (numpy.ndarray of type uint32)
-           lbuf (int) : (I) length of buf*4
-        Returns:
-           int, Cyclic Redundancy Check number
 </source>
 
 
@@ -1463,18 +1450,6 @@ librmn.c_wkoffit.argtypes = (_ct.c_char_p, _ct.c_int)
 librmn.c_wkoffit.restype  = _ct.c_int
 c_wkoffit = librmn.c_wkoffit
 
-librmn.crc32.argtypes = (
-    _ct.c_uint,
-    _npc.ndpointer(dtype=_np.uint32),
-    _ct.c_uint
-    )
-## librmn.crc32.argtypes = (
-##     _ct.c_int,
-##     _npc.ndpointer(dtype=_np.uint32),
-##     _ct.c_int
-##     )
-librmn.crc32.restype  = _ct.c_uint
-c_crc32 = librmn.crc32
 
 #--- base -----------------------------------------------------------
 
