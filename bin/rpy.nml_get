@@ -56,9 +56,9 @@ if __name__ == "__main__":
     parser.add_argument("-p", "--prettyprint", dest="pprint", 
                         action="store_true", 
                         help="Pretty print the namelist file or specified namelist")
-    parser.add_option("-u","--unquote", dest="unquote",
-                      action="store_true",
-                      help="Remove quotes from namelist values")
+    parser.add_argument("-u","--unquote", dest="unquote",
+                        action="store_true",
+                        help="Remove quotes from namelist values")
 
     parser.add_argument(dest="nml_keys", 
                         nargs='*', type=str, default=[], 
@@ -125,7 +125,7 @@ if __name__ == "__main__":
                 sys.exit(1)
         else:
             fd = sys.stdout
-        if options.unquote:
+        if args.unquote:
             value = str(value).rstrip().lstrip()
             if value[0] == value[-1]:
                 value = value.strip('\"').strip("\'")
