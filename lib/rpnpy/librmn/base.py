@@ -138,7 +138,7 @@ def fclos(iunit):
     return istat
 
 
-def fnom(filename, filemode=_rc.FST_RW, iunit=0):
+def fnom(filename, filemode=_rc.FST_RW, iunit=0, legacy=False):
     """
     Open a file and make the connection with a unit number.
 
@@ -148,6 +148,7 @@ def fnom(filename, filemode=_rc.FST_RW, iunit=0):
                    or one of these constants: FST_RW, FST_RW_OLD, FST_RO
         iunit    : forced unit number to conect to
                    if zero, will select a free unit
+        legacy   : fall back to legacy fnom mode for filenames if True
     Returns:
         int, Associated file unit number
     Raises:
@@ -189,7 +190,7 @@ def fnom(filename, filemode=_rc.FST_RW, iunit=0):
         raise TypeError("fnom: Expecting arg filemode of type str, Got {0}"\
                         .format(type(filemode)))
     # Prepend filename with '+' to tell librmn to preserve filename case.
-    if not filename.startswith('+'):
+    if not (legacy or filename.startswith('+')):
       filename = '+'+filename
     istat = _rp.c_fnom(_ct.byref(ciunit), _C_WCHAR2CHAR(filename),
                        _C_WCHAR2CHAR(filemode), 0)
@@ -199,12 +200,13 @@ def fnom(filename, filemode=_rc.FST_RW, iunit=0):
     return ciunit.value
 
 
-def wkoffit(filename):
+def wkoffit(filename, legacy=False):
     """
     Return code type of file (int)
 
     Args:
         filename : path/name of the file to examine
+        legacy   : fall back to legacy fnom mode for filenames if True
     Returns:
         int, file type code as follow:
           -3     FICHIER INEXISTANT
@@ -269,7 +271,7 @@ def wkoffit(filename):
     if filename.strip() == '':
         raise ValueError("wkoffit: must provide a valid filename")
     # Prepend filename with '+' to tell librmn to preserve filename case.
-    if not filename.startswith('+'):
+    if not (legacy or filename.startswith('+')):
       filename = '+'+filename
     return _rp.c_wkoffit(_C_WCHAR2CHAR(filename), len(filename))
 
