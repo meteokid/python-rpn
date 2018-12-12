@@ -36,7 +36,8 @@ while [[ $# -gt 0 ]] ; do
    shift
 done
 
-if [[ x$rpnpy == x || ! -d $rpnpy/src ]] ; then
+# if [[ x$rpnpy == x || ! -d $rpnpy/src ]] ; then
+if [[ x$rpnpy == x ]] ; then
 	 cat <<EOF
 ERROR: \$rpnpy not defined or src subdir does not exists
        rpnpy=$rpnpy
@@ -48,7 +49,8 @@ EOF
 	 exit 1
 fi
 
-SRCLIST="${rpnpy}/include ${rpnpy}/src"
+# SRCLIST="${rpnpy}/include ${rpnpy}/src"
+SRCLIST="${rpnpy}/include"
 TOPDIRS="${rpnpy}"
 
 rm -f $(rdevar srcpathfile)
