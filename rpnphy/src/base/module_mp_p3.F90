@@ -22,8 +22,8 @@
 !    Jason Milbrandt (jason.milbrandt@canada.ca)                                           !
 !__________________________________________________________________________________________!
 !                                                                                          !
-! Version:       3.1.5                                                                     !
-! Last updated:  2018-10-19                                                                !
+! Version:       3.1.6                                                                     !
+! Last updated:  2018-12-10                                                                !
 !__________________________________________________________________________________________!
 
  MODULE MODULE_MP_P3
@@ -98,7 +98,7 @@
  use iso_c_binding
 #endif
 
-  implicit none
+ implicit none
 
 ! Passed arguments:
  character*(*), intent(in)            :: lookup_file_dir            !directory of the lookup tables
@@ -108,7 +108,7 @@
 
 ! Local variables and parameters:
  logical, save                :: is_init = .false.
- character(len=16), parameter :: version_p3               = '3.1.5 '!version number of P3
+ character(len=16), parameter :: version_p3               = '3.1.6 '!version number of P3
  character(len=16), parameter :: version_intended_table_1 = '4'     !lookupTable_1 version intended for this P3 version
  character(len=16), parameter :: version_intended_table_2 = '4'     !lookupTable_2 version intended for this P3 version
  character(len=1024)          :: version_header_table_1             !version number read from header, table 1
@@ -418,7 +418,7 @@
 #ifdef ECCCGEM
    call rpn_comm_bcast(global_status,1,RPN_COMM_INTEGER,0,RPN_COMM_GRID,istat)
 #endif
- 
+
    if (global_status == STATUS_ERROR) then
       if (err_abort) then
          print*,'Stopping in P3 init'
@@ -1751,6 +1751,7 @@ END subroutine p3_init
             deltaD_init,dum1c,dum4c,dum5c,dumt,qcon_satadj,qdep_satadj,sources,sinks,    &
             drhop,timeScaleFactor,dt_left,tmp4,tmp5,tmp6,tmp7,tmp8,tmp9
 
+ double precision :: tmpdbl1,tmpdbl2,tmpdbl3
 
  integer :: dumi,i,k,kk,ii,jj,iice,iice_dest,j,dumk,dumj,dumii,dumjj,dumzz,n,nstep,      &
             tmpint1,tmpint2,ktop,kbot,kdir,qcindex,qrindex,qiindex,dumic,dumiic,dumjjc,  &
@@ -2508,7 +2509,7 @@ END subroutine p3_init
 
           else
              rhorime_c(iice) = 400.
-!             rhorime_r(iice) = 400.
+!            rhorime_r(iice) = 400.
           endif ! qi > qsmall and T < 273.15
 
     !--------------------
@@ -2531,8 +2532,14 @@ END subroutine p3_init
           dum   = (1./lamc(i,k))**3
 !         qcheti(iice_dest) = cons6*cdist1(i,k)*gamma(7.+pgam(i,k))*exp(aimm*(273.15-t(i,k)))*dum**2
 !         ncheti(iice_dest) = cons5*cdist1(i,k)*gamma(pgam(i,k)+4.)*exp(aimm*(273.15-t(i,k)))*dum
-          Q_nuc = cons6*cdist1(i,k)*gamma(7.+mu_c(i,k))*exp(aimm*(273.15-t(i,k)))*dum**2
-          N_nuc = cons5*cdist1(i,k)*gamma(mu_c(i,k)+4.)*exp(aimm*(273.15-t(i,k)))*dum
+
+!         Q_nuc = cons6*cdist1(i,k)*gamma(7.+mu_c(i,k))*exp(aimm*(273.15-t(i,k)))*dum**2
+!         N_nuc = cons5*cdist1(i,k)*gamma(mu_c(i,k)+4.)*exp(aimm*(273.15-t(i,k)))*dum
+          tmpdbl1  = dexp(dble(aimm*(273.15-t(i,k))))
+          tmpdbl2  = dble(dum)
+          Q_nuc = cons6*cdist1(i,k)*gamma(7.+mu_c(i,k))*tmpdbl1*tmpdbl2**2
+          N_nuc = cons5*cdist1(i,k)*gamma(mu_c(i,k)+4.)*tmpdbl1*tmpdbl2
+
           if (nCat>1) then
             !determine destination ice-phase category:
              dum1  = 900.     !density of new ice
@@ -2553,10 +2560,15 @@ END subroutine p3_init
 ! for future: get rid of log statements below for rain freezing
 
        if (qr(i,k)*iSPF(k).ge.qsmall.and.t(i,k).le.269.15) then
-          Q_nuc = cons6*exp(log(cdistr(i,k))+log(gamma(7.+mu_r(i,k)))-6.*log(lamr(i,k)))* &
-                  exp(aimm*(273.15-T(i,k)))*SPF(k)
-          N_nuc = cons5*exp(log(cdistr(i,k))+log(gamma(mu_r(i,k)+4.))-3.*log(lamr(i,k)))* &
-                  exp(aimm*(273.15-T(i,k)))*SPF(k)
+
+!         Q_nuc = cons6*exp(log(cdistr(i,k))+log(gamma(7.+mu_r(i,k)))-6.*log(lamr(i,k)))*exp(aimm*(273.15-t(i,k)))*SPF(k)
+!         N_nuc = cons5*exp(log(cdistr(i,k))+log(gamma(mu_r(i,k)+4.))-3.*log(lamr(i,k)))*exp(aimm*(273.15-t(i,k)))*SPF(k)
+          tmpdbl1 = dexp(dble(log(cdistr(i,k))+log(gamma(7.+mu_r(i,k)))-6.*log(lamr(i,k))))
+          tmpdbl2 = dexp(dble(log(cdistr(i,k))+log(gamma(mu_r(i,k)+4.))-3.*log(lamr(i,k))))
+          tmpdbl3 = dexp(dble(aimm*(273.15-t(i,k))))
+          Q_nuc = cons6*tmpdbl1*tmpdbl3*SPF(k)
+          N_nuc = cons5*tmpdbl2*tmpdbl3*SPF(k)
+
           if (nCat>1) then
              !determine destination ice-phase category:
              dum1  = 900.     !density of new ice
@@ -2795,8 +2807,8 @@ END subroutine p3_init
        endif
 
        if (t(i,k).lt.258.15 .and. supi_cld.ge.0.05) then
-!         dum = exp(-0.639+0.1296*100.*supi(i,k))*1000.*inv_rho(i,k)  !Meyers et al. (1992)
-          dum = 0.005*exp(0.304*(273.15-t(i,k)))*1000.*inv_rho(i,k)   !Cooper (1986)
+!         dum = 0.005*exp(0.304*(273.15-t(i,k)))*1000.*inv_rho(i,k)         !Cooper (1986)
+          dum = 0.005*dexp(dble(0.304*(273.15-t(i,k))))*1000.*inv_rho(i,k)  !Cooper (1986)
           dum = min(dum,100.e3*inv_rho(i,k)*SCF(k))
           N_nuc = max(0.,(dum-sum(nitot(i,k,:)))*odt)
 
@@ -2909,7 +2921,9 @@ END subroutine p3_init
                 dum1  = 39.36 + (nc(i,k)*iSCF(k)*1.e-6*rho(i,k)-100.)*(30.72-39.36)*5.e-3
                 qcaut = dum+(mu_c(i,k)-5.)*(dum1-dum)*0.1
               ! 1000/rho is for conversion from g cm-3/s to kg/kg
-                qcaut = exp(qcaut)*(1.e-3*rho(i,k)*qc(i,k)*iSCF(k))**4.7*1000.*inv_rho(i,k)*SCF(k)
+!               qcaut = exp(qcaut)*(1.e-3*rho(i,k)*qc(i,k)*iSCF(k))**4.7*1000.*inv_rho(i,k)*SCF(k)
+                qcaut = dexp(dble(qcaut))*(1.e-3*rho(i,k)*qc(i,k)*iSCF(k))**4.7*1000.*   &
+                        inv_rho(i,k)*SCF(k)
              endif
              ncautc = 7.7e+9*qcaut
 
@@ -2998,7 +3012,8 @@ END subroutine p3_init
           if (dum2.lt.dum1) then
              dum = 1.
           else if (dum2.ge.dum1) then
-             dum = 2.-exp(2300.*(dum2-dum1))
+!            dum = 2.-exp(2300.*(dum2-dum1))
+             dum = 2.-dexp(dble(2300.*(dum2-dum1)))
           endif
 
           if (iparam.eq.1.) then

@@ -45,7 +45,6 @@ module series_options
    character(len=*), parameter :: STN_MISSING_S = 'UNDEFINED'
    character(len=*), parameter :: PKGNAME_S = '(series) '
    character(len=32), parameter :: VERSION_S = 'rpnphy_series_6'
-   character(len=*), parameter :: SER_FILENAME_S = 'time_series.bin'
    !#Note: keep P_serg_srgeo_s in sync with series_geop_mod
    character(len=SER_STRLEN_VAR), parameter :: P_serg_srgeo_s(NVARGEO) = &
         (/'MA', 'LA', 'LO', 'ZP', 'MG', 'LH', &
