@@ -83,7 +83,6 @@ RDEB_m=$(rpy.nml_get -f ${NMLFILE} step/Fcst_start_S        2> /dev/null | sed '
 RFIN_m=$(rpy.nml_get -f ${NMLFILE} step/Fcst_end_S          2> /dev/null | sed 's/"//g' | sed "s/'//g")
 RRST_m=$(rpy.nml_get -f ${NMLFILE} step/Fcst_rstrt_S        2> /dev/null | sed 's/"//g' | sed "s/'//g")
 BKUP_m=$(rpy.nml_get -f ${NMLFILE} step/Fcst_bkup_S         2> /dev/null | sed 's/"//g' | sed "s/'//g")
-FREQ_m=$(rpy.nml_get -f ${NMLFILE} gem_cfgs/Out3_postfreq_s 2> /dev/null | sed 's/"//g' | sed "s/'//g")
 count=0 ; abort_file=samecfg_abort_
 domain_number=$((DOMAIN_start+1))
 while [ $domain_number -le $DOMAIN_end ] ; do
@@ -93,7 +92,7 @@ while [ $domain_number -le $DOMAIN_end ] ; do
   listing=same_config_${dname}.lis
   ${TASK_BIN}/same_multidomain_cfg.ksh \
      -f ${NMLFILE} -deb =${RDEB_m} -fin =${RFIN_m} -rst =${RRST_m} \
-     -bkp =${BKUP_m} -freq =${FREQ_m} -abortf ${abort_file}${dname} \
+     -bkp =${BKUP_m} -abortf ${abort_file}${dname} \
      1> ${listing} 2>&1 &
   if [ $count -eq $nthreads ] ; then
      date ; wait ; date
