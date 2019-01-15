@@ -1,0 +1,113 @@
+#!/bin/ksh
+# @Object: Remove src file, local modifications and libs
+# @Author: S.Chamberland
+# @Date:   March 2014
+. .rdebase.inc.dot
+
+DESC='Remove src file, local modifications and libs'
+USAGE="USAGE: ${MYSELF} [-h] [-v] [-l|--local_only] FILES"
+
+usage_long() {
+	 toto=$(echo -e $USAGE)
+	 more <<EOF
+$DESC
+
+$toto
+
+Options:
+    -h, --help         : print this help
+    -v, --verbose      : verbose mode
+    -l, --local_only   : remove only local src modifications (leave lib copy)
+                         If a lib version exists, it will bring it back
+                         DEFAULT: removes local and lib copies
+        --stubs        : create stubs for the included modules, functions, sub
+    FILES              : space separated list of src files to remove
+EOF
+}
+
+mystatus=0
+localonly=0
+mylocal=""
+mystubs=0
+PATHLIST=""
+while [[ $# -gt 0 ]] ; do
+   case $1 in
+      (-h|--help) usage_long; exit 0;;
+      (-v|--verbose) ((verbose=verbose+1));;
+      (-l|--local_only) localonly=1; mylocal=-l;;
+      (--stubs) mystubs=1;;
+      (-*) myerror "Option Not recognized: $1";;
+        *) PATHLIST="$PATHLIST $1" ;;
+    esac
+	 previous=$1
+    shift
+done
+
+if [[ x"$PATHLIST" == x"" ]] ; then
+   myerror "Must provide at least one FILE name"
+fi
+
+if [[ $mystubs == 1 ]] ; then
+   myerror "options --stubs is not supported yet"
+fi
+
+rde_exit_if_not_rdetopdir
+
+
+mymakefilestub() {
+   _myfile=$1
+   _isinc="$(echo ":${INCSUFFIXES}:" | tr ' ' ':' | grep \.${_myfile##*.})"
+   if [[ x"$_isinc" != x"" ]] ; then
+      echo "DELETED - should cause an error if included + compiled" > ${_myfile}
+      return 0
+   fi
+   _iscomp="$(echo ":${SRCSUFFIXES}:" | tr ' ' ':' | grep \.${_myfile##*.})"
+   if [[ x"$_iscomp" != x"" ]] ; then
+      #myerror "Removing (building a stub of) a source file is not yet supported, ignoring ${_myfile}"
+      cat > ${_myfile} <<EOF
+!# DELETED - This file was removed
+subroutine dummy_$$
+return
+end
+EOF
+   fi
+}
+
+isfile=0
+for myfile in $PATHLIST ; do
+   myfilel="$(rdelocate -l $myfile 2>/dev/null | grep -v "Missing file"| tr "\n" " " | cut -d" " -f1)"
+   myfiler="$(rdelocate -r $myfile 2>/dev/null | grep -v "Missing file"| tr "\n" " " | cut -d" " -f1)"
+   isfile0=""
+   if [[ x$myfilel == x ]] ; then
+      if [[ x$myfiler == x ]] ; then
+         myecho 1 "No such file: $myfile"
+         continue
+      elif [[ $localonly == 1 ]] ; then
+         myecho 1 "No local version of: $myfile"
+         continue
+      fi
+   else
+      myecho 1 "Removing local version of: $myfile"
+      rm -f $myfilel
+      isfile0="Removed"
+      if [[ x$myfiler != x && $localonly != 0 ]] ; then
+         myecho 1 "Library verion will be used for: $myfile"
+         isfile0="Removed (local) "
+      fi      
+   fi
+   if [[ x$myfiler != x && $localonly == 0 ]] ; then
+      myecho 1 "Making stub for: $myfile"
+      mymakefilestub $myfile
+      isfile0="Removed (stubbed) "
+   fi
+   if [[ x"$isfile0" != x"" ]] ; then
+      myecho 0 "$isfile0: $myfile"
+      isfile=1
+   fi
+done
+
+if [[ $isfile == 1 ]] ; then
+   myecho 1 "WARNING: files were removed, you may want to update dependencies with:\n\tmake dep"
+fi
+
+exit $mystatus

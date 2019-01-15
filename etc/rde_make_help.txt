@@ -1,0 +1,48 @@
+ ==============================================================
+ The following are some of the valid targets for this Makefile:
+ 
+ dep            : Update dependencies
+ obj            : Compile all out of date objects
+ obj_forced     : Force compile all locally modified source files
+                  and all source files depending on them
+ 
+ FILENAME.o     : Build a single .o if not up to date
+                  To force a build of a .o you need to 'touch' its source file
+ _invdep_.FILENAME.ext : 
+                  Build all inverse dependencies of FILENAME.ext if not up to date
+                  To force a re-build all inverse dependencies of FILENAME.ext
+                  you'll need to 'touch' FILENAME.ext
+
+ objects        : build all files in the source path
+
+ clean          : rm *.o *.mod from build tree (keep lib and bin)
+                  rm derived & extraced src files (keeps locally modified ones)
+ buildlean      : rm all files from build tree
+ distclean      : rm all files from build tree and all RDE locally created files 
+ 
+ tags           : Build the tag file for ${EDITOR:-vi} code navigation
+                  You may set the EDITOR env. var. to make the tag file for that editor
+ --------------------------------------------------------------
+ User overrides file: Makefile.user.mk
+ 
+ Example of content:
+ 
+ VERBOSE  = -v
+ OPTIL    = 2
+ OMP      = -openmp
+ MPI      = -mpi
+ #LFLAGS  = 
+ #ifeq (intel13sp1u2,$(CONST_RDE_COMP_ARCH))
+ #FFLAGS  = -g -traceback -C -ftrapuv #-warn all
+ #else
+ #FFLAGS  = -g -traceback -C -qinitauto=FF -qflttrap=ov:zerodivide:enable:invalid
+ #endif
+ #CFLAGS  =
+ #LIBAPPL = 
+ #LIBPATH_USER = 
+ #COMP_RULES_FILE = $(ROOT)/Compiler_rules_$(CONST_RDE_COMP_ARCH)
+ --------------------------------------------------------------
+ For a list and details of tools use:
+   rdehelp [--long]
+ ==============================================================
+ 

@@ -1,0 +1,37 @@
+#!/bin/ksh
+Prefixlang=""
+Suffixlang="f"
+
+if [ "$1" = "-f90" ]; then
+	Prefixlang="-lang-f90+"
+   Suffixlang="f90"
+	shift
+fi
+
+COMPILING_FORTRAN=YES
+. rde.get_compiler_rules.dot
+
+rm -f ${DestFile}.${Suffixlang}
+
+if [[ -n $Verbose ]] ; then
+   cat <<EOF
+r.gppf "$Prefixlang" -chop_bang -gpp -F  --curdirinclast \\
+	$(s.prefix -I ${INCLUDES} ${EC_INCLUDE_PATH}) \\
+	-D__FILE__="#file" -D__LINE__="#line" ${DEFINES} \\
+	"$SourceFile" > ${DestFile}.${Suffixlang}  || { rm -f ${DestFile}.${Suffixlang} ; exit 1 ; }
+EOF
+fi
+
+doit() {
+   status=0
+   r.gppf "$Prefixlang" -chop_bang -gpp -F  --curdirinclast \
+	   $(s.prefix -I ${INCLUDES} ${EC_INCLUDE_PATH}) \
+	   -D__FILE__=\"#file\" -D__LINE__=\"#line\" ${DEFINES} \
+ 	   "$SourceFile" 2>&1 > ${DestFile}.${Suffixlang} || { rm -f ${DestFile}.${Suffixlang} ; status=1 ;} 
+   return $status
+}
+
+toto="$(doit)"
+status=$?
+if [[ x$status != x0 ]] ; then echo $toto ; fi
+exit $status

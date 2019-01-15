@@ -1,0 +1,81 @@
+#!/bin/ksh
+# @Object: Open editor with files in build or src directory
+# @Author: S.Chamberland
+# @Date:   March 2014
+. .rdebase.inc.dot
+
+DESC='Open editor with files in build or src directory'
+USAGE="USAGE: ${MYSELF} [-h] [-b|-s|-l] [-v|-e] FILENAME [FILENAME2 ...]"
+usage_long() {
+	 toto=$(echo -e $USAGE)
+	 more <<EOF
+$DESC
+
+$toto
+
+Options:
+    -h, --help : print this help
+    -v, --verbose      : verbose mode
+    -l, --local : locate FILENAME in locally modified src only
+    -r, --ref   : locate FILENAME in src ref dirs only
+    -b, --build : locate FILENAME in build dir only
+    -V, --vi    : use vi    (DEFAULT: EDITOR=${EDITOR})
+    -E, --emacs : use emacs (DEFAULT: EDITOR=${EDITOR})
+
+Without -l, -r or -b, FILENAME is search in order in local, build then ref, first file found is displayed in the EDITOR
+
+EOF
+}
+
+EDITOR=${EDITOR:-vi}
+files=""
+binmode=0
+mydiropt=""
+while [[ $# -gt 0 ]] ; do
+   case $1 in
+      (-h|--help) usage_long; exit 0;;
+      (-v|--verbose) ((verbose=verbose+1));;
+      (-b|--build) mydiropt="-b"; binmode=1;;
+      (-l|--local) mydiropt="-l"; binmode=0;;
+      (-r|--ref)   mydiropt="-r"; binmode=0;;
+      (-E|--emacs) EDITOR=emacs;;
+      (-V|--vi) EDITOR=vi;;
+      (--) shift ; break;;
+      (-*) myerror "Option Not recognized: $1";;
+        *) files="$files $1"
+    esac
+	 previous=$1
+    shift
+done
+files="$files $@"
+
+if [[ x"$files" == x" " ]] ; then
+   myerror "Must provide at least one filename"
+fi
+
+rde_exit_if_not_rdetopdir
+
+files2=" "
+for item in $files ; do
+   item2="$(rdelocate ${mydiropt} $item 2>/dev/null | cut -d' ' -f1)"
+   if [[ x"$item2" == x"" ]] ; then
+      mysimfile="$(.rdesimilnames $item)"
+      mynbsim="$(echo $(echo $mysimfile | wc -w))"
+      if [[ x$mynbsim == x1 && ${mysimfile%.*} ==  $item ]] ; then
+         item2="$(rdelocate ${mydiropt} $mysimfile 2>/dev/null | cut -d' ' -f1)"
+         files2="$files2 $item2"
+      else
+         mystderr 0 "WARNING: file $item was not found"   
+         mystderr 0 ".. . . . Maybe you meant one of: $mysimfile"
+         mystderr 0 ".. . . . Or try ${MYSELF} $item with --local or --build or --ref"
+      fi
+   else
+      files2="$files2 $item2"
+   fi
+done
+if [[ x"$files2" != x" " ]] ; then
+   myecho 0 "$EDITOR $files2"
+   $EDITOR $files2
+else
+   myecho 0 "No files to edit"
+fi

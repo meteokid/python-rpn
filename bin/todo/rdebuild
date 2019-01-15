@@ -1,0 +1,119 @@
+#!/usr/bin/env ksh
+# @Object: Build target from source code from a specified experiment
+. .rdebase.inc.dot
+
+DESC='Build target from source code from a specified experiment'
+USAGE="Usage: ${MYSELF} [-h] [-v] [-m MACH] [-t TARGETS] [-n NAME] [-d MACH:/DEST/PATH/] [-w MACH:/WORK/PATH/] [PATH/TO/EXP]"
+
+usage_long() {
+         toto=$(echo -e $USAGE)
+         more 1>&2 <<EOF
+$DESC
+
+$toto
+
+Where:
+    PATH/TO/EXP : /PATH/TO/EXP/ to build (default: .)
+
+Options:
+    -h, --help     : print this help
+    -v, --verbose  : verbose mode
+    -t, --targets  : target list (default=gem)
+    -n, --name     : build name  (default=$USER/EXPNAME)
+    -m, --mach     : computer name where to build (default=localhost)
+    -d, --dest     : dest mach:/path/ where to put the build result 
+                     (default=MACH:\${EXPDIR}/suite/base/hub/MACH/work)
+    -w, --work     : workdir (/path/) where to do the build on MACH
+                     (default=\${EXPDIR}/suite/base/hub/MACH/work)
+EOF
+}
+
+# Retrieve and parse command line arguments
+verbose=0
+myforce=0
+mytargets='gem'
+myexpdir='.'
+myname=''
+mymach=$(hostname)
+mydest=''
+mywork=''
+while [[ $# -gt 0 ]] ; do
+   case $1 in
+      (-h|--help) usage_long; exit 0;;
+      (-v|--verbose) ((verbose=verbose+1));;
+      (-f|--force) myforce=1;;
+      (-t|--targets) shift ; mytargets="$(echo ${1})";;
+      (--targets=*) mytargets="$(echo ${1#*=})";;
+      (-n|--name) shift ; myname=$1;;
+      (--name=*) myname="$(echo ${1#*=})";;
+      (-d|--dest) shift ; mydest=$1;;
+      (--dest=*) mydest="$(echo ${1#*=})";;
+      (-w|--work) shift ; mywork=$1;;
+      (--work=*) mywork="$(echo ${1#*=})";;
+      (--) shift ; break;;
+      (-*) myerror "ERROR: Option Not recognized: $1" ;;
+      *) myexpdir="$1)";;
+    esac
+    shift
+done
+
+myexpdir="$(true_path ${myexpdir})"
+if [[ -z "${myexpdir}" || ! -d "${myexpdir}" ]] ; then
+   mystderr 0 "ERROR: No experience dir provided or not an accessible dir: ${myexpdir}"
+   usage_long; exit 1
+fi
+
+if [[ -z "${mytargets}" ]] ; then
+   mystderr 0 "ERROR: No target provided"
+   usage_long; exit 1
+fi
+
+if [[ -z "${myname}" ]] ; then
+   myname="${USER:-${LOGNAME}}/${myexpdir##*/}"
+fi
+
+if [[ -z "${mywork}" ]] ; then
+   mywork="${myexpdir}/suite/base/hub/${mymach}/work"
+fi
+
+if [[ -z "${mydest}" ]] ; then
+   mydest="${mymach}:${mywork}"
+fi
+
+isok=1
+ssh ${mymach} ls ${mywork} > /dev/null || isok=0
+if [[ $isok == 0 ]] ; then
+   mystderr 0 "ERROR: workdir does not exists ${mymach}:${mywork}"
+   usage_long; exit 1
+fi
+
+isok=1
+ssh ${mydest%%:*} ls ${mydest#*:} > /dev/null || isok=0
+if [[ $isok == 0 ]] ; then
+   mystderr 0 "ERROR: dest does not exists ${mydest}"
+   usage_long; exit 1
+fi
+
+#Take copy of the code
+mkdir -p $TMPDIR/$$
+rdecp -v ${myexpdir} --tar=${}/rdebuildjob-$$.tgz
+
+jobname=$TMPDIR/rdebuildjob-${mymach}-$$
+cat > $jobname <<EOF
+set -e
+set -x
+export mysource=${mysource}
+export mytargets="${mytargets}"
+export myname="${myname}"
+export mydest="${mydest}"
+export mywork="${mywork#*:}"
+cd \${mywork}
+tar xzvf ${mysource}
+set +x
+. .rde.setenv.dot
+set -x
+rdemklink -v
+make -j obj
+make \${mytargets} BUILDNAME=\${myname}
+#TODO: rsync -av $(rdevar build/bin) \${mydest}
+EOF

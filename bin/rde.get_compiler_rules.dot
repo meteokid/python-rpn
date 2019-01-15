@@ -1,0 +1,297 @@
+#!/bin/ksh
+#
+# s.get_compiler_rules.dot
+
+export LC_ALL=C
+
+for _item in $@ ; do
+   case ${_item} in
+      -verbose) Verbose="YES" ; break ;;
+   esac
+done
+
+get_comp_rules_file() {
+   _prev=''
+   for _item in $@ ; do
+      case ${_item} in
+         (--comprules=*) echo ${_item#*=} ; return ;;
+      esac
+   done
+   echo "$(s.get_compiler_rules \"$@\")"
+}
+   
+get_filename() {
+   _prev=''
+   for _item in $@ ; do
+      case ${_item} in
+         (-*) _prev=${_item} ;;
+         *)
+            case ${_prev} in
+               (-src|-src1)  echo ${_item} ; return ;;
+            esac ;;
+      esac
+   done
+   echo /dev/null
+}
+
+get_comp_extras() {
+   head -10 ${1} | \
+      perl -ne "print if s/^([ ]*(\!|\/\/|\/*)COMP_ARCH=([.]|${COMP_ARCH})[ ]*;)(.*)/\$4/" | \
+      tr -d '\n' | \
+      sed -e 's/[ ]*;[ ]*/;/g'
+}
+
+get_opt_suppress() {
+   _outfile=$1
+   shift
+   if [[ x"$(echo $@ | grep -- '-suppress=')" == x"" ]] ;then
+      echo ""
+      return
+   fi
+   printf "sed -e 's/^//'" > ${_outfile}
+   _cnt=1
+   _item="$(echo $@ | cut -d';' -f${_cnt})"
+   _nmax="$(echo $@ | tr ';' '\n' | wc -l)"
+   while [[ -n ${_item} && _cnt -lt 64 && _cnt -le ${_nmax} ]] ; do
+      case "${_item}" in 
+         -suppress=*) 
+            _item="$(echo ${_item#*=} | sed 's/^[ ]*//' | sed 's/[ ]*$//')" ;\
+            printf " -e 's/ %s / /g'"  "${_item}" >>${_outfile} ;\
+            echo "+ ${myfile##*/} COMP FLAGS Suppressing: ${_item}" 1>&2 \
+            ;;
+      esac
+      let _cnt=_cnt+1
+      _item="$(echo $@ | cut -d';' -f${_cnt})"
+   done
+   printf " -e 's:$: %s:'"  "${File}" >>${_outfile}
+   printf "\n" >>${_outfile}
+   chmod 755 ${_outfile}
+   #printf "%s" "+ Suppress Command: " 1>&2
+   #cat ${_outfile} 1>&2
+   echo ${_outfile}
+}
+
+get_opt_add() {
+   myaddflags=""
+   _cnt=1
+   _item="$(echo $@ | cut -d';' -f${_cnt})"
+   _nmax="$(echo $@ | tr ';' '\n' | wc -l)"
+   while [[ -n ${_item} && _cnt -lt 64 && _cnt -le ${_nmax} ]] ; do
+      case "${_item}" in 
+         -add=*) 
+            _item="$(echo ${_item#*=} | sed 's/^[ ]*//' | sed 's/[ ]*$//')" ;\
+            myaddflags="${myaddflags} ${_item}" \
+            ;;
+      esac
+      let _cnt=_cnt+1
+      _item="$(echo $@ | cut -d';' -f${_cnt})"
+   done
+   if [[ -n ${myaddflags} ]] ; then
+      echo "+ ${myfile##*/} COMP FLAGS Adding: ${myaddflags}" 1>&2
+   fi
+   echo ${myaddflags}
+}
+
+suppress_cmdline_args() {
+   printf "%s" "set -- "
+   _mycmd=$1
+   shift;
+   _myadd=$1
+   shift;
+   echo " $@ " | ${_mycmd}
+   echo ${_myadd}
+}
+
+set_cmdline_args() {
+   echo "set -- $@"
+}
+
+CompilerRules="$(get_comp_rules_file $@)"
+myfile="$(get_filename $@)"
+mypragmas="$(get_comp_extras "${myfile}")"
+if [[ -n ${mypragmas} ]] ; then
+   mysuppcmd="$(get_opt_suppress ${TMPDIR}/FiLtEr_$$ ${mypragmas})"
+   myaddflags="$(get_opt_add ${mypragmas})"
+fi
+
+if [[ -n ${mysuppcmd} ]] ; then
+   eval $(suppress_cmdline_args "${mysuppcmd}" "${myaddflags}" "$@")
+elif [[ -n ${myaddflags} ]] ; then
+   eval $(set_cmdline_args $@ ${myaddflags})
+fi
+
+if [ -n "${CompilerRules}" ]; then
+   for CompilerRule in ${CompilerRules}; do
+      if [[ -r ${CompilerRule} ]] ; then
+         if [[ -n ${Verbose} ]] ; then
+            echo USING: ${CompilerRule}
+            . ${CompilerRule}
+         else
+            . ${CompilerRule} > /dev/null
+         fi
+      fi
+   done
+fi
+
+if [ -n "${COMPILING_FORTRAN}${COMPILING_C}" ]; then
+   LocalArgs=1
+   unset WILL_LINK
+   WITH_OPENMP=-DWITHOUT_OpenMP
+   C_SHARED=""
+   if [[ "$(echo ${MPI_LIB} | tr 'a-z' 'A-Z')" == "NONE" ]] ; then
+      export MPI_LIB=""
+   fi
+   while [[ -n $LocalArgs && -n $1 ]]; do
+      if [ -n "$COMPILING_FORTRAN" ]; then
+         case "$1" in
+         --comprules=*) ;; #ignore
+         -verbose )
+            Verbose=yes
+            ;;
+         -mpi )
+            FC="$MPI_FC" ; F90C="$MPI_F90C" ; SYSLIBS="$SYSLIBS ${MPI_LIB}"
+            ;;
+         -openmp )
+            FFLAGS="$FFLAGS $OPENMP"
+            WITH_OPENMP=-DWITH_OpenMP
+            ;;
+         -debug )
+            FFLAGS="$FFLAGS $O_DEBUG"
+            ;;
+         -prof )
+            FFLAGS="$FFLAGS $prof_option"
+            ;;
+         -dynamic )
+            FC_STATIC=""
+            ;;
+         -shared )
+            FC_STATIC="$FC_SHARED"
+            ;;
+         -O )
+            Temp="-O"
+            [[ "$2" =  [0-5] ]] && shift && Temp="${F_Opt[$1]}"
+            FFLAGS="$FFLAGS $Temp"
+            ;;
+         -o )
+            shift
+            [[ "$1" = *.so* ]] && FC_STATIC="$FC_SHARED"
+            DestFile=${1%.*}
+            FFLAGS="$FFLAGS -o $1"
+            ;;
+         -src )
+            shift
+            SourceFile="$1"
+            [[ $1 = */* ]] && INCLUDES="${1%/*} $INCLUDES"
+            ;;
+         -src1 )
+            shift
+            SourceFile="$1"
+            [[ $1 = */* ]] && INCLUDES="$INCLUDES ${1%/*}"
+            ;;
+         -D* )
+            DEFINES="$DEFINES $1"
+            ;;
+         -I* )
+            INCLUDES="$INCLUDES ${1#-I}"
+            ;;
+         -l* )
+            LIBRARIES="$LIBRARIES ${1#-l}"
+            WILL_LINK=yes
+            ;;
+         -L* )
+            LIBRARIES_PATH="$LIBRARIES_PATH ${1#-L}"
+            WILL_LINK=yes
+            ;;
+         -- )
+            unset LocalArgs
+            ;;
+         * )
+            FFLAGS="$FFLAGS $1"
+            ;;
+         esac
+      elif [ -n $COMPILING_C ]; then
+         case "$1" in
+         --comprules=*) ;; #ignore
+         -verbose )
+            Verbose=yes
+            ;;
+         -mpi )
+            CC="$MPI_CC" ; CPP="$MPI_CPP" ; SYSLIBS="$SYSLIBS ${MPI_LIB}"
+            ;;
+         -openmp )
+            CFLAGS="$CFLAGS $OPENMPCC"
+            WITH_OPENMP=-DWITH_OpenMP
+            ;;
+         -debug )
+            CFLAGS="$CFLAGS $O_DEBUG"
+            ;;
+         -prof )
+            CFLAGS="$CFLAGS $prof_option"
+            ;;
+         -shared )
+            C_SHARED=${CC_SHARED:--shared}
+            ;;
+         -src )
+            shift
+            SourceFile="$1"
+            [[ $1 = */* ]] && INCLUDES="${1%/*} $INCLUDES"
+            ;;
+         -src1 )
+            shift
+            SourceFile="$1"
+            [[ $1 = */* ]] && INCLUDES="$INCLUDES ${1%/*}"
+            ;;
+         -I* )
+            INCLUDES="$INCLUDES ${1#-I}"
+            ;;
+         -O )
+            Temp="-O"
+            [[ "$2" =  [0-5] ]] && shift && Temp="${C_Opt[$1]}"
+            CFLAGS="$CFLAGS $Temp"
+            ;;
+         -o )
+            shift
+            [[ "$1" = *.so* ]] && C_SHARED=${CC_SHARED:--shared}
+            DestFile=${1%.*}
+            CFLAGS="$CFLAGS -o $1"
+            ;;
+         -- )
+            unset LocalArgs
+            ;;
+         -L* )
+            LIBRARIES_PATH="$LIBRARIES_PATH ${1#-L}"
+            WILL_LINK=yes
+            ;;
+         -l* )
+            CFLAGS="$CFLAGS $1"
+            WILL_LINK=yes
+            ;;
+         * )
+            CFLAGS="$CFLAGS $1"
+            ;;
+         esac
+      fi
+      shift
+   done
+
+   CFLAGS="$CFLAGS ${C_SHARED}"
+   FFLAGS="$FFLAGS $FC_STATIC"
+   DEFINES="$DEFINES $WITH_OPENMP $define"
+
+   [[ -d $ARMNLIB/include ]] && INCLUDES="$INCLUDES ${ARMNLIB}/include"
+   [[ -d $ARMNLIB/include/${EC_ARCH} ]] && INCLUDES="$INCLUDES ${ARMNLIB}/include/${EC_ARCH}"
+   [[ -z $DestFile ]] && DestFile=${SourceFile##*/} && DestFile=${DestFile%.*}
+fi
+
+if [[ -n ${mysuppcmd} ]] ; then
+   CFLAGS="$(echo " $CFLAGS " | ${mysuppcmd})"
+   FFLAGS="$(echo " $FFLAGS " | ${mysuppcmd})"
+   FC_options="$(echo " $FC_options " | ${mysuppcmd})"
+   FC_LD_options="$(echo " $FC_LD_options " | ${mysuppcmd})"
+   CC_options="$(echo " $CC_options " | ${mysuppcmd})"
+   CC_options_NOLD="$(echo " $CC_options_NOLD " | ${mysuppcmd})"
+   CPP_options="$(echo " $CPP_options " | ${mysuppcmd})"
+   rm -f ${mysuppcmd} 2>/dev/null || true
+fi
+
+unset myfile mypragmas mysuppcmd myaddflags 2>/dev/null || true

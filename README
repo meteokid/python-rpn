@@ -1,0 +1,26 @@
+==== Building ============================================================
+
+#git clone ssh://armnenv@localhost/~armnenv/GitDepots/rde.git
+git clone ssh://localhost/~armnenv/GitDepots/rde.git
+cd rde
+#git checkout -b tmp rde_VERSION
+#update version number (including leading 'x/') in Makefile
+. ./.setenv.dot
+make ssm
+
+==== Installing ==========================================================
+
+ssh MY_INSTALL_MACH
+cd /PATH/
+. ./.setenv.dot
+make install CONFIRM_INSTALL=yes
+## make install CONFIRM_INSTALL=yes SSM_BASE=/ssm/net/rpn/MIG SSM_BASE2=""
+## make install CONFIRM_INSTALL=yes SSM_BASE2=""
+
+==== Uninstalling ========================================================
+
+ssh MY_INSTALL_MACH
+cd /PATH/
+. ./.setenv.dot
+make uninstall UNINSTALL_CONFIRM=yes
+

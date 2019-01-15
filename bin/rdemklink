@@ -1,0 +1,115 @@
+#!/bin/ksh
+#
+
+. .rdebase.inc.dot
+
+DESC='Create dir and links for RPN Code Dev Env'
+USAGE="USAGE: ${MYSELF} [-v] [-f]"
+
+usage_long() {
+	 toto=$(echo -e $USAGE)
+	 more <<EOF
+$DESC
+
+$toto
+
+Options:
+    -h, --help         : print this help
+    -v, --verbose      : verbose mode
+    -f, --force        : force update links
+
+EOF
+}
+
+myforce=0
+while [[ $# -gt 0 ]] ; do
+   case $1 in
+      (-h|--help) usage_long; exit 0;;
+      (-v|--verbose) ((verbose=verbose+1));;
+      (-f|--force) myforce=1;;
+      (*) if [[ x$1 != x ]] ; then myerror "Option Not recognized: $1";fi;;
+    esac
+    shift
+done
+
+STORAGE=$(rdevar storage)
+BUILD=$(rdevar build)
+if [[ $verbose -gt 0 ]] ; then
+   echo STORAGE=$STORAGE
+   echo BUILD=$BUILD
+fi
+
+if [[ -z "${STORAGE}" ]] ; then
+   myerror "Storage var not defined, check your \$storage_model var: $storage_model"
+fi
+
+# if [[ $verbose -gt 0 ]] ; then
+#    set -x
+# fi
+
+myecho 1 "+ mkdir -p $STORAGE"
+mkdir -p $STORAGE
+touch $STORAGE/.restricted
+if [[ $myforce == 1 ]] ; then 
+   rm -rf $BUILD
+fi
+if [[ ! -e $BUILD ]] ; then
+   myecho 1 "+ ln -s $STORAGE $BUILD"
+   ln -s $STORAGE $BUILD
+fi
+
+for item in $(rdevar -l build/) ; do
+   mydir="$(rdevar $item)"
+   if [[ -z "$mydir" ]] ; then
+      myerror "Var not defined: rdevar $item"
+   fi
+   myecho 1 "+ mkdir -p $mydir"
+   mkdir -p $mydir
+   if [[ ! -d $mydir ]] ; then
+      myerror "Problem creating dir for $item: $mydir"
+   fi
+done
+
+for item in $RDE_BASE_MAKEFILES ; do
+   if [[ -f $item && $myforce == 1 ]] ; then
+      myecho 1 "+ rm -f $item"
+      rm -f $item
+   fi
+   if [[ ! -e $item ]] ; then
+      myecho 1 "+ ln -sf $RDE_INCLUDE/$item $item"
+      ln -sf $RDE_INCLUDE/$item $item
+   fi
+   if [[ -f mes_recettes ]] ; then
+      if [[ ! -f  Makefile.user.mk || $myforce == 1 ]] ; then
+         myecho 1 "+ mv Makefile.user.mk Makefile.user.mk-bk-$$"
+         myecho 1 "+ ln -sf mes_recettes Makefile.user.mk"
+         mv Makefile.user.mk Makefile.user.mk-bk-$$
+         ln -sf mes_recettes Makefile.user.mk
+      fi
+   fi
+done
+if [[ ! -e Makefile.user.mk ]] ; then
+   myecho 1 "+ cp $RDE_INCLUDE/Makefile.user.mk ."
+   cp $RDE_INCLUDE/Makefile.user.mk .
+fi
+
+RDE_CONFIG_FILE=$(rdevar rde_config_file)
+RDE_ARCH=$(rdevar rde_arch)
+RDE_LINKED_ARCH_LIST="$(rdevar rde_linked_arch_list)"
+_found=0
+for item in $RDE_LINKED_ARCH_LIST ; do
+   if [[ x$item == x$RDE_ARCH ]] ; then
+      _found=1
+   fi
+done
+if [[ $_found == 0 ]] ; then
+   myecho 1 "+ Create $RDE_CONFIG_FILE"
+   cat >> $RDE_CONFIG_FILE <<EOF
+RDE_LINKED_ARCH_LIST="\$RDE_LINKED_ARCH_LIST $RDE_ARCH"
+EOF
+   rm -f $(rdevar Makefile_const_wild)
+fi
+
+#TODO: create/update .setenv.dot to reload rde/model?
+
+

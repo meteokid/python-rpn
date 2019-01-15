@@ -1,0 +1,287 @@
+#!/bin/ksh
+# @Object: Add a component to a PF workdir
+# @Author: S.Chamberlands
+# @Date:   June 2014
+#
+
+. .pfbase.inc.dot
+
+##
+# Help
+##
+DESC='Import components into a PF workdir SRC_REF'
+USAGE="USAGE: ${MYSELF} [-h] [-v] [-f] [--srcpath=PATH] [--file=COMPONENT_LIST_FILE] COMPNAME/COMPVERSION"
+usage_long() {
+	 toto=$(echo -e $USAGE)
+	 more <<EOF
+$DESC
+
+$toto
+
+Options:
+    -h, --help     : print this help
+    -v, --verbose  : verbose mode
+    -f, --force    : force, overwrite present installation 
+                     [Not fully yet implemented]
+    --srcpath=PATH : List of dir where to look for src COMPONENT/VERSION
+                     [Default: $(pf_src_path)]
+    --file=/PATH/TO/COMPONENT_LIST_FILE
+                     File with list of COMPNAME/COMPVERSION
+    --skip_mkdep     :Do not redo dependencies
+
+EOF
+}
+
+##
+# Remove components dir and src
+##
+pf_rm_component() {
+   _comp=$1
+   _do_src_usr=$2
+   mystderr 1 "Remove Component dir and src: $_comp/$_ver"
+   #rm src_ref
+   rm -f $ROOT/$SRC_REF/$_comp 2>/dev/null || true
+   rm -rf $ROOT/$SRC_REF/$_comp 2>/dev/null || true
+   #rm build
+   for _mydir in $BUILD_SUB_DIR_LIST ; do
+      rm -rf $STORAGE_BIN/$_mydir/$_comp 2>/dev/null || true
+   done
+   #rm src_usr
+   if [[ x$_do_src_usr == xyes ]] ;then
+      rm -rf $ROOT/$SRC_USR/$_comp 2>/dev/null || true
+   fi
+   #TODO: rm ref/bin
+}
+
+##
+# Find components src path
+##
+pf_find_component() {
+   _comp=$1
+   _ver=$2
+   src_path="${srcpath0}:$(pf_src_path)"
+   for mydir in $(echo $src_path | tr ':' ' ') ; do
+      if [[ -d $mydir/$_comp/$_ver/include || -d $mydir/$_comp/$_ver/src ]] ; then
+         echo $mydir
+         return 0
+      fi
+   done
+   return 1
+}
+
+##
+# Import components dir and src
+##
+pf_add_component() {
+   _comp=$1
+   _ver=$2
+   mystderr 1 "++ Importing Component: $_comp/$_ver"
+
+   pf_add_component_ref $_comp $_ver
+   _status=$?
+   if [[ $_status -eq 0 || x$myforce == xbin ]] ; then
+      pf_add_component_mirror_dir $_comp
+      pf_clone_component_build $_comp $_ver $_clonepath
+      #TODO: prevent src cp if hasclonesource
+      pf_fill_component_build $_comp
+   fi
+   if [[ $_status -ne 0 ]] ; then
+      return 1
+   fi
+   pf_add_component_version_file $_comp $_ver
+
+   #Keep track
+   echo $_comp/$_ver >> $ROOT/.pf.components
+   cp $ROOT/.pf.components $TMPDIR/.pf.components_$$
+   cat $TMPDIR/.pf.components_$$ | sort -u > $ROOT/.pf.components
+   rm -f $TMPDIR/.pf.components_$$
+
+   #Add/Update Purplefrog build system unless no_update
+}
+
+pf_add_component_ref() {
+   _comp=$1
+   _ver=$2
+   if [[ -d $ROOT/$SRC_REF/$_comp ]] ; then
+      mystderr $((1+$nowarn_if_exists)) "WARNING: Component already linked in $SRC_REF"
+      if [[ x$myforce == x-f ]] ; then
+          mystderr $((1+nowarn_if_exists)) "........ Replacing existing $_comp"
+          pf_rm_component $_comp no
+      elif [[ x$myforce == xbin ]] ; then
+         mystderr $((1+$nowarn_if_exists)) "........ Will only update the build src for: $_comp"
+         mystderr $((1+$nowarn_if_exists)) "........ To replace existing $_comp, Use: ${MYSELF} -f  $_comp/$_ver"
+         return 1
+      else
+         mystderr $((1+$nowarn_if_exists)) "........ Nothing done for: $_comp/$_ver"
+         mystderr $((1+$nowarn_if_exists)) "........ To replace existing $_comp, Use: ${MYSELF} -f  $_comp/$_ver"
+         return 1
+      fi
+   fi
+   PF_src=$(pf_find_component $_comp $_ver)
+   if [[ -d $PF_src/$_comp/$_ver ]] ; then
+      mystderr 1 "Linking Existing Component: $_comp/$_ver"
+      if [[ -d $PF_src/$_comp/$_ver/bin ]] ; then
+         mkdir -p $BINREF
+         cd $PF_src/$_comp/$_ver/bin
+         for _mydir in $(find . -type d) ; do
+            mkdir -p $ROOT/$BINREF/$_mydir 2>/dev/null || true
+            for _myfile in $(ls -d $_mydir/* $_mydir/.[a-zA-Z0-9_]*) ; do
+               if [[ -f $_myfile ]] ; then
+                  rm -f $ROOT/$BINREF/$_mydir/$_myfile 2>/dev/null || true
+                  ln -s $PF_src/$_comp/$_ver/bin/$_mydir/$_myfile \
+                                   $ROOT/$BINREF/$_mydir/$_myfile
+               fi
+            done
+         done
+         cd $ROOT/
+         # mkdir -p $ROOT/$BINDIR/$BASE_ARCH/ 2/dev/null || true
+         # ln -sf $PF_src/$_comp/$_ver/bin $ROOT/$BINDIR/$_comp
+         # cp $PF_src/$_comp/$_ver/bin/* \
+         #    $PF_src/$_comp/$_ver/bin/.[a-zA-Z0-9_]* \
+         #    $ROOT/$BINDIR/
+         # cp $PF_src/$_comp/$_ver/bin/$BASE_ARCH/* \
+         #    $PF_src/$_comp/$_ver/bin/$BASE_ARCH/.[a-zA-Z0-9_]* \
+         #    $ROOT/$BINDIR/$BASE_ARCH/
+      fi
+      if [[ -d $PF_src/$_comp/$_ver/src ]] ; then
+         ln -sf $PF_src/$_comp/$_ver/src $ROOT/$SRC_REF/$_comp
+      else
+         ln -sf $PF_src/$_comp/$_ver $ROOT/$SRC_REF/$_comp
+      fi
+   else
+      mystderr 0 "ERROR: Component not found: $_comp/$_ver"
+      return 1
+   fi
+   # if [[ ! -d $ROOT/$SRC_REF/$_comp ]] ; then
+   #    mystderr 0 "WARNING: Component already linked in $SRC_REF"
+
+   #    #TODO: should be an error if not forced
+   #    mystderr 1 "Creating New Component: $_comp/$_ver"
+   #    mkdir -p $ROOT/$SRC_REF/$_comp/include 2>/dev/null
+   #    #TODO: add basic include file?
+   # fi
+}
+
+pf_add_component_mirror_dir() {
+   _comp=$1
+   mystderr 2 "Mirror components ref dir to src, build: $_comp"
+   for _item in $(cd $ROOT/$SRC_REF/$_comp ; find -L . -type d) ; do
+      if [[ x$item != x. ]] ;then
+         mkdir -p $ROOT/$SRC_USR/$_comp/$_item 2>/dev/null
+         for _mydir in $BUILD_SUB_DIR_LIST ; do
+            if [[ x$_mydir != xbin && x$_mydir != xlib && x$_mydir != xmod ]] ; then
+               mkdir -p  $STORAGE_BIN/$_mydir/$_comp/${_item} 2>/dev/null || true
+            else
+               mkdir -p  $STORAGE_BIN/$_mydir
+            fi
+         done
+      fi
+   done
+}
+
+pf_add_component_version_file() {
+   _comp=$1
+   _ver=$2
+   if [[ -f $ROOT/$SRC_REF/$_comp/.version_file ]] ; then
+      mystderr 1 "++ Add version file to: $_comp"
+      mkdir -p $ROOT/$SRC_USR/$_comp/include 2>/dev/null || true
+      for _item in $(cat $ROOT/$SRC_REF/$_comp/.version_file) ; do
+         pfmk_version_file ${myforce} $_comp $_ver $ROOT/$SRC_USR/$_comp/include $_item >/dev/null 2>&1
+      done
+   fi
+}
+
+##
+# Fill src build tree for this component
+##
+pf_fill_component_build() {
+   _comp=$1
+   mystderr 2 "Copy Component src to build: $_comp"
+   #TODO: if [[ $hasclonesrc -eq 0 || x$myforce != x ]] ; then
+   find $ROOT/$BUILD_SRC/$_comp -type l -exec rm -f {} \;
+   for _item in $(cd $ROOT/$SRC_REF/$_comp ; find -L . -type d) ; do
+      cp $ROOT/$SRC_REF/$_comp/$_item/* $ROOT/$BUILD_SRC/$_comp/${_item} 2>/dev/null || true
+   done
+   #(set -x ; cd $ROOT/$SRC_REF/$_comp ;\
+   # find -L . -type f -exep echo cp {} $ROOT/$BUILD_SRC/$_comp \; 2>/dev/null || true)
+}
+
+##
+# Clone an existing build tree for this component
+##
+pf_clone_component_build() {
+   _comp=$1
+   _ver=$2
+   _clonepath=$3
+   if [[ x$_clonepath == x ]] ;then
+      return 0
+   fi
+   mystderr 1 "++ Clone Component build: $_comp/$_ver"
+}
+
+## ====================================================================
+
+##
+# Inline Args
+##
+myforce=""
+srcpath0=""
+compfile=""
+compverlist=""
+skip_mkdep=0
+nowarn_if_exists=0
+while [[ $# -gt 0 ]] ; do
+   case $1 in
+      (-h|--help) usage_long; exit 0;;
+      (-v|--verbose) ((verbose=verbose+1));;
+      (-f|--force) myforce=-f;;
+      (--force=*) myforce=${1#*=};;
+      (--srcpath=*) srcpath0=$(echo ${1#*=}|tr ' ,;\t' '::::');;
+      (--file=*) compfile=${1#*=} ;;
+      (--skip_mkdep) skip_mkdep=1 ;;
+      (--nowarn_if_exists) nowarn_if_exists=9;;
+      (--) shift ; break ;;
+      -*) myerror "Option Not recognized: $1";;
+      *) break ;;
+    esac
+    shift
+done
+
+pf_exit_if_not_pftopdir
+
+if [[ x$srcpath0 != x ]] ; then
+   pf_src_path_add $srcpath0
+fi
+
+compverlist="$*"
+if [[ x$compfile != x ]] ; then
+   if [[ ! -f $compfile ]] ; then
+      myerror "No such file: $compfile"
+   fi
+   mystderr 0 "++ Importing components, using list from: $compfile"
+   compverlist="${compverlist} $(cat $compfile)"
+fi
+
+if [[ ! -n $compverlist ]] ; then
+   myerror "You Need to provide at least one component NAME/VERSION"
+fi
+
+for item in $(echo $compverlist | tr ' ' '\n' | sort -u); do
+   mycomp=${item%/*}
+   myver=${item#*/}
+   if [[ x$mycomp == x || x$myver == x || x$mycomp == x$myver ]] ; then
+      myerror "Wrong Format for COMPONENT/VERSION: $item"
+   fi
+   pf_add_component $mycomp $myver
+done
+
+if [[ $skip_mkdep == 0 ]] ; then
+   mystderr 0 "++ Update Makefiles"
+   #make links
+   #make dep
+   if [[ $verbose -eq 0 ]] ; then
+      make -s links_forced VERBOSE=
+   else
+      make links_forced VERBOSE=-v
+   fi
+fi

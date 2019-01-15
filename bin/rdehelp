@@ -1,0 +1,87 @@
+#!/bin/ksh
+
+. .rdebase.inc.dot
+DESC='RPN Code Development Environment help'
+USAGE="USAGE: ${MYSELF} [-h] [-l] [TOOL]"
+
+usage_long() {
+	 toto=$(echo -e $USAGE)
+	 more <<EOF
+$DESC
+
+$toto
+
+Options:
+    -h, --help   : print this help
+    -l, --long   : long format
+    TOOL         : Print help only for the specified tool
+EOF
+}
+
+if [[ x$1 == x-h || x$1 == x--help ]] ; then
+   usage_long
+   exit 0
+fi
+
+long=0
+if [[ x$1 == x-l || x$1 == x--long ]] ; then
+   long=1
+   shift
+fi
+
+if [[ $# -ne 0 ]] ; then
+   for item in $* ; do
+      echo ========================================
+      if [[ -e $(which rde$item) ]] ; then
+         echo "+ rde $item -h"
+         rde$item -h
+      else
+         echo "WARNING: No such tool: rde $item"
+         echo ".        Use 'rde help' to get a list of rde tools"
+      fi
+   done
+   echo ========================================
+   # for item in $[a-zA-Z0-9]* ; do
+   #    echo ========================================
+   #    echo $item
+   #    head -1 $(which $item) | grep ksh > /dev/null && $item -h
+   # done
+   # echo ========================================
+   exit 0
+fi
+
+cat <<EOF
+========================================
+RPN Code Development Environment (RDE)
+
+Basic setup  :
+   rde addsrc /PATH/TO/SRC
+   rde mklink
+   rde mkdep
+
+Makefile help (after basic setup):
+   make help
+
+Env. Var:
+   storage_model
+
+EOF
+
+if [[ $long == 0 ]] ; then
+   echo ========================================
+   echo "List of tools: (for details: rde help -l)"
+   echo
+   for item in $(rdevar utils); do 
+      item2="rde $(echo ${item##*/} | cut -c4-)"
+         #echo "   ${item2}\n       $(head -1 $item | grep ksh > /dev/null && grep DESC= $item | cut -d= -f2 | grep -v \$item)"
+      echo "   ${item2}\n       $(grep DESC= ${rde}/bin/$item | cut -d= -f2- | grep -v \$item)"
+   done
+   echo ========================================
+   exit 0
+fi
+
+for item in $(rdevar utils); do
+   item2="rde $(echo ${item##*/} | cut -c4-)"
+   head -1 ${rde}/bin/$item | grep ksh > /dev/null && echo ======================================== && echo ${item2} && $item --help
+done
+echo ========================================

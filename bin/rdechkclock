@@ -1,0 +1,80 @@
+#!/bin/ksh
+# @Object: Checkout library version of a source file
+# @Author: S.Chamberland
+# @Date:   March 2014
+
+MYSELF=${0##*/}
+DESC='Check clock skew between src and build dir'
+USAGE="USAGE: ${MYSELF} [-h] [-v] [-t NB_SECONDS]"
+
+usage_long() {
+	 toto=$(echo -e $USAGE)
+	 more <<EOF
+$DESC
+
+$toto
+
+Options:
+    -h, --help         : print this help
+    -t, --tolerance    : skew tolerance in seconds [default=0]
+    -v, --verbose      : verbose mode
+EOF
+}
+
+myerror() {
+	more <<EOF
+
+ERROR: $1
+
+EOF
+   usage_long
+   exit 1
+}
+
+verbose=0
+tolerance=1
+while [[ $# -gt 0 ]] ; do
+   case $1 in
+      (-h|--help) usage_long; exit 0;;
+      (-v|--verbose) ((verbose=verbose+1));;
+      (-t|--tolerance) tolerance=$2 ; shift;;
+      *) myerror "Option Not recognized: $1";;
+    esac
+	 previous=$1
+    shift
+done
+
+
+BUILDOBJ=$(rdevar build/obj 2>/dev/null)
+if [[ ! -d $BUILDOBJ || ! -w $BUILDOBJ ]] ; then
+   BUILDOBJ=$TMPDIR
+fi
+myname=.rdechkclock$$
+touch $myname $BUILDOBJ/$myname
+m0="$(stat -c %Y $myname)"
+m1="$(stat -c %Y $BUILDOBJ/$myname)"
+rm -f $myname $BUILDOBJ/$myname
+let dm=m1-m0
+if [[ dm -lt 0 ]] ; then
+   let dm=m0-m1
+fi
+if [[ dm -gt $tolerance ]] ; then
+   if [[ $verbose -ge 1 ]] ; then
+      cat <<EOF
+====================================================================
+= WARNING: Clock skew detected: $dm seconds
+=          "make" will not be able to properly eveluate file status
+= You may want to reboot your machine in order to solve the problem
+= or contact your computer support.
+= File systems as seen from "${TRUE_HOST:-$(hostname)}":
+=   $(true_path -n .) [$(df -P . | grep -v Mounted | cut -d " " -f1)]
+=   $(true_path -n $BUILDOBJ) [$(df -P $BUILDOBJ | grep -v Mounted | cut -d " " -f1)]
+====================================================================
+EOF
+   fi
+   exit 1
+fi
+if [[ $verbose -ge 1 ]] ; then
+   echo "No clock skew detected"
+fi
+exit 0

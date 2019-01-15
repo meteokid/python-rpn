@@ -1,0 +1,57 @@
+#!/bin/ksh
+# @Object: Echo list of similar names
+# @Author: S.Chamberland
+# @Date:   Oct 2014
+. .rdebase.inc.dot
+
+DESC='Echo list of similar names'
+USAGE="USAGE: ${MYSELF} [-h] [-v] NAME"
+
+usage_long() {
+	 toto=$(echo -e $USAGE)
+	 more <<EOF
+$DESC
+
+$toto
+
+Options:
+    -h, --help    : print this help
+    -v, --verbose : verbose mode
+    -q, --quiet        : silence every comment and errors
+    -R  --recurse : recursively search SRCPATH sub dirs
+    NAME          : SEARCH for files similar to name
+
+EOF
+}
+
+mydirlist="$(mysrcpath)"
+myrecurse=''
+quiet=0
+while [[ $# -gt 0 ]] ; do
+   case $1 in
+      (-h|--help) usage_long; exit 0;;
+      (-v|--verbose) ((verbose=verbose+1));;
+      (-q|--quiet) ((quiet=1));;
+      (-R|--recurse) myrecurse=-R;;
+      (--) shift ; break;;
+      (-*) myerror "Option Not recognized: $1";;
+        *) break;;
+    esac
+	 previous=$1
+    shift
+done
+myfile="$1"
+
+if [[ $quiet == 1 ]] ; then
+   verbose=0
+fi
+
+rde_exit_if_not_rdetopdir
+
+filelist="$(.rdesimilnames.py $myrecurse $myfile $mydirlist)"
+if [[ -n "$filelist" ]] ; then
+   myecho 1 "Maybe you meant:"
+   myecho 0 "$filelist"
+else
+   myecho 1 "No suggestions"
+fi

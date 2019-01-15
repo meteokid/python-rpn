@@ -1,0 +1,167 @@
+#!/bin/ksh
+
+myself=$0
+DESC='RDE helper to install ssm pkgs with bundles'
+USAGE="USAGE: ${myself##*/} [-h] [-v] --dest=DEST --bndl=BNDL [--pre=PREFILE] [--post=POSTFILE] [--depot=SSMDEPOT] SSMPKGLIST"
+
+#---- Functions ------------------------------------------------------
+#====
+usage_long() {
+         toto=$(echo -e $USAGE)
+         more <<EOF
+$DESC
+
+$toto
+
+Options:
+    -h, --help     : print this help
+    -v, --verbose  :  
+        --dest     : dest domain dir
+        --bndl     : dest bndl file
+        --pre      : preprend this file content to the bndl
+        --post     : postpend this file content to the bndl
+        --depot    : location of ssm pkg files
+        --base     : Base insall dir [will only put rel path in bndl]
+                     [default: ~/SsmDepot]
+        --uninstall: remove installed domain and bndl
+
+   SSMPKGLIST : space separated list of ssm pkg files
+EOF
+}
+
+myverbose=
+domaine=''
+bndl=''
+prebndl=''
+postbndl=''
+depot=~/SsmDepot
+#ssmbase=$HOME/SsmBundle/
+ssmbase=
+ssmpkglist=''
+uninstall=0
+while [[ $# -gt 0 ]] ; do
+    case $1 in
+        (-h|--help) usage_long; exit 0;;
+        (-v|--verbose) myverbose=--verbose ;;
+        (--dest=*) domain=${1#*=};;
+        (--bndl=*) bndl=${1#*=};;
+        (--pre=*) prebndl=${1#*=};;
+        (--post=*) postbndl=${1#*=};;
+        (--depot=*) depot=${1#*=};;
+        (--base=*) ssmbase=${1#*=};;
+        (--uninstall) uninstall=1;;
+        (--) shift ; break;;
+        (-*) echo "ERROR: Unrecognized option $1"
+            echo -e $USAGE
+            echo "---- ABORT ----"
+            exit 1;;
+       (*) ssmpkglist="$ssmpkglist $1"
+    esac
+    shift
+done
+ssmpkglist="$(set -x;cd $depot && ls -1 $ssmpkglist $* 2>/dev/null)"
+
+# if [[ ! -e $ssmbase ]] ; then
+#    cat 1>&2 <<EOF
+# ERROR: SSM install base dir does not exist or not readable: $ssmbase
+# EOF
+#    exit 1
+# fi
+
+if [[ $uninstall == 1 ]] ; then
+   set -x
+   if [[ -e $bndl ]] ; then
+      chmod u+w -R $bndl
+      rm -rf $bndl
+   elif [[ -e ${bndl%.*} ]] ; then
+      chmod u+w -R ${bndl%.*}
+      rm -rf ${bndl%.*}
+   else
+      echo "WARNING: No such bdnl to uninstall: $bndl"
+   fi
+   if [[ -d $domain ]] ; then
+      chmod u+w -R $domain
+      rm -rf $domain
+   else
+      echo "WARNING: No such domaine to uninstall: $domain"
+   fi
+   exit
+fi
+
+echo "Packages to install: $ssmpkglist"
+
+if [[ -e $domain ]] ; then
+   cat 1>&2 <<EOF
+ERROR: SSM Domain already exists: $domain
+EOF
+   exit 1
+fi
+if [[ -e $bndl ]] ; then
+   cat 1>&2 <<EOF
+ERROR: SSM bndl already exists: $bndl
+EOF
+   exit 1
+fi
+
+set -x
+
+mkdir -p ${domain%/*}
+chmod u+w ${domain%/*}
+ssm created $myverbose -d $domain
+if [[ ! -d $domain || ! -w $domain ]] ; then
+   cat 1>&2 <<EOF
+ERROR creating SSM Domain or not dir or not writable: 
+      $domain
+EOF
+   exit 1
+fi
+
+
+for ssmpkg in ${ssmpkglist} ; do
+   echo "==== Installing: $ssmpkg"
+   if [[ x${ssmpkg##*.} == xssm ]] ; then
+      ssmpkg=${ssmpkg%.*}
+   fi
+   ssm install $myverbose -d $domain -p $ssmpkg -u $depot
+   ssm publish $myverbose -d $domain -p $ssmpkg --yes
+done
+
+chmod a-w $domain
+
+mkdir -p ${bndl%/*}
+chmod u+w ${bndl%/*}
+touch $bndl
+if [[ ! -f  $bndl|| ! -w $bndl ]] ; then
+   cat 1>&2 <<EOF
+ERROR creating SSM bndl or not file or not writable: 
+      $bndl
+EOF
+   exit 1
+fi
+
+if [[ x$prebndl != x ]] ; then
+   cat $prebndl >> $bndl
+fi
+
+if [[ x$ssmbase != x ]] ; then
+   if [[ x${ssmbase%/*} != x ]] ; then
+      ssmbase=${ssmbase}/
+   fi
+   domain=$(echo $domain | sed "s|$ssmbase||")
+fi
+echo $domain >> $bndl
+
+if [[ x$postbndl != x ]] ; then
+   cat $postbndl >> $bndl
+fi
+
+if [[ "$(cat $bndl)" == "$domain" ]] ; then
+   rm -f $bndl
+   if [[ x$ssmbase != x ]] ; then
+      ln -s $ssmbase/$domain ${bndl%.*}
+   else
+      ln -s $domain ${bndl%.*}
+   fi
+else
+   chmod a-w $bndl
+fi

@@ -1,0 +1,188 @@
+#!/bin/bash
+DESC='List processed Makefile content'
+USAGE="USAGE: ${0##*/} [-h] [--targets] [--vars|--var=VARNAME] [--full]"
+
+usage_long() {
+   toto=$(echo -e $USAGE)
+   cat <<EOF
+$DESC
+
+$toto
+
+Options:
+    -h, --help         : print this help
+        --targets      : list targets (cleaned up unless --full)
+        --vars         : list makefile vars (cleaned up unless --full)
+        --var=VARNAME  : echo VARNAME=VALUE
+        --full         : full list (instead of cleaned) of vars or targets
+EOF
+}
+
+
+myfull=0
+targets=0
+vars=0
+varname=''
+while [[ $# -gt 0 ]] ; do
+   case $1 in
+      (-h|--help) usage_long; exit 0;;
+      (--full) myfull=1;;
+      (--targets) targets=1;;
+      (--vars) vars=1;;
+      (--var=*) vars=1; varname=${1#*=};;
+      (*) if [[ x$1 != x ]] ; then \
+         echo "ERROR: Option Not recognized: $1"
+         echo
+         usage_long
+         exit 1
+         fi;;
+    esac
+    shift
+done
+
+#TODO: use perl instead of sed for parsing to avoid arch limitation
+ls | sed -r "/./d" > /dev/null 2>&1 && ls | grep -A 1 . >/dev/null 2>&1
+if [[ $? -ne 0 ]] ; then
+   cat <<EOF
+
+ERROR: this script cannot be run on this ARCH, please try on a Linux system
+
+EOF
+   exit 1
+fi
+
+if [[ $targets == 0 && $vars == 0 ]] ; then
+   usage_long
+   exit 1
+fi
+
+
+if [[ $targets == 1 ]] ; then
+   if [[ $myfull == 1 ]] ; then
+
+      SCRIPT='
+  /^# Make data base/,/^# Files/d             # skip until files section
+  /^# Not a target/,+1          d             # following target isnt
+  /^\.PHONY:/                   d             # special target
+  /^\.SUFFIXES:/                d             # special target
+  /^\.DEFAULT:/                 d             # special target
+  /^\.PRECIOUS:/                d             # special target
+  /^\.INTERMEDIATE:/            d             # special target
+  /^\.SECONDARY:/               d             # special target
+  /^\.SECONDEXPANSION/          d             # special target
+  /^\.DELETE_ON_ERROR:/         d             # special target
+  /^\.IGNORE:/                  d             # special target
+  /^\.LOW_RESOLUTION_TIME:/     d             # special target
+  /^\.SILENT:/                  d             # special target
+  /^\.EXPORT_ALL_VARIABLES:/    d             # special target
+  /^\.NOTPARALLEL:/             d             # special target
+  /^\.ONESHELL:/                d             # special target
+  /^\.POSIX:/                   d             # special target
+  /^\.NOEXPORT:/                d             # special target
+  /^\.MAKE:/                    d             # special target
+
+# The stuff above here describes lines that are not
+#  explicit targets or not targets other than special ones
+# The stuff below here decides whether an explicit target
+#  should be output.
+
+  /^[^#\t:=%]+:([^=]|$)/ {                    # found target block
+    h                                         # hold target
+    d                                         # delete line
+  }
+  /^# File is an intermediate prerequisite/ { # nope
+    s/^.*$//;x                                # unhold target
+    d                                         # delete line
+  }
+  /^([^#]|$)/ {                               # end of target block
+    s/^.*$//;x                                # unhold target
+    s/:.*$//p                                 # write current target
+    d                                         # hide any bugs
+  }
+'
+
+   else #if myfull==1
+
+      SCRIPT='
+  /^# Make data base/,/^# Files/d             # skip until files section
+  /^# Not a target/,+1          d             # following target isnt
+  /^\.PHONY:/                   d             # special target
+  /^\.SUFFIXES:/                d             # special target
+  /^\.DEFAULT:/                 d             # special target
+  /^\.PRECIOUS:/                d             # special target
+  /^\.INTERMEDIATE:/            d             # special target
+  /^\.SECONDARY:/               d             # special target
+  /^\.SECONDEXPANSION/          d             # special target
+  /^\.DELETE_ON_ERROR:/         d             # special target
+  /^\.IGNORE:/                  d             # special target
+  /^\.LOW_RESOLUTION_TIME:/     d             # special target
+  /^\.SILENT:/                  d             # special target
+  /^\.EXPORT_ALL_VARIABLES:/    d             # special target
+  /^\.NOTPARALLEL:/             d             # special target
+  /^\.ONESHELL:/                d             # special target
+  /^\.POSIX:/                   d             # special target
+  /^\.NOEXPORT:/                d             # special target
+  /^\.MAKE:/                    d             # special target
+
+  /^[^#\t:=%]+\.o:/             d             # .o
+  /^[^#\t:=%]+\.ftn:/           d             # 
+  /^[^#\t:=%]+\.ftn90:/         d             # 
+  /^[^#\t:=%]+\.cdk90:/         d             # 
+  /^[^#\t:=%]+\.cdk:/           d             # 
+  /^[^#\t:=%]+\.F90:/           d             # 
+  /^[^#\t:=%]+\.f90:/           d             # 
+  /^[^#\t:=%]+\.f:/             d             # 
+  /^[^#\t:=%]+\.c:/             d             # 
+  /^_invdep_\.[^#\t:=%]+:/      d             # 
+  /^\/[^#\t:=%]+:/              d             # 
+  /^\.[^#\t:=%]+:/              d             # 
+
+# The stuff above here describes lines that are not
+#  explicit targets or not targets other than special ones
+# The stuff below here decides whether an explicit target
+#  should be output.
+
+  /^[^#\t:=%]+:([^=]|$)/ {                    # found target block
+    h                                         # hold target
+    d                                         # delete line
+  }
+  /^# File is an intermediate prerequisite/ { # nope
+    s/^.*$//;x                                # unhold target
+    d                                         # delete line
+  }
+  /^([^#]|$)/ {                               # end of target block
+    s/^.*$//;x                                # unhold target
+    s/:.*$//p                                 # write current target
+    d                                         # hide any bugs
+  }
+'
+
+   fi #if myfull==1
+   make -np 2>/dev/null \
+      | sed -n -r "$SCRIPT" \
+      | sort -u
+fi #if targets=1
+
+
+
+if [[ $vars == 1 ]] ; then
+
+   if [[ x"$varname" == x"" ]] ; then
+      if [[ $myfull == 1 ]] ; then
+         make -np 2>/dev/null \
+            | grep = \
+            | sed -r "/^if /d" \
+            | sort -u
+      else
+         make -np 2>/dev/null \
+            | grep -A 1 '# makefile' \
+            | grep = \
+            | sed -r "/^FMOD_FILE_/d;/^FMOD_LIST_/d;/^INVDEP_LIST_/d" \
+            | sort -u
+      fi
+   else
+      make -np 2>/dev/null \
+         | sed -n -r "/^\s*$varname\s*:?=/p"
+   fi
+
+fi #if vars == 1

@@ -1,0 +1,127 @@
+#!/bin/ksh
+# @Object: Locate files in build or src directories
+# @Author: S.Chamberland
+# @Date:   March 2014
+. .rdebase.inc.dot
+
+DESC='Locate files in build or src directory'
+USAGE="USAGE: ${MYSELF} [-h] [-b|-r|-l|-a] FILENAME [FILENAME2 ...]"
+
+usage_long() {
+	 toto=$(echo -e $USAGE)
+	 more 2>&1 <<EOF
+$DESC
+
+$toto
+
+Options:
+    -h, --help  : print this help
+    -l, --local : locate in locally modified src only
+    -r, --ref   : locate in src ref dirs only
+    -b, --build : locate in build dir only
+    -R  --recurse : recursively look into SRCPATH dirs
+EOF
+}
+
+files=""
+localonly=0
+refonly=0
+buildonly=0
+myrecurse=0
+while [[ $# -gt 0 ]] ; do
+   case $1 in
+      (-h|--help)  usage_long; exit 0;;
+      (-v|--verbose) ((verbose=verbose+1));;
+      (-l|--local) localonly=1;;
+      (-r|--ref)   refonly=1;;
+      (-b|--build) buildonly=1;;
+      (-R|--recurse) myrecurse=1;;
+      (--) shift ; break;;
+      (-*) myerror "Option Not recognized: $1";;
+        *) files="$files $1"
+    esac
+	 previous=$1
+    shift
+done
+files="$files $@"
+
+if [[ x"$files" == x" " ]] ; then
+   myerror "Must provide at least one filename"
+fi
+
+rde_exit_if_not_rdetopdir
+
+#followlinks='-L'
+followlinks=''
+
+srclist_cache_file="$(rdevar srcpathfilelistcache)"
+
+get_srclist_files() {
+   #TODO: check if up to date
+   #if [[ ! -f ${srclist_cache_file} ]] ; then
+   #   rdefind $(rdevar srcpath) --type=f --maxdepth=0 > $srclist_cache_file
+   #fi
+   #cat $srclist_cache_file
+   rdefind $(rdevar srcpath) --type=f --maxdepth=0
+}
+
+find_file() {
+   #_myfile=$1
+   #_mydir=$2
+   if [[ -f ${2}/${1} ]] ; then
+      echo ${2}/${1}
+   elif [[ $myrecurse == 1 ]] ; then
+      _mypath="$(find ${followlinks} ${2} -name ${1})"
+      echo ${_mypath}
+   fi
+}
+
+
+if [[ $localonly == 1 ]] ; then
+
+   for myfile in $files ; do
+      if [[ -f $myfile ]] ; then
+         myecho 0 ./$myfile
+      else
+         mystderr 0 "Missing file: $myfile"
+      fi
+   done
+   exit 0
+   
+elif [[ $refonly == 1 ]] ; then
+
+   mycache="$(get_srclist_files)"
+   for myfile in $files ; do
+      mypathlist="$(echo $mycache | tr ' ' '\n' | grep /${myfile} 2>/dev/null)"
+      if [[ x"$mypathlist" != x"" ]] ; then
+         myecho 0 $mypathlist | tr ' ' '\n'
+      else
+         mystderr 0 "Missing file: $myfile"
+      fi
+   done
+   exit 0
+
+elif [[ $buildonly == 1 ]] ; then
+   #mydirlist="$(rdevar build/src) $(rdevar build/pre)" 
+   mydirlist="$(rdevar build/src)"
+else
+   #mydirlist=". $(rdevar build/src) $(rdevar build/pre) $(rdevar srcpath)"
+   mydirlist=". $(rdevar build/src) $(rdevar srcpath)"
+fi
+
+for myfile in $files ; do
+   found=0
+   mypathlist2=""
+   for mydir in $mydirlist ; do
+      mypathlist="$(find_file $myfile $mydir)"
+      if [[ x"${mypathlist}" != x"" ]] ; then
+         mypathlist2="${mypathlist2} ${mypathlist}"
+         found=1
+      fi
+   done
+   if [[ x$found == x1 ]] ; then
+      myecho 0 ${mypathlist2} | tr ' ' '\n'
+   else
+      mystderr 0 "Missing file: $myfile"
+   fi
+done

@@ -1,0 +1,304 @@
+#!/bin/ksh
+# @Object: Echo specific RDE var or path
+# @Author: S.Chamberland
+# @Date:   March 2014
+
+# Display help in xterm if user clicked on the file 
+#if [[ -z $@ && $DISPLAY ]] && ! tty -s; then 
+#    xterm -hold -e "$(dirname "$0")/$(basename "$0")" -h; exit 
+#fi 
+
+MYSELF=${0##*/}
+DESC='Echo specific RDE var or path'
+USAGE="Usage: ${MYSELF} [-h] [-l] [--arch ARCH]"
+
+usage_long() {
+   toto=$(echo -e $USAGE)
+   more 1>&2 <<EOF
+$DESC
+
+$toto
+
+Options:
+    -h, --help   : print this help
+    -l, --list   : list known vars, with short match if any
+        --arch   : provide var as if EC_ARCH were provided arch
+        --mkfile : produce an Makefile include-able arch-specific file with all named const
+        --shfile : produce an shell dot-able arch-specific file with all named const
+
+EOF
+}
+
+doshfile=0
+domkfile=0
+dolist=0
+namelist=""
+if [[ x$RDE_USE_OLD_ARCH != x1 ]] ; then
+   #export RDE_KNOWN_BASE_ARCH0="linux26-x86-64 rhel-6.0-amd64-64 ubuntu-10.04-amd64-64 ubuntu-12.04-amd64-64 ubuntu-14.04-amd64-64 aix-7.1-ppc7-64 sles-11-amd64-64 sles-11-haswell-64 sles-11-haswell-64-xc40 sles-11-broadwell-64 sles-11-broadwell-64-xc40"
+   export RDE_KNOWN_BASE_ARCH0="
+ Linux_x86-64 
+ aix-7.1-ppc7-64
+ "
+   export RDE_KNOWN_BASE_ARCH="${RDE_KNOWN_BASE_ARCH:-$RDE_KNOWN_BASE_ARCH0}"
+   export RDE_KNOWN_BASE_ARCH_OLD="
+ Linux_x86-64:Linux_x86-64 
+ aix-7.1-ppc7-64:AIX-powerpc7
+ " 
+   export RDE_BASE_ARCH_EQUIV_LIST0="
+ Linux_x86-64:linux26-x86-64
+ Linux_x86-64:rhel-6.0-amd64-64
+ Linux_x86-64:ubuntu-10.04-amd64-64
+ Linux_x86-64:ubuntu-12.04-amd64-64
+ Linux_x86-64:ubuntu-14.04-amd64-64
+ Linux_x86-64:sles-11-amd64-64
+ Linux_x86-64:sles-11-haswell-64 
+ Linux_x86-64:sles-11-haswell-64-xc40 
+ Linux_x86-64:sles-11-broadwell-64 
+ Linux_x86-64:sles-11-broadwell-64-xc40
+ "
+   export RDE_BASE_ARCH_EQUIV_LIST="${RDE_BASE_ARCH_EQUIV_LIST:-$RDE_BASE_ARCH_EQUIV_LIST0}"
+   #TODO: export RDE_KNOWN_ARCH=
+   export RDE_BASE_ARCH=$ORDENV_PLAT
+else
+   export RDE_KNOWN_BASE_ARCH0="Linux_x86-64 AIX-powerpc7"
+   export RDE_KNOWN_BASE_ARCH="${RDE_KNOWN_BASE_ARCH:-$RDE_KNOWN_BASE_ARCH0}"
+   export RDE_KNOWN_BASE_ARCH_OLD="Linux_x86-64:Linux_x86-64 AIX-powerpc7:Linux_x86-64"
+   #TODO: export RDE_KNOWN_ARCH=
+   export RDE_BASE_ARCH=${BASE_ARCH:-${EC_ARCH%%/*}}
+fi
+export RDE_COMP_ARCH=${COMP_ARCH:-${EC_ARCH#*/}}
+DEP_ARCH=${RDE_BASE_ARCH}/${RDE_COMP_ARCH}
+while [[ $# -gt 0 ]] ; do
+   case $1 in
+      (-h|--help) usage_long; exit 0;;
+      (-l|--list) dolist=1; shift ; break;;
+      (--arch) 
+         if [[ x$2 != x && x$(echo $2 | cut -c1) != x- ]] ; then
+            shift ; DEP_ARCH=$1
+         fi;;
+      (--mkfile)  domkfile=1; shift ; break;;
+      (--shfile)  doshfile=1; shift ; break;;
+      (--) shift ; break;;
+      (-*) echo "ERROR: Option Not recognized: $1" 1>&2 ; exit 1;;
+      *) namelist="$namelist $1";;
+    esac
+    shift
+done
+namelist="$namelist $@"
+myrde_equiv_arch() {
+   _toto="$(echo ${RDE_BASE_ARCH_EQUIV_LIST} | tr ' ' '\n' | grep $RDE_BASE_ARCH | tr '\n' ';' | cut -d':' -f1)"
+   echo ${_toto:-$RDE_BASE_ARCH}
+}
+export RDE_ARCH=$DEP_ARCH
+export RDE_BASE_ARCH=${DEP_ARCH%%/*}
+export RDE_COMP_ARCH=${DEP_ARCH#*/}
+export RDE_ARCH_FLAT=${RDE_BASE_ARCH}_${RDE_COMP_ARCH}
+export RDE_BASE_ARCH_EQUIV="$(myrde_equiv_arch)"
+
+export RDE_BASE_ARCH_SFX=${RDE_BASE_ARCH}${RDE_BUILDDIR_SFX}
+
+INCSUFFIXES=".cdk .h .hf .fh .itf90 .inc .include"
+SRCSUFFIXES=".c .cpp .f .ftn .ptn .f90 .f95 .f03 .ftn90 .ptn90 .cdk90 .tmpl90 .F .FOR .F90 .F95 .F03"
+
+#RDE_COMP_ARCH0=${RDE_ARCH##*/}
+#hostarch=-${TRUE_HOST}-${RDE_COMP_ARCH:-${RDE_COMP_ARCH0:-unknown}}
+hostarch=-${RDE_BASE_ARCH_SFX}
+
+RDE_EXP_ROOT=${RDE_EXP_ROOT:-.}
+RDE_CONFIG_FILE=${RDE_EXP_ROOT}/.rde.config.dot
+RDE_SETENV_FILE=.rde.setenv.dot
+RDE_INC=$rde/include/$RDE_COMPILER_VERSION
+SRC_PATH_FILE=${RDE_EXP_ROOT}/.rde.srcpath.dot
+
+myhash="$(echo ${PWD:-$(pwd)} | cksum | cut -d" " -f1)"
+RDE_CONST_BASE=${TMPDIR:-/tmp}/.rde.const.${myhash}
+
+RDE_CONST_SH=${RDE_CONST_BASE}.${RDE_BASE_ARCH_SFX}.${rde_version}.dot
+RDE_CONST_MK=${RDE_CONST_BASE}.${RDE_BASE_ARCH_SFX}.${rde_version}.mk
+
+RDE_CONST_SH_WILD=${RDE_CONST_BASE}.*.dot
+RDE_CONST_MK_WILD=${RDE_CONST_BASE}.*.mk
+
+#RDE_DEP_MK=${RDE_EXP_ROOT}/Makefile.dep.${RDE_BASE_ARCH}.mk
+RDE_DEP_MK=${RDE_EXP_ROOT}/Makefile.dep.${RDE_BASE_ARCH_EQUIV}.mk
+RDE_DEP_MK_WILD=${RDE_EXP_ROOT}/Makefile.dep.*.mk
+# Makefile_dep=    Makefile.dep.${RDE_ARCH_FLAT}.mk;
+
+myrde_arch_list() {
+   echo "$(cd $RDE_INC ; find */* -type d)"
+}
+myrde_base_arch_list() {
+   echo "$(cd $RDE_INC ; rdefind * --type=d --maxdepth=0)"
+
+}
+myrdeconfigvar() {
+   if [[ -r $RDE_CONFIG_FILE ]] ; then
+      . $RDE_CONFIG_FILE
+   fi
+   echo $(eval "echo $(echo \${$1})")
+}
+myrde_utils_list() {
+   utils_list=
+   for item in ${rde}/bin/rde*; do 
+      itemname=${item##*/}
+      if [[ x"${itemname##*.}" == x"${itemname}" ]] ; then
+         utils_list="${utils_list} ${itemname}"
+      fi
+   done
+   echo ${utils_list}
+}
+
+mysrcpathvar() {
+   if [[ -r $SRC_PATH_FILE ]] ; then
+      . $SRC_PATH_FILE
+   fi
+   _mysrcpathvarval=$(eval "echo $(echo \${$1})")
+   if [[ x"${_mysrcpathvarval}" == x"" && x$2 != x ]] ; then
+      _mysrcpathvarval=$(eval "echo $(echo \${$2})")
+   fi
+   echo ${_mysrcpathvarval}
+}
+
+myvpathvar() {
+   if [[ -r $SRC_PATH_FILE ]] ; then
+      . $SRC_PATH_FILE
+   fi
+   echo $(eval "echo $(echo \${$1})" | tr ' ' ':')
+}
+
+mybasearchold() {
+   for item in $RDE_KNOWN_BASE_ARCH_OLD ; do
+      if [[ x${item%:*} == x${RDE_BASE_ARCH_EQUIV} ]] ; then
+         echo ${item#*:}
+         return
+      fi
+   done   
+}
+
+myrde_equiv_arch_list() {
+   _toto="$(echo ${RDE_BASE_ARCH_EQUIV_LIST} | tr ' ' '\n' | grep ${RDE_BASE_ARCH_EQUIV} | cut -d':' -f2)"
+   echo $RDE_BASE_ARCH ${_toto} | tr ' ' '\n' | grep -v ${RDE_BASE_ARCH_EQUIV} | sort -u
+}
+
+myvars="
+ base_arch_old=   \$(mybasearchold);
+ base_arch=       \${RDE_BASE_ARCH};
+ base_arch_sfx=   \${RDE_BASE_ARCH_SFX};
+ rdeinc=          \$RDE_INC;
+ rdesuffix=       \$INCSUFFIXES \$SRCSUFFIXES;
+ rdesuffix/inc=   \$INCSUFFIXES;
+ rdesuffix/src=   \$SRCSUFFIXES;
+ rde_config_file= \$RDE_CONFIG_FILE;
+ rde_setenv_dot=  \$RDE_SETENV_FILE;
+ rde_known_arch_list=   \$RDE_KNOWN_ARCH;
+ rde_known_base_arch_list= \$RDE_KNOWN_BASE_ARCH;
+ rde_base_arch_equiv=      \${RDE_BASE_ARCH_EQUIV};
+ rde_base_arch_equiv_list= \$(myrde_equiv_arch_list);
+ rde_supp_arch_list=   \$(myrde_arch_list);
+ rde_supp_base_arch_list= \$(myrde_base_arch_list);
+ rde_linked_arch_list= \$(myrdeconfigvar RDE_LINKED_ARCH_LIST);
+ rde_arch=        \$RDE_ARCH;
+ rde_arch_flat=   \$RDE_ARCH_FLAT;
+ rde_base_arch=   \$RDE_BASE_ARCH;
+ rde_base_arch_sfx=  \$RDE_BASE_ARCH_SFX;
+ rde_comp_arch=   \$RDE_COMP_ARCH;
+ build=           build\${hostarch};
+ build/src=       build\${hostarch}/\${RDE_COMP_ARCH};
+ build/pre=       build\${hostarch}/\${RDE_COMP_ARCH};
+ build/obj=       build\${hostarch}/\${RDE_COMP_ARCH};
+ build/mod=       build\${hostarch}/mod/\${RDE_COMP_ARCH};
+ build/lib=       build\${hostarch}/lib/\${RDE_COMP_ARCH};
+ build/bin=       build\${hostarch}/bin/\${RDE_COMP_ARCH};
+ build/run=       build\${hostarch}/run;
+ build/ssm=       build\${hostarch}/ssm;
+ local/src=       .;
+ local/bin=       bin;
+ ref/src=         ref/src;
+ ref/bin=         ref/bin;
+ srcpathfilelistcache= .rde.srclist.files.cache.${RDE_BASE_ARCH};
+ srcpathfile=       \${SRC_PATH_FILE};
+ vpath=             \$(myvpathvar SRCPATH);
+ srcpath_include=   \$(mysrcpathvar SRCPATH_INCLUDE SRCPATH);
+ srcpath=           \$(mysrcpathvar SRCPATH);
+ srcpath_maxdepth=  \$(mysrcpathvar SRCPATH_MAXDEPTH);
+ srcpath_r=         \$(mysrcpathvar SRCPATH_R);
+ srcpath_arch_list= \$(mysrcpathvar SRCPATH_ARCH_LIST);
+ srcpath_topdirs=   \$(mysrcpathvar SRCPATH_TOPDIRS);
+ storage=           \$(rdemodel_path -l storage)\${RDE_BUILDDIR_SFX};
+ utils=             \$(myrde_utils_list);
+ Makefile_dep=         \${RDE_DEP_MK};
+ Makefile_const=       \${RDE_CONST_MK};
+ Makefile_const_wild=  \${RDE_CONST_MK_WILD};
+ Makefile_user=            Makefile.user.mk;
+ Makefile_root=            Makefile.user.root.mk;
+ Makefile_user_basearch=   Makefile.user.\${RDE_BASE_ARCH_SFX}.mk;
+ Makefile_root_basearch=   Makefile.user.root.\${RDE_BASE_ARCH_SFX}.mk;
+ Makefile_user_comparch=   Makefile.user.\${RDE_BASE_ARCH_SFX}.\${RDE_COMP_ARCH}.mk;
+ Makefile_root_comparch=   Makefile.user.root.\${RDE_BASE_ARCH_SFX}.\${RDE_COMP_ARCH}.mk;
+ RDEROOTLINKS=    Makefile Makefile.build.mk Makefile.rules.mk build\${hostarch};
+ RDEROOTFILES=    \${RDE_DEP_MK_WILD} \${RDE_CONST_MK_WILD} \${RDE_CONFIG_FILE} \${SRC_PATH_FILE} \${RDE_SETENV_FILE};
+ RDEDIRS=         \$(rdemodel_path -l storage);
+ RDE_VERSION=     ${rde_version};
+ RDE_LASTUPDATED= \$(date +%s);
+"
+
+
+if [[ $domkfile == 1 ]] ; then
+   filename=${RDE_CONST_MK}
+   echo > $filename
+   #echo $eval $(echo $myvars | sed 's/;[ ]/;/g' | sed 's/=[ ]/ = /g') | tr ';' '\n'
+   knownnames="$(echo $myvars | tr ';' '\n' | sed 's/=.*$//g' )"
+   for myname in $knownnames ; do
+      myvar="$(echo $myvars | tr ';' '\n' | grep "^ ${myname}=")"
+      if [[ ! -n $myvar ]] ; then
+         myvar="$(echo $myvars | tr ';' '\n' | grep "^${myname}=")"
+      fi
+      myname2=CONST_$(echo $myname | tr 'a-z' 'A-Z' | sed 's/\///g')
+      echo "$myname2 := $(eval echo $(echo $myvar | cut -d= -f2))" >> $filename
+   done
+fi
+
+
+if [[ $doshfile == 1 ]] ; then
+   filename=${RDE_CONST_SH}
+   echo > $filename
+   #echo $eval $(echo $myvars | sed 's/;[ ]/;/g' | sed 's/=[ ]/ = /g') | tr ';' '\n'
+   knownnames="$(echo $myvars | tr ';' '\n' | sed 's/=.*$//g' )"
+   for myname in $knownnames ; do
+      myvar="$(echo $myvars | tr ';' '\n' | grep "^ ${myname}=")"
+      if [[ ! -n $myvar ]] ; then
+         myvar="$(echo $myvars | tr ';' '\n' | grep "^${myname}=")"
+      fi
+      myname2=CONST_$(echo $myname | tr 'a-z' 'A-Z' | sed 's/\///g')
+      echo "$myname2='$(eval echo $(echo $myvar | cut -d= -f2))'" >> $filename
+   done
+fi
+
+
+if [[ $dolist == 1 ]] ; then
+   knownnames="$(echo $myvars | tr ';' '\n' | sed 's/=.*$//g' )"
+   myname0=$(echo $namelist | cut -d' ' -f1)
+   knownnames1=""
+   for myname in $knownnames ; do
+      myname2=$(echo $myname | sed "s|^$myname0||")
+      if [[ x$myname0 == x || x$myname2 != x$myname ]] ; then
+         knownnames1="$knownnames1 $myname"
+      fi
+   done
+   echo "$knownnames1"
+   exit 0
+fi
+
+for item in $namelist ; do
+   myvar="$(echo $myvars | tr ';' '\n' | grep "^ ${item}=")"
+   if [[ ! -n $myvar ]] ; then
+      myvar="$(echo $myvars | tr ';' '\n' | grep "^${item}=")"
+   fi
+   if [[ -n $myvar ]] ; then
+      echo $(eval echo $(echo $myvar | cut -d= -f2))
+   else
+      echo "ERROR: Unknown var name: $item" 1>&2
+      exit 1
+   fi
+done
+

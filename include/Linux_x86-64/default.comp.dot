@@ -1,0 +1,1 @@
+export COMP_ARCH=${COMP_ARCH:-intel13sp1u2}

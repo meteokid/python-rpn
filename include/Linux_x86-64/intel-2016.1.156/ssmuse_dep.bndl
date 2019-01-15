@@ -1,0 +1,8 @@
+hpco/tmp/eccc/201402/03/base \
+hpco/exp/intel-2016.1.156 \
+code-tools_2.0_all@hpco/exp/jdm536/code-tools \
+eccc/mrd/rpn/MIG/ENV/sep
+eccc/mrd/rpn/libs/16.0-beta \
+eccc/mrd/rpn/utils/16.0-beta\
+main/opt/openmpi/openmpi-1.6.5/intelcomp-2016.1.156
+eccc/cmo/cmoi/base/20160606/

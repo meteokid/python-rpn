@@ -1,0 +1,127 @@
+#!/usr/bin/env ksh
+# @Object: Copy source code from a specified experiment
+# @Author: R.McTaggart-Cowan
+# @Date:   August2015
+. .rdebase.inc.dot
+
+DESC='Copy source code from a specified experiment'
+USAGE="Usage: ${MYSELF} [-h] [-v] [-f] SRC_PATH(S) [-d] [DST_PATH | --tar=TARFILE]"
+
+usage_long() {
+         toto=$(echo -e $USAGE)
+         more 1>&2 <<EOF
+$DESC
+
+$toto
+
+Options:
+    -h, --help     : print this help
+    -v, --verbose  : verbose mode
+    -f, --force    : force replace existing file
+    -d, --dest     : destination directory (default=.)
+        --tar      : put code in dest.tar file instead of dir
+
+EOF
+}
+
+# Retrieve and parse command line arguments
+src_path=''
+verbose=0
+myforce=0
+dst_path=''
+tar_file=''
+while [[ $# -gt 0 ]] ; do
+   case $1 in
+      (-h|--help) usage_long; exit 0;;
+      (-v|--verbose) ((verbose=verbose+1));;
+      (-f|--force) myforce=1;;
+      (-d|--dest) shift ; dst_path=$1;;
+      (--dest=*) dst_path=${1#*=};;
+      (--tar=*)  tar_file=${1#*=};;
+      (--) shift ; break;;
+      (-*) myerror "ERROR: Option Not recognized: $1" ;;
+      *) src_path="$(echo ${src_path} $1)";;
+    esac
+    shift
+done
+src_path="$(echo ${src_path} $*)"
+
+if [[ -z "${src_path}" ]] ; then
+   mystderr 0 "ERROR: No source path provided"
+   usage_long; exit 1
+fi
+
+if [[ ! -z "${tar_file}" ]] ; then
+   tar_dir=${tar_file%/*}
+   if [[ x${tar_dir} == x${tar_file} ]] ; then
+      tar_dir=$(pwd)
+   fi
+   if [[ ! -d ${tar_dir} ]] ; then
+      mystderr 0 "ERROR: destination tar file dir does not exists or is not writable: ${tar_dir}"
+      usage_long; exit 1
+   fi
+   if [[ -z "${dst_path}" ]] ; then
+      dst_path=$TMPDIR/$$
+   fi
+   mkdir -p ${dst_path}
+   tar_file=$(true_path ${tar_dir})/${tar_file##*/}
+fi
+
+if [[ -z "${dst_path}" ]] ; then
+   nbsrc=$(echo $(echo ${src_path} | wc -w) | cut -d" " -f1)
+   if [[ $nbsrc -lt 2 ]] ; then
+      mystderr 0 "ERROR: No destination path provided"
+      usage_long; exit 1
+   fi
+   previous=''
+   src_path0="${src_path}"
+   src_path=''
+   for item in ${src_path0} ; do
+      src_path="$(echo ${src_path} ${previous})"
+      previous=${item}
+   done
+   dst_path=${previous}
+fi
+
+
+if [[ ! -d ${dst_path} || ! -w ${dst_path} ]] ; then
+   mystderr 0 "ERROR: destination does does not exists or is not writable: ${dst_path}"
+   usage_long; exit 1
+fi
+
+myecho 1 "Files will be copied to ${dst_path}"
+
+# Import source files from specified path
+mywild="$(rdevar rdesuffix | sed 's/\./*./g')"
+mywild="${mywild} $(rdevar rde_setenv_dot rde_config_file srcpathfile Makefile_user Makefile_root)"
+for src in ${src_path} ; do     
+   if [[ ! -d ${src} ]] ; then
+      mystderr 0 "WARNING: Ignoring not dir: $src"
+   else
+      for srcfile in $(cd ${src} && ls ${mywild} 2>/dev/null || true) ; do
+         if [[ -f ${dst_path}/${srcfile} ]] ; then
+            if [[ ${myforce} == 1 ]] ; then
+               rm -f ${dst_path}/${srcfile} && cp ${src}/${srcfile} ${dst_path}
+               myecho 1 "Overriting ${srcfile} with ${src}/${srcfile}"
+            else
+               mystderr 0 "WARNING: File $srcfile already exists, ignoring ${src}/${srcfile}"
+               mystderr 0 "Use '${MYSELF} -f' to overwrite"
+            fi
+         else
+            #TODO: check if source is a file before cp
+            cp ${src}/${srcfile} ${dst_path}
+            myecho 1 "cp ${src}/${srcfile} ${dst_path}"
+         fi
+      done
+   fi
+done
+
+if [[ ! -z "${tar_file}" ]] ; then
+   myecho 1 "Building the archive file: ${tar_file}"
+   cd ${dst_path}
+   if [[ $verbose -ge 1 && $quiet == 0 ]] ; then
+      tar czvf ${tar_file} .
+   else
+      tar czf ${tar_file} .
+   fi
+fi

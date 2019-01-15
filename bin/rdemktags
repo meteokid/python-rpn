@@ -1,0 +1,100 @@
+#!/bin/ksh
+. .rdebase.inc.dot
+
+#TODO: implement [-d DIR_DEPTH] option
+DESC='Create tags code navigation files for EDITOR=${EDITOR:-vi} or emacs, vi'
+USAGE="USAGE: ${0##*/} [h] [-v] [-b] [--vi] [--emacs]"
+
+usage_long() {
+	 toto=$(echo -e $USAGE)
+	 more <<EOF
+$DESC
+
+$toto
+
+Options:
+    -h, --help    : print this help
+    -v, --verbose : verbose mode
+    -V, --vi      : produces files for vi  (DEFAULT: EDITOR=${EDITOR})
+    -E, --emacs   : produces files for emacs (DEFAULT: EDITOR=${EDITOR})
+    -l, --local   : look into into locally modified code only
+    -r, --ref     : look into in src ref dirs only
+    -b, --build   : look into in build dir only
+EOF
+}
+#    -R, --recursive : search recursively down the dir tree
+
+
+EDITOR=${EDITOR:-vi}
+binmode=0
+mydiropt=""
+while [[ $# -gt 0 ]] ; do
+   case $1 in
+      (-h|--help) usage_long; exit 0;;
+      (-v|--verbose) ((verbose=verbose+1));;
+      (-b|--build) mydiropt="-b"; binmode=1;;
+      (-l|--local) mydiropt="-l"; binmode=0;;
+      (-r|--ref)   mydiropt="-r"; binmode=0;;
+      (-E|--emacs) EDITOR=emacs;;
+      (-V|--vi) EDITOR=vi;;
+      (-*) myerror "Option Not recognized: $1";;
+      (*) if [[ x$1 != x ]] ; then myerror "Option Not recognized: $1"; fi;;
+    esac
+	 previous=$1
+    shift
+done
+
+rde_exit_if_not_rdetopdir
+
+SEARCH_PATH_BASE="$(pwd) $(rdevar srcpath)"
+if [[ x$mydiropt == x-l ]] ; then
+   SEARCH_PATH_BASE="$(pwd)"
+fi
+if [[ x$mydiropt == x-r ]] ; then
+   SEARCH_PATH_BASE="$(rdevar srcpath)"
+fi
+if [[ x$mydiropt == x-b ]] ; then
+   SEARCH_PATH_BASE="$(rdevar build/src) $(rdevar build/pre)"
+fi
+
+tagprogs="etags"
+tagfilename="TAGS"
+taglang="--language=fortran"
+if [[ x$EDITOR == xvi || x$EDITOR == xvim || x$EDITOR == gvim ]] ; then
+	 tagprogs="ctags"
+	 tagfilename="tags"
+    taglang="--language-force=fortran"
+fi
+
+EXT_F='.cdk .hf .fh .itf90 .inc .f .ftn .ptn .f90 .f95 .f03 .ftn90 .ptn90 .cdk90 .tmpl90 .F .FOR .F90 .F95 .F03 '
+EXT_C='.h .c .cpp'
+
+rm -f $tagfilename
+for mydir in $SEARCH_PATH_BASE ; do
+	echo "Scanning $mydir/"
+	for extfile in $EXT_F ; do
+		filelist=`ls ${mydir}/*${extfile} 2>/dev/null`
+		for myfile in $filelist ; do
+			for tagexe in $tagprogs ; do
+				#$tagexe $myfile $taglang --defines --append
+				$tagexe $myfile $taglang --append
+			done
+		done
+	done
+	for extfile in $EXT_C ; do
+		filelist=`ls ${mydir}/*${extfile} 2>/dev/null`
+		for myfile in $filelist ; do
+			for tagexe in $tagprogs ; do
+				#$tagexe $myfile --defines --append
+				$tagexe $myfile --append
+			done
+		done
+	done
+done
+
+#	 find . -maxdepth $DEPTH -type f -name '*.ftn*' -exec $item --language=fortran --defines --append {} \;
+#	 find . -maxdepth $DEPTH -type f -name '*.cdk*' -exec $item --language=fortran --defines --append {} \;
+#	 find . -maxdepth $DEPTH -type f -name '*.hf' -exec $item --language=fortran --defines --append {} \;
+#	 find . -maxdepth $DEPTH -type f -name '*.inc*' -exec $item --language=fortran --defines --append {} \; 
+#	 find . -maxdepth $DEPTH -type f -name '*.h' -exec $item  --defines --append {} \;
+#	 find . -maxdepth $DEPTH -type f -name '*.c' -exec $item  --defines --append {} \;

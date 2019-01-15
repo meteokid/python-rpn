@@ -1,0 +1,42 @@
+#!/bin/ksh
+#
+# s.ftn90
+
+# set EC_LD_LIBRARY_PATH and EC_INCLUDE_PATH using LD_LIBRARY_PATH
+#export EC_LD_LIBRARY_PATH=`s.generate_ec_path --lib`
+#export EC_INCLUDE_PATH=`s.generate_ec_path --include`
+
+COMPILING_FORTRAN=YES
+. rde.get_compiler_rules.dot
+
+rm -f ${DestFile}.f90
+
+if [[ -n $Verbose ]] ; then
+   cat <<EOF
+r.gppf -lang-f90+ -chop_bang -gpp -F --curdirinclast  \\
+	$(s.prefix -I ${INCLUDES} ${EC_INCLUDE_PATH}) \\
+	-D__FILE__="#file" -D__LINE__="#line" ${DEFINES} \\
+	"$SourceFile" > ${DestFile}.f90 || { rm -f ${DestFile}.f90 ; exit 1 ; }
+EOF
+fi
+
+r.gppf -lang-f90+ -chop_bang -gpp -F --curdirinclast  \
+	$(s.prefix -I ${INCLUDES} ${EC_INCLUDE_PATH}) \
+	-D__FILE__=\"#file\" -D__LINE__=\"#line\" ${DEFINES} \
+	"$SourceFile" > ${DestFile}.f90 || { rm -f ${DestFile}.f90 ; exit 1 ; }
+
+if [[ -n $Verbose ]] ; then
+   cat <<EOF
+${F90C:-ERROR_F90C_undefined} ${DestFile}.f90 ${FC_options} ${FFLAGS} \\
+	$(s.prefix "${Iprefix}" ${INCLUDES} ${EC_INCLUDE_PATH}) \\
+	$(s.prefix "${Lprefix}" ${LIBRARIES_PATH} ${EC_LD_LIBRARY_PATH}) \\
+	$(s.prefix "${lprefix}" ${LIBRARIES} ${SYSLIBS} ) \\
+	"$@"
+EOF
+fi
+
+${F90C:-ERROR_F90C_undefined} ${DestFile}.f90 ${FC_options} ${FFLAGS} \
+	$(s.prefix "${Iprefix}" ${INCLUDES} ${EC_INCLUDE_PATH}) \
+	$(s.prefix "${Lprefix}" ${LIBRARIES_PATH} ${EC_LD_LIBRARY_PATH}) \
+	$(s.prefix "${lprefix}" ${LIBRARIES} ${SYSLIBS} ) \
+	"$@"
