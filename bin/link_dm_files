@@ -1,0 +1,49 @@
+#!/bin/ksh
+#
+
+# Retrieve command line arguments
+arguments=$*
+echo $0 $arguments
+
+eval `cclargs_lite $0 \
+  -src_dir    ""  ""  "[source directory containing laststep subdirs  ]"\
+  -dst_dir    ""  ""  "[destination directory to build VALID_* subdirs]"\
+  -laststep   ""  ""  "[list of laststep subdirs to treat             ]"\
+  ++ $arguments`
+
+printf "\n ===> link_dm_files: STARTS $(date)\n"
+
+set -ex
+
+mkdir -p $dst_dir
+typeset -Z4 cnt=0000
+
+for last in ${laststep} ; do
+   SRC=${src_dir}/$last
+   cd ${SRC}
+   list_dir=$(ls -d *-*)
+   list_dmf=$(ls -1 $(echo ${list_dir} | cut -d " " -f1)/dm*)
+   for i in ${list_dmf} ; do
+      item=$(basename $i)
+      Start=$(echo ${item##*dm} | cut -d"-" -f1)
+      Prog=$(echo ${item} | cut -d "_" -f2)
+      t1=$(r.date $Start +$Prog | cut -c1-8)
+      t2=$(r.date $Start +$Prog | cut -c9-14)
+      if [ ! -d ${dst_dir}/VALID_${t1}.${t2} ] ; then
+        mkdir -p ${dst_dir}/VALID_${t1}.${t2}
+        cnt=0
+        for j in ${list_dir} ; do
+           target=GEM_input_file_${cnt}
+           /bin/rm -f ${dst_dir}/VALID_${t1}.${t2}/${target}
+           ln -s ${SRC}/$(basename $j)/dm${Start}*_${Prog} ${dst_dir}/VALID_${t1}.${t2}/${target}
+           echo ${target} >> ${dst_dir}/VALID_${t1}.${t2}/content_tmp
+           cnt=$((cnt+1))
+        done
+        echo $cnt > ${dst_dir}/VALID_${t1}.${t2}/content
+        cat ${dst_dir}/VALID_${t1}.${t2}/content_tmp >> ${dst_dir}/VALID_${t1}.${t2}/content
+        /bin/rm -f ${dst_dir}/VALID_${t1}.${t2}/content_tmp
+      fi 
+   done
+done
+
+printf "\n ===> link_dm_files: TERMINATED $(date)\n"

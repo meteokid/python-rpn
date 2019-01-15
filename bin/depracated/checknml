@@ -1,0 +1,109 @@
+#!/bin/ksh
+#
+if [ $# -eq 0 -o "$1" == "-help" ] ; then
+  printf "\n File "gem_settings.nml" must be in the current directory\n"
+  printf " usage: checknml [-q] [namelist name(s)] -- example: checknml gem_cfgs\n\n"
+  exit
+fi
+
+quiet=0; if [[ "$1" == "-q" ]] ; then quiet=1; shift; fi
+namelists=$*
+
+cat > $TMPDIR/getnml_$$ <<EOF
+ BEGIN{
+      level = 0
+      NAMELIST=toupper(NAMELIST)
+      }
+{
+  nf = split(toupper(\$0),field,",")
+  for (i=1; i<=nf; i++){
+       index0=index(field[i],"&")
+       if (index0 != 0){
+           fieldnml=substr(field[i],index0+1)
+           gsub(/[ \n]+/,"",fieldnml)
+           ok = 0
+           if (fieldnml == NAMELIST) {ok=1}
+           if (ok){
+               level=level+1
+               }
+               }
+       if (index(field[i],"/") != 0) {
+                level = 0
+               }
+       if (level > 0) {
+       nf1 = split(field[i],field1," ")
+       for (j=1; j<=nf1; j++){
+       if (index(field1[j],"=")==1){
+           printf "%s\n",toupper(field1[j-1])
+           }
+       if (index(field1[j],"=")>1){
+           printf "%s\n",toupper(substr(field1[j],1,index(field1[j],"=")-1))
+           }
+       }
+       }
+       }
+}
+EOF
+
+set -x
+gemprnml=$(which gemprnml_${BASE_ARCH}.Abs || echo error)
+prphynml=$(which prphynml_${BASE_ARCH}.Abs || echo error)
+set +x
+
+if [[ x$gemprnml == xerror || x$prphynml == xerror ]] ; then
+   echo "ERROR: cannot find gemprnml and prphynml"
+   exit 1
+fi
+
+$gemprnml ; $prphynml
+cat gemdict.nml phydict.nml | tr -dc "[:alnum:][:space:][:punct:]" > $TMPDIR/dict.nml_$$
+/bin/rm -f gemdict.nml phydict.nml
+XXDIFF=xxdiff
+[[ -z $(which xxdiff 2>/dev/null) ]] && XXDIFF=sdiff
+rtncode=0
+
+# Loop over input namelists
+for nlist in $namelists; do
+
+  awk -v NAMELIST="$nlist" -f $TMPDIR/getnml_$$ $TMPDIR/dict.nml_$$ | sort > $TMPDIR/model_list.$nlist_$$
+  cat $TMPDIR/model_list.$nlist_$$ | sed 's/\(XST_STN_LATLON\).*/\1/' > $TMPDIR/model_list.$nlist_$$_
+  mv $TMPDIR/model_list.$nlist_$$_ $TMPDIR/model_list.$nlist_$$
+  echo " " >> $TMPDIR/model_list.$nlist_$$
+  awk -v NAMELIST="$nlist" -f $TMPDIR/getnml_$$ gem_settings.nml   | sort > $TMPDIR/your_list.$nlist_$$
+  echo " " >> $TMPDIR/your_list.$nlist_$$
+
+  thelist=$(echo ${nlist}  | tr '[:lower:]' '[:upper:]')
+  if [ ${thelist} == "GEM_CFGS" -o ${thelist} == "PHYSICS_CFGS" ] ; then
+      mv $TMPDIR/your_list.$nlist_$$ $TMPDIR/your_list.1
+      cat $TMPDIR/your_list.1 | sed "/MONO/d" | sed "/MASS/d" | sed "/WLOAD/d" | sed "/HZD$/d"  | sed "/MIN/d" > $TMPDIR/your_list.$nlist_$$
+      rm -f $TMPDIR/your_list.1 
+  fi
+
+  # Display differences
+  if [[ ${quiet} -eq 0 ]] ; then
+    $XXDIFF $TMPDIR/model_list.$nlist_$$ $TMPDIR/your_list.$nlist_$$ &
+  fi
+
+  # Compute return code (elements in user list that do not match model list)
+  /bin/rm -f $TMPDIR/your_err.$nlist_$$
+  for entry in $(cat $TMPDIR/your_list.$nlist_$$) ; do
+    if [[ $(grep "^${entry}$" $TMPDIR/model_list.$nlist_$$ | wc -l) -eq 0 ]] ; then
+      echo ${entry} >> $TMPDIR/your_err.$nlist_$$
+    fi
+  done
+  if [[ -s $TMPDIR/your_err.$nlist_$$ ]] ; then
+    rtncode=1
+    echo "Error(s) detected in \"$nlist\" namelist for the following variables:" >&2
+    cat $TMPDIR/your_err.$nlist_$$ >&2
+  fi
+
+done
+
+# Final cleanup and return
+wait
+if [[ ${rtncode} -eq 0 && ${quiet} -eq 0 ]] ; then
+  echo "Namelists ($(echo $namelists | sed 's/\s/,/g')) are all ok"
+fi
+/bin/rm -f $TMPDIR/model_list.*_$$ $TMPDIR/your_list.*_$$ $TMPDIR/getnml_$$ $TMPDIR/dict.nml_$$
+exit ${rtncode}
+

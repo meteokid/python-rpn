@@ -1,0 +1,92 @@
+#!/bin/ksh
+
+# Retrieve command line arguments
+arguments=$*
+DESC="Update the GEM module in the current suite"
+
+# Process command line arguments
+eval $(rpy.cclargs \
+   -D ":" \
+   --desc "$DESC" \
+   ${0##*/} \
+   -v   "0"  "1"  "[verbose output]" \
+   ++ $arguments)
+
+# Set verbose mode if requested
+if [[ ${v} -gt 0 ]] ; then set -x ; fi
+
+# Check for required environment
+if [[ -z "$SEQ_EXP_HOME" ]] ; then
+   echo "Set SEQ_EXP_HOME before continuing with update" >&2
+   exit 1
+fi
+
+# Check that GEM is loaded in the environment
+if [[ -z "${ATM_MODEL_BNDL}" ]] ; then
+   . ${SEQ_EXP_HOME}/experiment.cfg
+   . s.ssmuse.dot GEM/${GEM_version} >/dev/null
+fi
+
+# Check that GEM is the current active module
+if [[ -n "${MAESTRO_CURRENT_REF}" ]] ; then
+   if [[ ${MAESTRO_MODULE_NAME} != 'gem' ]] ; then
+      echo "The GEM reference implementation is not currently active - reload it to continue" >&2
+      exit 1
+   fi
+else
+   echo "No reference implementation active - load GEM RI to continue" >&2
+   exit 1
+fi
+local_path=${SEQ_EXP_HOME}/modules/${MAESTRO_MODULE_NAME}
+
+# Confirm the current suite
+backup_ext=$(date -u +%Y-%m-%dT%H:%M:%S)
+update_mod=0
+while true ; do
+   echo -n "Update ${MAESTRO_MODULE_NAME} in ${SEQ_EXP_HOME}? [y/n] "
+   read yn
+   case ${yn} in
+      [Yy]* )
+         update_mod=1
+         if [[ $(r.read_link ${local_path}) == ${MAESTRO_MODULE_PATH}/mod ]] ; then
+            echo "GEM module already up-to-date"
+            update_mod=0
+         fi
+         if [[ -f ${local_path} ]] ; then
+            echo "Current ${MAESTRO_MODULE_NAME} module will be backed up with extension ${backup_ext}"
+         fi
+         break;;
+      [Nn]* )
+         echo "Exiting updater"
+         exit 0
+         break;;
+      *)
+         echo "Please answer yes or no"
+   esac
+done
+
+# Back up existing copy of module
+if [[ -e ${local_path} && ${update_mod} -gt 0 ]] ; then
+   backup=${local_path}_${backup_ext}
+   if [[ -e ${backup} ]] ; then backup=${backup}.$$ ; fi
+   if [[ -f ${local_path} ]] ; then mv ${local_path} ${backup} ; fi
+fi
+
+# Link in new module to suite
+if [[ ${update_mod} -gt 0 ]] ; then ln -s ${MAESTRO_MODULE_PATH}/mod ${local_path} ; fi
+
+# Add any missing resource files for this module
+update_res=0
+for mod in $(find ${SEQ_EXP_HOME}/resources -type d -name ${MAESTRO_MODULE_NAME}) ; do
+   for rifile in $(ls -1 ${MAESTRO_CURRENT_REF}/ref/resources/${MAESTRO_MODULE_NAME}/*.xml) ; do
+      local_res=${mod}/$(basename ${rifile})
+      if [[ ! -f ${local_res} ]] ; then
+         echo "Adding new resource file ${local_res} from reference implementation"
+         update_res=1
+         cp ${rifile} ${local_res}
+      fi
+   done
+done
+if [[ ${update_res} -eq 0 ]] ; then echo "GEM resources already up-to-date" ; fi
+
+

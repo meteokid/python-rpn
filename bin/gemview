@@ -1,0 +1,37 @@
+#!/usr/bin/env ksh
+
+# Retrieve command line arguments
+arguments=$*
+DESC="Start Maestro xflow  experiment/suite viewer"
+
+# Process command line arguments
+eval $(rpy.cclargs \
+    -D ":" \
+    --desc "${DESC}" \
+    ${0##*/} \
+    -exp  ""   ""   "[View only Experiment Name]" \
+    ++ $arguments)
+
+# Determine experiment path if provided
+if [[ -n "${exp}" ]] ; then
+   full_exp=${exp}
+   if [[ -n "${GEM_DEV_SUITE}" ]] ; then
+      case ${full_exp} in
+         /*) unset exp_base ;;
+         *) exp_base=${GEM_DEV_SUITE}/ ;;
+      esac
+      full_exp=${exp_base}${exp}
+   fi
+   if [[ ! -e "${full_exp}/EntryModule" ]] ; then
+      echo "Argument to -exp (${full_exp}) is not a Maestro experiment"
+      exit 1
+   fi
+   export SEQ_EXP_HOME=$(normpath.py -p ${full_exp})
+fi
+
+# Launch appropriate visualization
+if [[ -n "${GEM_DEV_SUITE}" && -z "${exp}" ]] ; then
+   xflow_overview -suites ${GEM_DEV_SUITE}/.dev_suite.xml
+else
+   xflow
+fi

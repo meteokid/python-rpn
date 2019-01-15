@@ -1,6 +1,6 @@
 SHELL = /bin/bash
 
-MODELSCRIPTS_VERSION0  = 4.8-LTS.14
+MODELSCRIPTS_VERSION0  = x/5.0.b9
 MODELSCRIPTS_VERSION   = $(notdir $(MODELSCRIPTS_VERSION0))
 MODELSCRIPTS_VERSION_X = $(dir $(MODELSCRIPTS_VERSION0))
 
@@ -10,8 +10,8 @@ MODELSCRIPTS_SSMALL_FILES  = $(MODELSCRIPTS_SSMALL_NAME).ssm
 SSM_DEPOT_DIR := $(HOME)/SsmDepot
 SSM_BASE      := $(HOME)/SsmBundles
 SSM_BASE2     := $(HOME)/SsmBundles
-MODELSCRIPTS_SSM_BASE_DOM  = $(SSM_BASE)/ENV/d/$(MODELSCRIPTS_VERSION_X)modelscripts
-MODELSCRIPTS_SSM_BASE_BNDL = $(SSM_BASE)/ENV/$(MODELSCRIPTS_VERSION_X)modelscripts
+MODELSCRIPTS_SSM_BASE_DOM  = $(SSM_BASE)/GEM/d/$(MODELSCRIPTS_VERSION_X)modelscripts
+MODELSCRIPTS_SSM_BASE_BNDL = $(SSM_BASE)/GEM/$(MODELSCRIPTS_VERSION_X)modelscripts
 MODELSCRIPTS_INSTALL   = modelscripts_install
 MODELSCRIPTS_UNINSTALL = modelscripts_uninstall
 
@@ -37,10 +37,12 @@ $(BUILDSSM)/$(MODELSCRIPTS_SSMALL_NAME):
 	rsync -av --exclude-from=$(DIRORIG_modelscripts)/.ssm.d/exclude $(DIRORIG_modelscripts)/ $@/ ; \
 	echo "Dependencies (s.ssmuse.dot): " > $@/BUILDINFO ; \
 	cat $@/ssmusedep.bndl >> $@/BUILDINFO ; \
+	echo "CURRENT_VERSION=$(MODELSCRIPTS_VERSION)" > $@/share/gem-mod/mod/VERSION ; \
 	.rdemk_ssm_control modelscripts $(MODELSCRIPTS_VERSION) all $@/BUILDINFO $@/DESCRIPTION > $@/.ssm.d/control
 
 .PHONY: install uninstall modelscripts_install modelscripts_uninstall
 install: modelscripts_install
+#TODO: install all pkg should be a git repos
 modelscripts_install: 
 	if [[ x$(CONFIRM_INSTALL) != xyes ]] ; then \
 		echo "Please use: make $@ CONFIRM_INSTALL=yes" ;\
@@ -48,8 +50,10 @@ modelscripts_install:
 	fi
 	cd $(SSM_DEPOT_DIR) ;\
 	rdessm-install -v \
+			--git \
 			--dest=$(MODELSCRIPTS_SSM_BASE_DOM)/modelscripts_$(MODELSCRIPTS_VERSION) \
 			--bndl=$(MODELSCRIPTS_SSM_BASE_BNDL)/$(MODELSCRIPTS_VERSION).bndl \
+			--pre=$(DIRORIG_modelscripts)/ssmusedep.bndl \
 			--base=$(SSM_BASE2) \
 			modelscripts{_,+*_}$(MODELSCRIPTS_VERSION)_*.ssm
 

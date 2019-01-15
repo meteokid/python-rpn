@@ -4,52 +4,57 @@
 # Retrieve command line arguments
 arguments=$*
 usage="Usage: $0 EXP_NAME [options]"
+DESC="Clean up a GEM development directory"
 
 # Check for a GEM development environment
 if [[ -z "${GEM_DEV_SUITE}" ]] ; then
-    echo "No active development environment:  use gemdev.dot to create one"
-    exit 1
+   echo "No active development environment:  use gemdev.dot to create one"
+   exit 1
 fi
 
 # Process command line arguments
-eval $(cclargs $0 "[Clean up a GEM development directory]" \
-    -f		"0"			"1"	"[Force all removal]" \
-    ++ $arguments)
+eval $(rpy.cclargs \
+   -D ":" \
+   --desc   "${DESC}" \
+   --positional "EXP_NAME" \
+   ${0##*/} \
+   -f   "0"   "1"   "[Force all removal]" \
+   ++ $arguments)
 dev=$*
 
 # Check for development directory
 if [[ -n "${dev}" ]] ; then
-    exps=
-    for exp in ${dev} ; do
-       exps="${exps} ${GEM_DEV_SUITE}/${exp}"
-    done
+   exps=
+   for exp in ${dev} ; do
+      exps="${exps} ${GEM_DEV_SUITE}/${exp}"
+   done
 else
-    exps=${GEM_DEV_SUITE}
+   exps=${GEM_DEV_SUITE}
 fi
 
 # Confirm removals
 confirm_rm(){
-    desc=${1}
-    answer=-1
-    while true ; do
-	echo "Remove ${desc} for ${exp}? [y/n] " 1>&2
-	read yn
-	case ${yn} in
-	    [Yy]* )
-                answer=1
-		break;;
-	    [Nn]* )
-		answer=0
-		break;;
-	    *)
-	        echo "Please answer y (yes) or n (no)" 1>&2
-	esac
-    done
-    if [[ ${answer} -lt 0 ]] ; then 
-	echo "Aborting on impossible situation with answer=${yn}" 1>&2
-	exit 1
-    fi
-    echo ${answer}
+   desc=${1}
+   answer=-1
+   while true ; do
+      echo "Remove ${desc} for ${exp}? [y/n] " 1>&2
+      read yn
+      case ${yn} in
+         [Yy]* )
+            answer=1
+            break;;
+         [Nn]* )
+            answer=0
+            break;;
+         *)
+            echo "Please answer y (yes) or n (no)" 1>&2
+      esac
+   done
+   if [[ ${answer} -lt 0 ]] ; then
+      echo "Aborting on impossible situation with answer=${yn}" 1>&2
+      exit 1
+   fi
+   echo ${answer}
 }
 
 # Remove all requested experiments
@@ -65,11 +70,11 @@ for exp in ${exps} ; do
    if [[ ${f} -gt 0 || $(confirm_rm "storage space") -gt 0 ]] ; then
       linkit_log=${exp}/gem/.linkit.log
       if [[ -f ${linkit_log} ]] ; then
-	      while read entry ; do
-	         host=${entry%%:*}
-	         path=${entry##*:}
-		      ssh -n ${host} rm -rf ${path}
-	      done <${linkit_log}
+         while read entry ; do
+            host=${entry%%:*}
+            path=${entry##*:}
+            ssh -n ${host} rm -rf ${path}
+         done <${linkit_log}
       fi
    fi
 
@@ -77,8 +82,8 @@ for exp in ${exps} ; do
    if [[ ${f} -gt 0 || $(confirm_rm "experiment home") -gt 0 ]] ; then
       devel_link=${exp}/gem
       if [[ -h ${devel_link} ]] ; then
-	      target=$(r.read_link ${devel_link})
-	      rm -fr ${target}
+         target=$(r.read_link ${devel_link})
+         rm -fr ${target}
       fi
    fi
 

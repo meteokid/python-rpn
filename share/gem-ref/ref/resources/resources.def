@@ -1,0 +1,3 @@
+FRONTEND = eccc-ppp1
+BACKEND = hare
+SEQ_DEFAULT_MACHINE = eccc-ppp1

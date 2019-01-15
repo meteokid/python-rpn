@@ -1,0 +1,110 @@
+#!/bin/ksh
+
+DESC="Run GEM interactively with a list of configs"
+
+eval $(rpy.cclargparse \
+   -D " " \
+   ${0##*/} \
+   "${DESC}" \
+   " " \
+   "positional"  'nargs=+'    " "              "[TEST_NAME]" \
+   "--ptopo"     'type=str,metavar=NXxNYxNOMP' '2x2x1'  "[Processor topology, NXxNYxNOMP]"\
+   "--noprep"    'action=store_true'  'false'  "[Avoid running the Prep task]" \
+   "--noout"     'action=store_true'  'false'  "[Avoid saving/moving the outputs]" \
+   "--stdout"    'action=store_true'  'false'  "[Send output to STDOUT]" \
+   "--debug"     'action=store_true'  'false'  "[Run in debug mode]" \
+   "--verif_log" 'type=str,metavar=/PATH/TO/VERIF_LOG' " " "[Path to ref. listing]" \
+   "--verif_out" 'type=str,metavar=/PATH/TO/VERIF_OUT' " " "[Path to ref. output]" \
+   "--ndigits"   'type=int'           "0"      "[Verif: Compare stats up to N significant digits (use 0 for no limit)]" \
+   "--rtol"      'type=float'         "1e-05"  "[Verif: Relative error tolerence]" \
+   "--atol"      'type=float'         "1e-08"  "[Verif: Absolute error tolerence]" \
+   ++++ $*)
+
+    # "--varlist"   'nargs=*, type=str'  " "      "[Verif, check only var in list (use ' ' for all vars)]" \
+    # "--okvalues", 'type=str,metavar=/PATH/TO/VALUES_DICT' " "  "[Verif: Dictionary file of expected min max values for vars]" \
+
+mycase="$*"
+mycase="${mycase:-$(ls -d cfg_*)}"
+
+myopt="-inorder"
+if [[ ${debug} == 'True' || ${stdout} == 'True' ]] ; then
+   myopt="-debug"
+   stdout='True'
+   if [[ ${debug} == 'True' ]] ; then
+      ptopo=1x1x1
+   fi
+fi
+
+linkit
+mkdir $(rdevar build)/log 2>/dev/null
+rm -f log 2>/dev/null
+ln -s $(rdevar build)/log log 2>/dev/null
+outdir0=$(rdevar build)/run/RUNMOD/output
+outdir1=$(rdevar build)/output
+
+for item in ${mycase} ; do
+   itemname=${item#*_}_${ptopo}_${ORDENV_PLAT}
+   echo "#==== ${itemname}"
+
+   if [[ ${noprep} != 'True' ]] ; then
+      echo "+ runprep -dircfg ${item}"
+      if [[ ${stdout} != 'True' ]] ; then
+         logfile1=log/runprep_${itemname}.log
+         echo "+ 1> ${logfile1}"
+         runprep -dircfg ${item} > ${logfile1} 2>&1
+      else
+         runprep -dircfg ${item}
+      fi
+   fi
+   if [[ $? != 0 ]] ; then
+      echo "ERROR: Problem in runprep for ${item}" 2>&1
+      continue
+   fi
+
+   echo "+ runmod  ${myopt} -dircfg ${item} -ptopo ${ptopo}"
+   logfile="log/runmod_${itemname}.log"
+   if [[ ${stdout} != 'True' ]] ; then
+      #TODO: option not to overwrite the listing
+      echo "+ 1> ${logfile}"
+      runmod  ${myopt} -dircfg ${item} -ptopo ${ptopo} > ${logfile} 2>&1
+   else
+      runmod  ${myopt} -dircfg ${item} -ptopo ${ptopo}
+   fi
+   if [[ $? != 0 ]] ; then
+      echo "ERROR: Problem in runmod for ${item}" 2>&1
+      continue
+   fi
+
+   if [[ "x${verif_log}" != "x" && ${stdout} != 'True' ]] ; then
+      reflog=${verif_log}
+      [[ -d ${reflog} ]] && reflog=${verif_log}/${logfile##*/} || true
+      ndg=""
+      [[ ${ndigits} -gt 0 ]] && ndg="-n ${ndigits}"
+      echo "+ gemverif_log_stats -i ${logfile} -r ${reflog} --keep ${ndg}"
+      gemverif_log_stats -i ${logfile} -r ${reflog} --keep ${ndg}
+   fi
+
+   if [[ "x${verif_out}" != "x" ]] ; then
+      [[ -d ${verif_out}/${itemname} ]] && verif_out=${verif_out}/${itemname} || true
+      echo "# Comparing out:${outdir0} ref:${verif_out}"
+      for myfile in $(cd ${outdir0} && find . -type f) ; do
+         outfile=${outdir0}/${myfile}
+         refout=${verif_out}/${myfile}
+         mytype="$(r.filetype ${outfile} | grep 'RPN standard random')"
+         if [[ "x${mytype}" != "x" && -f ${refout} ]] ; then
+            echo "+ gemverif_out_fields --atol ${atol} --rtol ${rtol} -i ${outfile} -r ${refout}"
+            gemverif_out_fields --atol ${atol} --rtol ${rtol} -i ${outfile} -r ${refout}
+         fi
+      done
+   fi
+
+   outdir=${outdir1}/${itemname}
+   if [[ ${noout} != 'True' ]] ; then
+      #TODO: option not to overwrite outputs
+      rm -rf ${outdir}
+      mkdir -p ${outdir} 2>/dev/null
+      echo "+ mv ${outdir0}/* ${outdir}"
+      mv ${outdir0}/* ${outdir}
+   fi
+
+done

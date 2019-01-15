@@ -25,4 +25,10 @@ if [[ -e ${packageHome}/bin/.env_setup.dot ]] ; then
 EOF
 fi
 
+#====
+gemmodlink=${packageHome}/share/gem-ref/ref/modules/gem
+gemmodpath="$(true_path ${gemmodlink})"
+rm -f ${gemmodlink}
+ln -s ${gemmodpath} ${gemmodlink}
+
 exit 0

@@ -1,5 +1,11 @@
 #!/bin/bash
 
+#TODO: KEEP OR NOT? not used in model
+DESC='(DEPRECATED - needs to be fixed) make gem vertical levels'
+echo $DESC
+
+exit 1
+
 # Autor  : Andre Plante Nov. 2010
 #
 # Object : To make gem vertical levels
@@ -86,9 +92,9 @@ cp ${FILE_R} ${TMPDIR}/${$}
 cd ${TMPDIR}/${$}
 
 #==============================================================================
-# Retreive parameter from speudo namelist
+# Retreive parameter from pseudo namelist
 
-getnml --file ${config##*/} -o 'nml-' pres_first_level height_above_ground pin amp
+rpy.nml_get --file ${config##*/} -o 'nml-' pres_first_level height_above_ground pin amp
 
 #==============================================================================
 

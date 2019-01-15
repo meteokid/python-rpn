@@ -1,0 +1,3 @@
+#!/bin/ksh93
+s.resolve_ssm_shortcuts $* 2>/dev/null | grep -q '^@' >/dev/null && exit 1
+exit 0

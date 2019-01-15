@@ -1,5 +1,6 @@
 #!/bin/ksh
 #
+#TODO: KEEP OR NOT? not used in model
 
 yin=`echo $1 | grep "YIN" | wc -l`
 yan=`echo $1 | grep "YAN" | wc -l`

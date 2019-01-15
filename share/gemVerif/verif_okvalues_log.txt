@@ -1,0 +1,3 @@
+#List of varnames, minval, maxval
+TT, 150., 350.
+ 

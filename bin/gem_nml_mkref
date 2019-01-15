@@ -1,0 +1,61 @@
+#!/bin/ksh
+# @Object: Create a reference nml fro gem
+# @Author: S.Chamberland
+# @Date:   Feb 2016
+
+DESC='Create a reference nml for gem'
+
+eval $(rpy.cclargparse \
+   -D " " \
+   ${0##*/} \
+   "${DESC}" \
+   "Example: ${0##*/} -v gem_settings.nml_ref" \
+   "positional"   'type=str'       " "     "[FILENAME]" \
+   "-v,--verbose" 'action=count'   '0'     '[verbose mode]' \
+   ++++ $*)
+myverbose=''
+if [[ ${verbose} -gt 0 ]] ; then
+   myverbose='-v'
+fi
+myfile="$1"
+
+if [[ x"${myfile}" == x"" ]] ; then
+   cat 1>&2 <<EOF
+ERROR: Need to provide a desitnation filename
+EOF
+   exit 1
+fi
+
+if [[ x"${gem_version}" == x"" ]] ; then
+   cat 1>&2 <<EOF
+ERROR: GEM environement not properly set, \${gem_version} not defined.
+EOF
+   exit 1
+fi
+
+a=$(which gemprnml_Linux_x86-64.Abs)
+b=$(which prphynml_Linux_x86-64.Abs)
+if [[ x"${a}" == x"" || x"${b}" == x"" ]] ; then
+   cat 1>&2 <<EOF
+ERROR: GEM environement not properly set, cannot find all print nml progs
+       gemprnml=${a}
+       prphynml=${b}
+EOF
+   exit 1
+fi
+
+here=$(pwd)
+mkdir $TMPDIR/$$
+cd $TMPDIR/$$
+${a}
+${b}
+filename='gem_settings.nml.ref'
+cat gemdict.nml phydict.nml > ${filename}
+rpy.nml_clean -f ${filename} -d -c -s -m 300 -t 'xst_stn_latlon(lat,lon,name) xst_stn_ij(i,j,name)'
+isrel=$(echo ${myfile} | cut -c1)
+if [[ x${isrel} == x/ ]] ; then
+   mv ${filename} ${myfile}
+else
+   mv ${filename} ${here}/${myfile}
+fi
+

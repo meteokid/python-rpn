@@ -1,45 +1,76 @@
 #!/bin/ksh
-# 
+# @Object: Create links in exp.dev.dir. and copy needed files
+# @Author: M.Desgagne, R.McTaggartCowan, S.Chamberland
+# @Date:   
+
+. .rdebase.inc.dot
+
 set -e
 
-if [[ -r ${gem}/share/Makefile.user.mk ]] ; then
-   if [[ "x$1" == "x-f" && -r Makefile.user.mk ]] ; then
-      echo "Saving a copy of previous Makefile.user.mk to Makefile.user.mk-$$"
-      mv Makefile.user.mk Makefile.user.mk-$$
+#==== Parse args
+DESC='Create links in exp.dev.dir. and copy needed files'
+
+eval $(rpy.cclargparse \
+   -D " " \
+   ${0##*/} \
+   "${DESC}" \
+   "Example: ${0##*/} -v" \
+   "-v,--verbose" 'action=count'       '0'     '[verbose mode]' \
+   "-q,--quiet"   'action=count'       '0'     '[quiet mode]' \
+   "-f,--force"   'action=store_true'  'false' '[force replace links and files]' \
+   ++++ $*)
+
+
+[[ ${quiet} -gt 0 ]] && verbose=0 || true
+myverb=''
+[[ ${verbose} -gt 0 ]] && myverb='-v' || true
+[[ ${verbose} -gt 1 ]] && myverb='-v -v' || true
+[[ ${verbose} -gt 2 ]] && myverb='-v -v -v' || true
+myforcestr=""
+[[ ${force} == "True" ]] && myforcestr="-f" || true
+
+#====
+for item in Makefile.user.mk Makefile.user.root.mk ; do
+   if [[ -r ${gem}/share/${item} ]] ; then
+      if [[ ${force} == "True" && -r ${item} ]] ; then
+         myecho 1 "+ Saving a copy of previous ${item} to ${item}-$$"
+         mv ${item} ${item}-$$
+      fi
+      if [[ ! -r ${item} ]] ; then
+         myecho 1 "+ Copying release ${item}"
+         cp ${gem}/share/${item} .
+      fi
    fi
-   if [[ ! -r Makefile.user.mk ]] ; then
-      echo "Copying release Makefile.user.mk"
-      cp ${gem}/share/Makefile.user.mk .
-   fi
-fi
+done
 
-rdemklink $1
+rdemklink ${myverb} ${myforcestr}
 
-#storage=$(model_path storage)
-storage=$(rdevar storage)
-BUILDRUN=$(rdevar build/run)
-BUILDBIN=$(rdevar build/bin)
+storage=${CONST_STORAGE}
+BUILDRUN=${CONST_BUILDRUN}
+BUILDBIN=${CONST_BUILDBIN}
 
+myecho 2 "+ Saving host:storage to .linkit.log"
 logfile=$(pwd)/.linkit.log
-echo ${TRUE_HOST:-$(hostname)}:$storage >> $logfile
-
+echo ${TRUE_HOST:-$(hostname)}:${storage} >> ${logfile}
 
 for item in PREP RUNMOD ; do
-   #/bin/rm -rf ${BUILDRUN}/$item
-   mkdir -p ${BUILDRUN}/$item 2> /dev/null
-   /bin/rm -f $item
-   ln -s ${BUILDRUN}/$item $item
+   myecho 2 "+ Linking ${BUILDRUN}/${item}"
+   #/bin/rm -rf ${BUILDRUN}/${item}
+   mkdir -p ${BUILDRUN}/${item} 2> /dev/null
+   /bin/rm -f ${item}
+   ln -s ${BUILDRUN}/${item} ${item}
 done
 
 # if [[ x$1 == x-f ]] ; then
 #    rm -rf BINMOD
 # fi
+myecho 2 "+ Linking BINMOD/${BASE_ARCH}"
 mkdir BINMOD 2> /dev/null || true
-if [[ x$1 == x-f ]] ; then
-   rm -rf BINMOD/$BASE_ARCH
+if [[ ${force} == "True" ]] ; then
+   rm -rf BINMOD/${BASE_ARCH}
 fi
-if [[ ! -e $BASE_ARCH ]] ; then
-   ln -sf ${TRUE_HOST:-$(hostname)}:$(pwd)/${BUILDBIN} BINMOD/$BASE_ARCH 2> /dev/null || true
+if [[ ! -e ${BASE_ARCH} ]] ; then
+   ln -sf ${TRUE_HOST:-$(hostname)}:$(pwd)/${BUILDBIN} BINMOD/${BASE_ARCH} 2> /dev/null || true
 fi
 
 for item in maingemdm; do
@@ -50,6 +81,8 @@ for item in maingemdm; do
    touch ${BUILDBIN}/${absname}
    if [[ ! -s ${BUILDBIN}/${absname} ]] ; then
       if [[ -n "${GEM_DEV_UPDATES}" ]] ; then
+         myecho 1 "+  Creating update stub: ${BUILDBIN}/${absname}"
+         myecho 1 "+  Run 'make gem' to update build for execution."
          cat > ${BUILDBIN}/${absname} <<EOF
 #!/usr/bin/env ksh
 message="Rebuild GEM executable with 'make gemdm' to include updates ${GEM_DEV_UPDATES}"
@@ -61,12 +94,11 @@ if [[ -n "\${MP_CHILD}" && \${MP_CHILD} -eq 0 ]] ; then
 fi
 exit 1
 EOF
-         echo "Creating update stub. Run 'make gemdm' to update build for execution."
          chmod a+x ${BUILDBIN}/${absname}
       else
          absname2=${item}_REL_${BASE_ARCH}.Abs
          abspath2=$(which $absname2)
-         echo "Copying release binary: $abspath2"
+         myecho 1 "+ Copying release binary: $abspath2"
          cp $abspath2 ${BUILDBIN}/${absname}
       fi
    fi

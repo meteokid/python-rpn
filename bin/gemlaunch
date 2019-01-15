@@ -1,0 +1,164 @@
+#!/usr/bin/env ksh
+
+# Retrieve command line arguments
+arguments=$*
+DESC="Launch a GEM integration in batch"
+
+# Preliminary command line argument processing
+unset exp
+found_exp=0
+for arg in ${arguments} ; do
+   if [[ -z "${exp}" && ${found_exp} -gt 0 ]] ; then
+      exp=${arg}
+   fi
+   case ${arg} in
+      -exp) found_exp=1 ;;
+   esac
+done
+if [[ ${found_exp} -gt 0 ]] ; then
+   full_exp=${exp}
+   if [[ -z "${exp}" ]] ; then
+      echo "Missing argument to -exp"
+      exit 1
+   fi
+   if [[ -n "${GEM_DEV_SUITE}" ]] ; then
+      case ${full_exp} in
+         /*) unset exp_base ;;
+         *) exp_base=${GEM_DEV_SUITE}/ ;;
+      esac
+      full_exp=${exp_base}${exp}
+   fi
+   if [[ ! -e "${full_exp}/EntryModule" ]] ; then
+      echo "Argument to -exp (${full_exp}) is not a Maestro experiment"
+      exit 1
+   fi
+   export SEQ_EXP_HOME=$(normpath.py -p ${full_exp})
+fi
+
+# Check that the environment is correctly set
+if [[ -z "${SEQ_EXP_HOME}" ]] ; then
+   print "Environment variable SEQ_EXP_HOME must be set"
+   exit 1
+fi
+
+# Retrieve default values
+def_date=$(tictac -f %Y%M%D%H)
+def_time_ntr=${node_wallclock}m
+def_ptopo_ntr=${node_cpu}
+eval $(nodeinfo -n /gem/Runmod -f res | grep -v soumetArgs | sed 's/\./_/')
+def_mach=${node_machine}
+def_ptopo=${node_cpu}
+def_time_mod=${node_wallclock}m
+def_cm=${node_memory}
+def_front="$(nodeinfo -n /gem/Prep -f res | sed 's/\./_/' | grep node_machine)"
+def_front=${def_front#*=}
+
+# Process command line arguments
+eval $(rpy.cclargs \
+    -D ":" \
+    --desc "${DESC}" \
+    ${0##*/} \
+    -date     "${def_date}"      ""  "[Run for date YYYYMMDDHH]" \
+    -exp      ""                 ""  "[Name of experiment to launch]" \
+    -mach     "${def_mach}"      ""  "[Name of backend (compute) host]" \
+    -front    "${def_front}"     ""  "[Name of frontend (PPP) host]" \
+    -ptopo    "${def_ptopo}"     ""  "[Processor topology for Runmod]" \
+    -time_mod "${def_time_mod}"  ""  "[Runmod wallclock time limit (minutes)]" \
+    -cm       "${def_cm}"        ""  "[Runmod memory size limit]" \
+    -dry_run  "0"                "1" "[Prepare resources but do not run exp]" \
+    -v        "0"                "1" "[Verbose output]" \
+    ++ $arguments)
+exp=${full_exp}
+
+# Handle time units correctly
+for task in ntr mod ; do
+    time_num=$(eval echo \$time_$(echo $task) | sed 's/[^0-9]//')
+    case $(eval echo \$time_$(echo $task)) in
+    *h) eval set_time_$(echo $task)=$((${time_num}*60))
+    ;;
+    *m) eval set_time_$(echo $task)=${time_num}
+    ;;
+    *s) eval set_time_$(echo $task)=$((${time_num}/60))
+    ;;
+    *) eval set_time_$(echo $task)=$(eval echo \$time_$(echo $task))
+    ;;
+    esac
+done
+
+# Check configuration file to determine cpu_multiplier value
+set_cpu_mult=""
+cfgfile=${SEQ_EXP_HOME}/experiment.cfg
+if [[ ${v} -gt 0 ]] ; then print "Checking ${cfgfile} for settings path" ; fi
+if [[ ! -r ${cfgfile} ]] ; then
+    print "Unable to read ${cfgfile}"
+    exit 1
+fi
+tmpfile=${TMPDIR}/cfg$$
+(. ${cfgfile} ; echo ${GEM_settings} >${tmpfile})
+rsettings=$(cat ${tmpfile})
+tmpsettings=${TMPDIR}/settings$$
+if [[ ${v} -gt 0 ]] ; then
+    scp ${rsettings} ${tmpsettings}
+else
+    scp ${rsettings} ${tmpsettings} >/dev/null 2>&1
+fi
+(. ${cfgfile} ; echo ${GEM_version} >${tmpfile})
+version=$(cat ${tmpfile})
+rm -f ${tmpfile}
+if [[ -r ${tmpsettings} ]] ; then
+    if [[ $(which rpy.nml_get 2>/dev/null | wc -w) -lt 1 ]] ; then
+    if [[ ${v} -gt 0 ]] ; then print "Temporarily acquiring valid GEM for settings file processing" ; fi
+    . s.ssmuse.dot GEM/${version} >/dev/null
+    fi
+    gtype=$(rpy.nml_get -f $tmpsettings grid/grd_typ_s | sed "s/'//g")
+    if [[ ${gtype} == 'GY' ]] ; then
+    set_cpu_mult="cpu_multiplier=2"
+    else
+    set_cpu_mult="cpu_multiplier=1"
+    fi
+else
+    if [[ ${v} -gt 0 ]] ; then print "Unable to read settings file: cpu_multiplier unchanged" ; fi
+fi
+rm -f ${tmpsettings}
+
+# Determine where to set exec host value
+resfile=${SEQ_EXP_HOME}/resources/resources.def
+
+set_mach="machine=${mach}"
+if [[ -n "${mach}" && $(grep BACKEND ${resfile} | wc -l) -gt 0 && \
+    $(find ${SEQ_EXP_HOME}/resources/gem -name "*.xml" -exec grep \${BACKEND} {} \; | wc -l) -ge 1 ]] ; then
+    set_mach=""
+    if [[ ${v} -gt 0 ]] ; then 
+       print "Writing backend ${mach} to ${resfile}"
+    fi
+    perl -pi -e "s/^\s*(BACKEND\s*=\s*).*\$/\$1${mach}/" ${resfile}
+fi
+
+set_front="machine=${front}"
+if [[ -n "${front}" && $(grep FRONTEND ${resfile} | wc -l) -gt 0 && \
+    $(find ${SEQ_EXP_HOME}/resources/gem -name "*.xml" -exec grep \${FRONTEND} {} \; | wc -l) -ge 1 ]] ; then
+    set_front=""
+    if [[ ${v} -gt 0 ]] ; then 
+       print "Writing frontend ${front} to ${resfile}"
+    fi
+    perl -pi -e "s/^\s*(FRONTEND\s*=\s*).*\$/\$1${front}/" ${resfile}
+    perl -pi -e "s/^\s*(SEQ_DEFAULT_MACHINE\s*=\s*).*\$/\$1${front}/" ${resfile}
+fi
+
+# Set requested resource options
+if [[ ${dry_run} -gt 0 ]] ; then dryrun="--dry-run" ; else dryrun="" ; fi
+if [[ -n "${date}" ]] ; then set_date="-d ${date}0000" ; else set_date="" ; fi
+if [[ ${v} -gt 0 ]] ; then verbose="-v" ; else verbose="" ; fi
+set_front=""
+set_mach=""
+nodesetres -n /gem/Prep     ${verbose} ${dryrun} ${set_front} ${set_cpu_mult} 
+nodesetres -n /gem/Upload   ${verbose} ${dryrun} ${set_front}
+nodesetres -n /gem/Runmod   ${verbose} ${dryrun} ${set_mach} wallclock=${set_time_mod} memory=${cm} ${set_cpu_mult} cpu=${ptopo}
+nodesetres -n /gem/Sortie   ${verbose} ${dryrun} ${set_front}
+nodesetres -n /gem/Transfer ${verbose} ${dryrun} ${set_front}
+
+# Start the experiment
+if [[ ${v} -gt 0 ]] ; then verbose="-debug" ; else verbose="" ; fi
+launch="expbegin -d ${date}0000 ${verbose}"
+if [[ ${v} -gt 0 ]] ; then echo "Launching experiment with:  ${launch}" ; fi
+if [[ ${dry_run} -lt 1 ]] ; then ${launch} ; fi

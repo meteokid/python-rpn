@@ -1,63 +1,80 @@
 #!/usr/bin/env ksh
-# Completely remove a development experiment
 
-confirmed=0
+# Retrieve command line arguments
+arguments=$*
+DESC="Completely remove a GEM development experiment"
+
+# Process command line arguments
+eval $(rpy.cclargs \
+    -D ":" \
+    --desc "$DESC" \
+    --positional "EXP_NAME" \
+    ${0##*/} \
+    -f  "0"   "1"   "[Forced removal (no confirmation needed)]" \
+    ++ $arguments)
+
+confirmed=$f
 if [[ x"${1}" == x"-f" ]] ; then
   confirmed=1
   shift
 fi
 
 # Check command line arguments
+if [[ $# != 1 ]] ; then
+   print "ERROR: Need to specify one and only one EXP_NAME" 1>&2
+   print "Usage: ${0##*/} [-f] EXP_NAME" 1>&2
+   exit 1
+fi
 if [[ -z "${1}" ]] ; then
-  print "Usage: $0 EXP_NAME" 1>&2
-  exit 1
+   print "Usage: ${0##*/} [-f] EXP_NAME" 1>&2
+   exit 1
 fi
 exp=${1}
 if [[ ! -d ${exp} ]] ; then
-  print "Experiment ${exp} does not exist" 1>&2
-  exit 1
+   print "Experiment ${exp} does not exist" 1>&2
+   exit 1
 fi
 
 # Confirm removal
 if [[ ${confirmed} -lt 1 ]] ; then 
-while true ; do
-  printf "Remove experiment ${exp} and all associated storage/suite space? [y/n] "
-  read yn
-  case ${yn} in
-    [Yy]* )
-      confirmed=1
-      break;;
-    [Nn]* )
-      print "Exiting updater"
-      exit 0
-      break;;
-    *)
-      print "Please answer yes or no"
-  esac
-done
+   while true ; do
+      printf "Remove experiment ${exp} and all associated storage/suite space? [y/n] "
+      read yn
+      case ${yn} in
+         [Yy]* )
+            confirmed=1
+            break;;
+         [Nn]* )
+            print "Exiting updater"
+            exit 0
+            break;;
+         *)
+            print "Please answer yes or no"
+      esac
+   done
 fi
 if [[ ${confirmed} -lt 1 ]] ; then 
-  print "Aborting on impossible situation with answer=${yn}" 1>&2
-  exit 1
+   print "Aborting on impossible situation with answer=${yn}" 1>&2
+   exit 1
 fi
 
 # Remove storage targets if they exist
 linkit_log=${exp}/.linkit.log
 if [[ -f ${linkit_log} ]] ; then
-  while read entry ; do
-     host=${entry%%:*}
-     path=${entry##*:}
-     ssh -n ${host} rm -rf ${path}/
-  done <${linkit_log}
+   while read entry ; do
+      host=${entry%%:*}
+      path=${entry##*:}
+      ssh -n ${host} rm -rf ${path}/
+   done <${linkit_log}
 fi
 
 # Remove development home target
 devel_link=${exp}/suite
 if [[ -h ${devel_link} ]] ; then
-  target=$(r.read_link ${devel_link})
-  rm -fr ${target}
-#  we should not do this rmdir ...
-#  rmdir $(dirname ${target})
+   target=$(r.read_link ${devel_link})
+   rm -fr ${target}
+   #  we should not do this rmdir ...
+   #  rmdir $(dirname ${target})
 fi
 
 # Remove the experiment

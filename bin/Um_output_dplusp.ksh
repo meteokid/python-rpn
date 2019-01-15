@@ -1,5 +1,6 @@
 #!/bin/ksh
-#
+#TODO: KEEP OR NOT? not used in model - only in Sortie.cfg
+
 #====> Obtaining the arguments:
 eval `cclargs_lite $0 \
      -list    ""  ""    "[list of files                      ]"\

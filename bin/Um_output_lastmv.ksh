@@ -1,5 +1,7 @@
 #!/bin/ksh
 #
+#TODO: KEEP OR NOT? not used in model
+
 printf "\n=====>  Um_output_lastmv.ksh starts: `date` ###########\n\n"
 
 DIR_dst=$1

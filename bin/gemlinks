@@ -1,0 +1,17 @@
+#!/bin/ksh
+
+arguments=$*
+DESC="Alias to Maestro's 'makelinks'"
+
+if [[ "x$1" == "x-h" || "x$1" == "x--help" ]] ; then
+   cat<<EOF
+${0##*/}
+    ${DESC}
+    Creates "machine" links in \${SEQ_EXP_HOME}/hub and \${SEQ_EXP_HOME}/listings
+    Uses "~/.suites/.default_links/*" to get the list of machines
+    and their link destination
+
+EOF
+fi
+
+makelinks $arguments

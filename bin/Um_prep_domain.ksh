@@ -12,6 +12,7 @@ eval `cclargs_lite -D " " $0 \
   -bin         "${TASK_BIN}"  ""    "[Binaries directory path      ]"\
   -headscript  ""          ""       "[Headscript to run            ]"\
   -check_namelist "0"      "1"      "[Check namelist validity      ]"\
+  -mkref_namelist "0"      "1"      "[Re-Create ref nml            ]"\
   -nmlfile     ""          ""       "[Model namelist settings file ]"\
   -npex        "1"         "1"      "[# of processors along x      ]"\
   -npey        "1"         "1"      "[# of processors along y      ]"\
@@ -20,6 +21,8 @@ eval `cclargs_lite -D " " $0 \
   -verbose     "0"         "1"      "[verbose mode                 ]"\
   -abort       ""          ""       "[Abort signal file prefix     ]"\
   ++ $arguments`
+
+mkref_namelist=1  # Force ref nml creation
 
 # Check for required inputs
 set ${SETMEX:-+ex}
@@ -57,14 +60,16 @@ if [ -n "${nmlfile}" ] ; then
 if [ -e "${nmlfile}" ] ; then
    # Verify namelist entries on request
    if [ ${check_namelist} -gt 0 ] ; then
-      ln -s ${nmlfile} ./gem_settings.nml
-      ${bin}checknml -q gem_cfgs physics step grid series
-      rm -f ./gem_settings.nml
-   fi
-   ${bin}checkdmpart_wrapper.ksh \
-            -nmlfile ${nmlfile} -domain ${mydomain} -bin $bin \
-            -check_namelist ${check_namelist} -cache ${cache} \
+      _mkref=""
+      if [[ ${mkref_namelist} == 1 ]] ; then
+         _mkref="-r"
+      fi
+      ${bin}checknml2 --nml="grid step gem_cfgs physics_cfgs surface_cfgs convection_cfgs series" ${_mkref} -- ${nmlfile}
+      ${bin}checkdmpart_wrapper.ksh \
+            -nmlfile ${nmlfile} -domain ${mydomain} -bin $bin   \
+            -check_namelist ${check_namelist} -cache "${cache}" \
             -npex ${npex} -npey ${npey} -verbose $verbose
+   fi
 fi
 fi
 date
@@ -132,7 +137,7 @@ if [ -e "${anal}" ] ; then
 fi
 date
 set -ex
-gtype=$(${bin}getnml -f ${nmlfile} -n grid grd_typ_s)
+gtype=$(${bin}rpy.nml_get -f ${nmlfile} grid/grd_typ_s)
 if [ "${gtype}" == "'GU'" -o "${gtype}" == "'GY'" ] ; then
   input=''
 fi

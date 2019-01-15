@@ -1,5 +1,7 @@
 #!/bin/ksh
 
+#TODO: KEEP OR NOT? not used in model
+
 # Autor  : Andre Plante winter 2009-2010
 #
 # Object : To convert GEMDM v3* levels to GEMDM v_4.1.2 levels and Vice Versa
@@ -15,7 +17,12 @@
 #          levels_zoom1.ps : plot showing bottum levels near the sea
 #          levels_zoom2.ps : plot showing bottum levels over the mountain top
 #
-#====================================================================================
+#=============================================================================
+
+DESC='(DEPRECATED - needs to be fixed) To convert GEMDM v3* levels to GEMDM v_4.1.2 levels and Vice Versa'
+echo $DESC
+
+exit 1
 
 eval `cclargs \
  -title         UNSET  UNSET  "[Graph title]"\
@@ -35,7 +42,7 @@ eval `cclargs \
 
 if [ $# -ne 0 ];then
    echo "You must use at lest the key -gem_settings (gem_settings_file) and key -rcoef (real value)"
-   exit 
+   exit
 fi
 
 #==============================================================================
@@ -111,20 +118,20 @@ cd ${TMPDIR}/${$}
 case ${DIRECTION} in
 
    reg_2_stg)
-   
+
       # Get namlist info in text files.
 
-      getnml --file ${gem3_settings} -o 'nml-' hyb grd_rcoef
-      rm -f nml-pres_pref.txt      
+      rpy.nml_get --file ${gem3_settings} -o 'nml-' hyb grd_rcoef
+      rm -f nml-pres_pref.txt
       echo "NOTE : The following command may produce an error if pres_pref is not"
       echo "       in the namelist, if this happens, pres_pref will by set to 800."
-      getnml --file ${gem3_settings} -o 'nml-' pres_pref
+      rpy.nml_get --file ${gem3_settings} -o 'nml-' pres_pref
       if [ ! -f nml-pres_pref.txt ];then
          echo 800. > nml-pres_pref.txt
-      fi      
+      fi
       echo "NOTE : The following command may produce an error if pres_ptop is not"
       echo "       in the namelist, if this happens, pres_ptop will be computed from hyb(1) and pref"
-      getnml --file ${gem3_settings} -o 'nml-' pres_ptop
+      rpy.nml_get --file ${gem3_settings} -o 'nml-' pres_ptop
       if [ ! -f nml-pres_ptop.txt ];then
          echo -1 > nml-pres_ptop.txt
       fi
@@ -139,7 +146,7 @@ case ${DIRECTION} in
       if [ "${R_PROC}" = "" ];then
 	  echo "Cannot find ${R_PROC_NAME}.r"
 	  exit 1
-      fi      
+      fi
 
       cp ${R_PROC} .
 
@@ -194,7 +201,7 @@ EOF
       fi
 
       # Get namlist info in texte files.
-      getnml --file ${gem_settings##*/} -o 'nml-' hyb grd_rcoef cstv_ptop_8
+      rpy.nml_get --file ${gem_settings##*/} -o 'nml-' hyb grd_rcoef cstv_ptop_8
 
 	  cat nml-grd_rcoef.txt
 
@@ -221,7 +228,7 @@ EOF
       rm -f out.ps
       R --no-save < job.r
 
-      if [ ${?} != 0 ];then 
+      if [ ${?} != 0 ];then
          echo "Problem with ${R_PROC_NAME}.r"
          echo "aborting"
          exit 1

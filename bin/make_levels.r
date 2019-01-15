@@ -1,3 +1,4 @@
+#TODO: KEEP OR NOT? not used in model
 make_levels <- function(pres_first_level=-1,
                            height_above_ground=-1,
                            pin=c(-1),

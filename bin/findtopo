@@ -1,136 +1,116 @@
 #!/bin/ksh
 #
-eval `cclargs $0 \
-  -npex_low  "1"    "1"    "[lower bound for npex           ]"\
-  -npex_high "0"    "0"    "[upper bound for npex           ]"\
-  -npey_low  "1"    "1"    "[lower bound for npey           ]"\
-  -npey_high "0"    "0"    "[upper bound for npey           ]"\
-  -omp       "1"    "1"    "[number of omp threads          ]"\
-  -smt       "1"    "2"    "[smt levels                     ]"\
-  -low       "0"    "0"    "[lower bound for number of nodes]"\
-  -high      "245"  "5000" "[upper bound for number of nodes]"\
-  -threads   "3"    "3"    "[number of threads to tun this scripts]"\
-  ++ $*`
-#
-BIN=checkdmpart_${BASE_ARCH}.Abs
-AIX=$(echo ${BASE_ARCH} | grep -i AIX)
-if [ -z "${AIX}" ] ; then
-  CORESperNODE=36
-else
-  CORESperNODE=32
-fi
-CMD="r.run_in_parallel -pgm $(true_path $(which $BIN))"
+DESC="Find valid topology for GEM"
 
-if [ ! -e gem_settings.nml ] ; then
-  printf "\n   File gem_settings.nml NOT available -- ABORT\n\n"
-  exit 1
-else
-  GRDTYP=$(getnml -f gem_settings.nml Grd_typ_S | sed "s/'//g")
+eval $(rpy.cclargs \
+   -D ":" \
+   --desc   "${DESC}" \
+   ${0##*/} \
+   -npex_low   "1"    "1"    "[lower bound for npex           ]"\
+   -npex_high  "0"    "0"    "[upper bound for npex           ]"\
+   -npey_low    "1"    "1"    "[lower bound for npey           ]"\
+   -npey_high   "0"    "0"    "[upper bound for npey           ]"\
+   -omp         "1"    "1"    "[number of omp threads          ]"\
+   -smt         "1"    "2"    "[smt levels                     ]"\
+   -low         "0"    "0"    "[lower bound for number of nodes]"\
+   -high        "245"  "5000" "[upper bound for number of nodes]"\
+   -nml         "gem_settings.nml" "gem_settings.nml" "[/PATH/TO/gem_settings.nml]"\
+   ++ $*)
+
+if [ ! -e ${nml} ] ; then
+   printf "\n   File ${nml} NOT available -- ABORT\n\n"
+   exit 1
 fi
+
+GRDTYP=$(rpy.nml_get -f ${nml} grid/Grd_typ_S | sed "s/'//g" | tr 'a-z' 'A-Z')
 if [ -z "${GRDTYP}" ] ; then
-  printf "\n   Cannot determine Grid type -- ABORT\n\n"
-  exit 1
-else
-  if [ "${GRDTYP}" == "GY" -o ${GRDTYP} == "gy" ] ; then
-    export GEM_YINYANG=YES
-    mult=2
-  else
-    mult=1
-  fi
+   printf "\n   Cannot determine Grid type -- ABORT\n\n"
+   exit 1
+fi
+GNJ=$(rpy.nml_get -f ${nml} grid/Grd_nj 2>/dev/null | sed "s/'//g")
+GNI=$(rpy.nml_get -f ${nml} grid/Grd_ni 2>/dev/null | sed "s/'//g" )
+mult=1
+if [ "${GRDTYP}" == "GY" ] ; then
+   export GEM_YINYANG=YES
+   mult=2
+   if [ -z "${GNI}" ] ; then
+      GNI=$((GNJ-1))
+      GNI=$((1+GNI*3))
+   else
+      GNJ=$((GNI-1))
+      GNJ=$((1+GNJ/3))
+   fi
 fi
 
-FN=${TMPDIR}/checkdmpart$$
-export Ptopo_npex=1 ; export Ptopo_npey=1
-${CMD} 1> $FN 2> /dev/null
-cnt=`grep "CHECKDMPART IS OK" $FN | wc -l`
-if [ $cnt -eq 1 ] ; then
-  GNI=$(grep "GRD_NI *=" $FN | tail -1 | cut -d "=" -f 2 | sed 's/,//')
-  GNJ=$(grep "GRD_NJ *=" $FN | tail -1 | cut -d "=" -f 2 | sed 's/,//')
-else
-  echo 1 1 | ${CMD}
-  exit -1
+if [ -z "${GNJ}" -o -z "${GNI}" ] ; then
+   printf "\n Cannot determine Grid type -- ABORT\n\n"
+   exit 1
 fi
-/bin/rm -f $FN
 
-MAX_threads=${threads}
+#  -threads   "3"    "3"    "[number of threads to tun this scripts]"\
+#MAX_threads=${threads}
 
-# when npex_high is not specified, we are considring
+# when npex_high is not specified, we are considering
 # sub-domain sizes larger than 20 on the x-axis
 
 if [ $npex_high -lt 1 ] ; then
-  npex_high=$((GNI/20))
+   npex_high=$((GNI/20))
 fi
 
-# when npey_high is not specified, we are considring
+# when npey_high is not specified, we are considering
 # sub-domain sizes larger than 10 on the y-axis
 
 if [ $npey_high -lt 1 ] ; then
-  npey_high=$((GNJ/10))
+   npey_high=$((GNJ/10))
 fi
 
+# Machine specific (XC40)
+CORESperNODE=36
 THREADSperCORE=${smt}
 THREADSperNODE=$((CORESperNODE*THREADSperCORE))
 
 echo INVESTIGATING NODES: $((npex_low*npey_low*omp*mult/THREADSperNODE)) $((npex_high*npey_high*omp*mult/THREADSperNODE))
 echo with NPEX_LOW= $npex_low NPEX_HIGH= $npex_high NPEY_LOW= $npey_low NPEY_HIGH= $npey_high
 
-chkdomain ()
-{
-NPEX=$1
-NPEY=$2
-FN=${TMPDIR}/proctopo$$_$3
-out=${4}_$3
+cat > checkdm.nml <<EOF
+&cdm_cfgs
+cdm_npex = ${npex_low},${npex_high}
+cdm_npey = ${npey_low},${npey_high}
+/
+EOF
 
-nthreads=$((NPEX*NPEY*omp*mult))
-nodes=$(echo "scale=3; ${nthreads} / ${THREADSperNODE}" | bc -l)
+lis=${TMPDIR}/checkdmpartlis$$
+checkdmpart.ksh -cfg cfg_0000 -nmlfile ./checkdm.nml -gemnml ${nml} 1> $lis 2>&1
 
-nodes_int=$(echo ${nodes} | cut -d "." -f1)
-FULLNODE=""
-if [ $((nodes_int*THREADSperNODE)) -eq ${nthreads} ] ; then
-  FULLNODE=FULL_NODE_XC40smt${smt}
-fi 
+GNI=$(grep "GRD_NI *=" $lis --text | tail -1 | cut -d "=" -f 2 | sed 's/,//')
+GNJ=$(grep "GRD_NJ *=" $lis --text | tail -1 | cut -d "=" -f 2 | sed 's/,//')
+/bin/rm -f $lis checkdm.nml
 
-cores=$(echo "scale=0; ${nodes} * ${CORESperNODE}" | bc -l)
-n=$((nthreads/THREADSperNODE))
-
-if [ $n -ge $low -a $n -le $high ] ; then
-  export Ptopo_npex=$NPEX ; export Ptopo_npey=$NPEY
-  ${CMD} 1> $FN 2> /dev/null
-  cnt=$(grep "CHECKDMPART IS OK" ${FN} | wc -l)
-  if [ $cnt -gt 0 ] ; then
-    printf ""TOPO:"%5i "x"%5i  "NODES="%8.2f  "CORES="%6.0f  "MPI="%6i "SUBDOMAINS="%5i "x"%5i %s\n"\
-         $NPEX $NPEY $nodes $cores $((NPEX*NPEY*mult)) $((GNI/NPEX)) $((GNJ/NPEY)) ${FULLNODE} >> $out
-  fi
-  /bin/rm -f $FN
+MY_OK=$(grep "OK" checkdmpart_status.dot)
+if [ "${MY_OK}" == "" ] ; then
+   printf "Abort: Use checknml ${nml} to find error\n"
+   /bin/rm -f ${TMPDIR}/findtopolis$$ checkdmpart_status.dot
+   exit 1
 fi
-}
+grep "topo_allowed=" checkdmpart_status.dot | sort -n -k 2 > ${TMPDIR}/findtopolis$$
+while read line ; do
+   ptopo=$(echo ${line##*=} | sed 's/ //g' | sed 's/"//g' | sed 's/;//g')
+   npex=$(echo $ptopo | cut -d"x" -f1)
+   npey=$(echo $ptopo | cut -d"x" -f2)
+   nthreads=$((npex*npey*omp*mult))
+   nodes=$(echo "scale=3; ${nthreads} / ${THREADSperNODE}" | bc -l)
+   nodes_int=$(echo ${nodes} | cut -d "." -f1)
+   FULLNODE=""
+   if [ $((nodes_int*THREADSperNODE)) -eq ${nthreads} ] ; then
+      FULLNODE=FULL_NODE_XC40smt${smt}
+   fi
+   cores=$(echo "scale=0; ${nodes} * ${CORESperNODE}" | bc -l)
+   n=$((nthreads/THREADSperNODE))
 
-FOUNDLISTE=${TMPDIR}/findtopolis$$
-rm -f ${FOUNDLISTE}_* ${FOUNDLISTE}TOTAL
-
-noc=0
-npex=$npex_low
-while [ $npex -le $npex_high ] ; do
-  npey=$npey_low
-  while [ $npey -le $npey_high ] ; do
-    noc=$((noc+1))
-    chkdomain $npex $npey $noc ${FOUNDLISTE}_${npex}_${npey} &
-    if [ $noc -eq $MAX_threads ] ; then
-      wait
-      noc=0
-    fi
-    npey=$((npey+1))
-  done
-  wait
-  cat ${FOUNDLISTE}_${npex}_* 1> ${FOUNDLISTE} 2> /dev/null
-  cat ${FOUNDLISTE} 2> /dev/null | sort -k 4 >> ${FOUNDLISTE}TOTAL
-  rm -f ${FOUNDLISTE}_${npex}_* ${FOUNDLISTE}
-  npex=$((npex+1))
-done
-
-if [ -e ${FOUNDLISTE}TOTAL ] ; then
-  cat ${FOUNDLISTE}TOTAL
-  /bin/rm -f ${FOUNDLISTE}TOTAL 
-fi
-
+   if [ $n -ge $low -a $n -le $high ] ; then
+      printf ""TOPO:"%5i "x"%5i  "NODES="%8.2f  "CORES="%6.0f  "MPI="%6i "SUBDOMAINS="%5i "x"%5i %s\n"\
+         $npex $npey $nodes $cores $((npex*npey*mult)) $((GNI/npex)) $((GNJ/npey)) ${FULLNODE}
+   fi
+done < ${TMPDIR}/findtopolis$$
+/bin/rm -f ${TMPDIR}/findtopolis$$ checkdmpart_status.dot
 

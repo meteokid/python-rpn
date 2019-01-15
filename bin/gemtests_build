@@ -1,0 +1,472 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# Author: Stephane Chamberland <stephane.chamberland@canada.ca>
+# Copyright: LGPL 2.1
+
+"""
+Create a tests maestro suite from a list a of GEM configs
+"""
+import argparse
+import os.path
+import sys
+import xml.etree.ElementTree as ET
+import verif_common as _vc
+import rpnpy.ftnnml as _fnml
+from maestro_objects import \
+     maestro_exp_clean, maestro_set_date, maestro_exp_set_wj_links, \
+     Mtask, MtaskCopy, Mfamily, Mmodule, MmoduleCopy
+
+_DEFAULT_CFG = {
+    'TEST_TYPE' : 'one',
+    'TEST_TOPO' : '2x1x1',
+    'TEST_TOPO2': '1x2x1',
+    'TEST_WALL' : '15'
+    }
+
+_MAX_MEMBERS = 999
+
+
+class GemTestSummary(MtaskCopy):
+    def __init__(self, moduleDst, testlist=[]):
+        MtaskCopy.__init__(self, 'Summary', 'gemVerif', moduleDst)
+        self.testlist = testlist
+        self.resOkKeys = ['immediate',]
+
+    def writeCfgMine(self, basepath=None):
+        spath = os.getenv('SEQ_EXP_HOME').strip()
+        if basepath is None:
+            basepath = os.path.join(spath, 'modules')
+        cpath = os.path.join(os.path.dirname(self.cfgPath(basepath)), 'container') + '.cfg'
+        mpath = self.parent.getNodesPathStr(basepath='')
+        with open(cpath, 'a') as fh:
+            fh.write('basepath="{}"\n'.format(spath))
+            fh.write('nodepath="{}"\n'.format(mpath))
+            fh.write('testlist="{}"\n'.format(" ".join(self.testlist)))
+
+
+class GemMod(MmoduleCopy):
+    def __init__(self):
+        MmoduleCopy.__init__(self, 'gem')
+        for m in self.members:
+            m.resOkKeys = ['immediate',]
+            if m.name == 'Prep':
+                m.resOkKeys += ('cpu_multiplier',)
+            if m.name in ('StageIN', 'StageOUT'):
+                m.resOkKeys += ('machine',)
+            if m.name == 'Runmod':
+                m.resOkKeys += ('cpu_multiplier', 'machine', 'cpu',
+                                'wallclock', 'memory')
+
+
+class GemVerifMod(MmoduleCopy):
+    def __init__(self):
+        MmoduleCopy.__init__(self, 'gemVerif')
+        for m in self.members:
+            m.resOkKeys = ['wallclock', 'memory', 'immediate',]
+
+    def setRes(self, res, container=False):
+        res1 = res.copy()
+        for k in ('verif_wallclock', 'verif_memory', 'verif_immediate',
+                  'verif_cpu', 'verif_machine'):
+            if k in res.keys():
+                res1[k.split('_')[1]] = res['k']
+        MmoduleCopy.setRes(self, res1, container)
+
+
+class GemRun(Mfamily):
+    def __init__(self, name):
+        Mfamily.__init__(self, 'Run'+name.strip(),
+                         allowedSubClass=(Mmodule,), maxMembers=1)
+        self.add(GemMod())
+
+
+class GemVerif(Mfamily):
+    def __init__(self, nrun=1):
+        self.nrun = nrun
+        Mfamily.__init__(self, 'Verif'+str(nrun),
+                         allowedSubClass=(Mmodule,), maxMembers=1)
+        self.add(GemVerifMod())
+
+
+class GemTest(Mfamily):
+    def __init__(self, pathname, testnum=0, nrun=None, machine='${FRONTEND}'):
+        #TODO: nrun is ignored, romve
+        nmax = 2
+        self.name0 = os.path.basename(pathname)
+        self.pathname, self.cfg = self.getConfig(pathname)
+        self.isGY = self.getSettingsIsGY(self.pathname)
+        self.nrun = 2 if self.cfg['TEST_TYPE'].lower() == 'diff' else 1
+        if self.nrun < 1 or self.nrun > nmax:
+            raise ValueError("[{}] Oops, trying to add too many runs: {}/{}".
+                            format(self.__class__.__name__, self.nrun, nmax))
+        name = "T{:02d}-{}".format(testnum, self.name0)
+        Mfamily.__init__(self, name, allowedSubClass=(Mmodule,),
+                         maxMembers=nmax+1)
+        m = Mmodule('Test'+str(self.nrun), allowedSubClass=(GemRun,GemVerif),
+                    maxMembers=nmax+1)
+        self.add(m)
+        for i in range(self.nrun):
+            a = GemRun(str(i+1))
+            m.add(a)
+            topo = self.cfg['TEST_TOPO']
+            if i > 0: #TODO: option to run parallel
+                topo = self.cfg['TEST_TOPO2']
+                a.addDep(m.members[-1])
+            x = 2 if self.isGY else 1
+            a.setRes({
+                'cpu' : topo,
+                'cpu_multiplier' : self.nrun * x,
+                'machine' : machine
+                })
+        a = GemVerif(self.nrun)
+        for i in m.members:
+            a.addDep(i)
+        m.add(a)
+
+    def getConfig(self, pathname):
+        cpath = os.path.join(pathname, 'configexp.cfg')
+        if not os.path.isfile(cpath):
+            pathname = os.path.join(pathname, 'cfg_0000')
+            cpath = os.path.join(pathname, 'configexp.cfg')
+        if not os.path.isfile(cpath):
+            raise IOError('[{}] Oops, test config file not found: {}'.
+                          format(self.__class__.__name__, cpath))
+        cfg = _DEFAULT_CFG.copy()
+        cfg = _vc.get_var_from_dot_script(cpath, cfg)
+        return pathname, cfg
+
+    def getSettingsIsGY(self, pathname):
+        spath = os.path.join(pathname, 'gem_settings.nml')
+        cfg = _fnml.FtnNmlFile(spath)
+        try:
+            grtyp = cfg.get('grid').get('grd_typ_s').get('v')
+        except KeyError:
+            grtyp = None
+        return str(grtyp).upper().strip(" '").strip(' "') == 'GY'
+
+    def writeCfgMine(self, basepath=None):
+        if basepath is None:
+            spath = os.getenv('SEQ_EXP_HOME').strip()
+            basepath = os.path.join(spath, 'modules')
+        cpathr = os.path.join('modules', self.getNodesPathStr(""), 'config')
+        cpath1 = self.cfgPath(basepath)
+        lpath  = os.path.join(os.path.dirname(cpath1), 'config')
+        if os.path.exists(lpath):
+            os.unlink(lpath)
+        try:
+            os.symlink(self.pathname, lpath)
+        except IOError:
+            pass
+        if not os.path.islink(lpath):
+            raise IOError('[{}] Oops, Was not able to creato link:\n\t{}\n\t\t-> {}'.
+                          format(self.__class__.__name__, lpath, self.pathname))
+        npath = self.getNodesPathStr("/")
+        with open(cpath1, 'w') as fh:
+            fh.write(r"""
+## Added by gemtest-build scripts
+printf "\n=====> {0}/containter.cfg Starts: $(date) ###########\n\n"
+EXP_CONFIG_DIR=${{SEQ_EXP_HOME}}/{1}
+EXP_CONFIG_NAME={2}
+test_type={3}
+test_topo={4}
+test_topo2={5}
+test_control=TODO
+. ${{EXP_CONFIG_DIR}}/configexp.cfg
+printf "\n=====> {0}/containter.cfg Ends: $(date) ###########\n\n"
+""".format(npath, cpathr, self.name0, self.cfg['TEST_TYPE'].lower(),
+           self.cfg['TEST_TOPO'], self.cfg['TEST_TOPO2']))
+        #TODO: set control dir for verif in container.cfg
+
+    def setRes(self, res={}, container=True):
+        if self.nrun == 1:
+            self.members[0].setRes(res, container)
+        else:
+            for m in self.members[0].members:
+                res1 = res.copy()
+                del(res1['cpu'])
+                if m.name in ('Run1', 'Run2'):
+                    k = 'cpu' + m.name[-1]
+                    if k in res.keys():
+                        del(res1[k])
+                        res1['cpu'] = res[k]
+                m.setRes(res1, container)
+
+
+class GemTestSet(Mfamily):
+    def __init__(self, name, maxMembers=_MAX_MEMBERS):
+        Mfamily.__init__(self, 'Set'+name.strip(), allowedSubClass=(GemTest,),
+                         maxMembers=maxMembers)
+
+
+class GemTestMachMod(Mmodule):
+    def __init__(self, name, maxConcurent=None):
+        if maxConcurent in (None, 1):
+            allowedSubClass = (GemTest, GemTestSummary)
+        else:
+            allowedSubClass = (GemTestSet, GemTestSummary)
+        Mmodule.__init__(self, name, allowedSubClass=allowedSubClass)
+        self.ntests = 0
+        self.maxConcurent = maxConcurent
+        self.hasSummary = False
+        if not maxConcurent in (None, 1):
+            self.add(GemTestSet('01', maxConcurent))
+
+    def addTest(self, pathname, nrun=None, machine='${FRONTEND}'):
+        print("Adding test: "+pathname)
+        if self.hasSummary:
+            raise ValueError("[{}] Oops, trying to add a test after the summary"
+                              .format(self.__class__.__name__))
+        t = GemTest(pathname, self.ntests+1, nrun, machine)
+        ## print("{} Add: {}".format(self.__class__.__name__, repr(t)))
+        if self.maxConcurent in (None, 1):
+            if self.maxConcurent == 1 and len(self.members) > 0:
+                t.addDep(self.members[-1])
+            self.add(t)
+        else:
+            try:
+                self.members[-1].add(t)
+            except IndexError:
+                s = GemTestSet("{:02d}".format(len(self.members)+1), self.maxConcurent)
+                s.addDep(self.members[-1])
+                s.add(t)
+                self.add(s)
+        self.ntests += 1
+
+    def addSummary(self):
+        self.hasSummary = True
+        if self.maxConcurent == 1 and len(self.members) > 0:
+            testlist = [t.name for t in self.members]
+        else:
+            testlist = ['{}/{}'.format(m.name, t.name)
+                        for m in self.members for t in m.members]
+        s = GemTestSummary(self.name, testlist)
+        for a in self.members:
+            s.addDep(a)
+        self.add(s)
+
+
+class GemTestMach(Mfamily):
+    def __init__(self, name, maxConcurent=None):
+        Mfamily.__init__(self, name,
+                         allowedSubClass=(Mmodule,), maxMembers=1)
+        self.module = GemTestMachMod('MachTests', maxConcurent)
+        self.add(self.module)
+
+    def addTest(self, name, nrun=None):
+        self.module.addTest(name, nrun, self.name)
+ 
+    def addSummary(self):
+        self.module.addSummary()
+
+
+class GemTestAll(Mmodule):
+    def __init__(self, machlist=('localhost',), maxConcurent=None):
+        self.machlist = machlist
+        Mmodule.__init__(self, 'AllTests', allowedSubClass=(GemTestMach,))
+        for a in machlist:
+            self.add(GemTestMach(a, maxConcurent))
+
+    def addTest(self, name, nrun=None):
+        for a in self.members:
+            a.addTest(name, nrun)
+
+    def addSummary(self):
+        for m in self.members:
+            m.addSummary()
+
+
+def writeResDef(mach_front, mach_back, immediate, mach_seq, wj, rpath):
+    """
+    """
+    rpath1 = os.path.join(rpath, 'resources.def')
+    with open(rpath1, 'w') as fh:
+        fh.write("FRONTEND = {}\n".format(mach_front))
+        fh.write("BACKEND = {}\n".format(mach_back))
+        if not wj:
+            fh.write("TESTS_IMMEDIATE = {}\n".format(immediate))
+            fh.write("SEQ_DEFAULT_MACHINE = {}\n".format(mach_seq))
+        else:
+            fh.write("TESTS_IMMEDIATE = 0\n")
+            fh.write("SEQ_DEFAULT_MACHINE=wj\n")
+            fh.write("SEQ_CONTAINER_METHOD=submit\n")
+
+
+def _parse_user_args():
+    """Define accepted args and parse user input
+
+    Returns:
+       object, parse arguments return by argparse.ArgumentParser.parse_args()
+    """
+    DESC="Create a tests maestro suite from a list a of GEM configs"
+    usage = """
+    %(prog)s --tests TEST1 [...] [options]"""
+    epilog="""
+# ==== HowTo ====
+# WorkerJob setup
+# See: https://portal.science.gc.ca/confluence/display/SCIDOCS/Using+WorkerJob+with+ord_soumet+and+Maestro
+    rm -rf ~/wj/ordsoumet
+    wjsetup ~/wj/ordsoumet
+    export WORKERJOB_WORKDIR=~/wj/ordsoumet
+    gemwj_deamon &
+
+# Tests suite import
+    export gemverifref=$(pwd)/share/gemVerif
+    export SEQ_EXP_HOME=$(normpath.py -p $(pwd)/suite/tests)
+    gemimport ${SEQ_EXP_HOME##*/} -tests -v -f \\
+        -d ${SEQ_EXP_HOME%/*} \\
+        -hub_prefix=gem/${ATM_MODEL_VERSION}/${PWD##*/}/${SEQ_EXP_HOME##*/}
+
+# Add all tests and build suite
+    for item in $(devadd --list | grep cfg_) ; do echo "Importing: ${item}" ; devadd -f -i --copy $item ; done
+    gem_tests_build --wj --clean --tests GEM_cfg_* --nwide=1 --ptopo=2x2x1
+    gemview -exp ${SEQ_EXP_HOME##*/} &
+
+    """
+    parser = argparse.ArgumentParser(
+        description=DESC, usage=usage, epilog=epilog,
+        prefix_chars='-+', formatter_class=argparse.RawDescriptionHelpFormatter)
+
+    #TODO: verbose
+
+    parser.add_argument("--front",  dest="mach_front",
+                        type=str, default=None,
+                        metavar='FRONT_END',
+                        help="FrontEnd machine to run tests on")
+
+    parser.add_argument("--mach",  dest="mach_list",
+                        nargs='*', type=str, default=None,
+                        metavar='BACK_END',
+                        help="List of BackEnd machine to run tests on")
+
+    parser.add_argument("--seq",  dest="mach_seq",
+                        type=str, default=None,
+                        metavar='SEQ_MACHINE',
+                        help="Maestro SEQ machine")
+
+    parser.add_argument("--tests",  dest="tests_list",
+                        nargs='+', type=str, default=None,
+                        metavar='TEST_CFG',
+                        help="List of tests config dir to add to the suite")
+
+    parser.add_argument("--nwide",  dest="nwide",
+                        type=int, default=2,
+                        metavar='N_WIDE',
+                        help="Max Number Concurrent/Parralel Runs")
+
+    parser.add_argument("--clean", dest="clean",
+                        action="store_true",
+                        help="Remove modules and ressources")
+
+    parser.add_argument("--wj", dest="wj",
+                        action="store_true",
+                        help="Run as worker jobs (ignores front/mach)")
+
+    parser.add_argument("--ptopo", dest="ptopo",
+                        type=str, default='1x1x1',
+                        help="Default CPU Topology (NPXxNPYxOMP")
+
+    parser.add_argument("--ptopo2", dest="ptopo2",
+                        type=str, default='2x2x1',
+                        help="Default Alternate CPU Topology for diff test types (NPXxNPYxOMP")
+
+    args = parser.parse_args()
+
+    if not (args.tests_list or args.clean):
+        sys.stderr.write("\nERROR: must provide at least one test or --clean option\n\n") #TODO: use logging module
+        parser.print_help()
+        sys.exit(1)
+
+    if args.wj:
+        if args.mach_front is not None:
+            sys.stderr.write("WARNING: WJ on, ignoring FRONT_END\n") #TODO: use logging module
+        if args.mach_list is not None:
+             sys.stderr.write("WARNING: WJ on, ignoring BACK_END\n")
+        if args.mach_seq is not None:
+             sys.stderr.write("WARNING: WJ on, ignoring SEQ_MACHINE\n")
+        args.mach_front = 'wj'
+        args.mach_list = ['wj']
+        args.mach_seq   = 'wj'
+
+    if not args.mach_seq:
+        args.mach_seq = os.getenv('ORDENV_TRUEHOST').strip()
+    if not args.mach_front:
+        args.mach_front = os.getenv('ORDENV_TRUEHOST').strip()
+    if not args.mach_list:
+        args.mach_list = [args.mach_front]
+
+    #TODO: validate ptopo, ptopo2
+
+    return args
+
+
+if __name__ == "__main__":
+    ## from pprint import pprint
+    ## import doctest
+    ## doctest.testmod()
+
+    args = _parse_user_args()
+
+    spath = os.getenv('SEQ_EXP_HOME').strip()
+    if not (spath and os.path.isdir(spath)):
+        sys.stderr.write("\nERROR: SEQ_EXP_HOME is not defined or not a dir.\n\n") #TODO: use logging module
+        sys.exit(1)
+
+    if args.clean:
+        maestro_exp_clean(spath, keep=('gem', 'gemVerif'))
+        maestro_set_date(spath)
+    if args.tests_list is None:
+        sys.exit(0)
+
+    memory = '5G'
+    wallclock = 22
+
+    immediate = 0
+    if args.wj:
+        immediate  = 0
+
+    resources = {
+        ## 'machine'   : '',
+        'memory'    : memory,
+        'cpu'       : args.ptopo,
+        'wallclock' : str(wallclock),
+        'immediate' : str(immediate)
+         ## soumet_args="-mpi -waste 100" />
+        }
+    _DEFAULT_CFG = {
+        'TEST_TYPE' : 'one',
+        'TEST_TOPO' : args.ptopo,
+        'TEST_TOPO2': args.ptopo2,
+        'TEST_WALL' : '15'
+        }
+
+    if len(args.mach_list) == 1:
+        m = GemTestMachMod(args.mach_list[0], args.nwide)
+    else:
+        m = GemTestAll(args.mach_list, args.nwide)
+
+    for a in args.tests_list:
+        if os.path.isdir(a):
+            if len(args.mach_list) == 1:
+                m.addTest(os.path.abspath(a), machine=args.mach_list[0])
+            else:
+                m.addTest(os.path.abspath(a))
+    m.addSummary()
+
+    print(m)
+
+    m.writeCfg(os.path.join(spath, 'modules'))
+    m.writeFlow(os.path.join(spath, 'modules'))
+    m.setRes(resources)
+    m.writeRes(os.path.join(spath, 'resources'))
+    writeResDef(args.mach_front, args.mach_list[0], immediate, args.mach_seq,
+                args.wj, rpath=os.path.join(spath, 'resources'))
+
+    if args.wj:
+        maestro_exp_set_wj_links(spath)
+
+    m.setEntryModule()
+
+
+# -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
+# vim: set expandtab ts=4 sw=4:
+# kate: space-indent on; indent-mode cstyle; indent-width 4; mixedindent off;

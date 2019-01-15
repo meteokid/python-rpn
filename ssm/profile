@@ -1,0 +1,5 @@
+# Export software version information
+vname=$(echo ${__swname} | sed 's/-/_/g' | tr "[:lower:]" "[:upper:]")_VERSION
+export ${vname}=${__version}
+unset __version
+

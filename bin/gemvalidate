@@ -1,0 +1,70 @@
+#!/bin/ksh
+
+# Retrieve command line arguments
+arguments=$*
+DESC="Validate the GEM reference implementation"
+
+# Process command line arguments
+eval $(rpy.cclargs \
+    -D ":" \
+    --desc "$DESC" \
+    ${0##*/} \
+    -v     "0"   "1"   "[verbose output]" \
+    ++ $arguments)
+
+# Check for required environment
+if [[ -z "$SEQ_EXP_HOME" ]] ; then
+  echo "Set SEQ_EXP_HOME before continuing with validation"
+  exit 1
+fi
+
+# Check that GEM is loaded in the environment
+if [[ -z "${ATM_MODEL_BNDL}" ]] ; then
+  . ${SEQ_EXP_HOME}/experiment.cfg
+  . s.ssmuse.dot GEM/${GEM_version} >/dev/null
+fi
+
+# Set verbose mode if requested
+if [[ ${v} -gt 0 ]] ; then set -x ; fi
+
+# Obtain information about output file location
+nodepath=gem/Transfer
+outdir=$(nodework -n ${nodepath} -ext +S01_0000000012^last)/output/cfg_0000/model
+exechost=$(echo ${outdir} | cut -d ':' -f 1)
+outlocal=$(echo ${outdir} | cut -d ':' -f 2)
+remotedata=$(echo "printf \"@%s@\" \$(readlink ${outlocal})" | ssh ${exechost} bash --login)
+datadir=$(echo $remotedata | cut -d '@' -f 2)
+remotearch=$(echo "printf \"@%s@\" \$BASE_ARCH" | ssh ${exechost} bash --login)
+arch=$(echo $remotearch | cut -d '@' -f 2)
+if [[ -z "${datadir}" ]] ; then
+  echo "Unable to access ${exechost}:${outlocal}"
+  exit 1
+fi
+
+# Copy output file locally and validate
+validfile=2009042700_006
+expectedfile=${ATM_MODEL_VALIDATION}/data/${ATM_MODEL_VERSION}/${arch}/${validfile}
+if [[ ! -f ${expectedfile} ]] ; then
+  echo "Incomplete installation of RI: validation data is missing"
+  exit 1
+fi
+validtmp=${TMPDIR}/valid$$
+rm -fr ${validtmp}
+mkdir -p ${validtmp}
+scp -q ${datadir}/${validfile} ${validtmp}
+#maxdiff=$(fstcomp -n -a ${validtmp}/${validfile} -b ${expectedfile} | grep -P '^\s{2}[\s<]' | cut -c 107-116 | sort | tail -n 1)
+rm -f gemvalidate_user_$$ gemvalidate_ref_$$
+ln -s ${validtmp}/${validfile} gemvalidate_user_$$
+ln -s ${expectedfile} gemvalidate_ref_$$
+maxdiff=$(fstcomp -n -a gemvalidate_user_$$ -b gemvalidate_ref_$$ | grep -P '^\s{2}[\s<]' | cut -c 107-116 | sort | tail -n 1)
+rm -f gemvalidate_user_$$ gemvalidate_ref_$$
+if [[ "${maxdiff}" == "0.0000E+00" ]] ; then
+rm -fr ${validtmp}
+  echo "Reference validates"
+  exit 0
+else
+  echo "Invalid: Found a maximum absolute difference of ${maxdiff} from reference"
+  echo "  Experiment validation file is ${expectedfile}"
+  echo "  Experiment output file is ${datadir}/${validfile}"
+  exit 2
+fi

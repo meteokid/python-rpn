@@ -1,0 +1,4 @@
+#!/bin/bash
+printf "\n=====>  BitPattern.tsk starts: $(date) ###########\n\n"
+sleep 2
+printf "\n=====>  BitPattern.tsk ends: $(date) ###########\n\n"

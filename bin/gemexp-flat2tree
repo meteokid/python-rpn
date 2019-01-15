@@ -1,16 +1,18 @@
-#/bin/ksh -x
+#!/bin/ksh -x
+
+DESC="Place a 'flat' list of GEM source files and re-order them in a GEM-like source tree"
 
 if [[ x$ATM_MODEL_VERSION == x ]] ; then
-	 echo "ERROR: need to load a model first"
-	 exit 1
+   echo "ERROR: need to load a model first"
+   exit 1
 fi
 
 destdir=$1
 
 if [[ ! -d $destdir ]] ; then
-	 echo "ERROR: dir not found: $destdir"
-	 echo "Usage: $0 mydir"
-	 exit 1
+   echo "ERROR: dir not found: $destdir"
+   echo "Usage: $0 mydir"
+   exit 1
 fi
 destdir=$(true_path $destdir)
 
@@ -23,15 +25,15 @@ flatdir=`pwd`
 filelist="$(ls *.[cfhFi]*)"
 
 for mysrc in $srclist ; do
-	 cd $(eval "echo \$$(echo $mysrc)")/src
-	 for mypart in $(ls -d *) ; do
-		  mypart2=${mysrc%*/}
-		  mypart2=${mypart2##/*}/$mypart
-		  for myfile in  $filelist; do
-				if [[ -r ./$mypart/$myfile ]] ; then 
-					 [[ ! -d $destdir/$mypart2 ]] && mkdir -p $destdir/$mypart2 2>/dev/null
-					 mv $flatdir/$myfile $destdir/$mypart2
-				fi
-		  done
-	 done
+   cd $(eval "echo \$$(echo $mysrc)")/src
+   for mypart in $(ls -d *) ; do
+      mypart2=${mysrc%*/}
+      mypart2=${mypart2##/*}/$mypart
+      for myfile in  $filelist; do
+         if [[ -r ./$mypart/$myfile ]] ; then
+            [[ ! -d $destdir/$mypart2 ]] && mkdir -p $destdir/$mypart2 2>/dev/null
+            mv $flatdir/$myfile $destdir/$mypart2
+         fi
+      done
+   done
 done

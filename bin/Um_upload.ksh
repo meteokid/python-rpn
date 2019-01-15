@@ -36,10 +36,11 @@ if [ -n "${inrep}" ] ; then
 	   mkdir -p ${target_base}/$(dirname ${file})
       cnt=$(( cnt + 1 ))
       lis=remote_copy_${this_task}_$(basename ${file}).lis
-#      ${TASK_BIN}/remote_copy -src $(${TASK_BIN}/readlink ${inrep}/${file}) \
-      ${TASK_BIN}/remote_copy -src $(readlink ${inrep}/${file})         \
-	                           -dst ${out_mach}:${out_dst}               \
-                              -abort ${abort_prefix}$(basename ${file}) 1> $lis 2>&1 &
+      ${TASK_BIN}/Um_upload_data.ksh \
+         -src $(readlink ${inrep}/${file}) \
+	      -dst ${out_mach}:${out_dst} \
+         -abort ${abort_prefix}$(basename ${file}) \
+         1> $lis 2>&1 &
       if [[ $cnt -eq $nthreads ]] ; then
         date ; wait ; date
         cnt=0
@@ -50,7 +51,7 @@ if [ -n "${inrep}" ] ; then
 
 # Check for aborted functions
    if [[ $(find . -name "${abort_prefix}*" | wc -l) -gt 0 ]] ; then
-     echo "ERROR: One or more ${TASK_BIN}/remote_copy function calls aborted ... see listings ${PWD}/remote_copy_${this_task}_*.lis for details"
+     echo "ERROR: One or more ${TASK_BIN}/Um_upload_data.ksh function calls aborted ... see listings ${PWD}/remote_copy_${this_task}_*.lis for details"
      cat remote_copy_${this_task}_*.lis
      exit 1
    fi

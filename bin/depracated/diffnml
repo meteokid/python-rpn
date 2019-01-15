@@ -1,0 +1,33 @@
+#!/usr/bin/env python
+import model,optparse,sys,tempfile,subprocess
+
+if __name__ == "__main__":
+    
+    # Command line arguments
+    usage = "usage: %prog [options] file1 file2 ..."
+    parser = optparse.OptionParser(usage=usage)
+    parser.add_option("-d","--diff",dest="diff",default="xxdiff",
+                      help="Differencing UTIL to use for display [default %default]",metavar="UTIL")
+    parser.add_option("-g","--orig",dest="orig_fmt",action="store_true",
+                      help="Keep original file formatting")
+    (options,args) = parser.parse_args()
+
+    # Check for required inputs
+    if len(args) < 2:
+        parser.print_help()
+        sys.exit(1)   
+
+    # Determine output formatting
+    reformat = True
+    if options.orig_fmt:
+        reformat = False
+
+    # Retrieve namelist entries
+    tmp = []
+    for i in range(0,len(args)):
+        cfg = model.Settings(file=args[i])
+        tmp.append(tempfile.NamedTemporaryFile(delete=False))
+        cfg.write(tmp[i].name,reformat=reformat)
+
+    # Difference the resulting files
+    subprocess.call(options.diff+' '+' '.join([tmpfile.name for tmpfile in tmp]),shell=True)

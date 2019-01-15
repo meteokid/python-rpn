@@ -1,5 +1,5 @@
 #!/bin/ksh
-#
+#TODO: KEEP OR NOT? not used in model
 arguments=$*
 
 #====> Obtaining the arguments:

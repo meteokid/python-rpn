@@ -1,14 +1,38 @@
 #!/bin/ksh
+# Prepare input data for an interactive GEM integration and perform
+# basic checks for configuration errors.
 
+# Retrieve command line arguments
 arguments=$*
-echo $0 $arguments
+DESC='Run GEM Prep task'
 
-eval `cclargs_lite -D " " $0 \
-  -cfg           "0:0"          "0:0"       "[configurations to consider]"\
-  -dircfg        "GEM_cfgs"     "GEM_cfgs"  "[location of config files  ]"\
-  -npe           "1"            "1"         "[# of simultaneous threads ]"\
-  -verbose       "0"            "1"         "[verbose mode              ]"\
-  ++ $arguments`
+# Check that running on the local machine is allowed
+if [[ "${ATM_MODEL_NORUN_HOST}" == "1" ]] ; then
+    echo "Interactive runs are not permitted on this host (ATM_MODEL_NORUN_HOST=${ATM_MODEL_NORUN_HOST})" 1>&2
+    exit 1
+fi
+
+# Check that interactive env was properly loaded
+if [[ "x${SEQ_EXP_HOME}" == "x" || \
+       $(true_path ${SEQ_EXP_HOME}/../gem) != $(true_path $(pwd)) ]] ; then
+    cat 1>&2 <<EOF
+ERROR: Interactive environement has not been properly set!
+       use ". ./.ssmuse_gem" before re-running "runprep"
+EOF
+    exit 1
+fi
+
+# Process command line arguments
+echo $0 ${arguments}
+eval $(rpy.cclargs \
+   -D " " \
+   --desc   "${DESC}" \
+   ${0##*/} \
+   -cfg      "0:0"       "0:0"       "[Configurations to consider (START:END)]"\
+   -dircfg   "GEM_cfgs"  "GEM_cfgs"  "[Location of config files]"\
+   -npe      "1"         "1"         "[Number of simultaneous threads ]"\
+   -verbose  "0"         "1"         "[verbose mode]"\
+   ++ ${arguments})
 
 export AFSISIO=${AFSISIO:-${ATM_MODEL_DFILES}}
 
@@ -16,27 +40,37 @@ DOMAIN_start=`echo $cfg | sed 's/:/ /' | awk '{print $1}'`
 DOMAIN_end=`  echo $cfg | sed 's/:/ /' | awk '{print $2}'`
 typeset -Z4 domain_number
 
-default_DIR_ATM=${ATM_MODEL_DFILES}/bcmk
-anal=${default_DIR_ATM}/2009042700_000
-ici=$PWD
+# default_DIR_ATM=${ATM_MODEL_DFILES}/bcmk
+# anal=${default_DIR_ATM}/2009042700_000
+# ici=$PWD
 export PATH=${PWD}/build-$ORDENV_PLAT/bin/$COMP_ARCH:$PATH
+export PATH=${PWD}/bin/${ORDENV_PLAT}:${PWD}/bin:${PATH}
+export PYTHONPATH=${PWD}/lib:${PWD}/bin:${PYTHONPATH}
 set -ex ; export SETMEX=-ex
-cd PREP ; cd $ici
+# cd PREP ; cd $ici
+
+if [[ ! -d PREP ]] ; then
+   echo "ERROR: PREP dir not found, Please re-run 'linkit'" 1>&2
+   exit 1
+fi
+
 rm -fr PREP/*
-domain_number=$DOMAIN_start
-while [ $domain_number -le $DOMAIN_end ] ; do
-  dname=cfg_$domain_number
-  DEST=${PWD}/PREP/output/${dname}
-  work=${PWD}/PREP/work
-  /bin/rm -rf $DEST ${work} ; mkdir -p $DEST ${work}
-  . ${dircfg}/${dname}/configexp.cfg
-  anal=${GEM_anal}
-  input=${GEM_inrep}
-  Um_prep_domain.ksh -anal ${GEM_anal} -input \'${GEM_inrep}\' \
+domain_number=${DOMAIN_start}
+while [ ${domain_number} -le ${DOMAIN_end} ] ; do
+   dname=cfg_${domain_number}
+   DEST=${PWD}/PREP/output/${dname}
+   work=${PWD}/PREP/work
+   /bin/rm -rf ${DEST} ${work}
+   mkdir -p ${DEST} ${work}
+   . ${dircfg}/${dname}/configexp.cfg
+   anal=${GEM_anal}
+   input=${GEM_inrep}
+   Um_prep_domain.ksh -anal ${GEM_anal} -input \'${GEM_inrep}\' \
       -o ${DEST} -work ${work} -headscript ${GEM_headscript_E} \
       -check_namelist ${GEM_check_settings} -bin               \
-      -nmlfile ${dircfg}/$dname/gem_settings.nml -nthreads $npe\
-      -verbose $verbose
-  ln -s ${GEM_inrep} ${DEST}/MODEL_inrep
-  domain_number=$(( domain_number+1 ))
+      -mkref_namelist ${GEM_mkref_settings:-0} \
+      -nmlfile ${dircfg}/${dname}/gem_settings.nml -nthreads $npe\
+      -verbose ${verbose}
+   ln -s ${GEM_inrep} ${DEST}/MODEL_inrep
+   domain_number=$(( domain_number+1 ))
 done
