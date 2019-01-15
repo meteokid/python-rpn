@@ -13,7 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 !
-      subroutine timing_start2 ( mynum, myname_S, mylevel )
+subroutine timing_start2 ( mynum, myname_S, mylevel )
       implicit none
 #include <arch_specific.hf>
 
@@ -26,15 +26,54 @@
 ! v4_40 - Desgagne - initial version
 ! v4_80 - Desgagne - introduce timer_level and timer_cnt
 
+#include <rmnlib_basics.hf>
       include "timing.cdk"
 
       DOUBLE PRECISION omp_get_wtime
+      integer :: mynum2
 
-      if (Timing_S=='YES') call tmg_start ( mynum, myname_S )
+      mynum2 = max(1, min(mynum, MAX_instrumented))
+      if (mynum /= mynum2) &
+           print *, 'WARNING: (timing_start2) called with mnum=', mynum, ' > MAX_instrumented=', MAX_instrumented
 
-      nam_subr_S(mynum) = myname_S ; timer_level(mynum) = mylevel
-      tb        (mynum) = omp_get_wtime()
-      timer_cnt (mynum) = timer_cnt(mynum) + 1
+      if (Timing_S=='YES') call tmg_start ( mynum2, myname_S )
+
+      nam_subr_S(mynum2)   = myname_S ; timer_level(mynum2) = mylevel
+      tb        (mynum2,1) = omp_get_wtime()
+      timer_cnt (mynum2,1) = timer_cnt(mynum2,1) + 1
 
       return
-      end
+end subroutine timing_start2
+
+
+subroutine timing_start_omp(mynum, myname_S, mylevel)
+   implicit none
+#include <arch_specific.hf>
+   integer, intent(in) :: mynum, mylevel
+   character(len=*), intent(in) :: myname_S
+#include <rmnlib_basics.hf>
+   include "timing.cdk"
+   integer, external :: omp_get_thread_num
+   integer :: t, mynum2
+   DOUBLE PRECISION omp_get_wtime
+
+   t = min(max(0, omp_get_thread_num()) + 2, MAX_threads)
+   mynum2 = max(1, min(mynum, MAX_instrumented))
+   if (mynum /= mynum2) then
+      print *, 'WARNING: (timing_start_omp) called with mnum=', &
+           mynum, ' > MAX_instrumented=', MAX_instrumented
+   endif
+
+!$omp single
+   if (Timing_S == 'YES') call tmg_start(mynum2, myname_S)
+   nam_subr_S(mynum2)  = myname_S
+   timer_level(mynum2) = mylevel
+!$omp end single nowait
+
+   tb(mynum2,t) = omp_get_wtime()
+   timer_cnt(mynum2,t) = timer_cnt(mynum2,t) + 1
+
+   return
+end subroutine timing_start_omp
+
+!#TODO: MPI version

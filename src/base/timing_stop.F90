@@ -13,7 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 !
-      subroutine timing_stop (mynum)
+subroutine timing_stop (mynum)
       implicit none
 #include <arch_specific.hf>
 !
@@ -25,13 +25,44 @@
 !revision
 ! v4_40 - Desgagne - initial version
 !
+#include <rmnlib_basics.hf>
       include "timing.cdk"
 
       DOUBLE PRECISION omp_get_wtime
+      integer :: mynum2
 
-      if (Timing_S=='YES') call tmg_stop (mynum)
+      mynum2 = max(1, min(mynum, MAX_instrumented))
+      if (mynum /= mynum2) &
+           print *, 'WARNING: (timing_start2) called with mnum=', mynum, ' > MAX_instrumented=', MAX_instrumented
 
-      sum_tb(mynum)= sum_tb (mynum) + (omp_get_wtime()    - tb (mynum))
+      if (Timing_S=='YES') call tmg_stop (mynum2)
+
+      sum_tb(mynum2,1)= sum_tb (mynum2,1) + (omp_get_wtime()    - tb (mynum2,1))
 
       return
-      end
+end subroutine timing_stop
+
+
+subroutine timing_stop_omp(mynum)
+   implicit none
+#include <arch_specific.hf>
+   integer, intent(in) :: mynum
+#include <rmnlib_basics.hf>
+   include "timing.cdk"
+   integer, external :: omp_get_thread_num
+   integer :: t, mynum2
+   DOUBLE PRECISION omp_get_wtime
+
+   mynum2 = max(1, min(mynum, MAX_instrumented))
+   t = min(max(0, omp_get_thread_num()) + 2, MAX_threads)
+
+!$omp single
+   if (Timing_S == 'YES') call tmg_stop(mynum2)
+!$omp end single nowait
+
+   sum_tb(mynum2,t) = sum_tb(mynum2,t) + (omp_get_wtime() - tb(mynum2,t))
+
+   return
+end subroutine timing_stop_omp
+
+!#TODO: MPI version with rpn_comm_barrier

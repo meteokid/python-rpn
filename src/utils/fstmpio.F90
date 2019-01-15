@@ -90,12 +90,12 @@ contains
       mysize = size(mydata)
       !#TODO: reduce min on io PEs to check if all io PEs open are ok
       call rpn_comm_bcast(mydata, mysize, RPN_COMM_INTEGER, comm_ipe_io_master, &
-           communicator_S, istat)
+           trim(communicator_S), istat)
       if (.not.isiope_L) F_fileid = mydata(1)
       call msg(MSG_DEBUG, '(fstmpio) open [END]')
       ! ---------------------------------------------------------------------
       return
-  end function fstmpio_open
+   end function fstmpio_open
 
 
    !/@

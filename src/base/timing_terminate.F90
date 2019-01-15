@@ -12,49 +12,79 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-!
+
       subroutine timing_terminate2 ( myproc, msg )
+      use iso_c_binding
       implicit none
 #include <arch_specific.hf>
-!
+
       character* (*) msg
       integer myproc
-!
-!author
-!     M. Desgagne   -- Winter 2012 --
-!
-!revision
-! v4_40 - Desgagne - initial version
-!
+
+!@author M. Desgagne   -- Winter 2012 --
+#include <rmnlib_basics.hf>
+#include <clib_interface_mu.hf>
+      include "rpn_comm.inc"
       include "timing.cdk"
 
-      character*16 name
-      character*64 fmt,nspace
+      character*64 fmt,nspace,nspace2,nspace3
       logical flag(MAX_instrumented)
-      integer i,j,k,elem,lvl,lvlel(0:100)
+      integer i,j,k,elem,lvl,lvlel(0:100),err,maxlen
+      integer(IDOUBLE),dimension(MAX_instrumented) :: timer_cnt2
+      real(RDOUBLE),dimension(MAX_instrumented) :: sum_tb_mn, sum_tb_mx, sum_tb_mn2, sum_tb_mx2
+      real(RDOUBLE) :: mymax, mymin
+      real :: sum_tb_per_mn, sum_tb_per_mx
 
       if (Timing_S=='YES') call tmg_terminate ( myproc, msg )
 
+      maxlen = 0
+      do i=1,MAX_instrumented
+         mymax = maxval(sum_tb(i,2:MAX_threads))
+         sum_tb_mx(i) = sum_tb(i,1) + mymax
+         mymin = mymax
+         do j=2,MAX_threads
+            if (sum_tb(i,j) > 0.) mymin = min(mymin, sum_tb(i,j))
+         enddo
+         sum_tb_mn(i)   = sum_tb(i,1)    + mymin
+         timer_cnt(i,1) = timer_cnt(i,1) + maxval(timer_cnt(i,2:MAX_threads))
+         maxlen = max(maxlen, len_trim(nam_subr_S(i)))
+      enddo
+
+      sum_tb_mn2 = 0.D0
+      sum_tb_mx2 = 0.D0
+      timer_cnt2 = 0
+      call rpn_comm_reduce(sum_tb_mn,    sum_tb_mn2,    MAX_instrumented, &
+           RPN_COMM_REAL8,    RPN_COMM_MIN, RPN_COMM_MASTER, RPN_COMM_GRID, err)
+      call rpn_comm_reduce(sum_tb_mx,    sum_tb_mx2,    MAX_instrumented, &
+           RPN_COMM_REAL8,    RPN_COMM_MAX, RPN_COMM_MASTER, RPN_COMM_GRID, err)
+      call rpn_comm_reduce(timer_cnt(:,1), timer_cnt2, MAX_instrumented, &
+           RPN_COMM_INTEGER8, RPN_COMM_MAX, RPN_COMM_MASTER, RPN_COMM_GRID, err)
+
       if (myproc.ne.0) return
 
-      print *,'___________________________________________________________' 
-      print *,'__________________TIMINGS ON PE #0_________________________'
+      print *,'___________________________________________________________'
+      print *,'__________________TIMINGS MIN : MAX________________________'
 
       flag=.false.
-
+      mymax = maxval(sum_tb_mx2)
+      write (nspace3,'(i3)') max(5, maxlen)
       do i = 1,MAX_instrumented
          lvl= 0 ; elem= i
  55      if ( (trim(nam_subr_S(elem)).ne.'') .and. (.not.flag(elem)) ) then
 
-            write (nspace,'(i3)') 5*lvl+1
-            fmt='('//trim(nspace)//'x,a,1x,a,i3,a,3x,a,1pe13.6,2x,a,i8)'
-            do k=1,len(name)
-               name(k:k) = '.'
-            end do
-            name (len(name)-len(trim(nam_subr_S(elem)))+1:len(name))= &
-            trim(nam_subr_S(elem))
-            write (6,trim(fmt)) name,'(',elem,')','Wall clock= ',&
-                                sum_tb(elem),'count= ',timer_cnt(elem)
+            err = clib_toupper(nam_subr_S(elem))
+            sum_tb_per_mn = real(sum_tb_mn2(elem)) / max(0.00001,real(mymax))
+            sum_tb_per_mx = real(sum_tb_mx2(elem)) / max(0.00001,real(mymax))
+            write (nspace,'(i3)') 3*lvl+1
+            write (nspace2,'(i3)') max(1,18-(3*lvl+1))
+            fmt = '(a,i3,a,'//trim(nspace)//'x,a'//trim(nspace3)//','// &
+                 trim(nspace2)//'x,a,f6.2,a,f6.2,a,'// &
+                 'a,1pe8.2,a,1pe8.2,a,i8)'
+            write(6, trim(fmt)) &
+                 "(", elem, ")", nam_subr_S(elem), &
+                 "(", 100.*sum_tb_per_mn, " : ", 100.*sum_tb_per_mx, "%) ", &
+                 'WallClock= ', sum_tb_mn2(elem), " : ", sum_tb_mx2(elem), &
+                 '  Count= ', timer_cnt2(elem)
             flag(elem) = .true. ; lvlel(lvl) = elem
  65         do j = 1,MAX_instrumented
                if ((timer_level(j) .eq. elem) .and. (.not.flag(j)) )then

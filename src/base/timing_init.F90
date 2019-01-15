@@ -27,6 +27,7 @@
 ! v4_80 - Desgagne - introduce timer_level and timer_cnt
 
 #include <clib_interface_mu.hf>
+#include <rmnlib_basics.hf>
       include "timing.cdk"
 
       character*16 dumc_S
@@ -39,7 +40,7 @@
 
       if (Timing_S=='YES') call tmg_init ( myproc, msg )
 
-      sum_tb= 0; timer_cnt= 0 ; timer_level= 0 ; nam_subr_S= ''
+      sum_tb= 0.D0; timer_cnt= 0 ; timer_level= 0 ; nam_subr_S= ''
 !
 !-------------------------------------------------------------------
 !
