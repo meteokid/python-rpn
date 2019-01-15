@@ -5,8 +5,8 @@ Linux_x86-64:ENV/d/hpcs-rpn/h201402.04-r16.2.2-intel201601-bndl
 Linux_x86-64:/ssm/net/cmdn/vgrid/6.3.0/intel-2016.1.156
 Linux_x86-64:/ssm/net/rpn/libs/master/rpncomm-intel-2016_4.5.16.12b_ubuntu-14.04-amd64-64
 
-ENV/d/x/modelutils/modelutils_1.5.b9
-ENV/d/x/rpnphy/rpnphy_6.0.b9
-GEM/d/x/gemdyn/gemdyn_5.0.b9
+ENV/d/x/modelutils/modelutils_1.5.rc1
+ENV/d/x/rpnphy/rpnphy_6.0.rc1
+GEM/d/x/gemdyn/gemdyn_5.0.rc1
 
 ENV/rde/1.1.2

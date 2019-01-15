@@ -9,8 +9,8 @@ sles-11-broadwell-64-xc40:eccc/cmd/cmdn/vgrid/6.3.0/PrgEnv-intel-5.2.82
 Linux_x86-64:eccc/mrd/rpn/libs/master/rpncomm-intel-2016_4.5.16.12b_ubuntu-14.04-amd64-64
 sles-11-broadwell-64-xc40:eccc/mrd/rpn/libs/master/rpncomm-PrgEnv-intel-5.2.82_4.5.16.12b_sles-11-broadwell-64-xc40
 
-eccc/mrd/rpn/MIG/ENV/d/x/modelutils/modelutils_1.5.b9
-eccc/mrd/rpn/MIG/ENV/d/x/rpnphy/rpnphy_6.0.b9
-eccc/mrd/rpn/MIG/GEM/d/x/gemdyn/gemdyn_5.0.b9
+eccc/mrd/rpn/MIG/ENV/d/x/modelutils/modelutils_1.5.rc1
+eccc/mrd/rpn/MIG/ENV/d/x/rpnphy/rpnphy_6.0.rc1
+eccc/mrd/rpn/MIG/GEM/d/x/gemdyn/gemdyn_5.0.rc1
 
 eccc/mrd/rpn/MIG/ENV/rde/1.1.2

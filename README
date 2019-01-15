@@ -319,9 +319,9 @@ ln -s gem/${VERSION_V}.bndl ${VERSION_V}.bndl
 
 #TODO: update
 # . s.ssmuse.dot GEM/gem/VERSION
-# . gemdev.dot test -v -cd -mach hadar
+# . gemdev.dot test -v -cd -front eccc-ppp2 -mach brooks-test
 # gemview -exp base &
-# gemlaunch -mach hadar
+# gemlaunch -mach brooks-test
 # # Wait for run to end (in the gemview window)
 # # if the run  ended w/o error, validate results with:
 # gemvalidate

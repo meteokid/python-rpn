@@ -164,7 +164,6 @@
   limsnodp    = .true.
   salty_qsat  = .true.
   impflx      = .true.,
-  zta         = -1.   ,    zua      = -1.
   z0mtype     = 'beljaars'
   z0ttype     = 'deacu12'
   diusst      = 'fairall'
@@ -208,6 +207,7 @@
 
   debug_mem_l     = .false
   debug_trace_l   = .false
+  timings_l = .true.
 
   input_type = 'DIST'
 /

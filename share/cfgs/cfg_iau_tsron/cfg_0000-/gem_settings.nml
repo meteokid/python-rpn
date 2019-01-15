@@ -82,7 +82,6 @@
  LIMSNODP  = .true., SALTY_QSAT = .false.
  IMPFLX    = .true.,
  Z0TLAT    = 25., 30.
- ZTA       = -1.   , ZUA        = -1.
  DIUSST    = 'fairall'
 /
 
@@ -108,6 +107,10 @@
  phystat_2d_l = .false.
  phystat_freq_S = '3h'
  phystat_list_s = 'ALLVARS=EDPV'
+
+  debug_mem_l     = .false.
+  debug_trace_l   = .false.
+  timings_l = .true.
 /
 
  &convection_cfgs
