@@ -88,7 +88,7 @@ if __name__ == "__main__":
 
     (ni,nj) = data.shape
     outfile = open(options.outfile, 'w')
-    for n in xrange(lat.size):
+    for n in range(lat.size):
         (lat2,lon2) = (np.asarray([lat[n]]),np.asarray([lon[n]]))
         lldata2 = rmn.gdllsval(grid, lat2, lon2, data)
         xypos2  = rmn.gdxyfll(grid, lat2, lon2)

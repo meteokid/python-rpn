@@ -579,7 +579,7 @@ mode=-4 : stamp to 14 word old style DATE array
     (cidate1, cidate2, cidate3) = (_ct.c_int(dat1), _ct.c_int(dat2), _ct.c_int(dat3))
     istat = _rmn.f_newdate(_ct.byref(cidate1), _ct.byref(cidate2), _ct.byref(cidate3), _ct.byref(cimode))
     if istat < 0:
-        raise error('Problem converting date with newdate (mode=%d) (%d, %d, %d)' % (mode, dat1, dat2, dat3))
+        raise error('Problem converting date with newdate (mode={0}) ({1}, {2}, {3})'.format(mode, dat1, dat2, dat3))
     return (cidate1.value, cidate2.value, cidate3.value)
 
 
@@ -621,7 +621,7 @@ def EncodeIp(pvalues):
                 where v1, v2 are float, kind is an int (named constant KIND_*)
                 RP1 must contain a level (or a pair of levels) in the atmosphere
                 RP2 must contain  a time (or a pair of times)
-                RP3 may contain anything, RP3%hi will be ignored (if RP1 or RP2 contains a pair, RP3 is ignored)
+                RP3 may contain anything, RP3.hi will be ignored (if RP1 or RP2 contains a pair, RP3 is ignored)
                 If RP1 is not a level or RP2 is not a time, Fstdc.error is raised
                 If RP1 and RP2 both contains a range , Fstdc.error is raised
         @return IP encoded values, tuple of int
@@ -717,7 +717,7 @@ def ezgetlalo(nij, grtyp, refparam, xyAxis, hasAxis, ij0, doCorners):
         ( 0.5, 0.5),  #NE
         ( 0.5, -0.5)   #SE
         )
-    for icorner in xrange(4):
+    for icorner in range(4):
         di = dij_corners[icorner][0]
         dj = dij_corners[icorner][1]
         ## xnew = x.copy('FORTRAN') + dij_corners[icorner][0]

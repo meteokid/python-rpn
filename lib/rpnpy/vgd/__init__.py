@@ -25,9 +25,6 @@
     rpnpy.vgd.const
     rpnpy.vgd.base
 
- Notes:
- The rpnpy.vgd module is only available from python-rpn version 2.0.b6
-
 """
 
 from rpnpy.version import *
@@ -45,17 +42,17 @@ class VGDError(Exception):
     """
     pass
 
-def checkVGDlibPath(rmn_libfile):
+def checkVGDlibPath(libfile):
     """
-    Return first matched filename for rmn_libfile wildcard
+    Return first matched filename for libfile wildcard
     Return None if no match
     """
     import os
     import glob
-    RMN_LIBPATH_ALL = glob.glob(rmn_libfile)
-    if len(RMN_LIBPATH_ALL) > 0:
-        if os.path.isfile(RMN_LIBPATH_ALL[0]):
-            return RMN_LIBPATH_ALL[0]
+    LIBPATH_ALL = glob.glob(libfile)
+    if len(LIBPATH_ALL) > 0:
+        if os.path.isfile(LIBPATH_ALL[0]):
+            return LIBPATH_ALL[0]
     return None
 
 def loadVGDlib(vgd_version=None):
@@ -99,7 +96,7 @@ def loadVGDlib(vgd_version=None):
                 break
 
     if not VGD_LIBPATH:
-        raise IOError, (-1, 'Failed to find libdescrip.so: ', vgd_libfile)
+        raise IOError(-1, 'Failed to find libdescrip.so: ', vgd_libfile)
 
     VGD_LIBPATH = os.path.abspath(VGD_LIBPATH)
     libvgd = None

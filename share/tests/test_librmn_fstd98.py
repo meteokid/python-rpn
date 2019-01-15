@@ -113,7 +113,16 @@ class Librmn_fstd98_Test(unittest.TestCase):
         mydir = os.path.join(ATM_MODEL_DFILES.strip(),'bcmk/')
         for i in range(1000):
             funit = rmn.fstopenall(mydir)
-            rmn.fstcloseall(funit)        
+            rmn.fstcloseall(funit)
+            
+    def test_openall_closeall_list(self):
+        """Test if close all on linked file actually close them all"""
+        ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES')
+        mydir1 = os.path.join(ATM_MODEL_DFILES.strip(),'bcmk/')
+        mydir2 = os.path.join(ATM_MODEL_DFILES.strip(),'bcmk_p/')
+        funit1 = rmn.fstopenall(mydir1)
+        funit2 = rmn.fstopenall(mydir2)
+        rmn.fstcloseall((funit1,funit2))        
 
     def test_isfst_openall_fstnbr(self):
         """isfst_openall_fstnbr should give known result with known input"""
@@ -255,14 +264,14 @@ class Librmn_fstd98_Test(unittest.TestCase):
         self.assertEqual(lo2['d'].shape,lo['d'].shape)
 
         if np.any(np.fabs(la2['d'] - la['d']) > self.epsilon):
-                print 'la2:',la2['d']
-                print 'la :',la['d']
-                print np.fabs(la2['d'] - la['d'])
+                print('la2:',la2['d'])
+                print('la :',la['d'])
+                print(np.fabs(la2['d'] - la['d']))
         self.assertFalse(np.any(np.fabs(la2['d'] - la['d']) > self.epsilon))
         if np.any(np.fabs(lo2['d'] - lo['d']) > self.epsilon):
-                print 'lo2:',lo2['d']
-                print 'lo :',lo['d']
-                print np.fabs(lo2['d'] - lo['d'])
+                print('lo2:',lo2['d'])
+                print('lo :',lo['d'])
+                print(np.fabs(lo2['d'] - lo['d']))
         self.assertFalse(np.any(np.fabs(la2['d'] - la['d']) > self.epsilon))
 
 
@@ -295,8 +304,8 @@ class Librmn_fstd98_Test(unittest.TestCase):
         #Note: For the order to be ok in the FSTD file, order='FORTRAN' is mandatory
         la['d'] = np.empty((ni,nj),dtype=np.float32,order='FORTRAN')
         lo['d'] = np.empty((ni,nj),dtype=np.float32,order='FORTRAN')
-        for j in xrange(nj):
-            for i in xrange(ni):
+        for j in range(nj):
+            for i in range(ni):
                 lo['d'][i,j] = 100.+float(i)        
                 la['d'][i,j] = float(j)
         rmn.fstecr(funit,la['d'],la)
