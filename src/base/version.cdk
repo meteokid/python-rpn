@@ -1,0 +1,3 @@
+
+      character*50 Version_title_S, Version_number_S
+      common / version_S / Version_title_S, Version_number_S

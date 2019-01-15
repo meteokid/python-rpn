@@ -1,0 +1,5 @@
+
+      logical Rstri_rstn_L, Rstri_user_busper_L
+
+      common / Rstrl / Rstri_rstn_L, Rstri_user_busper_L
+

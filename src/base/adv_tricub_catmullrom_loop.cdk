@@ -1,0 +1,121 @@
+#define cubic(p1, p2, p3, p4, x) \
+(p2) + 0.5 * (x) * ((p3) - (p1) + (x) * (2. * (p1) - 5. * (p2) + 4. * (p3) - (p4) + (x) * (3. * ((p2) - (p3)) + (p4) - (p1))))
+
+   do k=k0,F_nk
+      idxk = (k-1)*l_ni*l_nj
+      do j=j0,jn
+         idxjk = idxk + ((j-1)*l_ni)
+         do i=i0,in
+            n = idxjk + i
+
+            rri= F_x(n)
+            ii_d = (rri - adv_x00_8) * adv_ovdx_8
+            ii_a   = int(ii_d)
+            ii_d = ii_d - ii_a
+
+            ii_a = ii_a+1
+            if (rri < adv_bsx_8(ii_a)) ii_a = ii_a - 1
+            ii_a = max(2,min(ii_a,Adv_iimax))
+
+            rrj= F_y(n)
+            jj_d = (rrj - adv_y00_8) * adv_ovdy_8
+            jj_a   = int(jj_d)
+            jj_d = jj_d - jj_a
+
+            jj_a = jj_a+1
+            if (rrj < adv_bsy_8(jj_a)) jj_a = jj_a - 1
+            jj_a = max(G_haloy,min(jj_a,Adv_jjmax))
+
+            rrk= F_z(n)
+            kk_a = (rrk - p_z00_8) * adv_ovdz_8
+            kk_a = p_lcz(kk_a+1)
+            if (rrk < p_bsz_8(kk_a)) kk_a = kk_a - 1
+            kk_a = min(kkmax-1,max(0,kk_a))
+
+            zcubic_L = (kk_a > 0) .and. (kk_a < kkmax-1)
+
+            !- x interpolation
+            o2 = (kk_a-1)*Adv_nijag + (jj_a-Adv_int_j_off-1)*Adv_nit + (ii_a-Adv_int_i_off)
+            o1 = o2-Adv_nit
+            o3 = o2+Adv_nit
+            o4 = o3+Adv_nit
+
+            if (zcubic_L) then
+               a1 = cubic(F_in(o1-1),F_in(o1), F_in(o1+1), F_in(o1+2), ii_d)
+               a2 = cubic(F_in(o2-1),F_in(o2), F_in(o2+1), F_in(o2+2), ii_d)
+               a3 = cubic(F_in(o3-1),F_in(o3), F_in(o3+1), F_in(o3+2), ii_d)
+               a4 = cubic(F_in(o4-1),F_in(o4), F_in(o4+1), F_in(o4+2), ii_d)
+            endif
+
+            o1 = o1 + Adv_nijag
+            o2 = o2 + Adv_nijag
+            o3 = o3 + Adv_nijag
+            o4 = o4 + Adv_nijag
+
+#ifdef ADV_MONO
+               prmax = max(F_in(o2),F_in(o2+1),F_in(o3),F_in(o3+1))
+               prmin = min(F_in(o2),F_in(o2+1),F_in(o3),F_in(o3+1))
+#endif
+            b1 = cubic(F_in(o1-1), F_in(o1), F_in(o1+1), F_in(o1+2), ii_d)
+            b2 = cubic(F_in(o2-1), F_in(o2), F_in(o2+1), F_in(o2+2), ii_d)
+            b3 = cubic(F_in(o3-1), F_in(o3), F_in(o3+1), F_in(o3+2), ii_d)
+            b4 = cubic(F_in(o4-1), F_in(o4), F_in(o4+1), F_in(o4+2), ii_d)
+
+            o1 = o1 + Adv_nijag
+            o2 = o2 + Adv_nijag
+            o3 = o3 + Adv_nijag
+            o4 = o4 + Adv_nijag
+
+#ifdef ADV_MONO
+               prmax = max(prmax,F_in(o2),F_in(o2+1),F_in(o3),F_in(o3+1))
+               prmin = min(prmin,F_in(o2),F_in(o2+1),F_in(o3),F_in(o3+1))
+#endif
+            c1 = cubic(F_in(o1-1), F_in(o1), F_in(o1+1), F_in(o1+2), ii_d)
+            c2 = cubic(F_in(o2-1), F_in(o2), F_in(o2+1), F_in(o2+2), ii_d)
+            c3 = cubic(F_in(o3-1), F_in(o3), F_in(o3+1), F_in(o3+2), ii_d)
+            c4 = cubic(F_in(o4-1), F_in(o4), F_in(o4+1), F_in(o4+2), ii_d)
+
+            if (zcubic_L) then
+               o1 = o1 + Adv_nijag
+               o2 = o2 + Adv_nijag
+               o3 = o3 + Adv_nijag
+               o4 = o4 + Adv_nijag
+
+               d1 = cubic(F_in(o1-1), F_in(o1), F_in(o1+1), F_in(o1+2), ii_d)
+               d2 = cubic(F_in(o2-1), F_in(o2), F_in(o2+1), F_in(o2+2), ii_d)
+               d3 = cubic(F_in(o3-1), F_in(o3), F_in(o3+1), F_in(o3+2), ii_d)
+               d4 = cubic(F_in(o4-1), F_in(o4), F_in(o4+1), F_in(o4+2), ii_d)
+            endif
+
+            !- y interpolation
+            b1 = cubic(b1, b2, b3, b4, jj_d)
+            c1 = cubic(c1, c2, c3, c4, jj_d)
+
+            !- z interpolation
+            if (zcubic_L) then
+               a1 = cubic(a1, a2, a3, a4, jj_d)
+               d1 = cubic(d1, d2, d3, d4, jj_d)
+
+               ra = p_bsz_8(kk_a-1)
+               rb = p_bsz_8(kk_a  )
+               rc = p_bsz_8(kk_a+1)
+               rd = p_bsz_8(kk_a+2)
+               p1 = triprd(rrk,rb,rc,rd)*p_zabcd_8(kk_a+1)
+               p2 = triprd(rrk,ra,rc,rd)*p_zbacd_8(kk_a+1)
+               p3 = triprd(rrk,ra,rb,rd)*p_zcabd_8(kk_a+1)
+               p4 = triprd(rrk,ra,rb,rc)*p_zdabc_8(kk_a+1)
+
+               F_out(n) = p1 * a1 + p2 * b1 + p3 * c1 + p4 * d1
+            else
+               p3 = (rrk-p_bsz_8(kk_a))*p_zbc_8(kk_a+1)
+               p2 = 1. - p3
+
+               F_out(n) = p2 * b1 + p3 * c1
+            endif
+
+#ifdef ADV_MONO
+               F_out(n) = max(prmin , min(prmax,F_out(n)))
+#endif
+         enddo
+      enddo
+   enddo

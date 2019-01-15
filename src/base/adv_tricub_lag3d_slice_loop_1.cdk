@@ -1,0 +1,258 @@
+
+   call timing_start2 (51, 'FIND', 86)
+
+   !--------------------------------
+   !Get departure points (x,y,z)_usm
+   !--------------------------------
+   do k=k0,F_nk
+      idxk = (k-1)*l_ni*l_nj
+      do j=j0_e,jn_e
+         idxjk = idxk + ((j-1)*l_ni)
+         do i=i0_e-1,in_e
+
+            n = idxjk + i
+
+            x_usm_8(i,j,k) = F_x_usm(n)
+            y_usm_8(i,j,k) = F_y_usm(n) 
+            z_usm_8(i,j,k) = F_z_usm(n) 
+
+         enddo 
+      enddo 
+   enddo 
+
+   call timing_stop (51)
+
+   call timing_start2 (51, 'FIND', 86)
+
+   !--------------------------------
+   !Get departure points (x,y,z)_svm
+   !--------------------------------
+   do k=k0,F_nk
+      idxk = (k-1)*l_ni*l_nj
+      do j=j0_e-1,jn_e
+         idxjk = idxk + ((j-1)*l_ni)
+         do i=i0_e,in_e
+            n = idxjk + i
+
+            x_svm_8(i,j,k) = F_x_svm(n)
+            y_svm_8(i,j,k) = F_y_svm(n)
+            z_svm_8(i,j,k) = F_z_svm(n)
+
+         enddo
+      enddo
+   enddo
+
+   call timing_stop (51)
+
+   call timing_start2 (52, 'LIMITS', 86)
+
+   !-----------------------------------------------
+   !Find South/North limits of ADVECTED CORE domain
+   !-----------------------------------------------
+   do k=k0,F_nk
+
+      j_ps_(k) = l_nj
+      j_pn_(k) = 1
+
+      !Find SOUTH limits for y_usm_8(j0_c-ext): Interval [yv(j-1),yv(j)]: Compute location of y_usm_8(:,j0_c-ext) grid amongst Yv
+      !--------------------------------------------------------------------------------------------------------------------------
+      call adv_Fast_Loc_1D (y_usm_8((i0_c-ext)-1:(in_c+ext),j0_c-ext,k),Geomg_yv_8(0:l_nj),(in_c+ext)-((i0_c-ext)-1),l_nj,b_sn_location((i0_c-ext)-1:(in_c+ext)),1)
+
+      do i=(i0_c-ext)-1,(in_c+ext)
+         j_ps_(k) = min(b_sn_location(i),j_ps_(k))
+      enddo
+
+      !Find NORTH limits for y_usm_8(jn_c+ext): Interval [yv(j-1),yv(j)]: Compute location of y_usm_8(:,jn_c+ext) grid amongst Yv
+      !--------------------------------------------------------------------------------------------------------------------------
+      call adv_Fast_Loc_1D (y_usm_8((i0_c-ext)-1:(in_c+ext),jn_c+ext,k),Geomg_yv_8(0:l_nj),(in_c+ext)-((i0_c-ext)-1),l_nj,b_sn_location((i0_c-ext)-1:(in_c+ext)),1)
+
+      do i=(i0_c-ext)-1,(in_c+ext)
+         j_pn_(k) = max(b_sn_location(i),j_pn_(k))
+      enddo
+
+      !Find SOUTH limits for y_svm_8((j0_c-ext)-1): Interval [yv(j-1),yv(j)]: Compute location of y_svm_8(:,(j0_c-ext)-1) grid amongst Yv
+      !----------------------------------------------------------------------------------------------------------------------------------
+      call adv_Fast_Loc_1D (y_svm_8((i0_c-ext):(in_c+ext),(j0_c-ext)-1,k),Geomg_yv_8(0:l_nj),(in_c+ext)-(i0_c-ext),l_nj,c1_s((i0_c-ext):(in_c+ext),k),1)
+
+      do i=(i0_c-ext),(in_c+ext)
+         j_ps_(k) = min(c1_s(i,k),j_ps_(k))
+      enddo
+
+      !Find NORTH limits for y_svm_8(jn_c+ext): Interval [yv(j-1),yv(j)]: Compute location of y_svm_8(:,jn_c+ext) grid amongst Yv
+      !--------------------------------------------------------------------------------------------------------------------------
+      call adv_Fast_Loc_1D (y_svm_8((i0_c-ext):(in_c+ext),jn_c+ext,k),Geomg_yv_8(0:l_nj),(in_c+ext)-(i0_c-ext),l_nj,c1_n((i0_c-ext):(in_c+ext),k),1)
+
+      do i=(i0_c-ext),(in_c+ext)
+         j_pn_(k) = max(c1_n(i,k),j_pn_(k))
+      enddo
+
+   enddo
+
+   call timing_stop (52)
+
+   j_ps = l_nj
+   j_pn = 1
+
+   do k=k0,F_nk
+      j_ps = min(j_ps,j_ps_(k))
+      j_pn = max(j_pn,j_pn_(k))
+   enddo
+
+   call timing_start2 (53, 'x_LEFT_iecv', 86)
+
+   !--------------------------------------------------------------------------------------------------------
+   !Find (x_LEFT_iecv_8,z_LEFT_iecv_8) such that the curve line (x,y,z)_usm(j) intersects straigth line y=ys
+   !--------------------------------------------------------------------------------------------------------
+   do k=k0,F_nk
+
+      do i=i0_e-1,in_e
+
+         !Compute location of Ys grid amongst Y_USM 
+         !-----------------------------------------
+         call adv_Fast_Loc_1D (Geomg_y_8(j_ps:j_pn),y_usm_8(i,j0_e:jn_e,k),j_pn-j_ps,jn_e-j0_e,ys_location(j_ps:j_pn),j0_e)
+
+         do j=j_ps,j_pn
+
+            jm = ys_location(j)
+            jp = ys_location(j) + 1
+
+            slope_8 = y_usm_8(i,jp,k) - y_usm_8(i,jm,k)
+
+            if ( dabs(slope_8) <= epsilon(slope_8) ) Then
+                 slope_8  = 0.5d0
+            else 
+                 slope_8 = ( Geomg_y_8(j) - y_usm_8(i,jm,k) ) / slope_8 
+            endif 
+
+            x_LEFT_iecv_8 (i,j,k) = (1.d0 - slope_8 ) * x_usm_8(i,jm,k) + & 
+                                            slope_8   * x_usm_8(i,jp,k)
+
+            z_LEFT_iecv_8 (i,j,k) = (1.d0 - slope_8 ) * z_usm_8(i,jm,k) + & 
+                                            slope_8   * z_usm_8(i,jp,k)
+
+         enddo 
+
+      enddo    
+
+   enddo
+
+   call timing_stop (53)
+
+   call timing_start2 (52, 'LIMITS', 86)
+
+   !------------------------------------------------------------------------
+   !Find East/West limits of ADVECTED EXTENDED domain based on x_LEFT_iecv_8 
+   !------------------------------------------------------------------------
+   do k=k0,F_nk
+
+      !Find WEST limits for x_LEFT_iecv_8(i0_e-1): Interval [xu(i-1),xu(i)]: Compute location of x_LEFT_iecv_8(i0_e-1) amongst Xu
+      !--------------------------------------------------------------------------------------------------------------------------
+      call adv_Fast_Loc_1D (x_LEFT_iecv_8(i0_e-1,j_ps:j_pn,k),Geomg_xu_8(0:l_ni),j_pn-j_ps,l_ni,c1_w(j_ps:j_pn,k),1)
+
+      !Find EAST limits for x_LEFT_iecv_8(in_e): Interval [xu(i-1),xu(i)]: Compute location of x_LEFT_iecv_8(in_e) amongst Xu
+      !----------------------------------------------------------------------------------------------------------------------
+      call adv_Fast_Loc_1D (x_LEFT_iecv_8(in_e,j_ps:j_pn,k),Geomg_xu_8(0:l_ni),j_pn-j_ps,l_ni,c1_e(j_ps:j_pn,k),1)
+
+   enddo
+
+   do j=j_ps,j_pn
+
+      i_bw(j) = 1 
+      i_be(j) = F_ni 
+
+      do k=k0,F_nk
+         i_bw(j) = max(i_bw(j),c1_w(j,k)) !MAXIMUM (restriction over vertical)
+         i_be(j) = min(i_be(j),c1_e(j,k)) !MINIMUM (restriction over vertical)
+      enddo
+   enddo
+
+   call timing_stop (52)
+
+   !-------------------------------------------------------------------------------------------------------------
+   !Prepare 1D V-remapping
+   !-------------------------------------------------------------------------------------------------------------
+   !Find vertical line (xs,ys,z_bve) intersecting surface defined by departure points (x,y,z)_usm and (x,y,z)_svm
+   !-------------------------------------------------------------------------------------------------------------
+
+   !-----------
+   !3D Forecast
+   !-----------
+   if (.NOT.Schm_autobar_L) then
+
+   !TO BE REVISED
+
+   !-----------
+   !2D Forecast
+   !-----------
+   else
+
+      do k=k0,F_nk+1
+         do j=j_ps,j_pn
+            do i=i_bw(j),i_be(j)
+               z_bve_8(i,j,k) = Ver_z_8%m(k)
+            enddo
+         enddo
+      enddo
+
+   endif
+
+   call timing_start2 (55, 'DIST E', 86)
+
+   !------------------------------
+   !Find distance for EW-remapping
+   !------------------------------
+   do k=k0,F_nk
+
+      do j=j_ps,j_pn
+
+         !Evaluate distance between boundary points of Mapping#2
+         !------------------------------------------------------
+         do i=i0_e-1,in_e
+
+            dist_LEFT_iecv_8(i,j,k) = x_LEFT_iecv_8(i,j,k)
+
+         enddo
+
+         !Evaluate distance of boundary points of Mapping#1
+         !-------------------------------------------------
+         do i=i_bw(j)-1,i_be(j)
+
+            dist_LEFT_ecv_8(i,j,k) = Geomg_xu_8(i)
+
+         enddo
+
+      enddo
+   enddo
+
+   call timing_stop (55)
+
+   call timing_start2 (56, 'DIST N', 86)
+
+   !------------------------------
+   !Find distance for NS-remapping
+   !------------------------------
+   do k=k0,F_nk
+
+      do i=(i0_c-ext),(in_c+ext)
+
+         !Evaluate distance between boundary points of Mapping#2
+         !------------------------------------------------------
+         do j=(j0_c-ext)-1,(jn_c+ext)
+
+            dist_LEFT_lcv_8(i,j,k) = y_svm_8(i,j,k)
+
+         enddo
+
+         !Evaluate distance of boundary points of Mapping#1
+         !-------------------------------------------------
+         do j=c1_s(i,k)-1,c1_n(i,k)
+
+            dist_LEFT_ilcv_8(i,j,k) = Geomg_yv_8(j) 
+
+         enddo 
+
+      enddo
+
+   enddo
+
+   call timing_stop (56)

@@ -1,0 +1,63 @@
+#if defined (DOC)
+!
+!**comdeck yyg_pil0.cdk
+!
+!______________________________________________________________________
+!                                                                      |
+!  VARIABLES ASSOCIATED WITH BCS communication for Yin-Yang            |
+!______________________________________________________________________|
+!                    |                                                 |
+! NAME               | DESCRIPTION                                     |
+!--------------------|-------------------------------------------------|
+! M                  | Total number of Processors in Yang or Yin       |
+! Pil0_recvproc(M)   | Processor number to receive data FROM           |
+! Pil0_recv_len(M)   | Number of values to receive from Pil0_recvproc(i)|
+! Pil0_recv_adr(M)   | Address of starting index in vector for receiv- |
+!                    | ing data from processor Pil0_recvproc(i)         |
+! Pil0_recv_i(*,M)   | local gridpoint I to receive value from PE(i)   |
+! Pil0_recv_j(*,M)   | local gridpoint J to receive value from PE(i)   |
+! Pil0_sendproc(M)   | Processor number to send  data TO               |
+! Pil0_send_len(M)   | Number of values to send to Pil0_sendproc(i)     |
+! Pil0_send_adr(M)   | Address of starting index in vector for send-   |
+!                    | ing data to   processor Pil0_sendproc(i)         |
+! Pil0_send_imx(*,M) | closest I gridpoint on the other panel to find  |
+!                    | the value for Pil0_send_xxr,Pil0_send_yyr         |
+! Pil0_send_imy(*,M) | closest J gridpoint on the other panel to find  |
+!                    | the value for  Pil0_send_xxr,Pil0_send_yyr        |
+! Pil0_send_xxr(*,M) | longitude in the other panel to find the value  |
+!                    | for receiving panel                             |
+! Pil0_send_yyr(*,M) | latitude in the other panel to find the value   |
+!                    | for receiving panel                             |
+! Pil0_send_s1(*,M)  | element (s(1,1)) in matrix for polar vectors    |
+!                    | transformation                                  |
+! Pil0_send_s2(*,M)  | element (s(1,2)) in matrix for polar vectors    |
+!                    | transformation                                  |
+! Pil0_send_s3(*,M)  | element (s(2,1)) in matrix for polar vectors    |
+!                    | transformation                                  |
+! Pil0_send_s4(*,M)  | element (s(2,2)) in matrix for polar vectors    |
+!                    | transformation                                  |
+!______________________________________________________________________|
+#endif
+!
+!Declarations for Scalar variables (on Phi grid for nearest or linear interp)
+      integer  Pil0_send_all,Pil0_recv_all,Pil0_sendmaxproc,Pil0_recvmaxproc
+      integer, dimension (:), pointer :: &
+               Pil0_sendproc,  Pil0_recvproc, &
+               Pil0_recv_len, Pil0_send_len, &
+               Pil0_recv_adr, Pil0_send_adr, &
+               Pil0_recv_i  , Pil0_recv_j, Pil0_send_imx, Pil0_send_imy 
+!
+      real*8,  dimension (:), pointer :: &
+               Pil0_send_xxr, Pil0_send_yyr, &
+               Pil0_send_s1, Pil0_send_s2, Pil0_send_s3, Pil0_send_s4
+!
+      common/Pil0_i/ Pil0_send_all,Pil0_recv_all, &
+               Pil0_sendmaxproc, Pil0_recvmaxproc, &
+               Pil0_sendproc,  Pil0_recvproc, &
+               Pil0_recv_len, Pil0_send_len, &
+               Pil0_recv_adr, Pil0_send_adr, &
+               Pil0_recv_i  , Pil0_recv_j, Pil0_send_imx, Pil0_send_imy 
+
+      common/Pil0_r8/&
+               Pil0_send_xxr, Pil0_send_yyr, &
+               Pil0_send_s1, Pil0_send_s2, Pil0_send_s3, Pil0_send_s4

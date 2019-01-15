@@ -1,0 +1,172 @@
+!$omp parallel private(o1, o2, o3, o4, a1, a2, a3, a4, b1, b2, b3, b4, c1, c2, c3, c4,  &
+!$omp                  d1, d2, d3, d4, p1, p2, p3, p4, rri,rrj,rrk,ra,rb,rc,rd, n,i,j,k,&
+!$omp                  ii,jj,kk,idxk,idxjk,zcubic_L,capx,capy,capz,prf1,prf2)&
+!$omp          shared (F_mono, F_cub, F_lin, F_min, F_max, F_in, F_x, F_y, F_z,         &
+!$omp                  adx_y00_8,adx_x00_8,adx_ovdx_8,adx_ovdy_8,                       &
+!$omp                  adx_ovdz_8, adx_lcx,adx_lcy, adx_bsx_8,adx_bsy_8,p_bsz_8, adx_xabcd_8,   &
+!$omp                  adx_xbacd_8,adx_xcabd_8,adx_xdabc_8, adx_yabcd_8,adx_ybacd_8,adx_ycabd_8,&
+!$omp                  adx_ydabc_8, p_zabcd_8,p_zbacd_8, p_zcabd_8, p_zdabc_8, p_zbc_8, kkmax,  &
+!$omp                  F_num, i0, in, j0, jn, k0, F_nk)
+!$omp do private(prmin, prmax)
+
+   do k=k0,F_nk
+      idxk = (k-1)*Adx_mlnij
+      do j=j0,jn
+         idxjk = idxk + ((j-1)*adx_mlni)
+         do i=i0,in
+            n = idxjk + i
+
+            rri= F_x(n)
+            ii = (rri - adx_x00_8) * adx_ovdx_8
+            ii = adx_lcx(ii+1) + 1
+            if (rri < adx_bsx_8(ii)) ii = ii - 1
+            ii = max(2,min(ii,Adx_iimax))
+
+            rrj= F_y(n)
+            jj = (rrj - adx_y00_8) * adx_ovdy_8
+            jj = adx_lcy(jj+1) + 1
+            if (rrj < adx_bsy_8(jj)) jj = jj - 1
+            jj = max(adx_haloy,min(jj,Adx_jjmax))
+
+            rrk= F_z(n)
+            kk = (rrk - p_z00_8) * adx_ovdz_8
+            kk = p_lcz(kk+1)
+            if (rrk < p_bsz_8(kk)) kk = kk - 1
+            kk = min(kkmax-1,max(0,kk))
+
+            zcubic_L = (kk > 0) .and. (kk < kkmax-1)
+
+            !- x interpolation
+            ra = adx_bsx_8(ii-1)
+            rb = adx_bsx_8(ii  )
+            rc = adx_bsx_8(ii+1)
+            rd = adx_bsx_8(ii+2)
+            p1 = triprd(rri,rb,rc,rd)*adx_xabcd_8(ii)
+            p2 = triprd(rri,ra,rc,rd)*adx_xbacd_8(ii)
+            p3 = triprd(rri,ra,rb,rd)*adx_xcabd_8(ii)
+            p4 = triprd(rri,ra,rb,rc)*adx_xdabc_8(ii)
+
+            o2 = (kk-1)*Adx_nijag + (jj-Adx_int_j_off-1)*Adx_nit + (ii-Adx_int_i_off)
+            o1 = o2-Adx_nit
+            o3 = o2+Adx_nit
+            o4 = o3+Adx_nit
+
+            if (zcubic_L) then
+               a1 = p1 * F_in(o1-1) + p2 * F_in(o1) + p3 * F_in(o1+1) + p4 * F_in(o1+2)
+               a2 = p1 * F_in(o2-1) + p2 * F_in(o2) + p3 * F_in(o2+1) + p4 * F_in(o2+2)
+               a3 = p1 * F_in(o3-1) + p2 * F_in(o3) + p3 * F_in(o3+1) + p4 * F_in(o3+2)
+               a4 = p1 * F_in(o4-1) + p2 * F_in(o4) + p3 * F_in(o4+1) + p4 * F_in(o4+2)
+            endif
+
+            o1 = o1 + Adx_nijag
+            o2 = o2 + Adx_nijag
+            o3 = o3 + Adx_nijag
+            o4 = o4 + Adx_nijag
+
+#ifdef ADX_MONO
+               prmax = max(F_in(o2),F_in(o2+1),F_in(o3),F_in(o3+1))
+               prmin = min(F_in(o2),F_in(o2+1),F_in(o3),F_in(o3+1))
+#endif
+            b1 = p1 * F_in(o1-1) + p2 * F_in(o1) + p3 * F_in(o1+1) + p4 * F_in(o1+2)
+            b2 = p1 * F_in(o2-1) + p2 * F_in(o2) + p3 * F_in(o2+1) + p4 * F_in(o2+2)
+            b3 = p1 * F_in(o3-1) + p2 * F_in(o3) + p3 * F_in(o3+1) + p4 * F_in(o3+2)
+            b4 = p1 * F_in(o4-1) + p2 * F_in(o4) + p3 * F_in(o4+1) + p4 * F_in(o4+2)
+
+            o1 = o1 + Adx_nijag
+            o2 = o2 + Adx_nijag
+            o3 = o3 + Adx_nijag
+            o4 = o4 + Adx_nijag
+
+#ifdef ADX_MONO
+               prmax = max(prmax,F_in(o2),F_in(o2+1),F_in(o3),F_in(o3+1))
+               prmin = min(prmin,F_in(o2),F_in(o2+1),F_in(o3),F_in(o3+1))
+#endif
+            c1 = p1 * F_in(o1-1) + p2 * F_in(o1) + p3 * F_in(o1+1) + p4 * F_in(o1+2)
+            c2 = p1 * F_in(o2-1) + p2 * F_in(o2) + p3 * F_in(o2+1) + p4 * F_in(o2+2)
+            c3 = p1 * F_in(o3-1) + p2 * F_in(o3) + p3 * F_in(o3+1) + p4 * F_in(o3+2)
+            c4 = p1 * F_in(o4-1) + p2 * F_in(o4) + p3 * F_in(o4+1) + p4 * F_in(o4+2)
+
+            if (zcubic_L) then
+               o1 = o1 + Adx_nijag
+               o2 = o2 + Adx_nijag
+               o3 = o3 + Adx_nijag
+               o4 = o4 + Adx_nijag
+
+               d1 = p1 * F_in(o1-1) + p2 * F_in(o1) + p3 * F_in(o1+1) + p4 * F_in(o1+2)
+               d2 = p1 * F_in(o2-1) + p2 * F_in(o2) + p3 * F_in(o2+1) + p4 * F_in(o2+2)
+               d3 = p1 * F_in(o3-1) + p2 * F_in(o3) + p3 * F_in(o3+1) + p4 * F_in(o3+2)
+               d4 = p1 * F_in(o4-1) + p2 * F_in(o4) + p3 * F_in(o4+1) + p4 * F_in(o4+2)
+            endif
+
+            !- y interpolation
+            ra = adx_bsy_8(jj-1)
+            rb = adx_bsy_8(jj  )
+            rc = adx_bsy_8(jj+1)
+            rd = adx_bsy_8(jj+2)
+            p1 = triprd(rrj,rb,rc,rd)*adx_yabcd_8(jj)
+            p2 = triprd(rrj,ra,rc,rd)*adx_ybacd_8(jj)
+            p3 = triprd(rrj,ra,rb,rd)*adx_ycabd_8(jj)
+            p4 = triprd(rrj,ra,rb,rc)*adx_ydabc_8(jj)
+
+            b1 = p1 * b1 + p2 * b2 + p3 * b3 + p4 * b4
+            c1 = p1 * c1 + p2 * c2 + p3 * c3 + p4 * c4
+
+            !- z interpolation
+            if (zcubic_L) then
+               a1 = p1 * a1 + p2 * a2 + p3 * a3 + p4 * a4
+               d1 = p1 * d1 + p2 * d2 + p3 * d3 + p4 * d4
+               ra = p_bsz_8(kk-1)
+               rb = p_bsz_8(kk  )
+               rc = p_bsz_8(kk+1)
+               rd = p_bsz_8(kk+2)
+               p1 = triprd(rrk,rb,rc,rd)*p_zabcd_8(kk+1)
+               p2 = triprd(rrk,ra,rc,rd)*p_zbacd_8(kk+1)
+               p3 = triprd(rrk,ra,rb,rd)*p_zcabd_8(kk+1)
+               p4 = triprd(rrk,ra,rb,rc)*p_zdabc_8(kk+1)
+
+               F_cub(n) = p1 * a1 + p2 * b1 + p3 * c1 + p4 * d1
+            else
+               p3 = (rrk-p_bsz_8(kk))*p_zbc_8(kk+1)
+               p2 = 1. - p3
+
+               F_cub(n) = p2 * b1 + p3 * c1
+            endif
+
+#ifdef ADX_CONSERV
+
+            capx = (rri-Adx_bsx_8(ii)) * Adx_xbc_8(ii)
+            capy = (rrj-Adx_bsy_8(jj)) * Adx_ybc_8(jj)
+            capz = (rrk-  p_bsz_8(kk)) *   p_zbc_8(kk+1)
+
+            o2 = (kk)*Adx_nijag + (jj-Adx_int_j_off-1)*Adx_nit + (ii-Adx_int_i_off)
+            o3 = o2 + Adx_nit
+
+            prf1 = (1. - capy) * ( (1. - capx) * F_in(o2) + capx * F_in(o2+1) ) + &
+                         capy  * ( (1. - capx) * F_in(o3) + capx * F_in(o3+1) )
+
+            o2 = o2 + Adx_nijag
+            o3 = o3 + Adx_nijag
+
+            prf2 = (1. - capy) * ( (1. - capx) * F_in(o2) + capx * F_in(o2+1) ) + &
+                         capy  * ( (1. - capx) * F_in(o3) + capx * F_in(o3+1) )
+
+            F_lin (n) = max((1. - capz) * prf1 + capz * prf2,0.0d0)
+
+#ifdef ADX_MONO
+            F_mono(n) = max(prmin , min(prmax,F_cub(n)))
+            F_min (n) = prmin
+            F_max (n) = prmax
+#endif
+#else
+#ifdef ADX_MONO
+            F_cub(n) = max(prmin , min(prmax,F_cub(n)))
+#endif
+#endif
+
+
+         enddo 
+      enddo 
+   enddo 
+
+!$omp enddo
+!$omp end parallel

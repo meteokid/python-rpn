@@ -1,0 +1,19 @@
+
+      integer MAXOBUS
+      parameter (MAXOBUS=1000)
+      character*4 Obus_var_S(maxobus)
+      character*1 Obus_bus_S(maxobus)
+      integer Obus_top
+      integer Obus_offset(maxobus)
+      integer Obus_idx(maxobus)
+      integer Obus_addr(maxobus)
+      integer Obus_stag(maxobus)
+      integer Obus_mult(maxobus)
+      integer Obus_shp(maxobus)
+      integer Obus_mosaic(maxobus)
+      real    Obus_mul(maxobus)
+      real    Obus_add(maxobus)
+      common / Obus_r / Obus_mul,Obus_add
+      common / Obus_i / Obus_top,Obus_offset,Obus_idx,Obus_mosaic
+      common / Obus_i / Obus_addr,Obus_stag,Obus_mult,Obus_shp
+      common / Obus_c / Obus_var_S,Obus_bus_S

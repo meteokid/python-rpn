@@ -1,0 +1,12 @@
+#if !defined(GMM_IS_OK)
+#define GMM_IS_OK(errcode) (errcode >= 0)
+      integer, parameter :: GMM_MAXNAMELENGTH    =  32
+#endif
+
+      integer,parameter :: stat_maxn = 500
+      integer stat_nombre
+      character(len=GMM_MAXNAMELENGTH) :: stat_liste(stat_maxn)
+      common /stat_c/ stat_liste
+      common /stat_i/ stat_nombre
+!
+

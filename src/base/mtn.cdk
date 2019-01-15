@@ -1,0 +1,33 @@
+
+#if defined (DOC)
+!
+!
+!revision
+! v3_11 - Gravel S.           - initial version
+!
+!**comdeck mtn.cdk
+!
+!______________________________________________________________________
+!                                                                      |
+!  VARIABLES ASSOCIATED WITH THEORETICAL CASES                         |
+!______________________________________________________________________|
+!                    |                                                 |
+! NAME               | DESCRIPTION                                     |
+!--------------------|-------------------------------------------------|
+! mtn_hwx            | wavelength of large-scale component of mountain |
+! mtn_hwx1           | wavelength of small-scale component of mountain |
+! mtn_hght           | mountain height                                 |
+! mtn_nstar          | Brunt-Vaisala frequency                         |
+! mtn_tzero          | isothermal reference state                      |
+! mtn_flo            | upstream velocity in x direction                |
+!----------------------------------------------------------------------
+!
+#endif
+
+      real  mtn_hwx,  mtn_hwx1,   mtn_hght,  mtn_nstar
+      real  mtn_tzero,mtn_flo, mtn_hght_top
+
+!
+      common / mtn_r/ mtn_hwx,  mtn_hwx1,   mtn_hght,  mtn_nstar
+      common / mtn_r/ mtn_tzero,mtn_flo, mtn_hght_top
+

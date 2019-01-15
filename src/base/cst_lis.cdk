@@ -1,0 +1,12 @@
+
+!
+      integer cnbre
+      parameter(cnbre=31)
+      character*10 liste_S(cnbre)
+      data liste_S(1 :5 )/'CPD'   , 'CPV' , 'RGASD' , 'RGASV', 'TRPL' /
+      data liste_S(6 :10)/'TCDK'  , 'RAUW', 'EPS1'  , 'EPS2' , 'DELTA'/
+      data liste_S(11:15)/'CAPPA' , 'TGL' , 'CONSOL', 'GRAV' , 'RAYT' /
+      data liste_S(16:20)/'STEFAN', 'PI'  , 'OMEGA' , 'KNAMS', 'STLO' /
+      data liste_S(21:25)/'KARMAN', 'RIC' , 'CHLC'  , 'CHLF' , 'T1S'  /
+      data liste_S(26:30)/'T2S'   , 'AW'  , 'BW'    , 'AI'   , 'BI'   /
+      data liste_S(31   )/'SLP' /

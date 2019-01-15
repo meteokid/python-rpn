@@ -1,0 +1,26 @@
+#if !defined(__ADV_GMM__)
+#define __ADV_MMM__
+
+!**comdeck adv_gmm.cdk
+
+#define ADV_GMMFLAG_STAGX 1
+#define ADV_GMMFLAG_STAGY 2
+#define ADV_GMMFLAG_MOM   4
+
+#define ADV_GMMFLAG_SET(GMMMETA,GMMFLAG) (ior(GMMMETA%a%uuid1,GMMFLAG))
+#define ADV_GMMFLAG_UNSET(GMMMETA,GMMFLAG) (ieor(GMMMETA%a%uuid1,GMMFLAG))
+#define ADV_IS_GMMFLAG_SET(GMMMETA,GMMFLAG) (iand(GMMMETA%a%uuid1,GMMFLAG)>0)
+
+      character(len=40) :: adv_xth_s  , adv_yth_s  , adv_zth_s
+      character(len=40) :: adv_xcth_s , adv_ycth_s , adv_zcth_s
+      character(len=40) :: adv_xth_t_s , adv_yth_t_s , adv_zth_t_s
+      character(len=40) :: adv_xcth_t_s, adv_ycth_t_s, adv_zcth_t_s
+      character(len=40) :: adv_xct1_s, adv_yct1_s, adv_zct1_s
+
+      common /adv_gmm_s/ adv_xth_s  , adv_yth_s  , adv_zth_s
+      common /adv_gmm_s/ adv_xcth_s , adv_ycth_s , adv_zcth_s
+      common /adv_gmm_s/ adv_xth_t_s , adv_yth_t_s , adv_zth_t_s
+      common /adv_gmm_s/ adv_xcth_t_s, adv_ycth_t_s, adv_zcth_t_s
+      common /adv_gmm_s/ adv_xct1_s, adv_yct1_s, adv_zct1_s
+
+#endif

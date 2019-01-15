@@ -1,0 +1,27 @@
+
+#if defined (DOC)
+!
+!**comdeck nl.cdk
+!
+!______________________________________________________________________
+!                                                                      |
+!  VARIABLES ASSOCIATED WITH NLI (non-linear rhs)                      |
+!______________________________________________________________________|
+!                    |                                                 |
+! NAME               | DESCRIPTION                                     |
+!--------------------|-------------------------------------------------|
+! Nl_u               | non-linear deviation of U                       |
+! Nl_v               | non-linear deviation of V                       |
+! Nl_t               | non-linear deviation of T -> X                  |
+! Nl_c               | non-linear portion of continuity equation       |
+! Nl_w               | non-linear deviation of vertical motion         |
+! Nl_f               | non-linear deviation of FI -> WFI -> Q          |
+! Nl_x               | non-linear deviation of ksidot equation         |
+!----------------------------------------------------------------------
+!
+!
+#endif
+      real  , dimension (:,:,:), pointer :: nl_u, nl_v, nl_t, &
+                                            nl_c, nl_w, nl_f, nl_x
+      real  , dimension (:,:  ), pointer :: nl_b
+      common /nl_ptr/ nl_u, nl_v, nl_t, nl_c, nl_w, nl_f, nl_x, nl_b
