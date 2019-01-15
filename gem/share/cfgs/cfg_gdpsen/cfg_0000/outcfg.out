@@ -1,4 +1,5 @@
 
+ grid=2,model;
  grid=1,core;
  levels=1,eta, -1;
  levels=2, pres,[1000., 925., 850., 700., 500., 400., 300., 275., 250., 225., 200., 175., 150.,
@@ -16,10 +17,11 @@
  steps=4,hour,[24.,72.,120.];
  steps=5,hour,<0.,144.,3.>,<150.,240.,6.>;
 
+ sortie_p([EN], grid, 2, levels, 1, steps, 1)
  sortie_p([Z0,LH,VG,MT,MG,HS,AL,GL,LG,SD,TM,TS,TP,2F], grid, 1, levels, 1, steps, 1)
  sortie_p([FV,FC,FI,FS,FB,FL,SI,FQ,EI,IIR,ICR], grid, 1, levels, 1, steps, 2)
  sortie_p([TM,DSST,SINC,TG,NT,RT,PC,RC], grid, 1, levels, 1, steps, 5)
- sortie_p([PR,CQY,CQF], grid, 1, levels, 1, steps, 3)
+ sortie_p([PR], grid, 1, levels, 1, steps, 3)
  sortie_p([I0,I1,I2,I3,I4,I5,I6,I7,I8,I9,DN,SD],grid, 1, levels, 1, steps, 2)
 
  sortie([P0,PN,PT], grid, 1, levels, 1, steps, 5)

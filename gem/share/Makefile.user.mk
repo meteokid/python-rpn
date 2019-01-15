@@ -13,11 +13,11 @@ endif
 # MPI     = -mpi
 # LFLAGS  =     # User's flags passed to the linker
 # ifneq (,$(filter intel%,$(COMP_ARCH))$(filter PrgEnv-intel%,$(COMP_ARCH)))
-# FFLAGS  = -C -g -traceback -ftrapuv #-warn all
+# FFLAGS  = -C -g -traceback -ftrapuv -warn all -warn nointerfaces
 # CFLAGS  = -C -g -traceback -ftrapuv -fp-model precise #-Wall
 # else
 # FFLAGS  = -C -g -traceback
-# CFLAGS  = -C -g -traceback 
+# CFLAGS  = -C -g -traceback
 # endif
 # LIBAPPL = 
 # LIBPATH_USER = 
@@ -28,8 +28,8 @@ endif
 ## Optionally for gem the following options can also be modified
 ##
 ## For details GEM additional Makefile variables see:
-## https://wiki.cmc.ec.gc.ca/wiki/GEM/4.8/dev'
-## 
+## https://wiki.cmc.ec.gc.ca/wiki/GEM/5.0/dev'
+##
 ## Note: MODELUTILS_COMP_RULES_DEBUG is the Compiler_rules file
 ##       used to produce the debug libs
 
@@ -40,30 +40,28 @@ endif
 # COMP_RULES_FILE    = $(MODELUTILS_COMP_RULES_DEBUG)
 
 
-## For GEM developpers:
-## code developpement should mandatory be done with
-## the following options: (uncomment the lines below)
+## ==== For GEM developers ==========================================
+## code developpement should mandatory be done with (3 steps)
 
-# FFLAGS     = -C -g -traceback
-# MODELUTILS_SFX = -d
-# RPNPHY_SFX = -d
-# GEMDYN_SFX = -d
+## Step 1: uncomment the following lines
 
+# ifneq (,$(filter intel%,$(COMP_ARCH))$(filter PrgEnv-intel%,$(COMP_ARCH)))
+# FFLAGS = -C -g -traceback -ftrapuv -warn all -warn nointerfaces
+# CFLAGS = -C -g -traceback -ftrapuv -fp-model precise #-Wall
+# else
+# FFLAGS = -C -g -traceback
+# CFLAGS = -C -g -traceback
+# endif
 
-## To build with a local version of all libraries
-## 
-## Remove files (include or w/t module/sub/function) with: 
-## rderm filename.ext
-## do NOT create a stopping stub (prefer to catch at load time than run time)
-##
-## make dep         #mandatory
-## make -j objects  #mandatory
-## make modelutils_libs rpnphy_libs gemdyn_libs  #mandatory
-## make allbin_gem # allbin_modelutils allbin_rpnphy allbin_gemdyn 
+## Step 2: Add the following line (uncommented) in "Makefile.user.root.mk"
+# export RDE_LOCAL_LIBS_ONLY=1
 
-# MODELUTILS_VERSION=$(USER)
-# RPNPHY_VERSION=$(USER)
-# GEMDYN_VERSION=$(USER)
+## Step 3: Execute the following commands
+## make dep      #mandatory
+## make -j9 libs  #mandatory
+## make -j9 bins
+
+## ==== For GEM developers [END] ====================================
 
 ifneq (,$(ATM_MODEL_USERLIBS))
 ifeq (,$(COMP_RULES_FILE))
@@ -74,6 +72,40 @@ endif
 endif
 endif
 endif
+
+## Sample MPI abs targets
+
+mympiabsname: | mympiabsname_rm $(BINDIR)/mympiabsname
+	ls -l $(BINDIR)/mympiabsname
+mympiabsname_rm:
+	if [[ "x$(GEM_ABS_DEP)" == "x" ]] ; then \
+		rm -f $(BINDIR)/mympiabsname ; \
+	fi
+$(BINDIR)/mympiabsname: $(GEM_ABS_DEP) | $(GEM_VFILES)
+	export MAINSUBNAME="my_main_sub_name" ;\
+	export ATM_MODEL_NAME="$${MAINSUBNAME} $(BUILDNAME)" ;\
+	export ATM_MODEL_VERSION="$(GEM_VERSION)" ;\
+	export RBUILD_LIBAPPL="$(GEMDYN_LIBS_V) $(GEMDYN_LIBS_DEP)" ;\
+	$(RBUILD4objMPI)
+	ls $@
+
+## Sample no-MPI abs targets
+
+myabsname: | myabsname_rm $(BINDIR)/myabsname
+	ls -l $(BINDIR)/myabsname
+myabsname_rm:
+	if [[ "x$(GEM_ABS_DEP)" == "x" ]] ; then \
+		rm -f $(BINDIR)/myabsname ; \
+	fi
+$(BINDIR)/myabsname: $(GEM_ABS_DEP) | $(GEM_VFILES)
+	export MAINSUBNAME="my_main_sub_name" ;\
+	export ATM_MODEL_NAME="$${MAINSUBNAME} $(BUILDNAME)" ;\
+	export ATM_MODEL_VERSION="$(GEM_VERSION)" ;\
+	export RBUILD_LIBAPPL="$(GEMDYN_LIBS_V) $(GEMDYN_LIBS_DEP)" ;\
+	export RBUILD_COMM_STUBS="$(LIBCOMM_STUBS) $(MODELUTILS_DUMMYMPISTUBS)";\
+	$(RBUILD4objNOMPI)
+	ls $@
+
 
 ifneq (,$(DEBUGMAKE))
 $(info ## ==== Makefile.user.mk [END] ========================================)

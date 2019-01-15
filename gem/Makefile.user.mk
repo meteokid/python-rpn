@@ -26,8 +26,8 @@ COMPONENTS2_UC    := $(foreach item,$(COMPONENTS2),$(call rdeuc,$(item)))
 
 COMPONENTS_VFILES := $(foreach item,$(COMPONENTS2_UC),$($(item)_VFILES))
 
-SRCPATH_INCLUDE := $(CONST_SRCPATH_INCLUDE)
-VPATH           := $(CONST_VPATH) #$(ROOT)/$(CONST_BUILDSRC)
+# SRCPATH_INCLUDE := $(CONST_SRCPATH_INCLUDE) $(CONST_SRCPATH)
+# VPATH           := $(CONST_VPATH) #$(ROOT)/$(CONST_BUILDSRC)
 
 #------------------------------------
 
