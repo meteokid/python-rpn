@@ -1,0 +1,33 @@
+[DEFAULT]
+# List of colours to be used to display plot lines (use R_colours to allow R
+# to choose the colour list to use), comment this line for default behaviour
+colour_list=R_colours
+# Application to use to display plots once they have been generated (comment
+# this line to run without a display tool)
+display_application=display
+
+[tsplot]
+
+[profplot]
+# Default value of the highest pressure plotted in the vertical profile (i.e.
+# pressure at the bottom of the plot axis)
+yaxis_bottom_pressure=Inf
+# Default value of the lowest pressure plotted in the vertical profile (i.e.
+# pressure at the top of the plot axis)
+yaxis_top_pressure=100
+
+[scmdiag]
+# Default comma-separated list of derived fields to compute from an SCM integration
+diag_list=
+# Comma-separated list of plugins available to for diagnostic functionality
+plugins=winds,theta
+# User-defined path (colon-separated) to potential plugin locations beyond 
+# the package standard
+plugin_path=
+
+[linkit]
+# Set "flat" to True to have the linkit utility link the SCM results/ subdirectory
+# directly to the value defined by the environment variable $scm_results, without 
+# the usual experiment-specific subdirectory structure
+flat=False
+

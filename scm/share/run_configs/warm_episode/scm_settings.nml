@@ -1,0 +1,89 @@
+# Settings for a test run using GEM benchmark data
+
+ &step
+ step_runstrt_s = '20070322.000000',
+ step_dt_8 = 900.,
+ fcst_end_s = '12h',
+ fcst_nesdt_s = '15m',
+ /
+
+ &scm_cfgs
+
+ prof_point = 46.25, 282.5
+
+ debug_L = .false., dyn_forcings=.true.,
+
+ Grd_dx = 2.5, Grd_dy = 2.5,
+
+ Cstv_ptop_8= 705.381, Grd_rcoef= 1.,1.,
+ hyb= 0.01 ,0.020098 ,0.033067 ,0.047026 ,0.060292 ,0.071875 ,0.08128 ,0.088705 ,0.094348 ,0.098803 ,
+0.103159 ,0.10801 ,0.113356 ,0.119296 ,0.126028 ,0.133552 ,0.142066 ,0.151669 ,0.162559 ,0.175033 ,
+0.189388 ,0.205624 ,0.222751 ,0.240769 ,0.259678 ,0.279379 ,0.299872 ,0.321256 ,0.343531 ,0.366598 ,
+0.390457 ,0.415009 ,0.440452 ,0.466588 ,0.493417 ,0.520939 ,0.549154 ,0.577963 ,0.607366 ,0.637363 ,
+0.667954 ,0.698941 ,0.729928 ,0.759133 ,0.786655 ,0.812296 ,0.836254 ,0.858529 ,0.87922 ,0.898327 ,
+0.915949 ,0.932284 ,0.947233 ,0.960994 ,0.973567 ,0.98515 ,0.99505 ,
+
+  output_list = 'T8','2T','H8','UH','U8','UP','V8','VP','TJ','DQ','UD','VD',
+        'FC','FV','FI','FS','SI','FB','ECC','NT','TG'
+
+/
+
+ &surface_cfgs
+
+ ICELAC           = .true.     ,
+ ICEMELT          = .true.     ,
+ IMPFLX           = .true.     ,
+ LIMSNODP         = .true.     ,
+ SCHMSOL          = 'isba'     ,
+ Z0TLAT           = 25.,30.    ,
+ /
+
+ &convection_cfgs
+
+ DEEP             = 'kfc'      , 
+ KFCDEPTH         = 4000.      ,
+ KFCRAD           = 1500.      ,
+ DEEP_TIMECONV    = '1h'       ,
+ KFCTRIG4         = 0.,0.,0.05,0.05,
+ KFCTRIGL         = 0.01       ,
+ KFCTRIGLAT       = .true.     ,
+ TRIGLAT          = 25.,30.    ,
+ SHAL             = 'ktrsnt_mg',
+
+ /
+
+ &physics_cfgs
+
+ RADIA            = 'cccmarad' ,  
+ KNTRAD_S         = '1h'       ,
+ RADFLTR          = .false.    ,
+ TS_FLXIR         = .true.     ,
+ STRATOS          = .true.     ,
+
+ GWDRAG           = 'gwd86'    ,
+ NON_ORO          = .true.     ,
+ LMETOX           = .true.     , 
+
+ LONGMEL          = 'boujo'    ,
+ FLUVERT          = 'clef'     ,
+
+ PBL_SHAL         = 'conres'   ,
+ STCOND           = 'consun'   ,
+ INILWC           = .true.     ,
+
+ KTICEFRAC        = .false.    ,
+
+ PCPTYPE          = 'bourge3d' ,
+
+ QCO2             = 380.0      ,
+
+/
+&__deleted__
+zta=-1.,
+zua=-1.,
+/
+&__rpnphy_upcfg__
+orig_version=6.0.b7,
+from_version=6.0.b7,
+version=6.0.rc3,
+/

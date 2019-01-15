@@ -1,0 +1,190 @@
+!---------------------------------- LICENCE BEGIN -------------------------------
+! SCM - Library of kernel routines for the RPN single column model
+! Copyright (C) 1990-2017 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it 
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+
+subroutine setfld()
+  ! Generate an FST file that contains constant values for fields 
+  ! that are user-specified.
+
+  implicit none
+
+  ! Local parameters
+  integer, parameter :: LONG_CHAR=1024
+  integer, parameter :: STDOUT=6
+
+  ! Local derived types
+  type override
+     character(len=LONG_CHAR) :: in,key
+     integer :: lev
+     real :: value
+  end type override
+
+  ! Local variables
+  integer :: i,err,fdin,fdout,nrec,dateo,deet,npas,nbits,datyp, &
+       ip1,ip2,ip3,ip4,ni,nj,nk,ig1,ig2,ig3,ig4,swa,lng,dltf,ubc, &
+       ex1,ex2,ex3,nkeys,set,idelim_value,idelim_lev,kind,ival, &
+       iz0,izp,pex,pey,pe_local,pe_total
+  integer, dimension(:), allocatable :: keyList
+  real :: pval,eps
+  real, dimension(1) :: work
+  real, dimension(:,:), allocatable :: fld
+  character(len=1) :: typvar,grtyp
+  character(len=4) :: nomvar
+  character(len=12) :: etiket
+  character(len=LONG_CHAR) :: infile,outfile,cvalue
+  character(len=LONG_CHAR), dimension(:), allocatable :: args
+  logical :: found
+  type(override), dimension(:), allocatable :: sets
+
+  ! External functions
+  integer, external :: iargc,fnom,fclos,fstouv,fstfrm,fstinl,fstprm,fstluk,fstecr,utils_topology
+
+  ! Initialize RPN COMM libraries
+  pex = 0; pey = 0
+  call RPN_COMM_init(utils_topology,pe_local,pe_total,pex,pey)
+
+  ! Get positional command line arguments
+  i = iargc()
+  if (i < 2) call handle_error(-1,'setfld','You must specify the input and output files as arguments')
+  allocate(args(i),stat=err)
+  call handle_error(err,'setfld','Allocating space for args')
+  allocate(sets(i-2),stat=err)
+  call handle_error(err,'setfld','Allocating space for sets')
+  do i=1,size(args)
+     call getarg(i,args(i))
+  enddo
+  infile = args(1)
+  outfile = args(2)
+  if (size(sets) > 0) sets(:)%in = args(3:)
+  deallocate(args,stat=err)
+  call handle_error(err,'setfld','Freeing args')
+
+  ! Parse list of variables to set
+  do i=1,size(sets)
+     idelim_value = index(sets(i)%in,'=')
+     call handle_error_l(idelim_value/=0,'setfld','Variable definitions must be in the form NAME=VALUE')
+     idelim_lev = index(sets(i)%in,':')
+     if (idelim_lev == 0) then
+        idelim_lev = idelim_value
+        sets(i)%lev = -1
+     else
+        read(sets(i)%in(idelim_lev+1:idelim_value-1),'(i)') sets(i)%lev
+     endif
+     sets(i)%key = sets(i)%in(1:idelim_lev-1)
+     cvalue = sets(i)%in(idelim_value+1:)
+     if (index(cvalue,'.') == 0) cvalue = trim(cvalue)//'.'
+     read(cvalue,'(f)') sets(i)%value
+  enddo
+
+  ! Check for duplicate specification of roughness length
+  iz0 = -1; izp = -1
+  do i=1,size(sets)
+     if (trim(sets(i)%key) == 'Z0') iz0 = i
+     if (trim(sets(i)%key) == 'ZP') izp = i
+  enddo
+  if (all((/iz0,izp/) > 0)) then
+     eps = 0.001
+     call handle_error_l(abs(log(sets(iz0)%value)-sets(izp)%value)<eps,'setfld', &
+          'Inconsistent specification of Z0 and ZP [ln(Z0)]')
+  endif
+
+  ! Open input and output files
+  fdin = 0
+  err = fnom(fdin,trim(infile),'STD',0)
+  call handle_error(err,'setfld','Acquiring lock for '//trim(infile))
+  nrec = fstouv(fdin,'RND')
+  call handle_error_l(nrec>=0,'setfld','Opening '//trim(infile))
+  fdout = 0
+  err = fnom(fdout,trim(outfile),'STD',0)
+  call handle_error(err,'setfld','Acquiring lock for '//trim(outfile))
+  i = fstouv(fdout,'RND')
+  call handle_error_l(i>=0,'setfld','Opening '//trim(infile))
+
+  ! Loop over all entries to copy or redefine fields
+  allocate(keyList(nrec),stat=err)
+  call handle_error(err,'setfld','Allocating keyList')
+  err = fstinl(fdin,ni,nj,nk,-1,'',-1,-1,-1,'','',keyList,nkeys,size(keyList))
+  call handle_error(err,'setfld','Getting key list')
+  call handle_error_l(nkeys<=nrec,'setfld','Insufficient number of keys')
+  do i=1,nkeys
+     err = fstprm(keyList(i),dateo,deet,npas,ni,nj,nk,nbits,datyp, &
+          ip1,ip2,ip3,typvar,nomvar,etiket,grtyp,ig1,ig2,ig3,ig4, &
+          swa,lng,dltf,ubc,ex1,ex2,ex3)
+     call handle_error(err,'setfld','Getting record information')
+     if (nbits == 64) then
+        allocate(fld(ni,2*nj),stat=err)
+     else
+        allocate(fld(ni,nj),stat=err)
+     endif
+     call handle_error(err,'setfld','Allocating fld')
+     set = 0; found = .false.
+     do while (set < size(sets) .and. .not.found)
+        set = set+1
+        ! If names match then check for the correct ip1 (-1 for all levels)
+        if (trim(nomvar) == trim(sets(set)%key)) then
+           if (sets(set)%lev < 0) then
+              found = .true.
+           else
+              call convip(ip1,pval,kind,-1,'',.false.)
+              call convip(ival,pval,kind,+2,'',.false.)
+              if (sets(set)%lev == ival) found = .true.
+              call convip(ival,pval,kind,+3,'',.false.)
+              if (sets(set)%lev == ival) found = .true.
+           endif
+        endif
+     enddo
+     if (found) then
+        fld = sets(set)%value
+     elseif (trim(nomvar) == 'Z0' .and. izp > 0) then
+        fld = exp(sets(izp)%value)
+     elseif (trim(nomvar) == 'ZP' .and. iz0 > 0) then
+        fld = log(sets(iz0)%value)
+     else
+        err = fstluk(fld,keyList(i),ni,nj,nk)
+        call handle_error(err,'setfld','Reading record from '//trim(infile))
+     endif
+     err = fstecr(fld,work,-nbits,fdout,dateo,deet,npas,ni,nj,nk,ip1,ip2, &
+          ip3,typvar,nomvar,etiket,grtyp,ig1,ig2,ig3,ig4,datyp,.true.)
+     call handle_error(err,'setfld','Writing record to '//trim(outfile))
+     if (allocated(fld)) deallocate(fld,stat=err)
+     call handle_error(err,'setfld','Freeing fld')
+  enddo
+
+  ! Inform user of Z0/ZP correction
+  if (all((/iz0,izp/)>0)) then
+     write(STDOUT,*) 'Z0/ZP checked for consistency ... result ok'
+  elseif (any((/iz0,izp/)>0)) then
+     write(STDOUT,*) 'Z0/ZP made consistent according to specification'
+  endif
+
+  ! Close input and output files
+  err = fstfrm(fdin)
+  call handle_error(err,'setfld','Closing '//trim(infile))
+  err = fclos(fdin)
+  call handle_error(err,'setfld','Releasing lock for '//trim(infile))
+  err = fstfrm(fdout)
+  call handle_error(err,'setfld','Closing '//trim(outfile))
+  err = fclos(fdout)
+  call handle_error(err,'setfld','Releasing lock for '//trim(outfile))
+
+  ! Garbage collection
+  deallocate(keyList,stat=err)
+  call handle_error(err,'setfld','Freeing keyList')
+  deallocate(sets,stat=err)
+  call handle_error(err,'setfld','Freeing sets')
+
+  ! Shut down parallel libraries
+  call RPN_COMM_finalize(err)
+
+end subroutine setfld

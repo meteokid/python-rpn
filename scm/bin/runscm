@@ -1,0 +1,132 @@
+#!/usr/bin/env ksh
+arguments=$*
+set -e
+
+# Obtain settings from a configuration file if available
+basedir=$(pwd)/RUNSCM
+cfgfile="./configexp.cfg"
+if [[ -f ${cfgfile} ]] ; then . ${cfgfile} ; fi
+
+# Temporary check for outdated configuration file format
+if [[ $(grep '^\s*SCM_' configexp.cfg | wc -l) -gt 0 ]] ; then
+   printf "Found outdated configuration file settings.  Run the following to update ${cfgfile}:\n\n  scm_update_cfg ${cfgfile}\n\n"
+   exit 1
+fi
+
+# Get command line arguments as overrides
+eval `cclargs $0 \
+ -inrep       "${inrep}"         ""      "[Full path to *.ptxt input files                ]" \
+ -anal        "${anal}"          ""      "[Full path of the analysis                      ]" \
+ -climato     "${climato}"       ""      "[Full path of climatology file                  ]" \
+ -geophy      "${geophy}"        ""      "[Full path of geophysical file                  ]" \
+ -phy_intable "${phy_intable}"   ""      "[Full path of physics input descriptions        ]" \
+ -ozone       "${ozone}"         ""      "[Full path of climatology ozone file            ]" \
+ -radtab      "${radtab}"        ""      "[Full path of radiation table file              ]" \
+ -const       "${const}"         ""      "[Full path of geophysical constants file        ]" \
+ -phydata     "${phydata}"       ""      "[Full path to external physics forcing file     ]" \
+ -xfer        "${xfer}"          ""      "[Full path to output file target directory      ]" \
+ -exp         "${exp}"           ""      "[Experiment name (mandatory)                    ]" \
+ -model_input "${model_input}"   ""      "[Space-separated paths to model inputs          ]" \
+ -debug       "${debug}"         "gdb"   "[Debugger executable (gdb, gdbi, valgrind, ...) ]" \
+ -supp        "${supp}"          ""      "[Space-separated list of debugger suppression files ]"\
+ ++ $arguments`
+
+# Check for required arguments
+if [[ -z "$exp" ]] ; then
+  print "ERROR: exp must be provided either as an argument or in "${cfgfile}
+  exit 1
+fi
+
+# Get current directory for return
+here=${PWD}
+
+# Set default values
+default_inrep=${SCM_MODEL_DFILES}/dfiles/gabls-3
+default_anal=${SCM_MODEL_DFILES}/dfiles/gabls-3/analysis/2006070112_000
+default_climato=${SCM_MODEL_DFILES}/dfiles/gabls-3/climato/clim.gabls
+default_geophy=${SCM_MODEL_DFILES}/dfiles/gabls-3/geophy/geo.gabls
+default_phytb=${rpnphy}/include/physics_input_table_GENERIC
+default_ozone=${ATM_MODEL_DFILES}/datafiles/constants/ozoclim_Fortuin_Kelder1998
+default_irtab=${ATM_MODEL_DFILES}/datafiles/constants/irtab5_std
+default_const=${ATM_MODEL_DFILES}/datafiles/constants/thermoconsts
+default_phydata='<no value>'
+default_xfer=${here}/results
+
+# Parse the output file path
+xfer_full=${xfer:-${default_xfer}}/${exp}
+
+# Generate a temporary configuration file
+taskcfg=${TMPDIR}/scm_$$.cfg
+cat > ${taskcfg} <<EOF
+# <input>
+# INREP               ${inrep:-${default_inrep}}
+# ANALYSIS            ${anal:-${default_anal}}
+# CLIMATO             ${climato:-${default_climato}}
+# GEOPHY              ${geophy:-${default_geophy}}
+# constantes          ${const:-${cdefault_onst}}
+# ozone_clim.fst      ${ozone:-${default_ozone}}
+# rad_table.fst       ${radtab:-${default_irtab}}
+# physics_input_table ${phy_intable:-${default_phytb}}
+# EXT_PHYDATA         ${phydata:-${default_phydata}}
+# model_settings.nml  scm_settings.nml
+# MODEL_INPUT/        ${model_input} ${ATM_MODEL_DFILES}/datafiles/modeldata/*
+# </input>
+# <executables>
+# ATM_SCM.Abs        mainscm_\${BASE_ARCH}.Abs
+# remote_copy        r.scp
+# readlink           r.read_link
+# r.run_in_parallel  r.run_in_parallel
+# </executables>
+# <output>
+# xfer/              ${xfer_full}
+# </output>
+EOF
+
+# Run task setup to establish directory structure
+. ${TASK_SETUP:-task_setup.dot} --file=${taskcfg} --base=${basedir} --clean --verbose
+
+# Run in single column mode
+cd ${TASK_WORK}
+ln -s ${TASK_INPUT}/constantes .
+vsupp=""
+if [[ ${debug} == "valgrind" ]] ; then supp_key="--suppressions=" ; fi
+for base in ${rpnphy} ${scm} ; do
+   for ext in share share/${EC_ARCH} ; do
+      supp_file=${base}/${ext}/${debug}.supp
+      if [[ -f ${supp_file} ]] ; then
+         vsupp="${vsupp} ${supp_key}${supp_file}"
+      fi
+   done
+done
+if [[ -n "${supp}" ]] ; then vsupp="${vsupp} ${supp_key}${supp}" ; fi
+if [[ "${debug}" == "valgrind" ]] ; then
+   large_stack=20000000
+   ${debug} --main-stacksize=${large_stack} --max-stackframe=${large_stack} ${vsupp} ${TASK_BIN}/ATM_SCM.Abs
+elif [[ "${debug}" == "gdb" ]] ; then
+   ${debug} -batch -ex run -ex where -directory ${here}/build-${EC_ARCH} --args ${TASK_BIN}/ATM_SCM.Abs
+elif [[ "${debug}" == "gdbi" ]] ; then
+   gdb -ex where -directory ${here}/build-${EC_ARCH} --args ${TASK_BIN}/ATM_SCM.Abs
+elif [[ -n "${debug}" ]] ; then
+   ${debug} ${TASK_BIN}/ATM_SCM.Abs
+elif [[ ${ORDENV_DIST} = "aix" ]] ; then
+   ${TASK_BIN}/r.run_in_parallel -pgm ${TASK_BIN}/ATM_SCM.Abs
+else
+   ${TASK_BIN}/ATM_SCM.Abs
+fi
+cd ${here}
+
+# Transfer files to requested directory
+src=${TASK_WORK}/spool
+set +e
+dest=$(${TASK_BIN}/readlink ${TASK_OUTPUT}/xfer)
+log=${TASK_WORK}/xfer.log
+${TASK_BIN}/remote_copy -r ${src}/* ${dest} >${log} 2>&1
+if [[ $? == 0 ]] ; then
+   print "\n SCM outputs available in ${xfer_full}\n"
+else
+   print "\n An error occured during file transfer: see ${log} for details\n\n SCM output is available in ${src}\n"
+fi
+set -e
+
+# Final cleanup
+rm -f ${taskcfg}

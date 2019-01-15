@@ -1,0 +1,78 @@
+#!/usr/bin/env python
+
+# Prepare input for the single column model (SCM)
+import optparse
+import subprocess
+import sys,os
+import glob
+import signal
+
+def ptxtgen(cmd,logf,verbose=False):
+    """Use specified command to create SCM input files"""
+    if logf:
+        stdout_pipe = logf
+        stderr_pipe = logf
+    else:
+        stdout_pipe = sys.stdout
+        stderr_pipe = sys.stderr
+    if verbose: sys.stdout.write(' '.join(cmd)+'\n')
+    returncode = subprocess.call(cmd,shell=False,stdout=stdout_pipe,stderr=stdout_pipe)
+    if verbose: sys.stdout.write(str(returncode)+'\n')
+    if returncode == -signal.SIGSEGV:
+        sys.stderr.write('Segmentation Fault - try increasing stack size with "ulimit -s unlimited"\n')
+        sys.exit(1)
+
+if __name__ == "__main__":
+
+    # Command line argument parsing
+    usage = "%prog [options] INPUT_FILES"
+    description = "Convert FST files - usually GEM model output - into a set of initial and forcing files for the SCM.  Horizontal interpolation is performed and estimates of the dynamical forcings are computed, with the results written in the PTXT format for SCM ingestion."
+    epilog = "  INPUT_FILES are a list of FST files to be processed into an SCM-ready format, specified individually or using wildcards (these can be quoted to avoid shell expansion).  The first of these files will be treated as initializing data, with the remainder used to generate dynamical forcings."
+    if sys.hexversion >= 0x020502F0:  #usage and epilog available only in python 2.5.2 and above
+        parser = optparse.OptionParser(usage=usage,description=description,epilog=epilog)
+    else:
+        parser = optparse.OptionParser(description=description)
+    parser.add_option("-a","--lat",dest="lat",default=None,
+                      help="LATITUDE of profile point [-90,90]",metavar="LATITUDE")
+    parser.add_option("-n","--lon",dest="lon",default=None,
+                      help="LONGITUDE of profile point [0,360)",metavar="LONGITUDE")
+    parser.add_option("-p","--interp",dest="interp",default='cubic',
+                      help="ORDER of horizontal interpolation (cubic, linear, nearest)",metavar="ORDER")
+    parser.add_option("-t","--tracers",dest="tracers",default='HU',
+                      help="LIST of tracer fields to treat (comma-separated, default HU)",metavar="LIST")
+    parser.add_option("-l","--log",dest="log",default=None,
+                      help="Log FILE to write to (default STDOUT)",metavar="FILE")
+    parser.add_option("-i","--init",dest="initfile",default=None,
+                      help="Initializing data read from FILE (default is first file in list)",metavar="FILE")
+    parser.add_option("-v","--verbose",dest="verbose",default=False,action="store_true",
+                      help="Produce verbose output")
+    (options,args) = parser.parse_args()
+
+    # Check for required arguments
+    if not options.lat or not options.lon:
+        parser.print_help()
+        sys.stderr.write('\nError: the latitude (--lat) and longitude (--lon) of the profile point must be defined\n')
+        sys.exit(1)
+
+    # Open logfile on request
+    logf = None
+    if options.log:
+        try:
+            logf = open(options.log,'w+')
+        except OSError:
+            sys.stderr.write('\nError: unable to open '+options.log+' in write mode ... writing to STDOUT')
+            logf = None
+
+    # Process each file in the list individually using fst2ptxt
+    flist = []
+    for arg in args:
+        explist = glob.glob(arg)
+        flist.extend(sorted(explist))
+    if len(flist) is 0: sys.exit(0)
+    init_file = (options.initfile) and options.initfile or flist[0]
+    command_args = [str(float(options.lat)),str(float(options.lon)),options.interp.upper(),str(options.tracers)]
+    fst2ptxt_child = 'fst2ptxt'
+    status = ptxtgen([fst2ptxt_child,init_file,'init']+command_args,logf,verbose=options.verbose)
+    for file in flist:
+        status = ptxtgen([fst2ptxt_child,file,'forcings']+command_args,logf,verbose=options.verbose)
+   

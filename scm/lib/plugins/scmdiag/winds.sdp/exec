@@ -1,0 +1,3 @@
+#!/usr/bin/env ksh
+R --no-save --args ${SCMDIAG_VAR} ${SCMDIAG_RUN_DATE} ${SCMDIAG_RUN_PATH} <${SCMDIAG_PLUGIN_SRC_PATH}/windspd.R
+

@@ -1,0 +1,32 @@
+version=nml.2
+
+## file: scm_settings.nml > newname
+## class: settings > newclass
+
+file: scm_settings.nml
+class: Settings
+
+## # Syntax
+##
+## fileVersion: old_version > new_version
+## mv:  old_nml / old_var > new_nml / new_var
+## rm:  old_nml / old_var
+## set: nml / var = old_default > new_default
+## call: python_module.python_function
+## # Called as: python_function(nml_object, old_version, new_version, verbose, debug)
+## # Shoud return the updated cfg object
+## exec: external_script_name
+## # Called from shell as: script_name config_filename old_version new_version verbose debug
+## # Shoud edit the config_filename in place
+## msg: Message to print when Verbose
+
+
+#------
+fileVersion: 2.0.b7 > 2.0.b7b
+
+#------
+fileVersion: 2.0.b7b > 2.0.b7brde
+
+
+#------
+fileVersion: 2.0.b7brde > 2.0.rc3

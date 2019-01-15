@@ -1,0 +1,159 @@
+#!/usr/bin/env python
+
+import optparse
+import subprocess
+import glob,re
+import sys,os
+import ConfigParser
+
+class PluginError(Exception):
+    """Plugin error handling"""
+
+    def __init__(self,err_string):
+        self.err_string = err_string
+
+    def __str__(self):
+        return repr(self.err_string)
+
+class Plugin:
+    """Plugin storage and manipulation"""
+    plugin_ok = 0
+    plugin_err = 1
+
+    def __init__(self,name,abspath):
+        """Class constructor"""
+        self.name = name
+        self.abspath = abspath
+        if self._load() != self.plugin_ok:
+            raise PluginError('Failed to load '+self.name)
+
+    def _load(self):
+        """Acquire mandatory background information from the plugin"""
+        self.cmd = os.path.join(self.abspath,'exec')
+        if not (os.path.isfile(self.cmd) and os.access(self.cmd, os.X_OK)):
+            sys.stderr.write('Warning: No plugin execution found in '+self.cmd+'\n')
+            return(self.plugin_err)
+        doc_file = os.path.join(self.abspath,'doc')
+        with open(doc_file,'r') as fd:
+            doc = fd.readlines()
+        if not doc:
+            sys.stderr.write('Warning: No plugin behaviour specified in '+doc_file+'\n')
+            return(self.plugin_err)
+        self.diag = {}
+        for line in doc:
+            entry = re.split('\s',line.rstrip(),maxsplit=1)
+            self.diag[entry[0].upper()] = entry[1]
+        return(self.plugin_ok)
+
+    def diaglist(self,print_out=False,verbose=False):
+        """Generate a list of available diagnostic values"""
+        available_diag = sorted(self.diag.keys())
+        if print_out:
+            sys.stdout.write('  '+self.name.capitalize()+' defines:\n')
+            if verbose: sys.stdout.write('    '+'(Found at '+self.abspath+')\n')
+            for diag in available_diag:
+                sys.stdout.write('    '+diag+': '+self.diag[diag]+'\n')
+        return(available_diag)
+
+    def diagexec(self,var,run_date,run_path,verbose):
+        """Run the plugin"""
+        command = 'export SCMDIAG_VAR='+var+'; export SCMDIAG_RUN_DATE='+run_date+'; export SCMDIAG_RUN_PATH='+run_path+ \
+            '; export SCMDIAG_PLUGIN_SRC_PATH='+os.path.join(self.abspath,'src')+'; '+self.cmd
+        if verbose:
+            sys.stdout.write(command)
+        p = subprocess.Popen(command,shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        error_message = p.stderr.read().rstrip('\n')
+        output_message = p.stdout.read().rstrip('\n')
+        if verbose:
+            sys.stdout.write(output_message)
+        if error_message:
+            sys.stderr.write(error_message)
+
+def getDate(run_path):
+    """Retrieve date information about a run"""
+    fname = glob.glob(os.path.join(run_path,'coord/PRESM_*.txt'))
+    if len(fname) == 1:
+        try:
+            return(re.split('_',os.path.splitext(os.path.basename(fname[0]))[0])[1])
+        except:
+            pass
+    sys.stderr.write('Warning: Cannot find valid SCM integration output at '+run_path+'\n')
+    return()
+
+if __name__ == "__main__":
+
+    # Retrieve user configuration
+    config = ConfigParser.SafeConfigParser()
+    config.read([os.path.join(os.getenv('scm'),'share','default_config'),os.path.join(os.getenv('HOME'),'.scmrc')])
+    dlist_default = config.get('scmdiag','diag_list')
+    plugin_default = config.get('scmdiag','plugins')
+    plugin_path = ':'.join([os.getenv('SCMDIAG_PLUGIN_PATH'),config.get('scmdiag','plugin_path')])
+
+    # Command line argument parsing
+    usage = "Usage: %prog [options] PATHS"
+    parser = optparse.OptionParser(usage=usage)
+    parser.add_option("-v","--var",dest="var",default=dlist_default,
+                      help="comma-separated list of diagnostic VARIABLES to compute",metavar="VARIABLE")
+    parser.add_option("-p","--plugin",dest="plugin",default=plugin_default,
+                      help="comma-separated list of PLUGINS",metavar="PLUGIN")
+    parser.add_option("-l","--list",dest="list",default=False,action="store_true",
+                      help="list available diagnostics")
+    parser.add_option("","--verbose",dest="verbose",default=False,action="store_true",
+                      help="verbose output")
+    (options,args) = parser.parse_args()
+
+    # Load requested plugins
+    plugins = []
+    found = {}
+    for item in re.split(',',','.join([options.plugin,plugin_default])):
+        if not item: continue
+        try:
+            if found[item]: continue
+        except KeyError:
+            pass
+        plugin_base = item+'.sdp'
+        found[item] = False
+        for lib in re.split(':',plugin_path):
+            plugin_abspath = os.path.join(lib,plugin_base)
+            if os.path.isdir(plugin_abspath):
+                found[item] = True
+                break
+        if found[item]:
+            try:
+                plugins.append(Plugin(item,plugin_abspath))
+            except PluginError:
+                found[item] = False
+                pass
+        else:
+            sys.stderr.write('Warning: Cannot find requested plugin "'+item+'"\n')
+
+    # Generate list of available diagnostics on request
+    if options.list:
+        sys.stdout.write('\nAvailable Diagnostic Quantities\n')
+        for plug in plugins:
+            diag_list = plug.diaglist(print_out=True,verbose=options.verbose)
+        sys.stdout.write('\n')
+
+    # Check for at least one path
+    if len(args) < 1:
+        if options.list:
+            sys.exit(0)
+        else:
+            parser.print_usage()
+            sys.exit(1)
+
+    # Process all requested diagnostic fields
+    for var in re.split(',',options.var):
+        if not var: continue
+        found = False
+        for plug in plugins:
+            diag = var.upper()
+            if diag in plug.diaglist():
+                found = True
+                for run_path in args:
+                    run_date = getDate(run_path)
+                    if run_date: plug.diagexec(diag,run_date,run_path,verbose=options.verbose)
+                break
+        if not found:
+            sys.stderr.write('Warning: Unable to fulfill request for "'+var+'"\n')
+

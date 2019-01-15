@@ -1,0 +1,20 @@
+#!/usr/bin/env ksh
+
+# Abort on errors
+set -e
+
+# Check for required argument
+if [[ -z "${1}" ]] ; then
+   echo "Usage: $0 CFGFILE"
+   exit 1
+fi
+cfgfile=${1}
+
+# Back up original configuration file
+backup_file=${cfgfile}.$(date +"%Y%m%d%H%M%S")
+echo "Backing up original ${cfgfile} as ${backup_file}"
+cp ${cfgfile} ${backup_file}
+
+# Update configuration file format
+perl -pi -e 's/^\s*SCM_(.+=)/\1/' ${cfgfile}
+

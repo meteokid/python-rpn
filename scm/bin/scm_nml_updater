@@ -1,0 +1,93 @@
+#!/usr/bin/env ksh
+
+DESC="Update SCM's Fortran Namelists file from one version to another"
+
+eval $(rpy.cclargparse \
+   -D " " \
+   ${0##*/} \
+   "${DESC}" \
+   " " \
+   "--verbose,-v" 'action=store_true'   'false'   '[verbose mode]' \
+   "--backup,-b"  'action=store_true'   'false'   '[Create a backup (.bk) of the input FILE]' \
+   "--debug"      'action=store_true'   'false'   '[Debug mode]' \
+   "--file,-i"    'type=str,metavar=INFILE'       "scm_settings.nml"  "[Input Namelist filename]" \
+   "--outfile,-o" 'type=str,metavar=OUTFILE'       " "  "[Output Namelist filename]" \
+   "--from,-f"    'type=str,required=True,metavar=FROM_VERSION'  " "  "[Version of the orginal file]" \
+   "--to,-d"      'type=str,metavar=TO_VERSION'    "${ATM_MODEL_VERSION:-${scm_version}}"  "[File will be updated to VERSION1]" \
+   ++++ $*)
+
+[[ ${verbose} == "True" ]] && verbose=-v      || verbose=""
+[[ ${debug}   == "True" ]] && debug=--debug   || debug=""
+[[ ${backup}  == "True" ]] && backup=--backup || backup=""
+outfile=${outfile:-${file}}
+
+
+myecho() {
+   if [[ "x${verbose}" != "x" ]] ; then
+      printf "$@\n"
+   fi
+}
+
+if [[ "x${debug}" != "x" ]] ; then set -x ; fi
+
+## Update SCM specific nml [&step, &scm_cfgs]
+echo "## Updating ${file##*/} for SCM specific nml [${from} -> ${to}]"
+execPath=${scm}/share/nml_updater/upd
+configFile=${execPath}/scm_nml_update_db.txt
+
+nml_updater \
+   -i ${file} \
+   -o ${outfile} \
+   -f ${from} \
+   -d ${to} \
+   -c ${configFile} \
+   -p ${execPath} \
+   -n scm \
+   ${verbose} ${backup} ${debug}
+if [[ $? != 0 ]] ; then
+   set +x
+   myecho "Error: Problem updating ${file##*/} for SCM specific nml [${from} -> ${to}]" 1>&2
+   exit 1
+fi
+
+## Copy inFile to outFile if no outFile
+if [[ ! -f ${outfile} ]] ; then
+   cp ${file} ${outfile}
+fi
+
+## Check if backup was done
+if [[ "x${backup}" != "x" ]] ; then
+   if [[ -f ${file}.bk ]] ; then
+      backup=""
+   fi
+fi
+
+## Update SCM specific nml [&step, $scm_cfgs]
+verFile=${scm}/share/nml_updater/upd/scm_versions_db.txt
+fromVer="$(grep scm_${from}: ${verFile} | cut -d: -f2 | cut -d_ -f2)"
+toVer="$(grep scm_${to}: ${verFile} | cut -d: -f2 | cut -d_ -f2)"
+toVer="${toVer:-${rpnphy_version}}"
+echo "## Updating ${file##*/} for rpnphy specific nml  [${fromVer} -> ${toVer}]"
+configFile=${rpnphy}/share/nml_updater/upd/rpnphy_nml_update_db.txt
+if [[ ! -f ${configFile} ]] ; then
+   configFile=${scm}/share/nml_updater/upd/rpnphy_nml_update_db.txt
+fi
+execPath=${rpnphy}/share/nml_updater/upd
+if [[ ! -d ${execPath} ]] ; then
+   execPath=${scm}/share/nml_updater/upd
+fi
+
+nml_updater \
+   -i ${outfile} \
+   -o ${outfile} \
+   -f ${fromVer} \
+   -d ${toVer} \
+   -c ${configFile} \
+   -p ${execPath} \
+   -n rpnphy \
+   ${verbose} ${backup} ${debug}
+if [[ $? != 0 ]] ; then
+   set +x
+   myecho "Error: Problem updating ${file##*/} for rpnphy specific nml  [${fromVer} -> ${toVer}]" 1>&2
+   exit 1
+fi

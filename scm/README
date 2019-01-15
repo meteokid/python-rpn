@@ -1,0 +1,148 @@
+#!/bin/ksh
+
+## ==========================================================================
+## Building and Installing SCM
+## ==========================================================================
+
+
+## --- Getting the source code ----------------------------------------------
+
+git clone URL scm
+cd scm
+git checkout BRANCH
+
+## --- Updating with contributions ------------------------------------------
+
+## Merge contributors' code with yours
+
+#TODO
+
+## Update version numbers and dependencies
+
+#TODO
+
+## Update version numbers and dependencies
+
+# Update: share/nml_updater/upd/scm_nml_update_db.txt
+# Update: share/nml_updater/upd/scm_versions_db.txt
+
+# Update run_configs
+fromVer=    #TODO: set previous version of SCM for configs
+
+VERSION="$(echo $(cat ${scm:-./scm}/include/Makefile.local*.mk | grep _VERSION0 | grep -v dir | cut -d= -f2))"
+VERSION_V=${VERSION#*/}
+for nml in share/run_configs/*/scm_settings.nml ; do
+   ./bin/scm_nml_updater --from ${fromVer} --to ${VERSION_V} -i ${nml}
+done
+
+## Add tag
+
+#TODO
+
+## Push to the main depot
+
+#TODO: make sure all is commited and tag-ed
+
+git push origin BRANCH
+git push --tags origin
+
+
+## --- Building -------------------------------------------------------------
+
+export RDENETWORK='cmc'; . ./.setenv.dot --cmc
+
+##export RDENETWORK='science'; . ./.setenv.dot --science
+
+${scm}/bin/ouv_exp_scm -f -v
+rdemklink -v
+make buildclean
+# make scm_check_bndl
+make components_objects -j9
+make components_libs  MAKE_NO_LIBSO=1
+make components_abs
+make components_ssm
+make buildclean
+
+#For additional ARCH
+     ssh MYMACH
+     cd /PATH/
+     . ./.setenv.dot --cmc #--science
+     rdemklink -v
+     make buildclean
+     # make scm_check_bndl
+     make components_objects -j9
+     make components_libs  MAKE_NO_LIBSO=1
+     make components_abs
+     make components_ssm_arch
+     make buildclean
+
+#For Debug libs (for each ARCH)
+      ssh MYMACH
+      cd /PATH/
+     . ./.setenv.dot --cmc #--science
+      # ${scm}/bin/ouv_exp_scm -v  ## optional if build in same dir as above
+      export RDE_BUILDDIR_SFX=-d
+      rdemklink -v
+      make buildclean
+      # make scm_check_bndl
+      make components_objects -j9
+      make components_libs  MAKE_NO_LIBSO=1
+      make components_ssm_arch  COMPONENTS="scm" \
+        MAKE_SSM_NOMOD=1 MAKE_SSM_NOABS=1 MAKE_SSM_NOINC=1
+     make buildclean
+
+
+## --- Installing -----------------------------------------------------------
+## NOTE: This will install ssm pkg on all ARCH
+##       This must be done in the same SHELL as "Building" above (for the main arch)
+
+#-- CMC Network --
+
+make components_install CONFIRM_INSTALL=yes COMPONENTS="scm"
+
+#TODO: review install dir
+
+#-- Science Network --
+
+make components_install CONFIRM_INSTALL=yes SSM_BASE=/fs/ssm/eccc/mrd/rpn/MIG SSM_BASE2="" COMPONENTS="scm"
+
+#TODO: review install dir
+
+## --- test installation ---------------------------------------------------
+## NOTE: On a Linux machine, in a new shell
+
+#TODO: update
+# . s.ssmuse.dot SCM/VERSION
+# . scmdev.dot test -v -cd -front eccc-ppp2 -mach brooks-test
+# scmview -exp base &
+# scmlaunch -mach brooks-test
+# # Wait for run to end (in the scmview window)
+# # if the run  ended w/o error, validate results with:
+# scmvalidate
+
+
+## --- Uninstalling --------------------------------------------------------
+
+## NOTE: This will uninstall ssm pkg on all ARCH
+
+ssh MY_INSTALL_MACH
+cd /PATH/
+. ./.setenv.dot --cmc #--science
+make components_uninstall UNINSTALL_CONFIRM=yes  COMPONENTS="scm"
+## make components_uninstall UNINSTALL_CONFIRM=yes SSM_BASE=/ssm/net/rpn/MIG  COMPONENTS="scm"
+## make components_uninstall UNINSTALL_CONFIRM=yes SSM_BASE=/fs/ssm/eccc/mrd/rpn/MIG  COMPONENTS="scm"
+
+## TODO: rm -f ~/SsmBundles/SCM/${scm_version}.bndl
+## TODO: rm -f ~/SsmBundles/SCM/scm/${scm_version}-s.bndl
+## TODO: rm -rf ~/SsmBundles/SCM/d/scm/${scm_version}-s/
+
+
+
+
+
+
+
+
+
+
+
