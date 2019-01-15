@@ -51,7 +51,7 @@ contains
       integer, external :: chm_nml, sfc_nml2, cnv_nml2, check_options2, msg_getUnit
 
       integer :: err, unout
-      character(len=512) :: str512
+      character(len=1024) :: msg_S
       !-------------------------------------------------------------------
       F_status      = PHY_ERROR
       phy_init_ctrl = PHY_ERROR
@@ -59,12 +59,12 @@ contains
 
       !# Print Banner
       call msg(MSG_INFO, '   ************************************************************')
-      write(str512, "(3x,'Package: ',a,5x,'version: ',a)") &
+      write(msg_S, "(3x,'Package: ',a,5x,'version: ',a)") &
            trim(RPNPHY_NAME_S), trim(RPNPHY_VERSION_S)
-      call msg(MSG_INFO, str512)
-      write(str512, "(3x,'Release of: ',a,5x,'COMPILER: ',a)") &
+      call msg(MSG_INFO, msg_S)
+      write(msg_S, "(3x,'Release of: ',a,5x,'COMPILER: ',a)") &
            trim(RPNPHY_DSTP_S), trim(RPNPHY_EC_ARCH_S)
-      call msg(MSG_INFO, str512)
+      call msg(MSG_INFO, msg_S)
       call msg(MSG_INFO, '   ************************************************************')
 
       !# Reading namelists physics_cfgs from file F_namelist
@@ -122,7 +122,7 @@ contains
       implicit none
       character(len=*), intent(in) :: m_namelist
       integer :: m_istat
-      character(len=256) :: msg_S, namelist_S, name_S
+      character(len=1024) :: msg_S, namelist_S, name_S
       integer :: istat, unf
       !----------------------------------------------------------------
       m_istat = RMN_ERR
@@ -191,7 +191,7 @@ contains
       integer :: m_istat
 
       integer :: istat
-      character(len=512) :: str512
+      character(len=1024) :: msg_S
       !----------------------------------------------------------------
       m_istat = RMN_ERR
 
@@ -222,132 +222,132 @@ contains
       istat = clib_toupper(tofd)
 
       if (.not.any(cond_conserve == COND_CONSERVE_OPT)) then
-         call str_concat(str512,COND_CONSERVE_OPT,', ')
-         call msg(MSG_ERROR,'(phy_nml_check) cond_conserve = '//trim(cond_conserve)//' : Should be one of: '//trim(str512))
+         call str_concat(msg_S,COND_CONSERVE_OPT,', ')
+         call msg(MSG_ERROR,'(phy_nml_check) cond_conserve = '//trim(cond_conserve)//' : Should be one of: '//trim(msg_S))
          return
       end if
 
       if (.not.any(fluvert == FLUVERT_OPT)) then
-         call str_concat(str512,FLUVERT_OPT,', ')
-         call msg(MSG_ERROR,'(phy_nml_check) fluvert = '//trim(fluvert)//' : Should be one of: '//trim(str512))
+         call str_concat(msg_S,FLUVERT_OPT,', ')
+         call msg(MSG_ERROR,'(phy_nml_check) fluvert = '//trim(fluvert)//' : Should be one of: '//trim(msg_S))
          return
       end if
 
       if (.not.any(gwdrag == GWDRAG_OPT)) then
-         call str_concat(str512,GWDRAG_OPT,', ')
-         call msg(MSG_ERROR,'(phy_nml_check) gwdrag = '//trim(gwdrag)//' : Should be one of: '//trim(str512))
+         call str_concat(msg_S,GWDRAG_OPT,', ')
+         call msg(MSG_ERROR,'(phy_nml_check) gwdrag = '//trim(gwdrag)//' : Should be one of: '//trim(msg_S))
          return
       endif
 
       if (.not.any(input_type == INPUT_TYPE_OPT)) then
-         call str_concat(str512, INPUT_TYPE_OPT, ', ')
-         call msg(MSG_ERROR,'(phy_nml_check) input_type = '//trim(input_type)//' : Should be one of: '//trim(str512))
+         call str_concat(msg_S, INPUT_TYPE_OPT, ', ')
+         call msg(MSG_ERROR,'(phy_nml_check) input_type = '//trim(input_type)//' : Should be one of: '//trim(msg_S))
          return
       endif
 
       if (.not.any(longmel == LONGMEL_OPT)) then
-         call str_concat(str512,LONGMEL_OPT,', ')
-         call msg(MSG_ERROR,'(phy_nml_check) longmel = '//trim(longmel)//' : Should be one of: '//trim(str512))
+         call str_concat(msg_S,LONGMEL_OPT,', ')
+         call msg(MSG_ERROR,'(phy_nml_check) longmel = '//trim(longmel)//' : Should be one of: '//trim(msg_S))
          return
       endif
 
       if (.not.any(pbl_conserve == PBL_CONSERVE_OPT)) then
-         call str_concat(str512,PBL_CONSERVE_OPT,', ')
-         call msg(MSG_ERROR,'(phy_nml_check) pbl_conserve = '//trim(pbl_conserve)//' : Should be one of: '//trim(str512))
+         call str_concat(msg_S,PBL_CONSERVE_OPT,', ')
+         call msg(MSG_ERROR,'(phy_nml_check) pbl_conserve = '//trim(pbl_conserve)//' : Should be one of: '//trim(msg_S))
          return
       end if
 
       if (.not.any(pbl_diss == PBL_DISS_OPT)) then
-         call str_concat(str512,PBL_DISS_OPT,', ')
-         call msg(MSG_ERROR,'(phy_nml_check) pbl_diss = '//trim(pbl_diss)//' : Should be one of: '//trim(str512))
+         call str_concat(msg_S,PBL_DISS_OPT,', ')
+         call msg(MSG_ERROR,'(phy_nml_check) pbl_diss = '//trim(pbl_diss)//' : Should be one of: '//trim(msg_S))
          return
       endif
 
       if (.not.any(pbl_dissheat == PBL_DISSHEAT_OPT)) then
-         call str_concat(str512,PBL_DISSHEAT_OPT,', ')
-         call msg(MSG_ERROR,'(phy_nml_check) pbl_dissheat = '//trim(pbl_dissheat)//' : Should be one of: '//trim(str512))
+         call str_concat(msg_S,PBL_DISSHEAT_OPT,', ')
+         call msg(MSG_ERROR,'(phy_nml_check) pbl_dissheat = '//trim(pbl_dissheat)//' : Should be one of: '//trim(msg_S))
          return
       endif
       
       if (.not.any(pbl_func_stab == PBL_FUNC_STAB_OPT)) then
-         call str_concat(str512,PBL_FUNC_STAB_OPT,', ')
-         call msg(MSG_ERROR,'(phy_nml_check) pbl_func_stab = '//trim(pbl_func_stab)//' : Should be one of: '//trim(str512))
+         call str_concat(msg_S,PBL_FUNC_STAB_OPT,', ')
+         call msg(MSG_ERROR,'(phy_nml_check) pbl_func_stab = '//trim(pbl_func_stab)//' : Should be one of: '//trim(msg_S))
          return
       endif
       
       if (.not.any(pbl_func_unstab == PBL_FUNC_UNSTAB_OPT)) then
-         call str_concat(str512,PBL_FUNC_UNSTAB_OPT,', ')
-         call msg(MSG_ERROR,'(phy_nml_check) pbl_func_unstab = '//trim(pbl_func_unstab)//' : Should be one of: '//trim(str512))
+         call str_concat(msg_S,PBL_FUNC_UNSTAB_OPT,', ')
+         call msg(MSG_ERROR,'(phy_nml_check) pbl_func_unstab = '//trim(pbl_func_unstab)//' : Should be one of: '//trim(msg_S))
          return
       endif      
 
       if (.not.any(pbl_mlblac_max == PBL_MLBLAC_MAX_OPT)) then
-         call str_concat(str512,PBL_MLBLAC_MAX_OPT,', ')
-         call msg(MSG_ERROR,'(phy_nml_check) pbl_mlblac_max = '//trim(pbl_mlblac_max)//' : Should be one of: '//trim(str512))
+         call str_concat(msg_S,PBL_MLBLAC_MAX_OPT,', ')
+         call msg(MSG_ERROR,'(phy_nml_check) pbl_mlblac_max = '//trim(pbl_mlblac_max)//' : Should be one of: '//trim(msg_S))
          return
       endif
 
       if (.not.any(pbl_nonloc == PBL_NONLOC_OPT)) then
-         call str_concat(str512,PBL_NONLOC_OPT,', ')
-         call msg(MSG_ERROR,'(phy_nml_check) pbl_nonloc = '//trim(pbl_nonloc)//' : Should be one of: '//trim(str512))
+         call str_concat(msg_S,PBL_NONLOC_OPT,', ')
+         call msg(MSG_ERROR,'(phy_nml_check) pbl_nonloc = '//trim(pbl_nonloc)//' : Should be one of: '//trim(msg_S))
          return
       endif
 
       if (.not.any(pbl_shal == PBL_SHAL_OPT)) then
-         call str_concat(str512,PBL_SHAL_OPT,', ')
-         call msg(MSG_ERROR,'(phy_nml_check) pbl_shal = '//trim(pbl_shal)//' : Should be one of: '//trim(str512))
+         call str_concat(msg_S,PBL_SHAL_OPT,', ')
+         call msg(MSG_ERROR,'(phy_nml_check) pbl_shal = '//trim(pbl_shal)//' : Should be one of: '//trim(msg_S))
          return
       endif
 
       if (.not.any(pcptype == PCPTYPE_OPT)) then
-         call str_concat(str512,PCPTYPE_OPT,', ')
-         call msg(MSG_ERROR,'(phy_nml_check) pcptype = '//trim(pcptype)//' : Should be one of: '//trim(str512))
+         call str_concat(msg_S,PCPTYPE_OPT,', ')
+         call msg(MSG_ERROR,'(phy_nml_check) pcptype = '//trim(pcptype)//' : Should be one of: '//trim(msg_S))
          return
       endif
 
       if (.not.any(rad_atmpath == RAD_ATMPATH_OPT)) then
-         call str_concat(str512,RAD_ATMPATH_OPT,', ')
-         call msg(MSG_ERROR,'(phy_nml_check) rad_atmpath = '//trim(rad_atmpath)//' : Should be one of: '//trim(str512))
+         call str_concat(msg_S,RAD_ATMPATH_OPT,', ')
+         call msg(MSG_ERROR,'(phy_nml_check) rad_atmpath = '//trim(rad_atmpath)//' : Should be one of: '//trim(msg_S))
          return
       end if
 
       if (.not.RMN_IS_OK(str_toreal(rei_const,rad_cond_rei))) then
          if (.not.any(rad_cond_rei == RAD_COND_REI_OPT)) then
-            call str_concat(str512,RAD_COND_REI_OPT,', ')
-            call msg(MSG_ERROR,'(phy_nml_check) rad_cond_rei = '//trim(rad_cond_rei)//' : Should be a number (in microns) or one of: '//trim(str512))
+            call str_concat(msg_S,RAD_COND_REI_OPT,', ')
+            call msg(MSG_ERROR,'(phy_nml_check) rad_cond_rei = '//trim(rad_cond_rei)//' : Should be a number (in microns) or one of: '//trim(msg_S))
             return
          endif
       endif
       
       if (.not.RMN_IS_OK(str_toreal(rew_const,rad_cond_rew))) then
          if (.not.any(rad_cond_rew == RAD_COND_REW_OPT)) then
-            call str_concat(str512,RAD_COND_REW_OPT,', ')
-            call msg(MSG_ERROR,'(phy_nml_check) rad_cond_rew = '//trim(rad_cond_rew)//' : Should be a number (in microns) or one of: '//trim(str512))
+            call str_concat(msg_S,RAD_COND_REW_OPT,', ')
+            call msg(MSG_ERROR,'(phy_nml_check) rad_cond_rew = '//trim(rad_cond_rew)//' : Should be a number (in microns) or one of: '//trim(msg_S))
             return
          endif
       endif
 
       if (.not.any(rad_conserve == RAD_CONSERVE_OPT)) then
-         call str_concat(str512,RAD_CONSERVE_OPT,', ')
-         call msg(MSG_ERROR,'(phy_nml_check) rad_conserve = '//trim(rad_conserve)//' : Should be one of: '//trim(str512))
+         call str_concat(msg_S,RAD_CONSERVE_OPT,', ')
+         call msg(MSG_ERROR,'(phy_nml_check) rad_conserve = '//trim(rad_conserve)//' : Should be one of: '//trim(msg_S))
          return
       end if
 
       if (.not.any(radia == RADIA_OPT)) then
-         call str_concat(str512,RADIA_OPT,', ')
-         call msg(MSG_ERROR,'(phy_nml_check) radia = '//trim(radia)//' : Should be one of: '//trim(str512))
+         call str_concat(msg_S,RADIA_OPT,', ')
+         call msg(MSG_ERROR,'(phy_nml_check) radia = '//trim(radia)//' : Should be one of: '//trim(msg_S))
          return
       endif
 
       if (.not.any(stcond == STCOND_OPT)) then
-         call str_concat(str512,STCOND_OPT,', ')
-         call msg(MSG_ERROR,'(phy_nml_check) stcond = '//trim(stcond)//' : Should be one of: '//trim(str512))
+         call str_concat(msg_S,STCOND_OPT,', ')
+         call msg(MSG_ERROR,'(phy_nml_check) stcond = '//trim(stcond)//' : Should be one of: '//trim(msg_S))
          return
       endif
 
      if (.not.any(tofd == TOFD_OPT)) then
-         call str_concat(str512,TOFD_OPT,', ')
-         call msg(MSG_ERROR,'(phy_nml_check) tofd = '//trim(tofd)//' : Should be one of: '//trim(str512))
+         call str_concat(msg_S,TOFD_OPT,', ')
+         call msg(MSG_ERROR,'(phy_nml_check) tofd = '//trim(tofd)//' : Should be one of: '//trim(msg_S))
          return
       endif
 

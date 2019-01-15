@@ -62,7 +62,7 @@ contains
       implicit none
       character(len=*), intent(in) :: m_namelist
       integer :: m_istat
-      character(len=256) :: msg_S, namelist_S, name_S
+      character(len=1024) :: msg_S, namelist_S, name_S
       integer :: istat, unf
       !----------------------------------------------------------------
       m_istat = RMN_ERR
@@ -123,7 +123,7 @@ contains
 
       integer :: istat
       real :: mid_peff_tmp
-      character(len=512) :: str512
+      character(len=1024) :: msg_S
       !----------------------------------------------------------------
       m_istat = RMN_ERR
 
@@ -145,14 +145,14 @@ contains
       istat = clib_toupper(bkf_closures)
 
       if (.not.any(deep == DEEP_OPT)) then
-         call str_concat(str512,DEEP_OPT,', ')
-         call msg(MSG_ERROR,'(cnv_nml_check) deep = '//trim(deep)//' : Should be one of: '//trim(str512))
+         call str_concat(msg_S,DEEP_OPT,', ')
+         call msg(MSG_ERROR,'(cnv_nml_check) deep = '//trim(deep)//' : Should be one of: '//trim(msg_S))
          return
       end if
 
       if (.not.any(deep_conserve == DEEP_CONSERVE_OPT)) then
-         call str_concat(str512,DEEP_CONSERVE_OPT,', ')
-         call msg(MSG_ERROR,'(cnv_nml_check) deep_conserve = '//trim(deep_conserve)//' : Should be one of: '//trim(str512))
+         call str_concat(msg_S,DEEP_CONSERVE_OPT,', ')
+         call msg(MSG_ERROR,'(cnv_nml_check) deep_conserve = '//trim(deep_conserve)//' : Should be one of: '//trim(msg_S))
          return
       end if
 
@@ -160,8 +160,8 @@ contains
          if (RMN_IS_OK(timestr_check(deep_timeent))) then
             deep_timeent_sec = 1. !final update will be done in phy_init when timestep information is available
          else
-            call str_concat(str512,DEEP_TIMEENT_OPT,', ')
-            call msg(MSG_ERROR,'(cnv_nml_check) deep_timeent = '//trim(deep_timeent)//' : Should be one of: '//trim(str512))
+            call str_concat(msg_S,DEEP_TIMEENT_OPT,', ')
+            call msg(MSG_ERROR,'(cnv_nml_check) deep_timeent = '//trim(deep_timeent)//' : Should be one of: '//trim(msg_S))
             return
          end if
       end if
@@ -170,8 +170,8 @@ contains
          if (RMN_IS_OK(timestr_check(deep_timeconv))) then
             deep_timeconv_sec = 1. !final update will be done in phy_init when timestep information is available
          else
-            call str_concat(str512,DEEP_TIMECONV_OPT,', ')
-            call msg(MSG_ERROR,'(cnv_nml_check) deep_timeconv = '//trim(deep_timeconv)//' : Should be one of: '//trim(str512))
+            call str_concat(msg_S,DEEP_TIMECONV_OPT,', ')
+            call msg(MSG_ERROR,'(cnv_nml_check) deep_timeconv = '//trim(deep_timeconv)//' : Should be one of: '//trim(msg_S))
             return
          end if
       end if
@@ -180,33 +180,33 @@ contains
          if (RMN_IS_OK(timestr_check(deep_timerefresh))) then
             deep_timerefresh_sec = 1. !final update will be done in phy_init when timestep information is available
          else
-            call str_concat(str512,DEEP_TIMEREFRESH_OPT,', ')
-            call msg(MSG_ERROR,'(cnv_nml_check) deep_timerefresh = '//trim(deep_timerefresh)//' : Should be one of: '//trim(str512))
+            call str_concat(msg_S,DEEP_TIMEREFRESH_OPT,', ')
+            call msg(MSG_ERROR,'(cnv_nml_check) deep_timerefresh = '//trim(deep_timerefresh)//' : Should be one of: '//trim(msg_S))
             return
          end if
       end if
 
       if (.not. any(MID == MID_OPT)) then
-         call str_concat(str512,MID_OPT,', ')
-         call msg(MSG_ERROR,'(cnv_nml_check) mid = '//trim(mid)//' : Should be one of: '//trim(str512))
+         call str_concat(msg_S,MID_OPT,', ')
+         call msg(MSG_ERROR,'(cnv_nml_check) mid = '//trim(mid)//' : Should be one of: '//trim(msg_S))
          return
       end if
 
       if (.not.any(mid_conserve == MID_CONSERVE_OPT)) then
-         call str_concat(str512,MID_CONSERVE_OPT,', ')
-         call msg(MSG_ERROR,'(cnv_nml_check) mid_conserve = '//trim(mid_conserve)//' : Should be one of: '//trim(str512))
+         call str_concat(msg_S,MID_CONSERVE_OPT,', ')
+         call msg(MSG_ERROR,'(cnv_nml_check) mid_conserve = '//trim(mid_conserve)//' : Should be one of: '//trim(msg_S))
          return
       end if
 
       if (.not.any(mid_emffrac == MID_EMFFRAC_OPT)) then
-         call str_concat(str512,MID_EMFFRAC_OPT,', ')
-         call msg(MSG_ERROR,'(cnv_nml_check) mid_emffrac = '//trim(mid_emffrac)//' : Should be one of: '//trim(str512))
+         call str_concat(msg_S,MID_EMFFRAC_OPT,', ')
+         call msg(MSG_ERROR,'(cnv_nml_check) mid_emffrac = '//trim(mid_emffrac)//' : Should be one of: '//trim(msg_S))
          return
       end if
 
       if (.not.any(mid_emfmod == MID_EMFMOD_OPT)) then
-         call str_concat(str512,MID_EMFMOD_OPT,', ')
-         call msg(MSG_ERROR,'(cnv_nml_check) mid_emfmod = '//trim(mid_emfmod)//' : Should be one of: '//trim(str512))
+         call str_concat(msg_S,MID_EMFMOD_OPT,', ')
+         call msg(MSG_ERROR,'(cnv_nml_check) mid_emfmod = '//trim(mid_emfmod)//' : Should be one of: '//trim(msg_S))
          return
       end if
 
@@ -214,21 +214,21 @@ contains
          mid_peff_const = mid_peff_tmp
       else
          if (.not.any(mid_peff == MID_PEFF_OPT)) then
-            call str_concat(str512,MID_PEFF_OPT,', ')
-            call msg(MSG_ERROR,'(cnv_nml_check) mid_peff = '//trim(mid_peff)//' : Should be one of: '//trim(str512))
+            call str_concat(msg_S,MID_PEFF_OPT,', ')
+            call msg(MSG_ERROR,'(cnv_nml_check) mid_peff = '//trim(mid_peff)//' : Should be one of: '//trim(msg_S))
             return
          end if
       endif
 
       if (.not. any(SHAL == SHAL_OPT)) then
-         call str_concat(str512,SHAL_OPT,', ')
-         call msg(MSG_ERROR,'(cnv_nml_check) shal = '//trim(shal)//' : Should be one of: '//trim(str512))
+         call str_concat(msg_S,SHAL_OPT,', ')
+         call msg(MSG_ERROR,'(cnv_nml_check) shal = '//trim(shal)//' : Should be one of: '//trim(msg_S))
          return
       end if
 
       if (.not.any(shal_conserve == SHAL_CONSERVE_OPT)) then
-         call str_concat(str512,SHAL_CONSERVE_OPT,', ')
-         call msg(MSG_ERROR,'(cnv_nml_check) shal_conserve = '//trim(shal_conserve)//' : Should be one of: '//trim(str512))
+         call str_concat(msg_S,SHAL_CONSERVE_OPT,', ')
+         call msg(MSG_ERROR,'(cnv_nml_check) shal_conserve = '//trim(shal_conserve)//' : Should be one of: '//trim(msg_S))
          return
       end if
 
@@ -236,27 +236,27 @@ contains
          if (RMN_IS_OK(timestr_check(shal_timeconv))) then
             shal_timeconv_sec = 1. !final update will be done in phy_init when timestep information is available
          else
-            call str_concat(str512,SHAL_TIMECONV_OPT,', ')
-            call msg(MSG_ERROR,'(cnv_nml_check) shal_timeconv = '//trim(shal_timeconv)//' : Should be one of: '//trim(str512))
+            call str_concat(msg_S,SHAL_TIMECONV_OPT,', ')
+            call msg(MSG_ERROR,'(cnv_nml_check) shal_timeconv = '//trim(shal_timeconv)//' : Should be one of: '//trim(msg_S))
             return
          end if
       end if
 
       if (.not.any(bkf_entrains == BKF_ENTRAINS_OPT)) then
-         call str_concat(str512,BKF_ENTRAINS_OPT,', ')
-         call msg(MSG_ERROR,'(cnv_nml_check) bkf_entrains = '//trim(bkf_entrains)//' : Should be one of: '//trim(str512))
+         call str_concat(msg_S,BKF_ENTRAINS_OPT,', ')
+         call msg(MSG_ERROR,'(cnv_nml_check) bkf_entrains = '//trim(bkf_entrains)//' : Should be one of: '//trim(msg_S))
          return
       end if
 
       if (.not.any(bkf_detrains == BKF_DETRAINS_OPT)) then
-         call str_concat(str512,BKF_DETRAINS_OPT,', ')
-         call msg(MSG_ERROR,'(cnv_nml_check) bkf_detrains = '//trim(bkf_detrains)//' : Should be one of: '//trim(str512))
+         call str_concat(msg_S,BKF_DETRAINS_OPT,', ')
+         call msg(MSG_ERROR,'(cnv_nml_check) bkf_detrains = '//trim(bkf_detrains)//' : Should be one of: '//trim(msg_S))
          return
       end if
 
       if (.not.any(bkf_closures == BKF_CLOSURES_OPT)) then
-         call str_concat(str512,BKF_CLOSURES_OPT,', ')
-         call msg(MSG_ERROR,'(cnv_nml_check) bkf_closures = '//trim(bkf_closures)//' : Should be one of: '//trim(str512))
+         call str_concat(msg_S,BKF_CLOSURES_OPT,', ')
+         call msg(MSG_ERROR,'(cnv_nml_check) bkf_closures = '//trim(bkf_closures)//' : Should be one of: '//trim(msg_S))
          return
       end if
 
@@ -294,7 +294,7 @@ contains
       integer :: m_istat
 
       integer :: istat
-      character(len=512) :: str512
+      character(len=1024) :: msg_S
       !----------------------------------------------------------------
       m_istat = RMN_ERR
 

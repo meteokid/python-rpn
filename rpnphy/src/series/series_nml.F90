@@ -159,7 +159,7 @@ contains
 
       integer, external :: msg_getUnit
       integer :: istat, options, iverb
-      character(len=512) :: str512
+      character(len=1024) :: msg_S
       !----------------------------------------------------------------
       m_istat = RMN_ERR
 
@@ -177,8 +177,8 @@ contains
 
       series_on_L = .false.
       IF_NSTAT: if (series_nstng > 0) then
-         write(str512,'(i5,a)') series_nstng, ' Stations specified'
-         call msg(MSG_INFO, PKGNAME_S//str512)
+         write(msg_S,'(i5,a)') series_nstng, ' Stations specified'
+         call msg(MSG_INFO, PKGNAME_S//msg_S)
 
          series_nsurf = 0
          do while(series_nsurf < NVARMAX .and. &
