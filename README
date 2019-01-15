@@ -20,7 +20,7 @@ cat <<EOF > .git-tree-setenv
 ## Note: It is probably best to always use a recent version og Git
 ##       version 1.7 on Ubuntu 12 is probably too old
 ## Update (to git version 2.3.1) with:
-. s.ssmuse.dot /ssm/net/rpn/utils/15.2
+. s.ssmuse.dot /ssm/net/rpn/utils/16.2
 . r.module.dot
 module load git
 
@@ -44,13 +44,11 @@ mysuffix=.git
 # mygittreecomponents="modelutils:modelutils_1.3-branch rpnphy:rpnphy_5.7-branch gemdyn:gemdyn_4.7-branch gem:gem_4.7-branch"
 
 mygittreecomponents="
-   modelutils:master 
-   rpnphy:master 
-   gemdyn:master 
+   modelutils:master
+   rpnphy:master
+   gemdyn:master
    gem:master
    modelscripts:master
-   gem-mod:master
-   gem-ref:master
    rde:master
    "
 
@@ -107,11 +105,11 @@ EOF
 
 ## --- Getting the source code ----------------------------------------------
 
-## TODO: use shallow clones: git clone --depth $depth 
+## TODO: use shallow clones: git clone --depth ${depth}
 ##       use recent Git (see above)
 # myshallow="--depth 1"
 
-## TODO: use single branch clone: 
+## TODO: use single branch clone:
 ##       git clone URL --branch branch_name --single-branch [folder]
 
 for mymodule in ${mygittreecomponents} ; do
@@ -121,18 +119,80 @@ for mymodule in ${mygittreecomponents} ; do
    cd ${myname} ; git checkout -b tmp ${mytag} ; cd ..
 done
 
+## --- Updating with contributions ------------------------------------------
+
+## Need to have full clone (not shallow)
+
+## Create patches from RDE Git repos (when no merge is needed)
+
+# . r.load.dot GEM/???
+gemdev myexp -cd -v
+rdegit init
+cd $(rdevar build)/repos
+# git pull -X theirs ssh://${USER}@${MACH}/PATH/TO/EXPDIR/$(rdevar build)/repos
+# git mv _other/???  ???/
+# git rm ???
+git commit -a -m 'moved new files to proper location and actually remove others'
+cd ../..
+rdegit --patchsplit=NAME
+ls $(rdevar build)/repos/*.patch.tgz
+
+## Apply patches to components repos
+
+# cd ???
+# cp ???/$(rdevar build)/repos/*.patch.tgz .
+for mymodule in ${mygittreecomponents} ; do
+   myname=${mymodule%%:*}
+   cd ${mymodule}
+   rm -f *.patch
+   tar xzvf  ../${mymodule}_*.patch.tgz
+   for mypatch in *.patch ; do
+      git am --signoff < ${mypatch}
+   done
+   rm -f *.patch
+   cd ..
+done
+
+## Add tag, Update version numbers and dependencies
+
+#TODO
+
+## Push to the main depot
+
+for mymodule in ${mygittreecomponents} ; do
+   myname=${mymodule%%:*}
+   cd ${mymodule}
+   git push && git push --tags
+   cd ..
+done
+
+## --- Pushing code on the science network ----------------------------------
+
+# From a server on the EC Network:
+
+export DEPOTSLIST="cccmaphy gem-mod gem-ref gem gemcanonical gemdyn modelscripts modelutils python-rpn rde rpnphy sps sverif"
+export REMOTEGITURL="ssh://sgem000@eccc-ppp1.science.gc.ca/home/sgem000/GitDepots"
+(cd ~armnenv/GitDepots ;\ 
+for item in ${DEPOTSLIST} ; do \
+   echo "==== $item ====" ;\
+   (cd ${item}.git ; git push --mirror ${REMOTEGITURL}/${item}.git) ;\
+done)
+
+
 ## --- Building -------------------------------------------------------------
 
-export RDENETWORK='science'
-export RDENETWORK='cmc'
-. ./gem/.setenv-withdeps.dot
+export RDENETWORK='cmc'; . ./gem/.setenv-withdeps.dot --cmc
+
+##export RDENETWORK='science'; . ./gem/.setenv-withdeps.dot --science
+
 cp $gem/Makefile.user.* .
 $gem/bin/ouv_exp_gem -v
 rdemklink -v
 make buildclean
-make components_objects -j 6
+make gem_check_bndl
+make components_objects -j9
 make components_libs  MAKE_NO_LIBSO=1
-make components_abs 
+make components_abs
 make components_ssm
 make buildclean
 
@@ -142,9 +202,10 @@ make buildclean
      . ./gem/.setenv-withdeps.dot
      rdemklink -v
      make buildclean
-     make components_objects -j 6 
+     make gem_check_bndl
+     make components_objects -j9
      make components_libs  MAKE_NO_LIBSO=1
-     make components_abs 
+     make components_abs
      make components_ssm_arch
      make buildclean
 
@@ -156,7 +217,8 @@ make buildclean
       export RDE_BUILDDIR_SFX=-d
       rdemklink -v
       make buildclean
-      make components_objects -j 6
+      make gem_check_bndl
+      make components_objects -j9
       make components_libs  MAKE_NO_LIBSO=1
       make components_ssm_arch  COMPONENTS="modelutils rpnphy gemdyn" \
         MAKE_SSM_NOMOD=1 MAKE_SSM_NOABS=1 MAKE_SSM_NOINC=1
@@ -165,32 +227,91 @@ make buildclean
 
 ## --- Installing -----------------------------------------------------------
 ## NOTE: This will install ssm pkg on all ARCH
-## TODO: if you install as another user, you may have to copy the .ssm files 
-##       from ~user/SsmDepot/ to ~/SsmDepot/ before make components_install 
+## TODO: if you install as another user, you may have to copy the .ssm files
+##       from ~user/SsmDepot/ to ~/SsmDepot/ before make components_install
 
 ssh MY_INSTALL_MACH
 # mkdir $TMPDIR/gem-install
 # cd  $TMPDIR/gem-install
 # git clone of modelutils, rpnphy, gemdyn, gem
-. ./gem/.setenv-withdeps.dot
+
+#-- CMC Network --
+
+. ./gem/.setenv-withdeps.dot --cmc
 cp $gem/Makefile.user.* .
 $gem/bin/ouv_exp_gem
 rdemklink
-make components_install CONFIRM_INSTALL=yes
-## make components_install CONFIRM_INSTALL=yes SSM_BASE=/ssm/net/rpn/MIG SSM_BASE2=""
-## make components_install CONFIRM_INSTALL=yes SSM_BASE=/fs/ssm/eccc/mrd/rpn/MIG SSM_BASE2=""
+OTHERUSER=~armnsch
+make gem_check_bndl
+make components_install CONFIRM_INSTALL=yes SSM_DEPOT_DIR=${OTHERUSER}/SsmDepot COMPONENTS="modelutils rpnphy gemdyn gem"
 
-## NOTE: Need to run within new shell env (ordenv)
-. s.ssmuse.dot GEM/gem/VERSION
-bndl2dom.sh GEM/gem/${gem_version} GEM/gem/${gem_version}-s
+VERSION="$(echo $(cat ${gem:-./gem}/include/Makefile.local*.mk | grep _VERSION0 | grep -v dir | cut -d= -f2))"
+VERSION_X=$(dirname ${VERSION})
+VERSION_V=${VERSION#*/}
+VERSION_S=
+echo :${VERSION_X}:${VERSION_V}:${VERSION_S}:
+
+## NOTE: Need to run within new shell env (ordenv)... 
+## TODO: not working with new ssm
+# . s.ssmuse.dot GEM/$(dirname $VERSION)/gem/${VERSION#*/}
+# bndl2dom.sh GEM/gem/${gem_version} GEM/gem/${gem_version}-s
+# VERSION_S=-s
+
+echo :${VERSION_X}:${VERSION_V}:${VERSION_S}:
 
 cd ~/SsmBundles/GEM/tests
-cp ~/SsmBundles/GEM/gem/${gem_version}-s.bndl ${gem_version}.bndl
-chmod u+w ${gem_version}.bndl
-echo GEM/others/renametotest >> ${gem_version}.bndl
+cp ~/SsmBundles/GEM/${VERSION_X}/gem/${VERSION_V}${VERSION_S}.bndl ${VERSION_V}.bndl
+chmod u+w ${VERSION_V}.bndl
+echo GEM/others/renametotest >> ${VERSION_V}.bndl
 
-cd ~/SsmBundles/GEM
-ln -s gem/${gem_version}-s.bndl ${gem_version}.bndl 
+cd ~/SsmBundles/GEM/${VERSION_X}
+if [[ -f gem/${VERSION_V}-s.bndl ]] ; then
+   ln -s gem/${VERSION_V}-s.bndl ${VERSION_V}.bndl
+else
+   ln -s gem/${VERSION_V}.bndl ${VERSION_V}.bndl
+fi
+
+#TODO: create ref nml
+# in: ${ATM_MODEL_DFILES:-/home/ordenv/ssm-domains9/release/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles}/nml/ref
+# with: gem_nml_mkref gem_settings.${ATM_MODEL_VERSION}.ref
+# with: rpy.nml_get -v -f gem_settings.${ATM_MODEL_VERSION}.ref > gem_settings.${ATM_MODEL_VERSION}.ref.kv
+# with: cat gem_settings.${ATM_MODEL_VERSION}.ref.kv | cut -d= -f1 > gem_settings.${ATM_MODEL_VERSION}.ref.k
+
+#TODO: update gem_nml_update_db.txt
+# in: ${ATM_MODEL_DFILES:-/home/ordenv/ssm-domains9/release/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles}/nml/upd
+# diff gem_settings.$???}.ref.kv gem_settings.${ATM_MODEL_VERSION}.ref.kv
+
+#-- Science Network --
+
+. ./gem/.setenv-withdeps.dot --science
+cp $gem/Makefile.user.* .
+$gem/bin/ouv_exp_gem
+rdemklink
+make components_install CONFIRM_INSTALL=yes SSM_BASE=/fs/ssm/eccc/mrd/rpn/MIG SSM_BASE2="" COMPONENTS="modelutils rpnphy gemdyn gem"
+
+VERSION="$(echo $(cat ${gem:-./gem}/include/Makefile.local*.mk | grep _VERSION0 | grep -v dir | cut -d= -f2))"
+VERSION_X=$(dirname ${VERSION})
+VERSION_V=${VERSION#*/}
+VERSION_S=
+echo :${VERSION_X}:${VERSION_V}:${VERSION_S}:
+
+cd ~/SsmBundles/GEM/tests
+cp ~/SsmBundles/GEM/${VERSION_X}/gem/${VERSION_V}${VERSION_S}.bndl ${VERSION_V}.bndl
+chmod u+w ${VERSION_V}.bndl
+echo GEM/others/renametotest >> ${VERSION_V}.bndl
+
+cd ~/SsmBundles/GEM/${VERSION_X}
+ln -s gem/${VERSION_V}.bndl ${VERSION_V}.bndl
+
+#TODO: create ref nml
+# in: ${ATM_MODEL_DFILES:-???}/nml/ref
+# with: gem_nml_mkref gem_settings.${ATM_MODEL_VERSION}.ref
+# with: rpy.nml_get -v -f gem_settings.${ATM_MODEL_VERSION}.ref > gem_settings.${ATM_MODEL_VERSION}.ref.kv
+# with: cat gem_settings.${ATM_MODEL_VERSION}.ref.kv | cut -d= -f1 > gem_settings.${ATM_MODEL_VERSION}.ref.k
+
+#TODO: update gem_nml_update_db.txt
+# in: ${ATM_MODEL_DFILES:-???}/nml/upd
+# diff gem_settings.$???}.ref.kv gem_settings.${ATM_MODEL_VERSION}.ref.kv
 
 
 ## --- test installation ---------------------------------------------------
@@ -217,8 +338,8 @@ make components_uninstall UNINSTALL_CONFIRM=yes
 ## make components_uninstall UNINSTALL_CONFIRM=yes SSM_BASE=/ssm/net/rpn/MIG
 ## make components_uninstall UNINSTALL_CONFIRM=yes SSM_BASE=/fs/ssm/eccc/mrd/rpn/MIG
 
-## TODO: rm -f ~/SsmBundles/GEM/${gem_version}.bndl 
-## TODO: rm -f ~/SsmBundles/GEM/gem/${gem_version}-s.bndl 
+## TODO: rm -f ~/SsmBundles/GEM/${gem_version}.bndl
+## TODO: rm -f ~/SsmBundles/GEM/gem/${gem_version}-s.bndl
 ## TODO: rm -rf ~/SsmBundles/GEM/d/gem/${gem_version}-s/
 
 
@@ -232,7 +353,8 @@ git clone ssh://localhost/~armnenv/GitDepots/gem.git
 cd gem
 #git checkout -b tmp gem_VERSION
 #update version number (including leading 'x/') in ./include/Makefile.local.mk
-. ./.setenv.dot
+. ./.setenv.dot --cmc
+## . ./.setenv.dot --science
 ./bin/ouv_exp_gem --nodeps
 rdemklink
 make components_abs COMPONENTS=gem
@@ -252,9 +374,17 @@ make components_ssm COMPONENTS=gem
 
 ssh MY_INSTALL_MACH
 cd /PATH/
-. ./.setenv.dot
-make components_install COMPONENTS=gem CONFIRM_INSTALL=yes
-## make components_install COMPONENTS=gem CONFIRM_INSTALL=yes SSM_BASE=/ssm/net/rpn/MIG
+
+#-- CMC Network --
+
+. ./.setenv.dot --cmc
+OTHERUSER=~armnsch
+make components_install COMPONENTS=gem CONFIRM_INSTALL=yes SSM_DEPOT_DIR=${OTHERUSER}/SsmDepot
+
+#-- Science Network --
+
+. ./.setenv.dot --science
+make components_install COMPONENTS=gem CONFIRM_INSTALL=yes SSM_BASE=/ssm/net/rpn/MIG
 
 #TODO: post-install in a ...-s domain/bndl as above
 
@@ -264,12 +394,19 @@ make components_install COMPONENTS=gem CONFIRM_INSTALL=yes
 
 ssh MY_INSTALL_MACH
 cd /PATH/
-. ./.setenv.dot
-make components_uninstall COMPONENTS=gem UNINSTALL_CONFIRM=yes
-## make components_uninstall COMPONENTS=gem UNINSTALL_CONFIRM=yes SSM_BASE=/ssm/net/rpn/MIG
 
-#TODO: rm -f  ~/SsmBundles/GEM/${gem_version}.bndl 
-#TODO: rm -f  ~/SsmBundles/GEM/gem/${gem_version}-s.bndl 
+#-- CMC Network --
+
+. ./.setenv.dot --cmc
+make components_uninstall COMPONENTS=gem UNINSTALL_CONFIRM=yes
+
+#-- Science Network --
+
+. ./.setenv.dot --science
+make components_uninstall COMPONENTS=gem UNINSTALL_CONFIRM=yes SSM_BASE=/ssm/net/rpn/MIG
+
+#TODO: rm -f  ~/SsmBundles/GEM/${gem_version}.bndl
+#TODO: rm -f  ~/SsmBundles/GEM/gem/${gem_version}-s.bndl
 #TODO: rm -rf ~/SsmBundles/GEM/d/gem/${gem_version}-s/
 
 
@@ -293,7 +430,7 @@ git commit -a -m 'initial commit'
 rdeco FILENAME
 vi FILENAME
 
-make obj -j 
+make obj -j
 make gem
 
 ## Committing your changes locally
@@ -303,7 +440,7 @@ git add FILENAME
 git commit -a -m 'Message'
 
 ## Pushing back local modifications upstream
-## Note: It is not possible to push modifications upstreams, 
+## Note: It is not possible to push modifications upstreams,
 ##       you'll need to commit your changes into each component's repository
 ## Before committing, split your code changes into components with:
 gemexp-flat2tree .
@@ -335,13 +472,13 @@ for mymodule in ${mygittreecomponents} ; do
    git subtree add --squash --prefix=${myname}/ ${myname} ${mybranch}
 done
 set +x
- 
+
 ## --- Preparing the workdir git-repos --------------------------------------
 
 mylist="
-  gem/.gitignore 
-  gem/Makefile.user.mk 
-  gem/Makefile.user.root.mk 
+  gem/.gitignore
+  gem/Makefile.user.mk
+  gem/Makefile.user.root.mk
   gem/.setenv-withdeps.dot
   $(/bin/ls -d gem/share/cfgs/*)
 "
@@ -365,9 +502,9 @@ make vfiles2
 ## WARNING: Avoid "rdeco, rderm" as the local mods will not be pushed upsteam
 ##          Edit/rename/remove files directly in the components subdirs
 
-rdeed FILENAME 
+rdeed FILENAME
 
-make obj2 -j 
+make obj2 -j
 make lib2
 make abs2
 
@@ -386,15 +523,15 @@ make abs2
 ## --ignore-blank-lines
 git diff gem_dev0 #[path]
 git diff gem_dev0 --summary --name-status  #[path]
-git diff gem_dev0 --summary --stat         #--numstat #[path] 
-git diff gem_dev0 --summary --name-only    #[path] 
+git diff gem_dev0 --summary --stat         #--numstat #[path]
+git diff gem_dev0 --summary --name-only    #[path]
 
 git mv OLD NEW
 git add FILENAME
 git rm FILENAME
 
 git status
-git commit -m 'Message' ## Avoid "-a" since it is more prone to merge 
+git commit -m 'Message' ## Avoid "-a" since it is more prone to merge
                         ## changes from several subrepo into one commit
 
 ## --- Pushing back local modifications upstream -----------------------------
@@ -439,7 +576,7 @@ done
 ## WARNING: avoid UFN since stree seems to have dealbreaker bugs (promissing)
 
 ## WARNING: need a recent verion of Git, version 1.7 on Ubuntu 12 is too old
-##          See above to update 
+##          See above to update
 
 ## Preparing the git-repos
 

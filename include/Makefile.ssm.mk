@@ -65,8 +65,8 @@ gem_ssm_arch_rm:
 	rm -rf $(BUILDSSM)/$(GEM_SSMARCH_NAME)
 $(BUILDSSM)/$(GEM_SSMARCH_NAME):
 	mkdir -p $@/include/$(EC_ARCH) $@/lib/$(EC_ARCH) $@/bin/$(BASE_ARCH) ; \
-	ln -s $(EC_ARCH) $@/include/$(COMP_ARCH) ; \
-	ln -s $(EC_ARCH) $@/lib/$(COMP_ARCH) ; \
+	ln -s ./$(EC_ARCH)/. $@/include/$(COMP_ARCH) ; \
+	ln -s ./$(EC_ARCH)/. $@/lib/$(COMP_ARCH) ; \
 	touch $@/include/dummy_$(GEM_SSMARCH_NAME).inc ; \
 	touch $@/lib/libdummy_$(GEM_SSMARCH_NAME).a ; \
 	touch $@/bin/dummy_$(GEM_SSMARCH_NAME).bin ; \
@@ -88,6 +88,24 @@ $(BUILDSSM)/$(GEM_SSMARCH_NAME):
 	cp -R $(DIRORIG_gem)/.ssm.d $@/ ; \
 	.rdemk_ssm_control gem $(GEM_VERSION) $(SSMORDARCH) $@/BUILDINFO $@/DESCRIPTION > $@/.ssm.d/control 
 
+gem_check_bndl:
+	gemdyn_version_bndl="`cat $(gem)/ssmusedep.bndl | grep gemdyn`" ;\
+	if [[ $${gemdyn_version_bndl##*_} != $(GEMDYN_VERSION) ]] ; then \
+		echo "ERROR: GEMDYN Version Mismatch, bndl:$${gemdyn_version_bndl##*_} != loaded:$(GEMDYN_VERSION)" ;\
+		exit 1 ;\
+	fi
+	rpnphy_version_bndl="`cat $(gem)/ssmusedep.bndl | grep rpnphy`" ;\
+	if [[ $${rpnphy_version_bndl##*_} != $(RPNPHY_VERSION) ]] ; then \
+		echo "ERROR: RPNPHY Version Mismatch, bndl:$${rpnphy_version_bndl##*_} != loaded:$(RPNPHY_VERSION)" ;\
+		exit 1 ;\
+	fi
+	modelutils_version_bndl="`cat $(gem)/ssmusedep.bndl | grep modelutils`" ;\
+	if [[ $${modelutils_version_bndl##*_} != $(MODELUTILS_VERSION) ]] ; then \
+		echo "ERROR: MODELUTILS Version Mismatch, bndl:$${modelutils_version_bndl##*_} != loaded:$(MODELUTILS_VERSION)" ;\
+		exit 1 ;\
+	fi
+	echo "OK gem_check_bndl"
+	#TODO: Check modelutils, rpnphy, gemdyn, gem, vgrid, compiler... consistency
 
 .PHONY: gem_install gem_uninstall
 gem_install: 
@@ -97,6 +115,7 @@ gem_install:
 	fi
 	cd $(SSM_DEPOT_DIR) ;\
 	rdessm-install -v \
+			--git \
 			--dest=$(GEM_SSM_BASE_DOM)/gem_$(GEM_VERSION) \
 			--bndl=$(GEM_SSM_BASE_BNDL)/$(GEM_VERSION).bndl \
 			--pre=$(gem)/ssmusedep.bndl \

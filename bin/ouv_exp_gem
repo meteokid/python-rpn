@@ -4,6 +4,8 @@ myself=$0
 DESC='Open a new GEM rde-experiment with pre-set SRCPATH'
 USAGE="USAGE: ${myself##*/} [-h] [-v] [--nodeps]"
 
+eval $(rdevar --shdump)
+
 #---- Functions ------------------------------------------------------
 #====
 usage_long() {
@@ -15,24 +17,26 @@ $toto
 
 Options:
     -h, --help     : print this help
-    -v, --verbose  :  
+    -v, --verbose  : increase verbosity
+    -q, --quiet    : quiet mode
     -f, --force    : replace existing source path file if any
         --nodeps   : do not add known dependencies to the src path
-Will produce SRCPATH for all known ARCH \$(rdevar rde_known_base_arch_list)
+Will produce SRCPATH for all known ARCH ${CONST_RDE_KNOWN_BASE_ARCH_LIST}
 
 EOF
 }
 
-myverbose=
+_verbose=0
+_quiet=0
 myforce=0
 dodeps=1
-#EC_ARCH_LIST="$(rdevar rde_known_base_arch_list)"
-EC_ARCH_LIST="${EC_ARCH_LIST:-$(rdevar rde_known_base_arch_list)}"
+EC_ARCH_LIST="${EC_ARCH_LIST:-${CONST_RDE_KNOWN_BASE_ARCH_LIST}}"
 #TODO: 
 while [[ $# -gt 0 ]] ; do
    case $1 in
       (-h|--help) usage_long; exit 0;;
-      (-v|--verbose) myverbose=-v ;;
+      (-v|--verbose) ((_verbose=_verbose+1));;
+      (-q|--quiet) _verbose=0; _quiet=1;;
       (-f|--force) myforce=1 ;;
       (--nodeps) dodeps=0 ;;
       (-*|*) echo "ERROR: Unrecognized option $1"
@@ -43,19 +47,30 @@ while [[ $# -gt 0 ]] ; do
    shift
 done
 
+myverbose=
+[[ ${_verbose} -gt 1 ]] && myverbose=-v || true
+
 if [[ x$myforce == x1 ]] ; then
-   srcpathfile="$(rdevar srcpathfile 2>/dev/null || true)"
+   srcpathfile=${CONST_SRCPATHFILE}
    rm -f ${srcpathfile:-.rde.srcpath.dot}
 fi
 
-if [[ x$vgrid != x  ]] ; then
-   [[ -d ${vgrid}/include ]] && vgrid_include=${vgrid}/include
-   [[ -d ${vgrid}/src ]] && vgrid_src=${vgrid}/src
-fi
+# vgrid=${vgrid:-${VGRIDDESCRIPTORS_SRC}}
+# if [[ x${vgrid} != x ]] ; then
+#    vgrid=${vgrid%/}
+#    if [[ x${vgrid##*/} == xsrc ]] ; then
+#       [[ ! -d ${CONST_RDE_LINKDIR}  ]] && mkdir ${CONST_RDE_LINKDIR} || true
+#       rm -rf ${CONST_RDE_LINKDIR}/vgrid
+#       ln -s ${vgrid} ${CONST_RDE_LINKDIR}/vgrid
+#       vgrid=$(pwd)/${CONST_RDE_LINKDIR}/vgrid
+#    fi
+#    [[ -d ${vgrid}/include ]] && vgrid_include=${vgrid}/include || true
+#    [[ -d ${vgrid}/src ]] && vgrid_src=${vgrid}/src || true
+# fi
 
-if [[ x$rpncomm != x  ]] ; then
-   [[ -d ${rpncomm}/include ]] && rpncomm_include=${rpncomm}/include
-   [[ -d ${rpncomm}/src ]] && rpncomm_src=${rpncomm}/src
+if [[ x${rpncomm} != x  ]] ; then
+   [[ -d ${rpncomm}/include ]] && rpncomm_include=${rpncomm}/include || true
+   [[ -d ${rpncomm}/src ]] && rpncomm_src=${rpncomm}/src || true
 fi
 
 # if [[ x$vgrid == x  ]] ; then
@@ -127,51 +142,90 @@ EOF
 	 exit 1
 fi
 
+VALIDEXT="${CONST_RDESUFFIXINC} ${CONST_RDESUFFIXSRC}"
+VALIDEXTWILD="$(echo ${VALIDEXT} | sed 's|\.|*.|g') $(echo ${VALIDEXT} | sed 's|\.|*/*.|g') $(echo ${VALIDEXT} | sed 's|\.|*/*/*.|g')"
 
-SRCLIST="${vgrid_include} ${rpncomm_include} ${modelutils}/include ${rpnphy}/include ${gemdyn}/include ${gem}/include"
-TOPDIRS="${gemdyn}"
-if [[ $dodeps == 1 ]] ; then
-   SRCLIST="${vgrid_include} ${vgrid_src} ${rpncomm_include} ${rpncomm_src} ${modelutils}/include ${modelutils}/src ${rpnphy}/include ${rpnphy}/src ${gemdyn}/include ${gemdyn}/src ${gem}/include"
-   TOPDIRS="${vgrid} ${rpncomm} ${modelutils} ${rpnphy} ${gemdyn} ${gem}"
+SRCLIST=""
+TOPDIRS=""
+BINLIST=""
+if [[ x"${modelscripts}" == x"" ]] ; then
+   modelscripts=$(true_path $(which r.modelscripts_all-config) 2>/dev/null)
+   modelscripts=${modelscripts%/*}
+   modelscripts=${modelscripts%/*}
+fi
+rpnpy_src=/dev/null
+rpnpy_include=/dev/null
+
+export RDE_COMPONENTS="vgrid rpncomm rde rpnpy modelscripts modelutils rpnphy gemdyn gem ${RDE_COMPONENTS}"
+if [[ ${dodeps} == 1 ]] ; then
+   for item in ${RDE_COMPONENTS} ; do
+      maindir="$(eval echo \${${item}})"  #TODO: ${!item}
+      if [[ x${maindir} != x ]] ; then
+
+         incdir="$(eval echo \${${item}_include})"  #TODO: item2=${item}_include; ${!item2}
+         incdir="${incdir:-${maindir}/include}"
+         incdir0="${incdir}"
+         if [[ ! -d ${incdir} ]] ; then
+            incdir=""
+         fi
+
+         srcdir="$(eval echo \${${item}_src})"  #TODO: item2=${item}_src; ${!item2}
+         srcdir="${srcdir:-${maindir}/src}"
+         srcdir0="${srcdir}"
+         if [[ ! -d ${srcdir} ]] ; then
+            srcdir=""
+            if [[ -d ${maindir} && x"${incdir}" == x"" \
+                  && x"${incdir0}" != x"/dev/null" ]] ; then
+               [[ x"$(cd ${maindir} && ls ${VALIDEXTWILD} 2>/dev/null)" != x"" ]] && srcdir="${maindir}" || true
+            fi
+         fi
+
+         bindir="$(eval echo \${${item}_bin})"  #TODO: item2=${item}_bin; ${!item2}
+         bindir="${bindir:-${maindir}/bin}"
+         if [[ ! -d ${bindir} ]] ; then
+            bindir=""
+            if [[ -d ${maindir} && x"${incdir}${srcdir}" == x"" \
+                  && x"${incdir0}" != x"/dev/null" \
+                  && x"${srcdir0}" != x"/dev/null" ]] ; then
+               bindir="${maindir}"
+            fi
+         fi
+
+         if [[ ${_verbose} != 0 ]] ; then
+            if [[ ${_verbose} -gt 1 ]] ; then
+               echo "Adding ${item}: ${maindir} : inc=${incdir} : src=${srcdir} : bin=${bindir}"
+            else
+               echo "Adding ${item}: ${maindir}"
+            fi
+         fi
+         SRCLIST="${SRCLIST} ${srcdir}"
+         INCLIST="${INCLIST} ${incdir}"
+         BINLIST="${BINLIST} ${bindir}"
+         if [[ x"${incdir}${srcdir}${bindir}" != x"" ]] ; then
+            TOPDIRS="${TOPDIRS} ${maindir}"
+         fi
+      fi
+   done
+else
+   SRCLIST=""
+   INCLIST="${vgrid_include} ${rpncomm_include} ${modelutils}/include ${rpnphy}/include ${gemdyn}/include ${gem}/include" #TODO: add other RDE_COMPONENTS incdir
+   TOPDIRS="${gemdyn}"
 fi
 
-rm -f $(rdevar srcpathfile)
+rm -f ${CONST_SRCPATHFILE}
 for myarch in $EC_ARCH_LIST ; do
    myarchold=$(rdevar --arch ${myarch} base_arch)
    if [[ "x${myverbose}" == "x-v" ]] ; then
       echo "+ rdeaddsrc ${myverbose} -R --arch ${myarchold} --reset --topdirs '${TOPDIRS}' ${SRCLIST}"
    fi
    rdeaddsrc ${myverbose} -R --arch ${myarchold} --reset --topdirs "${TOPDIRS}" ${SRCLIST}
+   if [[ "x${myverbose}" == "x-v" ]] ; then
+      echo "+ rdeaddsrc ${myverbose} -R --arch ${myarchold} --reset --include ${INCLIST}"
+   fi
+   rdeaddsrc ${myverbose} -R --arch ${myarchold} --reset --include ${INCLIST}
 done
 
+#Clean rdevar cache
+rdevar --cc
 
-if [[ x${SEQ_EXP_HOME} == x ]] ; then
-   SEQ_EXP_HOME=$(rdemodel_path storage)
-   printf "\n SEQ_EXP_HOME not defined, using ${SEQ_EXP_HOME} \n\n"
-fi
-
-setenvfile=$(rdevar rde_setenv_dot)
-cat > ${setenvfile} <<EOF
-if [[ -z "\${ATM_MODEL_BNDL}" ]] ; then
-   . s.ssmuse.dot ${ATM_MODEL_BNDL:-NO_ATM_BNDL}
-elif [[ \${ATM_MODEL_BNDL} != ${ATM_MODEL_BNDL:-NO_ATM_BNDL} ]] ; then
-   cat 1>&2 <<EOF1
-
-   ** WARNING **
-   Mismatch of current \${ATM_MODEL_BNDL} in your environment and the experiment ${ATM_MODEL_BNDL:-NO_ATM_BNDL} in ${refload}
-   You should probably load this experiment in a new shell.
-
-EOF1
-fi
-export GEM_DEV_UPDATES="${GEM_DEV_UPDATES}"
-if [[ -n "\${GEM_DEV_UPDATES}" ]] ; then . s.ssmuse.dot \${GEM_DEV_UPDATES} ; fi 
-export GEM_DEV_SUITE=${GEM_DEV_SUITE}
-export SEQ_EXP_HOME=${SEQ_EXP_HOME}
-EOF
-
-if [[ x$myforce == x1 ]] ; then
-   rm -f .ssmuse_gem
-fi
-if [[ ! -f .ssmuse_gem ]] ; then
-   ln -s ${setenvfile} .ssmuse_gem 
-fi
+exit 0

@@ -1,0 +1,215 @@
+&grid
+  grd_typ_s  = 'LU'    ,
+  grd_ni     = 80      ,     grd_nj    = 60
+  grd_dx     = 0.5     ,     grd_dy    = 0.5
+  grd_lonr   = 180.0   ,     grd_latr  = 2.75
+  grd_xlon1  = -100.00 ,     grd_xlat1 = 53.00
+  grd_xlon2  =  -85.00 ,     grd_xlat2 = 50.00
+  grd_maxcfl = 4
+/
+
+&step
+  step_runstrt_s = "20090427.000000"
+  fcst_nesdt_s   = '12h'
+  fcst_end_s     = "12h"
+  fcst_gstat_s   = '3h'
+  step_dt        = 1200.
+/
+
+&gem_cfgs
+  lctl_rxstat_s   =  'GLB_8',
+
+  hyb_rcoef = 3., 15.
+  hyb=
+1.013731e-04  ,
+1.627754e-04  ,
+2.605143e-04  ,
+4.131838e-04  ,
+6.392740e-04  ,
+9.585168e-04  ,
+1.396009e-03  ,
+1.982035e-03  ,
+2.742135e-03  ,
+3.699144e-03  ,
+4.872435e-03  ,
+6.277705e-03  ,
+7.927258e-03  ,
+9.830644e-03  ,
+1.199549e-02  ,
+1.442837e-02  ,
+1.713573e-02  ,
+2.012467e-02  ,
+2.340372e-02  ,
+2.698333e-02  ,
+3.085878e-02  ,
+3.501382e-02  ,
+3.943207e-02  ,
+4.409839e-02  ,
+4.899989e-02  ,
+5.412675e-02  ,
+5.947273e-02  ,
+6.503552e-02  ,
+7.081704e-02  ,
+7.682364e-02  ,
+8.306636e-02  ,
+8.956118e-02  ,
+9.632945e-02  ,
+1.033984e-01  ,
+1.108018e-01  ,
+1.185812e-01  ,
+1.267869e-01  ,
+1.354686e-01  ,
+1.446622e-01  ,
+1.544045e-01  ,
+1.647347e-01  ,
+1.756934e-01  ,
+1.873232e-01  ,
+1.996677e-01  ,
+2.127722e-01  ,
+2.266823e-01  ,
+2.414443e-01  ,
+2.571042e-01  ,
+2.737070e-01  ,
+2.912963e-01  ,
+3.099130e-01  ,
+3.295946e-01  ,
+3.503738e-01  ,
+3.722777e-01  ,
+3.953262e-01  ,
+4.195309e-01  ,
+4.448380e-01  ,
+4.710684e-01  ,
+4.980296e-01  ,
+5.255275e-01  ,
+5.533735e-01  ,
+5.813907e-01  ,
+6.094182e-01  ,
+6.373139e-01  ,
+6.649557e-01  ,
+6.922417e-01  ,
+7.190894e-01  ,
+7.453858e-01  ,
+7.709042e-01  ,
+7.954379e-01  ,
+8.188151e-01  ,
+8.409014e-01  ,
+8.616011e-01  ,
+8.808559e-01  ,
+8.986422e-01  ,
+9.149664e-01  ,
+9.300043e-01  ,
+9.439255e-01  ,
+9.566650e-01  ,
+9.680431e-01  ,
+9.778685e-01  ,
+9.860255e-01  ,
+9.925241e-01  ,
+9.975018e-01  ,
+
+  sol_type_s = 'DIRECT'        , sol_yyg_eps = 1.e-04
+
+  cstv_tstr_8     = 240.0
+
+  hzd_pwr         = 2          , hzd_lnr       = 0.04
+  hzd_pwr_theta   = 6          , hzd_lnr_theta = 0.01
+
+  iau_input_type_s = 'DIST'
+
+  inp_npes   = 4 , out3_npes = 1,
+
+  init_balgm_l    = .false.    , init_dftr_l     = .false.
+  init_dfwin_l    = .true.     , init_dflength_s = '6h'
+  init_dfpl_s     = '6h'
+
+  vspng_coeftop   =  760000.   , vspng_nk        = 6
+
+  eq_sponge       = 50.0, 46.6, 38.3, 28.2, 18.4, 10.4, 4.6, 1.1
+
+  schm_hydro_l    = .true.     , schm_nblendyy     = 1
+  schm_itcn       = 2          ,
+  schm_itnlh      = 2          , schm_itraj        = 3
+  schm_adcub_l    = .true.     , schm_hzdadw_l     = .true.
+  schm_wload_l    = .false.    , schm_psadj        = 0
+
+  p_lmvd_weigh_high_lat = 0.0  ,
+
+  out3_etik_s     = 'bech30x15'   ,
+  out3_lieb_levels= 5000., 4900., 4800., 4700., 4600., 4500., 4400., 4300., 4200., 4100.,
+                    4000., 3900., 3800., 3700., 3600., 3500., 3400., 3300., 3200., 3100.,
+                    3000., 2900., 2800., 2700., 2600., 2500., 2400., 2300., 2200., 2100.,
+                    2000., 1900., 1800., 1700., 1600., 1500., 1400., 1300., 1200., 1100.,
+                    1000.,  900.,  800.,  700.,  600.,  500.,  400.,  300.,  200.,  100.,
+  out3_nbitg      = 12         , out3_cliph_l     = .false.    ,
+  out3_postproc_fact= 48      ,
+  out3_linbot     =  3         ,
+/
+
+&surface_cfgs
+  schmsol         = 'ISBA'     ,
+  tdiaglim        = .false.     ,
+  icemelt         = .true.     ,
+  icelac           = .false.    ,
+  beta           = 1.0        ,
+  z0tlat          = 25., 30.   ,
+  limsnodp        = .true.    ,
+  impflx           = .true.     ,
+  salty_qsat      = .true.    ,
+  veg_rs_mult     = 2.0         ,
+  leadfrac         = 0.03       ,
+  adj_i0_snow      = .false.    ,
+  isba_melting_fix = .true.     ,
+  diusst          = 'fairall'  ,
+  z0mtype         = 'beljaars' ,
+/
+
+&physics_cfgs
+  radia           = 'cccmarad2' , kntrad_s        = '1h'
+  radfiles        = 'std'      , fomic           = .false.    ,
+  radfltr         = .true.     , stratos         = .true.    ,
+  ts_flxir        = .false.    , lmetox          = .true.    ,
+
+  pbl_ricrit            =  0.15, 2.
+
+  gwdrag          = 'nil'      , non_oro         = .false.    ,
+
+  longmel         = 'blac62'   ,
+  fluvert         = 'moistke'  , evap            = .true.     ,
+
+  pbl_shal        = 'nil'
+  pbl_diss        = 'lim50'    ,
+
+  stcond          = 'mp_my2_old',
+  satuco          = .true.     , inilwc         = .true.      ,
+  pcptype         = 'NIL'      , moyhr          = 6           ,
+
+  diag_twind      = .true.     , refract         = .true.    ,
+  drag            = .true.     , chauf          = .true.      ,
+
+  qco2           = 380.0       ,
+
+  my_tc3comp             = -5., -5., -5.
+
+  fnn_reduc        = 1.0        ,
+  fnn_mask         = .false.    ,
+
+ phystat_dble_l = .true.
+ phystat_2d_l = .false.
+ phystat_freq_s = '3h'
+ phystat_list_s = 'ALLVARS=EDPV'
+ phystat_input_l = .true.
+
+ debug_mem_l     = .false
+ debug_trace_l   = .false
+
+ input_type = 'DIST'
+/
+
+&convection_cfgs
+ deep       = 'kfc2'     , shal     = 'bechtold'
+ kfcrad     = 500.       , kfcdepth = 2000.
+ kfctrig4   = 0.,0.,0.5,0.5,
+ kfctrigw   = 0.5, 1., 0.08, 0.01
+ kfcmom     = .true.
+ deep_timeconv = '1h'
+ shal_timeconv = '3h'
+/
