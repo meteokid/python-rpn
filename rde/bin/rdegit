@@ -1,4 +1,13 @@
 #!/bin/bash
+
+if [[ -d .git ]] ; then
+   cat 1>&2 <<EOF
+WARNING: You're in a git repository, cannot use 'rdegit'
+         Try using direct 'git' commands
+EOF
+   exit 1
+fi
+
 . .rdebase.inc.dot
 
 DESC='Use Git as CVS backend'
@@ -6,15 +15,15 @@ USAGE="USAGE: ${MYSELF} [-h] [-v] [-f] [-u] [GIT_CMD [GIT_CMD_OPTIONS]]"
 RDEGITTAG0="original"
 
 rdegiterror() {
-   if [[ $quiet == 0 ]] ; then
-      toto=$(echo -e $USAGE)
+   if [[ ${quiet} == 0 ]] ; then
+      toto=$(echo -e ${USAGE})
       more <<EOF
 
 ERROR: $1
 
-$DESC
+${DESC}
 
-$toto
+${toto}
 
 EOF
    fi
@@ -22,11 +31,11 @@ EOF
 }
 
 usage_long() {
-   toto=$(echo -e $USAGE)
+   toto=$(echo -e ${USAGE})
    more <<EOF
-$DESC
+${DESC}
 
-$toto
+${toto}
 
 Options:
     -h, --help        : print this help
@@ -85,7 +94,7 @@ WARNING: Commands/options below change the working dir content, use with caution
                              You may prefer: rdeco -f skocon.F90
     mv               : Move or rename a file, a directory, or a symlink
 
-Notes:
+## Notes: ##
 * Source files are auto added and removed from the git repository, thus
 ** no need to do git add/rm, just add/remove them from your working dir
 ** files are never in staging mode
@@ -94,66 +103,56 @@ Notes:
 * For gitk to represent properly your workdir,
   you may need to run '${MYSELF} update' or '${MYSELF} status'
 
-HowTo:
+## HowTo: ##
 * Save a copy of your code:
-  rdegit commit
-* Reset to last commmit:
-  rdegit reset
-* Reset only one file to last commit:
-  rdegit checkout HEAD -- PATH/TO/FILE
+      rdegit commit
+
+* Reset
+** Reset to last commit:
+      rdegit reset
+** Reset to base version:
+      rdegit reset ${RDEGITTAG0}
+** Reset to previous tagged version:
+      rdegit reset TAG
+** Reset only one file to last commit:
+      rdegit --update
+      rdegit checkout HEAD -- PATH/TO/FILE
+
 * Start to code on a new branch, 2 cases:
 ** case 1, from the present code (HEAD is a special keyword):
-   rdegit checkout -b BRANCHNAME HEAD
-   where HEAD is a special keyword. type as is in capital letters
+      rdegit checkout -b BRANCHNAME HEAD
+   where HEAD is a special keyword; type as is in capital letters
    where BRANCHNAME is the actual name of your branch
 ** case 2, from a previous commit:
-   rdegit checkout -b BRANCHNAME REFNAME
+      rdegit checkout -b BRANCHNAME REFNAME
    where REFNAME can be a commit hash (see rdegit log) or a tag (see rdegit tag)
+
 * Resume coding on another existing branch, 2 steps:
 ** step 1: save or reset the modified code, see commit and reset above
 ** step 2: checkout the code:
-   rdegit checkout BRANCHNAME
+      rdegit checkout BRANCHNAME
+
 * Pull from someone else's repos:
-   cd $(rdevar build/repos)
+      cd $(rdevar build/repos)
+      git remote add OTHER URL
+      git pull OTHER master
+      # You may need to resolve conflicts ("git status" will give the list)
+      # Use: "git mergetool FILENAME" to help resolving merge conflicts
+      # Use: "git commit -a" to save your code after resolving all merge conflicts
+      cd ../..
+      rdegit --update-reverse  # update your working dir from the git repository
 
-   # Initial import/merge v1
-   git remote add OTHER URL
-   git fetch OTHER
-   git checkout -b OTHER OTHER/master
-   # git rebase original
-   git rebase master
-   git checkout master
-   git merge OTHER
+* For operations not yet supported (merging, patching, ...), you can:
+      cd $(rdevar build)/repos
+      # do your git operations
+      cd ../..
+      rdegit --update-reverse  # update your working dir from the git repository
 
-   # Initial import/merge v2
-   git remote add OTHER URL
-   git fetch OTHER
-   git rebase master OTHER/master
-   git tag TMP
-   git checkout master
-   git merge OTHER
-   git tag -d TMP
-
-   # Initial import/merge v3
-   git remote add OTHER URL
-   git pull -X subtree OTHER master
-
-   # Next pull
-   git pull OTHER master
-
-   cd ../..
-   rdegit --update-reverse
-
-For Operations not yet supported (merging, patching, ...), you can:
-* cd $(rdevar build)/repos
-* # do your git operations
-* cd ../..
-* rdegit --update-reverse  # update your working dir from the git repository
-
-Notes:
+IMPORTANT:
 * For operation like 'rdegit diff=r.gitdiff -d' you may need to use a
   newer version of git:
-  . r.module.dot ; module load git/2.6.3
+      . r.module.dot ; module load git/2.6.3
+
 EOF
 
 }
@@ -206,16 +205,16 @@ done
 rde_exit_if_not_rdetopdir
 
 BUILDGIT=${ROOT}/${CONST_BUILDREPOS}
-# BUILDGIT=${ROOT}/${CONST_BUILD}/repos
+BUILDGIT=${BUILDGIT%/}
 RDETOPDIRS="$(rdevar srcpath_topdirs)"
 RDEGITDIROTHER="_other"
 VALIDEXTWILD="$(echo ${VALIDEXT} | sed 's/\./*./g')"
-EXTRAFILES="${SRC_PATH_FILE##*/} Makefile.build.mk Makefile.rules.mk Makefile.user.mk  Makefile.user.root.mk ${MAKEFILEDEP##*/}"
+# EXTRAFILES="${SRC_PATH_FILE##*/} Makefile.build.mk Makefile.rules.mk Makefile.user.mk  Makefile.user.root.mk ${MAKEFILEDEP##*/}"
+EXTRAFILES=""
 #EXTRAFILES2="$(echo ${CONST_EXTRADIRS} | tr '\n' ' ' | sed 's| |/* |g')"
 EXTRAFILES2="$(find ${CONST_EXTRADIRS} -type f | tr '\n' ' ')"
 GITLS=${BUILDGIT}/.rdesrcusrls
 GITLL=${BUILDGIT}/.rdesrcusrll
-GITMV=${BUILDGIT}/.rdesrcusrmv
 RDEPATHCACHEFILE=${BUILDGIT}/.filelist0
 
 
@@ -238,7 +237,6 @@ ${RDEPATHCACHEFILE##*/}
 ${GITLS##*/}
 ${GITLL##*/}
 .gitignore
-_other/*/.restricted
 .patch
 .patch.tgz
 .ssm.d/*
@@ -246,7 +244,9 @@ etc/*
 */.ssm.d/*
 */etc/*
 $(echo ${mylinks} | tr ' ' '\n')
+${RDEGITDIROTHER}/*/.restricted
 EOF
+# ${RDEGITDIROTHER}/Makefile*
    cd ${here}
 }
 
@@ -276,46 +276,6 @@ rdegitloadfilecache() {
 }
 
 
-rdeorginalname() {
-   myname="$1"
-   mymv="$(cat ${GITMV} | grep -e ":${myname}$" 2>/dev/null | tr '\n' ';')"
-   if [[ ! -z ${mymv} ]] ; then
-      mysrc=${mymv%;}
-      mysrc=${mysrc##*;}
-      mysrc=${mysrc%%:*}
-      echo $(rdeorginalname ${mysrc})
-   else
-      echo ${myname}
-   fi
-}
-
-rdeorginalnameapprox() {
-   myname="$1"
-   mymv="$(cat ${GITMV} | grep -e ":/.*${myname#/}$" 2>/dev/null | tr '\n' ';')"
-   if [[ ! -z ${mymv} ]] ; then
-      mysrc=${mymv%;}
-      mysrc=${mysrc##*;}
-      mysrc=${mysrc%%:*}
-      echo $(rdeorginalname ${mysrc})
-   else
-      echo ${myname}
-   fi
-}
-
-rdenewname() {
-   myname="$1"
-   mymv="$(cat ${GITMV} | grep -e "^${myname}:" 2>/dev/null | tr '\n' ';')"
-   if [[ ! -z ${mymv} ]] ; then
-      mydst=${mymv%;}
-      mydst=${mydst##*;}
-      mydst=${mydst##*:}
-      echo $(rdenewname ${mydst})
-   else
-      echo ${myname}
-   fi
-}
-
-
 rdename_exp2git0() {
    #Provide RDEGIT path for exp file name
    myname="$1"
@@ -328,11 +288,11 @@ rdename_exp2git0() {
       mypath2=${RDEGITDIROTHER}/${myname}
    fi
    if [[ x"${mypath2%%/*}" == x"${RDEGITDIROTHER}" ]] ; then
-      mypath2a="$(rdeorginalnameapprox ${mypath2##*/})"
+      mypath2a="${mypath2##*/}"
       [[ ${mypath2a} != ${mypath2##*/} ]] && mypath2=${mypath2a}|| true
       echo ${mypath2}
    else
-      echo $(rdeorginalname ${mypath2})
+      echo ${mypath2}
    fi
 }
 
@@ -355,39 +315,96 @@ rdegitinit() {
    mkdir -p ${BUILDGIT} 2> /dev/null
    cd ${BUILDGIT}
 
-   for item in ${CONST_EXTRADIRS} ; do
-      mkdir -p ${RDEGITDIROTHER}/${item}
-   done
-   ## Add other workdir files
-   for item in $(cd ${ROOT} ; ls ${EXTRAFILES} 2>/dev/null) ; do
-      cp ${ROOT}/$item ${RDEGITDIROTHER}/${item}
-   done
+   #TODO: ignore RDEEXPREPOSTAG if gemupdate
+   if [[ "x${RDEEXPREPOSTAG}" == "x" ]] ; then
 
-   rdegitbuildgitignore
-
-   myecho 1 "+ Git init and inital commits/imports with tag: ${RDEGITTAG0}"
-   git init
-   touch ${GITMV}
-   git add .
-   git commit -a -m "Initial commit of code from ROOT dir"
-   set -x
-   for item in ${RDESRCPATH_TOPDIR} ; do
-      item2=$(echo ${item##*/} | cut -d_ -f1-2)
-      if [[ -d ${item}/.git ]] ; then
-         myecho 1 "++ Add subtree dir for ${item2} [${item}]"
-         git remote add ${item2} ${item}
-         #echo $item2 : branch=$(git rev-parse --abbrev-ref HEAD)
-         git subtree add -P ${item2%%_*} ${item2} master #TODO: what if not master
-      else
-         item2=${item2%%_*}
-         myecho 1 "++ Add dir ${item2} [${item}]"
-         #cp -RL ${item} ./${item2}
-         cp -R ${item}/. ./${item2}
-         git add ${item2}/.
-         git commit -a -m "Initial commit of code from: ${item2}"
+      for item in ${CONST_EXTRADIRS} ; do
+         mkdir -p ${RDEGITDIROTHER}/${item}
+      done
+      ## Add other workdir files
+      if [[ "x${EXTRAFILES}" != "x" ]] ; then
+         for item in $(cd ${ROOT} ; ls ${EXTRAFILES} 2>/dev/null) ; do
+            cp ${ROOT}/$item ${RDEGITDIROTHER}/${item}
+         done
       fi
-   done
-   git tag ${RDEGITTAG0}
+
+      rdegitbuildgitignore
+
+      myecho 1 "+ Git init and inital commits/imports with tag: ${RDEGITTAG0}"
+      git init
+      touch .empty
+      git add .
+      git commit -a -m "Initial commit of code from ROOT dir"
+      for item in ${RDESRCPATH_TOPDIR} ; do
+         item2=$(echo ${item##*/} | cut -d_ -f1-2)
+         if [[ -d ${item}/.git ]] ; then
+            myecho 1 "++ Add subtree dir for ${item2} [${item}]"
+            git remote add ${item2} ${item}
+            #echo $item2 : branch=$(git rev-parse --abbrev-ref HEAD)
+            git subtree add -P ${item2%%_*} ${item2} master #TODO: what if not master
+         else
+            item2=${item2%%_*}
+            myecho 1 "++ Add dir ${item2} [${item}]"
+            #cp -RL ${item} ./${item2}
+            cp -R ${item}/. ./${item2}
+            git add ${item2}/.
+            git commit -a -m "Initial commit of code from: ${item2}"
+         fi
+         #TODO: save in .file list of depot/tag/dir
+      done
+
+   else
+
+      REMOTEURL=${RDEEXPREPOSTAG%/*}
+      REMOTETAG=${RDEEXPREPOSTAG##*/}
+      myecho 1 "+ Git clone: ${REMOTEURL} (${REMOTETAG})"
+
+      cd ..
+      rm -rf ${BUILDGIT##*/}
+
+      ok="$(git ls-remote ${REMOTEURL} | egrep "/\b${REMOTETAG}\b")"
+      if [[ "x${ok}" == "x" ]] ; then
+         cat 1>&2 <<EOF
+ERROR: Cannot find URL or tag/branch for
+          RDEEXPREPOSTAG=${RDEEXPREPOSTAG}
+          REMOTEURL=${RDEEXPREPOSTAG%/*}
+          REMOTETAG=${RDEEXPREPOSTAG##*/}
+       Try re-running "rdegit init" after redefining this variable with
+          export RDEEXPREPOSTAG="URL/TAG"
+EOF
+         exit 1
+      fi
+      if [[ "x${GEM_DEV_UPDATES}" != "x" ]] ; then
+         cat 1>&2 <<EOF
+ERROR: Cannot use RDEEXPREPOSTAG with GEM_DEV_UPDATES
+          RDEEXPREPOSTAG=${RDEEXPREPOSTAG}
+          GEM_DEV_UPDATES=${GEM_DEV_UPDATES}
+       Try re-running "rdegit init" after unsetting RDEEXPREPOSTAG with
+          unset RDEEXPREPOSTAG
+EOF
+         exit 1
+      fi
+
+      git clone --no-checkout ${REMOTEURL} ${BUILDGIT##*/}
+      cd ${BUILDGIT##*/}
+      git checkout -b master >/dev/null 2>&1 || git checkout master
+      git merge -X theirs ${REMOTETAG}
+      git remote set-branches origin ${REMOTETAG}-branch
+      # git remote set-head origin ${REMOTETAG}
+      ## Add other workdir dirs/files
+      for item in ${CONST_EXTRADIRS} ; do
+         mkdir -p ${RDEGITDIROTHER}/${item}
+      done
+      if [[ "x${EXTRAFILES}" != "x" ]] ; then
+         for item in $(cd ${ROOT} ; ls ${EXTRAFILES} 2>/dev/null) ; do
+            cp ${ROOT}/$item ${RDEGITDIROTHER}/${item}
+         done
+      fi
+      rdegitbuildgitignore
+      git commit -a -m "Initial commit of code from ROOT dir"
+
+   fi
+   git tag -f ${RDEGITTAG0}
 
    rdegitbuildfilecache
 
@@ -422,18 +439,26 @@ rdegitupdate() {
    for item in $(cat ${GITLS} 2>/dev/null) ; do
       if [[ ! -f ${ROOT}/${item} ]] ; then
          item2=$(rdename_exp2git0 ${item})
-         item2n=$(rdenewname ${item2})
+         item2n=${item2}
          if [[ x${item2%%/*} != x${RDEGITDIROTHER} ]] ; then
-            myecho 3 "+++ revert to original ${item2} : ${item2n}"
+            myecho 3 "+++ revert to original ${item2}"
             git checkout ${RDEGITTAG0} -- ${item2} #TODO: 2>/dev/null to avoid .gitignore complain
             # if [[ $? != 0 ]] ; then
             #    mystatus=1
             # fi
-            if [[ $? == 0 && ${item2} != ${item2n} ]] ; then
-               echo "${item2n}:${item2}" >> ${GITMV}  #TODO: double check this
-            fi
          else
             myecho 3 "+++ rm ${item2n}"
+            if [[ -L ${item2n} ]] ; then
+               item2nb=$(true_path ${item2n} 2>/dev/null)
+               if [[ "x${item2nb}" != "x" ]] ; then
+                  rm -f ${item2nb}
+                  if [[ x${doadd} == xadd ]] ; then
+                     item2nb=$(readlink ${item2n})
+                     item2nb=${item2nb##*../}
+                     git rm -f ${item2nb#/} 2>/dev/null
+                  fi
+               fi
+            fi
             rm -f ${item2n}
             if [[ x${doadd} == xadd ]] ; then
                git rm -f ${item2n} 2>/dev/null
@@ -446,7 +471,7 @@ rdegitupdate() {
    myecho 2 "++ Re-add all workdir files"
    for item in ${mylist} ; do
       item2=$(rdename_exp2git0 ${item})
-      item2n=$(rdenewname ${item2})
+      item2n=${item2}
       myecho 3 "+++ Update ${item} [${item2n}]"
       [[ ${item2n%/*} != ${item2n} ]] && mkdir -p ${item2n%/*}
       cp ${ROOT}/${item} ${item2n} #2>/dev/null
@@ -482,12 +507,15 @@ git2workdir() {
    filelist="$(git diff ${RDEGITTAG0} --name-only)"
    for item in ${filelist}; do
       item2=${item#*/}
-      myecho 2 "++ Adding: ${item2}";
-      if [[ x"$(echo ${CONST_EXTRADIRS} | tr ' ' '\n' | grep ${item2%%/*})" != x"" ]] ; then
-         mkdir -p ${ROOT}/${item2%/*}
-         cp ${item} ${ROOT}/${item2}
-      else
-         cp ${item} ${ROOT}
+     if [[ ${item2} != ${item} && \
+        ( ${item#_} == ${item} || "x${item%%/*}" == "x${RDEGITDIROTHER}" ) ]] ; then
+        myecho 2 "++ Adding: ${item2} : ${item#_} : ${item}";
+        if [[ x"$(echo ${CONST_EXTRADIRS} | tr ' ' '\n' | grep ${item2%%/*})" != x"" ]] ; then
+           mkdir -p ${ROOT}/${item2%/*}
+           cp ${item} ${ROOT}/${item2}
+        else
+           cp ${item} ${ROOT}
+        fi
      fi
    done
    #TODO: Should we re-build the rename list?
@@ -559,78 +587,6 @@ patch2git() {
    myerror "Apply is Not yet implemented"
 }
 
-
-rdegitmv() {
-   _mvopt="${1}"
-   _mvsrc0="${2%/}"
-   _mvsrc1="${3%/}"
-   _mvdst0="${4}"
-   _mvdst="${mvdst%/}"
-   _mvsrc=${_mvsrc0}/${_mvsrc1}
-   if [[ ${_mvsrc1} != ${_mvsrc1##*/} ]] ; then
-      if [[ ${_mvdst##*/} == ${_mvsrc1%%/*} ]] ; then
-         _mvdst=${_mvdst%/*}/${_mvsrc1}
-      else
-         _mvdst=${_mvdst}/${_mvsrc1}
-      fi
-   elif [[ -d ${_mvdst} ]] ; then
-      _mvdst=${_mvdst}/${_mvsrc1}
-   elif [[ ${_mvdst0} != ${_mvdst} ]] ; then
-      _mvdst=${_mvdst}/${_mvsrc1}
-   fi
-   myecho 2 "++ git mv ${_mvopt} ${_mvsrc} ${_mvdst}"
-   if [[ ! -f ${_mvsrc} ]] ; then
-      rdegiterror "rdegit mv source file not found: ${_mvsrc}"
-   fi
-
-   if [[ ${_mvsrc##*/} != ${_mvdst##*/} ]] ; then
-      _mvsrc0="$(rdeorginalname ${_mvsrc})"
-      if [[ ${_mvsrc0%%/*} != ${RDEGITDIROTHER} ]] ; then
-         #TODO: this resctriction should only apply to original source code
-         rdegiterror "rdegit mv do not support original file renaming (stub creation problem): ${_mvsrc} ${_mvdst}"
-      fi
-   fi
-   eval "cd ${BUILDGIT} && git mv ${_mvopt} ${_mvsrc} ${_mvdst}" || mystatus=1;
-   if [[ x${mystatus} == x0 ]] ; then
-      echo "${_mvsrc}:${_mvdst}" >> ${GITMV};:
-   fi
-}
-
-
-rdegitmvmulti() {
-   mvopt="${1}"
-   mvsrc="${2}"
-   mvdst="${3}"
-   myecho 1 "+ git mv ${mvopt} ${mvsrc} ${mvdst}"
-   cd ${BUILDGIT}
-   _multi=0
-   if [[ $(echo ${mvsrc} | wc -w) -gt 1 ]] ; then
-      if [[ -e ${mvdst} ]] ; then
-         if [[ ! -d ${mvdst} ]] ; then
-            rdegiterror "rdegit mv dest should be a dir for multiple source: ${mvdst}"
-         fi
-         _multi=1
-      else
-         _multi=2
-      fi
-   fi
-   for mvsrc1 in ${mvsrc} ; do
-      if [[ ! -e ${mvsrc1} ]] ; then
-         rdegiterror "rdegit mv source not found: ${mvsrc1}"
-      fi
-      if [[ -d ${mvsrc1} ]] ; then
-         mvsrc1=${mvsrc1%/}
-         for mvsrc2 in $(cd ${mvsrc1} && find . -type f) ; do
-            rdegitmv "${mvopt}" "${mvsrc1%/*}" "${mvsrc1##*/}/${mvsrc2}" "${mvdst}"
-         done
-      else
-         rdegitmv "${mvopt}" "${mvsrc1%/*}" "${mvsrc1##*/}" "${mvdst}"
-      fi
-   done
-   cd ${ROOT}
-}
-
-
 rdegitbuildgitignore
 if [[ x"${mycmd}" == x"init" ]] ; then
    rdegitinit
@@ -665,10 +621,20 @@ else
          eval "cd ${BUILDGIT} && git ${mycmd} ${mycmdopt}" || mystatus=1;;
       (commit)
          rdegitupdate add;
-         myecho 1 "+ git ${mycmd} -a ${mycmdopt}";
-         eval "cd ${BUILDGIT} && git ${mycmd} -a ${mycmdopt}" || mystatus=1;;
+         hasfile="$(cd ${BUILDGIT} &&  find ${RDEGITDIROTHER} -type f | grep -v '.restricted' | tr '\n' ' ')"
+         if [[ "x${hasfile}" != "x" ]] ; then \
+            printf "ERROR: New files were found; you need to mv them to an existing subdir:\n" 1>&2;
+            printf "       rdegit mv \\ \n\t\t$(echo ${hasfile}| sed 's| | \\\n\t\t|g') \\ \n\t\tDESTDIR\n" 1>&2;
+            exit 1;
+         else \
+            myecho 1 "+ git ${mycmd} -a ${mycmdopt}";
+            eval "cd ${BUILDGIT} && git ${mycmd} -a ${mycmdopt}" || mystatus=1;
+         fi;;
       (updatereverse)
          git2workdir;;
+         # myecho 1 "+ git reset --hard ";
+         # eval "cd ${BUILDGIT} && git ${mycmd} --hard ${mycmdopt}" || mystatus=1;
+         # rdegitupdate add;;
       (reset)
          myecho 1 "+ git ${mycmd} ${mycmdopt}";
          eval "cd ${BUILDGIT} && git ${mycmd} --hard ${mycmdopt}" || mystatus=1;
@@ -680,21 +646,37 @@ else
          eval "cd ${BUILDGIT} && git ${mycmd} ${mycmdopt}" || mystatus=1;
          git2workdir;
          rdegitupdate add;;
-      # (mv)
-      #    mycmdopt="$(echo ${mycmdopt} | tr '\t' ' ')";
-      #    # mvsrcdst="$(echo ${mycmdopt} | sed 's/-[^ ]*[ ]//g')";
-      #    # mvsrcdst="$(echo ${mycmdopt} | sed 's/-[^[:space:]]*[[:space:]]//g')";
-      #    mvsrcdst="$(echo ${mycmdopt} | tr ' ' '\n' | egrep -v '^-' | tr '\n' ' ')";
-      #    mvsrcdst="${mvsrcdst% }";
-      #    mvsrc="${mvsrcdst% *}";
-      #    mvdst="${mvsrcdst##* }";
-      #    mvopt="$(echo ${mycmdopt} | tr ' ' '\n' | egrep '^-' | tr '\n' ' ')";
-      #    rdegitupdate add;
-      #    rdegitmvmulti "${mvopt}" "${mvsrc}" "${mvdst}";
-      #    if [[ x$mystatus == x0 ]] ; then
-      #       git2workdir;
-      #       rdegitupdate add;
-      #    fi;;
+      (mv)
+         mycmdopt="$(echo ${mycmdopt} | tr '\t' ' ')";
+         # mvsrcdst="$(echo ${mycmdopt} | sed 's/-[^ ]*[ ]//g')";
+         # mvsrcdst="$(echo ${mycmdopt} | sed 's/-[^[:space:]]*[[:space:]]//g')";
+         mvsrcdst="$(echo ${mycmdopt} | tr ' ' '\n' | egrep -v '^-' | tr '\n' ' ')";
+         mvsrcdst="${mvsrcdst% }";
+         mvsrc="${mvsrcdst% *}";
+         mvdst="${mvsrcdst##* }";
+         mvopt="$(echo ${mycmdopt} | tr ' ' '\n' | egrep '^-' | tr '\n' ' ')";
+         rdegitupdate add;
+         if [[ ! -d ${BUILDGIT}/${mvdst} ]] ; then \
+            printf "ERROR: Can only mv to an existing dir: ${mvdst} not found or not a dir\n" 1>&2;
+            printf "       One of: $(cd ${BUILDGIT} && find . -type d | cut -d/ -f2-4 | sort -u | grep -v ${RDEGITDIROTHER} | grep -v '\.git' | grep -v '\.'| tr '\n' ' ')\n" 1>&2;
+            exit 1;
+         fi;
+         for item in ${mvsrc} ; do \
+            if [[ ${item%%/*} != ${RDEGITDIROTHER} || ! -f ${BUILDGIT}/${item} ]] ; then \
+               printf "ERROR: Can only mv files from ${RDEGITDIROTHER}: ${item} not a file or not in ${RDEGITDIROTHER}\n" 1>&2;
+               exit 1;
+            fi;
+         done;
+         # set -x;
+         (cd ${BUILDGIT} && git mv ${mvopt} ${mvsrc} ${mvdst};
+         for item in ${mvsrc} ; do \
+            mkdir -p ${item%/*} 2>/dev/null;
+            back=$(echo /${item%/*}/ | sed 's|[^/][^/]*|..|g');
+            ln -s ${back#/}/${mvdst}/${item##*/} ${item};
+            git add ${mvdst}/${item##*/};
+            git add ${item};
+         done);
+         echo;;
      *)
          if [[ x"${mycmd}" != x"" ]] ; then
             rdegiterror "Unknown or not Implemented Command: ${mycmd}";

@@ -136,7 +136,11 @@ for item in ${CONST_SRCPATH_TOPDIRS} ; do
    item2="$(true_path ${item} 2>/dev/null)"
    item2=${item2:-${item}}
    [[ $myforce == 1 ]] && rm -f ${CONST_RDE_LINKDIR}/${item##*/} || true
-   ln -s ${item2} ${CONST_RDE_LINKDIR}/${item##*/} 2>/dev/null || true
+   if [[ ! -e ${CONST_RDE_LINKDIR}/${item##*/} ]] ; then
+      ln -s ${item2} ${CONST_RDE_LINKDIR}/${item##*/} 2>/dev/null || true
+   elif [[ "x$(true_path ${CONST_RDE_LINKDIR}/${item##*/})" != "x$(true_path ${item2})" ]] ; then
+      myecho 1 "WARNING: link not updated ${CONST_RDE_LINKDIR}/${item##*/}"
+   fi
 done
 
 #TODO: create/update .setenv.dot to reload rde/model?
