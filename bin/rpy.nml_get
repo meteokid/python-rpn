@@ -13,7 +13,7 @@ from rpnpy.ftnnml import *
 if __name__ == "__main__":
 
     cleanName    = lambda x: x.lower().replace('\n',' ').strip()
-    
+
     # Command line arguments
     desc="Get list of values, variable names and namelists names from a Fortran namelist file"
     usage = """
@@ -35,7 +35,7 @@ if __name__ == "__main__":
                       action="store_true",
                       help="Include KEY in output expressions (useful for 'eval')",
                       metavar="KEY")
-    
+
     parser.add_option("-l","--listkeys", dest="listkeys",
                       action="store_true",
                       help="Print the list of vars (keys) of the specified namelist, of all namelists otherwise")
@@ -48,35 +48,40 @@ if __name__ == "__main__":
     parser.add_option("-p","--prettyprint", dest="pprint",
                       action="store_true",
                       help="Pretty print the namelist file or specified namelist")
+    parser.add_option("-u","--unquote", dest="unquote",
+                      action="store_true",
+                      help="Remove quotes from namelist values")
+
     (options,args) = parser.parse_args()
     if not (len(args) or options.listkeys or options.listnml
             or options.pprint or options.listkeyval):
         parser.print_help()
-        sys.exit(1)   
+        sys.exit(1)
 
     cfg = FtnNmlFile(options.nml_file)
 
     if options.listnml:
         print " ".join(cfg.keys())
         sys.exit(0)
-        
+ 
     if options.listkeys:
         mylist = ([options.namelist] if options.namelist else cfg.keys())
         print " ".join([" ".join(cfg.get(nml).keys()) for nml in mylist])
         sys.exit(0)
-        
+ 
     if options.listkeyval:
         mylist = ([options.namelist] if options.namelist else cfg.keys())
         for nml in ([options.namelist] if options.namelist else sorted(cfg.keys())):
             for myvar in sorted(cfg.get(nml).keys()):
+                #TODO: unquote option
                 print "%s/%s" % (nml,cfg.get(nml).get(myvar).toStr(clean=True).strip())
         sys.exit(0)
-        
+ 
     if options.pprint:
         for nml in ([options.namelist] if options.namelist else sorted(cfg.keys())):
             print cfg.get(nml).toStr(clean=True,uplowcase=True)
         sys.exit(0)
-        
+ 
     # Generate output
     outputSuffix = '.txt'
     for entry in args:
@@ -107,8 +112,12 @@ if __name__ == "__main__":
                 sys.stderr.write("ERROR: cannot open output file "+outFile+" for writing\n")
                 sys.exit(1)
         else:
-            fd = sys.stdout            
-        fd.write(expr+str(value)+'\n')        
+            fd = sys.stdout
+        if options.unquote:
+            value = str(value).rstrip().lstrip()
+            if value[0] == value[-1]:
+                value = value.strip('\"').strip("\'")
+        fd.write(expr+str(value)+'\n')
         if outFile: fd.close()
 
 # -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
