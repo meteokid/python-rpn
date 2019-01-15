@@ -15,7 +15,7 @@ if __name__ == "__main__":
     logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
 
     cleanName = lambda x: x.lower().replace('\n', ' ').strip()
-    
+
     # Command line arguments
     desc="Get list of values, variable names and namelists names from a Fortran namelist file"
     usage = """
@@ -44,6 +44,7 @@ if __name__ == "__main__":
                         action="store_true", 
                         help="Include KEY in output expressions (useful for 'eval')")
     parser.add_argument("-l", "--listkeys", dest="listkeys", 
+
                         action="store_true", 
                         help="Print the list of vars (keys) of the specified namelist, of all namelists otherwise")
     parser.add_argument("-v", "--listkeyval", dest="listkeyval", 
@@ -55,6 +56,9 @@ if __name__ == "__main__":
     parser.add_argument("-p", "--prettyprint", dest="pprint", 
                         action="store_true", 
                         help="Pretty print the namelist file or specified namelist")
+    parser.add_argument("-u","--unquote", dest="unquote",
+                        action="store_true",
+                        help="Remove quotes from namelist values")
 
     parser.add_argument(dest="nml_keys", 
                         nargs='*', type=str, default=[], 
@@ -66,31 +70,31 @@ if __name__ == "__main__":
     if not (len(args.nml_keys) or args.listkeys or args.listnml
             or args.pprint or args.listkeyval):
         parser.print_help()
-        sys.exit(1)   
+        sys.exit(1)
 
     cfg = FtnNmlFile(args.nml_file)
 
     if args.listnml:
         print(" ".join(cfg.keys()))
         sys.exit(0)
-        
+ 
     if args.listkeys:
         mylist = ([args.nml_name] if args.nml_name else cfg.keys())
         print(" ".join([" ".join(cfg.get(nml).keys()) for nml in mylist]))
         sys.exit(0)
-        
+ 
     if args.listkeyval:
         mylist = ([args.nml_name] if args.nml_name else cfg.keys())
         for nml in ([args.nml_name] if args.nml_name else sorted(cfg.keys())):
             for myvar in sorted(cfg.get(nml).keys()):
                 print("{}/{}".format(nml, cfg.get(nml).get(myvar).toStr(clean=True).strip()))
         sys.exit(0)
-        
+ 
     if args.pprint:
         for nml in ([args.nml_name] if args.nml_name else sorted(cfg.keys())):
             print(cfg.get(nml).toStr(clean=True, uplowcase=True))
         sys.exit(0)
-        
+ 
     # Generate output
     outputSuffix = '.txt'
     for entry in args.nml_keys:
@@ -120,8 +124,12 @@ if __name__ == "__main__":
                 logging.error('Cannot open output file for writing: {}\n'.format(outFile))
                 sys.exit(1)
         else:
-            fd = sys.stdout            
-        fd.write(expr+str(value)+'\n')        
+            fd = sys.stdout
+        if args.unquote:
+            value = str(value).rstrip().lstrip()
+            if value[0] == value[-1]:
+                value = value.strip('\"').strip("\'")
+        fd.write(expr+str(value)+'\n')
         if outFile: fd.close()
 
 # -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
