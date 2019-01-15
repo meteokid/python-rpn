@@ -959,11 +959,19 @@ New: surface_cfgs / z0tevol = FIXED
 #------
 fileVersion: 5.0.b9 > 5.0.rc1
 
-New: physics_cfgs/timings_l = F
+rm: surface_cfgs / thermal_stress
+rm: surface_cfgs / zta
+rm: surface_cfgs / zua
 
-rm: surface_cfgs/thermal_stres
+New: surface_cfgs / zt = 1.500000
+New: surface_cfgs / zu = 10.00000
+
+New: physics_cfgs / timings_l = F
 
 #------
 fileVersion: 5.0.rc1 > 5.0.rc2
+
+#------
+fileVersion: 5.0.rc2 > 5.0.rc3
 
 #------

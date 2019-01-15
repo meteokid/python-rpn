@@ -2,16 +2,17 @@
 #
 arguments=$*
 eval `cclargs_lite $0 \
-  -domain    ""	  ""         "[input/output domain                          ]"\
-  -xcasc     ""   ""         "[backend directory to link cascade files        ]"\
-  -d2z       "0"  "1"        "[assemble all # files into one E file           ]"\
-  -cleanup   "0"  "1"        "[remove input files once done and _status=OK    ]"\
-  -dplusp    "0"  "0"        "[move physics output into dynamics output       ]"\
-  -prefix    ""	  ""         "[add prefix to name of all files              ]"\
+  -domain    ""	""         "[input/output domain                          ]"\
+  -xcasc     ""   ""         "[backend directory to link cascade files      ]"\
+  -d2z       "0"  "1"        "[assemble all # files into one E file         ]"\
+  -cleanup   "0"  "1"        "[remove input files once done and _status=OK  ]"\
+  -dplusp    "0"  "0"        "[move physics output into dynamics output     ]"\
+  -prefix    ""	""         "[add prefix to name of all files              ]"\
   -yyoutgrid "U"  "U"        "[output grid for yin-yang: U, or GLB            ]"\
   -xferl     ""   ""         "[transfer model listings along with model output]"\
   -nthreads  "1"  "1"        "[Number of bemol process to run in parallel     ]"\
-  -abortf   "Um_output" "Um_output" "[abort file                              ]"\
+  -abortf    "Um_output" "Um_output" "[abort file                             ]"\
+  -serdate   "0"  "1"        "[Keep date suffix for time series files         ]"\
   ++ $arguments`
 
 printf "\n=====>  Um_output.ksh starts: `date` ###########\n\n"
@@ -63,7 +64,7 @@ date
                      -assemble ${d2z:-0} -dplusp ${dplusp:-0}\
                      -liste ${liste_of_prefix_to_treat}      \
                      -listm ${xferl} -nthreads ${nthreads}   \
-                     -repcasc ${REPCASC}
+                     -repcasc ${REPCASC} -serdate ${serdate}
 date
 
 STATUS_prep=$_status

@@ -103,7 +103,7 @@ for i in ${cfglist} ; do
     ((nb_abort=nb_abort+1))
   fi
 
-# Deal with special files: time_series.bin, zonaux_* and *.hpm*
+# Deal with special files: time_series*.bin, zonaux_* and *.hpm*
 # Files will be transfered from ${TASK_WORK}/$i to ${TASK_OUTPUT}/$i
 
   cd ${i}  
@@ -112,14 +112,14 @@ for i in ${cfglist} ; do
     REP=${TASK_OUTPUT}/${i}/`cat ${TASK_OUTPUT}/${i}/output_ready_MASTER | grep "\^last" | cut -d " " -f3 | sed 's/\^last//g'`/endstep_misc_files
     mkdir -p ${REP}
     if [ -d YIN ] ; then
-      mkdir ${REP}/YIN       ${REP}/YAN   2> /dev/null || true
-      mv YIN/time_series.bin* ${REP}/YIN   2> /dev/null || true
-      mv YAN/time_series.bin* ${REP}/YAN   2> /dev/null || true
-      mv YIN/[0-9]*/*.hpm    ${REP}/YIN   2> /dev/null || true
-      mv YAN/[0-9]*/*.hpm    ${REP}/YAN   2> /dev/null || true
+      mkdir ${REP}/YIN         ${REP}/YAN   2> /dev/null || true
+      mv YIN/time_series*.bin* ${REP}/YIN   2> /dev/null || true
+      mv YAN/time_series*.bin* ${REP}/YAN   2> /dev/null || true
+      mv YIN/[0-9]*/*.hpm      ${REP}/YIN   2> /dev/null || true
+      mv YAN/[0-9]*/*.hpm      ${REP}/YAN   2> /dev/null || true
     else
-      mv time_series.bin* ${REP} 2> /dev/null || true
-      mv [0-9]*/*.hpm    ${REP} 2> /dev/null || true
+      mv time_series*.bin* ${REP} 2> /dev/null || true
+      mv [0-9]*/*.hpm      ${REP} 2> /dev/null || true
     fi
     liste_busper=`find ./ -type f -name "BUSPER4spinphy*"`
     fn=`echo $liste_busper| awk '{print $1}'`

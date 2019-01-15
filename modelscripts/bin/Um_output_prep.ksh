@@ -12,6 +12,7 @@ eval `cclargs_lite $0 \
      -liste    ""      ""       "[Liste of model output type to treat]"\
      -listm    ""      ""       "[Xfer model listings along          ]"\
      -repcasc  ""      ""       "[Xfer cascade files                 ]"\
+     -serdate  "0"     "1"      "[Keep date suffix for time series files]"\
      -_status  "ABORT" "ABORT"  "[return status                      ]"\
      -nthreads "1"     "1"      "[Number of bemol process to run in parallel]"\
   ++ $arguments`
@@ -72,21 +73,36 @@ if [ $cnt -gt 0 ] ; then
 fi
 
 # Time series file
-find -L ${input} -type f -name 'time_series.bin*' > series_found
+find -L ${input} -type f -name 'time_series*.bin*' > series_found
 cnt=`cat series_found | wc -l`
 series_ok=1
 if [ $cnt -gt 0 ] ; then
   in_serie=`cat series_found`
-  printf "\n  =====>  feseri -iserial ${in_serie} -omsorti time_series.fst \n"
   #ln -sf ${in_serie} .
+  printf "\n  =====>  feseri -iserial time_series.bin -omsorti time_series.fst \n"
   for item in ${in_serie} ; do
+     if [[ ! -s ${item} ]] ; then
+        echo "Skipping empty file: ${item}"
+        ls -l ${item}
+        rm -f ${item}
+        continue
+     fi
      itemnum=${item##*_}_YIN
      if [[ x$(echo ${item} | sed 's|/YAN/|/|') != x${item} ]] ; then
         itemnum=${item##*_}_YAN
      fi
-     itemout=time_series.fst_${itemnum}
+     if [[ ${serdate} == 0 ]] ; then
+        itemout=time_series.fst_${itemnum}
+     else
+        itembase=${item%_*}
+        itemout=${itembase%.bin}.fst_${itemnum}
+     fi
+     itemout=${itemout##*/}
      itemin=time_series.bin_${itemnum}
      ln -s ${item} ${itemin}
+     # itemin=${item}
+     # printf "\n  =====>  feseri -iserial ${in_serie} -omsorti ${itemout} \n"
+     
      ${TASK_BIN}/feseri -iserial ${itemin} -omsorti ${itemout} 1> ${itemin}.lis
      if [ $? -ne 0 ]; then
         printf "\n feseri aborted \n\n"
@@ -99,16 +115,37 @@ if [ $cnt -gt 0 ] ; then
      fi
   done
   if [[ $series_ok == 1 ]] ; then
-     if [[ x"$(ls time_series.fst_*_YIN 2>/dev/null)" != x"" ]] ; then
-        editfst -i 0 -s time_series.fst_*_YIN -d time_series.fst
-        mv time_series.fst ${output}
-        nbfiles=$((nbfiles+1))
+     
+     if [[ ${serdate} == 0 ]] ; then
+
+        for yinyan in YIN YAN; do
+           if [[ x"$(ls time_series.fst_*_${yinyan} 2>/dev/null)" != x"" ]] ; then
+              editfst -i 0 \
+                 -s time_series.fst_*_${yinyan} \
+                 -d time_series.fst_${yinyan}
+              mv time_series.fst_${yinyan} ${output}
+              nbfiles=$((nbfiles+1))
+           fi
+        done
+        mv ${output}/time_series.fst_YIN \
+           ${output}/time_series.fst 2>/dev/null || true
+
+     elif [[ x"$(ls time_series_*.fst_*_* 2>/dev/null)" != x"" ]] ; then
+
+        datelist="$(ls time_series_*.fst_*_* 2>/dev/null | sed 's/time_series_//' | cut -d'.' -f1-2 | tr ' ' '\n' | sort -u | tr '\n' ' ')"
+        for serdate in ${datelist} ; do
+           for yinyan in YIN YAN; do
+              editfst -i 0 \
+                 -s time_series_${serdate}.fst_*_${yinyan} \
+                 -d time_series_${serdate}_${yinyan}.fst
+              mv time_series_${serdate}_${yinyan}.fst ${output}
+              nbfiles=$((nbfiles+1))
+           done
+           mv ${output}/time_series_${serdate}_YIN.fst \
+              ${output}/time_series_${serdate}.fst 2>/dev/null || true
+        done
      fi
-     if [[ x"$(ls time_series.fst_*_YAN 2>/dev/null)" != x"" ]] ; then
-        editfst -i 0 -s time_series.fst_*_YAN -d time_series.fst_YAN
-        mv time_series.fst_YAN ${output}
-        nbfiles=$((nbfiles+1))
-     fi
+
   fi
 fi
 

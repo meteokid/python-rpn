@@ -22,6 +22,7 @@ while [ $DOMAIN_number -le $SLICE_end ] ; do
        -dplusp ${MOD_GEM_dplusp} -prefix ${MOD_GEM_prefix} \
        -yyoutgrid ${MOD_GEM_yyoutgrid} -nthreads ${sub_par}\
        -cleanup ${MOD_GEM_clean} \
+       -serdate ${MOD_GEM_use_serdate:-0} \
        -abortf ${abort_prefix}${bname} 1> ${listing} 2>&1 &
 
   DOMAIN_number=$((DOMAIN_number+1))
