@@ -76,7 +76,20 @@ nb_restart=0
 nb_end=0
 
 printf " ##### UM_TIMING: POST Um_model.ksh STARTING AT: `date`\n"
-for i in cfg_* ; do
+if [[ "x${GEM_NDOMAINS}" != "x" ]] ; then
+   cfglist=""
+   start=$(echo ${GEM_NDOMAINS} | cut -d : -f1)
+   end=$(echo ${GEM_NDOMAINS} | cut -d : -f2)
+   idom=${start}
+   while [ ${idom} -le ${end} ] ; do
+      cfglist="${cfglist} cfg_$(printf "%4.4d" ${idom})"
+      idom=$((idom+1))
+   done
+else
+   cfglist=cfg_*
+fi
+
+for i in ${cfglist} ; do
 
   fn=${TASK_OUTPUT}/${i}/${status_file}
   if [ -s ${fn} ] ; then
@@ -85,6 +98,9 @@ for i in cfg_* ; do
     if [ "$_status" = "ABORT" ] ; then ((nb_abort=nb_abort+1))    ; fi
     if [ "$_status" = "RS"    ] ; then ((nb_restart=nb_restart+1)); fi
     if [ "$_status" = "ED"    ] ; then ((nb_end=nb_end+1))        ; fi
+  else
+    _status="ABORT"
+    ((nb_abort=nb_abort+1))
   fi
 
 # Deal with special files: time_series.bin, zonaux_* and *.hpm*
@@ -97,12 +113,12 @@ for i in cfg_* ; do
     mkdir -p ${REP}
     if [ -d YIN ] ; then
       mkdir ${REP}/YIN       ${REP}/YAN   2> /dev/null || true
-      mv YIN/time_series.bin ${REP}/YIN   2> /dev/null || true
-      mv YAN/time_series.bin ${REP}/YAN   2> /dev/null || true
+      mv YIN/time_series.bin* ${REP}/YIN   2> /dev/null || true
+      mv YAN/time_series.bin* ${REP}/YAN   2> /dev/null || true
       mv YIN/[0-9]*/*.hpm    ${REP}/YIN   2> /dev/null || true
       mv YAN/[0-9]*/*.hpm    ${REP}/YAN   2> /dev/null || true
     else
-      mv time_series.bin ${REP} 2> /dev/null || true
+      mv time_series.bin* ${REP} 2> /dev/null || true
       mv [0-9]*/*.hpm    ${REP} 2> /dev/null || true
     fi
     liste_busper=`find ./ -type f -name "BUSPER4spinphy*"`

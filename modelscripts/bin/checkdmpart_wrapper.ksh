@@ -21,11 +21,17 @@ if [ -n "${bin}" ] ; then
 fi
 
 flag_topo=0
+unset GEM_YINYANG
 if [ ${check_namelist} -gt 0 ] ; then
   BIN=$(which checkdmpart_${BASE_ARCH}.Abs)
   /bin/rm -f ./gem_settings.nml
   ln -s ${nmlfile} ./gem_settings.nml
+  GRDTYP=$(getnml -f gem_settings.nml -n grid grd_typ_s 2> /dev/null | sed "s/'//g")
+  if [ "$GRDTYP" == "GY" ] ; then 
+    GEM_YINYANG=YES
+  fi
   export Ptopo_npex=${npex:-1} ; export Ptopo_npey=${npey:-1}
+  export GEM_YINYANG
   ${bin}r.run_in_parallel -pgm ${BIN} -npex 1 -npey 1 | tee checkdmpart$$
   set +ex
   topo_ok=$(grep "CHECKDMPART IS OK" checkdmpart$$ | wc -l)
