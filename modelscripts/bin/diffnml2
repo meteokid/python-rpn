@@ -37,6 +37,12 @@ EOF
 
 refmode=0
 reffile=${ATM_MODEL_DFILES}/nml/ref/gem_settings.${ATM_MODEL_VERSION}.ref
+if [[ ! -f ${reffile} ]] ; then
+   mypath="$(which r.config_modelscripts_all 2>/dev/null || true)"
+   if [[ "x${mypath}" != "x" && -f ${mypath:-NO_SUCH_FILE}  ]] ; then
+      reffile=${mypath%/*}/../share/nml_updater/ref/gem_settings.${ATM_MODEL_VERSION}.ref
+   fi
+fi
 nmlfiles=""
 nml=""
 myverb=""
@@ -65,12 +71,12 @@ while [[ $# -gt 0 ]] ; do
             nmlfiles="${nmlfiles} ${1}";
          fi;;
     esac
-	 previous=$1
+    previous=$1
     shift
 done
 nmlfiles="${nmlfiles} $@"
 
-if [[ x"${nmlfiles}" == x"" ]] ; then
+if [[ x"${nmlfiles}" == x" " ]] ; then
    nmlfiles="./gem_settings.nml"
 fi
 
@@ -103,7 +109,13 @@ for item in ${reffile} ${nmlfiles} ; do
    if [[ ${myvalues} == 0 ]] ; then
       rpy.nml_get -f ${item} --listkeyval | cut -d= -f1 > ${nmlfilekv}
    else
-      rpy.nml_get -f ${item} --listkeyval > ${nmlfilekv}
+      rpy.nml_get -f ${item} --listkeyval --unquote | \
+         tr 'A-Z' 'a-z' | \
+         sed "s/='\([^']\+\)'/=\1/g" | \
+         sed 's/="\([^"]\+\)"/=\1/g' | \
+         sed 's/=t$/=.true./i' | \
+         sed 's/=f$/=.false./i' | \
+         sed 's/=([f])//' > ${nmlfilekv}
    fi
    if [[ x"${nml}" != x"" ]] ; then
       grep -e "${nml}" ${nmlfilekv} > ${nmlfilekv}+

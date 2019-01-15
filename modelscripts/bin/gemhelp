@@ -44,7 +44,7 @@ EOF
    else
       cat <<EOF
 |-
-| [[#$1|$1] || $2
+| [[#$1|$1]] || $2
 EOF
    fi
 }
@@ -115,9 +115,9 @@ if [[ ${long} == 'True' || ${wiki} != 'False' ]] ; then
       echo "$(grep DESC= $(which ${item}) | cut -d= -f2- | grep -v \${item})"
       echo
       [[ ${wiki} != 'False' ]] && echo "<pre>" || true
-      echo "+ ${item} --help"
+      echo "+ ${item} -h"
       echo
-      ${item} --help
+      ${item} -h
       [[ ${wiki} != 'False' ]] && echo "</pre>" || true
    done
    echofoot
