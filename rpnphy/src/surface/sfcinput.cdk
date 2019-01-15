@@ -1,0 +1,10 @@
+ 
+      integer,parameter :: PHYINREAD_MAX = 512
+      integer :: phyinread_dim
+      integer :: phyinread_n, phyinread_dateo
+      integer :: phyinread_dt, phyinread_step
+      character(len=32) :: phyinread_list_S(PHYINREAD_MAX)
+
+      common /phyinread/ phyinread_n,phyinread_dateo,phyinread_dt
+      common /phyinread/ phyinread_step,phyinread_list_S
+

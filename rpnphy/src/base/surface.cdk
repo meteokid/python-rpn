@@ -1,0 +1,52 @@
+!
+      integer indx_soil
+      integer indx_glacier
+      integer indx_water
+      integer indx_ice
+      integer indx_urb
+      integer indx_agrege
+!
+      logical cortm
+      logical drylaps
+      logical z0dir
+!
+      real    as
+      real    beta
+      real    ci
+      real    critlac
+      real    critmask
+      real    critsnow
+      real    leadfrac
+      real    n0rib
+      real    vamin
+      real    veg_rs_mult
+      real    zt
+      real    zta
+      real    zu
+      real    zua
+!
+      common / surfacei / indx_soil
+      common / surfacei / indx_glacier
+      common / surfacei / indx_water
+      common / surfacei / indx_ice
+      common / surfacei / indx_urb
+      common / surfacei / indx_agrege
+!
+      common / surfacel / cortm
+      common / surfacel / drylaps
+      common / surfacel / z0dir
+!
+      common / surfacer / as
+      common / surfacer / beta
+      common / surfacer / ci
+      common / surfacer / critlac
+      common / surfacer / critmask
+      common / surfacer / critsnow
+      common / surfacer / leadfrac
+      common / surfacer / n0rib
+      common / surfacer / vamin
+      common / surfacer / veg_rs_mult
+      common / surfacer / zt
+      common / surfacer / zta
+      common / surfacer / zu
+      common / surfacer / zua
