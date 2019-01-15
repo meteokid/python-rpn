@@ -222,7 +222,7 @@
       real tsair,ddd
       integer iv
 !
-include "thermoconsts.inc"
+#include "tdpack_const.hf"
 !
 !
       real stefinv
@@ -235,7 +235,7 @@ include "thermoconsts.inc"
       real rido3mx,ridwatmx
       real ln10inv, pogravinv
 
-      real, pointer, dimension(:) :: auzt
+      real, pointer, dimension(:), contiguous :: auzt
 
 !***********************************************************************
 !     AUTOMATIC ARRAYS

@@ -13,9 +13,10 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-integer function itf_cpl_init(F_path_S, F_print_L, F_unout, &
-     F_dateo, F_dt)
+function itf_cpl_init(F_path_S, F_print_L, F_unout, F_dateo, F_dt) result(F_istat)
    use cpl_itf, only: cpl_init
+   use phygridmap, only: drv_glb_ni, drv_glb_nj, drv_lcl_ni, drv_lcl_nj, &
+        phy_lcl_i0, phy_lcl_j0, phy_lcl_in, phy_lcl_jn, phydim_nk
    use sfc_options
    implicit none
 #include <arch_specific.hf>
@@ -24,27 +25,28 @@ integer function itf_cpl_init(F_path_S, F_print_L, F_unout, &
    logical, intent(in)          :: F_print_L
    integer, intent(in)          :: F_dateo, F_unout
    real, intent(in)             :: F_dt
+   !@return
+   integer :: F_istat
    !@object     interface to cpl_init
    !@authors    Francois Roy -- spring 2014
    !@revision
    ! v4_70 - Roy, F.  - initial version
 
-   include "phygrd.cdk"
-   integer code
+   integer :: istat
    !---------------------------------------------------------------
-   itf_cpl_init= 0
+   F_istat = 0
    if (.not.cplocn) return
 
-   code = cpl_init (F_path_S, F_print_L, F_unout, F_dateo, F_dt  , &
+   istat = cpl_init(F_path_S, F_print_L, F_unout, F_dateo, F_dt, &
         drv_glb_ni, drv_glb_nj, drv_lcl_ni, drv_lcl_nj, &
         phy_lcl_i0, phy_lcl_j0, phy_lcl_in, phy_lcl_jn, &
-        phydim_nk , z0mtype, Z0TLAT, Z0TRDPS300)
+        phydim_nk, z0mtype, z0ttype, Z0TLAT)
 
-   if (code .lt. 0) then
-      itf_cpl_init= -1
+   if (istat < 0) then
+      F_istat = -1
    else
-      cplocn= code .eq. 1
-      itf_cpl_init= 0
+      cplocn = (istat == 1)
+      F_istat = 0
    endif
    !---------------------------------------------------------------
    return

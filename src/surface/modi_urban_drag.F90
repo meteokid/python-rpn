@@ -32,7 +32,8 @@ INTERFACE
                           PQSAT_ROOF, PQSAT_ROAD, PDELT_ROOF, PDELT_ROAD,   &
                           PCD, PAC_ROOF, PAC_ROOF_WAT,                      &
                           PAC_WALL, PAC_ROAD, PAC_ROAD_WAT, PAC_TOP,        &
-                          PU_CAN, PRI                                       )
+                          PU_CAN, PRI,                                      &
+                          ZTRDZT,ZTRFZT,ZUZT,ZVZT                           )
 !
 !*      0.1    declarations of arguments 
 !
@@ -96,6 +97,11 @@ REAL, DIMENSION(:), INTENT(OUT)   :: PAC_TOP        ! aerodynamical conductance
 REAL, DIMENSION(:), INTENT(OUT)   :: PU_CAN         ! hor. wind in canyon
 REAL, DIMENSION(:), INTENT(OUT)   :: PRI            ! Town Richardson number
 !
+!
+REAL, DIMENSION(:), INTENT(OUT)   :: ztrfzt ! output for diasurf T,q at z=zt over roof
+REAL, DIMENSION(:), INTENT(OUT)   :: ztrdzt ! output for diasurf T,q at z=zt over roof
+REAL, DIMENSION(:), INTENT(OUT)   :: zuzt  ! output for diasurf u,v at z=zt over roof
+REAL, DIMENSION(:), INTENT(OUT)   :: zvzt  ! output for diasurf u,v at z=zt over roof
 !
 END SUBROUTINE URBAN_DRAG2
 !

@@ -26,9 +26,11 @@
                           PQSAT_ROOF, PQSAT_ROAD, PDELT_ROOF, PDELT_ROAD,   &
                           PCD, PAC_ROOF, PAC_ROOF_WAT,                      &
                           PAC_WALL, PAC_ROAD, PAC_ROAD_WAT, PAC_TOP,        &
-                          PU_CAN, PRI                                       )
+                          PU_CAN, PRI,                                      &
+                          ZTRDZT,ZTRFZT,ZUZT,ZVZT                           )
 !   ##########################################################################
-       use sfclayer_mod, only: sl_sfclayer
+       use sfclayer_mod, only: sl_sfclayer,SL_OK
+       use sfc_options    
 !
 !!****  *URBAN_DRAG*  
 !!
@@ -149,6 +151,12 @@ REAL, DIMENSION(:), INTENT(OUT)   :: PAC_TOP        ! aerodynamical conductance
 REAL, DIMENSION(:), INTENT(OUT)   :: PU_CAN         ! hor. wind in canyon
 REAL, DIMENSION(:), INTENT(OUT)   :: PRI            ! Town Richardson number
 !
+REAL, DIMENSION(:), INTENT(OUT)   :: ztrfzt ! output for diasurf T,q at z=zt over roof
+REAL, DIMENSION(:), INTENT(OUT)   :: ztrdzt ! output for diasurf T,q at z=zt over road
+REAL, DIMENSION(:), INTENT(OUT)   :: zuzt  ! output for diasurf u,v at z=zt over roof
+REAL, DIMENSION(:), INTENT(OUT)   :: zvzt  ! output for diasurf u,v at z=zt over roof
+!REAL, DIMENSION(:), INTENT(OUT)   :: zurdzt ! output for diasurf T,q at z=zt over road
+!REAL, DIMENSION(:), INTENT(OUT)   :: zvrdzt ! output for diasurf T,q at z=zt over road
 !
 !*      0.2    declarations of local variables
 !
@@ -171,6 +179,9 @@ INTEGER                   ::  JLOOP, STAT      !!
 !
 REAL,DIMENSION(SIZE(PTA)) :: cmu, ctu, ue, fcor                  ! temp var for sfc layer
 REAL,DIMENSION(SIZE(PTA)) :: z0h_roof,z0h_town,z0h_road,z0h_can  ! local thermal roughness
+REAL,DIMENSION(SIZE(PTA)) :: ztemp  ! temporary array for -not used- diagnostic var (to avoid print in the listing)
+real,    parameter :: XZT = 2.5  ! height for diag calc. different from zt
+
 INTEGER N
    logical, parameter :: TOWN_TDIAGLIM = .false.
 !
@@ -277,6 +288,11 @@ stat = sl_sfclayer(PTA/PEXNA,PQA,PVMOD,PVDIR,PUREF+PBLD_HEIGHT/3.,PZREF+PBLD_HEI
      ZTS_TOWN/PEXNS,ZQ_TOWN,PZ0_TOWN,Z0H_TOWN,PLAT,fcor,optz0=8,coefm=cmu,coeft=ctu,ue=ue,&
      tdiaglim=TOWN_TDIAGLIM)
 !
+   if (stat /= SL_OK) then
+      call physeterror('urban_drag mom.', 'error returned by sl_sfclayer()')
+      return
+   endif
+
 		PCD(:) = (cmu(:)/ue(:))**2  
 !
 !
@@ -291,7 +307,8 @@ PRI = ZRI
 !
 stat = sl_sfclayer(PTA/PEXNA,PQA,PVMOD,PVDIR,PUREF,PZREF, &
      PTS_ROOF/PEXNS,ZQ_ROOF,PZ0_ROOF,Z0H_ROOF,PLAT,fcor,optz0=8,coefm=cmu,coeft=ctu,ue=ue,&
-     tdiaglim=TOWN_TDIAGLIM)
+     tdiaglim=TOWN_TDIAGLIM,   &
+     hghtm_diag=zt,hghtt_diag=zt,t_diag=ztrfzt,u_diag=zuzt,v_diag=zvzt)
 !
 	          PAC_ROOF(:) = (cmu(:)*ctu(:)/ue(:)**2)  * PVMOD(:) 
 !
@@ -369,7 +386,7 @@ DO JLOOP=1,3
 ! z0h computed with Kanda (2007) formulation - option 8 in compz0
 stat = sl_sfclayer(PT_CANYON/PEXNS,PQ_CANYON,PU_CAN+ZW_CAN,PVDIR,PBLD_HEIGHT/2.,PBLD_HEIGHT/2., &
      PTS_ROAD/PEXNS,PQ_CANYON,PZ0_ROAD,Z0H_ROAD,PLAT,fcor,optz0=8,coefm=cmu,coeft=ctu,ue=ue, &
-     tdiaglim=TOWN_TDIAGLIM)
+     tdiaglim=TOWN_TDIAGLIM,hghtt_diag=zt,t_diag=ztrdzt)
 !
 		PAC_ROAD(:) = (cmu(:)*ctu(:)/ue(:)**2)  * (PU_CAN(:)+ZW_CAN(:)) 
 !

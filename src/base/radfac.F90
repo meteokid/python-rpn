@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN ------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,14 +12,14 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
-!**s/p radfac3
-!
-      subroutine radfac3 ( qoz,ozotoit,sig,nlev,nk,lref, &
+!-------------------------------------- LICENCE END --------------------------
+!*@/
+subroutine radfac3(qoz,ozotoit,sig,nlev,nk,lref, &
                            dlat,press,np,npmax,maxlev, &
                            o3f,x1,x2,x3,x4,i1,i2, &
                            s2,s3,nlat,fozo,clat,pref)
-      implicit none
+   use phy_status, only: phy_error_L
+   implicit none
 #include <arch_specific.hf>
       integer nlev,lref,np,npmax,maxlev,nlat,nk
 !
@@ -81,16 +81,13 @@
 !          ozoref2 (kg o3/kg air at climatological levels)
 !          qozon3  (kg o3/kg air at desired sigma  levels)
 !
-!*
-!
-!
-      external ozoref2,qozon3
-!
-!
+!*@/
+
       call ozoref2(o3f,lref,dlat,np,npmax,i1,nlat,clat,pref,fozo)
-!
+      if (phy_error_L) return
+
       call qozon3(qoz,ozotoit,o3f,press,sig,nlev,nk,np,npmax, &
                   lref,pref,x1,x2,x3,x4,i1,i2)
-!
+
       return
       end

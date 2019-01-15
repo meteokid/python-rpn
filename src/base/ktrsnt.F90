@@ -18,6 +18,7 @@
       SUBROUTINE KTRSNT3 ( CTT,CQT,ilab,CCF,QCKTL,QCKTI,DBDT,CRRL,CRRI, &
                           QCN,TP,TM,QP,QM,GZM,TQDF,PSP,PSM, &
                           SIGMA, TAU, KSHAL, NI, NK)
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 !
@@ -153,10 +154,7 @@
 !
 !*    PHYSICAL CONSTANTS.
 !     -------- ----------
-!
-include "thermoconsts.inc"
-include "dintern.inc"
-include "fintern.inc"
+
       rcpd = 1./CPD
       rgrav3 = 1./(GRAV*1.E3)
 !     typiquement entraine selon labda=1/GH (H=2km)

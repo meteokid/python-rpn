@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN -------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms 
@@ -12,17 +12,20 @@
 !You should have received a copy of the License/Disclaimer along with this software; 
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!-------------------------------------- LICENCE END ---------------------------
 
 module phygetmetaplus_mod
+   use phybus, only: entbus, perbus, dynbus, volbus
+   use phygridmap, only: phy_lcl_ni, phy_lcl_nj
    use phy_typedef
+   implicit none
    private
+#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 #include <msg.h>
 #include <gmm.hf>
 #include <clib_interface_mu.hf>
    include "buses.cdk"
-   include "phygrd.cdk"
 
    public :: phygetmetaplus, phygetmetaplus_single, phygetmetaplus_list, phymetaplus
 
@@ -30,7 +33,7 @@ module phygetmetaplus_mod
 
    type phymetaplus
       type(phymeta) :: meta
-      real, pointer :: ptr(:,:)
+      real, pointer, contiguous :: vptr(:,:)
       integer :: index
    end type phymetaplus
 
@@ -38,11 +41,6 @@ module phygetmetaplus_mod
       module procedure phygetmetaplus_single
       module procedure phygetmetaplus_list
    end interface phygetmetaplus
-
-   real, pointer, save :: busdyn(:,:) => null()
-   real, pointer, save :: busper(:,:) => null()
-   real, pointer, save :: busvol(:,:) => null()
-   real, pointer, save :: busent(:,:) => null()
 
 contains
 
@@ -94,7 +92,7 @@ contains
       !*@/
       integer, external :: phygetvarlist2, phygetindx
 
-      integer :: np, bp, v, istat, index, cnt, maxmeta, nmatch, ngetmax, nktot
+      integer :: np, bp, v, istat, index, cnt, maxmeta, nmatch, ngetmax, nktot, niktot
       integer :: param(BUSPAR_MAXPAR)
       real    :: vmin, vmax
       character(len=PHY_MAXNAMELENGTH) :: name, npath, bpath, bus
@@ -102,18 +100,9 @@ contains
       character(len=PHY_MAXNAMELENGTH) :: vlist(MAXBUS)
       logical :: full, to_alloc
       type(phymetaplus) :: meta_tmp(MAXBUS)
-      real, pointer :: busptr(:,:)
+      real, pointer, contiguous :: busptr(:,:)
       ! ---------------------------------------------------------------------
       F_istat = RMN_ERR
-
-      if (.not.associated(busdyn)) then !# Optimiz to avoid omp critical section
-!$omp critical
-         if (.not.associated(busdyn)) istat = gmm_get('BUSDYN_3d', busdyn)
-         if (.not.associated(busper)) istat = gmm_get('BUSPER_3d', busper)
-         if (.not.associated(busvol)) istat = gmm_get('BUSVOL_3d', busvol)
-         if (.not.associated(busent)) istat = gmm_get('BUSENT_3d', busent)
-!$omp end critical
-      endif
 
       name  = F_name  ; istat = clib_toupper(name)
       npath = F_npath ; istat = clib_toupper(npath)
@@ -148,29 +137,31 @@ contains
                oname_v = ' '
                iname_v = ' '
                istat = phygetindx(vlist(v), oname_v, iname_v, bus, index, param, size(param))
-               if (istat < 0) cycle
+               if (istat < 0 .or. index < 1) cycle
 
                ! Record is found - fill metadata structure
                nullify(busptr)
                IF_NOTMAX: if (cnt < maxmeta) then
                   select case(bus)
                   case ('D')
-                     busptr => busdyn
+                     busptr => dynbus
                   case ('P')
-                     busptr => busper
+                     busptr => perbus
                   case ('V')
-                     busptr => busvol
+                     busptr => volbus
                   case ('E')
-                     busptr => busent
+                     busptr => entbus
                   case DEFAULT
                      call msg(MSG_WARNING,'(phygetmetaplus) Unknown bus: '//trim(bus))
+                     cycle
                   end select
                   cnt = cnt+1
                   vmin = transfer(param(BUSPAR_VMIN), vmin)
                   vmax = transfer(param(BUSPAR_VMAX), vmax)
                   nktot = param(BUSPAR_NK) * param(BUSPAR_FMUL) &
                        * (param(BUSPAR_MOSAIC)+1)
-                  meta_tmp(cnt)%ptr   => busptr
+                  niktot = phy_lcl_ni * nktot
+                  meta_tmp(cnt)%vptr  => busptr(index:index-1+niktot,:)
                   meta_tmp(cnt)%index =  index
                   meta_tmp(cnt)%meta%iname  = iname_v
                   meta_tmp(cnt)%meta%oname  = oname_v

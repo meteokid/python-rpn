@@ -71,7 +71,7 @@
 !
 !IMPLICITES
 !
-include "thermoconsts.inc"
+#include "tdpack_const.hf"
 !
       integer i,k,im,k1,k2,k3,k4
       real dsg,dpsg,qctemp,qitemp

@@ -90,7 +90,7 @@
 !
 !***********************************************************************
 !
-include "thermoconsts.inc"
+#include "tdpack_const.hf"
 !
 !
       RAD2DEG = 180.0/PI

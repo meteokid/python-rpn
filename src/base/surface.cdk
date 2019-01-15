@@ -5,17 +5,19 @@
       integer indx_ice
       integer indx_urb
       integer indx_agrege
+      integer nagrege
 !
       logical cortm
-      logical drylaps
       logical z0dir
 !
-      real    as
       real    beta
-      real    ci
+      real    bh91_a, bh91_b, bh91_c, bh91_d
       real    critlac
       real    critmask
       real    critsnow
+      real    d97_as
+      real    dg92_ci
+      real    l07_ah, l07_am
       real    leadfrac
       real    n0rib
       real    vamin
@@ -24,6 +26,9 @@
       real    zta
       real    zu
       real    zua
+
+      character(len=16) sl_func_stab
+      character(len=16) sl_func_unstab
 !
       common / surfacei / indx_soil
       common / surfacei / indx_glacier
@@ -31,17 +36,20 @@
       common / surfacei / indx_ice
       common / surfacei / indx_urb
       common / surfacei / indx_agrege
+      common / surfacei / nagrege
 !
       common / surfacel / cortm
-      common / surfacel / drylaps
       common / surfacel / z0dir
 !
-      common / surfacer / as
       common / surfacer / beta
-      common / surfacer / ci
+      common / surfacer / bh91_a, bh91_b, bh91_c, bh91_d
       common / surfacer / critlac
       common / surfacer / critmask
       common / surfacer / critsnow
+      common / surfacer / d97_as
+      common / surfacer / dg92_ci
+      common / surfacer / l07_ah
+      common / surfacer / l07_am
       common / surfacer / leadfrac
       common / surfacer / n0rib
       common / surfacer / vamin
@@ -50,3 +58,6 @@
       common / surfacer / zta
       common / surfacer / zu
       common / surfacer / zua
+
+      common / surfacec / sl_func_stab
+      common / surfacec / sl_func_unstab

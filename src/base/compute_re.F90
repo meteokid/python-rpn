@@ -68,7 +68,7 @@
       real rec_cdd(lmx,nk), vs1(lmx,nk)
 !
 #include "cldop.cdk"
-include "thermoconsts.inc"
+#include "tdpack_const.hf"
 !
       data third/0.3333333/
       save third

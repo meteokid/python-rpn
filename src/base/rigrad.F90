@@ -13,10 +13,9 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
-!**S/P  RIGRAD2
 
-subroutine rigrad2(shr2,tve,qe,zn,ps,se,z,rig,gama,gamaq,tbl,ribkg,n,nk)
-
+subroutine rigrad3(shr2,tve,qe,zn,ps,se,z,rig,gama,gamaq,ribkg,n,nk)
+   use tdpack
    implicit none
 #include <arch_specific.hf>
 
@@ -34,12 +33,6 @@ subroutine rigrad2(shr2,tve,qe,zn,ps,se,z,rig,gama,gamaq,tbl,ribkg,n,nk)
    ! Output arguments
    real, dimension(n,nk), intent(out) :: rig        !gradient Richardson number
    real, dimension(n,nk), intent(out) :: gama,gamaq !temperature,moisture profile adjusmtent
-   real, dimension(n), intent(out) :: tbl           !top of the convective boundary layer (index)
-
-   ! External declarations
-   include "thermoconsts.inc"
-   include "dintern.inc"
-   include "fintern.inc"
 
    ! Internal variables
    integer :: i,k,down,up
@@ -56,10 +49,7 @@ subroutine rigrad2(shr2,tve,qe,zn,ps,se,z,rig,gama,gamaq,tbl,ribkg,n,nk)
       rig(:,k) = (GRAV / thetav(:,k)) * buoy / shr2(:,k)
    enddo
    rig(:,1) = (GRAV / thetav(:,1)) * ((thetav(:,2)-thetav(:,1))/(z(:,2)-z(:,1))) / shr2(:,1)
-   rig(:,nk) = (GRAV / thetav(:,nk)) * ((thetav(:,nk)-thetav(:,nk-1))/(z(:,nk)-z(:,k-1))) / shr2(:,nk)
-   do k=1,nk
-      where(rig(:,k) > 0.) tbl = real(k)
-   enddo
+   rig(:,nk) = (GRAV / thetav(:,nk)) * ((thetav(:,nk)-thetav(:,nk-1))/(z(:,nk)-z(:,nk-1))) / shr2(:,nk)
 
    ! Create mixing length-based Ri values
    BACKGROUND_PROFILE: if (ribkg) then
@@ -90,5 +80,5 @@ subroutine rigrad2(shr2,tve,qe,zn,ps,se,z,rig,gama,gamaq,tbl,ribkg,n,nk)
       enddo
    enddo
 
-end subroutine rigrad2
+end subroutine rigrad3
 

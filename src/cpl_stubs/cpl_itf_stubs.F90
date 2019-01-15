@@ -51,11 +51,11 @@ contains
       integer function cpl_init (F_path_S, F_print_L, F_unout, F_dateo, F_dt, &
                                  F_glb_ni, F_glb_nj, F_lcl_ni, F_lcl_nj     , &
                                  F_i0, F_j0, F_in, F_jn, F_nk               , &
-                                 F_z0mtype, F_z0lat, F_z0rdps300)
+                                 F_z0mtype, F_z0ttype, F_z0lat)
       implicit none
 #include <arch_specific.hf>
-      character(len=*), intent(in) :: F_path_S,F_z0mtype
-      logical, intent(in)          :: F_print_L,F_z0RDPS300
+      character(len=*), intent(in) :: F_path_S,F_z0mtype,F_z0ttype
+      logical, intent(in)          :: F_print_L
       integer, intent(in)          :: F_dateo, F_unout                , &
                                    F_glb_ni,F_glb_nj,F_lcl_ni,F_lcl_nj, &
                                    F_i0, F_j0, F_in, F_jn, F_nk

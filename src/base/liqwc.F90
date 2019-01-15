@@ -16,6 +16,7 @@
 !**S/R LIQWC
 !
       SUBROUTINE LIQWC(LWC, SIG, T, PSOL, LMX, LEV, MM, SATUCO)
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 !
@@ -68,11 +69,7 @@
 !          .FALSE. if water phase only for saturation
 !
 !*
-!
-!
-include "thermoconsts.inc"
-include "dintern.inc"
-include "fintern.inc"
+
       P0=101325.
       REC_CAPPA=1./CAPPA
       REC_RGASD=1./RGASD

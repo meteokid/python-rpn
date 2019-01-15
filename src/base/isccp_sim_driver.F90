@@ -26,7 +26,7 @@
 #include <arch_specific.hf>
 !
 #include "nbsnbl.cdk"
-include "thermoconsts.inc"
+#include "tdpack_const.hf"
 !
 #include "mcica.cdk"
 

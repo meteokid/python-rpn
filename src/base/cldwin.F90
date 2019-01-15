@@ -14,9 +14,11 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
       SUBROUTINE CLDWIN(BM,FM,T,HU,PS,TRAV,SIGMA,NI,NK,SATUCO)
+      use tdpack
       implicit none
 #include <arch_specific.hf>
-!
+#include <rmnlib_basics.hf>
+
       INTEGER NI,NK
       REAL FM(NI,NK),BM(NI,NK)
       REAL T(NI,NK),HU(NI,NK)
@@ -95,11 +97,7 @@
 !
 #include "comphy.cdk"
 #include "phyinput.cdk"
-include "thermoconsts.inc"
-include "dintern.inc"
-include "fintern.inc"
-!
-!
+
 !____FUNCTION USED FOR CORRECTING OF THE U00 FOR SIGMA>0.9
 !
       FUNB0(YPU0,XWFLO,XSIGMA,YPSGBT,YPUSG1)= &

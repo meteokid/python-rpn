@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN -------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms 
@@ -12,10 +12,10 @@
 !You should have received a copy of the License/Disclaimer along with this software; 
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
-!*** S/P GWSPECTRUM
-!
-  SUBROUTINE gwspectrum4( kproma , kbdim  , klev   &
+!-------------------------------------- LICENCE END ---------------------------
+
+!/@*
+SUBROUTINE gwspectrum4(kproma , kbdim  , klev   &
                          ,s      , sh     , sexpk  &
                          ,shexpk , pressg , th     &
                          ,ptm1   , pum1   , pvm1   &
@@ -24,9 +24,8 @@
                          ,tau    , rmscon , iheatcal &
                          ,kount, trnch               &
                          , std_p_prof, non_oro_pbot)
-
-    USE mo_gwspectrum,        ONLY: kstar, naz
-
+    USE mo_gwspectrum, ONLY: kstar, naz
+    use phy_status, only: phy_error_L
     implicit none
 #include <arch_specific.hf>
 
@@ -104,7 +103,8 @@
 ! pressg   surface pressure (pascal)
 ! th       half  level temperature
 ! std_p_prof  STanDard Pressure PRoFil to get emiss_lev
-!
+!*@/
+
     !  Local arrays for ccc/mam hines gwd scheme:
 
     ! Important local parameter (passed to all subroutines):
@@ -234,7 +234,8 @@
        ENDDO
        IF(levbot.lt.1)then
           write(6,1000)std_p_prof(1),std_p_prof(klev),non_oro_pbot
-          call qqexit(1)
+          call physeterror('gwspectrum', 'Problem with non_oro_pbot values, out of range')
+          return
        ENDIF
 
        !     * initialize switch for column calculation
@@ -276,6 +277,7 @@
                           m_alpha,  mmin_alpha ,sigma_t, sigmatm,        & 
                           kount, trnch,                                  &
                           levbot, hflt, lorms, iheatcal)
+       if (phy_error_L) return
 
 !       DO jk=1, klev
 !          DO jl=1,kproma

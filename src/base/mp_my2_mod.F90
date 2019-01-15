@@ -14,11 +14,13 @@
 !_______________________________________________________________________________!
 
 MODULE mp_my2_mod
+ use phy_status, only: phy_error_L
 
  private
  public  :: mp_my2_main
  private :: NccnFNC,SxFNC,gamma,gser,gammln,gammp,cfg,gamminc,polysvp,qsat,check_values
  private :: sedi_wrapper_2,sedi_1D,count_columns,des_OF_Ds,Dm_x,iLAMDA_x,N_Cooper,Nos_Thompson
+ private :: activate,maxsat,erf  ! Added by C.Jouan april2015
 
  CONTAINS
 
@@ -73,9 +75,9 @@ MODULE mp_my2_mod
 
   else
 
-    print*, '*** STOPPED in MODULE ### NccnFNC  *** '
-    print*, '    Parameter CCNtype incorrectly specified'
-    stop
+     NccnFNC = 0.
+     call physeterror('mp_my2:NccnFNC', 'Parameter CCNtype incorrectly specified')
+     return
 
   endif
 
@@ -132,9 +134,9 @@ MODULE mp_my2_mod
 
   else
 
-    print*, '*** STOPPED in MODULE ### SxFNC  *** '
-    print*, '    Parameter CCNtype incorrectly specified'
-    stop
+     SxFNC = 0.
+     call physeterror('mp_my2:SxFNC', 'Parameter CCNtype incorrectly specified')
+     return
 
   endif
 
@@ -280,6 +282,25 @@ END SUBROUTINE gser
  END FUNCTION gammp
 !======================================================================!
 
+ real FUNCTION erf(x)                ! Added by C.Jouan april2015
+
+ ! USES gammp
+ ! Returns the error function erf(x ).
+
+ IMPLICIT NONE
+
+ real :: x
+
+ if(x.lt.0.)then
+    erf=-gammp(.5,x**2)
+ else
+    erf=gammp(.5,x**2)
+ endif
+ return
+
+ END FUNCTION erf
+!======================================================================!
+
  SUBROUTINE cfg(gammcf,a,x,gln)
 
 ! USES gammln
@@ -294,7 +315,7 @@ END SUBROUTINE gser
  integer :: i,itmax
  real    :: a,gammcf,gln,x,eps,fpmin
  real    :: an,b,c,d,de1,h
- parameter (itmax=100,eps=3.e-7)
+ parameter (itmax=100,eps=3.e-7,fpmin=1.e-30)  ! Modified by C.Jouan april2015
 
  gln=gammln(a)
  b=x+1.-a
@@ -480,11 +501,13 @@ END SUBROUTINE cfg
         if (.not.(T(i,k)>T_low .and. T(i,k)<T_high)) then
            print*,'** WARNING IN MICRO **'
            print*,'** src,i,k,T: ',source_ind,i,k,T(i,k)
+           call flush(6)
            trap = .true.
         endif
         if (.not.(Qv(i,k)>=0. .and. Qv(i,k)<Q_high)) then
            print*,'** WARNING IN MICRO **'
            print*,'** src,i,k,Qv (HU): ',source_ind,i,k,Qv(i,k)
+           call flush(6)
         endif
         !-- NAN check:
         if (.not.(Qc(i,k)>=x_low .and. Qc(i,k)<Q_high .and.                               &
@@ -498,6 +521,7 @@ END SUBROUTINE cfg
                    Qi(i,k),Qn(i,k),Qg(i,k),Qh(i,k)
            print*, '** src,i,k,Nc,Nr,Ny,Nn,Ng,Nh: ',source_ind,i,k,Nc(i,k),Nr(i,k),       &
                   Ny(i,k),Nn(i,k),Ng(i,k),Nh(i,k)
+           call flush(6)
            trap = .true.
         endif
         if (.not.(Nc(i,k)>=x_low .and. Nc(i,k)<N_high .and.                               &
@@ -511,6 +535,7 @@ END SUBROUTINE cfg
                    Qi(i,k),Qn(i,k),Qg(i,k),Qh(i,k)
            print*, '** src,i,k,Nc,Nr,Ny,Nn,Ng,Nh: ',source_ind,i,k,Nc(i,k),Nr(i,k),       &
                   Ny(i,k),Nn(i,k),Ng(i,k),Nh(i,k)
+           call flush(6)
            trap = .true.
         endif
         !==
@@ -518,31 +543,37 @@ END SUBROUTINE cfg
            if ((Qc(i,k)>epsQ.and.Nc(i,k)<epsN) .or. (Qc(i,k)<epsQ.and.Nc(i,k)>epsN)) then
               print*,'** WARNING IN MICRO **'
               print*, '** src,i,k,Qc,Nc: ',source_ind,i,k,Qc(i,k),Nc(i,k)
+              call flush(6)
               trap = .true.
            endif
            if ((Qr(i,k)>epsQ.and.Nr(i,k)<epsN) .or. (Qr(i,k)<epsQ.and.Nr(i,k)>epsN)) then
               print*,'** WARNING IN MICRO **'
               print*, '** src,i,k,Qr,Nr: ',source_ind,i,k,Qr(i,k),Nr(i,k)
+              call flush(6)
               trap = .true.
            endif
            if ((Qi(i,k)>epsQ.and.Ny(i,k)<epsN) .or. (Qi(i,k)<epsQ.and.Ny(i,k)>epsN)) then
               print*,'** WARNING IN MICRO **'
               print*, '** src,i,k,Qi,Ny: ',source_ind,i,k,Qi(i,k),Ny(i,k)
+              call flush(6)
               trap = .true.
            endif
            if ((Qn(i,k)>epsQ.and.Nn(i,k)<epsN) .or. (Qn(i,k)<epsQ.and.Nn(i,k)>epsN)) then
               print*,'** WARNING IN MICRO **'
               print*, '** src,i,k,Qn,Nn: ',source_ind,i,k,Qn(i,k),Nn(i,k)
+              call flush(6)
               trap = .true.
            endif
            if ((Qg(i,k)>epsQ.and.Ng(i,k)<epsN) .or. (Qg(i,k)<epsQ.and.Ng(i,k)>epsN)) then
               print*,'** WARNING IN MICRO **'
               print*, '** src,i,k,Qg,Ng: ',source_ind,i,k,Qg(i,k),Ng(i,k)
+              call flush(6)
               trap = .true.
            endif
            if ((Qh(i,k)>epsQ.and.Nh(i,k)<epsN) .or. (Qh(i,k)<epsQ.and.Nh(i,k)>epsN)) then
               print*,'** WARNING IN MICRO **'
               print*, '** src,i,k,Qh,Nh: ',source_ind,i,k,Qh(i,k),Nh(i,k)
+              call flush(6)
               trap = .true.
            endif
         endif !if (check_consistency)
@@ -551,7 +582,11 @@ END SUBROUTINE cfg
 
   if (trap .and. force_abort) then
      print*,'** DEBUG TRAP IN MICRO, s/r CHECK_VALUES -- source: ',source_ind
-     if (source_ind/=100) stop
+     call flush(6)
+     if (source_ind/=100) then
+        call physeterror('mp_my2:check_values', 'Debug trap in micro, s/r check_values')
+        return
+     endif
   endif
 
  end subroutine check_values
@@ -996,24 +1031,182 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
  END SUBROUTINE count_columns
 !=======================================================================================!
 
+ SUBROUTINE activate( wbar, tair, rhoair, na, am, disp, hygro, n_act, s_max) ! Added by C.Jouan april2015
+!--------------------------------------------------------------------------------------
+! Calculates the number and mass of aerosols activated as CCN.
+! MKS units!
+!
+! Abdul-Razzak and Ghan, A parameterization of aerosol activation.
+! 2. Multiple aerosol types. J. Geophys. Res., 105, 6837-6844.
+!--------------------------------------------------------------------------------------
+
+   implicit NONE
+
+!---------------------------- Arguments --------------------------------
+   real, intent(in) :: &
+             wbar,         & !grid cell mean vertical velocity [m/s]
+             tair,         & !air temperature [K]
+             rhoair          !air density [kg/m3])
+
+   real, intent (in) ::    &
+             na,           & !aerosol number concentration [#/m3]
+             am,           & !aerosol mean radius [m]
+             disp,         & !aerosol size distribution
+             hygro           !aerosol hygroscopicity 
+
+   real, intent(out) ::     &
+             n_act,         & !num conc of activated aerosols [kg/m3]
+             s_max            !max supersaturation
+!------------------------ Local work space  ----------------------------
+   real     :: &              
+             pres,         & !pressure (Pa)           
+             diff,         & !diffusivity (m2/s)
+             conduct,      & !thermal conductivity (J/m/s/deg)
+             qs,           & !water vapor saturation mixing ratio
+             dqsdt,        & !change in qs with temperature
+             dqsdp,        & !change in qs with pressure
+             gloc            !thermodynamic function (m2/s)
+
+   real, parameter ::  &
+                       tt0       = 273.15,    & ![K] ref. temp.
+                       p0        = 101325.,   & ![Pa] ref. pres.
+                       hygro_thr = 1.0e-10,   & ! hygroscopicity threshold
+                       latvap    =.2501e+7,   & !J kg-1; latent heat of condensation
+                       cpair     =.100546e+4, & !J K-1 kg-1; specific heat of dry air
+                       rair      =.28705e+3,  & !J K-1 kg-1; gas constant for dry air
+                       rh2o      =.46151e+3,  & !J K-1 kg-1; gas constant for water vapour
+                       gravit    =.980616e+1, & !M s-2; gravitational acceleration
+                       rhoh2o    =.1e+4,      & !density of liquid H2O
+                       surften   =.076,       & !surface tension water/air interface N/m
+                       mwh2o     = 18.015e-3, & !kg.mole-1 water mass molecular
+                       r_universal = 8.3143,  & !J.K-1.mole-1 constant for ideal gas 
+                       pi        = 3.14159265,& 
+                       sq2       = sqrt(2.0)     
+
+   real     :: eta, etafactor2, amcube, smc, lnsmloc, alogsig, f1, f2 
+   real     :: alpha, beta, zeta, gammaloc, etafactor1, etafactor2max, &
+               alw, sqrtalw, sqrtg, lnsmax, x, aten
+
+!-----------------------------------------------------------------------
+  
+   !initialize output
+   
+   if( na < 1.e-20) return
+   
+   n_act = 0.
+   pres     = rair*rhoair*tair
+   diff     = 0.211e-4 * ( p0/pres ) * ( tair/tt0 )**1.94
+   conduct  = ( 5.69 + 0.017*(tair-tt0) ) * 4.186e2*1.e-5        ! convert to J/m/s/deg
+   qs       = qsat(tair, pres, 0)  
+   alpha    = gravit*( latvap/(cpair*rh2o*tair*tair) - 1./(rair*tair) )
+   dqsdt    = latvap/( rh2o*tair*tair) * qs
+   gammaloc = ( 1. + latvap/cpair*dqsdt ) / (rhoair*qs)
+
+   !  growth coefficent below (Abdul-Razzak & Ghan 1998 eqn 16)
+   !  should take into account kinetic effects and use modified diffusivity
+   !  and thermal conductivity
+   gloc = 1./(  rhoh2o/(diff*rhoair*qs)                             &
+          + latvap*rhoh2o/(conduct*tair)*(latvap/(rh2o*tair) - 1.)  )
+   sqrtg = sqrt(gloc)
+   beta  = 4.*pi*rhoh2o*gloc*gammaloc
+   etafactor2max = 1.e10/(alpha*wbar)**1.5 
+   aten     = 2.*mwh2o*surften/(r_universal*tt0*rhoh2o)
+
+   !single  updraft
+   alw        = alpha*wbar
+   sqrtalw    = sqrt(alw)
+   zeta       = 2.*sqrtalw*aten/(3.*sqrtg)
+   etafactor1 = 2.*alw*sqrtalw
+
+   alogsig      = log(disp)
+   f1           = 0.5*exp( 2.5*alogsig*alogsig )
+   f2           = 1. + 0.25*alogsig
+
+   if( na > 1.e-30 )then       
+      etafactor2=1./( na*beta*sqrtg )  
+      amcube = am**3
+      if( hygro > hygro_thr )then
+         smc=2.*aten*sqrt(aten/(27.*hygro*amcube))           ! critical supersaturation
+      else
+         smc=100.
+      end if
+   else
+      smc = 1.
+      etafactor2=etafactor2max 
+   endif
+
+   lnsmloc = log( smc ) 
+   eta     = etafactor1*etafactor2
+   call maxsat( zeta, eta, f1, f2, smc, s_max )
+   lnsmax = log(s_max)
+   !activated aerosol number conc
+   x = 2.*( lnsmloc-lnsmax )/( 3.*sq2*alogsig )
+   n_act = 0.5 * ( 1.-erf(x) ) * na
+   n_act = max( n_act, 0. ) 
+ END SUBROUTINE activate
+!=======================================================================
+
+ SUBROUTINE maxsat( zeta, eta, f1, f2, smc, s_max ) ! Added by C.Jouan april2015
+!=======================================================================
+! Purpose:
+! Calculates maximum supersaturation for one aerosol mode.
+!
+! Abdul-Razzak and Ghan, A parameterization of aerosol activation.
+! 2. Multiple aerosol types. J. Geophys. Res., 105, 6837-6844.
+!
+!-----------------------------------------------------------------------
+
+   implicit NONE
+
+   real     :: smc        ! critical supersaturation
+   real     :: zeta, eta
+   real     :: f1, f2
+   real     :: s_max       ! maximum supersaturation
+   real     :: g1, g2
+   real     :: rdummy
+!-----------------------------------------------------------------------
+
+   if( eta > 1.e-20 )then  
+     g1  = sqrt( zeta/eta )
+     g1  = g1*g1*g1
+     g2  = smc/sqrt( eta + 3*zeta )
+     g2  = sqrt(g2)
+     g2  = g2*g2*g2
+     rdummy = ( f1*g1 + f2*g2 )/( smc*smc )
+   else
+     rdummy = 1.e20
+   endif
+
+   if( s_max > 0. )then
+     s_max = 1./sqrt(rdummy)
+   else
+     s_max = 1.e-20
+   end if
+
+
+ END SUBROUTINE maxsat
+!==============================================================================!
 !_______________________________________________________________________________________!
 
- SUBROUTINE mp_my2_main(WZ,T,Q,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,PS,                    &
+ SUBROUTINE mp_my2_main(WZ,T,Q,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,Naero,PS,              & ! Added by C.Jouan april 2015
      sigma,RT_rn1,RT_rn2,RT_fr1,RT_fr2,RT_sn1,RT_sn2,RT_sn3,RT_pe1,RT_pe2,RT_peL,RT_snd,  &
-     dt,NI,NK,J,KOUNT,CCNtype,precipDiag_ON,sedi_ON,warmphase_ON,autoconv_ON,icephase_ON, &
-     snow_ON,Dm_c,Dm_r,Dm_i,Dm_s,Dm_g,Dm_h,ZET,ZEC,SS,reff_c,reff_i,nk_bottom)
+     dt,NI,NK,J,KOUNT,aeroact,CCNtype,precipDiag_ON,sedi_ON,warmphase_ON,autoconv_ON,icephase_ON, &
+     snow_ON,Dm_c,Dm_r,Dm_i,Dm_s,Dm_g,Dm_h,ZET,ZEC,SS,reff_c,reff_i1,reff_i2,reff_i3,     &
+     reff_i4,cloud_bin,nk_bottom)
 
   implicit none
 
 !CALLING PARAMETERS:
-  integer,               intent(in)    :: NI,NK,J,KOUNT,CCNtype
+  integer,               intent(in)    :: NI,NK,J,KOUNT,aeroact,CCNtype
   real,                  intent(in)    :: dt
   real, dimension(:),    intent(in)    :: PS
   real, dimension(:),    intent(out)   :: RT_rn1,RT_rn2,RT_fr1,RT_fr2,RT_sn1,RT_sn2,     &
                                           RT_sn3,RT_pe1,RT_pe2,RT_peL,ZEC,RT_snd
-  real, dimension(:,:),  intent(in)    :: WZ,sigma
+  real, dimension(:,:),  intent(in)    :: WZ,sigma,Naero ! Added by C.Jouan april2015
   real, dimension(:,:),  intent(inout) :: T,Q,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH
-  real, dimension(:,:),  intent(out)   :: ZET,reff_c,reff_i,Dm_c,Dm_r,Dm_i,Dm_s,Dm_g,Dm_h
+  real, dimension(:,:),  intent(out)   :: ZET,reff_c,reff_i1,reff_i2,reff_i3,reff_i4,    &
+  			 	          Dm_c,Dm_r,Dm_i,Dm_s,Dm_g,Dm_h
+  real, dimension(NI,NK),intent(out)   :: cloud_bin             ! cloud fraction (0 or 1)     
   real, dimension(:,:,:),intent(out)   :: SS
   logical,               intent(in)    :: precipDiag_ON,sedi_ON,icephase_ON,snow_ON,     &
                                           warmphase_ON,autoconv_ON,nk_BOTTOM
@@ -1084,12 +1277,16 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
 ! J                  y-dir index (local subdomain)
 ! KOUNT              current model time step number
 ! dt                 model time step                                      [s]
+! aeroact            switch for aerosol activations scheme                           ! Added by C.Jouan april2015                  
+!                      1 = default                            Last Version (Polynomial approximations of CP00a approach using a hypergeometric function)          
+!                      2 = ARG + aerosol climatology          Abdul-Razzak and Ghan, A parameterization of aerosol activation 
 ! CCNtype            switch for airmass type
 !                      1 = maritime                   --> N_c =  80 cm-3  (1-moment cloud)
 !                      2 = continental 1              --> N_c = 200 cm-3     "       "
 !                      3 = continental 2  (polluted)  --> N_c = 500 cm-3     "       "
 !                      4 = land-sea-mask-dependent (TBA)
 ! WZ                 vertical velocity                                    [m s-1]
+! Naero              total number concentration for CCN climatology       [#.kg-1]  ! Added by C.Jouan april2015
 ! sigma              sigma = p/p_sfc
 ! precipDiag_ON      logical switch, .F. to suppress calc. of sfc precip types
 ! sedi_ON            logical switch, .F. to suppress sedimentation
@@ -1166,7 +1363,8 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
        iLAMi,iLAMi2,iLAMi3,iLAMi4,iLAMi5,iLAMiB0,iLAMiB1,iLAMiB2,iLAMr6,iLAMh2,     &
        iLAMs,iLAMs2,iLAMsB0,iLAMsB1,iLAMsB2,iLAMr,iLAMr2,iLAMr3,iLAMr4,iLAMr5,      &
        iLAMc2,iLAMc3,iLAMc4,iLAMc5,iLAMc6,iQC,iQR,iQI,iQN,iQG,iQH,iEih,iEsh,        &
-       N_c,N_r,N_i,N_s,N_g,N_h,fluxV_i,fluxV_g,fluxV_s,rhos_mlt,fracLiq
+       N_c,N_r,N_i,N_s,N_g,N_h,fluxV_i,fluxV_g,fluxV_s,rhos_mlt,fracLiq,            &
+       cloudliq,cloudice,cloudsnow
 
  !Variables that only need to be calulated on the first step (and saved):
   real, save :: idt,iMUc,cmr,cmi,cms,cmg,cmh,icmr,icmi,icmg,icms,icmh,idew,idei,    &
@@ -1348,7 +1546,12 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
  !real, dimension(:,:), allocatable              :: DE_sub,iDE_sub,iDP_sub,pres_sub,     &
  !==                                                DZ_sub,zheight_sub,iDZ_sub,gamfact_sub
 
-
+ !--Constants used for activation scheme: ! ADD CJ april2015
+   real, dimension(size(QC,dim=1),size(QC,dim=2)) :: Nact,Smax,Ncn                        !activated aerosol num conc. [ #/kg]
+ ! Coefficient for NWFA used in Thomspon and Eidhammer (2014)  
+   real, parameter :: dispersion_aer  = 1.8     , & !size distribution sigma [m]
+                      radius_aer      = 0.04e-6 , & !mean radius [m]      
+                      hygro_aer       = 0.4         !hygroscopicity
   !==================================================================================!
 
   !----------------------------------------------------------------------------------!
@@ -1358,7 +1561,8 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
   !Switch on here later, once it is certain that calling routine is not supposed to
   !pass negative values of tracers.
   if (DEBUG_ON) call check_values(Q,T,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,epsQ,epsN,.false.,DEBUG_abort,100)
-
+  if (phy_error_L) return
+ 
   if (nk_BOTTOM) then
 !    !GEM / kin_1d:
      ktop  = 1          !k of top level
@@ -1384,6 +1588,7 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
   iDE = 1./DE
 
  !Convert N from #/kg to #/m3:
+  Ncn = Naero*DE ! Added by C.Jouan april2015
   NC = NC*DE
   NR = NR*DE
   NY = NY*DE
@@ -1398,7 +1603,7 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
   ! appropriate place.  It can then be output as a 3-D physics variable by adding
   ! SS01 to the sortie_p list in 'outcfgs.out'
   SS= 0.
-
+  
  !Compute diagnostic values only every 'outfreq' minutes:
  !calcDiag= (mod(DT*float(KOUNT),outfreq)==0.)
   calcDiag = .true.  !compute diagnostics every step (for time-series output)
@@ -1599,6 +1804,7 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
 
 !=======================================================================================!
 !  if (DEBUG_ON) call check_values(Q,T,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,epsQ,epsN,.false.,DEBUG_abort,200)
+!  if (phy_error_L) return
 
 !--- Ensure consistency between moments:
   do k= kbot,ktop,kdir
@@ -1690,6 +1896,7 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
 !===
 
   if (DEBUG_ON) call check_values(Q,T,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,epsQ,epsN,.true.,DEBUG_abort,300)
+  if (phy_error_L) return
 
 !Temporarily store arrays at time (t*) in order to compute warm-rain coalescence
 ! equations (Part 3a):
@@ -1740,6 +1947,7 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
   !----------------------------------------------------------------------------------!
 
   if (DEBUG_ON) call check_values(Q,T,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,epsQ,epsN,.true.,DEBUG_abort,400)
+  if (phy_error_L) return
 
   !----------------------------------------------------------------------------------!
   !                      PART 2: Cold Microphysics Processes                         !
@@ -1772,7 +1980,9 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
        Tc= T(i,k)-TRPL
        if (Tc<-120. .or. Tc>50.) then
           print*, '***WARNING*** -- In MICROPHYSICS --  Ambient Temp.(C),step,i,k:',Tc,kount,i,k
-         !stop
+          call flush(6)
+          ! phy_error_L = .true.
+          ! return
        endif
        Cdiff = (2.2157e-5+0.0155e-5*Tc)*1.e5/pres(i,k)
        MUdyn = 1.72e-5*(393./(T(i,k)+120.))*(T(i,k)/TRPL)**1.5 !RYp.102
@@ -2313,6 +2523,8 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
                 GG     =  1.*idew/(RGASV*(T(i,k))/((QSW(i,k)*pres(i,k))/EPS1)/          &
                             Cdiff+CHLC/Ka/(T(i,k))*(CHLC/RGASV/(T(i,k))-1.))  !CP00a
                 Swmax  =  SxFNC(WZ(i,k),Tc,pres(i,k),QSW(i,k),QSI(i,k),CCNtype,1)
+                if (phy_error_L) return
+
                 if (QSW(i,k)>1.e-20) then
                    ssat=  min((Q(i,k)/QSW(i,k)), Swmax) -1.
                 else
@@ -2976,7 +3188,8 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
   if ( T(i,k)<173. .or. T(i,k)>323.) then                            !** DEBUG **
      print*, '** STOPPING IN MICROPHYSICS: (Part 2, end) **'         !** DEBUG **
      print*, '** i,k,T [K]: ',i,k,T(i,k)                             !** DEBUG **
-     stop                                                            !** DEBUG **
+     call physeterror('mp_my2', 'Stopping in microphysics: (Part 2, end)')
+     return
   endif                                                              !** DEBUG **
 !=====
 
@@ -2989,6 +3202,7 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
   !----------------------------------------------------------------------------------!
 
   if (DEBUG_ON) call check_values(Q,T,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,epsQ,epsN,.true.,DEBUG_abort,450)
+  if (phy_error_L) return
 
   !----------------------------------------------------------------------------------!
   !                       PART 3: Warm Microphysics Processes                        !
@@ -3009,7 +3223,8 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
         RCACCR= 0.;  CCSCOC= 0.;  Dr= 0.;  iLAMr= 0.;  TAU= 0.
         CCAUTR= 0.;  CRSCOR= 0.;  SIGc= 0.;  DrINIT= 0.
         iLAMc3= 0.;  iLAMc6= 0.;  iLAMr3= 0.;  iLAMr6= 0.
-
+        Smax(i,k)= 0.; Nact(i,k)= 0.
+        
         rainPresent= (QR_in(i,k)>epsQ .and. NR_in(i,k)>epsN)
 
         if (QC_in(i,k)>epsQ .and. NC_in(i,k)>epsN) then
@@ -3163,20 +3378,37 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
         T(i,k)  = T(i,k)  + LCP*X
 
         if (X>0.) then
-          !nucleation of cloud droplets:
-           if (WZ(i,k)>0.001) then
-              !condensation and non-negligible upward motion:
-               !note: WZ threshold of 1 mm/s is to overflow problem in NccnFNC, which
-               !      uses a polynomial approximation that is invalid for tiny WZ.
-              NC(i,k) = max(NC(i,k), NccnFNC(WZ(i,k),T(i,k),pres(i,k),CCNtype))
+          !nucleation of cloud droplets:          
+           if (aeroact==2) then ! Added by C.Jouan april2015
+              if( WZ(i,k) > 0.) then ! ADD CJ april2015
+                 !print*, "WZ, T, DE, Ncn, radius_aer, dispersion_aer, hygro_aer:",WZ(i,k), T(i,k), DE(i,k), Ncn(i,k), radius_aer, dispersion_aer, hygro_aer 
+                 call activate(WZ(i,k), T(i,k), DE(i,k), Ncn(i,k), radius_aer, dispersion_aer, &
+                            hygro_aer, Nact(i,k), Smax(i,k))
+                 !print*, "NC, Nact, Smax:", NC(i,k), Nact(i,k), Smax(i,k)           
+                 NC(i,k) = max(NC(i,k), Nact(i,k))
+              else
+                 !condensation and negible or downward vertical motion:
+                 NC(i,k) = max(NC(i,k), N_c_SM)
+              endif                 
+           else if (aeroact==1) then
+              if (WZ(i,k)>0.001) then
+                 !condensation and non-negligible upward motion:
+                 !note: WZ threshold of 1 mm/s is to overflow problem in NccnFNC, which
+                 !      uses a polynomial approximation that is invalid for tiny WZ.
+                 NC(i,k) = max(NC(i,k), NccnFNC(WZ(i,k),T(i,k),pres(i,k),CCNtype)) 
+                 if (phy_error_L) return
+              else
+                 !condensation and negible or downward vertical motion:
+                 NC(i,k) = max(NC(i,k), N_c_SM)
+              endif
            else
-             !condensation and negible or downward vertical motion:
-              NC(i,k) = max(NC(i,k), N_c_SM)
-           endif
+                call physeterror('mp_my2', 'Parameter aeroact incorrectly specified')
+                return
+           endif           
         else
            if (QC(i,k)>epsQ) then
               !partial evaporation of cloud droplets:
-              NC(i,k) = max(0., NC(i,k) + X*NC(i,k)/max(QC(i,k),epsQ) ) !(dNc/dt)|evap
+              NC(i,k) = max(0., NC(i,k) + X*NC_in(i,k)/max(QC_in(i,k),epsQ) ) !(dNc/dt)|evap ! Modified by C.Jouan april2015
            else
               NC(i,k) = 0.
            endif
@@ -3286,6 +3518,7 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
   !----------------------------------------------------------------------------------!
 
   if (DEBUG_ON) call check_values(Q,T,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,epsQ,epsN,.true.,DEBUG_abort,500)
+  if (phy_error_L) return
 
   !----------------------------------------------------------------------------------!
   !                            PART 4:  Sedimentation                                !
@@ -3296,31 +3529,35 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
    fluxM_r= 0.;  fluxM_i= 0.;  fluxM_s= 0.;  fluxM_g= 0.;  fluxM_h= 0.
    RT_rn1 = 0.;  RT_rn2 = 0.;  RT_fr1 = 0.;  RT_fr2 = 0.;  RT_sn1 = 0.
    RT_sn2 = 0.;  RT_sn3 = 0.;  RT_pe1 = 0.;  RT_pe2 = 0.;  RT_peL = 0.
-
+ 
 !---- For sedimentation on all levels:
     call sedi_wrapper_2(QR,NR,1,epsQ,epsQr_sedi,epsN,dmr,ni,VrMax,DrMax,dt,fluxM_r,kdir, &
                         kbot,ktop_sedi,GRAV,zheight,nk,DE,iDE,iDP,DZ,iDZ,gamfact,kount,  &
                         afr,bfr,cmr,ckQr1,ckQr2,icexr9)
 
   if (DEBUG_ON) call check_values(Q,T,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,epsQ,epsN,.false.,DEBUG_abort,610)
+  if (phy_error_L) return
 
     call sedi_wrapper_2(QI,NY,2,epsQ,epsQi_sedi,epsN,dmi,ni,ViMax,DiMax,dt,fluxM_i,kdir, &
                         kbot,ktop_sedi,GRAV,zheight,nk,DE,iDE,iDP,DZ,iDZ,gamfact,kount,  &
                         afi,bfi,cmi,ckQi1,ckQi2,ckQi4)
 
   if (DEBUG_ON) call check_values(Q,T,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,epsQ,epsN,.false.,DEBUG_abort,620)
+  if (phy_error_L) return
 
     call sedi_wrapper_2(QN,NN,3,epsQ,epsQs_sedi,epsN,dms,ni,VsMax,DsMax,dt,fluxM_s,kdir, &
                         kbot,ktop_sedi,GRAV,zheight,nk,DE,iDE,iDP,DZ,iDZ,gamfact,kount,  &
                         afs,bfs,cms,ckQs1,ckQs2,iGS20)
 
   if (DEBUG_ON) call check_values(Q,T,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,epsQ,epsN,.false.,DEBUG_abort,630)
+  if (phy_error_L) return
 
     call sedi_wrapper_2(QG,NG,4,epsQ,epsQg_sedi,epsN,dmg,ni,VgMax,DgMax,dt,fluxM_g,kdir, &
                         kbot,ktop_sedi,GRAV,zheight,nk,DE,iDE,iDP,DZ,iDZ,gamfact,kount,  &
                         afg,bfg,cmg,ckQg1,ckQg2,ckQg4)
 
   if (DEBUG_ON) call check_values(Q,T,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,epsQ,epsN,.false.,DEBUG_abort,640)
+  if (phy_error_L) return
 
     call sedi_wrapper_2(QH,NH,5,epsQ,epsQh_sedi,epsN,dmh,ni,VhMax,DhMax,dt,fluxM_h,kdir, &
                         kbot,ktop_sedi,GRAV,zheight,nk,DE,iDE,iDP,DZ,iDZ,gamfact,kount,  &
@@ -3329,6 +3566,7 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
 
 
   if (DEBUG_ON) call check_values(Q,T,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,epsQ,epsN,.false.,DEBUG_abort,650)
+  if (phy_error_L) return
 
 !---  Impose constraints on size distribution parameters ---!
     do k= ktop,kbot,-kdir
@@ -3366,6 +3604,7 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
   RT_pe1 = fluxM_h *idew
 
   if (DEBUG_ON) call check_values(Q,T,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,epsQ,epsN,.false.,DEBUG_abort,700)
+  if (phy_error_L) return
 
 !----
   !Compute sum of solid (unmelted) volume fluxes [m3 (bulk hydrometeor) m-2 (sfc area) s-1]:
@@ -3497,6 +3736,7 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
  !-----------------------------------------------------------------------------------!
 
   if (DEBUG_ON) call check_values(Q,T,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,epsQ,epsN,.false.,DEBUG_abort,800)
+  if (phy_error_L) return
 
  !===================================================================================!
  !                             End of microphysics scheme                            !
@@ -3526,11 +3766,53 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
           !hardcoded for alpha_i = 0. and mu_i = 1.
            iNY   = 1./NY(i,k)
            iLAMi = max( iLAMmin2, iLAMDA_x(DE(i,k),QI(i,k),iNY,icexi9,thrd) )
-           reff_i(i,k) = 1.5*iLAMi
+           reff_i1(i,k) = 1.5*iLAMi
         else
-           reff_i(i,k) = 0.
+           reff_i1(i,k) = 0.
         endif
 
+      !snow:
+        if (QN(i,k)>epsQ .and. NN(i,k)>epsN) then
+          !hardcoded for alpha_s = 0. and mu_s = 1.
+           iNN   = 1./NN(i,k)
+           iLAMs  = max( iLAMmin2, iLAMDA_x(DE(i,k),QN(i,k),iNN,iGS20,idms) )
+           reff_i2(i,k) = 1.5*iLAMs
+        else
+           reff_i2(i,k) = 0.
+        endif
+
+      !graupel:
+        if (QG(i,k)>epsQ .and. NG(i,k)>epsN) then
+          !hardcoded for alpha_g = 0. and mu_g = 1.
+           iNG   = 1./NG(i,k)
+           iLAMg = max( iLAMmin1, iLAMDA_x(DE(i,k),QG(i,k),iNG,iGG99,thrd) )
+           reff_i3(i,k) = 1.5*iLAMg
+        else
+           reff_i3(i,k) = 0.
+        endif
+
+      !hail:
+        if (QH(i,k)>epsQ .and. NH(i,k)>epsN) then
+          !hardcoded for alpha_h = 0. and mu_h = 1.
+           iNH   = 1./NH(i,k)
+           iLAMh = max( iLAMmin1, iLAMDA_x(DE(i,k),QH(i,k),iNH,iGH99,thrd) )
+           reff_i4(i,k) = 1.5*iLAMh
+        else
+           reff_i4(i,k) = 0.
+        endif
+
+        ! calculate a 'binary' cloud fraction (0 or 1) based on supersaturation
+        cloud_bin(i,k)=0.
+        cloudliq=0.
+        cloudice=0.
+        cloudsnow=0.
+        if (QC(i,k).ge.epsQ .and. (Q(i,k)/QSW(i,k)-1.).gt.1.e-6) cloudliq=1.
+!        if (QI(i,k).ge.epsQ .and. (Q(i,k)/QSI(i,k)-1.).gt.1.e-6) cloudice=1.
+        if (QI(i,k).ge.epsQ .and. reff_i1(i,k).lt.100.e-6) cloudice=1.
+!        if (QN(i,k).ge.epsQ .and. (Q(i,k)/QSI(i,k)-1.).gt.1.e-6) cloudsnow=1.
+        if (QN(i,k).ge.epsQ .and. reff_i2(i,k).lt.100.e-6) cloudsnow=1.
+        cloud_bin(i,k)=cloudice+cloudsnow+cloudliq
+        cloud_bin(i,k)=max(min(cloud_bin(i,k),1.),0.)
      enddo
   enddo
 
@@ -3638,6 +3920,7 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
 !   QH = max(QH, 0.);   NH = max(NH, 0.)
 
   if (DEBUG_ON) call check_values(Q,T,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,epsQ,epsN,.false.,DEBUG_abort,900)
+  if (phy_error_L) return
 
  END SUBROUTINE mp_my2_main
 

@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN ------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,7 +12,7 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!-------------------------------------- LICENCE END --------------------------
 
 !/@*
 subroutine cldoptx5(LWC,IWC,LWP,IWP,neb,T,sig,ps, &
@@ -21,6 +21,7 @@ subroutine cldoptx5(LWC,IWC,LWP,IWP,neb,T,sig,ps, &
      topthw,topthi, ctp,ctt, &
      omegav,tauae,satuco, &
      cw_rad,ioptix)
+   use tdpack, only: GRAV, PI, RGASD
    implicit none
 #include <arch_specific.hf>
    !@OBJECT
@@ -130,8 +131,6 @@ subroutine cldoptx5(LWC,IWC,LWP,IWP,neb,T,sig,ps, &
    !                                 remove NOSTRLWC
    !*@/
 
-   include "thermoconsts.inc"
-
    integer, parameter :: OPT_OPTIX_OLD = 1
    integer, parameter :: OPT_OPTIX_NEW = 2
 
@@ -163,8 +162,8 @@ subroutine cldoptx5(LWC,IWC,LWP,IWP,neb,T,sig,ps, &
    data eps/1.e-10/
    save third,elsa,eps
 
-   rec_grav=1./grav
-   rec_rgasd=1./rgasd
+   rec_grav=1./GRAV
+   rec_rgasd=1./RGASD
 
    IF_OPTIX_NEW: if (IOPTIX == OPT_OPTIX_NEW) then
 
@@ -546,11 +545,8 @@ subroutine cldoptx5(LWC,IWC,LWP,IWP,neb,T,sig,ps, &
 !
             if (minval(LWC) < 1.e-10) then
               if (minval(LWC) < -1.e-10) then
-
-        write(6,*) minval(LWC)
-
-                write(6,'(a)') 'FATAL: large negative LWC in cldoptx4'
-                call qqexit(1)
+                call physeterror('cldoptx', 'large negative LWC')
+                return
               else
                 LWC = max(LWC,1.e-10)
               endif
@@ -718,13 +714,13 @@ subroutine cldoptx5(LWC,IWC,LWP,IWP,neb,T,sig,ps, &
 !                  within PBL in proportion with geometrical thickness
 !                  above pbl aerosol optical depth is kept negligible
 !
-        ct=2./pi
+        ct=2./PI
         REC_180=1./180.
         do 3 k=1,nk
         do 4 i=1,lmx
              tauae(i,k,1)=1.e-10
              tauae(i,k,2)=1.e-10
-             rlat = lat(i)*pi*REC_180
+             rlat = lat(i)*PI*REC_180
              if ( k.ge.int(ipbl(i)) ) then
 !
                 if ( mg(i).ge.0.5.or.ml(i).ge.0.5) then

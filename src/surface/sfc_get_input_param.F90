@@ -17,6 +17,7 @@
 function sfc_get_input_param()  result(istat)
    implicit none
 #include <arch_specific.hf>
+#include <rmnlib_basics.hf>
    !@Object initialization of the surface input parameters
    !@returns
    integer :: istat
@@ -33,9 +34,10 @@ function sfc_get_input_param()  result(istat)
    istat = WB_OK
    istat = min(wb_get('phyinput/phyinread_max'   ,phyinread_dim   ),istat)
    istat = min(wb_get('phyinput/phyinread_n'     ,phyinread_n     ),istat)
-   istat = min(wb_get('phyinput/phyinread_dateo' ,phyinread_dateo ),istat)
+   istat = min(wb_get('phyinput/phyinread_jdateo',phyinread_jdateo ),istat)
    istat = min(wb_get('phyinput/phyinread_dt'    ,phyinread_dt    ),istat)
    istat = min(wb_get('phyinput/phyinread_step'  ,phyinread_step  ),istat)
+   istat = min(wb_get('phyinput/phyinread_list_nk',phyinread_list_nk,nv),istat)
    istat = min(wb_get('phyinput/phyinread_list_S',phyinread_list_S,nv),istat)
 !!$   istat = min(wb_get('physteps/step_kount'      ,step_kount      ),istat)
 !!$   istat = min(wb_get('physteps/step_driver'     ,step_driver     ),istat)

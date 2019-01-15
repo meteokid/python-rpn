@@ -11,12 +11,12 @@ git clone ssh://localhost/~armnenv/GitDepots/rpnphy.git
 cd rpnphy
 #git checkout -b tmp rpnphy_VERSION
 #update version number (including leading 'x/') in ./include/Makefile.local.mk
-. ./.setenv.dot --cmc # --science
-./bin/ouv_exp_rpnphy
-rdemklink
+. ./.setenv.dot
+./bin/ouv_exp_rpnphy -v
+rdemklink -v
 make buildclean
 make components_objects -j 6 
-make components_libs  MAKE_NO_LIBSO=1
+make components_libs MAKE_NO_LIBSO=1
 make components_abs 
 make components_ssm
 make buildclean
@@ -26,10 +26,10 @@ make buildclean
       cd /PATH/
       . ./.setenv.dot
       #./bin/ouv_exp_rpnphy #optional if build in same dir as above
-      rdemklink
+      rdemklink -v
       make buildclean
       make components_objects -j 6 
-      make components_libs  MAKE_NO_LIBSO=1
+      make components_libs MAKE_NO_LIBSO=1
       make components_abs 
       make components_ssm_arch
       make buildclean
@@ -40,11 +40,11 @@ make buildclean
       . ./.setenv.dot
       #./bin/ouv_exp_rpnphy #optional if build in same dir as above
       export RDE_BUILDDIR_SFX=-d
-      rdemklink
+      rdemklink -v
       make buildclean
       make components_objects -j 6 
-      make components_libs  MAKE_NO_LIBSO=1
-      make components_ssm_arch  MAKE_SSM_NOMOD=1 MAKE_SSM_NOABS=1 MAKE_SSM_NOINC=1
+      make components_libs MAKE_NO_LIBSO=1
+      make components_ssm_arch MAKE_SSM_NOMOD=1 MAKE_SSM_NOABS=1 MAKE_SSM_NOINC=1
       make buildclean
 
 
@@ -54,7 +54,7 @@ make buildclean
 
 ssh MY_INSTALL_MACH
 cd /PATH/
-. ./.setenv.dot --cmc # --science
+. ./.setenv.dot
 make components_install CONFIRM_INSTALL=yes
 ## make components_install CONFIRM_INSTALL=yes SSM_BASE=/ssm/net/rpn/MIG SSM_BASE2=""
 ## make components_install CONFIRM_INSTALL=yes SSM_BASE=/fs/ssm/eccc/mrd/rpn/MIG SSM_BASE2=""
@@ -65,7 +65,7 @@ make components_install CONFIRM_INSTALL=yes
 
 ssh MY_INSTALL_MACH
 cd /PATH/
-. ./.setenv.dot --cmc # --science
+. ./.setenv.dot
 make components_uninstall UNINSTALL_CONFIRM=yes
 ## make components_uninstall UNINSTALL_CONFIRM=yes SSM_BASE=/ssm/net/rpn/MIG
 ## make components_uninstall UNINSTALL_CONFIRM=yes SSM_BASE=/fs/ssm/eccc/mrd/rpn/MIG

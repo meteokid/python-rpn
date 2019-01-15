@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN -------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,16 +12,18 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!-------------------------------------- LICENCE END ---------------------------
 
 
-subroutine DRAG5(TS, WG, WR, THETAA, VMOD, VDIR, HU, &
+subroutine DRAG6(TS, WG, WR, THETAA, VMOD, VDIR, HU, &
      PS, RS, VEG, Z0H, Z0TOT, WFC, &
      PSNG, PSNV, PSNZ0, LAI, ZUSL, ZTSL, LAT, FCOR, &
      RESA, ILMO, HST, FRV, FTEMP, FVAP, &
      CH, CD, HRSURF, HUSURF, HV, DEL, ZQS, &
-     CTU, N )
+     CTU, N)
+   use tdpack
    use sfclayer_mod, only: sl_sfclayer,SL_OK
+   use sfc_options
    implicit none
 #include <arch_specific.hf>
    !@Object
@@ -114,15 +116,9 @@ subroutine DRAG5(TS, WG, WR, THETAA, VMOD, VDIR, HU, &
    !        Calculate the surface fluxes of heat, moisture,
    !        and momentum over water surfaces.
 
-
-   include "thermoconsts.inc"
-
-   integer :: i
+   integer :: i, zopt
    real :: ue
-   real, dimension(n) :: TEMP, WRMAX, QSAT, COEF, CMU, SCR1, SCR6, SCR7, SCR8, SCR9, SCR10 , SCR11 
-
-   include "dintern.inc"
-   include "fintern.inc"
+   real, dimension(n) :: TEMP, WRMAX, QSAT, COEF, CMU
 
    !------------------------------------------------------------------------
 
@@ -159,8 +155,9 @@ subroutine DRAG5(TS, WG, WR, THETAA, VMOD, VDIR, HU, &
 
       ! b) low-level air is humid, i.e., qa >= qsat
 
-      if ( HRSURF(I)*QSAT(I).lt.HU(I).and.QSAT(I).le.HU(I) ) &
-           HRSURF(I) = 1.0
+      if ( HRSURF(I)*QSAT(I).lt.HU(I).and.QSAT(I).le.HU(I) ) then
+         HRSURF(I) = 1.0
+      endif
 
       !  for very humid soil (i.e., wg > wfc ), we take hu=1
 
@@ -217,12 +214,21 @@ subroutine DRAG5(TS, WG, WR, THETAA, VMOD, VDIR, HU, &
 
    ! 5. SURFACE TRANSFER COEFFICIENTS FOR HEAT AND MOMENTUM (CH and CD)
    !    ---------------------------------------------------------------
+   if (z0tevol == 'ZILI95') then
+      zopt = 9
+   elseif (z0tevol == 'FIXED') then
+      zopt = 0
+   else
+      call physeterror('drag', 'unknown option for z0tevol='//trim(z0tevol))
+      return
+   endif
 
-   i = sl_sfclayer(THETAA,HU,VMOD,VDIR,ZUSL,ZTSL,TS,ZQS,Z0TOT,Z0H,LAT,FCOR, &
+   i = sl_sfclayer(THETAA,HU,VMOD,VDIR,ZUSL,ZTSL,TS,ZQS, &
+        Z0TOT,Z0H,LAT,FCOR,optz0=zopt,L_min=sl_Lmin_soil,spdlim=VMOD, &
         coefm=CMU,coeft=CTU,flux_t=FTEMP,flux_q=FVAP,ilmo=ILMO,ue=FRV,h=HST)
    if (i /= SL_OK) then
-      print*, 'Aborting in drag() because of error returned by sl_sfclayer()'
-      stop
+      call physeterror('drag', 'error returned by sl_sfclayer()')
+      return
    endif
 
    do I=1,N
@@ -232,7 +238,7 @@ subroutine DRAG5(TS, WG, WR, THETAA, VMOD, VDIR, HU, &
       CD(I) = CMU(I) * CMU(I)
       CH(I) = CMU(I) * CTU(I)/UE
 
-      RESA(I) = 1. / CH(I) / (VMOD(I)+0.001)
+      RESA(I) = 1. / CH(I) / VMOD(I)
    end do
 
    ! 7. HALSTEAD COEFFICIENT (WITH THE NEW VALUES OF RESA)
@@ -244,4 +250,4 @@ subroutine DRAG5(TS, WG, WR, THETAA, VMOD, VDIR, HU, &
    end do
 
    return
-end subroutine DRAG5
+end subroutine DRAG6

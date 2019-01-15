@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN -------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms 
@@ -12,19 +12,17 @@
 !You should have received a copy of the License/Disclaimer along with this software; 
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
-!*** S/P HINES_WAVNUM
-  SUBROUTINE hines_wavnum ( m_alpha, sigma_t, sigma_alpha, ak_alpha,     &
+!-------------------------------------- LICENCE END --------------------------
+!/@*
+SUBROUTINE hines_wavnum ( m_alpha, sigma_t, sigma_alpha, ak_alpha,     &
        &                    mmin_alpha, losigma_t,                       &
        &                    v_alpha, visc_mol, density, densb,           &
        &                    bvfreq, bvfb, rms_wind, anis, lorms,         &
        &                    sigsqmcw, sigmatm,                           &
        &                    il1, il2, levtop, levbot, nlons, nlevs, nazmth)
 
-    USE mo_doctor,       ONLY: nerr
-    USE mo_exception,    ONLY: finish 
     USE mo_gwspectrum,   ONLY: kstar, m_min, slope, f1, f2, f3, naz
-
+    use phy_status, only: phy_error_L
     implicit none
 #include <arch_specific.hf>
 
@@ -46,22 +44,12 @@
     REAL*8    :: i_alpha(nlons,nazmth), mmin_alpha(nlons,nazmth)
 
     LOGICAL :: lorms(nlons), losigma_t(nlons,nlevs), do_alpha(nlons,nazmth)
-!
-!Author
-!
+
+!@Author
 !  aug. 10/95 - c. mclandress
 !  2000-2001  - m. charron
 !  2002       - e. manzini
-!
-!Revision
-!
-!Modules
-!
-! mo_doctor
-! mo_exception
-! mo_gwspectrum
-!
-!Object
+!@Object
 !
 !  This routine calculates the cutoff vertical wavenumber and velocity
 !  variances on a longitude by altitude grid for the hines' doppler 
@@ -70,7 +58,7 @@
 !        (2) only values of 1.0, 1.5 or 2.0 can be used for slope (slope). 
 !        (3) if m_min not zero, only slope=1. can be used. 
 !
-!Arguments
+!@Arguments
 !
 !              - Output
 ! m_alpha      cutoff wavenumber at each azimuth (1/m).
@@ -106,9 +94,8 @@
 ! do_alpha     .true. for the azimuths and longitudes for
 !                   which to continue to compute the drag above  
 !                   the lowest level
-    !
-    ! internal variables.
-    !
+!*@/
+
     INTEGER :: i, l, n, istart, lend, lincr, lbelow
 
     REAL*8    :: m_sub_m_turb, m_sub_m_mol, m_trial, mmsq
@@ -133,8 +120,8 @@
        lend   = levtop         
        lincr  = -1
     ELSE
-       WRITE (nerr,*) ' Error: level index not increasing downward '
-       CALL finish('hines_wavnum','Run terminated')
+       call physeterror('hines_wavnum', 'level index not increasing downward')
+       return
     END IF
 
 
@@ -167,7 +154,7 @@
     CALL hines_sigma ( sigmatm, sigalpmc,     &
          &                   sigsqmcw, naz, levbot,     &
          &                   il1, il2, nlons, nlevs, nazmth)
-    !
+
     !  calculate cutoff wavenumber and spectral amplitude factor 
     !  at bottom level where it is assumed that background winds vanish
     !  and also initialize minimum value of cutoff wavnumber.
@@ -287,6 +274,7 @@
             &              l, il1, il2, nlons, nlevs, nazmth,           &
             &              lorms, do_alpha )
 !	i_alpha=0.
+       if (phy_error_L) return
 
        !
        !  calculate the velocity variances at this level.

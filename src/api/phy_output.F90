@@ -9,12 +9,11 @@
 
 !/@*
 function phy_output(F_dateo,F_dt,F_step,F_gid_l,F_gid_g,F_reduc_core,F_outcfg_S,F_basedir_S) result(F_istat)
-   use phy_options, only: phy_init_ctrl, PHY_CTRL_INI_OK
-   use phy_typedef, only: PHY_NONE
+   use phy_status, only: phy_init_ctrl, PHY_CTRL_INI_OK, PHY_NONE
    use ezgrid_mod
    use hgrid_wb
    use vgrid_wb
-   use phy_output_mod, only: phy_output1
+   use phy_output_mod, only: phy_output1_4
    implicit none
 #include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -56,7 +55,7 @@ function phy_output(F_dateo,F_dt,F_step,F_gid_l,F_gid_g,F_reduc_core,F_outcfg_S,
       !TODO: output_set_postproc(F_id,F_step)
       init_L = .true.
    endif
-   F_istat = phy_output1(F_dateo,F_dt,F_step,F_outcfg_S,F_basedir_S,F_reduc_core)
+   F_istat = phy_output1_4(F_dateo,F_dt,F_step,F_outcfg_S,F_basedir_S,F_reduc_core)
    !---------------------------------------------------------------------
    return
 end function phy_output

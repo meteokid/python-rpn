@@ -96,7 +96,7 @@
 !
 !***********************************************************************
 !
-include "thermoconsts.inc"
+#include "tdpack_const.hf"
 !
       DEG2RAD = PI/180.
 !

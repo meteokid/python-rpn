@@ -1,16 +1,16 @@
 !-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
+!version 3 or (at your option) any later version that should be found at:
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
 !
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 !See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!You should have received a copy of the License/Disclaimer along with this software;
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
 !   ##########################################################################
@@ -35,37 +35,37 @@
                                       PLW_S_TO_R, PLW_S_TO_W                   )
 !   ##########################################################################
 !
-!!****  *ROAD_WALL_LAYER_E_BUDGET*  
+!!****  *ROAD_WALL_LAYER_E_BUDGET*
 !!
 !!    PURPOSE
 !!    -------
 !
 !     Computes the evoultion of roads and walls surface temperatures
-!         
-!     
+!
+!
 !!**  METHOD
 !     ------
 !
 !    6 : equations for evolution of Ts_road and Ts_wall simultaneously
 !        *************************************************************
 !
-!     dTw_k(t) / dt = 1/(dw_k*Cw_k) * (- 2*Kw_k-1*(Tw_k-Tw_k-1)/(dw_k-1 +dw_k) 
+!     dTw_k(t) / dt = 1/(dw_k*Cw_k) * (- 2*Kw_k-1*(Tw_k-Tw_k-1)/(dw_k-1 +dw_k)
 !                                      - 2*Kw_k  *(Tw_k-Tw_k+1)/(dw_k+1 +dw_k) )
 !
-!     dTw_1(t) / dt = 1/(dw_1*Cw_1) * (  Rn_w - H_w - LE_w 
+!     dTw_1(t) / dt = 1/(dw_1*Cw_1) * (  Rn_w - H_w - LE_w
 !                                      - 2*Kw_1*(Tw_1-Tw_2)/(dw_1 +dw_2)       )
 !
-!     dTr_1(t) / dt = 1/(dr_1*Cr_1) * (  Rn_r - H_r - LE_r 
+!     dTr_1(t) / dt = 1/(dr_1*Cr_1) * (  Rn_r - H_r - LE_r
 !                                      - 2*Kr_1*(Tr_1-Tr_2)/(dr_1 +dr_2)       )
 !
-!     dTr_k(t) / dt = 1/(dr_k*Cr_k) * (- 2*Kr_k-1*(Tr_k-Tr_k-1)/(dr_k-1 +dr_k) 
+!     dTr_k(t) / dt = 1/(dr_k*Cr_k) * (- 2*Kr_k-1*(Tr_k-Tr_k-1)/(dr_k-1 +dr_k)
 !                                      - 2*Kr_k  *(Tr_k-Tr_k+1)/(dr_k+1 +dr_k) )
 !
 !       with
 !
 !   K*_k  = (d*_k+ d*_k+1)/(d*_k/k*_k+ d*_k+1/k*_k+1)
 !
-!   Rn_w = abs_Rg_w 
+!   Rn_w = abs_Rg_w
 !  - sigma * emis_w                                                   * Ts_w**4 (t+dt)
 !  +         emis_w                       *      SVF_w                * LWR
 !  + sigma * emis_w * emis_r              *      SVF_w                * Ts_r**4 (t+dt)
@@ -124,11 +124,11 @@
 !!
 !!    MODD_CST
 !!
-!!      
+!!
 !!    REFERENCE
 !!    ---------
 !!
-!!      
+!!
 !!    AUTHOR
 !!    ------
 !!
@@ -136,7 +136,7 @@
 !!
 !!    MODIFICATIONS
 !!    -------------
-!!      Original    23/01/98 
+!!      Original    23/01/98
 !!                  21/11/01 (V. Masson and A. Lemonsu) bug of latent flux
 !!                           for very strong evaporation (all reservoir emptied
 !!                           in one time-step)
@@ -215,7 +215,7 @@ REAL, DIMENSION(:), INTENT(OUT)   :: PABS_LW_ROAD ! absorbed infrared rad.
 REAL, DIMENSION(:), INTENT(OUT)   :: PABS_LW_WALL ! absorbed infrared rad.
 !
 REAL, DIMENSION(:), INTENT(OUT)   :: PLW_S_TO_R   ! LW contribution from
-REAL, DIMENSION(:), INTENT(OUT)   :: PLW_S_TO_W   ! sky to road and wall 
+REAL, DIMENSION(:), INTENT(OUT)   :: PLW_S_TO_W   ! sky to road and wall
 !
 !*      0.2    declarations of local variables
 !
@@ -229,13 +229,15 @@ REAL, DIMENSION(SIZE(PTA),SIZE(PT_ROAD,2)+SIZE(PT_WALL,2)) ::  ZA,& ! lower diag
                                                                ZY,& ! r.h.s.
                                                                ZX   ! solution
 
+REAL, DIMENSION(SIZE(PQ_CANYON)) :: zqsat
+
 !
 REAL, DIMENSION(SIZE(PTA)) :: ZDN ! snow-covered surface fraction
 REAL, DIMENSION(SIZE(PTA)) :: ZDF ! snow-free surface fraction
 REAL, DIMENSION(SIZE(PTA)) :: ZLW_W_TO_W  ! L.W. interactions
 REAL, DIMENSION(SIZE(PTA)) :: ZLW_R_TO_W  ! from first Temp.
 REAL, DIMENSION(SIZE(PTA)) :: ZLW_W_TO_R  ! on second Temp.
-REAL, DIMENSION(SIZE(PTA)) :: ZLW_R_TO_R  ! 
+REAL, DIMENSION(SIZE(PTA)) :: ZLW_R_TO_R  !
 REAL, DIMENSION(SIZE(PTA)) :: ZLW_N_TO_W  ! idem. but from
 REAL, DIMENSION(SIZE(PTA)) :: ZLW_N_TO_R  ! snow rad.
 REAL, DIMENSION(SIZE(PTA)) :: ZDQSAT_ROAD ! dq_sat/dTs
@@ -244,10 +246,10 @@ REAL, DIMENSION(SIZE(PTA)) :: ZRHO_ACF_R  ! rho * conductance
 !                                         !     * snow-free f.
 REAL, DIMENSION(SIZE(PTA)) :: ZRHO_ACF_R_WAT ! rho * conductance for water
 !                                         !     * snow-free f.
-REAL, DIMENSION(SIZE(PTA)) :: ZSAC_T      ! weighted sum 
+REAL, DIMENSION(SIZE(PTA)) :: ZSAC_T      ! weighted sum
 !                                         ! of conductances
 !                                         ! for PT_CANYON
-REAL, DIMENSION(SIZE(PTA)) :: ZSAC_Q      ! weighted sum 
+REAL, DIMENSION(SIZE(PTA)) :: ZSAC_Q      ! weighted sum
 !                                         ! of conductances
 !                                         ! for PQ_CANYON
 REAL, DIMENSION(SIZE(PTA),SIZE(PT_ROAD,2)) :: ZMTC_O_D_ROAD
@@ -593,12 +595,12 @@ CALL TRIDIAG_GROUND(ZA,ZB,ZC,ZY,ZX)
 DO JLAYER=1,IWALL_LAYER
   ILAYER=IWALL_LAYER-JLAYER+1
   PT_WALL(:,JLAYER) = ZX(:,ILAYER)
-END DO  
+END DO
 !
 DO JLAYER=1,IROAD_LAYER
   ILAYER=IWALL_LAYER+JLAYER
   PT_ROAD(:,JLAYER) = ZX(:,ILAYER)
-END DO  
+END DO
 !
 !-------------------------------------------------------------------------------
 !
@@ -647,6 +649,21 @@ PQ_CANYON(:) = (  PQSAT_ROAD     (:) * PAC_ROAD_WAT(:) * ZDF(:)      &
                 + PLE_TRAFFIC (:) / (1.-PBLD(:)) / PRHOA(:) / XLVTT  &
                 + PLESNOW_ROAD(:) * ZDN(:)       / PRHOA(:) / XLVTT )&
                / ZSAC_Q(:)
+
+
+!
+!*     14.3    Resolve instabilities developing for winter conditions
+!              ----------------------------
+!
+! If canyon specific humidity gets too small or even negative
+! set it to specific humidity at the lowest level (KW)
+WHERE(PQ_CANYON(:) <= 1.e-6) PQ_CANYON(:) = PQA(:)
+
+! If canyon specific humidity gets larger than saturation
+! clip to saturation (KW)
+zqsat(:) = QSAT(PT_CANYON(:),PPS(:))
+WHERE(PQ_CANYON(:) > zqsat(:)) PQ_CANYON(:) = zqsat(:)
+
 !
 !-------------------------------------------------------------------------------
 !

@@ -15,8 +15,8 @@
 
 !/@*
 module phy_snapshot_mod
-   use phy_options, only: phy_init_ctrl, PHY_CTRL_INI_OK
-   use phy_typedef, only: PHY_NONE
+   use series_mod, only: series_pause, series_resume
+   use phy_status, only: phy_init_ctrl, PHY_CTRL_INI_OK, PHY_NONE
    use cpl_itf, only: cpl_snapshot
    implicit none
    private
@@ -44,14 +44,9 @@ contains
 #include <gmm.hf>
 #include <msg.h>
 
-      character(len=8), parameter :: SERIES_PAUSE_S = 'PAUSE'
-      integer, parameter :: SERIES_PAUSE  = 1
-      integer, parameter :: SERIES_RESUME = 0
-
       type(gmm_metadata) :: meta_busper
       integer :: istat
       real, pointer :: BUSPER_3d_digf(:,:), BUSPER_3d(:,:)
-      character(len=GMM_MAXNAMELENGTH) :: WorR_S, DorM_S
       ! ------------------------------------------------------------------
       F_istat = RMN_ERR
       if (phy_init_ctrl == PHY_NONE) then
@@ -82,7 +77,7 @@ contains
             call msg(MSG_ERROR,'(phy_snapshot) Cannot save BUSPER')
          endif
 
-         call serset(SERIES_PAUSE_S, SERIES_PAUSE, 1, istat)
+         istat = series_pause()
 
       case (PHY_SNAPSHOT_RESUME)
 
@@ -95,7 +90,7 @@ contains
             call msg(MSG_ERROR,'(phy_snapshot) Cannot restore BUSPER')
          endif
 
-         call serset(SERIES_PAUSE_S, SERIES_RESUME, 1, istat)
+         istat = series_resume()
 
       case default
          call msg(MSG_ERROR,'(phy_snapshot) Unknown mode.')

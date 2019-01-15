@@ -73,7 +73,7 @@
 !
 !
 !     Physical constants & parameters
-include "thermoconsts.inc"
+#include "tdpack_const.hf"
 
 !     Bourgouin's parametres (Wea. Forecasting 2000, 15, pp 583-592)
       real m1,m2,f1,f2,fslope,tmp

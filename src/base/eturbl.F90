@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN ------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,36 +12,41 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
-
-      subroutine ETURBL9(EN,ENOLD,ZN,ZD,RIF,TURBREG,RIG,SHR2,GAMA,HOL,FN, &
-                         GAMAL,QL,U,V,T,TE,TVE,Q,QCE,QE,H,PS,TS,S,SE, &
-                         TAU,KOUNT,GAMAQ,CCS,KT,Z,GZMOM,KCL,P_PROF,FRV,XH, &
-                         TRNCH,N,NK,Z0,IT)
+!-------------------------------------- LICENCE END --------------------------
+!/@*
+subroutine ETURBL12(EN,ENOLD,ZN,ZD,RIF,TURBREG,RIG,SHR2,GAMA,HOL,FN, &
+                         GAMAL,QL,U,V,T,TE,TVE,Q,QCE,QE,H,LH,PS,TS,S,SE, &
+                         TAU,KOUNT,GAMAQ,CCS,KT,Z,GZMOM,P_PROF,FRV,XH, &
+                         DXDY,TRNCH,N,NK,Z0,IT)
+      use tdpack, only: CAPPA, DELTA, KARMAN
+      use series_mod, only: series_xst
       use phy_options
+      use phy_status, only: phy_error_L
+      use mixing_length, only: ml_blend,ml_calc_blac,ml_calc_boujo,ML_OK
+      use pbl_stabfunc, only: psf_stabfunc, PSF_OK
       implicit none
 #include <arch_specific.hf>
+#include <rmnlib_basics.hf>
       integer TRNCH,N,NK
       real EN(N,NK),ENOLD(N,NK),ZN(N,NK),ZD(N,NK),RIF(N,NK),TURBREG(N,NK),RIG(N,NK),SHR2(N,NK)
       real GAMA(N,NK),FN(N,NK),XH(N)
       real HOL(N),U(N,NK),V(N,NK)
-      real GAMAL(N,NK),QL(N,NK)
-      real T(N,NK),TE(N,NK),TVE(N,NK),Q(N,NK),QCE(N,NK),QE(N,NK),H(N),PS(N)
+      real GAMAL(N,NK),QL(N,NK),DXDY(N)
+      real T(N,NK),TE(N,NK),TVE(N,NK),Q(N,NK),QCE(N,NK),QE(N,NK),H(N),LH(N),PS(N)
       real TS(N),S(n,NK),SE(n,NK),P_PROF(NK)
       real TAU
       integer KOUNT
       real LMN,Z0(N),FIMS
-      real KCL(N),FRV(N)
+      real FRV(N)
       real KT(N,NK),GAMAQ(N,NK),CCS(N,NK),FITS
       real Z(N,NK),GZMOM(N,NK)
       integer IT
       real EXP_TAU
       integer IERGET
 
-!Author
-!          J. Cote (RPN 1983)
+!@Author J. Cote (RPN 1983)
 !
-!Revision
+!@Revision
 ! 001      J. Cote RPN(Nov 1984)SEF version documentation
 ! 002      M. Lepine  -  RFE model code revision project (Feb 87)
 !                      -  Remove COMMON WKL2D1 and pass the
@@ -123,8 +128,7 @@
 !Object
 !          to predict EN(turbulent energy) and ZN(mixing length)
 !
-!Arguments
-!
+!@Arguments
 !          - Input/Output -
 ! EN       turbulent energy
 ! ZN       mixing length of the turbulence
@@ -149,26 +153,19 @@
 ! QC       cloud water
 ! QE       specific humidity on 'E' levels
 ! XH       convective velocity scale (w*)
-!
+! LH       launching height (m)
 !          - Input/Output -
 ! H        boundary layer height
-!
 !          - Input -
 ! PS
 ! S        sigma level
 ! SE       sigma level for turbulent energy
-! AT2M     coefficients for interpolation of T,Q to momentum levels
-! AT2E     coefficients for interpolation of T,Q to energy levels
 ! DSGDZ    sigma intervals
 ! TAU      timestep
 ! KOUNT    index of timestep
 ! KT       ratio of KT on KM (real KT calculated in DIFVRAD)
 ! Z        height of sigma level
 ! GZMOM    height of sigma momentum levels
-!
-!          - Input/Output -
-! KCL      index of 1st level in boundary level - 3
-!
 !          - Input -
 ! TRNCH    number of the slice
 ! N        horizontal dimension
@@ -176,17 +173,13 @@
 ! NK       vertical dimension
 ! Z0       roughness length
 ! IT       number of the task in muli-tasking (1,2,...) =>ZONXST
-!
-!Notes
+!@Notes
 !          EN and ZN contain the values at time T and input U
 !          and V are wind images. C and ZE are over-written.
 !          Refer to J.Mailhot and R.Benoit JAS 39 (1982)Pg2249-2266
 !          and Master thesis of J.Mailhot.
-!
-!
-!IMPLICITES
+!*@/
 
-include "thermoconsts.inc"
 #include "clefcon.cdk"
 #include "surface.cdk"
 #include "machcon.cdk"
@@ -198,39 +191,35 @@ include "thermoconsts.inc"
 !
       real, dimension(N) :: TEMPO,XB
       real, dimension(N,2) :: WK
-      real, dimension(N,NK) :: WORK,FIMI,FIMIR,FITI,ZE,C,X,DSGDZ,X1
+      real, dimension(N,NK) :: WORK,ZE,C,X,DSGDZ,X1,FM,FH
       real, dimension(N,4*NK) :: B
 !
 !***********************************************************************
 !
 !     temporary variables used to convert a #@$%!& CVMG.. expression
 !
-      real yuk1,yuk2
+      real yuk1,yuk2,dtfac
 !
       real, parameter :: EPSILON_B=1.E-8,PETIT=1.E-6,LMDA=200.
-      real ZNOLD(N,NK)
+      real ZNOLD(N,NK),beta_sfc(n)
       real SC,EXP_EXPLIM,TAUINV,BETAI
+      real, dimension(n,nk) :: zn_blac,zn_boujo,blend_hght
+      real, dimension(n,nk,3) :: w_cld
       integer J,K,STAT
       integer NKE
       integer, dimension(N) :: SLK
       integer, external :: neark
-      logical gdps_aggressive
 !      
       EXP_EXPLIM=exp(-EXPLIM)
       TAUINV=1.0/TAU
+      w_cld = 0.
 !
-      gdps_aggressive = .true.
-
-      if (gdps_aggressive) then
-         NKE=NK
-      else
-         NKE=NK-1
-      endif
+      NKE=NK
 !
 !     SHR2  =  ( D VENT / D Z ) ** 2
 !
       call ABSDVDZ3(SHR2,U,V,TVE,SE,DSGDZ,S,N,N,NK)
-!
+
       do k=1,NKE
          do j=1,N
             SHR2(j,k) = SHR2(j,k) + PETIT
@@ -240,16 +229,13 @@ include "thermoconsts.inc"
 !     RIG ( NOMBRE DE RICHARDSON GRADIENT)
 !
       if (PBL_RIBKG) then
-         call rigrad2(shr2,tve,qe,zn,ps,se,z,rig,gama,gamaq,kcl,PBL_RIBKG,n,nk)
+         call rigrad3(shr2,tve,qe,zn,ps,se,z,rig,gama,gamaq,PBL_RIBKG,n,nk)
       else
-         call RIGRAD1(RIG,GAMA,GAMAQ,XB,SHR2,T,TVE,Q,QE, &
-              S, SE, WK, N, N, NK )
-         do J=1,N
-            KCL(J)=XB(J)
-         end do
+         call rigrad1(rig, gama, gamaq, xb, shr2, t, tve, q, qe, &
+              s, se, wk, n, n, nk)
       endif
 
-      call serxst2(RIG, 'RI', TRNCH, n, nk, 0., 1., -1)
+      call series_xst(RIG, 'RI', trnch)
 
 !           AJOUT DE L'EFFET DE LA CONVECTION RESTREINTE
 
@@ -266,7 +252,7 @@ include "thermoconsts.inc"
                      HOL,S,SE,SHR2,WK,N,N,NK)
       endif
 
-      call serxst2(RIG, 'RM', TRNCH, n, nk, 0., 1., -1)
+      call series_xst(RIG, 'RM', trnch)
 
 
 !                               CALCUL DE LA LONGUEUR DE MELANGE
@@ -278,40 +264,30 @@ include "thermoconsts.inc"
 !                               A) BLACKADAR (1962)
 !
 
+      TEMPO = 0.23*SQRT(DXDY) !high resolution (<850m) adjustment to neutral mixing length
 
-      do K=1,NKE
-      do J=1,N
-         WORK(J,K)=1-CI*min(RIG(J,K),0.)
+      ! Compute the PBL stability functions
+      stat = psf_stabfunc(rig,z,fm,fh, &
+           blend_bottom=pbl_slblend_layer(1),blend_top=pbl_slblend_layer(2))
+      kt = fm/fh  !temporary storage for the inverse Prandtl number
+      if (stat /= PSF_OK) then
+         call physeterror('eturbl', 'error returned by PBL stability functions')
+         return
+      endif
+
+      ! Compute the Blackadar (1962) mixing length
+      do k=1,nke
+         do j=1,n
+            lmn = min(KARMAN*(z(j,k)+z0(j)),min(tempo(j),LMDA))
+            zn_blac(j,k) = lmn / fm(j,k)
+         enddo
       enddo
-      enddo
-      call VSPOWN1 (FIMI,WORK,-1./6.,N*NKE)
-      call VSPOWN1 (FITI,WORK,-1./3.,N*NKE)
-!
-      FITI(:,1:NKE)=BETA*FITI(:,1:NKE)
-      BETAI=1./BETA
-      do 20 K=1,NKE
-      do 20 J=1,N
-           LMN=min(KARMAN*(Z(J,K)+Z0(J)),LMDA)
-           FIMS=min(1+AS*RIG(J,K),1/max(PETIT,1-ASX*RIG(J,K)))
-           FITS=BETA*FIMS
-           if (RIG(J,K) .ge. 0.) then
-              ZN(J,K) = LMN*(1/FIMS)
-           else
-              ZN(J,K) = LMN*(1/FIMI(J,K))
-           endif
-!  METTRE DANS KT LE RAPPORT KT/KM (=FIM/FIT)
-           if (RIG(J,K) .ge. 0.) then
-              KT(J,K)=BETAI
-           else
-              KT(J,K)=FIMI(J,K)/FITI(J,K)
-           endif
-   20 continue
 !
 !     RIF ( NOMBRE DE RICHARDSON DE FLUX)
 !
       RIF = RIG
       call RIFLUX(RIF,KT,N,N,NK)
-!
+
 !     APPLY HYSTERESIS BASED ON TURBULENCE REGIME
       stat = neark(se,ps,3000.,n,nk,slk) !determine "surface layer" vertical index
       if (kount == 0) then
@@ -346,13 +322,13 @@ include "thermoconsts.inc"
          enddo
       enddo
 
-      call serxst2(RIF, 'RF', TRNCH, n, nk, 0.0, 1.0, -1)
+      call series_xst(RIF, 'RF', trnch)
 
 !                                Calculate the mixing length
 !                                according to Bougeault and
 !                                Lacarrere (1989)
 
-      IF_BOUJO: if (longmel == 'BOUJO') then
+      IF_BOUJO: if (any(longmel == (/'BOUJO   ', 'TURBOUJO'/))) then
          call VSPOWN1 (X1,SE,-CAPPA,N*NK)
          do K=1,NK
          do J=1,N
@@ -360,12 +336,22 @@ include "thermoconsts.inc"
             X1(J,K)=TE(J,K)*(1.0+DELTA*QE(J,K)-QCE(J,K))*X1(J,K)
          end do
          end do
-
-         if (TMP_BOUJO_HEIGHT_CORR) then
-            call mixlen3(zn,x1,enold,z,h,s,ps,n,nk)
-         else
-            call MIXLEN3( ZN, X1, ENOLD, GZMOM(1,2), H, S, PS, N, NK)
+         if (ml_calc_boujo(zn_boujo, x1, enold, w_cld, z, se, ps) /= ML_OK) then
+            call physeterror('eturbl', 'error returned by B-L mixing length estimate')
+            return
          endif
+         blend_hght(:,:nk-1) = gzmom(:,2:)
+         blend_hght(:,nk) = 0.
+         zn_boujo = max(zn_boujo,1.)
+         if (ml_blend(zn, zn_blac, zn_boujo, blend_hght, se, ps) /= ML_OK) then
+            call physeterror('eturbl', 'error returned by mixing length blending')
+            return
+         endif
+         if (longmel == 'TURBOUJO') then
+            where (nint(turbreg) == LAMINAR) zn = zn_blac ! Use local (Blackadar) mixing length for laminar flows
+         endif
+      else
+         zn = zn_blac
       endif IF_BOUJO
 
 !     No time filtering at kount=0 since this step is used for initialization only
@@ -382,13 +368,7 @@ include "thermoconsts.inc"
          endif IF_ZN_TIME_RELAX
       endif
 
-      if (longmel == 'BLAC62') then
-         do K=1,NKE
-            do J=1,N
-               ZE(J,K)=max(ZN(J,K),1.E-6)
-            end do
-         end do
-      else if (longmel == 'BOUJO')  then
+      if (any(longmel == (/'BOUJO   ', 'TURBOUJO'/))) then
          do K=1,NKE
             do J=1,N
                ZE(J,K) = ZN(J,K) * ( 1. - min( RIF(J,K) , 0.4) ) &
@@ -396,17 +376,22 @@ include "thermoconsts.inc"
                ZE(J,K) = max ( ZE(J,K) , 1.E-6 )
             end do
          end do
+      else
+         do K=1,NKE
+            do J=1,N
+               ZE(J,K)=max(ZN(J,K),1.E-6)
+            end do
+         end do
       end if
 
       if (PBL_DISS == 'LIM50') ze(:,1:nke) = min(ze(:,1:nke),50.)
 
       ZD(:,1:NKE) = ZE(:,1:NKE)
-      ZD(:,NK) = 0.0 !# FOR OUTPUT
 
-      call serxst2(ZN, 'L1', TRNCH, n, nk, 0.0, 1.0, -1)
-      call serxst2(ZE, 'L2', TRNCH, n, nk, 0.0, 1.0, -1)
+      call series_xst(ZN, 'L1', trnch)
+      call series_xst(ZE, 'L2', trnch)
 
-      call serxst2(ZE, 'LE', TRNCH, n, nk, 0.0, 1.0, -1)
+      call series_xst(ZE, 'LE', trnch)
 
       do K=1,NKE
         do J=1,N
@@ -441,11 +426,11 @@ include "thermoconsts.inc"
             do 33 J=1,N
    33          X(J,K)=0.0
 
-         call serxst2(X, 'EM', TRNCH, n, nk, 0.0, 1.0, -1)
-         call serxst2(X, 'EB', TRNCH, n, nk, 0.0, 1.0, -1)
-         call serxst2(X, 'ED', TRNCH, n, nk, 0.0, 1.0, -1)
-         call serxst2(X, 'ET', TRNCH, n, nk, 0.0, 1.0, -1)
-         call serxst2(X, 'ER', TRNCH, n, nk, 0.0, 1.0, -1)
+         call series_xst(X, 'EM', trnch)
+         call series_xst(X, 'EB', trnch)
+         call series_xst(X, 'ED', trnch)
+         call series_xst(X, 'ET', trnch)
+         call series_xst(X, 'ER', trnch)
 
       else
 
@@ -514,39 +499,45 @@ include "thermoconsts.inc"
                EN(J,NK)=0.0
    41        continue
 
-         call serxst2(ZE, 'EM', TRNCH, n, nk, 0.0, 1.0, -1)
-         call serxst2(X,  'EB', TRNCH, n, nk, 0.0, 1.0, -1)
-         call serxst2(C,  'ED', TRNCH, n, nk, 0.0, 1.0, -1)
+         call series_xst(ZE, 'EM', trnch)
+         call series_xst(X,  'EB', trnch)
+         call series_xst(C,  'ED', trnch)
 
 !     SOLUTION DE LA PARTIE DIFFUSIVE (E-F) DE L'EQUATION
 !                   DE L'ENERGIE TURBULENTE
 
          do 5 K=1,NK
             do 5 J=1,N
-               SC=CLEFAE*BLCONST_CK
+               SC=pbl_tkediff*CLEFAE*BLCONST_CK
 !     (E*-EN)/TAU
                X(J,K)=X(J,K)+C(J,K)+ZE(J,K)
                ZE(J,K)=B(J,K)
     5          C(J,K)=SC*ZN(J,K)*sqrt(ENOLD(J,K))*DSGDZ(j,k)**2
 
 !     METTRE X1 A ZERO
-      do 67 K=1,NK
-         do 67 J=1,N
-67          X1(J,K)=0
+      do K=1,NK
+         do J=1,N
+            X1(J,K)=0
+         enddo
+      enddo
 !     C CONTIENT K(E) ET X1 CONTIENT ZERO
 !
-      if (gdps_aggressive) then
+      if (pbl_zerobc) then
+         ZE(:,NK) = 0.
+         C(:,NK) = 0.
+         beta_sfc = 0.
+         XB = 0.
+      else
          XB = BLCONST_CU*FRV**2 + BLCONST_CW*XH**2
          ZE(:,NK) = XB
-         call DIFUVDFj (EN,ZE,C,X1,X1,XB,XH,S,SE,2*TAU,4,1., &
-              B(1,1),B(1,NK+1),B(1,2*NK+1),B(1,3*NK+1), &
-              N,N,N,NKE)
-      else
-         call DIFUVDFj (EN,ZE,C,X1,X1,XB,XH,S,SE,2*TAU,3,1., &
-              B(1,1),B(1,NK+1),B(1,2*NK+1),B(1,3*NK+1), &
-              N,N,N,NKE)
+         beta_sfc = XH
       endif
-!
+      dtfac = 1.
+      if (pbl_tkediff2dt) dtfac = 2.
+
+      call DIFUVDFj1 (EN,ZE,C,X1,X1,X1,XB,beta_sfc,S,SE,dtfac*TAU,4,1.,N,N,N,NKE)
+      if (phy_error_L) return
+
 !     NOUVEAU EN
       en = max(ETRMIN,ze+tau*en)
 !

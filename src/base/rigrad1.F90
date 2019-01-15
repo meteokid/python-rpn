@@ -17,6 +17,7 @@
 !
       SUBROUTINE RIGRAD1(RI,GAMA,GAMAQ,TBL,DUDZ2,T,TVE,Q,QE, &
                          SIGMA, SE, WW,  N, M, NK )
+      use tdpack
       implicit none
 #include <arch_specific.hf>
       INTEGER N,M,NK
@@ -73,12 +74,7 @@
 !
 !
 !*
-!
-include "thermoconsts.inc"
-include "dintern.inc"
-!
-include "fintern.inc"
-!
+
       DO j = 1, N
          WW(j) = FOTVT( T(j,1), Q(j,1) )
       END DO

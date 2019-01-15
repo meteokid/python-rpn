@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN -------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms 
@@ -12,42 +12,29 @@
 !You should have received a copy of the License/Disclaimer along with this software; 
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
-!*** S/P HINES_EXP
-  SUBROUTINE hines_exp (darr, data_zmax, alt, alt_exp,     &
+!-------------------------------------- LICENCE END --------------------------
+!/@*
+SUBROUTINE hines_exp (darr, data_zmax, alt, alt_exp,     &
        &                il1, il2, lev1, lev2, nlons, nlevs)
-!
-!Author
-!
-!  aug. 13/95 - c. mclandress
-!
-!Revison
-!
-!Object
-!
-!  This routine exponentially damps a longitude by altitude array 
+
+!@Author  aug. 13/95 - c. mclandress
+!@Object
+!  This routine exponentially damps a longitude by altitude array
 !  of darr above a specified altitude.
-!
-!Arguments
-!
+!@Arguments
 !            - Output -
 ! darr       modified data array.
-!
 !            - Input arguments:
 ! darr       original data array.
 ! alt        altitudes.
 ! alt_exp    altitude above which exponential decay applied.
 ! il1        first longitudinal index to use (il1 >= 1).
 ! il2        last longitudinal index to use (il1 <= il2 <= nlons).
-! lev1       first altitude level to use (lev1 >=1). 
+! lev1       first altitude level to use (lev1 >=1).
 ! lev2       last altitude level to use (lev1 < lev2 <= nlevs).
 ! nlons      number of longitudes.
 ! nlevs      number of vertical
 ! data_zmax  data values just above altitude alt_exp (work array)
-!
-
-    USE mo_doctor,       ONLY: nerr
-    USE mo_exception,    ONLY: finish 
 
     implicit none
 #include <arch_specific.hf>
@@ -56,14 +43,12 @@
     REAL*8  alt_exp
     REAL*8  darr(nlons,nlevs), data_zmax(nlons), alt(nlons,nlevs)
     REAL*8  exp_fac(nlons,nlevs)
-    !
-    ! internal variables.
-    !
+!*@/
+
     INTEGER  levbot, levtop, lincr, i, l
     REAL*8  hscale
-    !-----------------------------------------------------------------------     
-    
-    hscale = 5.e3 
+    !-----------------------------------------------------------------------
+    hscale = 5.e3
 
     !  index of lowest altitude level (bottom of drag calculation).
     !
@@ -75,8 +60,8 @@
        levtop = lev2
        lincr  = -1
     ELSE
-       WRITE (nerr,*) ' Error: level index not increasing downward '
-       CALL finish('hines_exp','Run terminated')
+       call physeterror('hines_exp', 'level index not increasing downward')
+       return
     END IF
     !
     !  data values at first level above alt_exp.
@@ -84,7 +69,7 @@
     DO i = il1,il2
        DO l = levtop,levbot,lincr
           IF (alt(i,l) .GE. alt_exp)  THEN
-             data_zmax(i) = darr(i,l) 
+             data_zmax(i) = darr(i,l)
           END IF
        END DO
     END DO
@@ -98,7 +83,7 @@
     END DO
     call vexp(exp_fac,exp_fac,lev2*(il2-il1+1))
 
-    DO l = 1,lev2 
+    DO l = 1,lev2
        DO i = il1,il2
           IF (alt(i,l) .GE. alt_exp)  THEN
              darr(i,l) = data_zmax(i) * exp_fac(i,l)

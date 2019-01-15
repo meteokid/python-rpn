@@ -15,7 +15,7 @@
 !-------------------------------------- LICENCE END --------------------------------------
 !**S/P RADDRIV - MAIN SUBROUTINE FOR RADIATIVE TRANSFER
 !
-      subroutine ccc2_raddriv (fsg, fsd, fsf, fsv, fsi, &
+      subroutine ccc2_raddriv1 (fsg, fsd, fsf, fsv, fsi, &
                           fatb,fadb,fafb,fctb,fcdb,fcfb, &
                           albpla, fdl, ful, hrs, hrl, &
                           cst, csb, clt, clb, par, &
@@ -23,23 +23,24 @@
                           fslo, fsamoon, ps, shtj, sig, &
                           tfull, tt, gt, o3, o3top, &
                           qq, co2, ch4, an2o, f11, &
-                          f12, f113, f114,o2,rmu, r0r, salb, taucs, &
+                          f12, f113, f114,o2,rmu, r0r, salb, em0, taucs, &
                           omcs, gcs, taucl, omcl, gcl, &
                           cldfrac, tauae, exta, exoma, exomga, &
                           fa, absa, lcsw, lclw, &
                           il1, il2, ilg, lay, lev)
 !
+      use phy_options, only: RAD_NUVBRANDS,rad_atmpath
       implicit none
 #include <arch_specific.hf>
 #include "nbsnbl.cdk"
-include "thermoconsts.inc"
+#include "tdpack_const.hf"
 !
       integer ilg,lay,lev,il1,il2
       real fsg(ilg), fsd(ilg), fsf(ilg), fsv(ilg), fsi(ilg), &
            albpla(ilg), fdl(ilg), ful(ilg), hrs(ilg,lay), hrl(ilg,lay), &
-           cst(ilg), csb(ilg), clt(ilg), clb(ilg), par(ilg)
+           cst(ilg), csb(ilg), clt(ilg), clb(ilg), par(ilg), em0(ilg)
 
-      real, dimension(ilg,6)  ::   fatb,fadb,fafb,fctb,fcdb,fcfb
+      real, dimension(ilg,RAD_NUVBRANDS)  ::   fatb,fadb,fafb,fctb,fcdb,fcfb
 !
       real ps(ilg), shtj(ilg,lev), sig(ilg,lay), &
            tfull(ilg,lev), tt(ilg,lay), gt(ilg), o3(ilg,lay), &
@@ -67,6 +68,7 @@ include "thermoconsts.inc"
 !  003    P.Vaillancourt           (Feb 12) : assume temperature is isothermal above model top
 !  004    P.Vaillancourt           (Feb 12) : impose min on humidity mixing ratio of 1.5e-6 kg/kg for sw and lw
 !  005    P.Vaillancourt           (Sep 14) : Update to gcm17
+!  006    V.Lee                    (Dec 17) : mcont, mcontg are vectors for MPI bit reproducibility
 !
 !Object
 !        Main subroutine that executes ccc radiative transfer
@@ -118,8 +120,8 @@ include "thermoconsts.inc"
 ! lcsw         logical key to control call to sw radiative transfer
 ! lclw         logical key to control call to lw radiative transfer
 ! il1          1
-! il2          horizontal dimension
-! ilg          horizontal dimension
+! il2          horizontal dimension (ni)
+! ilg          horizontal dimension (il2-il1+1)
 ! lay          number of model levels
 ! lev          number of flux levels (lay+1)
 !
@@ -194,6 +196,7 @@ include "thermoconsts.inc"
       integer, dimension(ilg,lay) :: inptmg
       integer, dimension(ilg,lay) :: nblk
       integer, dimension(ilg) :: isun
+      integer, dimension(ilg) :: mcont
 !
 !     work arrays used generally by longwave.
 !
@@ -203,12 +206,12 @@ include "thermoconsts.inc"
       real, dimension(ilg,lay) :: gci
       real, dimension(ilg,lay) :: cldm
       real, dimension(ilg,lev) :: bf
-      real, dimension(ilg) :: em0
       integer, dimension(ilg,lay) :: inpt
       integer, dimension(ilg,lay) :: inptm
       integer, dimension(ilg,lay) :: inpr
       integer, dimension(ilg,lay) :: ncd
       integer, dimension(ilg,lay) :: ncu
+      integer, dimension(ilg) :: mcontg !(size is lengath)
       integer, dimension(ilg) :: nct
       integer, dimension(ilg) :: nctg
       integer, dimension(lay) :: ncum
@@ -229,9 +232,9 @@ include "thermoconsts.inc"
       real a11, a12, a13, a21, a22, a23, a31, a32, a33, c20, c30
       real solarc, fracs, x, gw, rgw, dfnet, gwgh, rsolarc, pgw
       real ubeta0, epsd0, hrcoef, uu3, cut, seuil,specirr,qmr,qmin
-      integer i, k, ib, lev1, maxc, l, jyes, lengath, j, kp1, ig, mcont
+      integer i, k, ib, lev1, maxc,l, jyes, lengath, j, kp1, ig
       logical gh
-      integer ilg1,ilg2
+      integer ilg1,ilg2 !subsize of il1,il2
 !
       parameter (seuil=1.e-3)
       parameter (qmin=1.5e-6)
@@ -300,9 +303,9 @@ include "thermoconsts.inc"
 !     region 0.2 - 10 um (50000 - 1000 cm).
 !     for longwave, from band1 to band4, the solar and infrared
 !     interaction is considered. the total solar energy considered in
-!     the infrared region is 11.9006 w / m^2. sfinptl is the input
+!     the infrared region is 11.9096 w / m^2. sfinptl is the input
 !     solar flux in each longwave band
-!     the solar input in shortwave region is 1366.2035 - 11.9006 =
+!     the solar input in shortwave region is 1366.2035 - 11.9096 =
 !     1354.3029, the solar fractions for each band are set in gasopts
 !----------------------------------------------------------------------
 !
@@ -361,7 +364,7 @@ include "thermoconsts.inc"
         csb(i)                  =  0.0
         par(i)                  =  0.0
         fsamoon(i)              =  0.0
-        fslo(i)                 =  11.9006 * rmu(i) * fracs
+        fslo(i)                 =  11.9096 * rmu(i) * fracs
         albpla(i)               =  0.0
 !       shtj(i,lev) = 1. ci-dessous
         pfull(i,lev)            =  0.01 * ps(i) * shtj(i,lev)
@@ -371,12 +374,12 @@ include "thermoconsts.inc"
         isun(i)                 =  1
    20 continue
 !
-      fatb(IL1:IL2,1:6) = 0.0
-      fadb(IL1:IL2,1:6) = 0.0
-      fafb(IL1:IL2,1:6) = 0.0
-      fctb(IL1:IL2,1:6) = 0.0
-      fcdb(IL1:IL2,1:6) = 0.0
-      fcfb(IL1:IL2,1:6) = 0.0
+      fatb(IL1:IL2,1:RAD_NUVBRANDS) = 0.0
+      fadb(IL1:IL2,1:RAD_NUVBRANDS) = 0.0
+      fafb(IL1:IL2,1:RAD_NUVBRANDS) = 0.0
+      fctb(IL1:IL2,1:RAD_NUVBRANDS) = 0.0
+      fcdb(IL1:IL2,1:RAD_NUVBRANDS) = 0.0
+      fcfb(IL1:IL2,1:RAD_NUVBRANDS) = 0.0
 !
       do 30 k = 1, lay
        kp1 = k + 1
@@ -407,23 +410,15 @@ include "thermoconsts.inc"
 !     CALCULATIONS (> 200 MB). REUSING SPACES OF MTOP AND ISUN.        C
 !----------------------------------------------------------------------C
 !
+      mcont = lev
       do 35 k = 1, lev
       do 35 i = il1, il2
         if (pfull(i,k) .ge. 200.)                                   THEN
           mtop(i)               =  mtop(i) + 1
-          if (mtop(i) .eq. 1) isun(i) =  k
+          if (mtop(i) .eq. 1) mcont(i) =  max(k-1,1)
         endif
    35 continue
-!
-      mcont = lev
-!
-      DO 36 i = il1, il2
-        mcont                   =  min (isun(i), mcont)
-   36 continue
-      mcont = mcont - 1
-!PV to avoid crashing if model top has a pressure higher than 200. hPa
-      mcont=  max(mcont,1)
-!
+
 !
 !----------------------------------------------------------------------c
 ! define the spectral sampling for the shortwave and longwave.         c
@@ -499,9 +494,24 @@ include "thermoconsts.inc"
 !     use integer variables instead of actual integers
       ilg1=1
       ilg2=lengath
-!
+
+      ! Set the effecitve solar path length
+      select case (rad_atmpath)
+      case ('RODGERS67')
+         do i=ilg1,ilg2
+            j = isun(i)
+            rmug(i) =  sqrt (1224.0 * rmu(j) * rmu(j) + 1.0) / 35.0
+         enddo
+      case ('LI06')
+         do i=ilg1,ilg2
+            j = isun(i)
+            rmug(i) = (2.0 * rmu(j) + sqrt(498.5225 * rmu(j) * rmu(j) + 1.0)) / 24.35
+         enddo
+      end select
+
       do 230 i = ilg1, ilg2
         j = isun(i)
+        mcontg(i)               =  mcont(j) !mcontg is subset of mcont
         o3topg(i)               =  o3top(j)
 !
 !----------------------------------------------------------------------
@@ -510,10 +520,6 @@ include "thermoconsts.inc"
 !     reusing dmix for a factor of rmu
 !----------------------------------------------------------------------
 !
-! Parameterization of effective solar pathlength based on Li and Shibata (2006)
-!
-        rmug(i)                 = (2.0 * rmu(j) + sqrt(498.5225 * &
-                                  rmu(j) * rmu(j) + 1.0)) / 24.35
         c1(i)                   =  0.75 * rmug(i)
         c2(i)                   =  2.0 * c1(i) * rmug(i)
 !
@@ -777,7 +783,7 @@ include "thermoconsts.inc"
           endif
 !
           call ccc2_gasopts5(taug, gw, dps, ib, ig, o3g, qgs, co2g, ch4g, o2g, &
-                        inptmg, mcont, omci, dts, a1(1,3), lev1, gh, &
+                        inptmg, mcontg, omci, dts, a1(1,3), lev1, gh, &
                         ilg1, ilg2, ilg, lay)
 
 !
@@ -1006,7 +1012,7 @@ include "thermoconsts.inc"
 !
 !----------------------------------------------------------------------
 !     gather back required field. for planetary albedo the incoming
-!     energy of 11.9006 * fracs is totally absorbed in longwave part
+!     energy of 11.9096 * fracs is totally absorbed in longwave part
 !----------------------------------------------------------------------
 !
       rsolarc = r0r * solarc
@@ -1069,7 +1075,6 @@ include "thermoconsts.inc"
         a1(i,5)                 =  tt(i,1) - 250.0
         clt(i)                  =  0.0
         clb(i)                  =  0.0
-        em0(i)                  =  1.0
   510 continue
 !
       do 520 k = 1, lev
@@ -1090,7 +1095,7 @@ include "thermoconsts.inc"
 !
 !----------------------------------------------------------------------
 !     using c1 space for slwf which is the input solar energy in the
-!     infrared region. total 11.9006 w / m^2 from standard
+!     infrared region. total 11.9096 w / m^2 from standard
 !     calculation
 !     scaling cloud optical properties for ir scattering calculation
 !----------------------------------------------------------------------
@@ -1333,4 +1338,4 @@ include "thermoconsts.inc"
 !     (lclw)
 !
       return
-      end
+    end subroutine ccc2_raddriv1

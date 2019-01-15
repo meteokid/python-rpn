@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN -------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms 
@@ -12,11 +12,13 @@
 !You should have received a copy of the License/Disclaimer along with this software; 
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!-------------------------------------- LICENCE END ---------------------------
 
 !/@*
 subroutine town(bus, bussiz, ptsurf, ptsurfsiz, dt, trnch, kount, n, m, nk)
-   use sfclayer_mod,   only : sl_prelim,sl_sfclayer
+   use iso_c_binding
+   use mu_jdate_mod, only: jdate_day_of_year, mu_js2ymdhms
+   use sfclayer_mod,   only : sl_prelim,sl_sfclayer,SL_OK
    use modd_town,      only : nni, xtown,                            &
         xq_town,                               &
         xu_canyon,                             &
@@ -30,7 +32,23 @@ subroutine town(bus, bussiz, ptsurf, ptsurfsiz, dt, trnch, kount, n, m, nk)
         xrnsnow_road,xhsnow_road,xlesnow_road, &
         xgsnow_road,xmelt_road,                &
         xrn,xh,xle,xgflux,xevap,xrunoff,       &
-        xch,xri,xustar
+        xch,xri,xustar,                        &
+        XTRAD_IN,XTRAD_SUN,XTRAD_SHADE,        &
+        XTRAD_RFSUN,XTRAD_RFSHADE,             &
+        XTGLOBE_SUN,XTGLOBE_SHADE,             &
+        XTGLOBE_RFSUN,XTGLOBE_RFSHADE,         &
+        XTWETB,XTWETB_ROOF,                    &
+        XUTCI_IN,XUTCI_OUTSUN,XUTCI_OUTSHADE,  &
+        XUTCI_RFSUN,XUTCI_RFSHADE,             &
+        XWBGT_OUTSUN,XWBGT_OUTSHADE,           &
+        XWBGT_RFSUN,XWBGT_RFSHADE,             &
+        XUTCIC_IN,XUTCIC_OUTSUN,               &
+        XUTCIC_OUTSHADE,XUTCIC_RFSUN,          &
+        XUTCIC_RFSHADE,                        &
+        XTRFZT,XTRDZT,XURDZU,                  &
+		  XQ1,XQ2,XQ3,XQ4,XQ5,XQ6,XQ7,           &
+        XQ8,XQ9,XQ10,XQ11,XQ12,XQ13
+
    use modd_teb,       only : xzs, xbld, xbld_height, xz0_town,      &
         xz0_roof,xz0_road,                     &
         xwall_o_hor, xcan_hw_ratio,            &
@@ -54,10 +72,11 @@ subroutine town(bus, bussiz, ptsurf, ptsurfsiz, dt, trnch, kount, n, m, nk)
    use modd_csts
    use modi_coupling_teb2
    use modi_sunpos
-   use sfc_options
+   use sfc_options, only: atm_external, jdateo, zu, zt, impflx
    use sfcbus_mod
    implicit none
 #include <arch_specific.hf>
+#include <rmnlib_basics.hf>
    !@Object Choose the surface scheme for towns 
    !@Arguments
    !               - Input/Output -
@@ -81,19 +100,23 @@ subroutine town(bus, bussiz, ptsurf, ptsurfsiz, dt, trnch, kount, n, m, nk)
 
    !@Author Aude Lemonsu (April 2004)
    !*@/
+   ! Last version Sylvie Leroyer (2018)
 
    include "tebcst.cdk"
+! surface pointer and bus : definition
    include "town_ptr.cdk"
 
    integer surflen
 #define x(fptr,fj,fk) ptsurf(vd%fptr%i)+(fk-1)*surflen+fj-1
 
    real, external :: juliand
+   integer(IDOUBLE), parameter :: MU_JDATE_HALFDAY = 43200 !#TODO: use value from mu_jdate_mod
 
    integer, parameter :: indx_sfc = indx_urb
    real,    parameter :: xundef   = 999.
 
-   integer :: n, m, nk, i, j, k
+   integer :: n, m, nk, i, j, k, hh, mn, ss
+
    real    :: julien
 
    integer,dimension (90) :: alloc_status
@@ -103,26 +126,10 @@ subroutine town(bus, bussiz, ptsurf, ptsurfsiz, dt, trnch, kount, n, m, nk)
    real                   :: ptime       ! current time
    real                   :: ptstep      ! timestep   
 
-   real, pointer, dimension(:)     :: ptsun       ! solar time
-   real, pointer, dimension(:)     :: pzenith     ! solar zenithal angle
-   real, pointer, dimension(:)     :: pazim       ! solar azimuthal angle (rad from n, clock)
    real,          dimension(1)     :: psw_bands   ! middle wavelength of each band
-   real, pointer, dimension(:,:)   :: pdir_sw     ! direct ingoing solar radiation
-   real,          dimension(n,1)   :: psca_sw     ! diffuse ingoing solar radiation
-   real, pointer, dimension(:)     :: plw         ! ingoing longwave radiation
-   real, pointer, dimension(:)     :: pta         ! air temperature at forcing level
-   real, pointer, dimension(:)     :: pqa         ! air specific humidity at forcing level
    real,          dimension(n)     :: prhoa       ! air density at forcing level
-   real, pointer, dimension(:)     :: pu          ! zonal wind component       
-   real, pointer, dimension(:)     :: pv          ! meridional wind component       
-   real, pointer, dimension(:)     :: pps         ! surface pressure 
-   real, pointer, dimension(:)     :: ppa         ! air pressure at forcing level
    real,          dimension(n)     :: psnow       ! snow rate
    real,          dimension(n)     :: prain       ! rain rate
-   real, pointer, dimension(:)     :: pzref       ! height of forcing level for t and q
-   real, pointer, dimension(:)     :: puref       ! height of forcing level for the wind
-   real, pointer, dimension(:)     :: plat        ! latitude
-   real,          dimension(n)     :: psfth       ! flux of heat 
    real,          dimension(n)     :: psftq       ! flux of water vapor    
    real,          dimension(n)     :: psfu        ! zonal momentum flux         
    real,          dimension(n)     :: psfv        ! meridional momentum flux       
@@ -130,7 +137,8 @@ subroutine town(bus, bussiz, ptsurf, ptsurfsiz, dt, trnch, kount, n, m, nk)
    real,          dimension(n)     :: ptrad       ! radiative temperature
    real,          dimension(n,1)   :: pdir_alb    ! direct albedo for each band
    real,          dimension(n,1)   :: psca_alb    ! diffuse albedo for each band
-   real,          dimension(n)     :: ztvi        ! virtual temperature
+   real,          dimension(n,1)   :: zdir_sw    ! direct sw for each band
+   real,          dimension(n,1)   :: zsca_sw    ! diffuse sw for each band
    real,          dimension(n)     :: zvdir       ! direction of the wind
    real,          dimension(n)     :: zvmod       ! module of the wind
    real,          dimension(n)     :: ribn
@@ -140,18 +148,19 @@ subroutine town(bus, bussiz, ptsurf, ptsurfsiz, dt, trnch, kount, n, m, nk)
    real,          dimension(n)     :: fh
    real,          dimension(n)     :: dfm
    real,          dimension(n)     :: dfh
-   real,          dimension(n)     :: geop
    real,          dimension(n)     :: lat,lon     ! latitude and longitude
-   !     variables pour le calcul des angles solaires
-   real, target, dimension(n) ::  zday, zheure, zmin, &
-        xtsun, xzenith, xazimsol
+   real,          dimension(n)     :: zuzu
+   real, target, dimension(n) ::  zday, zheure, zmin
+   LOGICAL diagwind_interp
+   diagwind_interp=.FALSE.
 !---------------------------------------------------------------------------
 
    !# in  offline mode the t-step 0 is (correctly) not performed
-   if (fluvert.eq.'SURFACE'.and.kount.eq.0) return
+   if (atm_external .and. kount == 0) return
 
    surflen = m
 
+! surface pointer and bus : link to bus
 #include "town_ptr_as.cdk"
 
    nroof_layer = roof_layer
@@ -159,9 +168,8 @@ subroutine town(bus, bussiz, ptsurf, ptsurfsiz, dt, trnch, kount, n, m, nk)
    nwall_layer = wall_layer
 
    
-   !     Allocation
-   !     ----------
-   !     6. Diagnostic variables :
+! TEB specific pointer and bus : allocate
+!     6. Diagnostic variables :
    allocate( xq_town      (n)             , stat=alloc_status(40) )
    allocate( xles_roof    (n)             , stat=alloc_status(45) )
    allocate( xrunoff_roof (n)             , stat=alloc_status(47) )
@@ -184,12 +192,55 @@ subroutine town(bus, bussiz, ptsurf, ptsurfsiz, dt, trnch, kount, n, m, nk)
    allocate( xustar       (n)             , stat=alloc_status(76) )
    allocate( xz0_roof     (n)             , stat=alloc_status(77) )
    allocate( xz0_road     (n)             , stat=alloc_status(78) )
+!     7.heat-stress variables
+      allocate(XTRAD_IN          (N)  ,stat=alloc_status(91)    ) 
+      allocate(XTRAD_SUN         (N)  ,stat=alloc_status(92)    ) 
+      allocate(XTRAD_SHADE       (N) ,stat=alloc_status(93)     ) 
+      allocate(XTRAD_RFSUN       (N)  ,stat=alloc_status(94)    ) 
+      allocate(XTRAD_RFSHADE     (N)   ,stat=alloc_status(95)   ) 
+      allocate(XUTCI_IN          (N)   ,stat=alloc_status(96)   ) 
+      allocate(XUTCI_OUTSUN      (N)  ,stat=alloc_status(97)    ) 
+      allocate(XUTCI_OUTSHADE    (N)   ,stat=alloc_status(98)   ) 
+      allocate(XUTCI_RFSUN       (N)   ,stat=alloc_status(99)   ) 
+      allocate(XUTCI_RFSHADE     (N)  ,stat=alloc_status(100)   ) 
+      allocate(XWBGT_OUTSUN      (N)  ,stat=alloc_status(101)    ) 
+      allocate(XWBGT_OUTSHADE    (N)   ,stat=alloc_status(102)   ) 
+      allocate(XWBGT_RFSUN       (N)   ,stat=alloc_status(103)   ) 
+      allocate(XWBGT_RFSHADE     (N)  ,stat=alloc_status(104)   ) 
 
-   !------------------------------------------------------------------------
+      allocate(XUTCIC_IN         (N)   ,stat=alloc_status(105)  )
+      allocate(XUTCIC_OUTSUN     (N)   ,stat=alloc_status(106)  ) 
+      allocate(XUTCIC_OUTSHADE   (N)   ,stat=alloc_status(107)  ) 
+      allocate(XUTCIC_RFSUN      (N)  ,stat=alloc_status(108)   )
+      allocate(XUTCIC_RFSHADE    (N)  ,stat=alloc_status(109)   ) 
+!
+      allocate(XTGLOBE_SUN        (N)  ,stat=alloc_status(110) ) 
+      allocate(XTGLOBE_SHADE      (N)  ,stat=alloc_status(111) ) 
+      allocate(XTGLOBE_RFSUN      (N)  ,stat=alloc_status(112) ) 
+      allocate(XTGLOBE_RFSHADE    (N)  ,stat=alloc_status(113) ) 
+      allocate(XTWETB             (N)  ,stat=alloc_status(114) ) 
+      allocate(XTWETB_ROOF        (N)  ,stat=alloc_status(115) ) 
+!
+      allocate(XTRFZT     (N)  ,stat=alloc_status(116) ) 
+      allocate(XTRDZT     (N)  ,stat=alloc_status(118) ) 
+      allocate(XURDZU     (N)  ,stat=alloc_status(120) ) 
 
-   !     Initialisation
-   !     --------------
-   !     6. Diagnostic variables : 
+      allocate(XQ1     (N)  ,stat=alloc_status(121) ) 
+      allocate(XQ2     (N)  ,stat=alloc_status(122) ) 
+      allocate(XQ3     (N)  ,stat=alloc_status(123) ) 
+      allocate(XQ4     (N)  ,stat=alloc_status(124) ) 
+      allocate(XQ5     (N)  ,stat=alloc_status(125) ) 
+      allocate(XQ6     (N)  ,stat=alloc_status(126) ) 
+      allocate(XQ7     (N)  ,stat=alloc_status(127) ) 
+      allocate(XQ8     (N)  ,stat=alloc_status(128) ) 
+      allocate(XQ9     (N)  ,stat=alloc_status(129) ) 
+      allocate(XQ10    (N)  ,stat=alloc_status(130) ) 
+      allocate(XQ11    (N)  ,stat=alloc_status(131) ) 
+      allocate(XQ12    (N)  ,stat=alloc_status(132) ) 
+      allocate(XQ13    (N)  ,stat=alloc_status(133) ) 
+
+! TEB specific pointer and bus : Initialisation
+!     6. Diagnostic variables : 
    xq_town         = xundef
    xles_roof       = xundef
    xrunoff_roof    = xundef
@@ -210,26 +261,61 @@ subroutine town(bus, bussiz, ptsurf, ptsurfsiz, dt, trnch, kount, n, m, nk)
    xch             = xundef
    xri             = xundef
    xustar          = xundef
-   !-------------------------------------------------------------------------
+!     7. heat-stress variables
+    XTRAD_IN   = XUNDEF
+    XTRAD_SUN   = XUNDEF
+    XTRAD_SHADE   = XUNDEF
+    XTRAD_RFSUN   = XUNDEF
+    XTRAD_RFSHADE   = XUNDEF
+    XUTCI_IN   = XUNDEF
+    XUTCI_OUTSUN   = XUNDEF
+    XUTCI_OUTSHADE   = XUNDEF
+    XUTCI_RFSUN   = XUNDEF
+    XUTCI_RFSHADE   = XUNDEF
+    XWBGT_OUTSUN   = XUNDEF
+    XWBGT_OUTSHADE   = XUNDEF
+    XWBGT_RFSUN   = XUNDEF
+    XWBGT_RFSHADE   = XUNDEF
+    XUTCIC_IN   = XUNDEF
+    XUTCIC_OUTSUN   = XUNDEF
+    XUTCIC_OUTSHADE   = XUNDEF
+      XUTCIC_RFSUN  = XUNDEF 
+      XUTCIC_RFSHADE= XUNDEF 
+      XTGLOBE_SUN   = XUNDEF
+      XTGLOBE_SHADE   = XUNDEF
+      XTGLOBE_RFSUN   = XUNDEF
+      XTGLOBE_RFSHADE   = XUNDEF
+      XTWETB         = XUNDEF
+      XTWETB_ROOF    = XUNDEF
+      XQ1 = XUNDEF
+      XQ2 = XUNDEF
+      XQ3 = XUNDEF
+      XQ4 = XUNDEF
+      XQ5 = XUNDEF
+      XQ6 = XUNDEF
+      XQ7 = XUNDEF
+      XQ8 = XUNDEF
+      XQ9 = XUNDEF
+      XQ10 = XUNDEF
+      XQ11 = XUNDEF
+      XQ12 = XUNDEF
+      XQ13 = XUNDEF
 
    call ini_csts
 
-   !     Time
-   !     ----
-   julien       = juliand(dt,kount,date)
-   ptime        = date(5)*3600. + date(6)/100. + dt*(kount)
-   kday         = date(3) + int(ptime/86400.)
-   kmonth       = date(2)
-   kyear        = date(4)
+!  Time 
+   julien       = real(jdate_day_of_year(jdateo + kount*int(dt) + MU_JDATE_HALFDAY))
+   call mu_js2ymdhms(jdateo, kyear, kmonth, kday, hh, mn, ss)
+   ptime        = hh*3600. + mn*60 + ss + dt*(kount)
+   kday         = kday + int(ptime/86400.)
+
    ptime        = amod(ptime,3600*24.)
    ptstep       = dt
    psw_bands    = 0.
 
-   !-------------------------------------------------------------------------
-
-!     Calcul de l'angle zenithal
-!     --------------------------
-      do i=1,n
+!   Zenithal angle computation
+!   zdlat in rad 
+     do i=1,n
         lat(i) = zdlat(i)*180./XPI
         lon(i) = zdlon(i)*180./XPI
       end do
@@ -237,40 +323,17 @@ subroutine town(bus, bussiz, ptsurf, ptsurfsiz, dt, trnch, kount, n, m, nk)
       zheure(:) = int(ptime/3600.)*1.
       zmin(:)   = (ptime/3600.-int(ptime/3600.))*60.
 
-      call sunpos(kyear,kmonth,kday,ptime,lon,lat,xtsun,xzenith,xazimsol)
+      call sunpos(kyear,kmonth,kday,ptime,lon,lat,ztsun,zzenith,zazim)
 
-!---------------------------------------------------------------------------
-
-      ptsun  (1:n)     => xtsun   (1:n)
-      pzenith(1:n)     => xzenith (1:n)
-      pazim  (1:n)     => xazimsol(1:n)
-      pta    (1:n)     => bus(x(tmoins       ,1,nk) :)
-      pqa    (1:n)     => bus(x(humoins      ,1,nk) :)
-      pu     (1:n)     => bus(x(umoins       ,1,nk) :)
-      pv     (1:n)     => bus(x(vmoins       ,1,nk) :)
-      ppa    (1:n)     => bus(x(pmoins       ,1,1 ) :)
-      pps    (1:n)     => bus(x(pmoins       ,1,1 ) :)
-      pdir_sw(1:n,1:1) => bus(x(fdss         ,1,1 ) :)
-      plw    (1:n)     => bus(x(fdsi         ,1,1 ) :)
-      pzref  (1:n)     => bus(x(ztsl         ,1,1 ) :)
-      puref  (1:n)     => bus(x(zusl         ,1,1 ) :)
-      plat   (1:n)     => bus(x(dlat         ,1,1 ) :)
-
+! convert snow and rain rates
       do i=1,n
         psnow         (i) = zsnowrate(i) *1000.
         prain         (i) = zrainrate(i) *1000.
-        psca_sw       (i,1) = 0.
-        ztvi          (i) = pta(i)*(1+((XRV/XRD)-1)*pqa(i))
-        prhoa         (i) = pps(i)/XRD/ztvi(i)
       enddo
+
 !       General variables 
 !       -----------------
-      xzs    (1:n)     => bus(x(gztherm      ,1,nk) :)
-      xtown  (1:n)     => bus(x(urban        ,1,1 ) :)
-      geop = xzs * 9.81  !lowest level height to geopotential
-
-!     Urban parameters
-!     ----------------
+! TEB specific pointer and bus : link to bus
 !     1. Geometric parameters :
       xbld          (1:n) => bus(x(bld         ,1,1) : )
       xbld_height   (1:n) => bus(x(bld_height  ,1,1) : )
@@ -291,7 +354,7 @@ subroutine town(bus, bussiz, ptsurf, ptsurfsiz, dt, trnch, kount, n, m, nk)
 !     4. Anthropogenic fluxes :
       xh_traffic    (1:n) => bus(x(h_traffic   ,1,1) : )
       xle_traffic   (1:n) => bus(x(le_traffic  ,1,1) : )
-      xh_industry   (1:n) => bus(x(h_industry  ,1,1) : )
+      xh_industry  (1:n) => bus(x(h_industry  ,1,1) : )
       xle_industry  (1:n) => bus(x(le_industry ,1,1) : )
 !     4. Pronostic variables :
       xws_roof      (1:n) => bus(x(ws_roof     ,1,1) : )
@@ -343,28 +406,87 @@ subroutine town(bus, bussiz, ptsurf, ptsurfsiz, dt, trnch, kount, n, m, nk)
       xh_wall     (1:n) => bus(x( h_wall  ,1,1)  : )
       xle_wall    (1:n) => bus(x( le_wall ,1,1)  : )
       xgflux_wall (1:n) => bus(x( g_wall  ,1,1)  : )
+!     7. Heat-stress variables :
+      xtrad_in       (1:n) => bus( x( yradin,1,1)         : )  
+      xtrad_sun      (1:n) => bus( x( yradsun,1,indx_urb)        : )  
+      xtrad_shade    (1:n) => bus( x( yradshade,1,indx_urb)      : )  
+      xtrad_rfsun    (1:n) => bus( x(yradrfsun ,1,1)      : )  
+      xtrad_rfshade  (1:n) => bus( x( yradrfshade,1,1)    : )  
+      xutci_in      (1:n) => bus( x( yutciin,1,1)        : )  
+      xutci_outsun     (1:n) => bus( x( yutcisun,1,indx_urb)       : )  
+      xutci_outshade   (1:n) => bus( x( yutcishade,1,indx_urb)     : )  
+      xutci_rfsun   (1:n) => bus( x( yutcirfsun,1,1)     : )  
+      xutci_rfshade (1:n) => bus( x( yutcirfshade,1,1)   : )  
+      xwbgt_outsun     (1:n) => bus( x( ywbgtsun,1,indx_urb)       : )  
+      xwbgt_outshade   (1:n) => bus( x( ywbgtshade,1,indx_urb)     : )  
+      xwbgt_rfsun   (1:n) => bus( x( ywbgtrfsun,1,1)     : )  
+      xwbgt_rfshade (1:n) => bus( x( ywbgtrfshade,1,1)   : )  
+      xutcic_in     (1:n) => bus( x( yutcicin,1,1)       : )  
+      xutcic_outsun    (1:n) => bus( x(yutcicsun ,1,1)      : )  
+      xutcic_outshade  (1:n) => bus( x(yutcicshade ,1,1)    : )  
+      xutcic_rfsun  (1:n) => bus( x(yutcicrfsun ,1,1)    : )  
+      xutcic_rfshade(1:n) => bus( x(yutcicrfshade ,1,1)   : )  
+      xtglobe_sun     (1:n) => bus( x( ytglbsun,1,indx_urb)       : )  
+      xtglobe_shade   (1:n) => bus( x( ytglbshade,1,indx_urb)     : )  
+      xtwetb    (1:n) => bus( x(ytwetb ,1,indx_urb)         : )  
+      xtglobe_rfsun    (1:n) => bus( x( ytglbrfsun,1,1)         : )  
+      xtglobe_rfshade   (1:n) => bus( x( ytglbrfshade,1,1)         : )  
+      xtwetb_roof   (1:n) => bus( x( ytwetbrf,1,1)         : )  
+      xtrfzt   (1:n) => bus( x( ytrfzt,1,1)         : )  
+      xtrdzt   (1:n) => bus( x( ytrdzt,1,1)         : )  
+      xurdzu   (1:n) => bus( x( yurdzu,1,1)         : )  
+      xQ1   (1:n) => bus( x( yQ1,1,indx_urb)         : )  
+      xQ2   (1:n) => bus( x( yQ2,1,indx_urb)         : )  
+      xQ3   (1:n) => bus( x( yQ3,1,indx_urb)         : )  
+      xQ4   (1:n) => bus( x( yQ4,1,indx_urb)         : )  
+      xQ5   (1:n) => bus( x( yQ5,1,indx_urb)         : )  
+      xQ6   (1:n) => bus( x( yQ6,1,indx_urb)         : )  
+      xQ7   (1:n) => bus( x( yQ7,1,indx_urb)         : )  
+      xQ8   (1:n) => bus( x( yQ8,1,1)         : )  
+      xQ9   (1:n) => bus( x( yQ9,1,1)         : )  
+      xQ10  (1:n) => bus( x( yQ10,1,1)        : )  
+      xQ11  (1:n) => bus( x( yQ11,1,1)        : )  
+      xQ12  (1:n) => bus( x( yQ12,1,1)        : )  
+      xQ13  (1:n) => bus( x( yQ13,1,1)        : )  
 
+
+      do i=1,n
+    !# in  offline mode no forcing of diffuse (scattered) radiation
+    if (atm_external) then 
+    !#     about 13 % (Leroyer et al. 2018, urban climate)
+        zdir_sw  (i,1) = 0.87*psol_sw(i,1)
+        zsca_sw  (i,1) = 0.13*psol_sw(i,1)
+    else 
+        zdir_sw  (i,1) = pdir_sw(i,1)
+        zsca_sw  (i,1) = psca_sw(i,1)
+    endif
+    enddo
 
        ! coherence between solar zenithal angle and radiation
        !
-       where (sum(pdir_sw+psca_sw,2)>0.)
-         pzenith = min (pzenith,xpi/2.-0.01)
+       where (sum(zdir_sw+zsca_sw,2)>0.)
+         zzenith = min (zzenith,xpi/2.-0.01)
        elsewhere
-         pzenith = max (pzenith,xpi/2.)
+         zzenith = max (zzenith,xpi/2.)
        end where
 
-      do i=1,n
-        ztsun  (i) = ptsun  (i)
-        zzenith(i) = pzenith(i)
-        zazim  (i) = pazim  (i)
-      enddo
+   !     PRELIM
+   !     ----
+      I = SL_PRELIM(PTA,PQA,PU,PV,PPS,PUREF,MIN_WIND_SPEED=1E-4,SPD_AIR=ZVMOD,DIR_AIR=ZVDIR, &
+           RHO_AIR=PRHOA)
+
+   IF (I /= SL_OK) THEN
+      call physeterror('town', 'error returned by sl_prelim()')
+      return
+   endif
+
 !-----------------------------------------------------------------------------
 
       call    coupling_teb2 (ptstep, kyear, kmonth, kday, ptime,            &
-              ptsun, pzenith, pazim, pzref, puref, xzs, pu, pv, pqa, pta,   &
-              prhoa, prain, psnow, plw, pdir_sw, psca_sw, psw_bands, pps,   &
-              ppa, psftq, psfth, psfu, psfv,                                &
-              ptrad, pdir_alb, psca_alb, pemis, plat                        )
+              ztsun, zzenith, zazim, pzref, puref, xzs, pu, pv, pqa, pta,   &
+              prhoa, prain, psnow, plw, zdir_sw, zsca_sw, psw_bands, pps,   &
+              ppa, psftq,  zfc, psfu, psfv,                                &
+              ptrad, pdir_alb, psca_alb, pemis, zdlat                        )
 
 !-----------------------------------------------------------------------------
 
@@ -384,33 +506,33 @@ subroutine town(bus, bussiz, ptsurf, ptsurfsiz, dt, trnch, kount, n, m, nk)
         ztsrad (i) = ptrad      (i)
         zqsurf (i) = xq_town    (i)
         zalvis (i) = pdir_alb   (i,1)
-        zsnodp (i) = 0. 
-        zfc    (i) = psfth      (i)
+        zsnodp (i) = xbld(i)      * (xwsnow_roof(i)/xrsnow_roof(i))  +   &
+                    (1.-xbld(i))  * (xwsnow_road(i)/xrsnow_road(i)) 
         zfv    (i) = psftq      (i) * xlvtt
+!  runoff -- aggregated with all other surface tiles. Convert to mm
+        zrunofftot(i) = xrunoff(i) * dt 
+        zalscatw (i)  = psca_alb   (i,1)
+        zemtw (i)     = pemis   (i)
+        ztsradtw (i ) = ptrad   (i)
       end do
 
 !-----------------------------------------------------------------------------
-!   Diagnostics (tdiag, qdiag at z=zh/2; udiag, vdiag at z=zu above roof level)
+!   Compute town surface layer var. (for alfat alfaq ctu...)
 !-----------------------------------------------------------------------------
-      i = sl_prelim(bus(x(thetaa,1,1):x(thetaa,1,1)+n-1),bus(x(humoins,1,nk):x(humoins,1,nk)+n-1), &
-           zumoins,zvmoins,pps,bus(x(zusl,1,1):x(zusl,1,1)+n-1),min_wind_speed=1e-4,spd_air=zvmod,dir_air=zvdir)
-      i = sl_sfclayer(bus(x(thetaa,1,1):x(thetaa,1,1)+n-1),bus(x(humoins,1,nk):x(humoins,1,nk)+n-1),&
-           zvmod,zvdir,bus(x(zusl,1,1):x(zusl,1,1)+n-1),bus(x(ztsl,1,1):x(ztsl,1,1)+n-1), &
-           bus(x(tsurf,1,1):x(tsurf,1,1)+n-1),bus(x(qsurf,1,indx_urb):x(qsurf,1,indx_urb)+n-1), &
-           bus(x(z0,1,indx_urb):x(z0,1,indx_urb)+n-1),bus(x(z0t,1,indx_urb):x(z0t,1,indx_urb)+n-1), &
-           bus(x(dlat,1,1):x(dlat,1,1)+n-1),bus(x(fcor,1,1):x(fcor,1,1)+n-1),optz0=0,hghtm_diag=zu,hghtt_diag=zt, &
-           ilmo=bus(x(ilmo,1,indx_urb):x(ilmo,1,indx_urb)+n-1),h=bus(x(hst,1,indx_urb):x(hst,1,indx_urb)+n-1), &
-           ue=bus(x(frv,1,indx_urb):x(frv,1,indx_urb)+n-1),flux_t=bus(x(ftemp,1,indx_urb):x(ftemp,1,indx_urb)+n-1), &
-           flux_q=bus(x(fvap,1,indx_urb):x(fvap,1,indx_urb)+n-1),coefm=bus(x(bm,1,1):x(bm,1,1)+n-1), &
-           coeft=bus(x(bt,1,1):x(bt,1,1)+n-1))
+   !# Compute town surface layer var. (for alfat alfaq ctu...)
+   i = sl_sfclayer(pthetaa,pqa,zvmod,zvdir,puref,pzref,ztsurf,zqsurf, &
+        zz0,zz0t,zdlat,zfcor,optz0=0,hghtm_diag=zu,hghtt_diag=zt,      &
+        ilmo=zilmo,h=zhst,ue=zfrv,flux_t=zftemp,flux_q=zfvap,         &
+        coefm=zbm,coeft=zbt,u_diag=zudiag,v_diag=zvdiag) 
+
+   if (i /= SL_OK) then
+      call physeterror('town', 'error returned by sl_sfclayer()')
+      return
+   endif
 
       do i=1,n
-         ztdiag(i) = zt_canyon(i)
-         zqdiag(i) = zq_canyon(i)
-
-         zalfat(i) = -psfth(i)/(xcpd*prhoa(i))
+         zalfat(i) = -zfc(i)/(xcpd*prhoa(i))
          zalfaq(i) = -psftq(i)
-
         if (.not.impflx) zbt(i) = 0.
         if (impflx) then
          zalfat(i) = - zbt(i) * ztsurf(i) 
@@ -418,6 +540,74 @@ subroutine town(bus, bussiz, ptsurf, ptsurfsiz, dt, trnch, kount, n, m, nk)
         endif
       end do
 
+!-----------------------------------------------------------------------------
+!   Sreen-level Diagnostics
+!-----------------------------------------------------------------------------
+! sl_sfclayer between  road and mid-canyon for zt => compute ztdiag
+     i = sl_sfclayer(xt_canyon,xq_canyon,xu_canyon,zvdir,xbld_height/2.0,xbld_height/2.0,xt_road(:,1),xq_canyon, &
+        xz0_road,xz0_road/10.0,zdlat,zfcor,optz0=8,hghtm_diag=zu,hghtt_diag=zt,      &
+        t_diag=ztdiag) 
+
+      if (i /= SL_OK) then
+         call physeterror('town', 'error 2 returned by sl_sfclayer()')
+         return
+      endif
+
+! special conditions 
+      do i=1,n
+! => humidity
+        zqdiag(i) = xq_canyon(i)
+! => temperature
+      if (xbld_height(i) .le. (zt*2.0) ) then 
+        ztdiag(i) = xt_canyon(i)
+      endif
+! => wind (default diag is u_diag from above sl_sfclayer)
+! if bldh>15m => u_canyon 
+      if (xbld_height(i) .ge. (zu*3.0/2.0) ) then 
+        zudiag(i) = xu_canyon(i) *COS(zvdir(i))
+        zvdiag(i) = xu_canyon(i) *SIN(zvdir(i))
+      endif
+
+      if(diagwind_interp) then
+!  linear interpolation between two cases du/dz=Utop-Ucan / H-2H/3
+!                               => Uz U10 = (30/H-2) Utop + 3/H(H-10) Ucan
+      if( xbld_height(i) .gt. zu .and. xbld_height(i) .lt. (zu*3.0/2.0) )  then 
+        zuzu(i) =  (3.0 * zu /xbld_height(i) -2.) * zvmod(i)                  &
+           * LOG( (     zu    - 2 * xbld_height(i)/3.) / xz0_town (i))   &
+           / LOG( (zvmod(i) + 1.* xbld_height(i)/3.) / xz0_town   (i))   &
+           + (3.* ( xbld_height(i) -zu )/ xbld_height(i) ) * xu_canyon(i)
+        zudiag(i) = zuzu(i) *COS(zvdir(i))
+        zvdiag(i) = zuzu(i) *SIN(zvdir(i))
+      elseif (xbld_height(i) .le. 10.0 ) then
+!                            => log law. above roof level -  same as in urban_drag
+  zuzu(i) =  zvmod(i)                                                   &
+           * LOG( (     zu    - 2 * xbld_height(i)/3.) / xz0_town(i))   &
+           / LOG( ( puref(i)  + 1.* xbld_height(i)/3.) / xz0_town(i))
+        zudiag(i) = zuzu(i) *COS(zvdir(i))
+        zvdiag(i) = zuzu(i) *SIN(zvdir(i))
+      endif
+      endif
+      end do
+
+      ! Fill surface type-specific diagnostic values
+      zqdiagtyp = zqdiag
+      ztdiagtyp = ztdiag
+      zudiagtyp = zudiag
+      zvdiagtyp = zvdiag
+      zqdiagtypv = zqdiag
+      ztdiagtypv = ztdiag
+      zudiagtypv = zudiag
+      zvdiagtypv = zvdiag
+!     do i=1,n
+!      zqdiagtyp(i) = zqdiag(i)
+!      ztdiagtyp(i) = ztdiag(i)
+!      zudiagtyp(i) = zudiag(i)
+!      zvdiagtyp(i) = zvdiag(i)
+!      zqdiagtypv(i) = zqdiag(i)
+!      ztdiagtypv(i) = ztdiag(i)
+!      zudiagtypv(i) = zudiag(i)
+!      zvdiagtypv(i) = zvdiag(i)
+!     end do
 
       call fillagg ( bus, bussiz, ptsurf, ptsurfsiz, indx_urb, surflen )
 
@@ -444,6 +634,48 @@ subroutine town(bus, bussiz, ptsurf, ptsurfsiz, dt, trnch, kount, n, m, nk)
       deallocate( xustar            , stat=alloc_status(76) )
       deallocate( xz0_roof          , stat=alloc_status(77) )
       deallocate( xz0_road          , stat=alloc_status(78) )
+!     7. heat-stress indices
+      deallocate( XTRAD_IN        ,stat=alloc_status(91)  ) 
+      deallocate( XTRAD_SUN      ,stat=alloc_status(92)   ) 
+      deallocate( XTRAD_SHADE     ,stat=alloc_status(93)  ) 
+      deallocate( XTRAD_RFSUN      ,stat=alloc_status(94) ) 
+      deallocate( XTRAD_RFSHADE    ,stat=alloc_status(95) ) 
+      deallocate( XUTCI_IN        ,stat=alloc_status(96)  ) 
+      deallocate( XUTCI_OUTSUN     ,stat=alloc_status(97) ) 
+      deallocate( XUTCI_OUTSHADE   ,stat=alloc_status(98) ) 
+      deallocate( XUTCI_RFSUN     ,stat=alloc_status(99)  ) 
+      deallocate( XUTCI_RFSHADE    ,stat=alloc_status(100) ) 
+      deallocate( XWBGT_OUTSUN     ,stat=alloc_status(101) ) 
+      deallocate( XWBGT_OUTSHADE   ,stat=alloc_status(102) ) 
+      deallocate( XWBGT_RFSUN     ,stat=alloc_status(103)  ) 
+      deallocate( XWBGT_RFSHADE    ,stat=alloc_status(104) ) 
+      deallocate( XUTCIC_IN        ,stat=alloc_status(105)) 
+      deallocate( XUTCIC_OUTSUN    ,stat=alloc_status(106) ) 
+      deallocate( XUTCIC_OUTSHADE  ,stat=alloc_status(107) ) 
+      deallocate( XUTCIC_RFSUN     ,stat=alloc_status(108) ) 
+      deallocate( XUTCIC_RFSHADE   ,stat=alloc_status(109) ) 
+      deallocate( XTGLOBE_SUN      ,stat=alloc_status(110) ) 
+      deallocate( XTGLOBE_SHADE    ,stat=alloc_status(111) ) 
+      deallocate( XTGLOBE_RFSUN    ,stat=alloc_status(112) ) 
+      deallocate( XTGLOBE_RFSHADE  ,stat=alloc_status(113) ) 
+      deallocate( XTWETB           ,stat=alloc_status(114) ) 
+      deallocate( XTWETB_ROOF      ,stat=alloc_status(115) ) 
+      deallocate( XTRFZT          ,stat=alloc_status(116) ) 
+      deallocate( XTRDZT          ,stat=alloc_status(118) ) 
+      deallocate( XURDZU          ,stat=alloc_status(120) ) 
+      deallocate( XQ1          ,stat=alloc_status(121) ) 
+      deallocate( XQ2          ,stat=alloc_status(122) ) 
+      deallocate( XQ3          ,stat=alloc_status(123) ) 
+      deallocate( XQ4          ,stat=alloc_status(124) ) 
+      deallocate( XQ5          ,stat=alloc_status(125) ) 
+      deallocate( XQ6          ,stat=alloc_status(126) ) 
+      deallocate( XQ7          ,stat=alloc_status(127) ) 
+      deallocate( XQ8          ,stat=alloc_status(128) ) 
+      deallocate( XQ9          ,stat=alloc_status(129) ) 
+      deallocate( XQ10          ,stat=alloc_status(130) ) 
+      deallocate( XQ11          ,stat=alloc_status(131) ) 
+      deallocate( XQ12          ,stat=alloc_status(132) ) 
+      deallocate( XQ13          ,stat=alloc_status(133) ) 
 
       !--------------------------------------------------------------------
    return

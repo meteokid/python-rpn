@@ -13,192 +13,115 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
-!** S/P BAKTOTQ4
-!
-      SUBROUTINE BAKTOTQ4 (T, QV, QC, TM, S, SW, PS, TIF, FICE, &
-                          DT, DQV, DQC, &
-                          TVE, QCBL, FNN, FN, ZN, ZE, MG, &
-                          AT2T,AT2M,AT2E,TAU, N, M, NK)
-!
-!
-      implicit none
+
+subroutine baktotq6 (dt,dqv,dqc,thl,qw,dthl,dqw,qc,s,sw,ps,gztherm,tif,fice,&
+     tve,wz,hpbl,hflux,qcbl,fnn,fn,fngauss,fnnonloc,c1,zn,ze,mg, &
+     vcoef,pblsigs,pblq1,tau,n,nk)
+
+   implicit none
 #include <arch_specific.hf>
-!
-!
-      INTEGER N, M, NK
-      REAL TAU
-      REAL T(M,NK), QV(M,NK), QC(N,NK), TM(N,NK)
-      REAL S(N,NK), SW(N,NK), PS(N), TIF(N,NK), FICE(N,NK)
-      REAL DT(N,NK), DQV(N,NK), DQC(N,NK)
-      REAL TVE(N,NK), QCBL(N,NK)
-      REAL FNN(N,NK), FN(N,NK), ZN(N,NK), ZE(N,NK)
-      REAL AT2T(N,NK),AT2M(N,NK),AT2E(N,NK)
-      REAL MG(N)
-!
-!Author
-!          J. Mailhot (Nov 2000)
-!
-!Revision
-! 001      A.-M. Leduc (Oct 2001) Automatic arrays
-! 002      B. Bilodeau and J. Mailhot (Dec 2001) Add a test to
-!                      check the presence of advected explicit cloud water.
-! 003      J. Mailhot (Nov 2000) Cleanup of routine
-! 004      J. Mailhot (Feb 2003) - MOISTKE option based on implicit clouds only
-! 005      A-M. Leduc (Jun 2003) - pass ps to clsgs---> clsgs2
-! 006      J. P. Toviessi ( Oct. 2003) - IBM conversion
-!               - calls to exponen4 (to calculate power function '**')
-!               - etc.
-! 007      B. Bilodeau (Dec 2003)   More optimizations for IBM
-!                                   - Call to vspown1
-!                                   - Replace divisions by multiplications
-! 008      L. Spacek (Dec 2007) - add "vertical staggering" option
-!                                 change the name to baktotq3
-! 009      A. Zadra (Oct 2015) -- add land-water mask (MG) to input, which
-!                                 is then passed on to CLSGS4
-!
-!
-!Object
-!          Transform conservative variables and their tendencies
-!          back to non-conservative variables and tendencies.
-!          Calculate the boundary layer cloud properties (cloud fraction, cloud
-!          water content, flux enhancement factor).
-!
-!Arguments
-!
-!          - Input/Output -
-! T        thetal on input (temperature on output)
-! QV       qw (total water content = QV + QC) on input (specific humidity on output)
-!
-!          - Input -
-! QC       cloud water content
-! TM       temperature at current time
-! S        sigma levels
-! SW       sigma levels of T, Q
-! PS       surface pressure (in Pa)
-! TIF      temperature to compute ice fraction
-! FICE     ice fraction
-! MG       land-water mask
-!
-!          - Input/Output -
-! DT       thetal tendency on input (temperature tendency on output)
-! DQV      qw tendency on input (specific humidity tendency on output)
-!
-!          - Output -
-! DQC      cloud water content tendency
-!
-!          - Input -
-! TVE      virtual temperature on 'E' levels
-! QCBL     cloud water content of BL clouds (subgrid-scale)
-! FNN      flux enhancement factor (fN) * cloud fraction (N)
-!
-!          - Input/Output -
-! FN       constant C1 in second-order moment closure (on input)
-!          cloud fraction (on output)
-!
-!          - Input -
-! ZN       length scale for turbulent mixing (on 'E' levels)
-! ZE       length scale for turbulent dissipation (on 'E' levels)
-! AT2T     coefficients for interpolation of T,Q to thermo levels
-! AT2M     coefficients for interpolation of T,Q to momentum levels
-! AT2E     coefficients for interpolation of T,Q to energy levels
-! TAU      timestep
-! N        horizontal dimension
-! M        first dimension of T and QV
-! NK       vertical dimension
-!
-!
-!Notes
-!          Retrieval of cloud water content is done by
-!          a sub-grid-scale parameterization (implicit clouds)
-!
-!IMPLICITS
-!
-include "thermoconsts.inc"
-!
-!*
-!
-      INTEGER J, K
-!
-      REAL CPDINV, TAUINV
-!
-!
-!*********************************************************
-!     AUTOMATIC ARRAYS
-!*********************************************************
-!
-      REAL, dimension(N,NK) :: EXNER
-      REAL, dimension(N,NK) :: THL
-      REAL, dimension(N,NK) :: QW
-      REAL, dimension(N,NK) :: A
-      REAL, dimension(N,NK) :: B
-      REAL, dimension(N,NK) :: C
-      REAL, dimension(N,NK) :: ALPHA
-      REAL, dimension(N,NK) :: BETA
-      REAL, dimension(N,NK) :: QCP
-!
-!*********************************************************
-!
-!
-! MODULES
-      EXTERNAL THERMCO2, CLSGS4
 
+   ! Arguments
+   integer, intent(in) :: n                             !horizontal dimension
+   integer, intent(in) :: nk                            !vertical dimension
+   real, intent(in) :: tau                              !time step length (s)
+   real, dimension(n,nk), intent(in) :: thl             !liquid water potential temperature (K; theta_l)
+   real, dimension(n,nk), intent(in) :: qw              !total water mixing ratio (kg/kg; q_tot)
+   real, dimension(n,nk), intent(in) :: qc              !PBL cloud water content (kg/kg)
+   real, dimension(n,nk), intent(in) :: s               !sigma for full levels
+   real, dimension(n,nk), intent(in) :: sw              !sigma for working levels
+   real, dimension(n),    intent(in) :: ps              !surface pressure (Pa)
+   real, dimension(n,nk), intent(in) :: gztherm         !height of thermodynamic levels (m)
+   real, dimension(n,nk), intent(in) :: tif             !temperature used for ice fraction (K)
+   real, dimension(n,nk), intent(in) :: fice            !ice fraction
+   real, dimension(n,nk), intent(in) :: dthl            !tendency of theta_l (K/s)
+   real, dimension(n,nk), intent(in) :: dqw             !tendency of q_tot (kg/kg/s)
+   real, dimension(n,nk), intent(in) :: tve             !virtual temperature on e-levs (K)
+   real, dimension(n,nk), intent(in) :: wz              !gridscale vertical motion (m/s)
+   real, dimension(n), intent(in) :: hpbl               !boundary layer height (m)
+   real, dimension(n), intent(in) :: hflux              !surface heat flux (W/m2)
+   real, dimension(n,nk), intent(in) :: c1              !constant C1 in second-order moment closure
+   real, dimension(n,nk), intent(in) :: zn              !mixing length (m)
+   real, dimension(n,nk), intent(in) :: ze              !dissipation length (m)
+   real, dimension(n),    intent(in) :: mg              !land-sea mask
+   real, dimension(*), intent(in) :: vcoef              !coefficients for vertical interpolation
+   real, dimension(n,nk), intent(inout) :: fnn          !flux enhancement * cloud fraction
+   real, dimension(n,nk), intent(inout) :: fnnonloc     !nonlocal cloud fraction
+   real, dimension(n,nk), intent(out) :: fn             !cloud fraction
+   real, dimension(n,nk), intent(out) :: qcbl           !water content of PBL clouds (kg/kg)
+   real, dimension(n,nk), intent(out) :: dt             !tendency of dry air temperature (K/s)
+   real, dimension(n,nk), intent(out) :: dqv            !tendency of specific humidity (kg/kg/s)
+   real, dimension(n,nk), intent(out) :: dqc            !tendency of cloud water content (kg/kg/s)
+   real, dimension(n,nk), intent(out) :: fngauss        !Gaussian cloud fraction
+   real, dimension(n,nk), intent(out) :: pblsigs        !Subgrid moisture variance
+   real, dimension(n,nk), intent(out) :: pblq1          !Normalized saturation deficit 
 
-!
-!
-!------------------------------------------------------------------------
-!
-      CPDINV = 1./CPD
-      TAUINV = 1./TAU
-!
-!       1. Retrieval of implicit cloud water content
-!       --------------------------------------------
-!
-      CALL VSPOWN1(EXNER,SW,CAPPA,NK*N)
-!
-      DO K=1,NK
-      DO J=1,N
-        THL(J,K) = T(J,K) + TAU*DT(J,K)
-        QW(J,K) = QV(J,K) + TAU*DQV(J,K)
-      END DO
-      END DO
-!
-      CALL THERMCO2 (T, QV, QC, SW, PS, TIF, FICE, FNN, &
-                     THL, QW, A, B, C, ALPHA, BETA, &
-                     0, .FALSE., N, M, NK)
-!
-!                                              retrieve QC from QW and THL (put in QCP)
-      CALL CLSGS4 (THL, TVE, QW, QCP, FN, FNN, FN, &
-                  ZN, ZE, S, PS, MG, A, B, C, AT2T, AT2M, AT2E, N, NK)
-!
-!
-!       2.     Back to non-conservative variables (T and QV) and tendencies
-!       -------------------------------------------------------------------
-!
-      DO K=1,NK
-      DO J=1,N
-!                                              back to T- and QV-
-        T(J,K) = TM(J,K)
-        QV(J,K) = QV(J,K) - MAX( 0.0 , QC(J,K) )
-!
-!                                              update QC and QCBL
-        DQC(J,K) = ( MAX(0.0 , QCP(J,K)) - &
-                     MAX(0.0 , QC(J,K)   ) )*TAUINV
-!                                              prevent negative values for new QCBL
-        DQC(J,K) = MAX( DQC(J,K) , -MAX( 0.0 ,QC(J,K) )*TAUINV )
-        QCBL(J,K) =  MAX( 0.0 , QC(J,K) ) + DQC(J,K) * TAU
-!                                              retrieve T, and QV tendencies
-!                                              (T and QV updates are made elsewhere)
-        DT(J,K) = EXNER(J,K)*DT(J,K) &
-                  + ((CHLC+FICE(J,K)*CHLF)*CPDINV)*DQC(J,K)
-        DQV(J,K) = DQV(J,K) - DQC(J,K)
-!                                              prevent negative values for QV
-        DQV(J,K) = MAX( DQV(J,K) , -MAX( 0.0 ,QV(J,K) )*TAUINV )
-!                                              set cloud water content tendency to zero
-        DQC(J,K) = 0.0
-!
-      END DO
-      END DO
-!
-!
-      RETURN
-      END
+   !Author
+   !          J. Mailhot (Nov 2000)
+   
+   !Revision
+   ! 001      A.-M. Leduc (Oct 2001) Automatic arrays
+   ! 002      B. Bilodeau and J. Mailhot (Dec 2001) Add a test to
+   !                      check the presence of advected explicit cloud water.
+   ! 003      J. Mailhot (Nov 2000) Cleanup of routine
+   ! 004      J. Mailhot (Feb 2003) - MOISTKE option based on implicit clouds only
+   ! 005      A-M. Leduc (Jun 2003) - pass ps to clsgs---> clsgs2
+   ! 006      J. P. Toviessi ( Oct. 2003) - IBM conversion
+   !               - calls to exponen4 (to calculate power function '**')
+   !               - etc.
+   ! 007      B. Bilodeau (Dec 2003)   More optimizations for IBM
+   !                                   - Call to vspown1
+   !                                   - Replace divisions by multiplications
+   ! 008      L. Spacek (Dec 2007) - add "vertical staggering" option
+   !                                 change the name to baktotq3
+   ! 009      A. Zadra (Oct 2015) -- add land-water mask (MG) to input, which
+   !                                 is then passed on to CLSGS4
+   ! 010      A. Zadra, R. McT-C (Sep 2016) - implement non-local scaling
+   !                      deveoped by J. Mailhot/A. Lock (Aug 2012)
+   
+   !Object
+   !          Transform conservative variables and their tendencies
+   !          back to non-conservative variables and tendencies.
+   !          Calculate the boundary layer cloud properties (cloud fraction, cloud
+   !          water content, flux enhancement factor).
+   
+#include "tdpack_const.hf"
+
+   ! Local parameter definitions
+   integer, parameter :: IMPLICIT_CLOUD=0
+   logical, parameter :: COMPUTE_FROM_STATE=.false.
+
+   ! Local variables
+   integer :: j,k
+   real :: cpdinv,tauinv
+   real, dimension(n,nk) :: exner,thl_star,qw_star,acoef,bcoef,ccoef,alpha,beta,qcp,unused,qv
+
+   ! Precompute inverses
+   CPDINV = 1./CPD
+   TAUINV = 1./TAU
+
+   ! Update conserved variables following diffusion
+   call vspown1(exner,sw,CAPPA,nk*n)
+   thl_star = thl + tau*dthl
+   qw_star = qw + tau*dqw
+
+   ! Compute thermodynamic coefficients from conserved variables
+   call thermco3(unused,unused,unused,sw,ps,tif,fice,fnn,thl_star,qw_star,acoef,bcoef,ccoef,alpha,beta,&
+        IMPLICIT_CLOUD,COMPUTE_FROM_STATE,n,nk)
+
+   ! Retrive updated cloud water content (qcp) from conserved variables
+   call clsgs6(thl_star,tve,qw_star,qcp,fn,fnn,fngauss,fnnonloc,c1,zn,ze,wz,hpbl,hflux,s,ps,gztherm,&
+        mg,acoef,bcoef,ccoef,vcoef,pblsigs,pblq1,n,nk)
+
+   ! Convert back to state variables and tendencies
+   qv = qw - max(0.,qc)
+   dqc = (max(0.,qcp) - max(0.,qc)) * tauinv
+   dqc = max(dqc,-max(0.0,qc)*tauinv) !prevent negative values of qc
+   dqc = min(dqc,dqw + max(0.0,qv)*tauinv) !prevent over-depletion of water vapour by PBL cloud
+   qcbl = max(0.,qc) + dqc*tau 
+   dt = exner*dthl + ((CHLC+fice*CHLF)*CPDINV)*dqc
+   dqv = max((dqw-dqc),-max(0.0,qv)*tauinv)
+
+   return
+end subroutine baktotq6
+

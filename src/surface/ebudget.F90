@@ -14,16 +14,18 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
 
-subroutine EBUDGET2(T, TS, T2, W2, WF, WL, &
+subroutine EBUDGET3(T, TS, T2, W2, WF, WL, &
      WS, DT, ALPHAS, CD, RAINRATE, &
-     RG, ALVG, ALBT, RAT, THETAA, HU, PS, RHOA, &
+     RG, ALVG, ALBT, EMIST, EMSVC, RAT, THETAA, HU, PS, RHOA, &
      U, V, VEG, HRSURF, HV, DEL, RESA, RS, CT, &
      CG, ZCS, PSN, PSNV, PSNG, WSAT, D2, SNODP, &
      TST, T2T, RNET, HFLUX, LE, LEG, LEV, &
      LES, LER, LETR, GFLUX, EFLUX, &
      LEFF, DWATERDT, DSNOWDT, FREEZS, RHOMAX, &
      MELTS_TOT, MELTS_RN, FTEMP, FVAP, N)
-   use sfc_options
+   use tdpack
+   use sfc_options, only: rad_off, atm_external, isba_melting_fix, snow_emiss, &
+        snow_emiss_const, isba_soil_emiss, isba_soil_emiss_const
    implicit none
 #include <arch_specific.hf>
    !@Object
@@ -94,7 +96,7 @@ subroutine EBUDGET2(T, TS, T2, W2, WF, WL, &
    real CG(N), ZCS(N), PSN(N), PSNV(N), PSNG(N)
    real TST(N), T2T(N), RNET(N), HFLUX(N), LE(N)
    real LEG(N), LEV(N), LES(N), LER(N), LETR(N), GFLUX(N)
-   real EFLUX(N)
+   real EFLUX(N), EMIST(N), EMSVC(N)
    real FTEMP(N), FVAP(N)
    real LEFF(N), DWATERDT(N), DSNOWDT(N), FREEZS(N)
    real RHOMAX(N), MELTS_TOT(N), MELTS_RN(N)
@@ -153,26 +155,20 @@ subroutine EBUDGET2(T, TS, T2, W2, WF, WL, &
    !     3- find Ts(t) and T2(t).
    !     4- derive the surface fluxes.*
 
-   include "thermoconsts.inc"
-
    real,parameter :: PETIT = 1.E-7
 
    integer :: i
-   real :: EMISSN, KCOEF, RHOW, RATE, AA, BB, CC, B2M4AC, M
+   real :: KCOEF, RHOW, RATE, AA, BB, CC, B2M4AC, M
    real :: MLTRAIN, RAIN1, RAIN2, DTRAIN, PRDT
    real :: MELTSR,TEMPO,TST_MIN_TRPL
-   real, dimension(n) :: EMIST, ZQSAT, ZDQSAT, ZQSATT, RORA, A, B, C, TN, &
+   real, dimension(n) :: ZQSAT, ZDQSAT, ZQSATT, RORA, A, B, C, TN, &
         ZHV, FREEZFRAC, FREEZG, MELTG, TNMT0, MELTS, WORK, EG, ES, EV, &
-        FMLTRAIN  
+        FMLTRAIN, EMISSS, EMISSN
 
    !***********************************************************************
 
-   include "dintern.inc"
-   include "fintern.inc"
-
    ! THE FOLLOWING SHOULD BE PUT IN A COMMON COMDECK
 
-   EMISSN = 1.0
    RHOW   = 1000.
    KCOEF  = 1.E-6
    if (isba_melting_fix) KCOEF = 1E-6 * DT / 720.
@@ -184,7 +180,17 @@ subroutine EBUDGET2(T, TS, T2, W2, WF, WL, &
    !    -----------------------------------------------------
    !  (considering snow surfaces)
 
-   if (RADIA == 'NIL' .and. FLUVERT .ne. 'SURFACE') then 
+   select case (snow_emiss)
+   case DEFAULT
+      emissn(:) = snow_emiss_const
+   end select
+   select case (isba_soil_emiss)
+   case ('CLIMATO')
+      emisss(:) = emsvc(:)
+   case DEFAULT
+      emisss(:) = isba_soil_emiss_const
+   end select
+   if (rad_off .and. atm_external) then 
       !Do not include radiative forcings
       ALBT = 1.
       EMIST = 0.
@@ -204,8 +210,8 @@ subroutine EBUDGET2(T, TS, T2, W2, WF, WL, &
          ! the emissivity from the vegetation or soil
          ! types.
 
-         EMIST(I) = ( 1.-PSN(I) )*0.95 + &
-              PSN(I)  * EMISSN
+         EMIST(I) = ( 1.-PSN(I) ) * EMISSS(I) + &
+              PSN(I)  * EMISSN(I)
       end do
    endif
 
@@ -281,15 +287,9 @@ subroutine EBUDGET2(T, TS, T2, W2, WF, WL, &
 
 
    ! Common portion of the MELTS and FREEZS equations
-   if (isba_melting_fix) then
-      do I=1,N
-         WORK(I) = (TN(I)-TRPL) / ( ZCS(I)*CHLF*DT )
-      end do
-   else
-      do I=1,N
-         WORK(I) = PSN(I) * (TN(I)-TRPL) / ( ZCS(I)*CHLF*DT )
-      end do
-   endif
+   do I=1,N
+      WORK(I) = PSN(I) * (TN(I)-TRPL) / ( ZCS(I)*CHLF*DT )
+   end do
 
    ! MELTS and FREEZS tendencies
    ! Also calculate the maximum snow density
@@ -515,4 +515,4 @@ subroutine EBUDGET2(T, TS, T2, W2, WF, WL, &
    end do
 
    return
-end subroutine EBUDGET2
+end subroutine EBUDGET3

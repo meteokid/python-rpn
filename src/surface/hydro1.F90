@@ -14,12 +14,13 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
 
-subroutine HYDRO1(DT, TS, T2, WG, W2, WF, WL, WR, WS, ALPHAS, RHOS, SNODP, &
+subroutine HYDRO2(DT, T, TS, T2, WG, W2, WF, WL, WR, WS, ALPHAS, RHOS, SNODP, &
      RAINRATE, SNOWRATE, T2M, U10M, V10M, &
      LEV, LETR, LEG, LES, ZC1, ZC2, C3, CG, WGEQ, CT, LAI, VEG, D2, &
      WSAT, WFC, PSN, PSNG, PSNV, &
      LEFF, DWATERDT, DSNOWDT, FREEZS, RHOMAX, TST, T2T, &
      WGT, W2T, WFT, WLT, WRT, WST, ALPHAST, RHOST, DRAIN, RUNOFF, RSNOW, N)
+   use tdpack
    use sfc_options
    implicit none
 #include <arch_specific.hf>
@@ -83,7 +84,7 @@ subroutine HYDRO1(DT, TS, T2, WG, W2, WF, WL, WR, WS, ALPHAS, RHOS, SNODP, &
    ! RUNOFF   runoff
 
    integer N
-   real DT, TS(N), T2(N), WG(N), W2(N), WR(N), WS(N)
+   real DT, T(N), TS(N), T2(N), WG(N), W2(N), WR(N), WS(N)
    real WF(N), WL(N)
    real ALPHAS(N), RHOS(N), RAINRATE(N), SNOWRATE(N)
    real T2M(N), U10M(N), V10M(N)
@@ -142,7 +143,6 @@ subroutine HYDRO1(DT, TS, T2, WG, W2, WF, WL, WR, WS, ALPHAS, RHOS, SNODP, &
    !
    !
 
-   include "thermoconsts.inc"
    include "isbapar.cdk"
 
    integer :: I
@@ -156,9 +156,6 @@ subroutine HYDRO1(DT, TS, T2, WG, W2, WF, WL, WR, WS, ALPHAS, RHOS, SNODP, &
         ANSMIN, RHOSFALL
 
    !***********************************************************************
-
-   include "dintern.inc"
-   include "fintern.inc"
 
    ! THE FOLLOWING SHOULD BE IN A COMMON
 
@@ -174,8 +171,18 @@ subroutine HYDRO1(DT, TS, T2, WG, W2, WF, WL, WR, WS, ALPHAS, RHOS, SNODP, &
 
       RR(I) = 1000. * RAINRATE(I)
       SR(I) = 1000. * SNOWRATE(I)
+     
+      ! Freezing rain correction
+      if (isba_zr_freeze) then
+         if (T(I) <= TRPL .and. TS(I) <= TRPL) then
+            SR(I) = SR(I) + RR(I)
+            RR(I) = 0.
+         endif
+      endif
 
    end do
+
+   
 
    ! 1. EVOLUTION OF THE EQUIVALENT WATER CONTENT Wr
    !    --------------------------------------------
@@ -576,4 +583,4 @@ subroutine HYDRO1(DT, TS, T2, WG, W2, WF, WL, WR, WS, ALPHAS, RHOS, SNODP, &
    end do
 
    return
-end subroutine HYDRO1
+end subroutine HYDRO2

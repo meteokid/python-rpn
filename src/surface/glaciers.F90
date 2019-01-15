@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN -------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,10 +12,11 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!-------------------------------------- LICENCE END ---------------------------
 
 !/@*
 subroutine glaciers1(BUS, BUSSIZ, PTSURF, PTSURFSIZ, TRNCH, KOUNT, N, M, NK)
+   use tdpack
    use sfclayer_mod, only: sl_prelim,sl_sfclayer,SL_OK
    use sfc_options
    use sfcbus_mod
@@ -52,11 +53,8 @@ subroutine glaciers1(BUS, BUSSIZ, PTSURF, PTSURFSIZ, TRNCH, KOUNT, N, M, NK)
    !
    ! Note:     - this subroutine expects snow depth in metre 
    !*@/
-   
-   include "thermoconsts.inc"
-
-   include "dintern.inc"
-   include "fintern.inc"
+   !Revisions
+   ! 001    M. Carrera and V. Fortin (Nov 2007) - Compute total runoff
 
    integer SURFLEN
 #define x(fptr,fj,fk) ptsurf(vd%fptr%i)+(fk-1)*surflen+fj-1
@@ -66,25 +64,33 @@ subroutine glaciers1(BUS, BUSSIZ, PTSURF, PTSURFSIZ, TRNCH, KOUNT, N, M, NK)
    real, save :: CON1,CON2,CON3,CON4,CON5,CON6
    real, save :: CON7,CON8,CON9,CON10,CON11,CON12
    real, save :: FI0,CONDFI,TMELICE,TMELSNO
-   real, save :: ALBDI,ALBMI,ALBDS,ALBMS,COEFEXT,EMISICE,EMISNOW
+   real, save :: ALBDI,ALBMI,ALBDS,ALBMS,COEFEXT
    real, save :: ROICE,ROSNOW(2)
-   real, save :: HCAPI,VHFICE,VHFSNO
+   real, save :: HCAPI,HFICE,VHFICE,VHFSNO
    real, save :: HCAPS,KSDS,KSMS
-   real, save :: Z0GLA
+   real :: EMISICE, EMISNOW
 
-   real,dimension(n) :: a,    b,     c,     c2,   ct,   dqsat,emist,rhoa
+   real,dimension(n) :: a,    b,     c,     c2,   ct,   dqsat, rhoa
    real,dimension(n) :: scr1, scr2,  scr3,  scr4, scr5, scr6, scr7, scr8
    real,dimension(n) :: scr9, scr10, scr11, t2, vmod, vdir, zsnodp_m
+   real, dimension(n) :: zu10, zusr    ! wind at 10m and at the sensor level 
+   real, dimension(n) :: zref_sw_surf, zemit_lw_surf, zzenith
 
    real,pointer,dimension(:) :: al, albsfc, cmu, ctu, fc_glac
-   real,pointer,dimension(:) :: fsol, fv_glac
+   real,pointer,dimension(:) :: fsol, fv_glac, zemisr
    real,pointer,dimension(:) :: hice, hst_glac, hu, ilmo_glac
    real,pointer,dimension(:) :: ps, qsice, th, snorate, tdeep, ts, tt, uu, vv
    real,pointer,dimension(:) :: z0h, z0m
    real,pointer,dimension(:) :: zalfaq, zalfat, zdlat, zfcor, zfdsi
-   real,pointer,dimension(:) :: zftemp, zfvap, zqdiag, zsnodp, ztdiag
+   real,pointer,dimension(:) :: zftemp, zfvap, zqdiag, zrunofftot, zsnodp, ztdiag
    real,pointer,dimension(:) :: ztsurf, ztsrad, zudiag, zvdiag
    real,pointer,dimension(:) :: zfrv, zzusl, zztsl
+   real,pointer,dimension(:) :: zqdiagtyp, ztdiagtyp, zudiagtyp, zvdiagtyp
+   real,pointer,dimension(:) :: zqdiagtypv, ztdiagtypv, zudiagtypv, zvdiagtypv
+   real,pointer,dimension(:) :: zfsd, zfsf, zcoszeni
+   real,pointer,dimension(:) :: zutcisun, zutcishade, zwbgtsun, zwbgtshade
+   real,pointer,dimension(:) :: zradsun, zradshade, ztglbsun, ztglbshade
+   real,pointer,dimension(:) :: ztwetb, zq1, zq2, zq3, zq4, zq5, zq6, zq7
 
    logical, parameter :: GLACIER_TDIAGLIM=.false.
 
@@ -104,16 +110,14 @@ subroutine glaciers1(BUS, BUSSIZ, PTSURF, PTSURFSIZ, TRNCH, KOUNT, N, M, NK)
          0.57    ,  0.50  ,  0.83   ,  0.77  /
    data  COEFEXT / &
          1.5     /
-   data  EMISICE , EMISNOW / 0.99 , 0.99 /
    data  ROICE  / &
          913.0  /
    data  ROSNOW  / 330.0 , 450.0 /
-   data  HCAPI    , VHFICE   , VHFSNO   / &
-         2.062E+3 , 2.679E+8 , 1.097E+8 /
+   data  HCAPI    , HFICE   , VHFICE   , VHFSNO   / &
+         2.062E+3 , 3.34E+5 , 2.679E+8 , 1.097E+8 /
    data  HCAPS   , KSDS  , KSMS   / &
          2.04E+3 , 0.325 , 0.665 /
-   data  Z0GLA  / 3.0E-4 /
-   
+ 
    !------------------------------------------------------------------------
    SURFLEN = M
    DAY = 86400.
@@ -132,36 +136,75 @@ subroutine glaciers1(BUS, BUSSIZ, PTSURF, PTSURFSIZ, TRNCH, KOUNT, N, M, NK)
    endif
    fv_glac  (1:n) => bus( x(fv,1,indx_sfc)    : )
    hst_glac (1:n) => bus( x(hst,1,indx_sfc)   : )
-   hu       (1:n) => bus( x(humoins,1,nk)     : )
    ilmo_glac(1:n) => bus( x(ilmo,1,indx_sfc)  : )
-   ps       (1:n) => bus( x(pmoins,1,1)       : )
    qsice    (1:n) => bus( x(qsurf,1,indx_sfc) : )
    snorate  (1:n) => bus( x(snowrate,1,1)     : )
    tdeep    (1:n) => bus( x(tglacier,1,2)     : )
-   th       (1:n) => bus( x(thetaa,1,1)       : )
    ts       (1:n) => bus( x(tglacier,1,1)     : )
-   tt       (1:n) => bus( x(tmoins,1,nk)      : )
-   uu       (1:n) => bus( x(umoins,1,nk)      : )
-   vv       (1:n) => bus( x(vmoins,1,nk)      : )
    z0h      (1:n) => bus( x(z0t,1,indx_sfc)   : )
    z0m      (1:n) => bus( x(z0,1,indx_sfc)    : )
    zalfaq   (1:n) => bus( x(alfaq,1,1)        : )
    zalfat   (1:n) => bus( x(alfat,1,1)        : )
+   zcoszeni (1:n) => bus( x(cang,1,1)        : )
    zdlat    (1:n) => bus( x(dlat,1,1)         : )
+   zemisr   (1:n) => bus( x(emisr,1,1)        : )
    zfcor    (1:n) => bus( x(fcor,1,1)         : )
    zfdsi    (1:n) => bus( x(fdsi,1,1)         : )
    zfrv     (1:n) => bus( x(frv,1,indx_sfc)   : )
    zftemp   (1:n) => bus( x(ftemp,1,indx_sfc) : )
    zfvap    (1:n) => bus( x(fvap,1,indx_sfc)  : )
-   zqdiag   (1:n) => bus( x(qdiag,1,1)        : )
+   zrunofftot(1:n) => bus( x(runofftot,1,indx_sfc) : )
    zsnodp   (1:n) => bus( x(snodp,1,indx_sfc) : )
    ztsrad   (1:n) => bus( x(tsrad,1,1)        : )
    ztsurf   (1:n) => bus( x(tsurf,1,1)        : )
    zudiag   (1:n) => bus( x(udiag,1,1)        : )
+   zudiagtyp(1:n) => bus( x(udiagtyp,1,indx_sfc) : )
+   zudiagtypv(1:n) => bus( x(udiagtypv,1,indx_sfc) : )
    zvdiag   (1:n) => bus( x(vdiag,1,1)        : )
+   zvdiagtyp(1:n) => bus( x(vdiagtyp,1,indx_sfc) : )
+   zvdiagtypv(1:n) => bus( x(vdiagtypv,1,indx_sfc) : )
    ztdiag   (1:n) => bus( x(tdiag,1,1)        : )
+   ztdiagtyp(1:n) => bus( x(tdiagtyp,1,indx_sfc) : )
+   ztdiagtypv(1:n) => bus( x(tdiagtypv,1,indx_sfc) : )
+   zqdiag   (1:n) => bus( x(qdiag,1,1)        : )
+   zqdiagtyp(1:n) => bus( x(qdiagtyp,1,indx_sfc) : )
+   zqdiagtypv(1:n) => bus( x(qdiagtypv,1,indx_sfc) : )
    zzusl    (1:n) => bus( x(zusl,1,1)         : )
    zztsl    (1:n) => bus( x(ztsl,1,1)         : )
+   zfsd (1:n)       => bus( x(fsd,1,1)         : )
+   zfsf (1:n)       => bus( x(fsf,1,1)         : )
+   zutcisun (1:n)   => bus( x(yutcisun,1,indx_sfc)    : )
+   zutcishade (1:n) => bus( x(yutcishade,1,indx_sfc)  : )
+   zwbgtsun (1:n)   => bus( x(ywbgtsun,1,indx_sfc)    : )
+   zwbgtshade (1:n) => bus( x(ywbgtshade,1,indx_sfc)  : )
+   zradsun (1:n)    => bus( x(yradsun,1,indx_sfc)     : )
+   zradshade (1:n)  => bus( x(yradshade,1,indx_sfc)   : )
+   ztglbsun (1:n)   => bus( x(ytglbsun,1,indx_sfc)    : )
+   ztglbshade (1:n) => bus( x(ytglbshade,1,indx_sfc)  : )
+   ztwetb (1:n)     => bus( x(ytwetb,1,indx_sfc)      : )
+   zq1 (1:n)        => bus( x(yq1,1,indx_sfc)         : )
+   zq2 (1:n)        => bus( x(yq2,1,indx_sfc)         : )
+   zq3 (1:n)        => bus( x(yq3,1,indx_sfc)         : )
+   zq4 (1:n)        => bus( x(yq4,1,indx_sfc)         : )
+   zq5 (1:n)        => bus( x(yq5,1,indx_sfc)         : )
+   zq6 (1:n)        => bus( x(yq6,1,indx_sfc)         : )
+   zq7 (1:n)        => bus( x(yq7,1,indx_sfc)         : )
+
+   if (atm_tplus) then
+      hu       (1:n) => bus( x(huplus,1,nk)      : )
+      ps       (1:n) => bus( x(pplus,1,1)        : )
+      th       (1:n) => bus( x(thetaap,1,1)      : )
+      tt       (1:n) => bus( x(tplus,1,nk)       : )
+      uu       (1:n) => bus( x(uplus,1,nk)       : )
+      vv       (1:n) => bus( x(vplus,1,nk)       : )
+   else
+      hu       (1:n) => bus( x(humoins,1,nk)     : )
+      ps       (1:n) => bus( x(pmoins,1,1)       : )
+      th       (1:n) => bus( x(thetaa,1,1)       : )
+      tt       (1:n) => bus( x(tmoins,1,nk)      : )
+      uu       (1:n) => bus( x(umoins,1,nk)      : )
+      vv       (1:n) => bus( x(vmoins,1,nk)      : )
+   endif
 
 
 !*     1.     Preliminaries
@@ -170,9 +213,19 @@ subroutine glaciers1(BUS, BUSSIZ, PTSURF, PTSURFSIZ, TRNCH, KOUNT, N, M, NK)
       i = sl_prelim(tt,hu,uu,vv,ps,zzusl,spd_air=vmod,dir_air=vdir,rho_air=rhoa, &
            min_wind_speed=sqrt(vamin))
       if (i /= SL_OK) then
-         print*, 'Aborting in glaciers() because of error returned by sl_prelim()'
-         stop
-      endif  
+         call physeterror('glaciers', 'error returned by sl_prelim()')
+         return
+      endif
+
+      ! Set emissivity values
+      select case (snow_emiss)
+      case DEFAULT
+         EMISNOW = snow_emiss_const
+      end select
+      select case (ice_emiss)
+      case DEFAULT
+         EMISICE = ice_emiss_const
+      end select
 
       do I=1,N
 
@@ -212,8 +265,8 @@ subroutine glaciers1(BUS, BUSSIZ, PTSURF, PTSURFSIZ, TRNCH, KOUNT, N, M, NK)
            coefm=cmu,coeft=ctu,flux_t=zftemp,flux_q=zfvap,ilmo=ilmo_glac,ue=zfrv, &
            h=hst_glac)
       if (i /= SL_OK) then
-         print*, 'Aborting in glaciers() because of error returned by sl_sfclayer()'
-         stop
+         call physeterror('glaciers', 'error returned by sl_sfclayer()')
+         return
       endif 
 
 !       3.     Parameterizations (albedo, emissivity, conductivity,...)
@@ -293,10 +346,10 @@ subroutine glaciers1(BUS, BUSSIZ, PTSURF, PTSURFSIZ, TRNCH, KOUNT, N, M, NK)
       do I=1,N
 
         if( ZSNODP(I) .gt. CON10 ) then
-          EMIST(I) = EMISNOW
+          ZEMISR(I) = EMISNOW
           SCR1(I) = 1.0
         else
-          EMIST(I) = EMISICE
+          ZEMISR(I) = EMISICE
           SCR1(I) = 1.0 - FI0
           SCR1(I) = min( 1.0 , SCR1(I)+ZSNODP(I)* &
                         (1.0-SCR1(I))/CON10 )
@@ -310,17 +363,17 @@ subroutine glaciers1(BUS, BUSSIZ, PTSURF, PTSURFSIZ, TRNCH, KOUNT, N, M, NK)
 !                                              calculation of TS at time 'T+DT'
       do I=1,N
 
-        A(I) = CT(I) * ( 4. * EMIST(I) * STEFAN * TS(I)**3 &
+        A(I) = CT(I) * ( 4. * ZEMISR(I) * STEFAN * TS(I)**3 &
            +  RHOA(I) * CTU(I) * (DQSAT(I) * (CHLC+CHLF) + CPD) ) &
            + C2(I)
 
-        B(I) = CT(I) * ( 3. * EMIST(I) * STEFAN  * TS(I)**3 &
+        B(I) = CT(I) * ( 3. * ZEMISR(I) * STEFAN  * TS(I)**3 &
            + RHOA(I) * CTU(I) * DQSAT(I) * (CHLC+CHLF) )
 
         C(I) = C2(I) * T2(I) + CT(I) * &
            (  RHOA(I)*CTU(I) * (CPD*TH(I) - (CHLC+CHLF)*(QSICE(I)-HU(I))) &
            +  FSOL(I)*(1.-ALBSFC(I)) * (SCR1(I)+(1.-SCR1(I))*SCR2(I)) &
-           + EMIST(I)*ZFDSI(I) )
+           + ZEMISR(I)*ZFDSI(I) )
 
       end do
 
@@ -367,9 +420,19 @@ subroutine glaciers1(BUS, BUSSIZ, PTSURF, PTSURFSIZ, TRNCH, KOUNT, N, M, NK)
            hghtm_diag=zu,hghtt_diag=zt,t_diag=ztdiag,q_diag=zqdiag,u_diag=zudiag, &
            v_diag=zvdiag,tdiaglim=GLACIER_TDIAGLIM)
       if (i /= SL_OK) then
-         print*, 'Aborting in glaciers() because of error returned by sl_sfclayer()'
-         stop
+         call physeterror('glaciers', 'error 2 returned by sl_sfclayer()')
+         return
       endif
+
+      ! Fill surface type-specific diagnostic values
+      zqdiagtyp = zqdiag
+      ztdiagtyp = ztdiag
+      zudiagtyp = zudiag
+      zvdiagtyp = zvdiag
+      zqdiagtypv = zqdiag
+      ztdiagtypv = ztdiag
+      zudiagtypv = zudiag
+      zvdiagtypv = zvdiag
 
 !       5.     Melting and growth
 !       -------------------------
@@ -407,17 +470,20 @@ subroutine glaciers1(BUS, BUSSIZ, PTSURF, PTSURFSIZ, TRNCH, KOUNT, N, M, NK)
           SCR5(I) = RHOA(I)*CTU(I)* &
                     ( CPD*(TS(I)-TH(I))+(CHLC+CHLF)*(QSICE(I)-HU(I)) ) &
                    - FSOL(I)*(1.-ALBSFC(I))*SCR1(I) &
-                   + EMIST(I)*( STEFAN*TS(I)**4 - ZFDSI(I) )
+                   + ZEMISR(I)*( STEFAN*TS(I)**4 - ZFDSI(I) )
 
           SCR3(I) = SCR5(I) - SCR11(I)
 
 !                               criteria for melting at the surface
+          ZRUNOFFTOT(I) = 0.0
           if( TS(I).ge.SCR4(I) .and. &
               SCR5(I).le.0.0 .and. SCR3(I).lt.0.0 ) then
 
 !                               melt available snow...
             ZSNODP(I) = max( 0.0, ZSNODP(I) + DELT*SCR3(I)/VHFSNO )
-
+!                               (in units of water equivalent - kg/m2 or mm)
+            ZRUNOFFTOT(I) = - DELT*SCR3(I)/HFICE
+!
           endif
 !                               add snow fall (units changed from
 !                               water equivalent to snow equivalent)
@@ -453,10 +519,52 @@ subroutine glaciers1(BUS, BUSSIZ, PTSURF, PTSURFSIZ, TRNCH, KOUNT, N, M, NK)
 !***
 
       end do
+ 
+      !------------------------------------
+      !   7.     Heat Stress Indices
+      !------------------------------------
+      !#TODO: at least 4 times identical code in surface... separeted s/r to call
+      IF_THERMAL_STRESS: if (thermal_stress) then
 
-!     FILL THE ARRAYS TO BE AGGREGATED LATER IN S/R AGREGE
-      call FILLAGG ( BUS, BUSSIZ, PTSURF, PTSURFSIZ, INDX_GLACIER, &
-                     SURFLEN)
+         do I=1,N
+
+            if (abs(zzusl(i)-zu) <= 2.0) then
+               zu10(i) = sqrt(uu(i)**2+vv(i)**2)
+            else
+               zu10(i) = sqrt(zudiag(i)**2+zvdiag(i)**2)
+            endif
+
+            ! wind  at SensoR level
+            zusr(i) = zu10(i)
+
+            zref_sw_surf(i) = ALBSFC(I) * fsol(i)
+            zemit_lw_surf(i) = (1. -ZEMISR(I)) * zfdsi(i) + ZEMISR(I)*STEFAN *ztsurf(i)**4
+
+            ZZENITH(I) = acos(ZCOSZENI(I))      ! direct use of bus zenith
+            if (fsol(I) > 0.0) then
+               ZZENITH(I) = min(ZZENITH(I), PI/2.)
+            else
+               ZZENITH(I) = max(ZZENITH(I), PI/2.)
+            endif
+
+         end do
+
+         call SURF_THERMAL_STRESS(ZTDIAG, ZQDIAG,         &
+              ZU10,ZUSR,  ps,                             &
+              ZFSD, ZFSF, ZFDSI, ZZENITH,                 &
+              ZREF_SW_SURF,ZEMIT_LW_SURF,                 &
+              Zutcisun ,Zutcishade,                       &
+              zwbgtsun, zwbgtshade,                       &
+              zradsun, zradshade,                         &
+              ztglbsun, ztglbshade, ztwetb,               &
+              ZQ1, ZQ2, ZQ3, ZQ4, ZQ5,                    &
+              ZQ6,ZQ7, N)
+
+      endif IF_THERMAL_STRESS
+
+      !     FILL THE ARRAYS TO BE AGGREGATED LATER IN S/R AGREGE
+      call FILLAGG( BUS, BUSSIZ, PTSURF, PTSURFSIZ, INDX_GLACIER, &
+           SURFLEN)
 
    return
 end subroutine glaciers1

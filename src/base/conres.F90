@@ -16,6 +16,7 @@
 
       SUBROUTINE CONRES1(RI,GAMA,GAMAQ,FN,T,TVE,Q,QE,PS,HOL,SIGMA,SE,S, &
                             QC,N,M,NK)
+      use tdpack
       use phy_options
       implicit none
 #include <arch_specific.hf>
@@ -92,10 +93,6 @@
 !
 !          -Work-
 ! QC       specific humidity of cloud (N)
-
-include "thermoconsts.inc"
-include "dintern.inc"
-include "fintern.inc"
 
       RGASD_OV_GRAV=RGASD/GRAV
       GRAV_OV_CPD=GRAV/CPD

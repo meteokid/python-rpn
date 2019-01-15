@@ -26,7 +26,7 @@ subroutine agrege2( &
    implicit none
 #include <arch_specific.hf>
 
-   integer ni, trnch, ni_sfc, ptsurfsiz
+   integer ni, trnch, ptsurfsiz
    integer ptr_soil(ptsurfsiz), ptr_glacier(ptsurfsiz)
    integer ptr_water  (ptsurfsiz), ptr_ice  (ptsurfsiz)
    integer ptr_urb  (ptsurfsiz)
@@ -78,7 +78,6 @@ subroutine agrege2( &
 
    integer ik_soil, ik_glacier, ik_water, ik_ice, ik_ori, ik_urb
    integer i, ik, k, m, var
-   integer sommet, surflen
    integer n, var_no
 
    real, pointer, dimension(:) :: bus_ori

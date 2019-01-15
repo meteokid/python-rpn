@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN -------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,197 +12,337 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
-!** S/P PREP_CW
-subroutine prep_cw2 (f, fsiz, d, dsiz, v, vsiz, &
-     ficebl, kount, trnch, task, ni, nk)
+!-------------------------------------- LICENCE END ---------------------------
+
+module prep_cw
+   use debug_mod, only: init2nan
    use phy_options
    use phybus
    implicit none
+   private
+   public :: prep_cw3
+
+#include <msg.h>
+#include "phymkptr.hf"
+
+contains
+
+  !/@*
+   subroutine prep_cw3(f, fsiz, d, dsiz, v, vsiz, ficebl, ni, nk)
+      implicit none
 #include <arch_specific.hf>
 
-  integer fsiz, dsiz, vsiz, ni, n, nk
-  integer kount, trnch, task
-  real, target :: f(fsiz), d(dsiz), v(vsiz)
-  real ficebl(ni,nk)
-
-!Author
-!          L. Spacek (Oct 2004)
-!
-!Revisions
-!     001      see version 5.5.0 for previous history
-!
-!Object
-!          Save water contents and cloudiness in the permanent bus
-!
-!Arguments
-!
-!          - Input -
-! dsiz     dimension of d
-! fsiz     dimension of f
-! vsiz     dimension of v
-! ficebl   fraction of ice
-! kount    index of timestep
-! trnch    number of the slice
-! task     task number
-! ni       horizontal dimension
-! nk       vertical dimension
-!
-!          - Output -
-!
-!          - Input/Output -
-! d        dynamic             bus
-! f        permanent variables bus
-! v        volatile (output)   bus
-!***********************************************************************
-
-  integer ik, i, k
-  real, target,dimension(ni,nk) :: zero
-  real, pointer, dimension(:,:) :: zfbl, zfdc, zfsc, zftot, zfxp, ziwc, zlwc, &
-       zqcplus, zqiplus, zqldi, zqlsc, &
-       zqsdi, zqssc, zqtbl, zsnow, zqi_cat1, zqi_cat2, zqi_cat3, zqi_cat4
-
-  zero   (1:ni,1:nk) =  0.0
-  zfbl   (1:ni,1:nk) => f(fbl:)
-  zfdc   (1:ni,1:nk) => f(fdc:)
-  zftot  (1:ni,1:nk) => f(ftot:)
-  zfxp   (1:ni,1:nk) => f(fxp:)
-  zlwc   (1:ni,1:nk) => f(lwc:)
-  ziwc   (1:ni,1:nk) => f(iwc:)
-  zqcplus(1:ni,1:nk) => d(qcplus:)
-  zqtbl  (1:ni,1:nk) => f(qtbl:)
-  if (qiplus > 0) zqiplus(1:ni,1:nk) => d(qiplus:)
-!
-  if (convec == 'KFC'.or.convec == 'BECHTOLD') then
-     zqldi  (1:ni,1:nk) => f(qldi:)
-     zqsdi  (1:ni,1:nk) => f(qsdi:)
-  else
-     zqldi => zero(1:ni,1:nk)
-     zqsdi => zero(1:ni,1:nk)
-  endif
-!
-  if (conv_shal /= 'NIL') then
-     zqlsc  (1:ni,1:nk) => v(qlsc:)
-     zqssc  (1:ni,1:nk) => v(qssc:)
-  else
-     zqlsc => zero(1:ni,1:nk)
-     zqssc => zero(1:ni,1:nk)
-  endif
-!
-  if (conv_shal /= 'NIL') then
-     zfsc   (1:ni,1:nk) => f(fsc:)
-  else
-     zfsc => zero(1:ni,1:nk)
-  endif
-!
-!
-!     Apply the convection/condensation tendencies
-!     ------------------------------------------
-!
-!     Cloud water
-!     ------------
-!
-  if (stcond/='NIL'.and.stcond/='CONDS/') then
-!
-!     Copy qcplus into the permanent bus. Il will be used during
-!     next timestep by the radiation
-!
-     do k=1,nk
-        do i=1,ni
-           zlwc(i,k) =  zqcplus(i,k)
-        enddo
-     enddo
-  endif
-!     If we have the CONSUN scheme, the cloud water from MoisTKE has
-!     priority over the cloud water from the grid-scale scheme.
-!     In this Case, everything goes into the LWC (for liquid cloud water)
-!     variable.
-!
-  if (stcond=='CONSUN'.and.fluvert=='MOISTKE') then
-     do k=1,nk
-        do i=1,ni
-           if(zqtbl(i,k)>zqcplus(i,k))then
-              zlwc(i,k) = zqtbl(i,k)
-              zfxp(i,k) = zfbl(i,k)
-           endif
-        enddo
-     enddo
-  endif
+      !@Object Save water contents and cloudiness in the permanent bus
+      !@Arguments
+      !          - Input -
+      ! dsiz     dimension of d
+      ! fsiz     dimension of f
+      ! vsiz     dimension of v
+      ! ficebl   fraction of ice
+      ! ni       horizontal dimension
+      ! nk       vertical dimension
+      !          - Input/Output -
+      ! d        dynamic             bus
+      ! f        permanent variables bus
+      ! v        volatile (output)   bus
+      !*@/
+      integer, intent(in) :: fsiz, dsiz, vsiz, ni, nk
+      real, intent(inout), target :: f(fsiz), d(dsiz), v(vsiz)
+      real, intent(in) :: ficebl(ni,nk)
+      !*@/
+      integer :: nkm1
+      !----------------------------------------------------------------
+      call msg_toall(MSG_DEBUG, 'prep_cw [BEGIN]')
+      if (stcond(1:3) == 'MP_') then
+         nkm1 = nk-1
+         call prep_cw_MP(f, fsiz, v, vsiz, ficebl, ni, nk, nkm1)
+      else
+         call prep_cw_noMP(f, fsiz, d, dsiz, v, vsiz, ficebl, ni, nk)
+      endif
+      call msg_toall(MSG_DEBUG, 'prep_cw [END]')
+      !----------------------------------------------------------------
+      return
+   end subroutine prep_cw3
 
 
-!     MoisTKE has priority over the microphysics scheme
+   !/@*
+   subroutine prep_cw_noMP(f, fsiz, d, dsiz, v, vsiz, ficebl, ni, nk)
+      implicit none
+#include <arch_specific.hf>
 
-  if (stcond(1:2)=='MP') then
+      !@Object Save water contents and cloudiness in the permanent bus
+      !@Arguments
+      !          - Input -
+      ! dsiz     dimension of d
+      ! fsiz     dimension of f
+      ! vsiz     dimension of v
+      ! ficebl   fraction of ice
+      ! ni       horizontal dimension
+      ! nk       vertical dimension
+      !          - Input/Output -
+      ! d        dynamic             bus
+      ! f        permanent variables bus
+      ! v        volatile (output)   bus
+      !*@/
 
-     if (stcond(1:6)=='MP_MY2') then
-        zlwc = zqcplus
-     zsnow(1:ni,1:nk) => d(qnplus:)
-        ziwc = zqiplus + zsnow
-     elseif (stcond=='MP_P3') then
-        zlwc = zqcplus
-        zqi_cat1(1:ni,1:nk) => d(i1qtplus:)
-        ziwc = zqi_cat1
-        if (mp_p3_ncat >= 2) then
-           zqi_cat2(1:ni,1:nk) => d(i2qtplus:)
-           ziwc = ziwc + zqi_cat2
-        endif
-        if (mp_p3_ncat >= 3) then
-           zqi_cat3(1:ni,1:nk) => d(i3qtplus:)
-           ziwc = ziwc + zqi_cat3
-        endif
-        if (mp_p3_ncat >= 4) then
-           zqi_cat4(1:ni,1:nk) => d(i4qtplus:)
-           ziwc = ziwc + zqi_cat4
-        endif
-     endif
+      integer, intent(in) :: fsiz, dsiz, vsiz, ni, nk
+      real, intent(inout), target :: f(fsiz), d(dsiz), v(vsiz)
+      real, intent(in) :: ficebl(ni,nk)
 
-     if(fluvert=='MOISTKE') then
-        do k=1,nk
-           do i=1,ni
-              if (zqtbl(i,k).gt.zlwc(i,k)+ziwc(i,k)) then
-                 zlwc(i,k) =  zqtbl(i,k) * (1.0 - ficebl(i,k) )
-                 ziwc(i,k) =  zqtbl(i,k) * ficebl(i,k)
-                 zfxp(i,k) =  zfbl (i,k)
-              endif
-           enddo
-        enddo
-     endif
-  endif
+      !@Author L. Spacek (Oct 2004)
+      !*@/
 
-!     Add the cloud water (liquid and solid) coming from shallow and deep
-!     cumulus clouds (only for the Kuo Transient and Kain-Fritsch schemes).
-!     Note that no conditions are used for these calculations ...
-!     qldi, qsdi, and qlsc, qssc are zero if these schemes are not used.
-!     Also note that qldi, qsdi, qlsc and qssc are NOT IN-CLOUD values
-!     (multiplication done in kfcp4 and ktrsnt)
-!
-!     For grid-scale schemes (e.g., Sundqvist, Milbrandt-Yau, P3) all
-!     the cloud water is put in LWC (and will be partition later in the
-!     radiation subroutines)
-!
-  if (stcond(1:2)=='MP') then
-     zlwc = zlwc + zqldi + zqlsc
-     ziwc = ziwc + zqsdi + zqssc
-  else
-     zlwc = zlwc + zqldi + zqsdi + zqlsc + zqssc
-  endif
+      integer :: i, k
+      real :: cfblxp(ni,nk)
+      real, target :: zero(ni,nk)
+      real, pointer, dimension(:,:), contiguous :: zfbl, zfdc, zfsc, zftot, zfxp, ziwc, zlwc, &
+           zqcplus, zqiplus, zqldi, zqlsc, zqlmi, zqsmi, zfmc, &
+           zqsdi, zqssc, zqtbl, zsnow, zqi_cat1, zqi_cat2, zqi_cat3, zqi_cat4
+      !----------------------------------------------------------------
+      MKPTR2D(zfbl, fbl, f)
+      MKPTR2D(zfdc, fdc, f)
+      MKPTR2D(zfmc, fmc, f)
+      MKPTR2D(zfsc, fsc, f)
+      MKPTR2D(zftot, ftot, f)
+      MKPTR2D(zfxp, fxp, f)
+      MKPTR2D(ziwc, iwc, f)
+      MKPTR2D(zlwc, lwc, f)
+      MKPTR2D(zqcplus, qcplus, d)
+      MKPTR2D(zqi_cat1, qti1plus, d)
+      MKPTR2D(zqi_cat2, qti2plus, d)
+      MKPTR2D(zqi_cat3, qti3plus, d)
+      MKPTR2D(zqi_cat4, qti4plus, d)
+      MKPTR2D(zqiplus, qiplus, d)
+      MKPTR2D(zqldi, qldi, f)
+      MKPTR2D(zqlmi, qlmi, v)
+      MKPTR2D(zqlsc, qlsc, v)
+      MKPTR2D(zqsdi, qsdi, f)
+      MKPTR2D(zqsmi, qsmi, v)
+      MKPTR2D(zqssc, qssc, v)
+      MKPTR2D(zqtbl, qtbl, f)
+      MKPTR2D(zsnow, qnplus, d)
+
+      zero(:,:) =  0.0
+
+      if (any(convec == (/ &
+           'NIL   ', &
+           'KUOSTD', &
+           'OLDKUO'  &
+           /))) then
+         zqldi => zero(1:ni,1:nk)
+         zqsdi => zero(1:ni,1:nk)
+      endif
+
+      if (conv_shal == 'NIL') then
+         zqlsc => zero(1:ni,1:nk)
+         zqssc => zero(1:ni,1:nk)
+         zfsc => zero(1:ni,1:nk)
+      endif
+
+      if (conv_mid == 'NIL') then
+         zqlmi => zero(1:ni,1:nk)
+         zqsmi => zero(1:ni,1:nk)
+         zfmc => zero(1:ni,1:nk)
+      endif
+
+      call init2nan(cfblxp)
+
+      ! ------------------------------------------
+      ! Cloud water
+      ! ------------------------------------------
+
+      if (stcond /= 'NIL') then
+
+         ! qcplus may contain total water content from consun/newsund and detrained explicit clouds from kfc/bech
+         ! if (stcond = 'MP') qcplus is liquid clouds from expicit scheme + detrained explicit liquid clouds from kfc/bech
+
+         do k=1,nk
+            do i=1,ni
+               zlwc(i,k) = zqcplus(i,k)
+               cfblxp (i,k) = zfxp(i,k)
+            enddo
+         enddo
+      else
+         cfblxp = 0.
+      endif
+
+      ! If we have the CONSUN scheme, the cloud water from MoisTKE has
+      ! priority over the cloud water from the grid-scale scheme.
+
+      if (stcond == 'CONSUN' .and. fluvert == 'MOISTKE') then
+         do k=1,nk
+            do i=1,ni
+               if (zqtbl(i,k) > zqcplus(i,k))then
+                  zlwc(i,k) = zqtbl(i,k)
+                  cfblxp(i,k) = zfbl(i,k)
+               endif
+            enddo
+         enddo
+      endif
+
+      ! Add the cloud water (liquid and solid) coming from shallow and deep
+      ! cumulus clouds (only for the Kuo Transient and Kain-Fritsch schemes).
+      ! Note that no conditions are used for these calculations ...
+      ! qldi, qsdi, and qlsc, qssc are zero if these schemes are not used.
+      ! Also note that qldi, qsdi, qlsc and qssc are NOT IN-CLOUD values
+      ! (multiplication done in kfcp4 and ktrsnt)
+      !
+      ! For Sundqvist schemes all
+      ! the cloud water is put in LWC (and will be partitioned later in prep_cw_rad)
+
+      zlwc = zlwc + zqldi + zqsdi + zqlsc + zqssc + zqlmi + zqsmi
+
+      ! Combine explicit and Implicit clouds using the random overlap
+      ! approximation:
+      !     CFBLXP is either fxp or fbl depending on choice of merging between explicit and moistke
+      !     FDC is for deep convection clouds
+      !          (always defined as necessary for condensation too)
+      !     FSC is for the shallow convection clouds
+      !     FMC is for mid-level convective clouds
+
+      do k=1,nk
+         do i=1,ni
+            zftot(i,k) = min(1., max(0., &
+                 1. - (1.-cfblxp(i,k))*(1.-zfdc(i,k))*(1.-zfsc(i,k))*(1.-zfmc(i,k)) &
+                 ))
+         enddo
+      enddo
+      !----------------------------------------------------------------
+      return
+   end subroutine prep_cw_noMP
 
 
-!     Combine explicit and Implicit clouds using the random overlap
-!     approximation:
-!         FXP is for grid-scale condensation
-!              (but can also include the PBL clouds of MoisTKE)
-!         FDC is for deep convection clouds
-!              (always defined as necessary for condensation too)
-!         FSC is for the shallow convection clouds
-!
-!
-  do k=1,nk
-     do i=1,ni
-        zftot(i,k) = min(  max( &
-             1. - (1.-zfxp(i,k))*(1.-zfdc(i,k))*(1.-zfsc(i,k)) , &
-             0.       )  , &
-             1.)
-     enddo
-  enddo
-end subroutine prep_cw2
+   !/@*
+   subroutine prep_cw_MP(f, fsiz,  v, vsiz, ficebl, ni, nk, nkm1)
+      implicit none
+#include <arch_specific.hf>
+
+      !@Object
+      ! When MP schemes are used; merge water contents from "implicit cloud
+      ! sources"  for radiation
+      !
+      !@Arguments
+      !
+      !      - Input -
+      ! dsiz     dimension of d
+      ! fsiz     dimension of f
+      ! vsiz     dimension of v
+      ! ficebl   fraction of ice
+      ! ni       horizontal dimension
+      ! nk       vertical dimension
+      ! nkm1     vertical scope of the operator
+      !
+      !      - Input/Output -
+      ! d        dynamic             bus
+      ! f        permanent variables bus
+      ! v        volatile (output)   bus
+
+      integer, intent(in) :: fsiz, vsiz, ni, nk, nkm1
+      real, intent(inout), target :: f(fsiz), v(vsiz)
+      real, intent(in) :: ficebl(ni,nk)
+
+      !@Author
+      ! D. Paquin-Ricard (June 2017)
+      ! P. Vaillancourt (July  2016)
+      !*@/
+
+      integer :: i, k
+      real, target :: zero(ni,nk)
+      real, pointer, dimension(:,:), contiguous :: zfbl, zfdc, zfsc, zftot, zfxp, zfmp,  &
+           ziwcimp, zlwcimp, zqldi, zqlsc, zqsdi, zqssc, zqtbl, zfmc, &
+           zqlmi, zqsmi
+      !----------------------------------------------------------------
+      MKPTR2D(zfbl, fbl, f)
+      MKPTR2D(zfdc, fdc, f)
+      MKPTR2D(zfmc, fmc, f)
+      MKPTR2D(zfmp, fmp, f)
+      MKPTR2D(zfsc, fsc, f)
+      MKPTR2D(zftot, ftot, f)
+      MKPTR2D(zfxp, fxp, f)
+      MKPTR2D(zlwcimp, lwcimp, f)
+      MKPTR2D(ziwcimp, iwcimp, f)
+      MKPTR2D(zqldi, qldi, f)
+      MKPTR2D(zqlmi, qlmi, v)
+      MKPTR2D(zqlsc, qlsc, v)
+      MKPTR2D(zqsdi, qsdi, f)
+      MKPTR2D(zqsmi, qsmi, f)
+      MKPTR2D(zqssc, qssc, v)
+      MKPTR2D(zqtbl, qtbl, f)
+
+      zero(1:ni,1:nkm1) =  0.0
+
+      if (any(convec == (/ &
+           'NIL   ', &
+           'KUOSTD', &
+           'OLDKUO'  &
+           /))) then
+         zqldi => zero(1:ni,1:nkm1)
+         zqsdi => zero(1:ni,1:nkm1)
+         if (convec == 'NIL') zfdc => zero(1:ni,1:nkm1)
+      endif
+
+      if (conv_shal == 'NIL') then
+         zqlsc => zero(1:ni,1:nkm1)
+         zqssc => zero(1:ni,1:nkm1)
+         zfsc => zero(1:ni,1:nkm1)
+      endif
+
+      if (conv_mid == 'NIL') then
+         zqlmi => zero(1:ni,1:nk)
+         zqsmi => zero(1:ni,1:nk)
+         zfmc => zero(1:ni,1:nk)
+      endif
+
+      if (fluvert /= 'MOISTKE') then
+         zfbl => zero(1:ni,1:nkm1)
+         zqtbl => zero(1:ni,1:nkm1)
+      endif
+
+      ! PV-avril2016 : simplified version for MP schemes only
+      !          - agregates implicit clouds only;
+      !          - assumes that moistke is an implicit source of clouds amongst others (eliminate choice between mtke and exp clouds)
+      !          - could choose a maximum overlap of clouds instead of random?
+      !          - condensates are agregated assuming max overlap while fractions assume random ???
+      !
+      ! Add the cloud water (liquid and solid) coming from PBL, shallow  and deep cumulus clouds
+      ! note that all condensates must be GRID-SCALE values (not in-cloud)
+
+      if (fluvert == 'MOISTKE') then
+         do k=1,nkm1
+            do i=1,ni
+               zlwcimp(i,k) = zqtbl(i,k) * (1.0 - ficebl(i,k))
+               ziwcimp(i,k) = zqtbl(i,k) * ficebl(i,k)
+            enddo
+         enddo
+      endif
+
+      do k=1,nkm1
+         do i=1,ni
+            zlwcimp(i,k) = zlwcimp(i,k) + zqldi(i,k) + zqlsc(i,k)
+            ziwcimp(i,k) = ziwcimp(i,k) + zqsdi(i,k) + zqssc(i,k)
+         enddo
+      enddo
+
+
+      ! Agregate implicit cloud fractions
+      !     FBL is for PBL clouds from moistke
+      !     FDC is for deep convection clouds
+      !     FSC is for the shallow convection clouds
+      !     FMC is for mid-level convective clouds
+      !     FMP is the sum over the implicit, FXP: the explicit, FTOT: total
+      do k=1,nkm1
+         do i=1,ni
+            zfmp(i,k) = min(1., max(0., &     ! random overlap
+                 1. - (1.-zfbl(i,k))*(1.-zfdc(i,k))*(1.-zfsc(i,k))*(1.-zfmc(i,k)) &
+                 ))
+            zftot(i,k) = min(1., max(0., &    ! maximum overlap
+                 zfmp(i,k)+zfxp(i,k) &
+                 ))
+
+         enddo
+      enddo
+      !----------------------------------------------------------------
+      return
+   end subroutine prep_cw_MP
+
+end module prep_cw

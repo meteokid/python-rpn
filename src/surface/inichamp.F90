@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN -------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,13 +12,14 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!-------------------------------------- LICENCE END ---------------------------
 
 subroutine inichamp4(kount, trnch, ni, nk)
    use sfc_options
    use sfcbus_mod
    implicit none
 #include <arch_specific.hf>
+#include <rmnlib_basics.hf>
 
    integer, intent(in) :: kount, trnch , ni, nk
 
@@ -31,7 +32,8 @@ subroutine inichamp4(kount, trnch, ni, nk)
    ! ni       horizontal dimension
    ! nk       vertical dimension
 
-   include "thermoconsts.inc"
+#include <msg.h>
+#include "tdpack_const.hf"
    include "sfcinput.cdk"
 
 #define MKPTR1D(NAME1,NAME2) nullify(NAME1); if (vd%NAME2%i > 0 .and. associated(busptr(vd%NAME2%i)%ptr)) NAME1(1:ni) => busptr(vd%NAME2%i)%ptr(:,trnch)
@@ -40,12 +42,13 @@ subroutine inichamp4(kount, trnch, ni, nk)
 
    integer :: i
    real, dimension(ni) :: land
-   real, pointer, dimension(:)   :: zglacier, zglsea, zh, zkcl, zscl, &
+   real, pointer, dimension(:), contiguous   :: zglacier, zglsea, zh, &
         zmg, zsnoden, ztglacier, ztmice, ztsrad, ztwater
-   real, pointer, dimension(:,:) :: zhst, ztmoins
+   real, pointer, dimension(:,:), contiguous :: zhst, ztmoins
    !***********************************************************************
-     
-   nullify(zglacier, zglsea, zh, zkcl, zscl, zmg, zsnoden, ztglacier, &
+   call msg_toall(MSG_DEBUG, 'inichamp [BEGIN]')
+
+   nullify(zglacier, zglsea, zh, zmg, zsnoden, ztglacier, &
         ztmice, ztsrad, ztwater,zhst, ztmoins)
 
    PRE_INIT: if (kount == 0) then
@@ -53,19 +56,14 @@ subroutine inichamp4(kount, trnch, ni, nk)
       MKPTR1D(zglacier, glacier)
       MKPTR1D(zglsea, glsea)
       MKPTR1D(zh, h)
-      MKPTR1D(zkcl, kcl)
-      MKPTR1D(zscl, scl)
       MKPTR1D(zmg, mg)
       MKPTR1D(ztglacier, tglacier)
       MKPTR1D(ztmice, tmice)
-      MKPTR1D(zsnoden, snoden)
       MKPTR1D(ztsrad, tsrad)
       MKPTR1D(ztwater, twater)
 
       MKPTR2D(zhst, hst)
-      MKPTR2D(ztmoins, tmoins) 
-
-      zsnoden(1:ni) = 100.0
+      MKPTR2D(ztmoins, tmoins)
 
    endif PRE_INIT
 
@@ -94,10 +92,8 @@ subroutine inichamp4(kount, trnch, ni, nk)
             zhst(i,indx_urb ) = 300.
          endif
          zh   (i) = 300.
-         zkcl (i) = nk-3
-         zscl (i) = exp(-grav*zh(i)/(rgasd*ztmoins(i,nk-1)))
          ! Initial radiative surface temperature estimate for the radiation scheme
-         if (any('tsoilen' == phyinread_list_s(1:phyinread_n))) then
+         if (any('tsoil' == phyinread_list_s(1:phyinread_n))) then
             ztsrad(i) = zmg(i)*ztsrad(i) + (1.-zmg(i))*ztwater(i)
             ztsrad(i) = (1.-zglsea(i)*(1.-zmg(i)))*ztsrad(i) + &
                  (zglsea(i)*(1.-zmg(i)))*ztmice(i)
@@ -108,11 +104,11 @@ subroutine inichamp4(kount, trnch, ni, nk)
 
    endif POST_INIT
 
-   NEW_TOPO: if (any('dhdxdyen' == phyinread_list_s(1:phyinread_n)) .or. &
-        any('dhdxen' == phyinread_list_s(1:phyinread_n)) .or. &
-        any('dhdyen' == phyinread_list_s(1:phyinread_n)) .or. &
-        any('mgen' == phyinread_list_s(1:phyinread_n)) .or. &
-        any('lhtgen' == phyinread_list_s(1:phyinread_n))) then
+   NEW_TOPO: if (any('dhdxdy' == phyinread_list_s(1:phyinread_n)) .or. &
+        any('dhdx' == phyinread_list_s(1:phyinread_n)) .or. &
+        any('dhdy' == phyinread_list_s(1:phyinread_n)) .or. &
+        any('mg' == phyinread_list_s(1:phyinread_n)) .or. &
+        any('lhtg' == phyinread_list_s(1:phyinread_n))) then
 
       do i=1,ni
          land(i)  = - abs( nint( zmg(i) ) )
@@ -123,11 +119,8 @@ subroutine inichamp4(kount, trnch, ni, nk)
            ni, 1, ni, PTR1D(slope), PTR1D(xcent), PTR1D(mtdir))
 
    endif NEW_TOPO
-      
-   if (kount > 0) then
-      MKPTR1D(zsnoden, snoden)
-      zsnoden(1:ni) = 100.0
-   endif
+
+   call msg_toall(MSG_DEBUG, 'inichamp [END]')
 
    return
 end subroutine inichamp4

@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN ------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms 
@@ -12,18 +12,13 @@
 !You should have received a copy of the License/Disclaimer along with this software; 
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
-!*** S/P HINES_INTGRL
-  SUBROUTINE hines_intgrl (i_alpha,                                     &
+!-------------------------------------- LICENCE END --------------------------
+!/@*
+SUBROUTINE hines_intgrl (i_alpha,                                     &
        &                   v_alpha, m_alpha, bvfb, m_min, slope, naz,   &
        &                   lev, il1, il2, nlons, nlevs, nazmth,         &
        &                   lorms, do_alpha)
-
-    USE mo_doctor,     ONLY: nout, nerr
-    USE mo_exception,  ONLY: finish 
-
-
-    implicit none
+   implicit none
 #include <arch_specific.hf>
 
     INTEGER  lev, naz, il1, il2, nlons, nlevs, nazmth
@@ -34,22 +29,12 @@
 
     LOGICAL lorms(nlons), do_alpha(nlons,nazmth)
     LOGICAL lerror(nlons)
-!
-!Authors
-!
+
+!@Authors
 !  aug. 8/95 - c. mclandress
 !  2001      - m. charron
 !  2003      - l. kornblueh
-!
-!Revision
-!
-!Modules
-!
-! mo_doctor
-! mo_exception
-!
-!Object
-!
+!@Object
 !  This routine calculates the vertical wavenumber integral
 !  for a single vertical level at each azimuth on a longitude grid
 !  for the hines' doppler spread gwd parameterization scheme.
@@ -58,10 +43,9 @@
 !            which by construction is always less than 1. series
 !            solutions are used for small |qm| and analytical solutions
 !            for remaining values.
-!
+!@Arguments
 !           - Output -
 ! i_alpha   hines' integral.
-!
 !           - Input -
 ! v_alpha   azimuthal wind component (m/s). 
 ! m_alpha   azimuthal cutoff vertical wavenumber (1/m).
@@ -84,7 +68,7 @@
 ! qmin = minimum value of q_alpha (avoids indeterminant form of integral)
 ! qm_min = minimum value of q_alpha * m_alpha (used to avoid numerical
 !          problems).
-!
+!*@/
 
     !
     !  internal variables.
@@ -280,22 +264,22 @@
        END DO
 
        IF (ANY(lerror)) THEN
-          WRITE (nout,*) 
-          WRITE (nout,*) '******************************'
-          WRITE (nout,*) 'hines integral i_alpha < 0 '
-          WRITE (nout,*) '  longitude i=',i
-          WRITE (nout,*) '  azimuth   n=',n
-          WRITE (nout,*) '  level   lev=',lev
-          WRITE (nout,*) '  i_alpha =',i_alpha(i,n)
-          WRITE (nout,*) '  v_alpha =',v_alpha(i,lev,n)
-          WRITE (nout,*) '  m_alpha =',m_alpha(i,lev,n)
-          WRITE (nout,*) '  q_alpha =',v_alpha(i,lev,n)*rbvfb(i)
-          WRITE (nout,*) '  qm      =',v_alpha(i,lev,n)*rbvfb(i)*m_alpha(i,lev,n)
-          WRITE (nout,*) '******************************'
-          WRITE (nerr,*) ' Error: Hines i_alpha integral is negative  '
-          CALL finish(' hines_intgrl','Run terminated')
+!!$          WRITE (nout,*)
+!!$          WRITE (nout,*) '******************************'
+!!$          WRITE (nout,*) 'hines integral i_alpha < 0 '
+!!$          WRITE (nout,*) '  longitude i=',i
+!!$          WRITE (nout,*) '  azimuth   n=',n
+!!$          WRITE (nout,*) '  level   lev=',lev
+!!$          WRITE (nout,*) '  i_alpha =',i_alpha(i,n)
+!!$          WRITE (nout,*) '  v_alpha =',v_alpha(i,lev,n)
+!!$          WRITE (nout,*) '  m_alpha =',m_alpha(i,lev,n)
+!!$          WRITE (nout,*) '  q_alpha =',v_alpha(i,lev,n)*rbvfb(i)
+!!$          WRITE (nout,*) '  qm      =',v_alpha(i,lev,n)*rbvfb(i)*m_alpha(i,lev,n)
+!!$          WRITE (nout,*) '******************************'
+          call physeterror('hines_intgrl', 'i_alpha integral is negative')
+          return
        END IF
-  
+ 
     END DO
 
     RETURN

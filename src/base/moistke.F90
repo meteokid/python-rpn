@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN ------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,145 +12,112 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
-
-      subroutine MOISTKE6(EN,ENOLD,ZN,ZD,RIF,RIG,SHR2,KT,QC,FRAC,FNN, &
-                          GAMA,GAMAQ,GAMAL,H, &
-                          U,V,T,TVE,Q,QE,PS,S,SE,SW, &
-                          AT2T,AT2M,AT2E, &
-                          ZE,C,B,X,NKB,TAU,KOUNT, &
-                          Z,Z0,GZMOM,KCL,FRV,TURBREG, &
-                          X1,XB,XH,TRNCH,N,M,NK,IT)
-      use phy_options
-      implicit none
+!-------------------------------------- LICENCE END --------------------------
+!/@*
+subroutine moistke11(en,enold,zn,zd,rif,rig,buoy,shr2,pri,qc,c1,fnn, &
+     fngauss,fnnonloc,gama,gamaq,gamal,hpbl,lh,hpar, &
+     wthl_ng,wqw_ng,uw_ng,vw_ng, &
+     u,v,t,tve,q,qe,ps,s,se,sw, &
+     z,z0,gzmom,frv,wstar,turbreg, &
+     vcoef,dxdy,tau,kount,trnch,n,nk)
+   use tdpack, only: CAPPA, DELTA, GRAV, KARMAN, RGASD
+   use series_mod, only: series_xst
+   use phy_options
+   use phy_status, only: phy_error_L
+   use mixing_length, only: ml_tfilt,ml_blend,ml_calc_blac,ml_calc_boujo,ml_calc_lh,ML_LMDA,ML_OK
+   use pbl_stabfunc, only: psf_stabfunc, PSF_OK
+   implicit none
 #include <arch_specific.hf>
-      integer N,M,NK,i
-      integer NKB,KOUNT
-      integer IT,TRNCH
-      real EN(N,NK),ENOLD(N,NK),ZN(N,NK),ZD(N,NK),KT(N,NK)
-      real RIF(N,NK),RIG(N,NK),SHR2(N,NK),TURBREG(N,NK)
-      real QC(N,NK),QE(N,NK),FRAC(N,NK),FNN(N,NK)
-      real GAMA(N,NK),GAMAQ(N,NK),GAMAL(N,NK),H(N)
-      real U(M,NK),V(M,NK)
-      real T(N,NK),TVE(N,NK),Q(N,NK),PS(N)
-      real S(N,NK),SE(N,NK),SW(N,NK),AT2T(n,NK),AT2M(n,NK),AT2E(n,NK)
-      real ZE(N,NK),C(N,NK),B(N,NKB),X(N,NK)
-      real TAU
-      real Z(N,NK),Z0(N),GZMOM(N,NK)
-      real KCL(N),FRV(N)
-      real X1(N,NK)
-      real XB(N),XH(N)
-!
-!Author
-!          J. Mailhot (Nov 2000)
-!
-!Revision
-! 001      J. Mailhot (Jun 2002) Add cloud ice fraction
-!                      Change calling sequence and rename MOISTKE1
-! 002      J. Mailhot (Feb 2003) Add boundary layer cloud content
-!                      Change calling sequence and rename MOISTKE2
-! 003      A. Plante  (May 2003) IBM conversion
-!                        - calls to exponen4 (to calculate power function '**')
-!                        - divisions replaced by reciprocals (call to vsrec from massvp4 library)
-! 004      B. Bilodeau (Aug 2003) exponen4 replaced by vspown1
-!                                 call to mixlen2
-! 005      Y. Delage (Sep 2004) Replace UE2 by FRV and rename subroutine. Introduce log-linear
-!                   stability function in mixing length for near-neutral cases.  Perform
-!                    optimisation in calcualtion of KT
-! 006     A-M. Leduc (June 2007) Add z0 argument, moistke3-->moistke4.
-!                                 Z0 was missing in calculation of ZN.
-! 007      L. Spacek (Dec 2007) - add "vertical staggering" option
-!                                 correction FITI=BETA*FITI, limit ZN < 5000
-!
-!Object
-!          Calculate the turbulence variables (TKE, mixing length,...)
-!          for a partly cloudy boundary layer, in the framework of a
-!          unified turbulence-cloudiness formulation.
-!          Uses moist conservative variables (thetal and qw), diagnostic
-!          relations for the mixing and dissipation lengths, and a predictive
-!          equation for moist TKE.
-!
-!
-!Arguments
-!
-!          - Input/Output -
-! EN       turbulent energy
-! ZN       mixing length of the turbulence
-! ZD       dissipation length of the turbulence
-!
-!          - Output -
-! RIF      flux Richardson number
-! RIG      gradient Richardson number
-! SHR2     square of wind shear
-!
-!          - Input -
-! ENOLD    turbulent energy (at time -)
-! QC       boundary layer cloud water content
-! FRAC     cloud fraction (computed in BAKTOTQ2)
-!          - Output -
-! FRAC     constant C1 in second-order moment closure (used by CLSGS)
-!
-!          - Input -
-! FNN      flux enhancement factor (computed in BAKTOTQ2)
-! GAMA     countergradient term in the transport coefficient of theta
-! GAMAQ    countergradient term in the transport coefficient of q
-! GAMAL    countergradient term in the transport coefficient of ql
-! H        height of the the boundary layer
-!
-!          - Input -
-! U        east-west component of wind
-! V        north-south component of wind
-! T        temperature
-! TVE      virtual temperature on 'E' levels
-! Q        specific humidity
-! QE       specific humidity on 'E' levels
-!
-!          - Input -
-! PS       surface pressure
-! S        sigma level
-! SE       sigma level on 'E' levels
-! SW       sigma level on working levels
-! AT2T     coefficients for interpolation of T,Q to thermo levels
-! AT2M     coefficients for interpolation of T,Q to momentum levels
-! AT2E     coefficients for interpolation of T,Q to energy levels
-! TAU      timestep
-! KOUNT    index of timestep
-! KT       ratio of KT on KM (real KT calculated in DIFVRAD)
-! Z        height of sigma level
-! Z0       roughness length
-! GZMOM    height of sigma momentum levels
-!
-!          - Input/Output -
-! KCL      index of 1st level in boundary layer
-!
-!          - Input -
-! FRV      friction velocity
-! ZE       work space (N,NK)
-! C        work space (N,NK)
-! B        work space (N,NKB)
-! X        work space (N,NK)
-! X1       work space (N,NK)
-! XB       work space (N)
-! XH       work space (N)
-! NKB      second dimension of work field B
-! TRNCH    number of the slice
-! N        horizontal dimension
-! M        1st dimension of T, Q, U, V
-! NK       vertical dimension
-! IT       number of the task in muli-tasking (1,2,...) =>ZONXST
-!
-!Notes
-!          Refer to J.Mailhot and R.Benoit JAS 39 (1982)Pg2249-2266
-!          and Master thesis of J.Mailhot.
-!          Mixing length formulation based on Bougeault and Lacarrere .....
-!          Subgrid-scale cloudiness scheme appropriate for TKE scheme
-!          based on studies by Bechtold et al:
-!          - Bechtold and Siebesma 1998, JAS 55, 888-895
-!          - Cuijpers and Bechtold 1995, JAS 52, 2486-2490
-!          - Bechtold et al. 1995, JAS 52, 455-463
-!
+#include <rmnlib_basics.hf>
+   !Arguments
+   integer, intent(in) :: n                          !horizontal dimension
+   integer, intent(in) :: nk                         !vertical dimension
+   integer, intent(in) :: kount                      !time step number
+   integer, intent(in) :: trnch                      !slice number
+   real, intent(in) :: tau                           !time step length (s)
+   real, dimension(n), intent(in) :: hpbl            !height of the PBL (m)
+   real, dimension(n), intent(in) :: lh              !launching height (m)   
+   real, dimension(n), intent(in) :: ps              !surface pressure (Pa)
+   real, dimension(n), intent(in) :: z0              !roughness length (m)
+   real, dimension(n), intent(in) :: frv             !friction velocity (m/s)
+   real, dimension(n), intent(in) :: wstar           !convective velocity scale
+   real, dimension(n), intent(in) :: dxdy            !horizontal grid area (m^2)
+   real, dimension(n,nk), intent(in) :: enold        !TKE of previous time step (m2/s2)
+   real, dimension(n,nk), intent(in) :: qe           !specific humidity on e-lev (kg/kg)
+   real, dimension(n,nk), intent(in) :: u            !u-component wind (m/s)
+   real, dimension(n,nk), intent(in) :: v            !v-component wind (m/s)
+   real, dimension(n,nk), intent(in) :: t            !dry air temperature (K)
+   real, dimension(n,nk), intent(in) :: tve          !virt. temperature on e-lev (K)
+   real, dimension(n,nk), intent(in) :: q            !specific humidity (kg/kg)
+   real, dimension(n,nk), intent(in) :: s            !sigma for full levels
+   real, dimension(n,nk), intent(in) :: se           !sigma for e-lev
+   real, dimension(n,nk), intent(in) :: sw           !sigma for working levels
+   real, dimension(*), intent(in) :: vcoef           !coefficients for vertical interpolation
+   real, dimension(n,nk), intent(in) :: z            !height of e-levs (m)
+   real, dimension(n,nk), intent(in) :: gzmom        !height of momentum levels (m)
+   real, dimension(n), intent(inout) :: hpar         !height of parcel ascent (m)
+   real, dimension(n,nk), intent(inout) :: en        !TKE (m2/s2)
+   real, dimension(n,nk), intent(inout) :: zn        !mixing length (m)
+   real, dimension(n,nk), intent(inout) :: zd        !dissipation length (m)
+   real, dimension(n,nk), intent(inout) :: qc        !PBL cloud water content
+   real, dimension(n,nk), intent(inout) :: fngauss   !Gaussian (local) cloud fraction
+   real, dimension(n,nk), intent(inout) :: fnn       !flux enhancement factor
+   real, dimension(n,nk), intent(out) :: fnnonloc    !nonlocal cloud fraction
+   real, dimension(n,nk), intent(out) :: pri         !inverse Prandtl number (ratio of KT/KM diffusion coefficients)
+   real, dimension(n,nk), intent(out) :: rif         !flux Richardson number
+   real, dimension(n,nk), intent(out) :: rig         !gradient Richardson number
+   real, dimension(n,nk), intent(out) :: buoy        !buoyancy flux (s^-2)
+   real, dimension(n,nk), intent(out) :: shr2        !square of vertical wind shear (s^-2)
+   real, dimension(n,nk), intent(out) :: turbreg     !turbulence regime
+   real, dimension(n,nk), intent(out) :: c1          !coefficient C1 in second-order moment closure (CLSGS)
+   real, dimension(n,nk), intent(out) :: gama        !countergradient term for theta_l
+   real, dimension(n,nk), intent(out) :: gamaq       !countergradient term for q
+   real, dimension(n,nk), intent(out) :: gamal       !countergradient term for q_l
+   real, dimension(n,nk), intent(out) :: wthl_ng     !nonlocal flux for theta_l
+   real, dimension(n,nk), intent(out) :: wqw_ng      !nonlocal flux for q
+   real, dimension(n,nk), intent(out) :: uw_ng       !nonlocal flux for u-wind
+   real, dimension(n,nk), intent(out) :: vw_ng       !nonlocal flux for v-wind
 
-include "thermoconsts.inc"
+   !@Author J. Mailhot (Nov 2000)
+
+   !@Revision
+   ! 001      J. Mailhot (Jun 2002) Add cloud ice fraction
+   !                      Change calling sequence and rename MOISTKE1
+   ! 002      J. Mailhot (Feb 2003) Add boundary layer cloud content
+   !                      Change calling sequence and rename MOISTKE2
+   ! 003      A. Plante  (May 2003) IBM conversion
+   !                        - calls to exponen4 (to calculate power function '**')
+   !                        - divisions replaced by reciprocals (call to vsrec from massvp4 library)
+   ! 004      B. Bilodeau (Aug 2003) exponen4 replaced by vspown1
+   !                                 call to mixlen2
+   ! 005      Y. Delage (Sep 2004) Replace UE2 by FRV and rename subroutine. Introduce log-linear
+   !                   stability function in mixing length for near-neutral cases.  Perform
+   !                    optimisation in calcualtion of KT
+   ! 006     A-M. Leduc (June 2007) Add z0 argument, moistke3-->moistke4.
+   !                                 Z0 was missing in calculation of ZN.
+   ! 007      L. Spacek (Dec 2007) - add "vertical staggering" option
+   !                                 correction FITI=BETA*FITI, limit ZN < 5000
+   ! 008      A. Zadra/R. McT-C (Sep 2016) Implement nonlocal scaling option designed
+   !                    by Mailhot and Lock (Aug 2012).
+
+   !@Object
+   !          Calculate the turbulence variables (TKE, mixing length,...)
+   !          for a partly cloudy boundary layer, in the framework of a
+   !          unified turbulence-cloudiness formulation.
+   !          Uses moist conservative variables (thetal and qw), diagnostic
+   !          relations for the mixing and dissipation lengths, and a predictive
+   !          equation for moist TKE.
+   
+   !@Notes
+   !          Refer to J.Mailhot and R.Benoit JAS 39 (1982)Pg2249-2266
+   !          and Master thesis of J.Mailhot.
+   !          Mixing length formulation based on Bougeault and Lacarrere .....
+   !          Subgrid-scale cloudiness scheme appropriate for TKE scheme
+   !          based on studies by Bechtold et al:
+   !          - Bechtold and Siebesma 1998, JAS 55, 888-895
+   !          - Cuijpers and Bechtold 1995, JAS 52, 2486-2490
+   !          - Bechtold et al. 1995, JAS 52, 455-463
+   !*@/
 
 #include "clefcon.cdk"
 #include "surface.cdk"
@@ -158,327 +125,263 @@ include "thermoconsts.inc"
 #include "tables.cdk"
 #include "phyinput.cdk"
 
-      external DIFUVDFJ
-      external  BLCLOUD3, TKEALG
+   ! Local parameter definitions
+   real, parameter :: ICAB=0.4
 
-      real EXP_TAU
-      integer IERGET,STAT,NEARK
-      external NEARK
-!
-!
-!********************** AUTOMATIC ARRAYS
-!
-      real ZNOLD(N,NK)
-!
-!
-!*
-!
-!
-      real FIMS,PETIT,BETAI,dif_tau
-      integer J,K
-!
-      integer type
-!
-!------------------------------------------------------------------------
-!
-      real ICAB,C1,LMDA
-      save ICAB,C1,LMDA
-      data ICAB, C1, LMDA  / 0.4, 0.32, 200. /
-!***********************************************************************
-!     AUTOMATIC ARRAYS
-!***********************************************************************
-!
-      integer, dimension(N) :: SLK
-      real, dimension(N,NK) :: FIMI
-      real*8, dimension(N,NK) :: FIMIR
-      real, dimension(N,NK) :: FITI
-      real*8, dimension(N,NK) :: FITIR
-      real*8, dimension(N,NK) :: FITSR
-      real, dimension(N,NK) :: WORK
-      real, dimension(N,NK) :: TE
-      real, dimension(N,NK) :: QCE
-!
-      type=4
-      PETIT=1.E-6
-!
-!      0.     Keep the mixing lenght zn from the previous time step
-!      ------------------------------------------------------------
-!
-       ZNOLD(:,:)  = ZN(:,:)
-!
-!
-!
-!      1.     Preliminaries
-!      --------------------
-!
-!
-      if(KOUNT.eq.0) then
-        do K=1,NK
-        do J=1,N
-          ZN(J,K)=min(KARMAN*(Z(J,K)+Z0(J)),LMDA)
-          ZD(J,K)=ZN(J,K)
-        end do
-        end do
-        if (.not.any('qtbl' == phyinread_list_s(1:phyinread_n))) &
-             QC(:,:) = 0.0
-        if (.not.any('fnn' == phyinread_list_s(1:phyinread_n))) &
-             FNN(:,:) = 0.0
-        if (.not.any('fbl' == phyinread_list_s(1:phyinread_n))) &
-             FRAC(:,:) = 0.0
-      endif
-!
-!
-!      2.     Boundary layer cloud properties
-!      --------------------------------------
-!
-!
-      call BLCLOUD3 (U, V, T, TVE, Q, QC, FNN, &
-                     S, SW,PS, SHR2, RIG, X, &
-                     AT2M,AT2E, &
-                     N, M, NK)
-!
-!
-!                                GAMA terms set to zero
-!                                (when formulation uses conservative variables)
-      do K=1,NK
-      do J=1,N
-         GAMA(J,K)=0.0
-         GAMAQ(J,K)=0.0
-         GAMAL(J,K)=0.0
-      end do
-      end do
-!
-!
-      do K=1,NK-1
-      do J=1,N
-!                                top of the unstable PBL (from top down)
-        if( X(J,K).gt.0. ) KCL(J) = K
-      end do
-      end do
-!
-!
-      call serxst2(RIG, 'RI', TRNCH, N, nk, 0., 1., -1)
-!
-      call serxst2(RIG, 'RM', TRNCH, N, nk, 0., 1., -1)
-!
-      do K=1,NK
-      do J=1,N
-         WORK(J,K)=1-CI*min(RIG(J,K),0.)
-      enddo
-      enddo
-      call VSPOWN1 (FIMI,WORK,-1/6.,N*NK)
-      call VSPOWN1 (FITI,WORK,-1/3.,N*NK)
-      FITI=BETA*FITI
-      FITIR=FITI
-      FIMIR=FIMI
-      call VREC(FITIR,FITIR,N*NK)
-      call VREC(FIMIR,FIMIR,N*NK)
-      BETAI=1/BETA
-      do K=1,NK
-      do J=1,N
-         FIMS=min(1+AS*max(RIG(J,K),0.),1/max(PETIT,1-ASX*RIG(J,K)))
-         ZN(J,K)=min(KARMAN*(Z(J,K)+Z0(J)),LMDA)
-         if( RIG(J,K).ge.0.0 ) then
-           ZN(J,K)=ZN(J,K)/FIMS
-         else
-           ZN(J,K)=ZN(J,K)*FIMIR(J,K)
-           ZN(J,K)=min(ZN(J,K),5000.)
-         endif
-!
-!                                KT contains the ratio KT/KM (=FIM/FIT)
-!
-         if(RIG(J,K).ge.0.0) then
-           KT(J,K)=BETAI
-         else
-            KT(J,K)=FIMI(J,K)*FITIR(J,K)
-         endif
-      end do
-      end do
-!
-!                                From gradient to flux form of buoyancy flux
-!                                and flux Richardson number (for time series output)
-      do K=1,NK
-      do J=1,N
-         X(J,K)=KT(J,K)*X(J,K)
-         RIF(J,K)=KT(J,K)*RIG(J,K)
-!                                Computes constant C1
-         FRAC(J,K)=2.0*BLCONST_CK*KT(J,K)*ICAB
-      end do
-      end do
-!
-!     EXPAND NEUTRAL REGIME
-      stat = neark(se,ps,3000.,n,nk,slk) !determine "surface layer" vertical index
-      if (kount == 0) then
-         INIT_TURB: if (.not.any('turbreg'==phyinread_list_s(1:phyinread_n))) then
-            do k=1,nk
-               do j=1,n
-                  if (k <= slk(j)) then
-                     if (RIF(j,k) > PBL_RICRIT(1)) then
-                        TURBREG(j,k) = LAMINAR
-                     else
-                        TURBREG(j,k) = TURBULENT
-                     endif
-                  else
-                     TURBREG(j,k) = TURBULENT
-                  endif
-               enddo
-            enddo
-         endif INIT_TURB
-      endif
-      do k=1,nk             !do not apply to the lowest level (-2)
-         if (std_p_prof(k) < 60000.) cycle
+   ! Local variable declarations
+   integer :: ierget,stat,i,j,k
+   integer, dimension(n) :: slk
+   real :: betai,dtfac
+   real, dimension(n) :: e_sfc,beta_sfc
+   real, dimension(n,nk) :: znold,work,te,qce,dudz,dvdz,wb_ng,f_cs,e_star,asig,ke,diss_term, &
+        shr_term,shr_ng,zero,buoy_term,weight,tv,exner,zn_blac,zn_boujo,zn_blac_clip,frac, &
+        blend_hght,przn,fm,fh
+   real, dimension(n,nk,3) :: w_cld
+   logical, dimension(n,nk) :: turb_mask
+
+   ! External symbols
+   integer, external :: neark
+
+   ! Keep the mixing lenght zn from the previous time step
+   znold  = zn
+   
+   ! Initialization
+   if(kount.eq.0) then
+      do k=1,nk
          do j=1,n
-            ABOVE_SFCLAYER: if (k <= slk(j)) then
-               if (RIF(j,k) < PBL_RICRIT(1)) then
-                  TURBREG(j,k) = TURBULENT
-               elseif (RIF(j,k) > PBL_RICRIT(2)) then
-                  TURBREG(j,k) = LAMINAR
-               endif
-               ! Neutral regime: set buoyant suppression to mechanical generation (cute: FIXME)
-               if (RIF(j,k) > PBL_RICRIT(1) .and. RIF(j,k) < 1. .and. nint(TURBREG(j,k)) == LAMINAR) X(J,K) = SHR2(J,K)
-               if (RIF(j,k) > 1. .and. RIF(j,k) < PBL_RICRIT(2) .and. nint(TURBREG(j,k)) == TURBULENT) X(J,K) = SHR2(J,K)
-            endif ABOVE_SFCLAYER
-         enddo
-      enddo
-
-      call serxst2(RIF, 'RF', TRNCH, N, nk, 0.0, 1.0, -1)
-
-!      3.     Mixing and dissipation length scales
-!      -------------------------------------------
-!
-!
-!                                Compute the mixing and dissipation lengths
-!                                according to Bougeault and Lacarrere (1989)
-!                                and Belair et al (1999)
-!
-      call VSPOWN1 (X1,SE,-CAPPA,N*NK)
-!                                Virtual potential temperature (THV)
-!
-      call TOTHERMO(T, TE,  AT2T,AT2M,N,NK+1,NK,.true.)
-      call TOTHERMO(QC,QCE, AT2T,AT2M,N,NK+1,NK,.true.)
-
-      X1(:,:)=TE(:,:)*(1.0+DELTA*QE(:,:)-QCE(:,:))*X1(:,:)
-
-      if (longmel == 'BOUJO') then
-         if (TMP_BOUJO_HEIGHT_CORR) then
-            call mixlen3(zn,x1,enold,z,h,s,ps,n,nk)
-         else
-            call MIXLEN3( ZN, X1, ENOLD, GZMOM(1,2), H, S, PS, N, NK)
-         endif
-      endif
-
-!     No time filtering at kount=0 since this step is used for initialization only
-      if(KOUNT == 0)then
-         if (any('zn'==phyinread_list_s(1:phyinread_n))) zn = znold
-      else     
-         ZN_TIME_RELAXATION: if (PBL_ZNTAU > 0.) then
-            EXP_TAU = exp(-TAU/PBL_ZNTAU)
-            ZN = ZN + (ZNOLD-ZN)*EXP_TAU
-         endif ZN_TIME_RELAXATION
-      end if
-
-      if (longmel == 'BLAC62') then
-        ZE(:,:) = max(ZN(:,:),1.E-6)
-      else if(longmel == 'BOUJO') then
-        ZE(:,:) = ZN(:,:) * ( 1. - min( RIF(:,:) , 0.4) ) &
-                  / ( 1. - 2.*min( RIF(:,:) , 0.4) )
-        ZE(:,:) = max ( ZE(:,:) , 1.E-6 )
-      end if
-
-      if (PBL_DISS == 'LIM50') ze = min(ze,50.)
-
-      ZD(:,:) = ZE(:,:)
-
-
-
-      call serxst2(ZN, 'L1', TRNCH, N, nk, 0.0, 1.0, -1)
-      call serxst2(ZD, 'L2', TRNCH, N, nk, 0.0, 1.0, -1)
-
-      call serxst2(ZD, 'LE', TRNCH, N, nk, 0.0, 1.0, -1)
-
-
-!      4.     Turbulent kinetic energy
-!      -------------------------------
-
-      if(KOUNT.eq.0)then
-
-        do K=1,NK
-        do J=1,N
-           X(J,K)=0.0
-        end do
-        end do
-
-        call serxst2(X, 'EM', TRNCH, N, nk, 0.0, 1.0, -1)
-        call serxst2(X, 'EB', TRNCH, N, nk, 0.0, 1.0, -1)
-        call serxst2(X, 'ED', TRNCH, N, nk, 0.0, 1.0, -1)
-        call serxst2(X, 'ET', TRNCH, N, nk, 0.0, 1.0, -1)
-        call serxst2(X, 'ER', TRNCH, N, nk, 0.0, 1.0, -1)
-
-      else
-
-!                                Solve the algebraic part of the TKE equation
-!                                --------------------------------------------
-!
-!                                Put dissipation length in ZE (work array)
-      do K=1,NK
-      do J=1,N
-         ZE(J,K) = ZD(J,K)
-      end do
-      end do
-
-         ! The original was incorrect since the vectors are not conformal
-         ! This has no impact on the integration but made -g -C option complain
-         !B = SHR2
-         B(1:n,1:nk) = SHR2(1:n,1:nk)
-         call TKEALG(C,EN,ZN,ZE,B,X,TAU,N,NK)
-
-!                                Mechanical production term
-         call serxst2(B, 'EM', TRNCH, N, NKB, 0.0, 1.0, -1)
-!                                Thermal production term
-         call serxst2(X, 'EB', TRNCH, N, NK, 0.0, 1.0, -1)
-!                                Viscous dissipation term
-         call serxst2(ZE, 'ED', TRNCH, N, NK, 0.0, 1.0, -1)
-
-!                                Solve the diffusion part of the TKE equation
-!                                --------------------------------------------
-!                                (uses scheme i of Kalnay-Kanamitsu 1988 with
-!                                 double timestep, implicit time scheme and time
-!                                 filter with coefficient of 0.5)
-
-         do K=1,NK
-         do J=1,N
-!                                X contains (E*-EN)/TAU
-            X(J,K)=(C(J,K)-EN(J,K))/TAU
-!                                ZE contains E*
-            ZE(J,K)=C(J,K)
-!                                C contains K(EN) with normalization factor
-            C(J,K) = ( (GRAV/RGASD)*SE(J,K)/TVE(J,K) )**2
-            C(J,K)=BLCONST_CK*CLEFAE*ZN(J,K)*sqrt(ENOLD(J,K))*C(J,K)
-!                                countergradient and inhomogeneous terms set to zero
-            X1(J,K)=0.0
+            zn(j,k)=min(KARMAN*(z(j,k)+z0(j)),ML_LMDA)
+            zd(j,k)=zn(j,k)
          end do
-         end do
-!
-         if( type.eq.4 ) then
-!                                surface boundary condition
-           do J=1,N
-             XB(J)=BLCONST_CU*FRV(J)**2 + BLCONST_CW*XH(J)**2
-             ZE(J,NK)=XB(J)
-           end do
-!
-         endif
-!
-         dif_tau = TAU
-         if(PBL_TKEDIFF2DT) dif_tau = 2.*TAU
-         call DIFUVDFJ (EN,ZE,C,X1,X1,XB,XH,S,SE,dif_tau,type,1., &
-                        B(1,1),B(1,NK+1),B(1,2*NK+1),B(1,3*NK+1), &
-                        N,N,N,NK)
-!
-         ! New TKE
-         en = max(ETRMIN,ze+tau*en)
+      end do
+      if (.not.any('qtbl' == phyinread_list_s(1:phyinread_n))) qc = 0.
+      if (.not.any('fnn' == phyinread_list_s(1:phyinread_n))) fnn = 0.
+      if (.not.any('fblgauss' == phyinread_list_s(1:phyinread_n))) fngauss = 0.
+      if (.not.any('hpar' == phyinread_list_s(1:phyinread_n))) hpar = hpbl
+   endif
+   zero = 0.
 
-      endif
-!
-!
+   ! Estimate boundary layer cloud properties and nonlocal fluxes
+   call blcloud5(u,v,t,tve,q,qc,fnn,frac,fngauss,fnnonloc,w_cld, &
+        wb_ng,wthl_ng,wqw_ng,uw_ng,vw_ng,f_cs,dudz,dvdz, &
+        hpar,frv,z0,wstar,gzmom,z,s,sw,ps,shr2,rig, &
+        buoy,tau,vcoef,n,nk,size(w_cld,dim=3))
+
+   ! Output Richardson number time series
+   call series_xst(rig, 'RI', trnch)
+   call series_xst(rig, 'RM', trnch)
+
+   ! Set countergradient terms to 0 because diffused variables are conserved
+   do k=1,nk
+      do j=1,n
+         gama(j,k)=0.0
+         gamaq(j,k)=0.0
+         gamal(j,k)=0.0
+      end do
+   end do
+
+   ! Compute PBL stability functions and inverse Prandtl number (Pr=(fit/fim); pri=(fim/fit))
+   if (psf_stabfunc(rig, z, fm, fh, blend_bottom=pbl_slblend_layer(1), &
+        blend_top=pbl_slblend_layer(2)) /= PSF_OK) then
+      call physeterror('moistke', 'error returned by PBL stability functions')
       return
-      end
+   endif
+   pri = fm/fh
+
+   ! User-selected mixing (zn) and dissipation (zd) length scale estimates
+   LENGTH_SCALES: select case (longmel)
+
+   case ('BLAC62') ! Estimate based on Blackadar (1962)
+      if (ml_calc_blac(zn, rig, w_cld, z, z0, fm, hpbl, lh, dxdy=dxdy, przn=przn) /= ML_OK) then
+         call physeterror('moistke', 'error returned by Blackadar mixing length estimate')
+         return
+      endif
+      if (ml_tfilt(zn, znold, tau, kount) /= ML_OK) then
+         call physeterror('moistke', 'error returned by mixing length time filtering')
+         return
+      endif
+      zd = max(zn,1.E-6)
+      pri = pri/przn
+      
+   case ('BOUJO','TURBOUJO') ! Esimate based on Bougeault and Lacarrere (1989)
+      call vspown1(exner,se,-CAPPA,n*nk)
+      te(1:n,1:nk)  = t(1:n,1:nk)
+      qce(1:n,1:nk) = qc(1:n,1:nk)
+      tv = te*(1.0+DELTA*qe-qce)*exner
+      turb_mask = .true.
+      if (longmel == 'TURBOUJO') then
+         where (nint(turbreg) == LAMINAR)
+            turb_mask = .false.
+         endwhere
+      endif
+      if (ml_calc_boujo(zn_boujo, tv, enold, w_cld, z, s, ps, mask=turb_mask) /= ML_OK) then
+           call physeterror('moistke', 'error returned by B-L mixing length estimate')
+           return
+        endif
+      if (ml_calc_blac(zn_blac, rig, w_cld, z, z0, fm, hpbl, lh, przn=przn) /= ML_OK) then
+           call physeterror('moistke', 'error returned by Blackadar mixing length estimate')
+           return
+        endif
+      ! Correct thermo levels yields larger mixing lengths: FIXME (remove blend_hght here and gzmom from interface)
+      !   stat = ml_blend(zn,zn_blac,zn_boujo,z,s,ps)
+      blend_hght(:,:nk-1) = gzmom(:,2:)
+      blend_hght(:,nk) = 0.
+      if (ml_blend(zn, zn_blac, zn_boujo, blend_hght, s, ps) /= ML_OK) then
+         call physeterror('moistke','error returned by mixing length blending')
+         return
+      endif
+      where (zn_boujo < 0.)
+         zn = zn_blac   ! Use local (Blackadar) mixing length for laminar flows
+      elsewhere
+         przn = 1.      ! Use nonlocal (Bougeault) mixing length for turbulent flows
+      endwhere
+      if (ml_tfilt(zn, znold, tau, kount) /= ML_OK) then
+         call physeterror('moistke', 'error returned by mixing length time filtering')
+         return
+      endif
+      pri = pri/przn
+      rif = pri*rig
+      zd = zn * (1.-min(rif,0.4)) / (1.-2.*min(rif,0.4))
+      zd = max(zd,1.e-6)
+      if (longmel == 'TURBOUJO' .and. pbl_mlturb_diss) then
+         where (nint(turbreg) == LAMINAR) zd = max(zn,1.E-6)
+      endif
+
+   case ('LH') ! Estimate based on Lenderink and Holtslag (2004) modified for non-local Cu effects
+      przn = 1.
+      pri = pri/przn
+      if (ml_calc_lh(zd, zn, pri, buoy, enold, w_cld, rig, z, f_cs, hpar) /= ML_OK) then
+         call physeterror('moistke', 'error returned by L-H mixing length estimate')
+         return
+      endif
+      if (kount > 0) then ! Blend towards Blackadar length scale at upper levels
+         if (ml_calc_blac(zn_blac, rig, w_cld, z, z0, fm, hpbl, lh) /= ML_OK) then
+            call physeterror('moistke', 'error returned by Blackadar mixing length estimate')
+            return
+         endif
+         call blweight2(weight, s, ps, n, nk)
+         zn = zn_blac + (zn-zn_blac)*weight
+         zd = zn_blac + (zd-zn_blac)*weight
+         if (ml_tfilt(zn, znold, tau, kount) /= ML_OK) then
+            call physeterror('moistke', 'error returned by mixing length time filtering')
+            return
+         endif
+      endif
+
+   end select LENGTH_SCALES
+   
+
+   ! Adjust dissipation length scale on user request
+   if (pbl_diss == 'LIM50') zd = min(zd,50.)
+
+   ! Recycling of length scales
+   if (any('zn'==phyinread_list_s(1:phyinread_n))) zn = znold
+
+   ! Output length scales for time series
+   call series_xst(zn, 'L1', trnch)
+   call series_xst(zd, 'L2', trnch)
+   call series_xst(zd, 'LE', trnch)
+
+   ! Change from gradient to flux form of buoyancy flux and flux Richardson number
+   buoy = pri*buoy
+   rif = pri*rig
+   c1 = 2*BLCONST_CK*pri*ICAB
+   CALL series_xst(rif, 'RF', trnch)
+
+   ! Determine turbulence regime
+   slk(:) = nk
+   if (pbl_turbsl_depth > 0.) &
+        stat = neark(se,ps,pbl_turbsl_depth,n,nk,slk) !determine "surface layer" vertical index
+   if (kount == 0) then
+      INIT_TURB: if (.not.any('turbreg'==phyinread_list_s(1:phyinread_n))) then
+         do k=1,nk
+            do j=1,n
+               if (k <= slk(j)) then
+                  if (rif(j,k) > pbl_ricrit(1)) then
+                     turbreg(j,k) = LAMINAR
+                  else
+                     turbreg(j,k) = TURBULENT
+                  endif
+               else
+                  turbreg(j,k) = TURBULENT
+               endif
+            enddo
+         enddo
+      endif INIT_TURB
+   endif
+
+   ! Apply Richardson number hysteresis and update regime
+   do k=1,nk
+      if (std_p_prof(k) < 60000.) cycle
+      do j=1,n
+         ABOVE_SFCLAYER: if (k <= slk(j)) then
+            if (rif(j,k) < pbl_ricrit(1)) then
+               turbreg(j,k) = TURBULENT
+            elseif (rif(j,k) >  pbl_ricrit(2)) then
+               turbreg(j,k) = LAMINAR
+            endif
+            ! Neutral regime: set buoyant suppression to mechanical generation (cute: FIXME)
+            if (rif(j,k) > pbl_ricrit(1) .and. rif(j,k) < 1. .and. nint(turbreg(j,k)) == LAMINAR) buoy(j,k) = shr2(j,k)
+            if (rif(j,k) > 1. .and. rif(j,k) < pbl_ricrit(2) .and. nint(turbreg(j,k)) == TURBULENT) buoy(j,k) = shr2(j,k)
+         else
+            turbreg(j,k) = TURBULENT
+         endif ABOVE_SFCLAYER
+      enddo
+   enddo
+
+   ! Update turbulent kinetic energy
+   UPDATE_TKE: if (kount == 0) then
+
+      call series_xst(zero, 'EM', trnch)
+      call series_xst(zero, 'EB', trnch)
+      call series_xst(zero, 'ED', trnch)
+      call series_xst(zero, 'ET', trnch)
+      call series_xst(zero, 'ER', trnch)
+
+   else
+
+      ! Solve the algabraic part of the TKE equation
+      call tkealg2(e_star,en,zn,zd,shr2,buoy,diss_term,shr_term,buoy_term,tau,n,nk)
+
+      ! Add nonlocal fluxes (non-gradient terms) for time series output
+      if ( pbl_nonloc == 'LOCK06' ) then
+         shr_ng = -uw_ng*dudz - vw_ng*dvdz !non-gradient shear production
+         e_star = e_star + tau*(wb_ng + shr_ng) !update of e* for nonlocal
+         shr_term = shr_term + shr_ng !non-gradient for shear production term
+         buoy_term = buoy_term + wb_ng !non-gradient buoyancy (thermal production) term
+      endif
+
+      ! Output TKE equation terms for time series
+      call series_xst(shr_term, 'EM', trnch)
+      call series_xst(buoy_term, 'EB', trnch)
+      call series_xst(diss_term, 'ED', trnch)
+
+      ! Prepare for diffusion term of the TKE equation
+      asig = (GRAV/RGASD) * se/tve 
+      ke = pbl_tkediff*BLCONST_CK*clefae*zn*sqrt(enold) * asig**2
+
+      ! Compute surface boundary condition
+      if (pbl_zerobc) then
+         e_sfc = 0.
+         beta_sfc = 0.
+         e_star(:,nk) = 0.
+         call difuvdfj1(en,e_star,ke,zero,zero,zero,e_sfc,beta_sfc,s,se,tau,4,1.,n,n,n,nk)
+         if (phy_error_L) return
+      else
+         e_sfc = BLCONST_CU*frv**2 + BLCONST_CW*wstar**2
+         beta_sfc = wstar
+         e_star(:,nk) = e_sfc
+      endif
+
+      ! Diffuse TKE
+      dtfac = 1.
+      if (pbl_tkediff2dt) dtfac = 2.
+      call difuvdfj1(en,e_star,ke,zero,zero,zero,e_sfc,beta_sfc,s,se,dtfac*tau,4,1.,n,n,n,nk)
+      if (phy_error_L) return
+
+      ! update TKE for the timestep
+      en = max(ETRMIN,e_star+tau*en)
+
+   endif UPDATE_TKE
+
+   return
+end subroutine moistke11

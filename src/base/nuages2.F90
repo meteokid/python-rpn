@@ -14,11 +14,11 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
 
-!**S/P  NUAGES2
-!
       SUBROUTINE NUAGES2 ( CH , CM , CL , C3D , &
                            BASE, Q , T , PS, SHCL, ILMO, S, &
                            TRNCH, N, M, NK, ITASK, SATUCO, STRCLD)
+      use tdpack
+      use series_mod, only: series_xst
       implicit none
 #include <arch_specific.hf>
       INTEGER N,M,NK,ITASK,IERROR
@@ -27,11 +27,9 @@
       REAL BASE (N)
       INTEGER TRNCH
       LOGICAL SATUCO,STRCLD
-!
-!Author
-!          R. Benoit RPN (April 1984)
-!
-!Revision
+
+!@Author R. Benoit RPN (April 1984)
+!@Revision
 ! 001      J. Cote RPN(Nov 1984)SEF version documentation
 ! 002      R. Benoit RPN(April 1985) Remove clouds in unstable
 !          boundary layer
@@ -60,11 +58,9 @@
 !          stratospheric clouds
 ! 019      J.P. Toviessi (June 2003) - Revove CVMG functions
 !
-!Object
-!          to calculate simplified cloud cover
+!@Object calculate simplified cloud cover
 !
-!Arguments
-!
+!@Arguments
 !          - Output -
 ! CH       high altitude cloud fraction (0 to 1)
 ! CM       medium altitude cloud fraction (0 to 1)
@@ -89,15 +85,9 @@
 !          .FALSE. if water phase only for saturation
 ! STRCLD   .TRUE. if stratospheric clouds are acceptable
 !          .FALSE. otherwise
-!
-!
-!IMPLICITES
-!
+
 #include "clefcon.cdk"
-!
-!
-!*
-!
+
       REAL SST,SCL,SH,SM
       REAL F,SIG,NEBUL,U,SQRT3
       INTEGER J,K,KH,KM,KL
@@ -118,9 +108,6 @@
 !
       REAL tmpNEBUL,tmp
 !
-include "thermoconsts.inc"
-include "dintern.inc"
-include "fintern.inc"
       DATA SST , SCL , SH , SM / 0.225 , 0.905 , 0.395 , 0.710 /
 !
 !     TOPC and MINQ are the minimum values of pressure and
@@ -150,7 +137,7 @@ include "fintern.inc"
       enddo
 
       call mfohr4 ( C3D(1,1),Q(1,1),T(1,1),ftmp1,N,NK,N,SATUCO)
-      CALL serxst2(C3D, 'HR', TRNCH, N, NK, 0.0, 1.0, -1)
+      call series_xst(c3d, 'hr', trnch)
 !
 !  BASE DE COUCHE DE CONDENSATION (SI EXISTE)
 !  HM = SEUIL DE DEBUT DE CONDENSATION

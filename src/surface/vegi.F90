@@ -16,6 +16,7 @@
 
 subroutine vegi(RG, T, TS, HU, PS, W2, RGL, LAI, RSMIN, GAMMA, WWILT, &
      WFC, RS, N)
+   use tdpack
    use sfc_options
    implicit none
 #include <arch_specific.hf>
@@ -46,15 +47,10 @@ subroutine vegi(RG, T, TS, HU, PS, W2, RGL, LAI, RSMIN, GAMMA, WWILT, &
    !@Revisions
    ! 001      B. Bilodeau (January 2001)
 
-   include "thermoconsts.inc"
-
    integer :: i
    real, dimension(n) :: f, f1,f2,f3,f4, qsat
 
    !***********************************************************************
-
-   include "dintern.inc"
-   include "fintern.inc"
    
    ! 1.     THE 'ZF1' FACTOR
    !         ---------------

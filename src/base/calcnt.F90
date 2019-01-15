@@ -68,7 +68,7 @@
         real rei, rec_rei, ki
         real elsa, emiss,xnu
 !
-include "thermoconsts.inc"
+#include "tdpack_const.hf"
 !
 ! diffusivity factor of Elsasser
         data elsa/1.66/

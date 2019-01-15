@@ -56,8 +56,8 @@ subroutine copybus3(bus_sfc, sfcsiz, &
 
 #include <rmnlib_basics.hf>
 
-   integer i, ik, ik_sfc, ik_ori, k, m, var, istat
-   integer sommet, surflen
+   integer i, ik_sfc, ik_ori, k, m, var
+   integer surflen
    integer pseudo_m
 
    real, pointer :: bus_ori(:)

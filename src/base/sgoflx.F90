@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN ------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms 
@@ -12,38 +12,36 @@
 !You should have received a copy of the License/Disclaimer along with this software; 
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
-!**S/P SGOFLX
-!
-      subroutine sgoflx5(uu,vv,utend,vtend, &
+!-------------------------------------- LICENSEE END --------------------------
+
+!/@*
+subroutine sgoflx7(uu,vv,utend,vtend,ttend,utendgwd4,vtendgwd4,&
                          tth,ttf,ss,ssh, &
                          ilev,ilg,il1,il2, &
-                         grav,rgas,rgocp,tau,taufac, &
+                         tau,taufac, &
                          gc,height,slope,xcent,mtdir, &
                          psurf,fcor, &
-                         gwdrag,blocking,orolift,leewave, &
-                         applytend, &
-			 stabfactor,nldirfactor,cdmin)
-!
+                         gwdrag,blocking, &
+			 stabfactor,nldirfactor,cdmin, split_tend_L)
+      use  tdpack, only: CAPPA, CPD, GRAV, RGASD
       implicit none
 #include <arch_specific.hf>
-!
-!
-      logical gwdrag,blocking,orolift,leewave,applytend, &
-	      stabfactor,nldirfactor
-!
+
+      logical gwdrag,blocking, &
+	      stabfactor,nldirfactor, split_tend_L
+
       integer ilev,ilg,il1,il2
-      real grav,rgas,rgocp,tau,taufac,cdmin
+      real tau,taufac,cdmin
       real*8 uu(ilg,ilev),      vv(ilg,ilev),     utend(ilg,ilev), &
-             vtend(ilg,ilev),   tth(ilg,ilev),    ttf(ilg,ilev), &
+             vtend(ilg,ilev),   ttend(ilg,ilev),  tth(ilg,ilev),    ttf(ilg,ilev), &
              ss(ilg,ilev),      ssh(ilg,ilev),    gc(ilg), &
              height(ilg),       slope(ilg),       xcent(ilg), &
              mtdir(ilg),        psurf(ilg),       fcor(ilg)
-!
-!Author
+      real, intent(out) :: utendgwd4(ilg,ilev), vtendgwd4(ilg,ilev)
+!@Author
 !        A. Zadra - May 2002 - From lin_sgoflx1
 !
-!Revisions
+!@Revisions
 ! 001    B. Bilodeau and A. Zadra (Apr 2003) - Add smoothing of BV frequency.
 ! 002    J.-P. Toviessi (May 2003) - IBM conversion
 !              - calls to vsqrt routine (from massvp4 library)
@@ -69,8 +67,10 @@
 !                effective drag coefficient for blocking term
 ! 011    A. Plante - Removed toplev since notop is not a option anymore
 !
+! 012    A. Zadra - Critical value phic (used in calculation of blocking height)
+!                is adjusted according to the resolution of the lowest layer
 !
-!Object
+!@Object
 !        Simplified version of subgrid orographic drag (sgoflx2) scheme:
 !        - reduced, non-smoothed buoyancy frequency
 !        - shortened gravity-wave drag (McFarlane 87)
@@ -79,14 +79,10 @@
 !        - lee-wave breaking (not yet included)
 !
 !
-!Arguments
+!@Arguments
 !          - Input/Output -
 ! UU       U component of wind as input
-!          U component of wind modified by the gravity wave
-!          drag as output (if applytend is .true.)
 ! VV       V component of wind as input
-!          V component of wind modified by the gravity wave
-!          drag as output (if applytend is .true.)
 !
 !          - Input -
 ! TTH      virtual temperature level means
@@ -97,15 +93,15 @@
 !          - Output -
 ! UTEND    total tendency on U (gwd + blocking)
 ! VTEND    total tendency on V (gwd + blocking)
+! TTEND    total tendency on T (gwd + blocking)
+! UTENDGWD4  GWD tendency on U
+! VTENDGWD4  GWD tendency on V
 !
 !          - Input -
 ! ILEV     number of levels
 ! ILG      total horizontal dimension
 ! IL1      1st dimension of U,V,T to start calculation
 ! IL2      index on horizontal dimension to stop calculation
-! GRAV     gravitational constant
-! RGAS     gas constant
-! RGOCP    CAPPA (see thermodynamic constants)
 ! TAU      timestep times a factor: 1 for two time-level models
 !                                   2 for three time-level models
 ! TAUFAC   1/(length scale).
@@ -118,10 +114,8 @@
 ! FCOR     Coriolis factor
 ! GWDRAG   .true. for gravity wave drag
 ! BLOCKING .true. for blocking
-! OROLIFT  .true. for orographic lift
-! LEEWAVE  .true. for lee wave parameterization
-! APPLYTEND.true. if tendencies are to be applied in this subroutine
-!
+!*@/
+
 !***********************************************************************
 !     AUTOMATIC ARRAYS
 !***********************************************************************
@@ -186,10 +180,6 @@
       REAL*8, dimension(ILG,ILEV) :: ZB
       REAL*8, dimension(ILG,ILEV) :: UTENDLLB
       REAL*8, dimension(ILG,ILEV) :: VTENDLLB
-      REAL*8, dimension(ILG,ILEV) :: UTENDLFT
-      REAL*8, dimension(ILG,ILEV) :: VTENDLFT
-      REAL*8, dimension(ILG,ILEV) :: UTENDLWB
-      REAL*8, dimension(ILG,ILEV) :: VTENDLWB
       REAL*8, dimension(ILG,ILEV) :: UTENDTOT
       REAL*8, dimension(ILG,ILEV) :: VTENDTOT
 !
@@ -206,19 +196,21 @@
       real*8 QDrgas,QDratio, QDgrav,QDhmin2
       real*8 QDtmp
       real*8 ks2,vent
-      real*8 href,nd
+      real*8 href,nd,fc,phic
+
 !
       vmin  = 2.
       v0    = 1.e-30
       hmin1  = 10.
       hmin2  = 3.
       QDhmin2= 1.0/hmin2
-      QDrgas = 1.0/dble(rgas)
-      QDgrav = 1.0/dble(grav)
+      QDrgas = 1.0/dble(RGASD)
+      QDgrav = 1.0/dble(GRAV)
       zero  = 0.
       unit  = 1.
       cdblk = 1.
       href  = 130.
+      fc    = 1.5
 !
 !     Note: The values of some parameters are not uniquely defined 
 !           and are subject to tuning, such as:
@@ -238,6 +230,7 @@
         do i=il1,il2
           utend(i,l) = zero
           vtend(i,l) = zero
+          ttend(i,l) = zero
         enddo
       enddo
 !
@@ -292,8 +285,8 @@
         enddo
       enddo
 !
-      call vpown1 (sexpk ,s ,dble(rgocp),len*ilev)
-      call vpown1 (shexpk,sh,dble(rgocp),len*ilev)
+      call vpown1 (sexpk ,s ,dble(CAPPA),len*ilev)
+      call vpown1 (shexpk,sh,dble(CAPPA),len*ilev)
 !
 !cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 !     GRAVITY-WAVE DRAG
@@ -317,14 +310,14 @@
 !
       call VLOG(QDvtmp1(1),sh(1,ilev),jyes)
       do i=1,jyes
-        zb(i,ilev)  = -(rgas*QDgrav)*tf(i,ilev)*QDvtmp1(i)
+        zb(i,ilev)  = -(RGASD*QDgrav)*tf(i,ilev)*QDvtmp1(i)
       enddo
       do l=ilev-1,1,-1
         call VLOG(QDvtmp1(1),sh(1,l+1),jyes)
         call VLOG(QDvtmp2(1),sh(1,l  ),jyes)
         do i=1,jyes
           zb(i,l)  = zb(i,l+1) + &
-                    (rgas*QDgrav)*tf(i,l)*(QDvtmp1(i)-QDvtmp2(i))
+                    (RGASD*QDgrav)*tf(i,l)*(QDvtmp1(i)-QDvtmp2(i))
         enddo
       enddo
 !-------------------------------------------------------------------
@@ -336,8 +329,8 @@
           aux = (th(i,l)/shexpk(i,l)-th(i,l-1)/shexpk(i,l-1)) &
                 /(sh(i,l)-sh(i,l-1))
           if ( aux.ge.(-5./s(i,l)) ) aux = -5./s(i,l)
-          aux = -aux*s(i,l)*grav/(rgas*tf(i,l))
-          bvfreq(i,l) = grav*aux*sexpk(i,l)/tf(i,l)
+          aux = -aux*s(i,l)*GRAV/(RGASD*tf(i,l))
+          bvfreq(i,l) = GRAV*aux*sexpk(i,l)/tf(i,l)
         enddo
         call vsqrt(bvfreq(1,l),bvfreq(1,l),jyes)
       enddo   
@@ -422,7 +415,7 @@
           else
             asq(i,l)    = asqs(i,l)
           endif
-          depfac(i,l) = (taufac*grav*QDrgas)*asq(i,l)*dfac(i,l)
+          depfac(i,l) = (taufac*GRAV*QDrgas)*asq(i,l)*dfac(i,l)
         enddo
       enddo
       do i=1,jyes
@@ -538,8 +531,8 @@
           aux = (th(i,l)/shexpk(i,l)-th(i,l-1)/shexpk(i,l-1)) &
                 /(sh(i,l)-sh(i,l-1))
           if ( aux.ge.(-5./s(i,l)) ) aux = -5./s(i,l)
-          aux = -aux*s(i,l)*grav/(rgas*tf(i,l))
-          bvfreq(i,l) = grav*aux*sexpk(i,l)/tf(i,l)
+          aux = -aux*s(i,l)*GRAV/(RGASD*tf(i,l))
+          bvfreq(i,l) = GRAV*aux*sexpk(i,l)/tf(i,l)
         enddo
         call vsqrt(bvfreq(1,l),bvfreq(1,l),jyes)
       enddo
@@ -551,14 +544,14 @@
 !
       call VLOG(QDvtmp1(1),sh(1,ilev),jyes)
       do i=1,jyes
-        zb(i,ilev)  = -(rgas*QDgrav)*tf(i,ilev)*QDvtmp1(i)
+        zb(i,ilev)  = -(RGASD*QDgrav)*tf(i,ilev)*QDvtmp1(i)
       enddo
       do l=ilev-1,1,-1
         call VLOG(QDvtmp1(1),sh(1,l+1),jyes)
         call VLOG(QDvtmp2(1),sh(1,l  ),jyes)
         do i=1,jyes
           zb(i,l)  = zb(i,l+1) + &
-                     (rgas*QDgrav)*tf(i,l)*(QDvtmp1(i)-QDvtmp2(i))
+                     (RGASD*QDgrav)*tf(i,l)*(QDvtmp1(i)-QDvtmp2(i))
         enddo
       enddo
 !
@@ -569,7 +562,7 @@
 !     lower level for averaging:
       do l=ilev-2,1,-1
         do i=1,jyes
-          if (zb(i,l).lt.(1.5*env(i)))    izt3(i) = l
+          if (zb(i,l).lt.( fc*env(i)))    izt3(i) = l
           if (zb(i,l).lt.     env(i) )    izt1(i)  = l
         enddo
       enddo
@@ -616,7 +609,8 @@
               bloff(i) = 1
             else
               hblk(i) = hblk(i) + dz*bvfreq(i,l)/uparl
-              if (hblk(i) .gt. 0.5) then
+              phic = 0.44 + 0.06*tanh((zb(i,ilev)-15.)/4.);
+              if (hblk(i) .gt. phic) then
                 izb(i)   = l-1
                 bloff(i) = 1
               endif
@@ -725,7 +719,7 @@
 !        - minimum value: 4.e-3 s^-1
 !
       do i=1,jyes
-        ndscale(i) = ( grav/dscale(i) ) &
+        ndscale(i) = ( GRAV/dscale(i) ) &
                    * ( ( th(i,iztd(i))*shexpk(i,ilev   ) ) & 
                       /( th(i,ilev   )*shexpk(i,iztd(i)) ) - 1.0 )
         if ( ndscale(i).gt.0.0   )  ndscale(i) = sqrt(ndscale(i))
@@ -750,7 +744,7 @@
               if (zb(i,l).lt.(dscale(i)))    iztd(i) = l
             enddo
             nd = ndscale(i)
-            ndscale(i) = ( grav/dscale(i) ) &
+            ndscale(i) = ( GRAV/dscale(i) ) &
                    * ( ( th(i,iztd(i))*shexpk(i,ilev   ) ) &
                       /( th(i,ilev   )*shexpk(i,iztd(i)) ) - 1.0 )
             if ( ndscale(i).gt.0.0 )  ndscale(i) = sqrt(ndscale(i))
@@ -800,38 +794,7 @@
       enddo
 !
       endif
-!
-!ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-!     OROGRAPHIC LIFT
-!
-!--------------------------------------------------------------------
-!     Initialize arrays
-      do l=1,ilev
-        do i=1,len
-          utendlft(i,l) = zero
-          vtendlft(i,l) = zero
-        enddo
-      enddo
-!
-      if (orolift) then
-!
-      endif
-!
-!ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-!     LEE-WAVE BREAKING
-!
-!--------------------------------------------------------------------
-!     Initialize arrays
-      do l=1,ilev
-        do i=1,len
-          utendlwb(i,l) = zero
-          vtendlwb(i,l) = zero
-        enddo
-      enddo
-!
-      if (leewave) then
-!
-      endif
+
 !ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 !     TOTAL DRAG AND RESULTING WIND FIELD
 !
@@ -842,47 +805,42 @@
           vtendtot(i,l) = zero
         enddo
       enddo
-!
+
 !     Add and scatter tendencies
       do l=1,ilev
         do i=1,len
           utendtot(i,l) = utendgwd(i,l) + &
-                          utendllb(i,l) + &
-                          utendlft(i,l) + &
-                          utendlwb(i,l)
+                          utendllb(i,l)
           vtendtot(i,l) = vtendgwd(i,l) + &
-                          vtendllb(i,l) + &
-                          vtendlft(i,l) + &
-                          vtendlwb(i,l)
+                          vtendllb(i,l)
         enddo
       enddo
-!
+
       do l=1,ilev
         do i=1,len
           ii = drag(i) + il1 - 1
           utend(ii,l) = utendtot(i,l)
           vtend(ii,l) = vtendtot(i,l)
+          ttend(ii,l) = (-1./CPD) * (u(i,l)*utendtot(i,l) + v(i,l)*vtendtot(i,l))
+          utendgwd4(ii,l) = real(utendgwd(i,l))
+          vtendgwd4(ii,l) = real(vtendgwd(i,l))
         enddo
       enddo
-!
+
+      if (split_tend_L) then
+         utendgwd4 = 0.
+         vtendgwd4 = 0.
+         do l=1,ilev
+            do i=1,len
+               ii = drag(i) + il1 - 1
+               utendgwd4(ii,l) = real(utendgwd(i,l))
+               vtendgwd4(ii,l) = real(vtendgwd(i,l))
+            enddo
+         enddo
+      endif
+
 !--------------------------------------------------------------------
  600  continue
 !--------------------------------------------------------------------
-!     Apply sgo tendency onto U and V:
-!
-      if (applytend) then
-!
-      do l=1,ilev
-        do i=il1,il2
-          uu(i,l) = uu(i,l) + tau*utend(i,l) 
-          vv(i,l) = vv(i,l) + tau*vtend(i,l) 
-        enddo
-      enddo
-!
-      endif
-!
-!ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       return
-      end
-!=========================
-! Stub
+   end subroutine sgoflx7

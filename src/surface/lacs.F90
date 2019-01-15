@@ -19,6 +19,7 @@ subroutine lacs4(F_climat_L, ni, trnch)
    use sfcbus_mod
    implicit none
 #include <arch_specific.hf>
+#include <rmnlib_basics.hf>
 
    logical F_climat_L
    integer ni, trnch
@@ -30,13 +31,13 @@ subroutine lacs4(F_climat_L, ni, trnch)
    ! F_climat_L climate mode logical key
    ! ni         horizontal length
 
-   include "thermoconsts.inc"
+#include "tdpack_const.hf"
    include "sfcinput.cdk"
 
    integer i
    real twater_ini
 
-   real, pointer, dimension(:) :: zglsea, zicedp, ziceline, zml, ztwater, &
+   real, pointer, dimension(:), contiguous :: zglsea, zicedp, ziceline, zml, ztwater, &
         zvegf
 
 #define MKPTR1D(NAME1,NAME2) nullify(NAME1); if (vd%NAME2%i > 0 .and. associated(busptr(vd%NAME2%i)%ptr)) NAME1(1:ni) => busptr(vd%NAME2%i)%ptr(:,trnch)
@@ -69,16 +70,16 @@ subroutine lacs4(F_climat_L, ni, trnch)
          !CC  but it clearly deteriorates results today (BD, Feb '08).
 
          if (.not.F_climat_L .and. &
-              (any('glseaen'==phyinread_list_s(1:phyinread_n)) .or. &
-              any('vegfen'==phyinread_list_s(1:phyinread_n)))) then
+              (any('glsea0'==phyinread_list_s(1:phyinread_n)) .or. &
+              any('vegf'==phyinread_list_s(1:phyinread_n)))) then
             zglsea(i) = zglsea(i) * (1. - leadfrac)
          endif
 
          ! Set minimal ice depth if zero ice thickness in
          ! analysis (or climatology) while ice fraction is non zero
-         if (any('glseaen'==phyinread_list_s(1:phyinread_n)) .or. &
-              any('icedpen'==phyinread_list_s(1:phyinread_n)) .or. &
-              any('vegfen'==phyinread_list_s(1:phyinread_n))) then
+         if (any('glsea0'==phyinread_list_s(1:phyinread_n)) .or. &
+              any('icedp'==phyinread_list_s(1:phyinread_n)) .or. &
+              any('vegf'==phyinread_list_s(1:phyinread_n))) then
             if (zglsea(i) >= 0..and.zicedp(i) <= 0.) then
                zicedp(i) = max(minicedp, 0.25 * zglsea(i))
             endif
@@ -88,9 +89,9 @@ subroutine lacs4(F_climat_L, ni, trnch)
 
          ! Water temperature of ice-covered lakes is 0 C. only
          ! if point is "north" of ice line.
-         if (any('icelinen'==phyinread_list_s(1:phyinread_n)) .or. &
-              any('glseaen'==phyinread_list_s(1:phyinread_n)) .or. &
-              any('vegfen'==phyinread_list_s(1:phyinread_n))) then
+         if (any('iceline'==phyinread_list_s(1:phyinread_n)) .or. &
+              any('glsea0'==phyinread_list_s(1:phyinread_n)) .or. &
+              any('vegf'==phyinread_list_s(1:phyinread_n))) then
             if (zglsea(i) > 10.*critmask .and. ziceline(i) >= 0.5) then
                ztwater(i) = TRPL
             endif
@@ -102,8 +103,8 @@ subroutine lacs4(F_climat_L, ni, trnch)
          ! of ice thickness (varying between 0 and 30 cm) is performed
          ! when GL ranges from 0 to 50%.
 
-         if (any('glseaen'==phyinread_list_s(1:phyinread_n)) .or. &
-              any('vegfen'==phyinread_list_s(1:phyinread_n))) then
+         if (any('glsea0'==phyinread_list_s(1:phyinread_n)) .or. &
+              any('vegf'==phyinread_list_s(1:phyinread_n))) then
             if (zglsea(i) > 0.50) then
                zicedp (i)  = max(0.30, zicedp(i))
                zglsea (i)  = 1.00

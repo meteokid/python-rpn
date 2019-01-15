@@ -114,7 +114,6 @@ IROOF = SIZE(PT_ROOF,2)
 IWALL = SIZE(PT_WALL,2)
 !
 ZT_FLOOR (:) = 19. + XTT
-ZT_FLOOR (:) = 23. + XTT
 !
 !
 !*      2.   inside conductance FOR SURFACES

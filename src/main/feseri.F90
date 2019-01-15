@@ -1,3 +1,21 @@
+!# feseri Needs: SERGDIM .F90, serie.F90
+
+!# SERGDIM Needs: series.cdk, serdim.F90, seralc2.F90
+!# series.cdk Needs: -
+!# serdim Needs: -
+!# seralc2 Needs:-
+
+!# serie2 Needs: INDSERI.F90, SERPAT2, SERFIN, SERACC, SERECRI3
+!# INDSERI Needs: -
+!# SERPAT2 Needs: -
+!# SERFIN Needs: PLLWFGFW
+!# SERACC Needs: acclist.cdk
+!# SERECRI3 Needs: -
+!# PLLWFGFW Needs: -
+!# acclist.cdk Needs: 
+
+!# Needs: sergdim.F90 serie.F90 series.cdk serdim.F90 seralc2.F90 indseri.F90 serpat2.F90 serfin.F90 seracc.F90 serecri2.F90 pllwfgfw.F90 acclist.cdk
+
 !-------------------------------------- LICENCE BEGIN ------------------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
@@ -56,7 +74,7 @@
 !
       integer, external :: fnom,FSTFRM, FSTOUV,SERGDIM3,EXDB,EXFIN
 
-include "thermoconsts.inc"
+#include "tdpack_const.hf"
 !
       integer status,inbr
       character *128, defo(9),listl(9),lfn(9)

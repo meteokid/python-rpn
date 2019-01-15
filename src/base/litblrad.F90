@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN ------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,11 +12,10 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
-!**s/r litblrad
-
-      Subroutine litblrad (F_file_S, F_myproc)
-      implicit none
+!-------------------------------------- LICENCE END --------------------------
+!/@*
+subroutine litblrad (F_file_S, F_myproc)
+   implicit none
 #include <arch_specific.hf>
 
       character *(*) F_file_S
@@ -43,11 +42,10 @@
 !
 !          - input -
 ! F_file_S  name of the radiation table file
+!*@/
 
 #include "radiation.cdk"
 #include "ozopnt.cdk"
-
-      include "thermoconsts.inc"
 
       external rd_radtab
       integer i,j,k,ij
@@ -74,8 +72,8 @@
       TT=UU+MXX
 !
       IF(TT+NTT-1 .NE. NTOTAL) THEN
-         WRITE(6,*) 'S/R PNTTG123. ERREUR DANS LES POINTEURS. STOP'
-         CALL QQEXIT(1)
+         call physeterror('litblrad', 'Erreur dans les pointeurs.')
+         return
       ENDIF
 
       call phyrdfile (F_file_S, rd_radtab, 'IRTAB', F_myproc)

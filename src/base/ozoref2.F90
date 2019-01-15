@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN ------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,12 +12,13 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
-!**S/P OZOREF2
-!
-      SUBROUTINE OZOREF2(O3F,LREF,DLAT,NP,NMAX,LBL,NLAT,ALAT, &
+!-------------------------------------- LICENCE END --------------------------
+
+!*@/
+SUBROUTINE OZOREF2(O3F,LREF,DLAT,NP,NMAX,LBL,NLAT,ALAT, &
            PREF,F)
-      implicit none
+   use tdpack, only: PI
+   implicit none
 #include <arch_specific.hf>
       INTEGER LREF,NP,NMAX,IB,I,J,K,L,NLAT
       REAL SLOPE,XLATI,PREF(LREF)
@@ -55,11 +56,8 @@
 ! ALAT     climatological ozone latitudes in degrees
 ! F        climatological ozone field in PPMV
 !
-!*
-!
-!
-include "thermoconsts.inc"
-!
+!*@/
+
       FAC = 180./PI
 !
       DO 145 J=1,NP
@@ -75,7 +73,7 @@ include "thermoconsts.inc"
         IF(IB.LE.1) THEN
           WRITE(6,6030) XLATI
           WRITE(6,*) (ALAT(I),i=1,NLAT)
-          CALL QQEXIT(1)
+          call physeterror('ozoref', 'O3 Inpol out bounds in latitude')
           RETURN
  6030     FORMAT(1X,' O3 INPOL OUT BOUNDS IN LATITUDE:',E12.4)
         ENDIF

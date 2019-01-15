@@ -1,22 +1,24 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!-------------------------------------- LICENCE BEGIN -------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
+!version 3 or (at your option) any later version that should be found at:
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
 !
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 !See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!You should have received a copy of the License/Disclaimer along with this software;
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!-------------------------------------- LICENCE END ---------------------------
 
 function phyfillbus(F_kount) result(F_istat)
+   use phygridmap, only: phy_lcl_ni, phy_lcl_nj, phy_lcl_i0, phy_lcl_in, phy_lcl_j0, phy_lcl_jn, phydim_nk
    use phy_typedef
    use phy_getmeta_mod, only: phy_getmeta
+   use phyfoldmeta_mod, only: phyfold
    implicit none
 #include <arch_specific.hf>
 
@@ -24,33 +26,35 @@ function phyfillbus(F_kount) result(F_istat)
    integer :: F_istat                        !Function result
 
    !@author  Michel Desgagne  -   summer 2013
-   !@object	Transfer data to p_runlgt space
+   !@object  Transfer data to p_runlgt space
 
 #include <msg.h>
 #include <rmnlib_basics.hf>
 #include <gmm.hf>
 #include <clib_interface_mu.hf>
-   include "phygrd.cdk"
-
-   integer, external :: phyfold2
 
    logical, parameter :: NOSHORTMATCH_L = .false.
    integer, parameter :: NVARMAX = 256
    integer, parameter :: MUST_INIT = 1
-   character(len=*), parameter :: FLD_INIT(4) = &
-        (/'TDMASK', 'DLAT', 'DLON', 'DXDY'/)
+   character(len=*), parameter :: FLD_INIT(4) = (/ &
+        'TDMASK', &
+        'DLAT  ', &
+        'DLON  ', &
+        'DXDY  '  &
+        /)
 
    integer, save :: nvars = 0
-   type(phymeta), pointer,save :: metalist(:) => null()
+   type(phymeta), pointer, contiguous, save :: metalist(:) => null()
 
    type(gmm_metadata) :: meta
    character(len=GMM_MAXNAMELENGTH) :: varname_S
    character(len=32) :: prefix_S, basename_S, time_S, ext_S
    integer :: i, k0, istat, err, ijkmin(3), ijkmax(3)
-   real, pointer :: src2d(:,:), src3d(:,:,:)
+   real, pointer, contiguous :: src2d(:,:), src3d(:,:,:)
+   real, pointer :: src2d1(:,:), src3d1(:,:,:)
    !     ---------------------------------------------------------------
    F_istat = RMN_ERR
-   
+
    ijkmin = 1
    ijkmax = (/phy_lcl_ni, phy_lcl_nj, 1/)
 
@@ -61,8 +65,9 @@ function phyfillbus(F_kount) result(F_istat)
          nullify(src2d)
          istat = min(gmm_get(FLD_INIT(i), src2d, meta), istat)
          if (associated(src2d)) then
+            src2d1(1:,1:) => src2d(phy_lcl_i0:phy_lcl_in,phy_lcl_j0:phy_lcl_jn)
             istat = min( &
-                 phyfold2(src2d(phy_lcl_i0:phy_lcl_in,phy_lcl_j0:phy_lcl_jn),FLD_INIT(i),'P',ijkmin,ijkmax), &
+                 phyfold(src2d1,FLD_INIT(i),'P',ijkmin,ijkmax), &
                  istat)
          else
             call msg(MSG_ERROR,'(phyfillbus) missing GMM var: '//trim(FLD_INIT(i)))
@@ -74,6 +79,7 @@ function phyfillbus(F_kount) result(F_istat)
          return
       endif
    endif
+   F_istat = RMN_ERR
 
    ! Pull dynamics state into the bus
    istat = 0
@@ -104,7 +110,8 @@ function phyfillbus(F_kount) result(F_istat)
             istat = min(err,istat)
             if (associated(src2d)) then
                ijkmax(3) = 1
-               err = phyfold2(src2d(phy_lcl_i0:phy_lcl_in,phy_lcl_j0:phy_lcl_jn),trim(metalist(i)%vname),'D',ijkmin,ijkmax)
+               src2d1(1:,1:) => src2d(phy_lcl_i0:phy_lcl_in,phy_lcl_j0:phy_lcl_jn)
+               err = phyfold(src2d1,trim(metalist(i)%vname),'D',ijkmin,ijkmax)
                if (.not.RMN_IS_OK(err)) &
                     call msg(MSG_ERROR,'(phyfillbus) Problem folding 2d pointer for: '//trim(varname_S))
                istat = min(err,istat)
@@ -123,7 +130,8 @@ function phyfillbus(F_kount) result(F_istat)
                   k0 = meta%l(3)%high
                   ijkmax(3) = 1
                endif
-               err = phyfold2(src3d(phy_lcl_i0:phy_lcl_in,phy_lcl_j0:phy_lcl_jn,k0:),trim(metalist(i)%vname),'D',ijkmin,ijkmax)
+               src3d1(1:,1:,1:) => src3d(phy_lcl_i0:phy_lcl_in,phy_lcl_j0:phy_lcl_jn,k0:)
+               err = phyfold(src3d1,trim(metalist(i)%vname),'D',ijkmin,ijkmax)
                if (.not.RMN_IS_OK(err)) &
                     call msg(MSG_ERROR,'(phyfillbus) Problem folding 3d pointer for: '//trim(varname_S))
                istat = min(err,istat)

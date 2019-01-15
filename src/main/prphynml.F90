@@ -62,15 +62,11 @@ subroutine nml_convection
 end subroutine nml_convection
 
 subroutine nml_series()
+   use series_options
    implicit none
 #include <arch_specific.hf>
-   include "series.cdk"
-   P_serg_srsrf_s = 'UNDEFINED'
-   P_serg_srprf_s = 'UNDEFINED'
-   P_serg_srwri   = 1
-   P_serg_serstp  = 99999
-   Xst_stn_latlon(1:MAXSTAT) =  &
-        station_latlon('UNDEFINED',real(STN_MISSING),real(STN_MISSING))
+   integer :: istat
+   istat = series_options_init()
    write(6, nml=series)
    return
 end subroutine nml_series

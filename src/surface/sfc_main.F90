@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN ------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,16 +12,26 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!-------------------------------------- LICENCE END --------------------------
+
+module sfc_main
+   private
+   public :: sfc_main2
+
+contains
 
 !/@*
-subroutine sfc_main(seloc, trnch, kount, dt, ni, m, nk, task)
+function sfc_main2(seloc, trnch, kount, dt, ni, nk) result(F_istat)
+   use tdpack, only: DELTA, RGASD
+   use phy_status, only: phy_error_L
+   use phygridmap, only: ijdrv_phy
    use sfc_options
    use sfcbus_mod
    use sfclayer_mod, only: sl_adjust,SL_OK
    use cpl_itf, only: cpl_update
    implicit none
 #include <arch_specific.hf>
+#include <rmnlib_basics.hf>
    !@Object Main interface subroutine for the surface processes
    !@Arguments
    !          - Input/Output -
@@ -38,17 +48,17 @@ subroutine sfc_main(seloc, trnch, kount, dt, ni, m, nk, task)
    ! DT       length of timestep
    ! NI       number of elements processed in the horizontal
    !          (could be a subset of M in future versions)
-   ! M        horizontal dimensions of fields
-   !          (not used for the moment)
+   !          horizontal dimensions of fields
    ! NK       vertical dimension
-   ! TASK     task number
 
    logical, parameter :: CP_TO_SFCBUS = .true.
    logical, parameter :: CP_FROM_SFCBUS = .false.
 
-   integer :: trnch,kount,ni,m, nk, task
+   integer :: trnch,kount,ni, nk
 
-   real :: dt, seloc(m,nk)
+   real :: dt, rhoair, seloc(ni,nk)
+
+   integer :: F_istat
 
    !@Author B. Bilodeau (Dec 1998)
    !@Revisions
@@ -75,10 +85,7 @@ subroutine sfc_main(seloc, trnch, kount, dt, ni, m, nk, task)
    ! 020      L. Spacek   (Nov 2011)  - insert calculations of tve, za etc.
    !                                    call to calz, lin_kdif_sim1
    !*@/
-
-   include "thermoconsts.inc"
-   !#TODO: replace phygrd.cdk needed for cpl ijdrv_phy
-   include "phygrd.cdk"
+#include <msg.h>
    include "sfcinput.cdk"
 
    logical :: do_glaciers, do_ice, do_urb
@@ -102,40 +109,72 @@ subroutine sfc_main(seloc, trnch, kount, dt, ni, m, nk, task)
    real,   dimension(surfesptot*ni) :: bus_soil, bus_water, bus_ice, &
         bus_glacier, bus_urb
    !
-   real, pointer, dimension(:)      :: zdtdiag, zmg, zglacier, zglsea, &
-        ztdiag, ztnolim, zurban, zztsl, &
-        zqdiag, zudiag, zvdiag,zicedp,ztwater
-   real, pointer, dimension(:,:)    :: poids_out, zilmo, ztmoins, ztplus, &
-        zhuplus,zuplus,zvplus,zsnodp
+   real, pointer, dimension(:), contiguous      :: zdtdiag, zmg, zfvapliq, zfvapliqaf, &
+        zglacier, zglsea, zpmoins, zpplus, ztdiag, ztnolim, zurban, zztsl, &
+        zqdiag, zudiag, zvdiag,zicedp,ztwater, zqdiagstn, ztdiagstn, &
+        zudiagstn, zvdiagstn, zqdiagstnv, ztdiagstnv, zudiagstnv, zvdiagstnv
+   real, pointer, dimension(:,:), contiguous    :: poids_out, zfvap, zilmo, zrunofftot, &
+        zrunofftotaf, ztmoins, ztplus, &
+        zhuplus,zuplus,zvplus,zsnodp, &
+        zqdiagtyp, ztdiagtyp, zudiagtyp, zvdiagtyp, zqdiagtypv, ztdiagtypv, &
+        zudiagtypv, zvdiagtypv, ztddiagtyp, ztddiagtypv
    !     ---------------------------------------------------------------
-   
-   if (.not.do_surface) return
+   F_istat = RMN_ERR
+
+   call msg_toall(MSG_DEBUG, 'sfc_main [BEGIN]')
+
 
 #define MKPTR1D(NAME1,NAME2) nullify(NAME1); if (vd%NAME2%i > 0 .and. associated(busptr(vd%NAME2%i)%ptr)) NAME1(1:ni) => busptr(vd%NAME2%i)%ptr(:,trnch)
 #define MKPTR2D(NAME1,NAME2) nullify(NAME1); if (vd%NAME2%i > 0 .and. associated(busptr(vd%NAME2%i)%ptr)) NAME1(1:ni,1:vd%NAME2%mul*vd%NAME2%niveaux) => busptr(vd%NAME2%i)%ptr(:,trnch)
 
    MKPTR1D(zdtdiag, dtdiag)
    MKPTR1D(zmg, mg)
+   MKPTR1D(zfvapliq, fvapliq)
+   MKPTR1D(zfvapliqaf, fvapliqaf) 
    MKPTR1D(zglacier, glacier)
    MKPTR1D(zglsea, glsea)
    MKPTR1D(zicedp, icedp)
    MKPTR1D(ztwater, twater)
+   MKPTR1D(zpmoins, pmoins)
+   MKPTR1D(zpplus, pplus)
    MKPTR1D(ztdiag, tdiag)
+   MKPTR1D(ztdiagstn, tdiagstn)
+   MKPTR1D(ztdiagstnv, tdiagstnv)
    MKPTR1D(zqdiag, qdiag)
+   MKPTR1D(zqdiagstn, qdiagstn)
+   MKPTR1D(zqdiagstnv, qdiagstnv)
    MKPTR1D(zudiag, udiag)
+   MKPTR1D(zudiagstn, udiagstn)
+   MKPTR1D(zudiagstnv, udiagstnv)
    MKPTR1D(zvdiag, vdiag)
+   MKPTR1D(zvdiagstn, vdiagstn)
+   MKPTR1D(zvdiagstnv, vdiagstnv)
    MKPTR1D(ztnolim, tnolim)
    MKPTR1D(zurban, urban)
    MKPTR1D(zztsl, ztsl)
 
    MKPTR2D(poids_out, sfcwgt)
+   MKPTR2D(zfvap, fvap)
    MKPTR2D(zilmo, ilmo)
+   MKPTR2D(zqdiagtyp, qdiagtyp)
+   MKPTR2D(zqdiagtypv, qdiagtypv)
+   MKPTR2D(zrunofftot, runofftot)
+   MKPTR2D(zrunofftotaf, runofftotaf)
    MKPTR2D(zsnodp, snodp)
+   MKPTR2D(ztddiagtyp, tddiagtyp)
+   MKPTR2D(ztddiagtypv, tddiagtypv)
+   MKPTR2D(ztdiagtyp, tdiagtyp)
+   MKPTR2D(ztdiagtypv, tdiagtypv)
    MKPTR2D(ztmoins, tmoins)
    MKPTR2D(ztplus, tplus)
    MKPTR2D(zhuplus, huplus)
+   MKPTR2D(zudiagtyp, udiagtyp)
+   MKPTR2D(zudiagtypv, udiagtypv)
    MKPTR2D(zuplus, uplus)
+   MKPTR2D(zvdiagtyp, vdiagtyp)
+   MKPTR2D(zvdiagtypv, vdiagtypv)
    MKPTR2D(zvplus, vplus)
+
 
    ! Update coupling fields GL, TM, SD and I8
 
@@ -154,8 +193,8 @@ subroutine sfc_main(seloc, trnch, kount, dt, ni, m, nk, task)
       lemin = min(zmg(i),zglsea(i),zglacier(i),zurban(i))
       lemax = max(zmg(i),zglsea(i),zglacier(i),zurban(i))
       if (lemin.lt.0. .or. lemax.gt.1.) then
-         write(6,1000)
-         call qqexit(1)
+         call msg_toall(MSG_ERROR, '(sfc_main) INVALID WEIGHTS FOR SURFACE PROCESSES, MAKE SURE THAT LAND-SEA MASK, SEA ICE FRACTION, FRACTION OF GLACIERS, MASK OF URBAN AREAS, ARE BOUNDED BETWEEN 0 AND 1')
+         return
       endif
    end do
 
@@ -260,7 +299,15 @@ subroutine sfc_main(seloc, trnch, kount, dt, ni, m, nk, task)
               dt, kount, trnch, &
               ni_soil, ni_soil, nk-1)
 
+      elseif (schmsol.eq.'SVS') then
+
+         call svs (bus_soil, siz_soil, &
+              ptr_soil, nvarsurf, &
+              dt, kount, trnch, &
+              ni_soil, ni_soil, nk-1)
+
       endif
+      if (phy_error_L) return
 
       call copybus3(bus_soil, siz_soil, &
            ptr_soil, nvarsurf, &
@@ -299,6 +346,7 @@ subroutine sfc_main(seloc, trnch, kount, dt, ni, m, nk, task)
            ptr_water, nvarsurf    ,  &
            lcl_indx , trnch, kount,  &
            ni_water , ni_water, nk-1 )
+      if (phy_error_L) return
 
       call copybus3(bus_water, siz_water, &
            ptr_water, nvarsurf, &
@@ -339,6 +387,7 @@ subroutine sfc_main(seloc, trnch, kount, dt, ni, m, nk, task)
            ptr_ice , nvarsurf    , &
            lcl_indx, trnch, kount, &
            ni_ice  , ni_ice, nk-1  )
+      if (phy_error_L) return
 
       call copybus3(bus_ice, siz_ice, &
            ptr_ice, nvarsurf, &
@@ -377,6 +426,7 @@ subroutine sfc_main(seloc, trnch, kount, dt, ni, m, nk, task)
            ptr_glacier, nvarsurf, &
            trnch, kount, &
            ni_glacier, ni_glacier, nk-1)
+      if (phy_error_L) return
 
       call copybus3(bus_glacier, siz_glacier, &
            ptr_glacier, nvarsurf, &
@@ -415,6 +465,7 @@ subroutine sfc_main(seloc, trnch, kount, dt, ni, m, nk, task)
            dt, trnch, kount, &
            ni_urb, ni_urb, &
            nk-1)
+      if (phy_error_L) return
 
       call copybus3(bus_urb, siz_urb, &
            ptr_urb, nvarsurf, &
@@ -435,6 +486,13 @@ subroutine sfc_main(seloc, trnch, kount, dt, ni, m, nk, task)
         rangs, poids, ni, trnch, &
         do_glaciers, do_ice, do_urb)
 
+   !       ACCUMULATE RUNNOFF FOR EACH SURFACE TYPE
+   do k=1,nsurf+1
+      do i=1,ni
+         zrunofftotaf(i,k) = zrunofftotaf(i,k) + zrunofftot(i,k)
+      enddo
+   enddo
+
    !*****************************
    ! UPDATE DIAG LEVEL AT START *
    !*****************************
@@ -446,6 +504,39 @@ subroutine sfc_main(seloc, trnch, kount, dt, ni, m, nk, task)
       if (any('pw_vv:p'==phyinread_list_s(1:phyinread_n))) zvdiag = zvplus(:,nk)
    endif
 
+   !******************************************
+   ! COMPUTE "STATION" DIAGNOSTICS OVER LAND *
+   !******************************************
+
+   where (poids(:,indx_soil) > 0.1)
+      zqdiagstn(:) = zqdiagtyp(:,indx_soil)
+      ztdiagstn(:) = ztdiagtyp(:,indx_soil)
+      zudiagstn(:) = zudiagtyp(:,indx_soil)
+      zvdiagstn(:) = zvdiagtyp(:,indx_soil)
+      zqdiagstnv(:) = zqdiagtypv(:,indx_soil)
+      ztdiagstnv(:) = ztdiagtypv(:,indx_soil)
+      zudiagstnv(:) = zudiagtypv(:,indx_soil)
+      zvdiagstnv(:) = zvdiagtypv(:,indx_soil)
+   elsewhere
+      zqdiagstn(:) = zqdiagtyp(:,indx_agrege)
+      ztdiagstn(:) = ztdiagtyp(:,indx_agrege)
+      zudiagstn(:) = zudiagtyp(:,indx_agrege)
+      zvdiagstn(:) = zvdiagtyp(:,indx_agrege)
+      zqdiagstnv(:) = zqdiagtypv(:,indx_agrege)
+      ztdiagstnv(:) = ztdiagtypv(:,indx_agrege)
+      zudiagstnv(:) = zudiagtypv(:,indx_agrege)
+      zvdiagstnv(:) = zvdiagtypv(:,indx_agrege)
+   endwhere
+
+   do k=1,nsurf+1
+     call mhuaes3(ztddiagtyp(:,k), zqdiagtyp(:,k), ztdiagtyp(:,k), zpplus, .false., ni, 1, ni)
+       ztddiagtyp(:,k)=max(ztddiagtyp(:,k),0.)
+       ztddiagtyp(:,k)=ztdiagtyp(:,k)-ztddiagtyp(:,k)
+     call mhuaes3(ztddiagtypv(:,k), zqdiagtypv(:,k), ztdiagtypv(:,k), zpplus, .false.,ni, 1, ni)
+       ztddiagtypv(:,k)=max(ztddiagtypv(:,k),0.)
+       ztddiagtypv(:,k)=ztdiagtypv(:,k)-ztddiagtypv(:,k)
+   enddo
+   
    !*******************************************
    !     CORRECTIFS POUR LA SORTIE            *
    !*******************************************
@@ -469,6 +560,18 @@ subroutine sfc_main(seloc, trnch, kount, dt, ni, m, nk, task)
       end do
    enddo
 
+      !     Calcul du flux d'evaporation en kg/m2 a partir
+      !     du flux d'humidite en m/s*kg/kg: m/s * kg water / kg air:
+      !     il faut multiplier par la densite de l'air
+      !     and by the length of the timestep
+      !     It only makes sense theoretically to calculate fvapliq from the aggregated field
+      !     since HU is averaged over all surface types
+   do i = 1,ni
+      rhoair = zpmoins(i) / ( RGASD * ztdiag(i) * (1. + DELTA * zqdiag(i)) )
+      zfvapliq(i) = zfvap(i,indx_agrege) * dt * rhoair
+      zfvapliqaf(i) = zfvapliqaf(i) + zfvapliq(i)
+   enddo
+
    !******************************************
    !     METTRE UNE LIMITE SUR L'AMPLITUDE   *
    !     DE L'INVERSION DE TEMPERATURE       *
@@ -479,18 +582,10 @@ subroutine sfc_main(seloc, trnch, kount, dt, ni, m, nk, task)
         write(6,*) 'itf_sfc_main cannot compute adjusted diagnostics'
    zdtdiag = ztdiag - ztnolim
 
-1000 format (//2(1x,60('*')/),1x,'*',58(' '),'*'/ &
-        1x,'*',11(' '),'INVALID WEIGHTS FOR SURFACE', &
-        20(' '),'*'/1x,'*',11(' '), &
-        'PROCESSES IN SUBROUTINE "SURFACE"', &
-        14(' '),'*'/(1x,'*',58(' '),'*'/), &
-        ' *',11(' '),'MAKE SURE THAT # LAND-SEA MASK',17(' '),'*' &
-        /1x,'*',26(' '),'# SEA ICE FRACTION',14(' '),'*'/, &
-        ' *',26(' '),'# FRACTION OF GLACIERS',10(' '),'*'/ &
-        ' *',26(' '),'# MASK OF URBAN AREAS',11(' '),'*'/ &
-        ' *',11(' '),'ARE BOUNDED BETWEEN 0 AND 1',20(' '),'*'/ &
-        (1x,'*',58(' '),'*'/), &
-        ' *',58(' '),'*'/2(1x,60('*')/))
+   call msg_toall(MSG_DEBUG, 'sfc_main [END]')
    !     ---------------------------------------------------------------
+   F_istat = RMN_OK
    return
-end subroutine sfc_main
+end function sfc_main2
+
+end module sfc_main

@@ -1,4 +1,4 @@
-!---------------------------------- LICENCE BEGIN -------------------------------
+!---------------------------------- LICENCE BEGIN -----------------------------
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
@@ -11,9 +11,10 @@
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-!---------------------------------- LICENCE END ---------------------------------
+!---------------------------------- LICENCE END -------------------------------
 
 module physlb_mod
+   use phy_status, only: phy_error_L
    use phy_options
    private
    public :: physlb1
@@ -26,7 +27,7 @@ contains
        esiz,dsiz,fsiz,vsiz,kount,ni,nj,nk,pslic )
     implicit none
     integer :: esiz,dsiz,fsiz,vsiz,kount,ni,nj,nk,pslic
-    real, dimension(:,:), pointer :: busent3D, busdyn3D, busper3D, busvol3D
+    real, dimension(:,:), pointer, contiguous :: busent3D, busdyn3D, busper3D, busvol3D
 
     !@Author L. Spacek (May 2010)
     !@Object The main physics subroutine
@@ -63,12 +64,14 @@ contains
     if ( jdo > nj ) return
 
     if (test_phy) then
-       call testphy_phyexe ( busent3D(1,jdo) ,busdyn3D(1,jdo) , busper3D(1,jdo), busvol3D(1,jdo) , &
-         esiz, dsiz, fsiz, vsiz, jdo, kount, ni, nk )
+       call physeterror('physlb1', 'testphy_phyexe needs to be updated')
+!!$       call testphy_phyexe ( busent3D(1,jdo) ,busdyn3D(1,jdo) , busper3D(1,jdo), busvol3D(1,jdo) , &
+!!$         esiz, dsiz, fsiz, vsiz, jdo, kount, ni, nk )
     else
        call phyexe ( busent3D(1,jdo) ,busdyn3D(1,jdo) , busper3D(1,jdo), busvol3D(1,jdo) , &
             esiz, dsiz, fsiz, vsiz, jdo, kount, ni, nk )
     endif
+    if (phy_error_L) return
 
     goto 100
     !

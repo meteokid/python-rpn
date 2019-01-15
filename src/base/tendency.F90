@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN -------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,111 +12,265 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
-!**s/p tendency
-!
-subroutine tendency4 ( uplus0,vplus0,wplus0,tplus0,huplus0,qcplus0, &
-     vbus,dbus,rcdt1,vsiz,dsiz,kount,ni,nk )
-  use phy_options
-  use phybus
-  implicit none
+!-------------------------------------- LICENCE END ---------------------------
+
+module tendency
+   implicit none
+   private
+   public :: tendency5, apply_tendencies
+
+#include "phymkptr.hf"
+
+   interface apply_tendencies
+      module procedure apply_tendencies_bus
+      module procedure apply_tendencies_bus2
+      module procedure apply_tendencies_ptr
+   end interface apply_tendencies
+
+contains
+
+   !/@*
+   subroutine tendency5(uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0, &
+        vbus, dbus, rcdt1, vsiz, dsiz, kount, ni, nk)
+      use phy_options
+      use phybus
+      implicit none
 #include <arch_specific.hf>
-  integer                :: vsiz,dsiz,kount,ni,nk
-  real, dimension(ni,nk) :: uplus0,vplus0,wplus0,tplus0,huplus0,qcplus0
-  real, target           :: vbus(vsiz), dbus(dsiz)
-  real                   :: rcdt1
-  !
-  !Author
-  !          L. Spacek (Oct 2011)
-  !
-  !Revision
-  !
-  !Object
-  !          Calculates tendencies in physics
-  !
-  !Arguments
-  !
-  !          - Input -
-  ! dsiz     dimension of dbus
-  ! vsiz     dimension of vbus
-  ! ni       horizontal running length
-  ! nk       vertical dimension
-  ! rcdt1    1/cdt1
-  !
-  !          - Output -
-  ! uplus0   initial value of dbus(uplus)
-  ! vplus0   initial value of dbus(vplus)
-  ! tplus0   initial value of dbus(tplus)
-  ! huplus0  initial value of dbus(huplus)
-  ! qcplus0  initial value of dbus(qcplus)
-  !
-  !          - input/output -
-  ! dbus     dynamics input field
-  ! vbus     physics tendencies and other output fields from the physics
-  !
-  !Implicities
-  !
+      !@Author  L. Spacek (Oct 2011)
+      !@Object Calculates tendencies in physics
+
+      !@Arguments
+
+      integer, intent(in) :: vsiz, dsiz, kount, ni, nk
+      real, dimension(ni,nk), intent(in) :: uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0
+      real, target, intent(inout) :: vbus(vsiz),  dbus(dsiz)
+      real, intent(in)  :: rcdt1
+
+      ! dsiz     dimension of dbus
+      ! vsiz     dimension of vbus
+      ! ni       horizontal running length
+      ! nk       vertical dimension
+      ! rcdt1    1/cdt1
+      ! uplus0   initial value of dbus(uplus)
+      ! vplus0   initial value of dbus(vplus)
+      ! tplus0   initial value of dbus(tplus)
+      ! huplus0  initial value of dbus(huplus)
+      ! qcplus0  initial value of dbus(qcplus)
+      ! dbus     dynamics input field
+      ! vbus     physics tendencies and other output fields from the physics
+      !*@/
+#include <msg.h>
 #include "ens.cdk"
-  include "thermoconsts.inc"
-  !
-  integer                :: i,j,k,nik,ierget
 
-  real, pointer, dimension(:,:) :: zhuphytd, zhuplus, zqcphytd, zqcplus, zqdifv, ztdifv, ztphytd, ztplus, zuphytd, zudifv, zuplus, zvphytd, zvdifv, zvplus, zwphytd, zwplus
-  !-------------------------------------------------------------
+      integer :: i, k
+      real, pointer, dimension(:,:), contiguous :: zhuphytd, zhuplus, zqcphytd, zqcplus, zqdifv, ztdifv, ztphytd, ztplus, zuphytd, zudifv, zuplus, zvphytd, zvdifv, zvplus, zwphytd, zwplus
+      !-------------------------------------------------------------
+      call msg_toall(MSG_DEBUG, 'tendency [BEGIN]')
 
-  zhuphytd(1:ni,1:nk) => vbus( huphytd:)
-  zhuplus (1:ni,1:nk) => dbus( huplus:)
-  zqcphytd(1:ni,1:nk) => vbus( qcphytd:)
-  zqcplus (1:ni,1:nk) => dbus( qcplus:)
-  zqdifv  (1:ni,1:nk) => vbus( qdifv:)
-  ztdifv  (1:ni,1:nk) => vbus( tdifv:)
-  ztphytd (1:ni,1:nk) => vbus( tphytd:)
-  ztplus  (1:ni,1:nk) => dbus( tplus:)
-  zuphytd (1:ni,1:nk) => vbus( uphytd:)
-  zudifv  (1:ni,1:nk) => vbus( udifv:)
-  zuplus  (1:ni,1:nk) => dbus( uplus:)
-  zvphytd (1:ni,1:nk) => vbus( vphytd:)
-  zvdifv  (1:ni,1:nk) => vbus( vdifv:)
-  zvplus  (1:ni,1:nk) => dbus( vplus:)
+      MKPTR2D(zhuphytd, huphytd, vbus)
+      MKPTR2D(zhuplus , huplus, dbus)
+      MKPTR2D(zqcphytd, qcphytd, vbus)
+      MKPTR2D(zqcplus , qcplus, dbus)
+      MKPTR2D(zqdifv  , qdifv, vbus)
+      MKPTR2D(ztdifv  , tdifv, vbus)
+      MKPTR2D(ztphytd , tphytd, vbus)
+      MKPTR2D(ztplus  , tplus, dbus)
+      MKPTR2D(zuphytd , uphytd, vbus)
+      MKPTR2D(zudifv  , udifv, vbus)
+      MKPTR2D(zuplus  , uplus, dbus)
+      MKPTR2D(zvphytd , vphytd, vbus)
+      MKPTR2D(zvdifv  , vdifv, vbus)
+      MKPTR2D(zvplus  , vplus, dbus)
+      MKPTR2D(zwphytd , wphytd, vbus)
+      MKPTR2D(zwplus  , wplus, dbus)
 
-  do k=1,nk
-  do i=1,ni
-     zuphytd (i,k) = (zuplus (i,k) - uplus0 (i,k)) * rcdt1
-     zvphytd (i,k) = (zvplus (i,k) - vplus0 (i,k)) * rcdt1
-     ztphytd (i,k) = (ztplus (i,k) - tplus0 (i,k)) * rcdt1
-     zhuphytd(i,k) = (zhuplus(i,k) - huplus0(i,k)) * rcdt1
-     zqcphytd(i,k) = (zqcplus(i,k) - qcplus0(i,k)) * rcdt1
-  enddo
-  enddo
-  if(diffuw)then
-     zwphytd (1:ni,1:nk) => vbus( wphytd:)
-     zwplus  (1:ni,1:nk) => dbus( wplus:)
-     do k=1,nk
-     do i=1,ni
-        zwphytd(i,k)  = (zwplus(i,k) - wplus0(i,k)) * rcdt1
+      do k=1,nk
+         do i=1,ni
+            zuphytd (i,k) = (zuplus (i,k) - uplus0 (i,k)) * rcdt1
+            zvphytd (i,k) = (zvplus (i,k) - vplus0 (i,k)) * rcdt1
+            ztphytd (i,k) = (ztplus (i,k) - tplus0 (i,k)) * rcdt1
+            zhuphytd(i,k) = (zhuplus(i,k) - huplus0(i,k)) * rcdt1
+            zqcphytd(i,k) = (zqcplus(i,k) - qcplus0(i,k)) * rcdt1
+         enddo
+      enddo
+
+      if (diffuw) then
+         do k=1,nk
+            do i=1,ni
+               zwphytd(i,k)  = (zwplus(i,k) - wplus0(i,k)) * rcdt1
+            enddo
+         enddo
+      endif
+
+      do i=1,ni
+         zuphytd (i,nk) = zudifv(i,nk)
+         zvphytd (i,nk) = zvdifv(i,nk)
+         ztphytd (i,nk) = ztdifv(i,nk)
+         zhuphytd(i,nk) = zqdifv(i,nk)
+      end do
+
+      if (stochphy .and. kount >= 1) then
+         do k=1,nk
+            do i=1,ni
+               zuplus (i,k) = uplus0 (i,k)
+               zvplus (i,k) = vplus0 (i,k)
+               ztplus (i,k) = tplus0 (i,k)
+               !       zhuplus(i,k) = huplus0(i,k)
+               !       zqcplus(i,k) = qcplus0(i,k)
+            enddo
+         enddo
+      endif
+ 
+      call msg_toall(MSG_DEBUG, 'tendency [END]')
+      !-------------------------------------------------------------
+      return
+   end subroutine tendency5
+
+
+   !/@*
+   subroutine apply_tendencies_bus(d,dsiz,v,vsiz,f,fsiz,ivar,iten,ni,nk,nkscope)
+      use phy_options
+      use phybus
+      implicit none
+#include <arch_specific.hf>
+      !@Object Linear combination of two arrays
+      !@Arguments
+      !          - input -
+      ! ivar     variable  index
+      ! iten     tendency  index
+      ! ni       horizonal index
+      ! nk       vertical  index
+      ! nkscope  vertical  operator scope
+      ! v        volatile bus
+      ! f        permanent bus
+      !
+      !          - input/output -
+      ! d        dynamics bus
+
+      integer, intent(in)    :: dsiz,vsiz,fsiz,ivar,iten,ni,nk,nkscope
+      real, target, intent(in)    :: v(vsiz),f(fsiz)
+      real, target, intent(inout) :: d(dsiz)
+
+      !@Author L. Spacek (Oct 2011)
+      !*@/
+
+      integer :: k
+
+      real, pointer, dimension(:), contiguous   :: ztdmask
+      real, pointer, dimension(:,:), contiguous :: ziten, zivar
+      !----------------------------------------------------------------
+
+      MKPTR1D(ztdmask, tdmask, f)
+      MKPTR2D(ziten, iten, v)
+      MKPTR2D(zivar, ivar, d)
+
+      if (.not.(associated(ztdmask) .and. associated(ziten) .and. associated(zivar))) then
+         call physeterror('apply_tendencies_bus', 'Problem getting pointers')
+         return
+      endif
+
+      do k=1,nkscope
+         zivar(:,k) = zivar(:,k) + ztdmask(:)*ziten(:,k)*delt
      enddo
-     enddo
-  endif
 
-  do i=1,ni
-     zuphytd (i,nk) = zudifv(i,nk)
-     zvphytd (i,nk) = zvdifv(i,nk)
-     ztphytd (i,nk) = ztdifv(i,nk)
-     zhuphytd(i,nk) = zqdifv(i,nk)
-  end do
+      !----------------------------------------------------------------
+      return
+   end subroutine apply_tendencies_bus
 
-  if (stochphy.and.kount.ge.1) then
-     do k=1,nk
-     do i=1,ni
-        zuplus (i,k) = uplus0 (i,k)
-        zvplus (i,k) = vplus0 (i,k)
-        ztplus (i,k) = tplus0 (i,k)
-!       zhuplus(i,k) = huplus0(i,k)
-!       zqcplus(i,k) = qcplus0(i,k)
+
+   !/@*
+   subroutine apply_tendencies_bus2(d,v,f,ivar,iten,ni,nk,nkscope)
+      use phy_options
+      use phybus
+      implicit none
+#include <arch_specific.hf>
+      !@Object Linear combination of two arrays
+      !@Arguments
+      !          - input -
+      ! ivar     variable  index
+      ! iten     tendency  index
+      ! ni       horizonal index
+      ! nk       vertical  index
+      ! nkscope  vertical  operator scope
+      ! v        volatile bus
+      ! f        permanent bus
+      !
+      !          - input/output -
+      ! d        dynamics bus
+
+      real, target, intent(inout) :: d(:)
+      real, target, intent(in)    :: v(:),f(:)
+      integer, intent(in) :: ivar,iten,ni,nk
+      integer, intent(in), optional :: nkscope
+
+      !@Author L. Spacek (Oct 2011)
+      !*@/
+
+      integer :: k, nkscope1
+
+      real, pointer, dimension(:), contiguous   :: ztdmask
+      real, pointer, dimension(:,:), contiguous :: ziten, zivar
+      !----------------------------------------------------------------
+
+      MKPTR1D(ztdmask, tdmask, f)
+      MKPTR2D(ziten, iten, v)
+      MKPTR2D(zivar, ivar, d)
+
+      nkscope1 = nk
+      if (present(nkscope)) nkscope1 = nkscope
+
+      if (.not.(associated(ztdmask) .and. associated(ziten) .and. associated(zivar))) then
+         call physeterror('apply_tendencies_bus2', 'Problem getting pointers')
+         return
+      endif
+
+      do k=1,nkscope1
+         zivar(:,k) = zivar(:,k) + ztdmask(:)*ziten(:,k)*delt
      enddo
-     enddo
-  endif
-  !
-  !-------------------------------------------------------------
-  !
-end subroutine tendency4
+
+      !----------------------------------------------------------------
+      return
+   end subroutine apply_tendencies_bus2
+
+   !/@*
+   subroutine apply_tendencies_ptr(zivar, ziten, ztdmask, ni, nk, nkscope, F_minval, F_maxval)
+      use phy_options
+      implicit none
+#include <arch_specific.hf>
+      !@Object Linear combination of two arrays
+      !@Arguments
+      real, dimension(ni)  :: ztdmask
+      real, dimension(ni, nk) :: ziten, zivar
+      integer, intent(in) :: ni, nk, nkscope
+      real, intent(in), optional :: F_minval, F_maxval
+      !*@/
+      integer :: k
+     !----------------------------------------------------------------
+      if (present(F_minval)) then
+         if (present(F_maxval)) then
+            do k=1,nkscope
+               zivar(:,k) = max(F_minval, max(F_minval, &
+                    zivar(:,k) + ztdmask(:)*ziten(:,k)*delt))
+            end do
+         else
+            do k=1,nkscope
+               zivar(:,k) = max(F_minval, &
+                    zivar(:,k) + ztdmask(:)*ziten(:,k)*delt)
+            end do
+         endif
+      else if (present(F_maxval)) then
+         do k=1,nkscope
+            zivar(:,k) = min(F_maxval, &
+                 zivar(:,k) + ztdmask(:)*ziten(:,k)*delt)
+         enddo
+      else
+         do k=1,nkscope
+            zivar(:,k) = zivar(:,k) + ztdmask(:)*ziten(:,k)*delt
+         enddo
+      endif
+      !----------------------------------------------------------------
+      return
+   end subroutine apply_tendencies_ptr
+
+
+end module tendency
