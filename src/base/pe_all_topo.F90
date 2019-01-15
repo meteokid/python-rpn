@@ -34,13 +34,15 @@ use iso_c_binding
 
       integer,parameter :: BUFSIZE=10000
       integer, external :: fnom,wkoffit,OMP_get_max_threads
-
-      character(len=3) :: mycol_S,myrow_S
-      character(len=500) :: fn, pwd_S
-      integer err,unf
-      integer, dimension(4) :: bcast_ptopo
-      integer bufnml(BUFSIZE),bufoutcfg  (BUFSIZE), &
-              bufcte(BUFSIZE),bufinphycfg(BUFSIZE)
+      integer, external :: generate_unique_name
+      
+      character(len=3)   :: mycol_S,myrow_S
+      character(len=33)  :: buffer
+      character(len=1024):: fn, pwd_S, scratch_dir
+      integer :: err,unf,nc
+      integer, dimension(2) :: bcast_ptopo
+      integer :: bufnml(BUFSIZE),bufoutcfg  (BUFSIZE), &
+                 bufinphycfg(BUFSIZE)
 !
 !-------------------------------------------------------------------
 !
@@ -95,7 +97,6 @@ use iso_c_binding
       if (Ptopo_myproc == 0) then
          call array_from_file(bufnml,size(bufnml),Path_nml_S)
          call array_from_file(bufoutcfg,size(bufoutcfg),Path_outcfg_S)
-         call array_from_file(bufcte,size(bufcte),trim(Path_input_S)//'/constantes')
          call array_from_file(bufinphycfg,size(bufinphycfg),Path_phyincfg_S)
       endif
 
@@ -112,23 +113,21 @@ use iso_c_binding
 !
 ! Writing local namelist file Path_nml_S (blind write)
 !
-      err = clib_getcwd(pwd_S)
-      Path_nml_S    = trim(pwd_S)//'/model_settings'
-      Path_outcfg_S = trim(pwd_S)//'/output_settings'
-      Path_phyincfg_S = trim(pwd_S)//'/physics_input_table'
+      if (clib_getenv ('GEM_scratch_dir',scratch_dir) < 0) scratch_dir='/tmp'
+      nc = generate_unique_name(buffer,len(buffer))
+      Path_nml_S      = trim(scratch_dir)//'/model_settings_'//buffer(1:nc)
+      Path_outcfg_S   = trim(scratch_dir)//'/output_settings_'//buffer(1:nc)
+      Path_phyincfg_S = trim(scratch_dir)//'/physics_input_table_'//buffer(1:nc)
 
       call RPN_COMM_bcast(bufnml,size(bufnml),"MPI_INTEGER",0, &
                                                  "grid",err )
       call RPN_COMM_bcast(bufoutcfg,size(bufoutcfg),"MPI_INTEGER",0, &
-                                                 "grid",err )
-      call RPN_COMM_bcast(bufcte,size(bufcte),"MPI_INTEGER",0, &
                                                  "grid",err )
       call RPN_COMM_bcast(bufinphycfg,size(bufinphycfg),"MPI_INTEGER",0, &
                                                  "grid",err )
 
       call array_to_file (bufnml,size(bufnml),trim(Path_nml_S))
       call array_to_file (bufoutcfg,size(bufoutcfg),trim(Path_outcfg_S))
-      call array_to_file (bufcte,size(bufcte),'constantes'    )
       call array_to_file (bufinphycfg,size(bufinphycfg),trim(Path_phyincfg_S))
 
       Lun_rstrt = 0 ; Rstri_rstn_L= .false. ; Step_kount= 0
