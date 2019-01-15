@@ -29,7 +29,7 @@ subroutine inisoili2(ni, trnch)
    ! NI          longueur d'une tranche horizontale
 
    integer :: i
-   real, pointer, dimension(:) :: zacoef, zbcoef, zc1sat, zc2ref, zc3ref, &
+   real, pointer, dimension(:), contiguous :: zacoef, zbcoef, zc1sat, zc2ref, zc3ref, &
         zcgsat, zclay, zpcoef, zsand, zwfc, &
         zwsat, zwwilt
 

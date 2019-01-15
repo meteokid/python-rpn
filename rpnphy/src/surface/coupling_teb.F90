@@ -75,7 +75,15 @@ USE MODD_TOWN,       ONLY :                                                     
                        XRNSNOW_ROAD,XHSNOW_ROAD,XLESNOW_ROAD,                   &
                        XGSNOW_ROAD,XMELT_ROAD,                                  &
                        XRN,XH,XLE,XGFLUX,XEVAP,XRUNOFF,                         &
-                       XCH,XRI,XUSTAR
+                       XCH,XRI,XUSTAR,                                          &
+                      XTRAD_IN,XTRAD_SUN,XTRAD_SHADE,XTRAD_RFSUN,XTRAD_RFSHADE, &
+                      XTGLOBE_SUN,XTGLOBE_SHADE,XTGLOBE_RFSUN,XTGLOBE_RFSHADE,  &
+                      XTWETB,XTWETB_ROOF,                                       &
+                XUTCI_IN,XUTCI_OUTSUN,XUTCI_OUTSHADE,XUTCI_RFSUN,XUTCI_RFSHADE, &
+                    XWBGT_OUTSUN, XWBGT_OUTSHADE, XWBGT_RFSUN, XWBGT_RFSHADE,   &
+            XUTCIC_IN,XUTCIC_OUTSUN,XUTCIC_OUTSHADE,XUTCIC_RFSUN,XUTCIC_RFSHADE &
+           ,XTRFZT,XTRDZT,XURDZU  				                                   &
+           ,XQ1,XQ2,XQ3,XQ4,XQ5,XQ6,XQ7,XQ8,XQ9,XQ10,XQ11,XQ12,XQ13
 !
 USE MODI_TEB2
 ! 
@@ -232,7 +240,15 @@ CALL TEB2  (XT_CANYON, XQ_CANYON, XU_CANYON,                          &
      XMELT_ROAD,                                                      &
      XRN, XH, XLE, XGFLUX, XEVAP, XRUNOFF,                            &
      XUSTAR, XCH, XRI,                                                &
-     PTRAD, PEMIS, ZDIR_ALB, ZSCA_ALB, ZRESA_TOWN                     )
+     PTRAD, PEMIS, ZDIR_ALB, ZSCA_ALB, ZRESA_TOWN ,                   &
+     XTRAD_IN, XTRAD_SUN, XTRAD_SHADE, XTRAD_RFSUN, XTRAD_RFSHADE,    &
+     XTGLOBE_SUN, XTGLOBE_SHADE, XTGLOBE_RFSUN, XTGLOBE_RFSHADE,      &
+     XTWETB,XTWETB_ROOF,                                              &
+     XUTCI_IN, XUTCI_OUTSUN, XUTCI_OUTSHADE, XUTCI_RFSUN, XUTCI_RFSHADE, &
+      XWBGT_OUTSUN, XWBGT_OUTSHADE, XWBGT_RFSUN, XWBGT_RFSHADE,          &
+     XUTCIC_IN,XUTCIC_OUTSUN,XUTCIC_OUTSHADE,XUTCIC_RFSUN,XUTCIC_RFSHADE &
+      ,XTRFZT,XTRDZT,XURDZU &
+     ,XQ1,XQ2,XQ3,XQ4,XQ5,XQ6,XQ7,XQ8,XQ9,XQ10,XQ11,XQ12,XQ13   )
 !
 !
 !-------------------------------------------------------------------------------------

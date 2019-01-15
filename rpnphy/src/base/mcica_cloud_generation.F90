@@ -23,7 +23,7 @@
       implicit none
 #include <arch_specific.hf>
 #include "mcica.cdk"
-include "thermoconsts.inc"
+#include "tdpack_const.hf"
 !#include "xcwdata.cdk"
 
 ! INPUT DATA
@@ -382,7 +382,7 @@ include "thermoconsts.inc"
 !       EXTERNAL MCICA_CLD_GENERATOR
 
 #include "mcica.cdk"
-include "thermoconsts.inc"
+#include "tdpack_const.hf"
 
 ! Note: LAY    => Number of layers
 ! Note: NX_LOC => Number of subcolumns to generate

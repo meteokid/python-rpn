@@ -15,10 +15,12 @@
 !-------------------------------------- LICENCE END --------------------------------------
 
 subroutine inicover2(kount, ni, trnch)
+   use mu_jdate_mod, only: jdate_day_of_year
    use sfc_options
    use sfcbus_mod
    implicit none
 #include <arch_specific.hf>
+#include <rmnlib_basics.hf>
 
    integer ni, kount, trnch
 
@@ -327,7 +329,8 @@ subroutine inicover2(kount, ni, trnch)
 
    !********************************************************************
 
-   real, external :: juliand, interpveg
+   integer(IDOUBLE), parameter :: MU_JDATE_HALFDAY = 43200 !#TODO: use value from my_jdate_mod
+   real, external :: interpveg
 
    integer :: i,j
    real :: julien, juliens
@@ -340,7 +343,7 @@ subroutine inicover2(kount, ni, trnch)
    IF_ISBA: if (schmsol == 'ISBA') then
 
       ! Determine the current julian day
-      julien = juliand( delt, kount, date )
+      julien = real(jdate_day_of_year(jdateo + kount*int(delt) + MU_JDATE_HALFDAY))
 
       ! Do the aggregation
       do i=1,nclass

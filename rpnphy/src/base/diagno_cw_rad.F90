@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN -------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,73 +12,72 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
-!**   S/P DIAGNO_CW_RAD
-      Subroutine diagno_cw_rad (f, fsiz, d,dsiz, v, vsiz, &
-           liqwcin, icewcin, liqwp, icewp, cloud, heurser, &
-           kount, trnch, task, ni, nk)
+!-------------------------------------- LICENCE END ---------------------------
 
+module diagno_cw_rad
+   implicit none
+   private
+   public :: diagno_cw_rad1
+
+contains
+
+   !/@*
+   subroutine diagno_cw_rad1(f, fsiz, d,dsiz, v, vsiz, &
+        liqwcin, icewcin, liqwp, icewp, cloud, &
+        trnch, ni, nk)
+      use series_mod, only: series_xst
       use phybus
       implicit none
 #include <arch_specific.hf>
 
-      Integer fsiz, dsiz, vsiz, ni, nk
-      Integer kount, trnch, task
-      Real heurser
-      Real, target ::  f(fsiz), d(dsiz), v(vsiz)
-      Real liqwcin(ni,nk), icewcin(ni,nk)
-      Real liqwp(ni,nk-1), icewp(ni,nk-1)
-      Real cloud(ni,nk)
+      integer, intent(in) :: fsiz, dsiz, vsiz, ni, nk, trnch
+      real, intent(inout), target ::  f(fsiz), d(dsiz), v(vsiz)
+      real, intent(inout) :: liqwcin(ni,nk), icewcin(ni,nk)
+      real, intent(inout) :: liqwp(ni,nk-1), icewp(ni,nk-1) !#TODO: check this
+      real, intent(inout) :: cloud(ni,nk)
 
-!     Author
-!     L. Spacek (Apr 2005)
-!
-!     Revisions
-!     001      see version 5.5.0 for previous history
-!
-!     Object
-!     Calculate diagnostic for the radiation package
-!
-!     Arguments
-!
-!     - input -
-!     dsiz     Dimension of d
-!     fsiz     Dimension of f
-!     vsiz     Dimension of v
-!     liqwcin  in-cloud liquid water content
-!     icewcin  in-cloud ice    water content
-!     liqwp    in-cloud liquid water path
-!     icewp    in-cloud ice    water path
-!     cloud    cloudiness passed to radiation
-!     kount    index of timestep
-!     trnch    number of the slice
-!     task     task number
-!     n        horizontal Dimension
-!     nk       number of layers
-!
-!     - output -
-!     tlwp     total integrated liquid water path
-!     tiwp     total integrated ice    water path
-!     tlwpin   total integrated in-cloud liquid water path
-!     tiwpin   total integrated in-cloud ice    water path
-!     lwcrad   liquid water content passed to radiation
-!     iwcrad   ice    water content passed to radiation
-!     cldrad  cloudiness passed to radiation
+      !@Author L. Spacek (Apr 2005)
+      !@Object Calculate diagnostic for the radiation package
+      !@Arguments
+      !     - input -
+      !     dsiz     Dimension of d
+      !     fsiz     Dimension of f
+      !     vsiz     Dimension of v
+      !     liqwcin  in-cloud liquid water content
+      !     icewcin  in-cloud ice    water content
+      !     liqwp    in-cloud liquid water path
+      !     icewp    in-cloud ice    water path
+      !     cloud    cloudiness passed to radiation
+      !     kount    index of timestep
+      !     trnch    number of the slice
+      !     ni       horizontal Dimension
+      !     nk       number of layers
+      !     - output -
+      !     tlwp     total integrated liquid water path
+      !     tiwp     total integrated ice    water path
+      !     tlwpin   total integrated in-cloud liquid water path
+      !     tiwpin   total integrated in-cloud ice    water path
+      !     lwcrad   liquid water content passed to radiation
+      !     iwcrad   ice    water content passed to radiation
+      !     cldrad  cloudiness passed to radiation
+      !*@/
+#include "phymkptr.hf"
 
-      Integer i, j, k, ik, it
+      integer :: i, k
 
-      real, pointer, dimension(:)   :: ztlwp, ztiwp, ztlwpin, ztiwpin
-      real, pointer, dimension(:,:) :: zlwcrad, ziwcrad, zcldrad
+      real, pointer, dimension(:), contiguous   :: ztlwp, ztiwp, ztlwpin, ztiwpin
+      real, pointer, dimension(:,:), contiguous :: zlwcrad, ziwcrad, zcldrad
+      !----------------------------------------------------------------
 
-      ztlwp  (1:ni)      => f( tlwp:)
-      ztiwp  (1:ni)      => f( tiwp:)
-      ztlwpin(1:ni)      => f( tlwpin:)
-      ztiwpin(1:ni)      => f( tiwpin:)
-      zlwcrad(1:ni,1:nk) => v( lwcrad:)
-      ziwcrad(1:ni,1:nk) => v( iwcrad:)
-      zcldrad(1:ni,1:nk) => v( cldrad:)
+      MKPTR1D(ztlwp, tlwp, f)
+      MKPTR1D(ztiwp, tiwp, f)
+      MKPTR1D(ztlwpin, tlwpin, f)
+      MKPTR1D(ztiwpin, tiwpin, f)
+      MKPTR2D(zlwcrad, lwcrad, v)
+      MKPTR2D(ziwcrad, iwcrad, v)
+      MKPTR2D(zcldrad, cldrad, v)
 
-      Do i=1,ni
+      do i=1,ni
          ztlwp(i)      = 0.0
          ztiwp(i)      = 0.0
          ztlwpin(i)    = 0.0
@@ -86,42 +85,44 @@
          zlwcrad(i,nk) = 0.0
          ziwcrad(i,nk) = 0.0
          zcldrad(i,nk) = 0.0
-      Enddo
+      enddo
 
-      Do k=1,nk-1
-         Do i=1,ni
+      do k=1,nk-1
+         do i=1,ni
             ztlwp(i)   = ztlwp(i)   + liqwp(i,k)*cloud(i,k)
             ztiwp(i)   = ztiwp(i)   + icewp(i,k)*cloud(i,k)
             ztlwpin(i) = ztlwpin(i) + liqwp(i,k)
             ztiwpin(i) = ztiwpin(i) + icewp(i,k)
-         Enddo
-      Enddo
+         enddo
+      enddo
 
-!     conversion d'unites : tlwp et tiwp en kg/m2
-
-      Do i=1,ni
+      !# conversion d'unites : tlwp et tiwp en kg/m2
+      do i=1,ni
          ztlwp(i)   = ztlwp(i) * 0.001
          ztiwp(i)   = ztiwp(i) * 0.001
          ztlwpin(i) = ztlwpin(i) * 0.001
          ztiwpin(i) = ztiwpin(i) * 0.001
-      Enddo
+      enddo
 
-      Do k=1,nk-1
-         Do i=1,ni
+      do k=1,nk-1
+         do i=1,ni
             zlwcrad(i,k) = liqwcin(i,k)*cloud(i,k)
             ziwcrad(i,k) = icewcin(i,k)*cloud(i,k)
             zcldrad(i,k) = cloud(i,k)
-         Enddo
-      Enddo
+         enddo
+      enddo
 
-!     extraction pour diagnostics
-      Call serxst2(f(tlwp), 'icr', trnch, ni, 1, 0.0, 1.0, -1)
-      Call serxst2(f(tiwp), 'iir', trnch, ni, 1, 0.0, 1.0, -1)
-      Call serxst2(f(tlwpin), 'w1', trnch, ni, 1, 0.0, 1.0, -1)
-      Call serxst2(f(tiwpin), 'w2', trnch, ni, 1, 0.0, 1.0, -1)
+      !# extraction pour diagnostics
+      call series_xst(ztlwp, 'icr', trnch)
+      call series_xst(ztiwp, 'iir', trnch)
+      call series_xst(ztlwpin, 'w1', trnch)
+      call series_xst(ztiwpin, 'w2', trnch)
+      call series_xst(ziwcrad, 'iwcr', trnch)
+      call series_xst(zlwcrad, 'lwcr', trnch)
+      call series_xst(zcldrad, 'cldr', trnch)
 
-      Call serxst2(v(iwcrad), 'iwcr', trnch, ni, nk, 0.0, 1.0, -1)
-      Call serxst2(v(lwcrad), 'lwcr', trnch, ni, nk, 0.0, 1.0, -1)
-      Call serxst2(v(cldrad), 'cldr', trnch, ni, nk, 0.0, 1.0, -1)
+      !----------------------------------------------------------------
+      return
+   end subroutine diagno_cw_rad1
 
-      End Subroutine diagno_cw_rad
+end module diagno_cw_rad

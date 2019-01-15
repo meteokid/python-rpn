@@ -18,8 +18,10 @@
 subroutine inisurf4(kount, ni, nk, trnch)
    use sfc_options
    use sfcbus_mod
+   use svs_configs
    implicit none
 #include <arch_specific.hf>
+#include <rmnlib_basics.hf>
    !@Object Transfer and initialize geophysical fields for the
    !        surface schemes
    !@Arguments
@@ -39,7 +41,7 @@ subroutine inisurf4(kount, ni, nk, trnch)
    !       permanent variables.
    !*@/
 
-   include "thermoconsts.inc"
+#include "tdpack_const.hf"
    include "isbapar.cdk"
    include "sfcinput.cdk"
 
@@ -50,11 +52,18 @@ subroutine inisurf4(kount, ni, nk, trnch)
    real, save :: tauf   = 0.24
    real, save :: tauday = 24.
 
-   real    :: prcor
-   integer :: i, k
+   real    :: tempsum, tempclay, tempsand
+   integer :: i, k, nk1
 
-   real, pointer, dimension(:) :: zalen, zdhdx, zdhdxdy, zdhdxdyen, zdhdxen, zdhdy, zdhdyen, zepstfn, zglacen, zglacier, zglsea, zglsea0, zglseaen, zicedp, zicedpen, ziceline, zicelinen, zlhtg, zlhtgen, zmg, zmgen, zml, zresa, zsnoal, zsnoalen, zsnoagen, zsnoden, zsnoma, zsnoro, zsnoroen, ztsrad, ztwater, ztwateren, zwveg, zwvegen, zwsnow, zwsnowen, zz0en
-   real, pointer, dimension(:,:) :: zalvis, zclay, zclayen, zisoil, zisoilen, zsand, zsanden, zsnodp, zsnodpen, ztglacen, ztglacier, ztmice, ztmicen, ztmoins, ztsoil, ztsoilen, zvegf, zvegfen, zwsoil, zwsoilen, zz0, zz0t
+   real, pointer, dimension(:), contiguous :: &
+        zdrainaf, zemisr, zemistg, zemistgen, zfvapliqaf, zglacier, zglsea, &
+        zglsea0, zicedp, ziceline, zlhtg, zmg, zml, zresa, zresagr, zresavg, &
+        zresasa, zresasv, zslop, zsnoal, zsnoalen, zsnoagen, zsnodpl, zsnoden, &
+        zsnoma, zsnoro, zsnvden, zsnvdp, zsnvma, ztsrad, ztwater, zwveg, &
+        zwsnow, zz0en, zz0veg, zz0tveg
+   real, pointer, dimension(:,:), contiguous :: &
+        zalvis, zclay, zclayen, zisoil, zrunofftotaf, zsand, zsanden, zsnodp, &
+        ztglacier, ztmice, ztmoins, ztsoil, zvegf, zwsoil, zz0, zz0t
 
 #define MKPTR1D(NAME1,NAME2) nullify(NAME1); if (vd%NAME2%i > 0 .and. associated(busptr(vd%NAME2%i)%ptr)) NAME1(1:ni) => busptr(vd%NAME2%i)%ptr(:,trnch)
 #define MKPTR2D(NAME1,NAME2) nullify(NAME1); if (vd%NAME2%i > 0 .and. associated(busptr(vd%NAME2%i)%ptr)) NAME1(1:ni,1:vd%NAME2%mul*vd%NAME2%niveaux) => busptr(vd%NAME2%i)%ptr(:,trnch)
@@ -64,104 +73,81 @@ subroutine inisurf4(kount, ni, nk, trnch)
    !  Nothing to process if no fields were read
    if (phyinread_n == 0) return
 
-   MKPTR1D(zalen,alen)
-   MKPTR1D(zdhdx,dhdx)
-   MKPTR1D(zdhdxdy,dhdxdy)
-   MKPTR1D(zdhdxdyen,dhdxdyen)
-   MKPTR1D(zdhdxen,dhdxen)
-   MKPTR1D(zdhdy,dhdy)
-   MKPTR1D(zdhdyen,dhdyen)
-   MKPTR1D(zepstfn,epstfn)
-   MKPTR1D(zglacen,glacen)
+   MKPTR1D(zdrainaf,drainaf)
+   MKPTR1D(zemisr,emisr)
+   MKPTR1D(zemistg,emistg)
+   MKPTR1D(zemistgen,emistgen)
+   MKPTR1D(zfvapliqaf,fvapliqaf)
    MKPTR1D(zglacier,glacier)
    MKPTR1D(zglsea,glsea)
    MKPTR1D(zglsea0,glsea0)
-   MKPTR1D(zglseaen,glseaen)
    MKPTR1D(zicedp,icedp)
-   MKPTR1D(zicedpen,icedpen)
    MKPTR1D(ziceline,iceline)
-   MKPTR1D(zicelinen,icelinen)
    MKPTR1D(zlhtg,lhtg)
-   MKPTR1D(zlhtgen,lhtgen)
    MKPTR1D(zmg,mg)
-   MKPTR1D(zmgen,mgen)
    MKPTR1D(zml,ml)
    MKPTR1D(zresa,resa)
+   MKPTR1D(zresagr,resagr)
+   MKPTR1D(zresavg,resavg)
+   MKPTR1D(zresasa,resasa)
+   MKPTR1D(zresasv,resasv)
+   MKPTR1D(zslop,slop)
    MKPTR1D(zsnoal,snoal)
    MKPTR1D(zsnoalen,snoalen)
    MKPTR1D(zsnoagen,snoagen)
    MKPTR1D(zsnoden,snoden)
+   MKPTR1D(zsnodpl,snodpl) 
    MKPTR1D(zsnoma,snoma)
    MKPTR1D(zsnoro,snoro)
-   MKPTR1D(zsnoroen,snoroen)
+   MKPTR1D(zsnvden,snvden)
+   MKPTR1D(zsnvdp,snvdp) 
+   MKPTR1D(zsnvma,snvma)
    MKPTR1D(ztsrad,tsrad)
    MKPTR1D(ztwater,twater)
-   MKPTR1D(ztwateren,twateren)
    MKPTR1D(zwveg,wveg)
-   MKPTR1D(zwvegen,wvegen)
    MKPTR1D(zwsnow,wsnow)
-   MKPTR1D(zwsnowen,wsnowen)
    MKPTR1D(zz0en,z0en)
+   MKPTR1D(zz0veg,z0veg)
+   MKPTR1D(zz0tveg,z0tveg)
 
    MKPTR2D(zalvis,alvis)
    MKPTR2D(zclay,clay)
    MKPTR2D(zclayen,clayen)
    MKPTR2D(zisoil,isoil)
-   MKPTR2D(zisoilen,isoilen)
+   MKPTR2D(zrunofftotaf,runofftotaf)
    MKPTR2D(zsand,sand)
    MKPTR2D(zsanden,sanden)
    MKPTR2D(zsnodp,snodp)
-   MKPTR2D(zsnodpen,snodpen)
-   MKPTR2D(ztglacen,tglacen)
    MKPTR2D(ztglacier,tglacier)
    MKPTR2D(ztmice,tmice)
-   MKPTR2D(ztmicen,tmicen)
    MKPTR2D(ztmoins,tmoins)
    MKPTR2D(ztsoil,tsoil)
-   MKPTR2D(ztsoilen,tsoilen)
    MKPTR2D(zvegf,vegf)
-   MKPTR2D(zvegfen,vegfen)
    MKPTR2D(zwsoil,wsoil)
-   MKPTR2D(zwsoilen,wsoilen)
    MKPTR2D(zz0,z0)
    MKPTR2D(zz0t,z0t)
 
-   if (any('vegfen' == phyinread_list_s(1:phyinread_n))) then
-      do i=1,ni
-         do k=1,nclass
-            zvegf(i,k) = zvegfen(i,k)
-         end do
-      end do
-   endif
-
-   ! Several treatments on geophysical fields valid for both isba and fcrest
-   ! the water temperature (tm) is decreased for points where the 
+   ! Several treatments on geophysical fields valid for isba
+   ! the water temperature (tm) is decreased for points where the
    ! filtering of mountains lead to an icrease of the water level
    ! (old subroutine modtmtp of gem's dynamic library)
 
-
-   if ( drylaps ) then
-      prcor = grav/cpd
-   else
-      prcor = grav*stlo
-   end if
-
    ! Other consistency tests ...
 
-   if (any('snodpen' == phyinread_list_s(1:phyinread_n))) then
+   if (any('snodp' == phyinread_list_s(1:phyinread_n))) then
 !VDIR NODEP
       do k=1,nsurf
          do i=1,ni
-            zsnodpen(i,k) = max( 0., zsnodpen(i,k))
+            zsnodp(i,k) = max( 0., zsnodp(i,k))
          end do
       end do
    endif
 
-   if (any('tglacen' == phyinread_list_s(1:phyinread_n))) then
+   if (any('tglacier' == phyinread_list_s(1:phyinread_n))) then
 !VDIR NODEP
       do i=1,ni
-         ztglacen(i,1) = min( trpl, ztglacen(i,1))
-         ztglacen(i,2) = min( trpl, ztglacen(i,2))
+         ztglacier(i,1) = min( trpl, ztglacier(i,1))
+         ztglacier(i,2) = min( trpl, ztglacier(i,2))
       end do
    endif
 
@@ -174,92 +160,72 @@ subroutine inisurf4(kount, ni, nk, trnch)
    !
 !VDIR NODEP
    DO_I: do i=1,ni
-      if (any('alen' == phyinread_list_s(1:phyinread_n))) then
-         zalvis(i,indx_soil   ) = zalen(i)
-         zalvis(i,indx_glacier) = zalen(i)
-         zalvis(i,indx_water  ) = zalen(i)
-         zalvis(i,indx_ice    ) = zalen(i)
-         zalvis(i,indx_agrege ) = zalen(i)
+      if (any('alvis' == phyinread_list_s(1:phyinread_n))) then
+         nk1 = size(zalvis,2)
+         zalvis(i,indx_soil   ) = zalvis(i,nk1)
+         zalvis(i,indx_glacier) = zalvis(i,nk1)
+         zalvis(i,indx_water  ) = zalvis(i,nk1)
+         zalvis(i,indx_ice    ) = zalvis(i,nk1)
+         zalvis(i,indx_agrege ) = zalvis(i,nk1)
          if (schmurb.ne.'NIL') then
-            zalvis(i,indx_urb ) = zalen(i)
+            zalvis(i,indx_urb ) = zalvis(i,nk1)
          endif
       endif
 
-      if (any('glacen' == phyinread_list_s(1:phyinread_n))) then
-         zglacier(i) = zglacen(i)
-      endif
-      if (any('mgen' == phyinread_list_s(1:phyinread_n))) then
-         zmg(i) = zmgen(i)
+      if (kount == 0 .and. .not.any('emisr' == phyinread_list_s(1:phyinread_n))) then
+         zemisr(i) = 1.
       endif
 
       !       --- snodp deja en metres
-      if (any('snodpen' == phyinread_list_s(1:phyinread_n))) then
-         zsnodp(i,indx_soil   ) = zsnodpen(i,1)
-         zsnodp(i,indx_glacier) = zsnodpen(i,2)
+      if (any('snodp' == phyinread_list_s(1:phyinread_n))) then
          zsnodp(i,indx_water  ) = 0.0
-         zsnodp(i,indx_ice    ) = zsnodpen(i,4)
       endif
 
-      if (any('twateren' == phyinread_list_s(1:phyinread_n))) then
-         ztwater(i) = ztwateren(i)
-      endif
-      if (any('tsoilen' == phyinread_list_s(1:phyinread_n))) then
-         ztsrad(i) = ztsoilen(i,1)
+      if (any('tsoil' == phyinread_list_s(1:phyinread_n))) then
+         ztsrad(i) = ztsoil(i,1)
       endif
       if (any('z0en' == phyinread_list_s(1:phyinread_n))) then
-         zz0 (i,indx_soil   ) = zz0en(i)
-         zz0 (i,indx_glacier) = zz0en(i)
+         zz0 (i,indx_soil   ) = max(zz0en(i),z0min)
+         zz0 (i,indx_glacier) = max(zz0en(i),Z0GLA)
          zz0 (i,indx_water  ) = z0sea
          zz0 (i,indx_ice    ) = z0ice
-         zz0 (i,indx_agrege ) = zz0en(i)
-         zz0t(i,indx_soil   ) = zz0en(i)
-         zz0t(i,indx_glacier) = zz0en(i)
+         zz0 (i,indx_agrege ) = max(zz0en(i),z0min)
+         zz0t(i,indx_soil   ) = max(zz0en(i),z0min)
+         zz0t(i,indx_glacier) = max(zz0en(i),Z0GLA)
          zz0t(i,indx_water  ) = z0sea
          zz0t(i,indx_ice    ) = z0ice
-         zz0t(i,indx_agrege ) = zz0en(i)
+         zz0t(i,indx_agrege ) = max(zz0en(i),z0min)
       endif
-      if (any('lhtgen' == phyinread_list_s(1:phyinread_n))) then
-         zlhtg(i) = zlhtgen(i)
+      if (any('z0veg' == phyinread_list_s(1:phyinread_n))) then
+         zz0veg (i) = max(zz0veg(i),z0min)
+         zz0tveg(i) = max(zz0veg(i),z0min)
       endif
-      if (any('icedpen' == phyinread_list_s(1:phyinread_n))) then
-         zicedp(i) = zicedpen(i)
-      endif
-      if (any('tglacen' == phyinread_list_s(1:phyinread_n))) then
-         ztglacier(i,1) = ztglacen(i,1)
-         ztglacier(i,2) = ztglacen(i,2)
-      endif
-      if (any('glseaen' == phyinread_list_s(1:phyinread_n))) then
-         zglsea (i) = zglseaen(i)
-         zglsea0(i) = zglseaen(i)
+      if (any('glsea0' == phyinread_list_s(1:phyinread_n))) then
+         zglsea (i) = zglsea0(i)
       endif
       !       Mask for the lakes
-      if (any('vegfen' == phyinread_list_s(1:phyinread_n))) then
-         zml(i) = zvegfen(i,3)
+      if (any('vegf' == phyinread_list_s(1:phyinread_n))) then
+         zml(i) = zvegf(i,3)
       endif
-      if(icelac) then
-         if (any('icelinen' == phyinread_list_s(1:phyinread_n))) then
-            ziceline(i) = zicelinen(i)
-         endif
-      else
-         if (kount == 0) ziceline(i) = 1.
+      if (kount == 0 .and. .not.icelac) ziceline(i) = 1.
+
+      if(kount == 0) then
+         !# total surface runoff
+         zrunofftotaf(i,indx_soil   ) = 0.0
+         zrunofftotaf(i,indx_glacier) = 0.0
+         zrunofftotaf(i,indx_water  ) = 0.0
+         zrunofftotaf(i,indx_ice    ) = 0.0
+         zrunofftotaf(i,indx_agrege ) = 0.0
+         !# evaporation
+         zfvapliqaf(i) = 0.0
       endif
 
-      !       transvidage des variables necessaires au blocage orographique
-      if (any('dhdxen' == phyinread_list_s(1:phyinread_n))) then
-         zdhdx(i) = zdhdxen(i)
-      endif
-      if (any('dhdyen' == phyinread_list_s(1:phyinread_n))) then
-         zdhdy(i) = zdhdyen(i)
-      endif
-      if (any('dhdxdyen' == phyinread_list_s(1:phyinread_n))) then
-         zdhdxdy(i) = zdhdxdyen(i)
-      endif
    end do DO_I
 
-   if (any('tmicen' == phyinread_list_s(1:phyinread_n))) then
+
+   if (any('tmice' == phyinread_list_s(1:phyinread_n))) then
       do k=1,nl
          do i=1,ni
-            ztmice(i,k) = ztmicen(i,k)
             ztmice(i,k) = min(tcdk, ztmice(i,k))
          end do
       end do
@@ -269,23 +235,12 @@ subroutine inisurf4(kount, ni, nk, trnch)
    !                             for lakes only
    !========================================================================
 
-   if (any('vegfen' == phyinread_list_s(1:phyinread_n))) then
-      if (schmsol == 'ISBA') then
-!VDIR NODEP
-         do k=1,nclass
-            do i=1,ni
-               zvegf(i,k) = zvegfen(i,k)
-            end do
-         end do
-      endif
-   endif
-
    call lacs4(climat, ni, trnch)
 
    !========================================================================
    !     Special cases
 
-   if (any('icedpen' == phyinread_list_s(1:phyinread_n))) then
+   if (any('icedp' == phyinread_list_s(1:phyinread_n))) then
 !VDIR NODEP
       do i=1,ni
          !           no snow allowed in the absence of marine ice
@@ -295,49 +250,13 @@ subroutine inisurf4(kount, ni, nk, trnch)
       end do
    endif
 
-   if (kount == 0) then
-!VDIR NODEP
-      do i=1,ni
-         !           For force-restore scheme only : if no radiation scheme
-         !           is used, then surface IR emissivity is set to 0.
-         if (radia == 'NIL') then
-            zepstfn(i) = 0.
-         else
-            zepstfn(i) = stefan
-         end if
-      end do
-   endif
-
    !=========================================================================
    !                                      FOR ISBA ... FOR ISBA ... FOR ISBA
    !=========================================================================
 
    IF_ISBA: if (schmsol == 'ISBA') then
 
-!VDIR NODEP
-      do i=1,ni
-
-         if (any('tsoilen' == phyinread_list_s(1:phyinread_n))) then
-            ztsoil(i,1) = ztsoilen(i,1)
-            ztsoil(i,2) = ztsoilen(i,2)
-         endif
-         if (any('wsoilen' == phyinread_list_s(1:phyinread_n))) then
-            zwsoil(i,1) = zwsoilen(i,1)
-            zwsoil(i,2) = zwsoilen(i,2)
-         endif
-         if (any('wvegen' == phyinread_list_s(1:phyinread_n))) then
-            zwveg(i) = zwvegen(i)
-         endif
-         if (any('isoilen' == phyinread_list_s(1:phyinread_n))) then
-            zisoil(i,1) = zisoilen(i,1)
-         endif
-         if (any('wsnowen' == phyinread_list_s(1:phyinread_n))) then
-            zwsnow(i) = zwsnowen(i)
-         endif
-         if (kount == 0) then
-            zresa(i) = 50.
-         endif
-      end do
+      if (kount == 0) zresa(1:ni) = 50.
 
       ! Special operations for the snow variables
       !
@@ -351,11 +270,11 @@ subroutine inisurf4(kount, ni, nk, trnch)
 
 !VDIR NODEP
       do i=1,ni
-         if (any('snoroen' == phyinread_list_s(1:phyinread_n))) then
-            zsnoro(i) = max(100.,zsnoroen(i)) / rauw
+         if (any('snoro' == phyinread_list_s(1:phyinread_n))) then
+            zsnoro(i) = max(100.,zsnoro(i)) / rauw
          endif
-         if (any('snoroen' == phyinread_list_s(1:phyinread_n)) .or. &
-              any('snodpen' == phyinread_list_s(1:phyinread_n))) then
+         if (any('snoro' == phyinread_list_s(1:phyinread_n)) .or. &
+              any('snodp' == phyinread_list_s(1:phyinread_n))) then
             zsnoma(i) = rauw * zsnoro(i) * zsnodp(i,indx_soil)
          endif
       end do
@@ -401,9 +320,9 @@ subroutine inisurf4(kount, ni, nk, trnch)
 
       !  Initialize the parameters that depend on vegetation
 
-      if (any('vegfen' == phyinread_list_s(1:phyinread_n)) .or. &
+      if (any('vegf' == phyinread_list_s(1:phyinread_n)) .or. &
            (kntveg > 0 .and. mod(kount,kntveg) == 0)) then
-          call inicover2(kount, ni, trnch)
+         call inicover2(kount, ni, trnch)
       endif
 
       ! Sand and clay fractions of the soil are taken as simple averages 
@@ -411,15 +330,11 @@ subroutine inisurf4(kount, ni, nk, trnch)
 
 !VDIR NODEP
       do i=1,ni
-         if (any('sanden' == phyinread_list_s(1:phyinread_n))) then
-            zsand(i,1) = (  zsanden(i,1) &
-                 + zsanden(i,2) &
-                 + zsanden(i,3) ) / 3.
+         if (any('sand' == phyinread_list_s(1:phyinread_n))) then
+            zsand(i,1) = (zsand(i,1) + zsand(i,2) + zsand(i,3)) / 3.
          endif
-         if (any('clayen' == phyinread_list_s(1:phyinread_n))) then
-            zclay(i,1) = (  zclayen(i,1) &
-                 + zclayen(i,2) &
-                 + zclayen(i,3) ) / 3.
+         if (any('clay' == phyinread_list_s(1:phyinread_n))) then
+            zclay(i,1) = (zclay(i,1) + zclay(i,2) + zclay(i,3)) / 3.
          endif
       end do
 
@@ -429,12 +344,110 @@ subroutine inisurf4(kount, ni, nk, trnch)
 
       ! Initialize the soil characteristics using the soil texture
 
-      if (any('clayen' == phyinread_list_s(1:phyinread_n)) .or. &
-           any('sanden' == phyinread_list_s(1:phyinread_n))) then
+      if (any('clay' == phyinread_list_s(1:phyinread_n)) .or. &
+           any('sand' == phyinread_list_s(1:phyinread_n))) then
          call inisoili2(ni, trnch)
       endif
 
    end if IF_ISBA
+!=========================================================================
+!                                      FOR SVS  ... FOR SVS  ... FOR SVS 
+!=========================================================================
+!
+!
+   IF_SVS: IF (schmsol.EQ.'SVS') THEN
+!
+!VDIR NODEP
+         DO i=1,ni
+            if (kount == 0) then
+               ! calculate snow mass
+               zsnoma(i)  = zsnoden(i) * zsnodpl(i)
+               zsnvma(i)  = zsnvden(i) * zsnvdp(i)
+
+
+               zdrainaf(i)        = 0.0
+               if ( read_emis ) &
+                    zemistg(i)         = zemistgen(i)
+               zresagr(i)         = 100.
+               zresavg(i)         = 50.
+               zresasa(i)         = 100.
+               zresasv(i)         = 100.               
+               ! DDeacu: Ensure that slope is positive and set its minimum value             
+               if ( zmg(i).gt.critmask ) then
+                  zslop(i)  = min ( max( abs( zslop(i) ) , 5.e-03 ) , 1.0 ) 
+               else
+                  zslop(i)  = 0.0
+               endif
+               
+            endif      
+
+      END DO
+!
+!
+!                          Initialize the parameters that depend
+!                          on vegetation
+!
+   
+      if (any('vegf' == phyinread_list_s(1:phyinread_n))) then
+         call inicover_svs(0, ni, trnch)
+      endif
+!
+!
+!
+!
+!                           Sand and clay fractions 
+!
+!VDIR NODEP
+      kount_zero: if ( kount == 0 ) then
+         soil_data: if ( soiltext == "GSDE" .or. soiltext == "SLC" &
+              .or. soiltext == "SOILGRIDS" ) then 
+            DO k=1,nl_stp
+               DO i=1,ni
+                  watmask1: if (zmg(i).lt.critmask) then
+                     ! OVER WATER...
+                     zsand  (i,k)    = 0.0
+                     zclay  (i,k)    = 0.0
+                  else
+                     ! OVER LAND
+                     
+                     if (zsanden(i,k)+zclayen(i,k).lt.critexture) then
+                        !                If no sand and clay component
+                        !                attribute to these points characteristics
+                        !                of typical loamy soils
+                        zsand(i,k) = 35.
+                        zclay(i,k) = 35.
+                     else 
+                        !                 Minimum of 1% of sand and clay 
+                        zsand(i,k) =  max( zsanden(i,k) , 1.0) 
+                        
+                        zclay(i,k) =  max( zclayen(i,k) , 1.0)
+                        
+                        if ( zsand(i,k)+zclay(i,k).gt.100 ) then
+                           ! reduce sand & clay  percentage proportionally 
+                           tempsum= zsand(i,k) + zclay(i,k)
+                           zsand(i,k) = zsand(i,k)/tempsum * 100.
+                           zclay(i,k) = zclay(i,k)/tempsum * 100.
+                        endif
+                     endif
+                  endif watmask1
+                  
+               enddo
+            enddo
+            ! read in texture, do coherence check 
+            ! initialize soil characteristics 
+            call inisoili_svs( ni, trnch )
+         endif soil_data
+
+         ! Make sure the entry fields are coherent ...
+
+         call coherence3(ni, trnch)
+
+
+      endif kount_zero ! kount =0.0
+
+     END IF IF_SVS
+
+
 
    !========================================================================
    !                             for TEB only

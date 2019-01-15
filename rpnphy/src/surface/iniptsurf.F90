@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN ------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,10 +12,10 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!-------------------------------------- LICENCE END ---------------------------
 
 !/@*
-subroutine iniptsurf3(ni,nk)
+function iniptsurf4(ni,nk) result(F_istat)
    use sfc_options
    use sfcbus_mod
    implicit none
@@ -27,6 +27,7 @@ subroutine iniptsurf3(ni,nk)
    ! NK       vertical dimension
 
    integer, intent(in) :: ni, nk
+   integer :: F_istat
 
    !@Author B. Bilodeau (Sept 1999)
    !@Revisions
@@ -42,42 +43,48 @@ subroutine iniptsurf3(ni,nk)
    !                                   to calculate pointer position
    !*@/
 
-!!$   external :: sfcbus_data
-
 #include <msg.h>
 #include <rmnlib_basics.hf>
-   include "thermoconsts.inc"
 
-   integer, parameter :: nb_agrege = 22
+   integer, parameter :: nb_agrege = 48
    integer, parameter :: nb_glaciers = 1
    integer, parameter :: nb_water = 4
    integer, parameter :: nb_ice = 2
-   integer, parameter :: nb_urb = 68
+   integer, parameter :: nb_urb = 95
 
    character(len=16) :: agrege_out(nb_agrege), &
         glaciers_out(nb_glaciers), water_out(nb_water), ice_out(nb_ice), &
         urb_out(nb_urb), tmp_S
    integer :: i, j, l, m, ier
-   
+ 
    ! les variables de sortie du module "soils" ont preseance
    ! sur celles de tous les autres schemas, sauf exceptions
    ! contenues dans les listes plus bas
 
    ! liste des variables de surface a agreger
+   !#TODO: check that a trimming is not done on longer vars
    data agrege_out   / &
         !  ces variables sont moyennees lineairement
         'ALFAQ'    , 'ALFAT'    , 'ALVIS'    , 'BM'       , 'BT'       , &
-        'FC'       , 'FRV'      , 'FTEMP'    , 'FV'       , &
+        'EMISR'    , 'FC'       , 'FRV'      , 'FTEMP'    , 'FV'       , &
         'FVAP'     , 'HST'      , 'ILMO'     , &
-        'QDIAG'    , 'QSURF'    , 'SNODP'    , 'TDIAG'    , 'TSURF'    , &
-        'UDIAG'    , 'VDIAG'    , &
-        
+        'QDIAG'    , 'QSURF'    , 'RUNOFFTOT', 'SNODP'    , 'TDIAG'    , &
+        'TSURF'    , 'UDIAG'    , 'VDIAG'    , &
+        'QDIAGTYP' , 'TDIAGTYP' , 'UDIAGTYP' , 'VDIAGTYP' , &
+        'QDIAGTYPV', 'TDIAGTYPV', 'UDIAGTYPV', 'VDIAGTYPV', &
+        'YUTCISUN' , 'YUTCISHADE' ,                                      &
+        'YWBGTSUN' , 'YWBGTSHADE' , 'YRADSUN', 'YRADSHADE',              &
+        'YTGLBSUN' , 'YTGLBSHADE' , 'YTWETB' ,                           &
+        'YQ1' , 'YQ2' , 'YQ3' , 'YQ4' , 'YQ5' ,                          &
+        'YQ6' , 'YQ7' ,    &
+ 
         !  le flux infrarouge emis par la surface, qui est
         !  proportionnel a TSRAD**4, est moyenne lineairement
         'TSRAD'    , &
-        
+ 
         !  on prend la moyennne logarithmique des longueurs de rugosite
         'Z0'       , 'Z0T' &
+
         /
 
    ! liste des variables de sortie du module "glaciers"
@@ -109,10 +116,18 @@ subroutine iniptsurf3(ni,nk)
         'ALB_WALL' , 'EMIS_ROOF', 'EMIS_ROAD', 'EMIS_WALL', 'HC_ROOF'  , &
         'HC_ROAD' , 'HC_WALL'  , 'TC_ROOF'  , 'TC_ROAD'  , 'TC_WALL'  , &
         'D_ROAD'  , 'D_ROOF'   , 'D_WALL'   , 'H_TRAFFIC', 'H_INDUSTRY',&
-        'LE_TRAFFIC','LE_INDUSTRY', 'EMIS_TOWN' & 
+        'LE_TRAFFIC','LE_INDUSTRY', 'EMTW', 'ALSCATW', 'TSRADTW'        &
+        ,'YRADIN', 'YRADRFSUN', 'YRADRFSHADE','YUTCIIN','YUTCIRFSUN'    &
+        ,'YUTCIRFSHADE', 'YUTCICIN','YWBGTRFSUN','YWBGTRFSHADE'         &
+        ,'YUTCICSUN','YUTCICSHADE', 'YUTCICRFSUN','YUTCICRFSHADE'       &
+        ,'YTGLBRFSUN','YTGLBRFSHADE','YTWETBRF', 'YTRFZT', 'YTRDZT',    &
+        'YURDZU' , 'YQ8', 'YQ9', 'YQ10','YQ11' ,'YQ12' , 'YQ13'         &
         /
 
+   F_istat = RMN_ERR
+
    ier = sfcbus_init()
+   if (.not.RMN_IS_OK(ier)) return
 
    ! multiple 2D fields and mosaic tiles are stored in
    ! slices of NI where the order is as follows:
@@ -182,7 +197,7 @@ subroutine iniptsurf3(ni,nk)
 
                print *,'(iniptsurf3) ',vl(j)%mul,nsurf,trim(vl(j)%n)
                call msg(MSG_ERROR, '(iniptsurf3) MULTIPLICITY FACTOR EXCEEDED FOR VAR: '//trim(vl(j)%n))
-               call qqexit(1)
+               return
 
             endif
 
@@ -242,5 +257,6 @@ subroutine iniptsurf3(ni,nk)
    write(tmp_S,*) indx_agrege
    call msg(MSG_INFO,'(iniptsurf) AGGREGATED VALUE '//trim(tmp_S))
 
+   F_istat = RMN_OK
    return
-end subroutine iniptsurf3
+end function iniptsurf4

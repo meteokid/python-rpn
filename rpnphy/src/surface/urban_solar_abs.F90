@@ -22,7 +22,9 @@
                                PDN_ROOF, PDF_ROOF, PDN_ROAD, PDF_ROAD,       &
                                PABS_SW_ROOF, PABS_SW_ROAD, PABS_SW_WALL,     &
                                PABS_SW_SNOW_ROOF, PABS_SW_SNOW_ROAD,         &
-                               PDIR_ALB_TOWN, PSCA_ALB_TOWN                  )
+                               PDIR_ALB_TOWN, PSCA_ALB_TOWN ,                &
+                               PREF_SW_ROOF, PREF_SW_ROAD, PREF_SW_WALL,     &
+                               PREF_SW_SNOW_ROOF, PREF_SW_SNOW_ROAD         )
 !   ##########################################################################
 !
 !!****  *URBAN_SOLAR_ABS*  
@@ -226,6 +228,12 @@ REAL, DIMENSION(:), INTENT(OUT)   :: PABS_SW_SNOW_ROAD ! solar radiation absorbe
 REAL, DIMENSION(:), INTENT(OUT)   :: PDIR_ALB_TOWN     ! town direct albedo
 REAL, DIMENSION(:), INTENT(OUT)   :: PSCA_ALB_TOWN     ! town diffuse albedo
 !
+REAL, DIMENSION(:), INTENT(OUT)   :: PREF_SW_ROAD      ! reflected solar radiations
+REAL, DIMENSION(:), INTENT(OUT)   :: PREF_SW_WALL      ! by roads and walls and roofs
+REAL, DIMENSION(:), INTENT(OUT)   :: PREF_SW_ROOF      ! 
+REAL, DIMENSION(:), INTENT(OUT)   :: PREF_SW_SNOW_ROOF      ! reflected solar radiations
+REAL, DIMENSION(:), INTENT(OUT)   :: PREF_SW_SNOW_ROAD      ! by snow over road and roof
+!
 !*      0.2    declarations of local variables
 !
 !                                                           
@@ -259,6 +267,17 @@ REAL, DIMENSION(SIZE(PDIR_SW)) :: ZABS_SCA_SW_WALL      ! road, wall, and snow
 REAL, DIMENSION(SIZE(PDIR_SW)) :: ZABS_SCA_SW_SNOW_ROOF ! over roof and wall,
 REAL, DIMENSION(SIZE(PDIR_SW)) :: ZABS_SCA_SW_SNOW_ROAD ! coming from diffuse rad.
 !
+REAL, DIMENSION(SIZE(PDIR_SW)) :: ZREF_DIR_SW_ROOF      ! solar radiation
+REAL, DIMENSION(SIZE(PDIR_SW)) :: ZREF_DIR_SW_ROAD      ! reflected by roofs,
+REAL, DIMENSION(SIZE(PDIR_SW)) :: ZREF_DIR_SW_WALL      ! road, wall, and snow
+REAL, DIMENSION(SIZE(PDIR_SW)) :: ZREF_DIR_SW_SNOW_ROOF ! over roof and wall,
+REAL, DIMENSION(SIZE(PDIR_SW)) :: ZREF_DIR_SW_SNOW_ROAD ! coming from direct rad.
+REAL, DIMENSION(SIZE(PDIR_SW)) :: ZREF_SCA_SW_ROOF      ! solar radiation
+REAL, DIMENSION(SIZE(PDIR_SW)) :: ZREF_SCA_SW_ROAD      ! reflected by roofs,
+REAL, DIMENSION(SIZE(PDIR_SW)) :: ZREF_SCA_SW_WALL      ! road, wall, and snow
+REAL, DIMENSION(SIZE(PDIR_SW)) :: ZREF_SCA_SW_SNOW_ROOF ! over roof and wall,
+REAL, DIMENSION(SIZE(PDIR_SW)) :: ZREF_SCA_SW_SNOW_ROAD ! coming from diffuse rad.
+!
 INTEGER                        :: JI                    ! loop index
 !-------------------------------------------------------------------------------
 !
@@ -267,6 +286,12 @@ PABS_SW_ROAD(:) = 0.
 PABS_SW_WALL(:) = 0.
 PABS_SW_SNOW_ROOF(:) = 0.
 PABS_SW_SNOW_ROAD(:) = 0.
+!
+PREF_SW_ROOF(:) = 0.
+PREF_SW_ROAD(:) = 0.
+PREF_SW_WALL(:) = 0.
+PREF_SW_SNOW_ROOF(:) = 0.
+PREF_SW_SNOW_ROAD(:) = 0.
 !
 ZDIR_SW = MAX(PDIR_SW,1.E-3)
 ZSCA_SW = MAX(PSCA_SW,1.E-3)
@@ -281,18 +306,27 @@ ZABS_DIR_SW_SNOW_ROOF(:) = ZDIR_SW(:) * (1. - PASNOW_ROOF(:))
 ZABS_SCA_SW_ROOF     (:) = ZSCA_SW(:) * (1. - PALB_ROOF  (:))
 ZABS_SCA_SW_SNOW_ROOF(:) = ZSCA_SW(:) * (1. - PASNOW_ROOF(:))
 !
+ZREF_DIR_SW_ROOF     (:) = ZDIR_SW(:) * PALB_ROOF  (:)
+ZREF_DIR_SW_SNOW_ROOF(:) = ZDIR_SW(:) * PASNOW_ROOF(:)
+ZREF_SCA_SW_ROOF     (:) = ZSCA_SW(:) * PALB_ROOF  (:)
+ZREF_SCA_SW_SNOW_ROOF(:) = ZSCA_SW(:) * PASNOW_ROOF(:)
+!
 !-------------------------------------------------------------------------------
 !
 !*      2.     SOLAR RADIATIONS FOR ROADS AND WALLS
 !              ------------------------------------
 !
 DO JI=1,SIZE(PZENITH(:))
-    IF (ABS(0.5*XPI-PZENITH(JI)) <  1.E-6) THEN
-        IF(0.5*XPI-PZENITH(JI) >= 0.) ZTANZEN(JI)=TAN(0.5*XPI-1.E-6)
-        IF(0.5*XPI-PZENITH(JI) < 0.) ZTANZEN(JI)=TAN(0.5*XPI+1.E-6)
-    ELSE
-        ZTANZEN(:) = TAN(PZENITH(:))
-    ENDIF
+!
+  IF (ABS(0.5*XPI-PZENITH(JI)) <  1.E-6) THEN
+    IF(0.5*XPI-PZENITH(JI) > 0.)  ZTANZEN(JI)=TAN(0.5*XPI-1.E-6)
+    IF(0.5*XPI-PZENITH(JI) <= 0.) ZTANZEN(JI)=TAN(0.5*XPI+1.E-6)
+  ELSEIF (ABS(PZENITH(JI)) <  1.E-6) THEN
+    ZTANZEN(JI)=SIGN(1.,PZENITH(JI))*TAN(1.E-6)
+  ELSE
+    ZTANZEN(JI) = TAN(PZENITH(JI))
+  ENDIF
+
 ENDDO
 
 !*      2.1    radiation coefficients
@@ -333,14 +367,16 @@ ZAALB_ROAD(:) =  PDF_ROAD(:) * PALB_ROAD  (:) &
 !              ---------------------------------------------
 !
 CALL SOLAR_REFLECTIONS(ZDIR_SW_ROAD,ZDIR_SW_WALL,                               &
-                       ZABS_DIR_SW_ROAD, ZABS_DIR_SW_SNOW_ROAD,ZABS_DIR_SW_WALL )
+                       ZABS_DIR_SW_ROAD, ZABS_DIR_SW_SNOW_ROAD,ZABS_DIR_SW_WALL,&
+                       ZREF_DIR_SW_ROAD,ZREF_DIR_SW_SNOW_ROAD,ZREF_DIR_SW_WALL  )
 !
 !
 !*      2.9    absorption of diffuse incoming solar radiation
 !              ----------------------------------------------
 !
 CALL SOLAR_REFLECTIONS(ZSCA_SW_ROAD,ZSCA_SW_WALL,                               &
-                       ZABS_SCA_SW_ROAD, ZABS_SCA_SW_SNOW_ROAD,ZABS_SCA_SW_WALL )
+                       ZABS_SCA_SW_ROAD, ZABS_SCA_SW_SNOW_ROAD,ZABS_SCA_SW_WALL,&
+                       ZREF_SCA_SW_ROAD,ZREF_SCA_SW_SNOW_ROAD,ZREF_SCA_SW_WALL )
 !
 !-------------------------------------------------------------------------------
 !
@@ -372,6 +408,11 @@ WHERE(PDIR_SW(:)==0.)
   ZABS_DIR_SW_WALL     (:) = 0.
   ZABS_DIR_SW_SNOW_ROOF(:) = 0.
   ZABS_DIR_SW_SNOW_ROAD(:) = 0.
+  ZREF_DIR_SW_ROOF     (:) = 0.
+  ZREF_DIR_SW_ROAD     (:) = 0.
+  ZREF_DIR_SW_WALL     (:) = 0.
+  ZREF_DIR_SW_SNOW_ROOF(:) = 0.
+  ZREF_DIR_SW_SNOW_ROAD(:) = 0.
 END WHERE
 !
 WHERE(PSCA_SW(:)==0.)
@@ -380,6 +421,11 @@ WHERE(PSCA_SW(:)==0.)
   ZABS_SCA_SW_WALL     (:) = 0.
   ZABS_SCA_SW_SNOW_ROOF(:) = 0.
   ZABS_SCA_SW_SNOW_ROAD(:) = 0.
+  ZREF_SCA_SW_ROOF     (:) = 0.
+  ZREF_SCA_SW_ROAD     (:) = 0.
+  ZREF_SCA_SW_WALL     (:) = 0.
+  ZREF_SCA_SW_SNOW_ROOF(:) = 0.
+  ZREF_SCA_SW_SNOW_ROAD(:) = 0.
 END WHERE
 !
 !-------------------------------------------------------------------------------
@@ -407,13 +453,39 @@ PABS_SW_SNOW_ROOF(:) = ZABS_DIR_SW_SNOW_ROOF(:) + ZABS_SCA_SW_SNOW_ROOF(:)
 !
 PABS_SW_SNOW_ROAD(:) = ZABS_DIR_SW_SNOW_ROAD(:) + ZABS_SCA_SW_SNOW_ROAD(:)
 !
+!-------------------------------------------------------------------------------
+!
+!*      6.     Total solar radiation reflected by each surface
+!              ----------------------------------------------
+!
+! solar radiation reflected by roofs
+!
+PREF_SW_ROOF     (:) = ZREF_DIR_SW_ROOF     (:) + ZREF_SCA_SW_ROOF     (:)
+!
+! solar radiation reflected by roads
+!
+PREF_SW_ROAD     (:) = ZREF_DIR_SW_ROAD     (:) + ZREF_SCA_SW_ROAD     (:)
+!
+! solar radiation reflected by walls
+!
+PREF_SW_WALL     (:) = ZREF_DIR_SW_WALL     (:) + ZREF_SCA_SW_WALL     (:)
+!
+! solar radiation reflected by snow on roofs
+!
+PREF_SW_SNOW_ROOF(:) = ZREF_DIR_SW_SNOW_ROOF(:) + ZREF_SCA_SW_SNOW_ROOF(:)
+!
+! solar radiation reflected by snow on roads
+!
+PREF_SW_SNOW_ROAD(:) = ZREF_DIR_SW_SNOW_ROAD(:) + ZREF_SCA_SW_SNOW_ROAD(:)
+!
 !
 !-------------------------------------------------------------------------------
 !
 CONTAINS
 !
 !-------------------------------------------------------------------------------
-SUBROUTINE SOLAR_REFLECTIONS(ZSW_ROAD,ZSW_WALL,ZABS_SW_ROAD,ZABS_SW_SNOW,ZABS_SW_WALL)
+SUBROUTINE SOLAR_REFLECTIONS(ZSW_ROAD,ZSW_WALL,ZABS_SW_ROAD,ZABS_SW_SNOW,ZABS_SW_WALL, &
+			     ZSREF_SW_ROAD,ZSREF_SW_SNOW,ZSREF_SW_WALL)
 !
 REAL, DIMENSION(:), INTENT(IN) :: ZSW_ROAD     ! solar radiation received by road
 REAL, DIMENSION(:), INTENT(IN) :: ZSW_WALL     ! and wall before reflection
@@ -421,10 +493,12 @@ REAL, DIMENSION(:), INTENT(OUT):: ZABS_SW_ROAD ! solar radiation absorbed by
 REAL, DIMENSION(:), INTENT(OUT):: ZABS_SW_SNOW ! solar radiation absorbed by
 REAL, DIMENSION(:), INTENT(OUT):: ZABS_SW_WALL ! road, snow over road, and wall 
 !
+REAL, DIMENSION(:), INTENT(OUT):: ZSREF_SW_ROAD ! sum of all reflections
+REAL, DIMENSION(:), INTENT(OUT):: ZSREF_SW_SNOW ! sum of all reflections
+REAL, DIMENSION(:), INTENT(OUT):: ZSREF_SW_WALL ! against road and wall
+!
 REAL, DIMENSION(SIZE(ZSW_ROAD)) :: ZREF0_SW_ROAD ! first solar reflection
 REAL, DIMENSION(SIZE(ZSW_ROAD)) :: ZREF0_SW_WALL ! against road and wall
-REAL, DIMENSION(SIZE(ZSW_ROAD)) :: ZSREF_SW_ROAD ! sum of all reflections
-REAL, DIMENSION(SIZE(ZSW_ROAD)) :: ZSREF_SW_WALL ! against road and wall
 !
 !
 !*      A.     first solar radiation reflection
@@ -475,6 +549,26 @@ REAL, DIMENSION(SIZE(ZSW_ROAD)) :: ZSREF_SW_WALL ! against road and wall
 !              ---------------------------------------
 !
   ZABS_SW_WALL(:) = (1.-PALB_WALL(:))                              &
+                    * (   ZSW_WALL(:)                              &
+                        + ZSREF_SW_ROAD(:) *        PSVF_WALL(:)   &
+                        + ZSREF_SW_WALL(:) * (1.-2.*PSVF_WALL(:)) )
+!
+!*      E.     total solar radiation reflected by roads
+!              ---------------------------------------
+!
+  ZSREF_SW_ROAD(:) = PALB_ROAD(:)                                   &
+                    * (   ZSW_ROAD(:)                              &
+                        + ZSREF_SW_WALL(:) * (1.-   PSVF_ROAD(:)) )
+!
+  ZSREF_SW_SNOW(:) = PASNOW_ROAD  (:)                               &
+                    * (   ZSW_ROAD(:)                              &
+                        + ZSREF_SW_WALL(:) * (1.-   PSVF_ROAD(:)) )
+!
+!
+!*      F.     total solar radiation reflected by walls
+!              ---------------------------------------
+!
+  ZSREF_SW_WALL(:) = PALB_WALL(:)                                   &
                     * (   ZSW_WALL(:)                              &
                         + ZSREF_SW_ROAD(:) *        PSVF_WALL(:)   &
                         + ZSREF_SW_WALL(:) * (1.-2.*PSVF_WALL(:)) )

@@ -14,8 +14,6 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 module phy_step_mod
-   use phy_options, only: phy_init_ctrl, PHY_CTRL_INI_OK, dyninread_list_s, delt, date, satuco
-   use phy_typedef, only: PHY_NONE
    private
    public :: phy_step
 
@@ -23,7 +21,10 @@ contains
 
   !/@*
   function phy_step (F_stepcount, F_stepdriver) result(F_istat)
-    use str_mod, only: str_concat
+    use series_mod, only: series_stepinit, series_stepend
+    use phy_status, only: phy_error_L, phy_init_ctrl, PHY_CTRL_INI_OK, PHY_NONE
+    use phy_options, only: delt, cond_infilter, sgo_tdfilter
+    use phygridmap, only: phydim_ni, phydim_nj, phydim_nk
     use physlb_mod, only: physlb1
     use cpl_itf   , only: cpl_step
     use phybus, only: entbus, perbus, dynbus, volbus
@@ -42,17 +43,14 @@ contains
 #include <arch_specific.hf>
 #include <WhiteBoard.hf>
 #include <msg.h>
-    include "phygrd.cdk"
     include "physteps.cdk"
 
     integer, external :: phyput_input_param, sfc_get_input_param
 
     integer, save :: pslic
 
-    logical :: series_L, srsus_L
-    integer :: istat, type1, sizeof1, ntr, options1
-    character(len=256) :: str256
-
+    integer :: istat
+    real :: cond_sig, gwd_sig
     !---------------------------------------------------------------
     F_istat = RMN_ERR
     if (phy_init_ctrl == PHY_NONE) then
@@ -62,35 +60,18 @@ contains
        call msg(MSG_ERROR,'(phy_step) Physics not properly initialized.')
        return
     endif
-
     if (F_stepcount == 0) then
-       ntr = 0
-       istat = wb_get_meta('itf_phy/READ_TRACERS', type1, sizeof1, ntr, options1)
-       if (WB_IS_OK(istat) .and. ntr > 0) then
-          allocate(dyninread_list_s(ntr))
-          istat = wb_get('itf_phy/READ_TRACERS', dyninread_list_s, ntr)
-          if (.not.WB_IS_OK(istat)) then
-             call msg (MSG_ERROR, &
-                  '(phy_step) Unable to retrieve tracer WB entry')
-             return
-          endif
-          call str_concat(str256, dyninread_list_s, ', ')
-          call msg(MSG_INFO,'(phy_step) List of read tracers: '//trim(str256))
-      else
-          call msg(MSG_INFO,'(phy_step) No list of read tracers found')
-          ntr = 0
-          allocate(dyninread_list_s(1))
-          dyninread_list_s = ''
-       endif
+      if (.not.WB_IS_OK(wb_get('dyn/cond_infilter',cond_sig))) cond_sig = -1.
+      if (.not.WB_IS_OK(wb_get('dyn/sgo_tdfilter',gwd_sig))) gwd_sig = -1.
+      if (cond_infilter /= cond_sig .or. sgo_tdfilter /= gwd_sig) then
+         call msg(MSG_ERROR, '(phy_step) cond_infilter or sgo_tdfilter requested in but not supported by dyn')
+         return
+      endif
     endif
 
-    istat = wb_get('model/series/P_serg_srsus_L' , srsus_L)
-    if (istat /= WB_OK) call msg(MSG_ERROR,'(wb P_serg_srsus_L)')
-    series_L = (srsus_L .and. (F_stepcount >= 1))
-
-    if (series_L) &
-         call ser_ctrl2(perbus, size(perbus,1), phydim_ni, &
-                        phydim_nj, F_stepcount, delt, date, satuco)
+    istat = series_stepinit(F_stepcount)
+    if (.not.RMN_IS_OK(istat)) &
+         call msg(MSG_ERROR,'(phy_step) Problem in series step init')
 
     pslic = 0
     step_kount  = F_stepcount
@@ -107,10 +88,16 @@ contains
          size(entbus,1), size(dynbus,1), size(perbus,1), size(volbus,1), &
          F_stepcount, phydim_ni, phydim_nj, phydim_nk, pslic)
 !$omp end parallel
+    if (phy_error_L) return
 
-    if (series_L) call ser_out(F_stepcount == 1, date, satuco)
+    istat = series_stepend()
+    if (.not.RMN_IS_OK(istat)) &
+         call msg(MSG_ERROR,'(phy_step) Problem in series step end')
+
+    if (phy_error_L) return
 
     call phystats(F_stepcount, delt)
+    if (phy_error_L) return
 
     F_istat = RMN_OK
     !---------------------------------------------------------------

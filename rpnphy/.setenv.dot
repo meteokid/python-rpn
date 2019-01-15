@@ -1,45 +1,21 @@
 #!/bin/ksh
+# COMP_ARCH_DEFAULT=${COMP_ARCH_DEFAULT:-intel13sp1u2}
+# [[ x$BASE_ARCH == xAIX-powerpc7 || x$ORDENV_PLAT == xaix-7.1-ppc7-64 ]] && COMP_ARCH_DEFAULT=xlf13
+# if [[ x"$1" != x"savehist=500" ]] ; then
+#    export COMP_ARCH=${1:-${COMP_ARCH_DEFAULT}}
+# else
+#    export COMP_ARCH=${COMP_ARCH_DEFAULT}
+# fi
+# echo "USING: COMP_ARCH=$COMP_ARCH"
 
-DESC='Load package dependencies'
-USAGE="USAGE: ${MYSELF} [-v] [-f] [--cmc|--science] [COMP_ARCH]"
-
-usage_long() {
-   toto=$(echo -e $USAGE)
-   more <<EOF
-$DESC
-
-$toto
-
-Options:
-    -h, --help         : print this help
-    -v, --verbose      : verbose mode
-        --cmc          : set dependencies for CMC network
-        --science      : set dependencies for Sience network
-EOF
-}
-
-RDENETWORK=${RDENETWORK:-'science'}
-COMP_ARCH_DEFAULT=intel13sp1u2
-[[ x$BASE_ARCH == xAIX-powerpc7 ]] && COMP_ARCH_DEFAULT=xlf13
-verbose=0
-while [[ $# -gt 0 ]] ; do
-   case $1 in
-      (-h|--help) usage_long; exit 0;;
-      (-v|--verbose) ((verbose=verbose+1));;
-      (--cmc) RDENETWORK=cmc ;;
-      (--science) RDENETWORK=science ;;
-      (savehist*) ;;
-      # (*) if [[ x$1 != x ]] ; then myerror "Option Not recognized: $1";fi;;
-      (*) COMP_ARCH=${1:-${COMP_ARCH_DEFAULT}} ;;
-    esac
-    shift
-done
-
-echo "USING: COMP_ARCH=$COMP_ARCH"
-echo "LINKING for ${RDENETWORK:-science} NETWORK"
-for item in $(ls *-${RDENETWORK:-science}); do
-   ln -sf ${item} ${item%-*}
-done
+# if [[ -f .setenv_${COMP_ARCH}.dot ]] ; then
+#    echo ". .setenv_${COMP_ARCH}.dot"
+#    . .setenv_${COMP_ARCH}.dot
+# fi
+# if [[ -f ssmusedep_${COMP_ARCH}.bndl ]] ; then
+#    echo ". s.ssmuse.dot ssmusedep_${COMP_ARCH}.bndl"
+#    . s.ssmuse.dot $(cat ssmusedep_${COMP_ARCH}.bndl)
+# fi
 
 if [[ -f ssmusedep.bndl ]] ; then
    echo ". s.ssmuse.dot ssmusedep.bndl"

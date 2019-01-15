@@ -55,11 +55,13 @@ rpnphy_ssm_arch_rm:
 	rm -rf $(BUILDSSM)/$(RPNPHY_SSMARCH_NAME)
 $(BUILDSSM)/$(RPNPHY_SSMARCH_NAME):
 	mkdir -p $@/lib/$(EC_ARCH) ; \
+	ln -s ./$(EC_ARCH)/. $@/lib/$(COMP_ARCH) ; \
 	touch $@/lib/libdummy_$(RPNPHY_SSMARCH_NAME).a ; \
 	cd $(LIBDIR) ; \
 	rsync -av `ls librpnphy*.a librpnphy*.a.fl librpnphy*.so 2>/dev/null` $@/lib/$(EC_ARCH)/ ; \
 	if [[ x$(MAKE_SSM_NOMOD) != x1 ]] ; then \
 		mkdir -p $@/include/$(EC_ARCH) ; \
+		ln -s ./$(EC_ARCH)/. $@/include/$(COMP_ARCH) ; \
 		touch $@/include/dummy_$(RPNPHY_SSMARCH_NAME).inc ; \
 		cd $(MODDIR) ; \
 		cp $(RPNPHY_MOD_FILES) $@/include/$(EC_ARCH) ; \
@@ -86,6 +88,7 @@ $(BUILDSSM)/$(RPNPHY_SSMARCH_NAME):
 
 
 .PHONY: rpnphy_install rpnphy_uninstall
+#TODO: install all pkg should be a git repos
 rpnphy_install: 
 	if [[ x$(CONFIRM_INSTALL) != xyes ]] ; then \
 		echo "Please use: make $@ CONFIRM_INSTALL=yes" ;\
@@ -93,6 +96,7 @@ rpnphy_install:
 	fi
 	cd $(SSM_DEPOT_DIR) ;\
 	rdessm-install -v \
+			--git \
 			--dest=$(RPNPHY_SSM_BASE_DOM)/rpnphy_$(RPNPHY_VERSION) \
 			--bndl=$(RPNPHY_SSM_BASE_BNDL)/$(RPNPHY_VERSION).bndl \
 			--pre=$(rpnphy)/ssmusedep.bndl \

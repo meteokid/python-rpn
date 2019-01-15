@@ -52,7 +52,15 @@ INTERFACE
                      PMELT_ROAD,                                              &
                      PRN_TOWN, PH_TOWN, PLE_TOWN, PGFLUX_TOWN, PEVAP_TOWN,    &
                      PRUNOFF_TOWN, PUSTAR_TOWN, PCH_TOWN, PRI_TOWN,           &
-                     PTS_TOWN, PEMIS_TOWN, PDIR_ALB_TOWN, PSCA_ALB_TOWN, PRESA_TOWN )
+                     PTS_TOWN, PEMIS_TOWN, PDIR_ALB_TOWN, PSCA_ALB_TOWN, PRESA_TOWN , &
+                     PTRAD_IN, PTRAD_SUN, PTRAD_SHADE, PTRAD_RFSUN, PTRAD_RFSHADE,    &
+            PTGLOBE_SUN, PTGLOBE_SHADE, PTGLOBE_RFSUN, PTGLOBE_RFSHADE,       &
+            PTWETB,PTWETB_ROOF,                                               &
+            PUTCI_IN, PUTCI_OUTSUN, PUTCI_OUTSHADE, PUTCI_RFSUN, PUTCI_RFSHADE, &
+            WBGT_SUN, WBGT_SHADE, WBGT_RFSUN, WBGT_RFSHADE,                     &
+            PUTCIC_IN,PUTCIC_OUTSUN,PUTCIC_OUTSHADE,PUTCIC_RFSUN,PUTCIC_RFSHADE &
+            ,PTRFZT,PTRDZT,PURDZU				 	                                &
+           ,PQ1,PQ2,PQ3,PQ4,PQ5,PQ6,PQ7,PQ8,PQ9,PQ10,PQ11,PQ12,PQ13             )
 !
 !
 !*      0.1    declarations of arguments 
@@ -184,6 +192,54 @@ REAL, DIMENSION(:), INTENT(OUT)   :: PEMIS_TOWN    ! town equivalent emissivity
 REAL, DIMENSION(:), INTENT(OUT)   :: PDIR_ALB_TOWN ! town equivalent direct albedo
 REAL, DIMENSION(:), INTENT(OUT)   :: PSCA_ALB_TOWN ! town equivalent diffuse albedo
 REAL, DIMENSION(:), INTENT(OUT)   :: PRESA_TOWN    ! town aerodynamical resistance
+!
+REAL, DIMENSION(:), INTENT(OUT)   :: PTRAD_IN       ! body MRT inside building (K)
+REAL, DIMENSION(:), INTENT(OUT)   :: PTRAD_SUN      ! body MRT in the exposed street (K)
+REAL, DIMENSION(:), INTENT(OUT)   :: PTRAD_SHADE    ! body MRT in the shaded street (K)
+REAL, DIMENSION(:), INTENT(OUT)   :: PTRAD_RFSUN      ! body MRT on the exposed roof (K)
+REAL, DIMENSION(:), INTENT(OUT)   :: PTRAD_RFSHADE    ! body MRT on the shaded roof (K)
+REAL, DIMENSION(:), INTENT(OUT)   :: PTWETB          ! wet-bulb temperature over the ground (K)
+REAL, DIMENSION(:), INTENT(OUT)   :: PTWETB_ROOF     ! wet-bulb temperature over the roof (K)
+
+REAL, DIMENSION(:), INTENT(OUT)   :: PUTCI_IN       ! UTCI inside building
+REAL, DIMENSION(:), INTENT(OUT)   :: PUTCI_OUTSUN   ! UTCI in the exposed street
+REAL, DIMENSION(:), INTENT(OUT)   :: PUTCI_OUTSHADE ! UTCI in the shaded street
+REAL, DIMENSION(:), INTENT(OUT)   :: PUTCI_RFSUN    ! UTCI on the exposed roof
+REAL, DIMENSION(:), INTENT(OUT)   :: PUTCI_RFSHADE  ! UTCI on the shaded roof
+
+REAL, DIMENSION(:), INTENT(OUT)   :: WBGT_SUN         ! WBGT  wet bulb globe temperature in the street (C)
+REAL, DIMENSION(:), INTENT(OUT)   :: WBGT_SHADE       ! WBGT  wet bulb globe temperature in the street (C)
+REAL, DIMENSION(:), INTENT(OUT)   :: WBGT_RFSUN       ! WBGT  wet bulb globe temperature on the roof (C)
+REAL, DIMENSION(:), INTENT(OUT)   :: WBGT_RFSHADE     ! WBGT  wet bulb globe temperature on the roof (C)
+
+REAL, DIMENSION(:), INTENT(OUT)   :: PUTCIC_IN       ! UTCI inside building
+REAL, DIMENSION(:), INTENT(OUT)   :: PUTCIC_OUTSUN   ! UTCI in the exposed street
+REAL, DIMENSION(:), INTENT(OUT)   :: PUTCIC_OUTSHADE ! UTCI in the shaded street
+REAL, DIMENSION(:), INTENT(OUT)   :: PUTCIC_RFSUN   ! UTCI in the exposed street
+REAL, DIMENSION(:), INTENT(OUT)   :: PUTCIC_RFSHADE ! UTCI in the shaded street
+!
+ REAL, DIMENSION(:), INTENT(OUT)   :: PTGLOBE_SUN      ! Globe Temperature in the exposed street (K)
+ REAL, DIMENSION(:), INTENT(OUT)   :: PTGLOBE_SHADE    ! Globe Temperature in the shaded street (K)
+ REAL, DIMENSION(:), INTENT(OUT)   :: PTGLOBE_RFSUN    ! Globe Temperature  on the exposed roof (K)
+ REAL, DIMENSION(:), INTENT(OUT)   :: PTGLOBE_RFSHADE  ! Globe Temperature  on the shaded roof  (K)
+!
+ REAL, DIMENSION(:), INTENT(OUT)   :: PTRFZT
+ REAL, DIMENSION(:), INTENT(OUT)   :: PTRDZT
+ REAL, DIMENSION(:), INTENT(OUT)   :: PURDZU
+!
+ REAL, DIMENSION(:), INTENT(OUT)   :: PQ1
+ REAL, DIMENSION(:), INTENT(OUT)   :: PQ2
+ REAL, DIMENSION(:), INTENT(OUT)   :: PQ3
+ REAL, DIMENSION(:), INTENT(OUT)   :: PQ4
+ REAL, DIMENSION(:), INTENT(OUT)   :: PQ5
+ REAL, DIMENSION(:), INTENT(OUT)   :: PQ6
+ REAL, DIMENSION(:), INTENT(OUT)   :: PQ7
+ REAL, DIMENSION(:), INTENT(OUT)   :: PQ8
+ REAL, DIMENSION(:), INTENT(OUT)   :: PQ9
+ REAL, DIMENSION(:), INTENT(OUT)   :: PQ10
+ REAL, DIMENSION(:), INTENT(OUT)   :: PQ11
+ REAL, DIMENSION(:), INTENT(OUT)   :: PQ12
+ REAL, DIMENSION(:), INTENT(OUT)   :: PQ13
 !
 !
 END SUBROUTINE TEB2

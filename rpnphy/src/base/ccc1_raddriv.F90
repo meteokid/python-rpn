@@ -15,34 +15,37 @@
 !-------------------------------------- LICENCE END --------------------------------------
 !**S/P RADDRIV - MAIN SUBROUTINE FOR RADIATIVE TRANSFER
 !
-      subroutine ccc1_raddriv (fsg, fsd, fsf, fsv, fsi, &
+      subroutine ccc1_raddriv2(fsg, fsd, fsf, fsv, fsi, &
                           fatb,fadb,fafb,fctb,fcdb,fcfb, &
                           albpla, fdl, ful, hrs, hrl, &
                           cst, csb, clt, clb, par, &
                           flxds,flxus,flxdl,flxul, &
                           fslo, fsamoon, ps, shtj, sig, &
                           tfull, tt, gt, o3, o3top, &
-                          qq, rmu, r0r, salb, taucs, &
+                          qq, rmu, r0r, salb, em0, taucs, &
                           omcs, gcs, taucl, omcl, gcl, &
                           cldfrac, tauae, exta, exoma, exomga, &
                           fa, absa, lcsw, lclw, &
                           il1, il2, ilg, lay, lev)
 !
+      use phy_options, only: RAD_NUVBRANDS,rad_atmpath
       implicit none
+
 #include <arch_specific.hf>
 #include "nbsnbl.cdk"
-include "thermoconsts.inc"
+#include "tdpack_const.hf"
 !
       integer ilg,lay,lev,il1,il2
       real fsg(ilg), fsd(ilg), fsf(ilg), fsv(ilg), fsi(ilg), &
            albpla(ilg), fdl(ilg), ful(ilg), hrs(ilg,lay), hrl(ilg,lay), &
            cst(ilg), csb(ilg), clt(ilg), clb(ilg), par(ilg)
 
-      real, dimension(ilg,6)  ::   fatb,fadb,fafb,fctb,fcdb,fcfb
+      real, dimension(ilg,RAD_NUVBRANDS) ::   fatb,fadb,fafb,fctb,fcdb,fcfb
 !
       real ps(ilg), shtj(ilg,lev), sig(ilg,lay), &
            tfull(ilg,lev), tt(ilg,lay), gt(ilg), o3(ilg,lay), &
-           o3top(ilg), qq(ilg,lay), rmu(ilg), r0r, salb(ilg,nbs)
+           o3top(ilg), qq(ilg,lay), rmu(ilg), r0r, salb(ilg,nbs), &
+           em0(ilg)
 !
       real taucs(ilg,lay,nbs), omcs(ilg,lay,nbs), gcs(ilg,lay,nbs), &
            taucl(ilg,lay,nbl), omcl(ilg,lay,nbl), gcl(ilg,lay,nbl), &
@@ -94,6 +97,7 @@ include "thermoconsts.inc"
 !              some versions)
 ! rmu          cosine of solar zenith angle
 ! r0r          calculate the variation of solar constant
+! em0          surface emissivity
 ! salb         surface albedo
 ! taucs/taucl  cloud optical depth for solar/longwave
 ! omcs/omcl    cloud single scattering albedo for solar / longwave
@@ -198,7 +202,6 @@ include "thermoconsts.inc"
       real, dimension(ilg,lay) :: gci
       real, dimension(ilg,lay) :: cldm
       real, dimension(ilg,lev) :: bf
-      real, dimension(ilg) :: em0
       integer, dimension(ilg,lay) :: inpt
       integer, dimension(ilg,lay) :: inptm
       integer, dimension(ilg,lay) :: inpr
@@ -359,12 +362,12 @@ include "thermoconsts.inc"
         flxds(i,lev)            =  0.0
         flxus(i,lev)            =  0.0
    20 continue
-      fatb(IL1:IL2,1:6) = 0.0
-      fadb(IL1:IL2,1:6) = 0.0
-      fafb(IL1:IL2,1:6) = 0.0
-      fctb(IL1:IL2,1:6) = 0.0
-      fcdb(IL1:IL2,1:6) = 0.0
-      fcfb(IL1:IL2,1:6) = 0.0
+      fatb(IL1:IL2,1:RAD_NUVBRANDS) = 0.0
+      fadb(IL1:IL2,1:RAD_NUVBRANDS) = 0.0
+      fafb(IL1:IL2,1:RAD_NUVBRANDS) = 0.0
+      fctb(IL1:IL2,1:RAD_NUVBRANDS) = 0.0
+      fcdb(IL1:IL2,1:RAD_NUVBRANDS) = 0.0
+      fcfb(IL1:IL2,1:RAD_NUVBRANDS) = 0.0
 !
       do 30 k = 1, lay
        kp1 = k + 1
@@ -444,7 +447,21 @@ include "thermoconsts.inc"
 !     use integer variables instead of actual integers
       ilg1=1
       ilg2=lengath
-!
+
+      ! Set the effecitve solar path length
+      select case (rad_atmpath)
+      case ('RODGERS67')
+         do i=ilg1,ilg2
+            j = isun(i)
+            rmug(i) =  sqrt (1224.0 * rmu(j) * rmu(j) + 1.0) / 35.0
+         enddo
+      case ('LI06')
+         do i=ilg1,ilg2
+            j = isun(i)
+            rmug(i) = (2.0 * rmu(j) + sqrt(498.5225 * rmu(j) * rmu(j) + 1.0)) / 24.35
+         enddo
+      end select
+
       do 230 i = ilg1, ilg2
         j = isun(i)
         o3topg(i)               =  o3top(j)
@@ -455,8 +472,6 @@ include "thermoconsts.inc"
 !     reusing dmix for a factor of rmu
 !----------------------------------------------------------------------
 !
-        rmug(i)                 =  sqrt (1224.0 * rmu(j) * rmu(j) + &
-                                   1.0) / 35.0
         c1(i)                   =  0.75 * rmug(i)
         c2(i)                   =  2.0 * c1(i) * rmug(i)
 !
@@ -926,7 +941,6 @@ include "thermoconsts.inc"
         clb(i)                  =  0.0
         mtop(i)                 =  0
         isun(i)                 =  1
-        em0(i)                  =  1.0
   510 continue
 !
 !----------------------------------------------------------------------

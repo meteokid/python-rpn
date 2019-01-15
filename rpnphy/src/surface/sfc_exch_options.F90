@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN ------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,80 +12,101 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!-------------------------------------- LICENCE END --------------------------
 
-subroutine sfcexch_options2()
-   use sfc_options
-   use sfcbus_mod
-   use timestr_mod, only: timestr2step
-   implicit none
+module sfcexch_options
+   private
+   public :: sfcexch_options3
+
+contains
+   !/@*
+   function sfcexch_options3() result(F_istat)
+      use sfc_options
+      use sfcbus_mod
+      use timestr_mod, only: timestr2step
+      implicit none
 #include <arch_specific.hf>
-   !@Object initialization of the surface parameters at the beginning
-   !        of each execution of the model
-   !@Author  L. Spacek (Spring 2013)
-   !@Revisions
-   !*
+      integer :: F_istat
+      !@Object initialization of the surface parameters at the beginning
+      !        of each execution of the model
+      !@Author  L. Spacek (Spring 2013)
+      !@Revisions
+      !*@/
 
 #include <msg.h>
 #include <rmnlib_basics.hf>
 #include <WhiteBoard.hf>
-   include "isbapar.cdk"
-   include "tebcst.cdk"
-   
-   integer :: ier, nv, options, iverb
-   !---------------------------------------------------------------------
+      include "isbapar.cdk"
+      include "tebcst.cdk"
 
-   options = WB_REWRITE_NONE+WB_IS_LOCAL
-   iverb = wb_verbosity(WB_MSG_INFO)
-   ier = WB_OK
+      integer :: ier, nv, options, iverb
+      !---------------------------------------------------------------------
+      F_istat = RMN_ERR
 
-   ier = min(wb_get('phy/date',date,nv),ier)
-   ier = min(wb_get('phy/climat',climat),ier)
-   ier = min(wb_get('phy/delt',delt),ier)
-   ier = min(wb_get('phy/fluvert',fluvert),ier)
-   ier = min(wb_get('phy/radslope',radslope),ier)
-   ier = min(wb_get('phy/radia',radia),ier)
+      options = WB_REWRITE_NONE+WB_IS_LOCAL
+      iverb = wb_verbosity(WB_MSG_INFO)
+      ier = WB_OK
 
-   ier = min(wb_put('sfc/as',as,options),ier)
-   ier = min(wb_put('sfc/beta',beta,options),ier)
-   ier = min(wb_put('sfc/ci',ci,options),ier)
-   ier = min(wb_put('sfc/critlac',critlac,options),ier)
-   ier = min(wb_put('sfc/critmask',critmask,options),ier)
-   ier = min(wb_put('sfc/critsnow',critsnow,options),ier)
-   ier = min(wb_put('sfc/drylaps',drylaps,options),ier)
-   ier = min(wb_put('sfc/impflx',impflx,options),ier)
-   ier = min(wb_put('sfc/indx_soil',indx_soil,options),ier)
-   ier = min(wb_put('sfc/indx_glacier',indx_glacier,options),ier)
-   ier = min(wb_put('sfc/indx_water',indx_water,options),ier)
-   ier = min(wb_put('sfc/indx_ice',indx_ice,options),ier)
-   ier = min(wb_put('sfc/indx_urb',indx_urb,options),ier)
-   ier = min(wb_put('sfc/indx_agrege',indx_agrege,options),ier)
-   ier = min(wb_put('sfc/leadfrac',leadfrac,options),ier)
-   ier = min(wb_put('sfc/n0rib',n0rib,options),ier)
-   ier = min(wb_put('sfc/tdiaglim',tdiaglim,options),ier)
-   ier = min(wb_put('sfc/vamin',vamin,options),ier)
-   ier = min(wb_put('sfc/veg_rs_mult',veg_rs_mult,options),ier)
-   ier = min(wb_put('sfc/z0dir',z0dir,options),ier)
-   ier = min(wb_put('sfc/zt',zt,options),ier)
-   ier = min(wb_put('sfc/zta',zta,options),ier)
-   ier = min(wb_put('sfc/zu',zu,options),ier)
-   ier = min(wb_put('sfc/zua',zua,options),ier)
+      ier = min(wb_get('phy/jdateo',jdateo),ier)
+      ier = min(wb_get('phy/climat',climat),ier)
+      ier = min(wb_get('phy/delt',delt),ier)
+      ier = min(wb_get('phy/flux_consist',atm_tplus),ier)
+      ier = min(wb_get('phy/rad_off',rad_off),ier)
+      ier = min(wb_get('phy/radslope',radslope),ier)
+      ier = min(wb_get('phy/atm_external',atm_external),ier)
+      ier = min(wb_get('phy/update_alwater',update_alwater),ier)
+      ier = min(wb_get('phy/z0veg_only',z0veg_only),ier)
 
-   iverb = wb_verbosity(iverb)
-   
-   if (.not.RMN_IS_OK(ier)) then
-      call msg(MSG_ERROR,'(sfc_exch_options) probleme in wb_put/get')
-      call qqexit(1)
-   endif
+      ier = min(wb_put('sfc/beta',beta,options),ier)
+      ier = min(wb_put('sfc/bh91_a',bh91_a,options),ier)
+      ier = min(wb_put('sfc/bh91_b',bh91_b,options),ier)
+      ier = min(wb_put('sfc/bh91_c',bh91_c,options),ier)
+      ier = min(wb_put('sfc/bh91_d',bh91_d,options),ier)
+      ier = min(wb_put('sfc/critlac',critlac,options),ier)
+      ier = min(wb_put('sfc/critmask',critmask,options),ier)
+      ier = min(wb_put('sfc/critsnow',critsnow,options),ier)
+      ier = min(wb_put('sfc/d97_as',d97_as,options),ier)
+      ier = min(wb_put('sfc/dg92_ci',dg92_ci,options),ier)
+      ier = min(wb_put('sfc/impflx',impflx,options),ier)
+      ier = min(wb_put('sfc/indx_soil',indx_soil,options),ier)
+      ier = min(wb_put('sfc/indx_glacier',indx_glacier,options),ier)
+      ier = min(wb_put('sfc/indx_water',indx_water,options),ier)
+      ier = min(wb_put('sfc/indx_ice',indx_ice,options),ier)
+      ier = min(wb_put('sfc/indx_urb',indx_urb,options),ier)
+      ier = min(wb_put('sfc/indx_agrege',indx_agrege,options),ier)
+      ier = min(wb_put('sfc/l07_ah',l07_ah,options),ier)
+      ier = min(wb_put('sfc/l07_am',l07_am,options),ier)
+      ier = min(wb_put('sfc/leadfrac',leadfrac,options),ier)
+      ier = min(wb_put('sfc/n0rib',n0rib,options),ier)
+      ier = min(wb_put('sfc/sl_func_stab',sl_func_stab,options),ier)
+      ier = min(wb_put('sfc/sl_func_unstab',sl_func_unstab,options),ier)
+      ier = min(wb_put('sfc/tdiaglim',tdiaglim,options),ier)
+      ier = min(wb_put('sfc/vamin',vamin,options),ier)
+      ier = min(wb_put('sfc/veg_rs_mult',veg_rs_mult,options),ier)
+      ier = min(wb_put('sfc/z0dir',z0dir,options),ier)
+      ier = min(wb_put('sfc/zt',zt,options),ier)
+      ier = min(wb_put('sfc/zta',zta,options),ier)
+      ier = min(wb_put('sfc/zu',zu,options),ier)
+      ier = min(wb_put('sfc/zua',zua,options),ier)
 
-   if (kntveg_S /= '') then
-      ier = timestr2step(kntveg, kntveg_S, dble(delt))
+      iverb = wb_verbosity(iverb)
+
       if (.not.RMN_IS_OK(ier)) then
-         call msg(MSG_ERROR,'(sfc_exch_options) Problem converting kntveg_S='//trim(kntveg_S))
-         call qqexit(1)
+         call msg(MSG_ERROR,'(sfc_exch_options) probleme in wb_put/get')
+         return
       endif
-   endif
 
-   !----------------------------------------------------------------------
-   return
-end subroutine sfcexch_options2
+      if (kntveg_S /= '') then
+         ier = timestr2step(kntveg, kntveg_S, dble(delt))
+         if (.not.RMN_IS_OK(ier)) then
+            call msg(MSG_ERROR,'(sfc_exch_options) Problem converting kntveg_S='//trim(kntveg_S))
+            return
+         endif
+      endif
+
+      F_istat = RMN_OK
+      !----------------------------------------------------------------------
+      return
+   end function sfcexch_options3
+
+end module sfcexch_options

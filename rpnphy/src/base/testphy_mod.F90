@@ -1,6 +1,7 @@
 module testphy_mod
   ! Implementation of RPN physics test stub
   use vgrid_descriptors, only: vgrid_descriptor
+  use mu_jdate_mod
   implicit none
   private
 
@@ -10,7 +11,10 @@ module testphy_mod
 
   ! External parameters
   integer, parameter, public :: PT_STDOUT=6,PT_STDERR=0,PT_OK=0,PT_ERR=-1
-  character(len=*), dimension(2), parameter, public :: PT_TEST_TYPES=(/'full','itf'/)
+  character(len=*), dimension(2), parameter, public :: PT_TEST_TYPES = (/ &
+       'full', &
+       'itf '  &
+       /)
 
   ! External subprograms
   public :: pt_run
@@ -368,9 +372,11 @@ contains
     integer, parameter :: COMPATIBILITY_LVL=13 !#TODO: was 6... may need to review
 
     ! Internal variables
+    integer(IDOUBLE) :: jdateo
     integer :: istat,dateo
     integer, dimension(:), pointer :: ip1m
     real, dimension(:), pointer :: std_p_prof
+    character(len=MU_JDATE_PDF_LEN) :: dateo_S
 
     ! Set error return status
     F_istat = PT_ERR
@@ -385,7 +391,6 @@ contains
 
     ! Start physics initialization with mandatory parameters
     istat = WB_OK
-    istat= min(wb_put('itf_phy/VSTAG',.true.),istat)
     istat= min(wb_put('itf_phy/TLIFT',0),istat)
     call handle_error_l(WB_IS_OK(istat),'itf_phy_init','Cannot fill required whiteboard entries')
 
@@ -400,7 +405,9 @@ contains
     call handle_error_l(istat==VGD_OK,'itf_phy_init','Cannot create a standard pressure profile')
 
     ! Obtain required values for final initialization
-    call datp2f(dateo,'20090427.000000')
+    dateo_S = '20090427.000000'
+    jdateo = jdate_from_print(dateo_S)
+    dateo  = jdate_to_cmc(jdateo)
 
     ! Complete physics initialization
     istat = phy_init(trim(input_path)//'/MODEL_INPUT/',dateo,STEP_DT,GRID_NAME,GRID_NAME,NK+1,std_p_prof)

@@ -14,11 +14,12 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
 
-      subroutine SKOCON3( ZTE   , ZQE   , ZCWE   , ZCRR  , ZCSR  , ZSRR, &
+      subroutine SKOCON4( ZTE   , ZQE   , ZCWE   , ZCRR  , ZCSR  , ZSRR, &
                           ZSSR  , ZSTCOV, ZCUCOV , TP    , TM    , QP  , &
                           QM    , TSS   , CWP    , CWM   , PSP   , &
                           PSM   , ILAB  , S      , NI    , NLEV  , &
-                          FACTDT, DT    , SATUCO,  CONVEC, prflx , swflx )
+                          DT    , SATUCO,  CONVEC, prflx , swflx )
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 !
@@ -31,7 +32,7 @@
               TSS(NI)       , CWP(NI,nlev), CWM(NI,nlev), &
               PSP(NI)       , PSM(NI)     , S(ni,*)     , &
               PRFLX(ni,nlev+1), SWFLX(ni,nlev+1)
-      real    FACTDT, DT
+      real    DT
       character(len=*) :: CONVEC
       logical SATUCO
 
@@ -85,8 +86,6 @@
 ! S       sigma levels
 ! NI      1st horizontal dimension
 ! NLEV    number of model levels
-! FACTDT  2 for 3-time level models
-!         1 for 2-time level models
 ! DT      timestep
 ! SATUCO  parameter to indicate
 ! CONVEC  convection switch
@@ -267,10 +266,8 @@
 !       TANVIL      IF T(KHT) .LE. TANVIL A STRATIFORM ANVIL CLOUD IS
 !                   CALCULATED IN THE TOP CONVECTIVE LAYER
 !       TCMTMX      (TC-T) - MAX
-!       FACTDT      2 FOR 3-TIME LEVEL MODELS
-!                   1 FOR 2-TIME LEVEL M0DELS
 !       DT          TIMESTEP
-!       RTWODT      = 1. / (FACTDT*DT)
+!       RTDT        = 1. / DT
 !       U00MAX      MAXIMUN ALLOWABLE VALUE OF MODIFIED HU00
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
@@ -278,7 +275,7 @@
 !           ------------------------------------------------------------
 !
 !
-      real    TWODT  , hfis   , xdpb
+      real    hfis   , xdpb
       real    YMN    , XXP    , XHJ    , XF     , XFPRIM , &
               XCWP1  , XPRADD , DTMELT , XROV   , XRO    , &
               XMIND  , DMELT  , SQMELT , XMELT  , DSNOW  , &
@@ -296,7 +293,7 @@
       real    CBFEFF , CTFRZ1 , HCCU   , PMOIST , HCUNRM , &
               HMRCU  , HMRST  , HTAUCU , TANVIL , HCST   , &
               HVTERM , CVPEVP , STPEVP , HVSNOW , SQVSNO , HKMELT , &
-              U00MAX , HU00   , RTWODT , &
+              U00MAX , HU00   , RDT , &
               ICLDDT2dt       , ICLDDTdt , &
               rICLDDT2dt      , rICLDDTdt
       real    yp, yt, yq, s1, s2, xt, QGTO, xd, xc, yc, ye, &
@@ -313,10 +310,6 @@
               JNR
       integer lqonof, KHBP1
       real    temp1         , temp2
-!***
-include "dintern.inc"
-include "thermoconsts.inc"
-!****
 !
       real    TVBEG  , REDUES , TVIRTC
       real    T0I    , TCI    , TSCALE , APRI  , &
@@ -451,8 +444,6 @@ include "thermoconsts.inc"
 !
       real Z1, Z2, Z3, Z4, Z5
 !
-include "fintern.inc"
-!
 !           FORMULA FOR THETHAE FROM A SERIES EXPANSION
 !
 !           TAE = PI*T*EXP(L*Q/(CP*T)) = EXP(CONAE)*PI*T*(1+(X*(1+.5*X))
@@ -586,9 +577,8 @@ include "fintern.inc"
       HKMELT = 3.E-5
       U00MAX = 0.99
       HU00 = 0.85
-      twodt = factdt * dt
-      RTWODT = 1. / TWODT        !AJOUT (WEI YU, 1994)
-      ICLDDT2dt = ICLDDT * TWODT
+      RDT = 1. / DT        !AJOUT (WEI YU, 1994)
+      ICLDDT2dt = ICLDDT * DT
       rICLDDT2dt = 1. / ICLDDT2dt
       ICLDDTdt = ICLDDT * DT
       rICLDDTdt = 1. / ICLDDTdt
@@ -637,10 +627,10 @@ include "fintern.inc"
 !vdir noloopchg
       do 17 il = 1, ni
          DLNPDT(il,JK) = ( 1. / HPK(il,JK) ) * S(il,JK)  &!Sigma local
-                        * ( PSP(IL) - PSM(IL) ) * rTWODT
-         HDTAD(il,JK) = ( HTP1(il,JK) - TM(il,JK) ) * rTWODT
-         HDQAD(il,JK) = ( HQP1(il,JK) - QM(il,JK) ) * rTWODT
-         HDCWAD(il,JK) = ( CWP(il,JK) - CCWM(il,JK) ) * rTWODT
+                        * ( PSP(IL) - PSM(IL) ) * rDT
+         HDTAD(il,JK) = ( HTP1(il,JK) - TM(il,JK) ) * rDT
+         HDQAD(il,JK) = ( HQP1(il,JK) - QM(il,JK) ) * rDT
+         HDCWAD(il,JK) = ( CWP(il,JK) - CCWM(il,JK) ) * rDT
 17    continue
 
       do 18 il = 1, ni
@@ -765,7 +755,7 @@ include "fintern.inc"
 !
 !-----------------------------------------------------------------------
 !
-         if (any(convec == (/'OLDKUO','FCPKUO'/))) then
+         if (convec == 'OLDKUO') then
 !           TRANSVIDAGE DE ILAB DANS CUMASK
             do JK=1,NLEV
                do IL=1,NI
@@ -952,7 +942,7 @@ include "fintern.inc"
             xp = xp * xp
 !***
             EVAPRI = PRCPST(il) - XP
-!     HEVAPR(JK) = EVAPRI/(ICLDDT*TWODT*XRO)
+!     HEVAPR(JK) = EVAPRI/(ICLDDT*DT*XRO)
             HEVAPR(il,JK) = EVAPRI / ( XMIND * XROV )
          endif
 !***
@@ -1035,11 +1025,11 @@ include "fintern.inc"
          if ( CUMASK(il,JK) .eq. 1. ) then
             HLDCP = HCPI * ELOFT(il,JK)
 !
-            QPREL = QM(il,JK) + TWODT * ( HDQAD(il,JK)-STHEAT(il,JK) )
-            TPREL = TM(il,JK) + TWODT * ( HDTAD(il,JK) + STHEAT(il,JK) &
+            QPREL = QM(il,JK) + DT * ( HDQAD(il,JK)-STHEAT(il,JK) )
+            TPREL = TM(il,JK) + DT * ( HDTAD(il,JK) + STHEAT(il,JK) &
                                                                * HLDCP )
             QSPREL = HQSAT(il,JK) + HSQ(il,JK) * ( TPREL - TM(il,JK) ) &
-                    / HLDCP - QM(il,JK) * DLNPDT(il,JK) * TWODT
+                    / HLDCP - QM(il,JK) * DLNPDT(il,JK) * DT
             QSPREL = AMAX1( QSPREL, 0.0 )
          endif
 
@@ -1047,7 +1037,7 @@ include "fintern.inc"
          QINCR = 0.                               !pour la vectorisation
 !***
          if ( CUMASK(il,JK) .eq. 1. .and. QPREL .gt. QSPREL ) then
-            QINCR = ( QPREL - QSPREL ) / ( TWODT * ( 1. + HSQ(il,JK) ) )
+            QINCR = ( QPREL - QSPREL ) / ( DT * ( 1. + HSQ(il,JK) ) )
             STHEAT(il,JK) = STHEAT(il,JK) + CUMASK(il,JK) * QINCR
          endif
 !
@@ -1063,8 +1053,8 @@ include "fintern.inc"
          if ( REQCON(il) .eq. 0. &
                 .and. CWP(il,JK) * CUMASK(il,JK) .gt. 0. ) then
 !
-            STHEAT(il,JK) = STHEAT(il,JK) - CWP(il,JK) * rTWODT
-            HDCWST(il,JK) = - CWP(il,JK) * rTWODT
+            STHEAT(il,JK) = STHEAT(il,JK) - CWP(il,JK) * rDT
+            HDCWST(il,JK) = - CWP(il,JK) * rDT
          endif
 360   continue
 !-----------------------------------------------------------------------

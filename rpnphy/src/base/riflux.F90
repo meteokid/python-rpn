@@ -59,7 +59,7 @@
 !
       INTEGER J,K
 !
-      DO 2 K=1,NK-1
+      DO 2 K=1,NK
          DO 2 J=1,N
 !
 !     CALCUL DE RIF
@@ -68,9 +68,6 @@
 !
     2  CONTINUE
 !
-         DO 3 J=1,N
-            R(J,NK)=0.
-    3  CONTINUE
 !
       RETURN
       END

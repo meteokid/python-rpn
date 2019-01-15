@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN -------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,11 +12,11 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
-!** S/P read_isccpdata
-        SUBROUTINE read_isccpdata ()
+!-------------------------------------- LICENCE END ---------------------------
 
-      implicit none
+!*@/
+SUBROUTINE read_isccpdata()
+   implicit none
 #include <arch_specific.hf>
 
 !Author
@@ -28,7 +28,7 @@
 !Object
 !          Read in XCW data needed by stochastic cloud generator
 
-!Implicites
+!*@/
 
 #include "mcica.cdk"
 
@@ -110,16 +110,10 @@
 
 ! FOUND ERRORS
 
- 901  write(6,6001) IER,fn
-      CALL QQEXIT( 1 )
- 902  write(6,6002) fn
-      CALL QQEXIT( 2 )
-
-      RETURN
+901   call physeterror('read_isccpdata', 'Problem opening: '//trim(fn))
+      return
+902   call physeterror('read_isccpdata', 'Problem reading: '//trim(fn))
+      return
 
 !----------------------------------------------------------------------
-
- 6001 FORMAT(/'READ_ISCCPDATA error ',I5,' openning file ',A/)
- 6002 FORMAT(/'READ_ISCCPDATA unable to read file ',A/)
-
       END

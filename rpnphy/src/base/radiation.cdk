@@ -12,8 +12,8 @@
       real g(ntotal)
 
 !     ozone climatologique
-      real, dimension (:  ), pointer :: goz
-      real, dimension (:,:), pointer :: gozon12
+      real, dimension(:  ), pointer, contiguous :: goz
+      real, dimension(:,:), pointer, contiguous :: gozon12
 
       common /rad_r/ g,goz,gozon12
 

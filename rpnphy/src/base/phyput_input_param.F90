@@ -18,6 +18,7 @@
 function phyput_input_param() result(istat)
    implicit none
 #include <arch_specific.hf>
+#include <rmnlib_basics.hf>
 
 !@objective initialization of the surface input parameters
 !@Author L. Spacek (Fall 2013)
@@ -38,9 +39,10 @@ function phyput_input_param() result(istat)
    istat = WB_OK
    istat = min(wb_put('phyinput/phyinread_max'   ,phyinread_max   ,options),istat)
    istat = min(wb_put('phyinput/phyinread_n'     ,phyinread_n     ,options),istat)
-   istat = min(wb_put('phyinput/phyinread_dateo' ,phyinread_dateo ,options),istat)
+   istat = min(wb_put('phyinput/phyinread_jdateo',phyinread_jdateo ,options),istat)
    istat = min(wb_put('phyinput/phyinread_dt'    ,phyinread_dt    ,options),istat)
    istat = min(wb_put('phyinput/phyinread_step'  ,phyinread_step  ,options),istat)
+   istat = min(wb_put('phyinput/phyinread_list_nk',phyinread_list_nk,options),istat)
    istat = min(wb_put('phyinput/phyinread_list_S',phyinread_list_S,options),istat)
    istat = min(wb_put('physteps/step_kount'      ,step_kount      ,options),istat)
    istat = min(wb_put('physteps/step_driver'     ,step_driver     ,options),istat)

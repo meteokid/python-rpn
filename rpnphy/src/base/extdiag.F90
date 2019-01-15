@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN -------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,225 +12,294 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!-------------------------------------- LICENCE END ---------------------------
 
-!/@*
-subroutine extdiag2(d, f, v, dsiz, fsiz, vsiz, kount, trnch, icpu, ni, nk)
-   use phy_options
-   use phybus
+module extdiag
    implicit none
+   private
+   public :: extdiag3
+
+contains
+   !/@*
+   subroutine extdiag3(d, f, v, dsiz, fsiz, vsiz, kount, trnch, ni, nk)
+      use tdpack_const, only: CAPPA
+      use series_mod, only: series_xst, series_isstep, series_isvar
+      use phy_options
+      use phybus
+      implicit none
 #include <arch_specific.hf>
-   !@Object calculate averages and accumulators of tendencies and diagnostics
-   !@Arguments
-   !          - Input/Output -
-   ! f        permanent bus
-   !          - input -
-   ! d        dynamic bus
-   ! v        volatile (output) bus
-   !          - input -
-   ! dsiz     dimension of d
-   ! fsiz     dimension of f
-   ! vsiz     dimension of v
-   ! trnch    slice number
-   ! icpu     task number
-   ! n        horizontal running length
-   ! nk       vertical dimension
+      !@Object calculate averages and accumulators of tendencies and diagnostics
+      !@Arguments
+      !          - Input/Output -
+      ! f        permanent bus
+      !          - input -
+      ! d        dynamic bus
+      ! v        volatile (output) bus
+      !          - input -
+      ! dsiz     dimension of d
+      ! fsiz     dimension of f
+      ! vsiz     dimension of v
+      ! trnch    slice number
+      ! ni       horizontal running length
+      ! nk       vertical dimension
 
-   integer :: dsiz, fsiz, vsiz, icpu, kount, trnch, ni, nk, istat
-   real, target :: d(dsiz), f(fsiz), v(vsiz)
+      integer, intent(in) :: dsiz, fsiz, vsiz, kount, trnch, ni, nk
+      real, target, intent(inout) :: d(dsiz), f(fsiz), v(vsiz)
 
-   !@Author B. Bilodeau Feb 2003 - from serdyn5 and phyexe1
-   !*@/
-   include "thermoconsts.inc"
-   include "buses.cdk"
-   logical, external :: series_isstep, series_isvar
+      !@Author B. Bilodeau Feb 2003 - from serdyn5 and phyexe1
+      !*@/
+#include <msg.h>
+#include "phymkptr.hf"
+      include "buses.cdk"
 
-   character(len=4) :: oname
-   integer :: i, k, ierget, s1, ord, kam, ivar, busidx
+      logical, parameter :: OVERWRITE_L = .true.
 
-   real, dimension(ni)     :: work1d
-   real, dimension(ni, nk) :: p, work2d1, work2d2
+      character(len=4) :: oname
+      integer :: i, k, s1, kam, ivar, busidx, nkm1
 
-   real, pointer, dimension(:)    :: zpmoins, busptr
-   real, pointer, dimension(:, :) :: zhuplus, zsigw, ztplus, &
-        zuplus, zvplus, ztcond, zze
+      real, dimension(ni)     :: work1d
+      real, dimension(ni, nk) :: p, work2d1, work2d2
 
-   if (.not.series_isstep(' ')) return
+      real, pointer, dimension(:), contiguous    :: zpmoins, busptr2d, ztdew, zflusolaf, &
+           zuvsmax, zuvsavg, zhrsmax, zhrsmin, zhusavg, zttmins1, zttmaxs1
+      real, pointer, dimension(:, :), contiguous :: zhuplus, zsigw, ztplus, &
+           zuplus, zvplus, zwplus, ztcond, zze, busptr3d, &
+           zqcplus, zftot, zfbl, zqtbl, zfdc
+      !----------------------------------------------------------------
 
-   s1 = ni*(nk-1)-1
+      if (.not.series_isstep()) return
+      call msg_toall(MSG_DEBUG, 'extdiag [BEGIN]')
 
-   ! Extract time series and zonal diagnostics on nk levels
-   call sersetm('KA', trnch, nk)
+      s1 = ni*(nk-1)-1
+      nkm1 = nk-1
 
-   call serxst2(v(tdew),     'TW', trnch, ni, 1, 0., 1., -1) !TDK
-   call serxst2(f(flusolaf), 'AF', trnch, ni, 1, 0., 1., -1) !N4
+      MKPTR2D(zfbl, fbl, f)
+      MKPTR2D(zfdc, fdc, f)
+      MKPTR1D(zflusolaf, flusolaf, f)
+      MKPTR2D(zftot, ftot, f)
+      MKPTR1D(zhrsmax, hrsmax, f)
+      MKPTR1D(zhrsmin, hrsmin, f)
+      MKPTR2D(zhuplus, huplus, d)
+      MKPTR1D(zhusavg, husavg, f)
+      MKPTR1D(zpmoins, pmoins, f)
+      MKPTR2D(zqcplus, qcplus, d)
+      MKPTR2D(zqtbl, qtbl, f)
+      MKPTR2D(zsigw, sigw, d)
+      MKPTR2D(ztcond, tcond, v)
+      MKPTR1D(ztdew, tdew, v)
+      MKPTR2D(ztplus, tplus, d)
+      MKPTR1D(zttmaxs1, ttmax+S1, f)
+      MKPTR1D(zttmins1, ttmin+S1, f)
+      MKPTR2D(zuplus, uplus, d)
+      MKPTR1D(zuvsavg, uvsavg, f)
+      MKPTR1D(zuvsmax, uvsmax, f)
+      MKPTR2D(zvplus, vplus, d)
+      MKPTR2D(zwplus, wplus, d)
+      MKPTR2D(zze, ze, v)
 
-   if (moyhr > 0) then
-      call serxst2(f(uvsmax), 'UX', trnch, ni, 1, 0., 1., -1) !UVMX
-      call serxst2(f(uvsavg), 'WA', trnch, ni, 1, 0., 1., -1) !UVAV
-      call serxst2(f(hrsmax), 'HX', trnch, ni, 1, 0., 1., -1) !HRMX
-      call serxst2(f(hrsmin), 'HN', trnch, ni, 1, 0., 1., -1) !HRMN
-      call serxst2(f(husavg), 'QV', trnch, ni, 1, 0., 1., -1) !QSAV
-      call serxst2(f(ttmin+S1), 'T5', trnch, ni, 1, 0., 1., -1) !T5.. +S1!
-      call serxst2(f(ttmax+S1), 'T9', trnch, ni, 1, 0., 1., -1) !T9.. +S1!
-   endif
+      ! Extract time series and zonal diagnostics on nk levels
 
-   ! Clouds
-   call serxst2(f(ftot), 'NU', trnch, ni, nk, 0., 1., -1) !FN
-   call serxst2(f(fbl),  'NJ', trnch, ni, nk, 0., 1., -1) !NC
-   call serxst2(f(qtbl), 'QB', trnch, ni, nk, 0., 1., -1) !QTBL
+      if (associated(ztdew)) call series_xst(ztdew,     'TW', trnch) !TDK
+      if (associated(zflusolaf)) call series_xst(zflusolaf, 'AF', trnch) !N4
 
-   if (.not.any(convec == (/'NIL   ', 'SEC   ', 'MANABE'/))) then
-      ! Nuages convectifs
-      call serxst2(F(FDC), 'NC', trnch, ni, nk, 0., 1., -1) !CK
-   endif
+      if (moyhr > 0) then
+         if (associated(zuvsmax)) call series_xst(zuvsmax, 'UX', trnch) !UVMX
+         if (associated(zuvsavg)) call series_xst(zuvsavg, 'WA', trnch) !UVAV
+         if (associated(zhrsmax)) call series_xst(zhrsmax, 'HX', trnch) !HRMX
+         if (associated(zhrsmin)) call series_xst(zhrsmin, 'HN', trnch) !HRMN
+         if (associated(zhusavg)) call series_xst(zhusavg, 'QV', trnch) !QSAV
+         if (associated(zttmins1)) call series_xst(zttmins1, 'T5', trnch) !T5.. +S1!
+         if (associated(zttmaxs1)) call series_xst(zttmaxs1, 'T9', trnch) !T9.. +S1!
+      endif
 
-   ! Effect of precipitation evaporation
-   if (series_isvar('EP')) then
-      ztcond (1:ni, 1:nk) => v( tcond :)
-      do k=1, nk-1
-         do i=1, ni
-            work2d1(i, k)=min(0., ztcond(i, k))
+      ! Clouds
+      if (associated(zftot)) call series_xst(zftot, 'NU', trnch) !FN
+      if (associated(zfbl)) call series_xst(zfbl,  'NJ', trnch) !NC
+      if (associated(zqtbl)) call series_xst(zqtbl, 'QB', trnch) !QTBL
+
+      if (.not.any(convec == (/'NIL   ', 'SEC   '/))) then
+         ! Nuages convectifs
+         if (associated(zfdc)) call series_xst(zfdc, 'NC', trnch) !CK
+      endif
+
+      ! Effect of precipitation evaporation
+      if (series_isvar('EP')) then
+         do k=1, nk-1
+            do i=1, ni
+               work2d1(i, k)=min(0., ztcond(i, k))
+            enddo
          enddo
+         call series_xst(work2d1, 'EP', trnch)
+      endif
+
+      if (associated(zuplus)) call series_xst(zuplus, 'UUWE', trnch) !UP
+      if (associated(zvplus)) call series_xst(zvplus, 'VVSN', trnch) !VP
+      if (associated(zwplus)) call series_xst(zwplus, 'WW', trnch)   !WP
+      if (associated(ztplus)) call series_xst(ztplus, 'TT', trnch) !2T
+
+      ! Potential temperature
+      if (series_isvar('TH')) then
+         do k=1, nk
+            !vdir nodep
+            do i=1, ni
+               p(i, k) = zsigw(i, k)*zpmoins(i)
+               work2d1(i, k) = 1.e-5*p(i, k)
+            end do
+         end do
+         call vspown1(work2d1, work2d1, -CAPPA, ni*nk)
+         do k=1, nk
+            do i=1, ni
+               work2d1(i, k) = ztplus(i, k)*work2d1(i, k)
+            end do
+         end do
+         call series_xst(work2d1, 'TH', trnch)
+         call series_xst(P, 'PX', trnch)
+      endif
+
+      !# Dew point temperature
+      if (series_isvar('TD')) then
+         ! Find dew point depression first (es). saturation calculated with
+         ! respect to water only (since td may be compared to observed tephigram).
+         call mhuaes3(work2d1, zhuplus, ztplus, p, .false., ni, nk, ni)
+         do k=1, nk
+            !vdir nodep
+            do i=1, ni
+               work2d1(i, k) = min( &
+                    ztplus(i, k), &
+                    ztplus(i, k) - work2d1(i, k) &
+                    )
+            end do
+         end do
+         call series_xst(work2d1, 'TD', trnch)
+      endif
+
+      !# Moisture: Eliminate negative values
+      if (series_isvar('HR')) then
+         !vdir nodep
+         do k=1, nk
+            do i=1, ni
+               work2d1(i, k) = max(0.0, zhuplus(i, k))
+            end do
+         end do
+         call series_xst(work2d1, 'HU', trnch)
+      endif
+
+      !# Relative humidity
+      if (series_isvar('HR')) then
+         do k=1, nk
+            do i=1, ni
+               work2d2(i, k) = zsigw(i, k)*zpmoins(i)
+            end do
+         end do
+         call mfohr4 (work2d1, zhuplus, ztplus, &
+              work2d2, ni, nk, ni, satuco)
+         call series_xst(work2d1, 'HR', trnch)
+      endif
+
+      if (stcond /= 'NIL' ) then
+         !       Total cloud water
+         if (associated(zqcplus)) call series_xst(zqcplus, 'QC', trnch) !CQ
+      endif
+
+      if (associated(zpmoins)) call series_xst(zpmoins, 'P0', trnch) !P8
+
+      ! Modulus of the surface wind
+      if (series_isvar('VE')) then
+         do i = 1, ni
+            work1d(i) = zuplus(i, nk)*zuplus(i, nk) + &
+                 zvplus(i, nk)*zvplus(i, nk)
+         end do
+         call vssqrt(work1d, work1d, ni)
+         call series_xst(work1d, 'VE', trnch)
+      endif
+
+      ! Geopotential height (in dam)
+      if (series_isvar('GZ')) then
+         do k=1, nk
+            do i=1, ni
+               work2d1(i, k) = 0.1 * zze(i, k)
+            end do
+         enddo
+         call series_xst(work2d1, 'GZ', trnch)
+      endif
+
+      ! Prepare only lowest-level component visibilities for series
+      if (stcond(1:6) == 'MP_MY2') then
+         do i=1,ni
+            work1d(i) = v(vis+(nkm1-1)*ni+i-1)
+         enddo
+         call series_xst(work1d,    'VIS' , trnch)
+         do i=1,ni
+            work1d(i) = v(vis1+(nkm1-1)*ni+i-1)
+         enddo
+         call series_xst(work1d,    'VIS1', trnch)
+         do i=1,ni
+            work1d(i) = v(vis2+(nkm1-1)*ni+i-1)
+         enddo
+         call series_xst(work1d,    'VIS2', trnch)
+         do i=1,ni
+            work1d(i) = v(vis3+(nkm1-1)*ni+i-1)
+         enddo
+         call series_xst(work1d,    'VIS3', trnch)
+      endif
+
+      !# Extract Series for all bus var
+      !#TODO: use phygetmetaplus w/ meta%vptr
+      do ivar=1,dyntop
+         oname  = dynnm(ivar, BUSNM_ON)
+         if (series_isvar(oname)) then
+            kam    = dynpar(ivar, BUSPAR_NK)
+            busidx = dynpar(ivar, BUSPAR_I0)
+            if (busidx < 1) cycle
+            if (kam == 1) then
+               busptr2d(1:ni) => d(busidx:)
+               call series_xst(busptr2d, oname, trnch, &
+                    F_overwrite_L=.not.OVERWRITE_L)
+            else
+               busptr3d(1:ni,1:kam) => d(busidx:)
+               call series_xst(busptr3d, oname, trnch, &
+                    F_overwrite_L=.not.OVERWRITE_L)
+            endif
+         endif
       enddo
-      call serxst2(work2d1, 'EP', trnch, ni, nk, 0.0, 1., -1)
-   endif
-
-   call serxst2(d(uplus), 'UUWE', trnch, ni, nk, 0.0, 1.0, -1) !UP
-   call serxst2(d(vplus), 'VVSN', trnch, ni, nk, 0.0, 1.0, -1) !VP
-   call serxst2(d(wplus), 'WW',   trnch, ni, nk, 0.0, 1.0, -1) !WP
-   call serxst2(d(tplus), 'TT',   trnch, ni, nk, 0.0, 1.0, -1) !2T
-
-   ! Potential temperature
-   if (series_isvar('TH')) then
-      zpmoins(1:ni) => f(pmoins:)
-      zsigw(1:ni, 1:nk) => d(sigw:)
-      ztplus(1:ni, 1:nk) => d(tplus:)
-      do k=1, nk
-!vdir nodep
-         do i=1, ni
-            p(i, k) = zsigw(i, k)*zpmoins(i)
-            work2d1(i, k) = 1.e-5*p(i, k)
-         end do
-      end do
-      call vspown1(work2d1, work2d1, -cappa, ni*nk)
-      do k=1, nk
-         do i=1, ni
-            work2d1(i, k) = ztplus(i, k)*work2d1(i, k)
-         end do
-      end do
-      call serxst2(work2d1, 'TH', trnch, ni, nk, 0.0, 1.0, -1)
-      call serxst2(P,       'PX', TRNCH, NI, nk, 0.0, 1.0, -1)
-   endif
-
-   !# Dew point temperature
-   if (series_isvar('TD')) then
-      ! Find dew point depression first (es). saturation calculated with
-      ! respect to water only (since td may be compared to observed tephigram).
-      ztplus(1:ni, 1:nk) => d(tplus:)
-      call mhuaes3(work2d1, d(huplus), d(tplus), p, .false., ni, nk, ni)
-      do k=1, nk
-!vdir nodep
-         do i=1, ni
-            work2d1(i, k) = min( &
-                 ztplus(i, k), &
-                 ztplus(i, k) - work2d1(i, k) &
-                 )
-         end do
-      end do
-      call serxst2(work2d1, 'TD', trnch, ni, nk, 0.0, 1.0, -1)
-   endif
-
-   !# Moisture: Eliminate negative values
-   if (series_isvar('HR')) then
-      zhuplus(1:ni, 1:nk) => d(huplus:)
-!vdir nodep
-      do k=1, nk
-         do i=1, ni
-            work2d1(i, k) = max(0.0, zhuplus(i, k))
-         end do
-      end do
-      call serxst2(work2d1, 'HU', trnch, ni, nk, 0.0, 1.0, -1)
-   endif
-
-   !# Relative humidity
-   if (series_isvar('HR')) then
-      zpmoins(1:ni) => f(pmoins:)
-      zsigw(1:ni, 1:nk) => d(sigw:)
-      do k=1, nk
-         do i=1, ni
-            work2d2(i, k) = zsigw(i, k)*zpmoins(i)
-         end do
-      end do
-      call mfohr4 (work2d1, d(huplus), d(tplus), &
-           work2d2, ni, nk, ni, satuco)
-      call serxst2(work2d1, 'HR', trnch, ni, nk, 0.0, 1.0, -1)
-   endif
-
-   if (.not. any(trim(stcond) == (/'CONDS', 'NIL  '/))) then
-      !       Total cloud water
-      call serxst2(d(qcplus), 'QC', trnch, ni, nk, 0.0, 1.0, -1) !CQ
-   endif
-
-   call serxst2(f(pmoins), 'P0', trnch, ni, 1, 0.0, 1.0, -1) !P8
-
-   ! Modulus of the surface wind
-   if (series_isvar('VE')) then
-      zuplus(1:ni, 1:nk) => d( uplus:)
-      zvplus(1:ni, 1:nk) => d( vplus:)
-      do i = 1, ni
-         work1d(i) = zuplus(i, nk)*zuplus(i, nk) + &
-              zvplus(i, nk)*zvplus(i, nk)
-      end do
-      call vssqrt(work1d, work1d, ni)
-      call serxst2(work1d, 'VE', trnch, ni, 1, 0.0, 1.0, -1)
-   endif
-
-   ! Geopotential height (in dam)
-   if (series_isvar('GZ')) then
-      zze(1:ni, 1:nk) => v(ze:)
-      do k=1, nk
-         do i=1, ni
-            work2d1(i, k) = 0.1 * zze(i, k)
-         end do
+      do ivar=1,pertop
+         oname  = pernm(ivar, BUSNM_ON)
+         if (series_isvar(oname)) then
+            kam    = perpar(ivar, BUSPAR_NK)
+            busidx = perpar(ivar, BUSPAR_I0)
+            if (busidx < 1) cycle
+            if (kam == 1) then
+               busptr2d(1:ni) => f(busidx:)
+               call series_xst(busptr2d, oname, trnch, &
+                    F_overwrite_L=.not.OVERWRITE_L)
+            else
+               busptr3d(1:ni,1:kam) => f(busidx:)
+               call series_xst(busptr3d, oname, trnch, &
+                    F_overwrite_L=.not.OVERWRITE_L)
+            endif
+         endif
       enddo
-      call serxst2(work2d1, 'GZ', trnch, ni, nk, 0., 1., -1)
-   endif
+      do ivar=1,voltop
+         oname  = volnm(ivar, BUSNM_ON)
+         if (series_isvar(oname)) then
+            kam    = volpar(ivar, BUSPAR_NK)
+            busidx = volpar(ivar, BUSPAR_I0)
+            if (busidx < 1) cycle
+            if (kam == 1) then
+               busptr2d(1:ni) => v(busidx:)
+               call series_xst(busptr2d, oname, trnch, &
+                    F_overwrite_L=.not.OVERWRITE_L)
+            else
+               busptr3d(1:ni,1:kam) => v(busidx:)
+               call series_xst(busptr3d, oname, trnch, &
+                    F_overwrite_L=.not.OVERWRITE_L)
+            endif
+         endif
+      enddo
 
+      call msg_toall(MSG_DEBUG, 'extdiag [END]')
+      !----------------------------------------------------------------
+      return
+   end subroutine extdiag3
 
-   !# Extract Series for all bus var
-!!$   print *,'Extract Series for all bus var', series_nvars,dyntop,pertop,voltop
-   ord = -9
-   do ivar=1,dyntop
-      oname  = dynnm(ivar, BUSNM_ON)
-      if (series_isvar(oname)) then
-         kam    = dynpar(ivar, BUSPAR_NK)
-         busidx = dynpar(ivar, BUSPAR_I0)
-         busptr => d(busidx:)
-!!$         print *,'Extract Series D ',  trim(oname), trnch ,kam
-         call serxst2(busptr, oname, trnch, ni, kam, 0., 1., ord)
-      endif
-   enddo
-   do ivar=1,pertop
-      oname  = pernm(ivar, BUSNM_ON)
-      if (series_isvar(oname)) then
-         kam    = perpar(ivar, BUSPAR_NK)
-         busidx = perpar(ivar, BUSPAR_I0)
-         busptr => f(busidx:)
-!!$         print *,'Extract Series P ',  trim(oname), trnch ,kam
-         call serxst2(busptr, oname, trnch, ni, kam, 0., 1., ord)
-      endif
-   enddo
-   do ivar=1,voltop
-      oname  = volnm(ivar, BUSNM_ON)
-      if (series_isvar(oname)) then
-         kam    = volpar(ivar, BUSPAR_NK)
-         busidx = volpar(ivar, BUSPAR_I0)
-         busptr => v(busidx:)
-!!$         print *,'Extract Series V ',  trim(oname), trnch ,kam
-         call serxst2(busptr, oname, trnch, ni, kam, 0., 1., ord)
-      endif
-   enddo
-
-   return
-end subroutine extdiag2
+end module extdiag

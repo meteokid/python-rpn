@@ -20,7 +20,7 @@
       implicit none
 #include <arch_specific.hf>
       INTEGER INPUNIT,SERSTD,STATUS,F_NIG,F_NK_HYBM, &
-              F_NK_HYBT,F_NCOEF
+              F_NK_HYBT
       LOGICAL ECHO,COMPRESS,HOUR64,F_DIAG
 
 !Arguments
@@ -43,7 +43,6 @@
 !          .FALSE. to write a 32-bit real (float) for the forecast hour
 ! F_DIAG   .TRUE. to run diagnostics (NOT USED)
 !          .FALSE. to shut off diagnostic calculation
-! F_NCOEF  NOT USED
 
 #include "series.cdk"
 
@@ -65,23 +64,19 @@
 
       INTEGER, PARAMETER :: STDOUT=6
 
-      INTEGER TMP,AL,MG,Z0,HS,CND,LAT,LON,GL,NE,MAP,SD,NIG
+      INTEGER TMP,AL,MG,Z0,HS,CND,LAT,LON,GL,MAP,SD,NIG
       INTEGER NK_HYBM,NK_HYBT,NCOEF,ERR
       CHARACTER *4 NOMVAR(NVAR), MODELE*3
 
       REAL DGRW,RGAS,GRAV
-      CHARACTER *8  ETIKET8
       CHARACTER *12 ETIKET, ETIKMAJ
-      INTEGER DATE(14),NK,ITYP,NTYPES,IECR,SHYBT,SHYBM,size_vtbl(3)
+      INTEGER DATE(14),NK,ITYP,IECR,size_vtbl(3)
       CHARACTER *1 TV
       REAL PHS
-      INTEGER I,K,L,M,LP,NT,NREC,NSKIP,IP2,NPAK,NPHYE,DATYP,VKIND
+      INTEGER I,K,L,M,LP,NT,NREC,NSKIP,IP2,NPAK,NPHYE,DATYP
       LOGICAL SATUES, SATUCO
-      REAL(KIND=8) :: PTOP_8
 
-      REAL DEGRAD ,scrap
-      REAL IG1,IG2,IG3,IG4,X1,X2
-      LOGICAL IBM32_2_IEEE
+      REAL DEGRAD
       real*8, dimension(:,:,:), pointer :: vtbl
       real  , dimension(:    ), pointer :: wkpt
       real*8, dimension(:    ), pointer :: wkpt8
@@ -192,7 +187,7 @@
             LAT=indseri('LA',nomvar,nphye)
             LON=indseri('LO',nomvar,nphye)
 
-             NE=indseri('NE',nomvar,nphye)
+!!$             NE=indseri('NE',nomvar,nphye)
              GL=indseri('GL',nomvar,nphye)
              MG=indseri('MG',nomvar,nphye)
              HS=indseri('HS',nomvar,nphye)
@@ -387,20 +382,20 @@
          ENDIF
        PHYSE(L,HS)=PHS
 !
-       IF(ITYP.LE.0) THEN
-         IF(PHYSE(L,GL).LT.0.9) THEN
-           NTYPES=0
-         ELSE
-           NTYPES=2
-         ENDIF
-       ELSE IF(ITYP.GE.1) THEN
-         IF(PHYSE(L,NE).GT.0.) THEN
-            NTYPES=1
-         ELSE
-            NTYPES=-1
-         ENDIF
-       ENDIF
-        PHYSE(L,MG)=NTYPES
+!!$       IF(ITYP.LE.0) THEN
+!!$         IF(PHYSE(L,GL).LT.0.9) THEN
+!!$           NTYPES=0
+!!$         ELSE
+!!$           NTYPES=2
+!!$         ENDIF
+!!$       ELSE IF(ITYP.GE.1) THEN
+!!$         IF(PHYSE(L,NE).GT.0.) THEN
+!!$            NTYPES=1
+!!$         ELSE
+!!$            NTYPES=-1
+!!$         ENDIF
+!!$       ENDIF
+!!$        PHYSE(L,MG)=NTYPES
         PHYSE(L,TMP)=PHYSE(L,TMP)-273.15
         PHYSE(L,Z0)=MAX(0.,PHYSE(L,Z0))
 !
@@ -415,8 +410,8 @@
       IECR = FSTECR (PHYSE(1,LON),STOK,NPAK,serstd,date(14),0,0,NSTAT, &
                  1,1,0,IP2,0,TV,'>>',ETIKET,'T',0,0,0,0,DATYP,.FALSE.)
 !
-      IECR = FSTECR (PHYSE(1,MG),STOK,NPAK,serstd,date(14),0,0,NSTAT, &
-                 1,1,0,IP2,0,TV,'GS',ETIKET,'Y',0,IP2,0,0,DATYP,.FALSE.)
+!!$      IECR = FSTECR (PHYSE(1,MG),STOK,NPAK,serstd,date(14),0,0,NSTAT, &
+!!$                 1,1,0,IP2,0,TV,'GS',ETIKET,'Y',0,IP2,0,0,DATYP,.FALSE.)
 !
       IECR = FSTECR (PHYSE(1,HS),STOK,NPAK,serstd,date(14),0,0,NSTAT, &
                  1,1,0,IP2,0,TV,'HS',ETIKET,'Y',0,IP2,0,0,DATYP,.FALSE.)

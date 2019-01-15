@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN ------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms 
@@ -12,9 +12,9 @@
 !You should have received a copy of the License/Disclaimer along with this software; 
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
-!*** S/P HINES_EXTRO
-  SUBROUTINE hines_extro4( nlons, nlevs, nazmth,                          &
+!-------------------------------------- LICENCE END --------------------------
+!/@*
+SUBROUTINE hines_extro4( nlons, nlevs, nazmth,                          &
                            drag_u, drag_v, heat, diffco, flux_u, flux_v,  &
                            vel_u, vel_v, bvfreq, density, visc_mol, alt,  &
                            rmswind, anis, k_alpha, sigsqmcw,              &
@@ -25,8 +25,7 @@
     USE mo_gwspectrum,     ONLY: kstar, m_min,            &
          &                       naz, slope, f1, f2, f3, f5, f6,  &
          &                       icutoff, alt_cutoff, smco, nsmax
-    USE mo_doctor,         ONLY: nout
-
+    use phy_status, only: phy_error_L
     implicit none
 #include <arch_specific.hf>
 
@@ -50,30 +49,21 @@
     REAL*8    :: smoothr1(nlons,nlevs), smoothr2(nlons,nlevs)
 
     LOGICAL :: lorms(nlons), losigma_t(nlons,nlevs)
-!
-!Authors
-!
+
+!@Authors
 !  aug. 13/95 - c. mclandress
 !  sept. /95  - n. mcfarlane
 !  1995- 2002 - e. manzini
-!
-!Revision
-!
+!@Revision
 !  001   A. Zadra & R. McTaggart-Cowan (June 2011) - provide upper boundary index through interface
 !  001   A. Plante - Remove toplev (notop). Set lev1 to 1 since our model to is well below 120km.
-!
-!Modules
-!
-!  mo_gwspectrum
-!  mo_doctor
-!
-!Object
+!@Object
 !  main routine for hines' "extrowave" gravity wave parameterization based
 !  on hines' doppler spread theory. this routine calculates zonal
 !  and meridional components of gravity wave drag, heating rates
 !  and diffusion coefficient on a longitude by altitude grid.
 !  no "mythical" lower boundary region calculation is made. 
-!
+!@Argumentsxs
 !              - Output -
 ! drag_u       zonal component of gravity wave drag (m/s^2).
 ! drag_v       meridional component of gravity wave drag (m/s^2).
@@ -81,7 +71,6 @@
 ! diffco       diffusion coefficient (m^2/sec)
 ! flux_u       zonal component of vertical momentum flux (pascals)
 ! flux_v       meridional component of vertical momentum flux (pascals)
-!
 !              - Input -
 ! vel_u        background zonal wind component (m/s).
 ! vel_v        background meridional wind component (m/s).
@@ -99,12 +88,10 @@
 ! nlons        number of longitudes.
 ! nlevs        number of vertical levels.
 ! nazmth       azimuthal array dimension (nazmth >= naz).
-!
 !              - ouput diagnostics -
 ! m_alpha      cutoff vertical wavenumber (1/m).
 ! mmin_alpha   minimum value of cutoff wavenumber.
 ! sigma_t      total rms horizontal wind (m/s).
-!
 !              - work arrays -
 ! v_alpha      wind component at each azimuth (m/s) and if iheatcal=1
 !              holds vertical derivative of cutoff wavenumber.
@@ -114,8 +101,8 @@
 ! densb        background density at bottom level.
 ! bvfb         buoyancy frequency at bottom level and
 !              work array for icutoff = 1.
-!
 ! losigma_t    .true. for total sigma not zero
+!*@/
 
     !
     !  internal variables.
@@ -157,7 +144,7 @@
     CALL hines_wind ( v_alpha,   & 
          &                  vel_u, vel_v, naz,   &
          &                  il1, il2, lev1, lev2, nlons, nlevs, nazmth )
-    !
+
     !  calculate cutoff vertical wavenumber and velocity variances.
     !
     CALL hines_wavnum ( m_alpha, sigma_t, sigma_alpha, ak_alpha,   &
@@ -166,7 +153,8 @@
          &              bvfreq, bvfb, rmswind, anis, lorms,        &
          &              sigsqmcw, sigmatm,                         &
          &              il1, il2, lev1, lev2, nlons, nlevs, nazmth)
-    !
+    if (phy_error_L) return
+
     !  smooth cutoff wavenumbers and total rms velocity in the vertical 
     !  direction nsmax times, using flux_u as temporary work array.
     !   
@@ -198,7 +186,7 @@
          &            m_min, slope, naz,                          &
          &            il1, il2, lev1, lev2, nlons, nlevs, nazmth, &
          &            kount, trnch, lorms, hflt )
-    !
+
     !  cutoff drag above alt_cutoff, using bvfb as temporary work array.
     !
     IF (icutoff.EQ.1)  THEN
@@ -207,7 +195,8 @@
        CALL hines_exp ( drag_v, bvfb, alt, alt_cutoff,  &
             &                   il1, il2, lev1, lev2, nlons, nlevs )
     END IF
-    !
+    if (phy_error_L) return
+
     !  print out various arrays for diagnostic purposes.
     !
     IF (iprint.EQ.1)  THEN
@@ -220,25 +209,18 @@
     !  if not calculating heating rate and diffusion coefficient then finished.
     !
     IF (iheatcal.NE.1)  RETURN
-    !
-    !
+
+    call physeterror('hines_extro4', 'You are not supposed to call hines_heat')
+    return
+
+    !TODO: WTF: this would never be called!
     !  heating rate and diffusion coefficient.
-    !
-      write(6,'(A)')"+++++++++++++++++++++++++++++++++++++++++++++"
-      write(6,'(A)')"+  YOU ARE NOT SUPPOSED TO CALL HINES_HEAT  +"
-      write(6,'(A)')"+  THE MODEL WILL STOP                      +"
-      write(6,'(A)')"+++++++++++++++++++++++++++++++++++++++++++++"
-      CALL QQEXIT(1)
-    !
     CALL hines_heat ( heat, diffco,                                 &
          &            alt, bvfreq, density, sigma_t, sigma_alpha,   &
          &            flux, visc_mol, kstar, f1, f2, f3, f5, f6,    &
          &            naz, il1, il2, lev1, lev2, nlons, nlevs,      &
          &            nazmth, losigma_t )
-    !
 
-    !  finished.
-    !
     RETURN
     !-----------------------------------------------------------------------
  END SUBROUTINE hines_extro4

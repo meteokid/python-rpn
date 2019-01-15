@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN -------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,84 +12,94 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
-!*** S/P radslop
-!*
+!-------------------------------------- LICENCE END ---------------------------
 
-      subroutine radslop (f, fsiz, v, vsiz, n,&
-                          hz,julien,idatim,trnch,kount)
+module radslop
+   implicit none
+   private
+   public :: radslop3
+
+contains
+
+   !/@*
+   subroutine radslop3(f, fsiz, v, vsiz, ni, hz, julien, trnch)
+      use debug_mod, only: init2nan
       use phy_options
       use phybus
+      use series_mod, only: series_xst
       implicit none
 #include <arch_specific.hf>
 
-      integer fsiz,vsiz, n,nk,nkp, kount,trnch
-      integer idatim(14)
-      
-      real f(fsiz), v(vsiz), dire,difu,albe
-      real julien
+      !@Object add the effects of the sloping terrain to the radiation computation.
+      !@Arguments
+      !          - Input/Output -
+      ! f        field of permanent physics variables
+      ! fsiz     dimension of f
+      !          - Input
+      ! v        field of volatile physics variables
+      ! vsiz     dimension of v
+      ! ni       horizontal dimension
+      ! hz       Greenwich hour (0 to 24)
+      ! julien   Julien days
+      ! trnch    number of the slice
 
-      real hz
-      integer i
+      integer, intent(in) :: fsiz, vsiz, ni, trnch
+      real, intent(inout), target :: f(fsiz), v(vsiz)
+      real, intent(in) :: julien
+      real, intent(in) :: hz
 
-!Authors
-!        J. Mailhot, A. Erfani, J. Toviessi
-!
-!
-!Revisions
-!
-!
-!Object
-!      To add the effects of the sloping terrain to the radiation
-!      computation.
-! 
-!
-!Arguments
-!
-!          - Input/Output -
-! f        field of permanent physics variables
-! fsiz     dimension of f
-!
-!          - Input
-! v        field of volatile physics variables
-! vsiz     dimension of v
-! n        horizontal dimension
-! hz       Greenwich hour (0 to 24)
-! julien   Julien days
-! idatim   time coded in standard RPN format
-! trnch    number of the slice
-! kount    number of the timestep
+      !@Authors J. Mailhot, A. Erfani, J. Toviessi
+      !*@/
+#include "phymkptr.hf"
 
-      real bcos(n),bsin(n),stan(n),ssin(n),scos(n)
-      real heurser
-      integer ierget
-      integer it
-      
-	   if (.not.radslope) then
-         do i=0 , n-1 
-            f(fluslop+i) = 0.0
-         enddo
+      real, pointer, dimension(:), contiguous :: zc1slop, zc2slop, zc3slop, zc4slop, zc5slop, zdlat, zdlon, zfluslop, zfsd0, zfsf0, zvv1, zap
+      real, dimension(ni) :: bcos, bsin, stan, ssin, scos
+      real :: dire, difu, albe
+      integer :: i
+      !----------------------------------------------------------------
+
+      MKPTR1D(zc1slop, c1slop, f)
+      MKPTR1D(zc2slop, c2slop, f)
+      MKPTR1D(zc3slop, c3slop, f)
+      MKPTR1D(zc4slop, c4slop, f)
+      MKPTR1D(zc5slop, c5slop, f)
+      MKPTR1D(zdlat, dlat, f)
+      MKPTR1D(zdlon, dlon, f)
+      MKPTR1D(zfluslop, fluslop, f)
+      MKPTR1D(zfsd0, fsd0, f)
+      MKPTR1D(zfsf0, fsf0, f)
+      MKPTR1D(zvv1, vv1, f)
+      MKPTR1D(zap, ap, v)
+
+      if (.not.radslope) then
+         zfluslop(1:ni) = 0.0
          return
       endif
 
-      call suncos1(scos,ssin,stan,bsin,bcos,n,                              &
-                   f(dlat),f(dlon),hz,julien,idatim,radslope)
+      call init2nan(bcos, bsin, stan, ssin, scos)
 
-      do 100 i=0 , n-1 
+      call suncos2(scos, ssin, stan, bsin, bcos, ni, zdlat, zdlon, hz, &
+           julien, radslope)
 
-          dire= f(fsd0+i)*( f(c1slop+i)+ stan(i+1)*( f(c2slop+i)*bcos(i+1) + &
-                f(c3slop+i)*bsin(i+1))) * f(vv1+i)
-          dire= max(0.0,dire)
+      do i = 1, ni
 
-          difu= (f(fsf0+i)* f(c4slop+i)) * f(vv1+i)
+         dire = zfsd0(i) * ( &
+              zc1slop(i) + &
+              stan(i) * (zc2slop(i)*bcos(i) + zc3slop(i)*bsin(i)) &
+              ) * zvv1(i)
+         dire = max(0.0, dire)
 
-          albe = ((f(fsf0+i) + f(fsd0+i))*f(c5slop+i) * v(ap+i) ) * f(vv1+i)
+         difu = (zfsf0(i) * zc4slop(i)) * zvv1(i)
 
-        f(fluslop+i) = dire + difu + albe
+         albe = ((zfsf0(i) + zfsd0(i)) * zc5slop(i) * zap(i)) * zvv1(i)
 
- 100   continue      
+         zfluslop(i) = dire + difu + albe
 
-       call serxst2(f(fluslop), 'fusl', trnch, n, 1, 0.0, 1.0, -1)
+      enddo
 
-	   return
-       end	
+      call series_xst(zfluslop, 'fusl', trnch)
+      !----------------------------------------------------------------
+      return
+   end subroutine radslop3
+
+end module radslop

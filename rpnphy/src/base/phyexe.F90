@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN -------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,12 +12,29 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!-------------------------------------- LICENCE END ---------------------------
 
 !/@*
 subroutine phyexe(e, d, f, v, esiz, dsiz, fsiz, vsiz, trnch, kount, ni, nk)
+   use debug_mod, only: init2nan
+   use apply_rad_tendencies, only: apply_rad_tendencies1
+   use calcdiag, only: calcdiag1
+   use diagnosurf, only: diagnosurf5
+   use ens_ptp, only: ens_ptp2
+   use extdiag, only: extdiag3
+   use gwd, only: gwd9
+   use metox, only: metox3
+   use phy_status, only: phy_error_L
    use phy_options
    use phybus
+   use phystepinit, only: phystepinit3
+   use precipitation, only: precipitation4
+   use prep_cw, only: prep_cw3
+   use radiation, only: radiation3
+   use sfc_calcdiag, only: sfc_calcdiag3
+   use surface, only: surface1
+   use tendency, only: tendency5
+   use turbulence, only: turbulence2
    implicit none
 #include <arch_specific.hf>
    !@object this is the main interface subroutine for the cmc/rpn unified physics
@@ -42,65 +59,104 @@ subroutine phyexe(e, d, f, v, esiz, dsiz, fsiz, vsiz, trnch, kount, ni, nk)
    integer :: esiz,dsiz,fsiz,vsiz,trnch,kount,ni,nk
    real    :: e(esiz), d(dsiz), f(fsiz), v(vsiz)
 
-   !@author L. Spacek (oct 2011) 
+   !@author L. Spacek (oct 2011)
    !@notes
    !          phy_exe is called by all the models that use the cmc/rpn
    !          common physics library. it returns tendencies to the
    !          dynamics.
    !*@/
+#include <msg.h>
+#include <rmnlib_basics.hf>
    include "tables.cdk"
    include "physteps.cdk"
 
-   integer :: icpu
-   real    :: dt, cdt1, rcdt1
+   integer :: iverb, nkm1, istat
+   character(len=64) :: tmp_S
 
-   real, dimension(ni,nk)   :: uplus0,vplus0,wplus0,tplus0,huplus0,qcplus0
-   real, dimension(ni,nk)   :: seloc,ficebl
+   real, dimension(ni,nk) :: uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0
+   real, dimension(ni,nk) :: seloc, ficebl
    !----------------------------------------------------------------
-   icpu = 1
-   dt   = delt
+   write(tmp_S, '(i6,i6,a)') kount, trnch, ' (phyexe)'
+   call msg_verbosity_get(iverb)
+   if (debug_trace_L) call msg_verbosity(MSG_DEBUG)
+   call msg_toall(MSG_DEBUG, trim(tmp_S)//' [BEGIN]')
+
+   call init2nan(uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0, seloc, ficebl)
+
+   nkm1 = nk-1
 
    call inichamp4(kount, trnch, ni, nk)
+   if (phy_error_L) return
 
-   call phystepinit1(uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0, v, d, f,&
-        seloc, dt, cdt1, rcdt1, vsiz, dsiz, fsiz, kount, trnch, icpu, ni, nk)
+   call phystepinit3(uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0, v, d, f,&
+        seloc, delt, vsiz, dsiz, fsiz, kount, trnch, ni, nk)
+   if (phy_error_L) return
 
-   call radiation2(d, dsiz, f, fsiz, v, vsiz, e, esiz, seloc, ni, nk, kount, &
-        trnch, icpu)
+   call radiation3(d, dsiz, f, fsiz, v, vsiz, ni, nk, kount, trnch)
+   if (phy_error_L) return
 
-   call sfc_main(seloc, trnch, kount, dt, ni, ni, nk, icpu)
+   TURBULENT_FLUX_CONSISTENCY: if (pbl_flux_consistency) then
 
-   call metox2(d, v, f, dsiz, vsiz, fsiz, ni, nk)
+      call metox3(d, v, f, dsiz, vsiz, fsiz, ni, nk)
+      if (phy_error_L) return
 
-   call gwd8(d, f, v, e, dsiz, fsiz, vsiz, esiz, std_p_prof, cdt1, kount, &
-        trnch, ni, ni, nk-1, icpu )
+      call gwd9(d, f, v, dsiz, fsiz, vsiz, std_p_prof, delt, kount, trnch, ni, nk, nkm1)
+      if (phy_error_L) return
 
-   if (radia /= 'NIL') &
-        call apply_tendencies1(d, dsiz, v, vsiz, f, fsiz, tplus, trad, ni, nk-1)
+      call apply_rad_tendencies1(d, dsiz, v, vsiz, f, fsiz, ni, nk, nkm1)
+      if (phy_error_L) return
 
-   call turbulence1(d, f, v, dsiz, fsiz, vsiz, ficebl, seloc, cdt1, kount, &
-        trnch, icpu, ni, nk )
+      call surface1(seloc, trnch, kount, delt, ni, nk)
+      if (phy_error_L) return
 
-   call shallconv3(d, dsiz, f, fsiz, v, vsiz, kount, trnch, cdt1, ni, nk)
+   else
 
-   Call precipitation(d, dsiz, f, fsiz, v, vsiz, dt, ni, nk, kount, trnch, icpu)
+      call surface1(seloc, trnch, kount, delt, ni, nk)
+      if (phy_error_L) return
 
-   call prep_cw2(f, fsiz, d, dsiz, v, vsiz, ficebl, kount, trnch, icpu, ni, nk)
+      call metox3(d, v, f, dsiz, vsiz, fsiz, ni, nk)
+      if (phy_error_L) return
 
-   call tendency4(uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0, v, d, &
-        rcdt1, vsiz, dsiz, kount, ni, nk)
+      call gwd9(d, f, v, dsiz, fsiz, vsiz, std_p_prof, delt, kount, trnch, ni, nk, nkm1)
+      if (phy_error_L) return
 
-   call ens_ptp1(d, v, f, dsiz, fsiz, vsiz, ni, nk, kount)
+      call apply_rad_tendencies1(d, dsiz, v, vsiz, f, fsiz, ni, nk, nkm1)
+      if (phy_error_L) return
 
-   call calcdiag(d, f, v, dsiz, fsiz, vsiz, dt, trnch, kount, ni, nk)
-   call sfc_calcdiag2(f, v, fsiz, vsiz, moyhr, acchr, dt, trnch, kount, step_driver, ni, nk)
+   endif TURBULENT_FLUX_CONSISTENCY
 
-   call chm_exe(e, d, f, v, esiz, dsiz, fsiz, vsiz, dt, trnch, kount, &
-        icpu, ni, nk)
+   call turbulence2(d, f, v, dsiz, fsiz, vsiz, ficebl, seloc, delt, kount, trnch, ni, nk)
+   if (phy_error_L) return
 
-   call diagnosurf3(ni, ni, nk, trnch, icpu, kount)
-   call extdiag2(d, f, v, dsiz,fsiz, vsiz, kount, trnch, icpu, ni, nk)
+   call precipitation4(tplus0, huplus0, d, dsiz, f, fsiz, v, vsiz, delt, ni, nk, kount, trnch)
+   if (phy_error_L) return
 
+   call prep_cw3(f, fsiz, d, dsiz, v, vsiz, ficebl, ni, nk)
+   if (phy_error_L) return
+
+   call tendency5(uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0, v, d, &
+        1./delt, vsiz, dsiz, kount, ni, nk)
+   if (phy_error_L) return
+
+   call ens_ptp2(d, v, f, dsiz, fsiz, vsiz, ni, nk, kount)
+   if (phy_error_L) return
+
+   call calcdiag1(tplus0, huplus0, qcplus0, d, f, v, delt, trnch, kount, ni, nk)
+   if (phy_error_L) return
+
+   call sfc_calcdiag3(f, v, fsiz, vsiz, moyhr, acchr, delt, trnch, kount, step_driver, ni, nk)
+   if (phy_error_L) return
+
+   call chm_exe(e, d, f, v, esiz, dsiz, fsiz, vsiz, int(delt), trnch, kount, ni, nk)
+   if (phy_error_L) return
+
+   call diagnosurf5(ni, nk, trnch, kount)
+   if (phy_error_L) return
+
+   call extdiag3(d, f, v, dsiz,fsiz, vsiz, kount, trnch, ni, nk)
+
+   call msg_toall(MSG_DEBUG, trim(tmp_S)//' [END]')
+   call msg_verbosity(iverb)
    !----------------------------------------------------------------
    return
 end subroutine phyexe

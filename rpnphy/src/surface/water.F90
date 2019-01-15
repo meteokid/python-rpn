@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN -------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,17 +12,19 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!-------------------------------------- LICENCE END ---------------------------
 
 !/@*
 subroutine water1(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, &
      n, m, nk )
+   use tdpack
    use sfclayer_mod, only: sl_prelim,sl_sfclayer,SL_OK
    use cpl_itf     , only: cpl_update
    use sfc_options
    use sfcbus_mod
    implicit none
 #include <arch_specific.hf>
+#include <rmnlib_basics.hf>
    !@Object Calculate:   - surface roughness length (Z0) over open water
    !                       (not covered by ice) using Charnock's relation with a
    !                       BETA1 parameter (optional sea state dependency);
@@ -41,27 +43,26 @@ subroutine water1(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, &
    !             (not used for the moment)
    ! NK          vertical dimension
 
-   integer bussiz, kount, trnch, N, M, NK
+   integer :: bussiz, kount, trnch, N, M, NK
    real, target :: bus(bussiz)
-   integer ptsurfsiz
-   integer ptsurf(ptsurfsiz), lcl_indx(2,n)
+   integer :: ptsurfsiz
+   integer :: ptsurf(ptsurfsiz), lcl_indx(2,n)
 
    !@Author J. Mailhot, S. Belair and B. Bilodeau (Dec 1998)
+   !Revisions
+   ! 001      M. Carrera and V. Fortin (Nov 2007) - Compute total runoff
+   !                as precipitation - evaporation (no storage)
    !@Notes
    !          Z0 = BETA1*USTAR**2/GRAV (in metres) with minimum value
    !          Z0MIN and a maximum value Z0MAX
    !*@/
-   include "thermoconsts.inc"
    include "sfcinput.cdk"
 
-   include "dintern.inc"
-   include "fintern.inc"
-
-   integer surflen
+   integer :: surflen
 #define x(fptr,fj,fk) ptsurf(vd%fptr%i)+(fk-1)*surflen+fj-1
 
    real, parameter :: z0max = 5.e-3
-
+   real, parameter :: LAKE_MASK_THRESHOLD = 0.001
    real, parameter :: am = 0.11        !Roughness adjustment coefficient (Beljaars qjrms 1994)
    real, parameter :: beta1 = 0.018    !Charnock's coefficient
    real, parameter :: k_visc = 1.5e-5  !Kinematic viscosity estimate at ~20oc
@@ -84,23 +85,33 @@ subroutine water1(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, &
    logical, parameter :: WATER_TDIAGLIM = .false.
 
    real,pointer,dimension(:) ::  alvis_wat, cmu, ctu, fc_wat, mlac
-   real,pointer,dimension(:) ::  fv_wat
+   real,pointer,dimension(:) ::  fv_wat, zemisr, zalwater
    real,pointer,dimension(:) ::  hst_wat, hu, ilmo_wat
    real,pointer,dimension(:) ::  ps, qs, th, ts, tt, uu, vv
    real,pointer,dimension(:) ::  z0h, z0m, zdsst
    real,pointer,dimension(:) ::  zalfaq, zalfat, zdlat, zfcor
-   real,pointer,dimension(:) ::  zftemp, zfvap, zqdiag, ztdiag
+   real,pointer,dimension(:) ::  zftemp, zfvap, zqdiag, zrainrate
+   real,pointer,dimension(:) ::  zrunofftot, zsnowrate, ztdiag
    real,pointer,dimension(:) ::  ztsurf, ztsrad, zudiag, zvdiag
    real,pointer,dimension(:) ::  zfrv, zzusl, zztsl
    real,pointer,dimension(:) ::  zflusolis,zfdsi,zskin_depth,zskin_inc
+   real,pointer,dimension(:) :: zqdiagtyp, ztdiagtyp, zudiagtyp, zvdiagtyp
+   real,pointer,dimension(:) :: zqdiagtypv, ztdiagtypv, zudiagtypv, zvdiagtypv
+   real,pointer,dimension(:) ::  zfsd, zfsf, zcoszeni
+   real,pointer,dimension(:) ::  zutcisun, zutcishade, zwbgtsun, zwbgtshade
+   real,pointer,dimension(:) ::  zradsun, zradshade, ztglbsun, ztglbshade
+   real,pointer,dimension(:) ::  ztwetb, zq1, zq2, zq3, zq4, zq5, zq6, zq7
+
 
    real, dimension(n) :: z0m_adjust,tva,rhoa,vmod,vdir,vmodd
    real, dimension(n) :: alpha_w,rho_a,frv_w,frv_a,visc_w,skin_solar,q_bal,skin_q,sst
-   real, dimension(n) :: base_bflux,mo_len,warm_increment,stab_func,lambda,ud,vdi,gamma
+   real, dimension(n) :: warm_increment,stab_func,lambda,ud,vdi,gamma
    real, dimension(n) :: this_inc,prev_inc,denom
    real, dimension(n) :: my_ta,my_qa
+   real, dimension(n) :: zu10,zusr          ! wind at 10m and sensor level
+   real, dimension(n) :: zref_sw_surf, zemit_lw_surf, zzenith
 
-   integer I, J, K
+   integer I
    real qsat_o_salty, delh, delq
    logical            :: cplupd
 
@@ -115,37 +126,79 @@ subroutine water1(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, &
    fc_wat   (1:n) => bus( x(fc,1,indx_sfc)    : )
    fv_wat   (1:n) => bus( x(fv,1,indx_sfc)    : )
    hst_wat  (1:n) => bus( x(hst,1,indx_sfc)   : )
-   hu       (1:n) => bus( x(humoins,1,nk)     : )
    ilmo_wat (1:n) => bus( x(ilmo,1,indx_sfc)  : )
-   ps       (1:n) => bus( x(pmoins,1,1)       : )
    qs       (1:n) => bus( x(qsurf,1,indx_sfc) : )
-   th       (1:n) => bus( x(thetaa,1,1)       : )
    ts       (1:n) => bus( x(twater,1,1)       : )
-   tt       (1:n) => bus( x(tmoins,1,nk)      : )
-   uu       (1:n) => bus( x(umoins,1,nk)      : )
-   vv       (1:n) => bus( x(vmoins,1,nk)      : )
    z0h      (1:n) => bus( x(z0t,1,indx_sfc)   : )
    z0m      (1:n) => bus( x(z0,1,indx_sfc)    : )
    zalfaq   (1:n) => bus( x(alfaq,1,1)        : )
    zalfat   (1:n) => bus( x(alfat,1,1)        : )
+   zalwater (1:n) => bus( x(alwater,1,1)      : )
    zdlat    (1:n) => bus( x(dlat,1,1)         : )
    zdsst    (1:n) => bus( x(dsst,1,1)         : )
+   zemisr   (1:n) => bus( x(emisr,1,1)        : )
    zfcor    (1:n) => bus( x(fcor,1,1)         : )
    zfdsi    (1:n) => bus( x(fdsi,1,1)         : )
    zflusolis(1:n) => bus( x(flusolis,1,1)     : )
    zftemp   (1:n) => bus( x(ftemp,1,indx_sfc) : )
    zfvap    (1:n) => bus( x(fvap,1,indx_sfc)  : )
+   zrainrate(1:n) => bus( x(rainrate,1,1)     : )
+   zrunofftot(1:n) => bus( x(runofftot,1,indx_sfc) : )
+   zsnowrate(1:n) => bus( x(snowrate,1,1)     : )
    zskin_depth(1:n) => bus( x(skin_depth,1,1) : )
    zskin_inc(1:n) => bus( x(skin_inc,1,1)     : )
    ztsurf   (1:n) => bus( x(tsurf,1,1)        : )
    ztsrad   (1:n) => bus( x(tsrad,1,1)        : )
    zudiag   (1:n) => bus( x(udiag,1,1)        : )
+   zudiagtyp(1:n) => bus( x(udiagtyp,1,indx_sfc) : )
+   zudiagtypv(1:n) => bus( x(udiagtypv,1,indx_sfc) : )
    zvdiag   (1:n) => bus( x(vdiag,1,1)        : )
+   zvdiagtyp(1:n) => bus( x(vdiagtyp,1,indx_sfc) : )
+   zvdiagtypv(1:n) => bus( x(vdiagtypv,1,indx_sfc) : )
    ztdiag   (1:n) => bus( x(tdiag,1,1)        : )
+   ztdiagtyp(1:n) => bus( x(tdiagtyp,1,indx_sfc) : )
+   ztdiagtypv(1:n) => bus( x(tdiagtypv,1,indx_sfc) : )
    zqdiag   (1:n) => bus( x(qdiag,1,1)        : )
+   zqdiagtyp(1:n) => bus( x(qdiagtyp,1,indx_sfc) : )
+   zqdiagtypv(1:n) => bus( x(qdiagtypv,1,indx_sfc) : )
    zfrv     (1:n) => bus( x(frv,1,indx_sfc)   : )
    zzusl    (1:n) => bus( x(zusl,1,1)         : )
    zztsl    (1:n) => bus( x(ztsl,1,1)         : )
+   zcoszeni (1:n)   => bus( x(cang,1,1)        : )
+   zfsd (1:n)       => bus( x(fsd,1,1)         : )
+   zfsf (1:n)       => bus( x(fsf,1,1)         : )
+   zutcisun (1:n)   => bus( x(yutcisun,1,indx_sfc)    : )
+   zutcishade (1:n) => bus( x(yutcishade,1,indx_sfc)  : )
+   zwbgtsun (1:n)   => bus( x(ywbgtsun,1,indx_sfc)    : )
+   zwbgtshade (1:n) => bus( x(ywbgtshade,1,indx_sfc)  : )
+   zradsun (1:n)    => bus( x(yradsun,1,indx_sfc)     : )
+   zradshade (1:n)  => bus( x(yradshade,1,indx_sfc)   : )
+   ztglbsun (1:n)   => bus( x(ytglbsun,1,indx_sfc)    : )
+   ztglbshade (1:n) => bus( x(ytglbshade,1,indx_sfc)  : )
+   ztwetb (1:n)     => bus( x(ytwetb,1,indx_sfc)      : )
+   zq1 (1:n)        => bus( x(yq1,1,indx_sfc)         : )
+   zq2 (1:n)        => bus( x(yq2,1,indx_sfc)         : )
+   zq3 (1:n)        => bus( x(yq3,1,indx_sfc)         : )
+   zq4 (1:n)        => bus( x(yq4,1,indx_sfc)         : )
+   zq5 (1:n)        => bus( x(yq5,1,indx_sfc)         : )
+   zq6 (1:n)        => bus( x(yq6,1,indx_sfc)         : )
+   zq7 (1:n)        => bus( x(yq7,1,indx_sfc)         : )
+
+   if (atm_tplus) then
+      hu       (1:n) => bus( x(huplus,1,nk)      : )
+      ps       (1:n) => bus( x(pplus,1,1)        : )
+      th       (1:n) => bus( x(thetaap,1,1)      : )
+      tt       (1:n) => bus( x(tplus,1,nk)       : )
+      uu       (1:n) => bus( x(uplus,1,nk)       : )
+      vv       (1:n) => bus( x(vplus,1,nk)       : )
+   else
+      hu       (1:n) => bus( x(humoins,1,nk)     : )
+      ps       (1:n) => bus( x(pmoins,1,1)       : )
+      th       (1:n) => bus( x(thetaa,1,1)       : )
+      tt       (1:n) => bus( x(tmoins,1,nk)      : )
+      uu       (1:n) => bus( x(umoins,1,nk)      : )
+      vv       (1:n) => bus( x(vmoins,1,nk)      : )
+   endif
 
    !------------------------------------------------------------------------
 
@@ -165,7 +218,7 @@ subroutine water1(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, &
    do I=1,N
       !        QS(I) = FOQSA(TS(I),PS(I)) * (1.-MLAC(I))*qsat_o_salty
       QS(I) = FOQSA(SST(I),PS(I))
-      if(MLAC(I) .le. 0.001) QS(I) = qsat_o_salty*QS(I)
+      if(MLAC(I) .le. LAKE_MASK_THRESHOLD) QS(I) = qsat_o_salty*QS(I)
    end do
 
 
@@ -176,11 +229,15 @@ subroutine water1(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, &
 
       ! Precompute the Beljaars (QJRMS 1995, pp255-270) adjustment to the Charnock 
       ! relationship to increase the roughness length at low wind speeds (low ZFRV).
-      z0m_beljaars: if (z0mtype == 'BELJAARS') then
+      select case (z0mtype)
+      case ('BELJAARS') 
          Z0M_ADJUST = AM*K_VISC/max(ZFRV,ZFRVMIN)
-      else
+      case ('CHARNOCK')
          Z0M_ADJUST = 0.
-      endif z0m_beljaars
+      case DEFAULT
+         call physeterror('water', 'Unsupported z0mtype: '//trim(z0mtype))
+         return
+      end select
 
       ! Use Charnock's relation to estimate roughness length
       do I=1,N
@@ -189,17 +246,17 @@ subroutine water1(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, &
 
    endif
 
-   if (Z0TRDPS300) then
-      do I=1,N
-         ZFRV(I)=max(ZFRVMIN,  ZFRV(I))
-         Z0H(I) = min(2.e-05/ZFRV(I), 1.e-04)
-      end do
-   else
-      do I=1,N
-         Z0H(I) = Z0M(I)
-      end do
-   endif
-
+   select case (z0ttype)
+   case ('DEACU12')
+      z0h = min(2.e-5/max(zfrv,ZFRVMIN),1.e-4)
+   case ('ECMWF')
+      z0h = min(6.e-6/max(zfrv,ZFRVMIN),5.e-4)
+   case ('MOMENTUM')
+      z0h = z0m
+   case DEFAULT
+      call physeterror('water', 'Unsupported z0ttype: '//trim(z0ttype))
+      return
+   end select
 
    ! Note:  For |lat| >= Z0TLAT(2)  Charnock's (or Deacu) relation is used
    !        For |lat| <= Z0TLAT(1)  Z0HCON is used.
@@ -224,17 +281,27 @@ subroutine water1(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, &
 
    i = sl_prelim(tt,hu,uu,vv,ps,zzusl,rho_air=rho_a,spd_air=vmod,dir_air=vdir,min_wind_speed=VAMIN)
    if (i /= SL_OK) then
-      print*, 'Aborting in water() because of error returned by sl_prelim()'
-      stop
+      call physeterror('water', 'error returned by surface layer precalculations')
+      return
    endif
    i = sl_sfclayer(th,hu,vmod,vdir,zzusl,zztsl,sst,qs,z0m,z0h,zdlat,zfcor, &
         hghtm_diag=zu,hghtt_diag=zt,coefm=cmu,coeft=ctu,flux_t=zftemp, &
         flux_q=zfvap,ilmo=ilmo_wat,ue=zfrv,h=hst_wat,t_diag=ztdiag,    &
         q_diag=zqdiag,u_diag=zudiag,v_diag=zvdiag,tdiaglim=WATER_TDIAGLIM)
    if (i /= SL_OK) then
-      print*, 'Aborting in water() because of error returned by sl_sfclayer()'
-      stop
+      call physeterror('water', 'error returned by surface layer calculations')
+      return
    endif
+
+   ! Fill surface type-specific diagnostic values
+   zqdiagtyp = zqdiag
+   ztdiagtyp = ztdiag
+   zudiagtyp = zudiag
+   zvdiagtyp = zvdiag
+   zqdiagtypv = zqdiag
+   ztdiagtypv = ztdiag
+   zudiagtypv = zudiag
+   zvdiagtypv = zvdiag
 
    ! Also compute the air density at a chosen height (for now, the chosen height is
    ! at the screen level, i.e. at zt = 1.5m)
@@ -242,9 +309,9 @@ subroutine water1(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, &
    i = sl_sfclayer(th,hu,vmod,vdir,zzusl,zztsl,sst,qs,z0m,z0h,zdlat,zfcor, &
         hghtt_diag=1.5,t_diag=my_ta,q_diag=my_qa,tdiaglim=WATER_TDIAGLIM)
    if (i /= SL_OK) then
-      print*, 'Aborting in water() because of error returned by sl_sfclayer()'
-      stop
-   endif
+      call physeterror('water', 'error returned by surface layer density')
+      return
+  endif
 
 
 
@@ -262,6 +329,10 @@ subroutine water1(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, &
       if (.not.IMPFLX) CTU (I) = 0.
       RHOA(i) = PS(I)/(RGASD * my_ta(I)*(1.+DELTA*my_qa(I)))
       !         RHOA(i) = PS(I)/(RGASD * ZTDIAG(I)*(1.+DELTA*ZQDIAG(I)))
+      ! Compute runoff as total precipitation in kg/m2/s (or mm/s) minus evaporation.
+      ! ZALFAQ being negative for an upward flux, we need to add rho*zalfaq    
+      ZRUNOFFTOT (I) = (1000.*(ZRAINRATE(I) + ZSNOWRATE(I)) &
+           + RHOA(I)*ZALFAQ(I)) * DELT
       FC_WAT(I)    = -CPD *RHOA(i)*ZALFAT(I)
       FV_WAT(I)    = -CHLC*RHOA(i)*ZALFAQ(I)
 
@@ -269,6 +340,15 @@ subroutine water1(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, &
          ZALFAT   (I) = - CTU(I) *  SST(I)
          ZALFAQ   (I) = - CTU(I) *  QS(I)
       endif
+
+      ! Set emissivity of water for the radiation scheme
+      select case (water_emiss)
+      case DEFAULT
+         zemisr(i) = water_emiss_const
+      end select
+ 
+      ! Set albedo of water to predicted value if available
+      if (update_alwater) alvis_wat(i) = zalwater(i)
 
    end do
 
@@ -296,8 +376,8 @@ subroutine water1(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, &
             my_ta(1:n)=ztdiag(1:n)
             my_qa(1:n)=zqdiag(1:n)
          else
-            print*, 'Aborting in water() because of inconsistent density level'
-            stop
+            call physeterror('water', 'attempt to use an inconsistent density level')
+            return
          endif
          do I=1,N
             RHOA(I) = PS(I)/(RGASD * my_ta(I)*(1.+DELTA*my_qa(I)))
@@ -336,14 +416,17 @@ subroutine water1(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, &
 
    DIURNAL_SST: if ( diusst == 'FAIRALL') then
 
-      if (cplocn) STOP 'cplocn=true, diusst NOT TAKEN CARE OF YET'
+      if (cplocn) then
+         call physeterror('water', 'cplocn=true, diusst NOT taken care of yet')
+         return
+      endif
 
       ! Preliminary calculations
       i = sl_prelim(tt,hu,uu,vv,ps,zzusl,rho_air=rho_a,spd_air=vmod,dir_air=vdir,min_wind_speed=VAMIN)
       i = sl_sfclayer(th,hu,vmod,vdir,zzusl,zztsl,sst,qs,z0m,z0h,zdlat,zfcor,hghtm_diag=10., &
            ue=frv_a,u_diag=ud,v_diag=vdi,tdiaglim=WATER_TDIAGLIM)
       vmodd = sqrt(ud**2 + vdi**2)
-      alpha_w = 8.75e-6 * (sst-tcdk+9.) !expansion coefficient estimate from Hayes et al. (JGR, 1991)
+      alpha_w = max(8.75e-6*(sst-tcdk+9.),0.) !expansion coefficient estimate from Hayes et al. (JGR, 1991)
       visc_w = 1.8e-6 - 4.e-8*(sst-tcdk) !kinematic viscosity (from IITC 2011 recommendations at 10oC)
       frv_w = frv_a * sqrt(rho_a/rho_w) !friction velocity of water
       q_bal = -(fv_wat + fc_wat + (emis*stefan*sst**4 - zfdsi)) !surface energy balance (without shortwave)
@@ -377,14 +460,17 @@ subroutine water1(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, &
             endwhere
             lambda = 86400.*frv_w*cond_w/(gamma*rho_w*cv_w*ref_depth*visc_w)
          else
-            print*, 'No Saunders proportionality constants defined for '//trim(saunders)//' in subroutine water()'
-            stop
+            call physeterror('water', 'No Saunders constants defined for '//trim(saunders))
+            return
          endif
          zskin_depth = lambda * visc_w / (sqrt(rho_a/rho_w)*frv_a)
          zskin_depth = max(min(zskin_depth,0.01),skin_depth_min) !limit skin depth to physical values
          ! Compute cool skin temperature increment (difference SST - T(zskin_depth))
          zskin_inc = zskin_depth / cond_w * (skin_q)
          if (saunders == 'fairall') zskin_inc = min(zskin_inc,0.)
+         if (.not.diusst_coolskin_lakes) then
+            where (mlac(:) > LAKE_MASK_THRESHOLD) zskin_inc(:) = 0.
+         endif
 
       endif COOL_SKIN
 
@@ -409,11 +495,64 @@ subroutine water1(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, &
                endwhere
             endwhere
          enddo
-         zdsst = warm_increment
+         ! Do not apply warm layer over lakes unless requested
+         if (diusst_warmlayer_lakes) then
+            zdsst(:) = warm_increment(:)
+         else
+            where (mlac(:) < LAKE_MASK_THRESHOLD)
+               zdsst(:) = warm_increment(:)
+            endwhere
+         endif
 
       endif WARM_LAYER
 
    endif DIURNAL_SST
+
+   !--------------------------------------
+   !   6.     Heat Stress Indices
+   !------------------------------------
+   !#TODO: at least 4 times identical code in surface... separeted s/r to call
+   IF_THERMAL_STRESS: if (thermal_stress) then
+
+      do I=1,N
+
+         if (abs(zzusl(i)-zu) <= 2.0) then
+            zu10(i) = sqrt(uu(i)**2+vv(i)**2)
+         else
+            zu10(i) = sqrt(zudiag(i)**2+zvdiag(i)**2)
+         endif
+
+         ! wind  at SensoR level
+         zusr(i) = zu10(i)
+
+         zref_sw_surf(i) = alvis_wat(i) * zflusolis(i)
+         !    zref_sw_surf(i) = 0.075 * zflusolis(i)
+         ! alvis_wat currently problems over the lakes !!!! for now albedo~=0.075 (DAVIES, mc Master university, when??
+         zemit_lw_surf(i)  = (1. - zemisr(i)) * zfdsi(i) + zemisr(i)*STEFAN   &
+              !        zemit_lw_surf(i)  = (1. -0.976) * zfdsi(i) + 0.976*STEFAN   &
+              *ztsurf(i)**4
+         ! emissivity for lake ontario 0.976 but should depend on Sun elev Fresnel 's formula ??
+         ZZENITH(I) = acos(ZCOSZENI(I))      ! direct use of bus zenith
+         if (ZFLUSOLIS(I) > 0.0) then
+            ZZENITH(I) = min(ZZENITH(I), PI/2.)
+         else
+            ZZENITH(I) = max(ZZENITH(I), PI/2.)
+         endif
+
+      end do
+
+      call SURF_THERMAL_STRESS(ZTDIAG, ZQDIAG,         &
+           ZU10,ZUSR,  ps,                             &
+           ZFSD, ZFSF, ZFDSI, ZZENITH,                 &
+           ZREF_SW_SURF,ZEMIT_LW_SURF,                 &
+           Zutcisun ,Zutcishade,                       &
+           zwbgtsun, zwbgtshade,                       &
+           zradsun, zradshade,                         &
+           ztglbsun, ztglbshade, ztwetb,               &
+           ZQ1, ZQ2, ZQ3, ZQ4, ZQ5,                    &
+           ZQ6,ZQ7, N)
+   endif IF_THERMAL_STRESS
+   !--------------------------------------
 
    ! FILL THE ARRAYS TO BE AGGREGATED LATER IN S/R AGREGE
    call FILLAGG ( BUS, BUSSIZ, PTSURF, PTSURFSIZ, INDX_WATER, SURFLEN )

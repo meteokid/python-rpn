@@ -23,8 +23,8 @@ contains
   !/@*
   function phy_terminate() result(F_istat)
       use cpl_itf, only: cpl_terminate
-      use phy_options, only: phy_init_ctrl, PHY_CTRL_INI_OK
-      use phy_typedef, only: PHY_NONE
+      use series_mod, only: series_terminate
+      use phy_status, only: PHY_NONE, PHY_CTRL_INI_OK, phy_error_L, phy_init_ctrl
       implicit none
 
     integer :: F_istat  !Return status (RMN_OK or RMN_ERR)
@@ -35,6 +35,7 @@ contains
 #include <rmnlib_basics.hf>
 #include <msg.h>
 
+    integer :: istat
     ! ---------------------------------------------------------------------
     F_istat = RMN_ERR
     if (phy_init_ctrl == PHY_NONE) then
@@ -49,10 +50,12 @@ contains
     F_istat = RMN_ERR
 
     ! Shut down time series
-    call ser_clos
+    istat = series_terminate()
 
     ! Shut down coupler
     call cpl_terminate (.true.)
+
+    if (phy_error_L) return
 
     ! Successful completion
     F_istat = RMN_OK

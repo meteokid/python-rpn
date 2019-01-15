@@ -16,7 +16,7 @@
 !**S/R MFSLESMX  -  MIXED PHASE SATURATION VAPOR PRESSURE CALCULATION
 !
       SUBROUTINE MFDLESMX(RES,TT,FF,DF,NI,NK)
-!
+      use tdpack_const
       implicit none
 #include <arch_specific.hf>
 !
@@ -42,50 +42,38 @@
 ! DF       value of derivative w/r to T for saturation w/r to ice or liquid
 ! NI       horizontal dimension
 ! NK       vertical dimension
-!
 !*
-!
-include "thermoconsts.inc"
-!
-      INTEGER I,K
-!
+      integer i,k
+      real*8, dimension(ni,nk) :: work8
+      real*8, dimension(ni,nk) :: foewad
+      real*8, dimension(ni,nk) :: fesid
+      real*8, dimension(ni,nk) :: fesmxd
+
+#define __FORTRAN__
+#include "tdpack_func.h"
+
 !***********************************************************************
-!     AUTOMATIC ARRAYS
-!***********************************************************************
-!
-      REAL*8, dimension(NI,NK) :: WORK8
-      REAL*8, dimension(NI,NK) :: FOEWAD
-      REAL*8, dimension(NI,NK) :: FESID
-      REAL*8, dimension(NI,NK) :: FESMXD
-!
-!***********************************************************************
-!
-include "dintern.inc"
-include "fintern.inc"
-!
-!MODULES
-!
-      DO K=1,NK
-         DO I=1,NI
-            FOEWAD(I,K)=FOEWAF(TT(I,K))
-            FESID(I,K) =FESIF(TT(I,K))
-         ENDDO
-      ENDDO
-      CALL VEXP(FOEWAD,FOEWAD,NI*NK)
-      CALL VEXP(FESID,FESID,NI*NK)
-      DO K=1,NK
-         DO I=1,NI
-            FOEWAD(I,K)=FOMULT(FOEWAD(I,K))
-            FESID(I,K) =FOMULT(FESID(I,K))
-            FESMXD(I,K)=FESMXX(FF(I,K),FESID(I,K),FOEWAD(I,K))
-         ENDDO
-      ENDDO
-      DO K=1,NK
-      DO I=1,NI
-      RES(I,K)=&
-      FDLESMXX(TT(I,K),FF(I,K),DF(I,K),FOEWAD(I,K),FESID(I,K),FESMXD(I,K))
-      ENDDO
-      ENDDO
+      do k=1,nk
+         do i=1,ni
+            foewad(i,k)=FOEWAF(tt(i,k))
+            fesid(i,k) =FESIF(tt(i,k))
+         enddo
+      enddo
+      call vexp(foewad,foewad,ni*nk)
+      call vexp(fesid,fesid,ni*nk)
+      do k=1,nk
+         do i=1,ni
+            foewad(i,k)=aerk1w*foewad(i,k)
+            fesid(i,k) =aerk1i*fesid(i,k)
+            fesmxd(i,k)=FESMXX(ff(i,k),fesid(i,k),foewad(i,k))
+         enddo
+      enddo
+      do k=1,nk
+      do i=1,ni
+      res(i,k)=&
+      FDLESMXX(tt(i,k),ff(i,k),df(i,k),foewad(i,k),fesid(i,k),fesmxd(i,k))
+      enddo
+      enddo
 !
       RETURN
       END

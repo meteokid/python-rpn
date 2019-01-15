@@ -1,5 +1,5 @@
 module my_dmom_mod
-
+  use tdpack
   implicit none
 #include <arch_specific.hf>
 
@@ -17,7 +17,8 @@ module my_dmom_mod
      initN,dblMom_c,dblMom_r,dblMom_i,dblMom_s,dblMom_g,dblMom_h,Dm_c,Dm_r,Dm_i,Dm_s,   &
      Dm_g,Dm_h,ZET,ZEC,SLW,VIS,VIS1,VIS2,VIS3,h_CB,h_ML1,h_ML2,h_SN,SS01,SS02,SS03,SS04,&
      SS05,SS06,SS07,SS08,SS09,SS10,SS11,SS12,SS13,SS14,SS15,SS16,SS17,SS18,SS19,SS20,   &
-     Tc_3comp,PRFLXKY,SWFLXKY,F12KY,FEVPKY,CLRKY,CLRKY1)
+     Tc_3comp,PRFLXKY,SWFLXKY,F12KY,FEVPKY,CLRKY,CLRKY1,cloud_bin,reff_c,reff_i1,       &
+     reff_i2,reff_i3, reff_i4)
 
   use my_fncs_mod
   use my_sedi_mod
@@ -37,7 +38,9 @@ module my_dmom_mod
   real, dimension(:,:),  intent(out)   :: T_TEND,QCTEND,QRTEND,QITEND,QNTEND,          &
         QGTEND,QHTEND,Q_TEND,NCTEND,NRTEND,NYTEND,NNTEND,NGTEND,NHTEND,ZET,Dm_c,       &
         Dm_r,Dm_i,Dm_s,Dm_g,Dm_h,SLW,VIS,VIS1,VIS2,VIS3,SS01,SS02,SS03,SS04,SS05,SS06, &
-        SS07,SS08,SS09,SS10,SS11,SS12,SS13,SS14,SS15,SS16,SS17,SS18,SS19,SS20
+        SS07,SS08,SS09,SS10,SS11,SS12,SS13,SS14,SS15,SS16,SS17,SS18,SS19,SS20,reff_c,  &
+        reff_i1,reff_i2,reff_i3,reff_i4
+  real, dimension(NI,NK),intent(out)   :: cloud_bin             ! cloud fraction (0 or 1)     
   logical,               intent(in)    :: dblMom_c,dblMom_r,dblMom_i,dblMom_s,         &
         dblMom_g,dblMom_h,precipDiag_ON,sedi_ON,icephase_ON,snow_ON,warmphase_ON,      &
         autoconv_ON,initN
@@ -241,7 +244,7 @@ module my_dmom_mod
        iLAMs,iLAMs2,iLAMsB0,iLAMsB1,iLAMsB2,iLAMr,iLAMr2,iLAMr3,iLAMr4,iLAMr5,      &
        iLAMc2,iLAMc3,iLAMc4,iLAMc5,iLAMc6,iQCM,iQRM,iQIM,iQNM,iQGM,iQHM,iEih,iEsh,  &
        N_c,N_r,N_i,N_s,N_g,N_h,fluxV_i,fluxV_g,fluxV_s,rhos_mlt,fracLiq,maxQlClip,  &
-       maxQiClip
+       maxQiClip,iNC,iNY,iNN,iNG,iNH,cloudliq,cloudice,cloudsnow
 
  !Variables that only need to be calulated on the first step (and saved):
   real, save :: idt,iMUc,cmr,cmi,cms,cmg,cmh,icmr,icmi,icmg,icms,icmh,idew,idei,    &
@@ -361,10 +364,6 @@ module my_dmom_mod
   real, parameter :: Ni_max      = 1.e+7          ![m-3] max ice crystal concentration
   real, parameter :: maxTclip    = 10.            ![k] max allowable drop in T from Q clip
   real, parameter :: satw_peak   = 1.01           !assumed max. peak saturation w.r.t. water (for calc of Simax)
-
-include "thermoconsts.inc"
-include "dintern.inc"
-include "fintern.inc"
 
   ! Constants used for contact ice nucleation:
   real, parameter :: LAMa0  = 6.6e-8     ![m] mean free path at T0 and p0 [W95_eqn58]
@@ -2753,6 +2752,76 @@ include "fintern.inc"
 
  !-----------------------------------------------------------------------------------!
  !                    Calculation of diagnostic output variables:                    !
+
+ ! Compute effective radii for cloud and ice (to be passed to radiation scheme):
+ !  - based of definition, r_eff = M_r(3)/M_r(2) = 0.5*M_D(3)/M_D(2),
+ !    where the pth moment w.r.t. diameter, M_D(p), is given by MY2005a, eqn (2)
+  do k = 1,nk
+     do i = 1,ni
+
+      !cloud:
+        if (QC(i,k)>epsQ .and. NC(i,k)>epsN) then
+          !hardcoded for alpha_c = 1. and mu_c = 3.
+           iNC   = 1./NC(i,k)
+           iLAMc = iLAMDA_x(DE(i,k),QC(i,k),iNC,icexc9,thrd)
+           reff_c(i,k) = 0.664639*iLAMc
+        else
+           reff_c(i,k) = 0.
+        endif
+
+      !ice:
+        if (QI(i,k)>epsQ .and. NY(i,k)>epsN) then
+          !hardcoded for alpha_i = 0. and mu_i = 1.
+           iNY   = 1./NY(i,k)
+           iLAMi = max( iLAMmin2, iLAMDA_x(DE(i,k),QI(i,k),iNY,icexi9,thrd) )
+           reff_i1(i,k) = 1.5*iLAMi
+        else
+           reff_i1(i,k) = 0.
+        endif
+
+      !snow:
+        if (QN(i,k)>epsQ .and. NN(i,k)>epsN) then
+          !hardcoded for alpha_s = 0. and mu_s = 1.
+           iNN   = 1./NN(i,k)
+           iLAMs  = max( iLAMmin2, iLAMDA_x(DE(i,k),QN(i,k),iNN,iGS20,idms) )
+           reff_i2(i,k) = 1.5*iLAMs
+        else
+           reff_i2(i,k) = 0.
+        endif
+
+      !graupel:
+        if (QG(i,k)>epsQ .and. NG(i,k)>epsN) then
+          !hardcoded for alpha_g = 0. and mu_g = 1.
+           iNG   = 1./NG(i,k)
+           iLAMg = max( iLAMmin1, iLAMDA_x(DE(i,k),QG(i,k),iNG,iGG99,thrd) )
+           reff_i3(i,k) = 1.5*iLAMg
+        else
+           reff_i3(i,k) = 0.
+        endif
+
+      !hail:
+        if (QH(i,k)>epsQ .and. NH(i,k)>epsN) then
+          !hardcoded for alpha_h = 0. and mu_h = 1.
+           iNH   = 1./NH(i,k)
+           iLAMh = max( iLAMmin1, iLAMDA_x(DE(i,k),QH(i,k),iNH,iGH99,thrd) )
+           reff_i4(i,k) = 1.5*iLAMh
+        else
+           reff_i4(i,k) = 0.
+        endif
+
+     ! calculate a 'binary' cloud fraction (0 or 1) based on supersaturation
+        cloud_bin(i,k)=0.
+        cloudliq=0.
+        cloudice=0.
+        cloudsnow=0.
+        if (QC(i,k).ge.epsQ .and. (QM(i,k)/QSW(i,k)-1.).gt.1.e-6) cloudliq=1.
+        if (QI(i,k).ge.epsQ .and. reff_i1(i,k).lt.100.e-6) cloudice=1.
+        if (QN(i,k).ge.epsQ .and. reff_i2(i,k).lt.100.e-6) cloudsnow=1.
+        cloud_bin(i,k)=cloudice+cloudsnow+cloudliq
+        cloud_bin(i,k)=max(min(cloud_bin(i,k),1.),0.)
+
+     enddo
+  enddo
 
   IF (calcDiag) THEN
 

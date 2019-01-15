@@ -15,16 +15,16 @@
 !-------------------------------------- LICENCE END --------------------------------------
 
 module phy_getmeta_mod
-   use phy_options, only: phy_init_ctrl, PHY_CTRL_INI_OK
-   use phy_typedef, only: phymeta, PHY_NONE, NPATH_DEFAULT, BPATH_DEFAULT, PHY_MAXNAMELENGTH
+   use phy_status, only: phy_init_ctrl, PHY_CTRL_INI_OK, PHY_NONE
+   use phy_typedef, only: phymeta, NPATH_DEFAULT, BPATH_DEFAULT, PHY_MAXNAMELENGTH
    use phygetmetaplus_mod, only: phymetaplus, phygetmetaplus, PATHLENGTH
+!!$   use phygridmap, only: 
    private
 #include <rmnlib_basics.hf>
 #include <msg.h>
 #include <gmm.hf>
 #include <clib_interface_mu.hf>
    include "buses.cdk"
-   include "phygrd.cdk"
 
    public :: phy_getmeta, phy_getmeta_single, phy_getmeta_list, PATHLENGTH
 

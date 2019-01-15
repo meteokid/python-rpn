@@ -33,7 +33,23 @@ XLE_ROOF,XLES_ROOF,XGFLUX_ROOF,XRUNOFF_ROOF,XRN_ROAD,XH_ROAD,   &
 XLE_ROAD,XLES_ROAD,XGFLUX_ROAD,XRUNOFF_ROAD,XRN_WALL,XH_WALL,   &
 XLE_WALL,XGFLUX_WALL,XRNSNOW_ROOF,XHSNOW_ROOF,XLESNOW_ROOF,     &
 XGSNOW_ROOF,XMELT_ROOF,XRNSNOW_ROAD,XHSNOW_ROAD,XLESNOW_ROAD,   &
-XGSNOW_ROAD,XMELT_ROAD,XRN,XH,XLE,XGFLUX,XEVAP,XRUNOFF,XCH,XRI,XUSTAR
+XGSNOW_ROAD,XMELT_ROAD,XRN,XH,XLE,XGFLUX,XEVAP,XRUNOFF,XCH,XRI,XUSTAR,  &
+XTRAD_IN,XTRAD_SUN,XTRAD_SHADE,        &
+XTRAD_RFSUN,XTRAD_RFSHADE,             &
+XTGLOBE_SUN,XTGLOBE_SHADE,             &
+XTGLOBE_RFSUN,XTGLOBE_RFSHADE,         &
+XTWETB,XTWETB_ROOF,                    &
+XUTCI_IN,XUTCI_OUTSUN,XUTCI_OUTSHADE,  &
+XUTCI_RFSUN,XUTCI_RFSHADE,             &
+XWBGT_OUTSUN,XWBGT_OUTSHADE,           &
+XWBGT_RFSUN,XWBGT_RFSHADE,             &
+XUTCIC_IN,XUTCIC_OUTSUN,               &
+XUTCIC_OUTSHADE,XUTCIC_RFSUN,          &
+XUTCIC_RFSHADE,                        &
+XTRFZT,XTRDZT,XURDZU,                  &
+XQ1,XQ2,XQ3,XQ4,XQ5,XQ6,XQ7,           &
+XQ8,XQ9,XQ10,XQ11,XQ12,XQ13
+
 !$OMP THREADPRIVATE(/ttte/)
 #define ALLOCATABLE POINTER
 !
@@ -93,6 +109,51 @@ REAL, DIMENSION(:)  , ALLOCATABLE :: XRUNOFF         ! Runoff over ground
 REAL, DIMENSION(:)  , ALLOCATABLE :: XCH             ! Heat drag             
 REAL, DIMENSION(:)  , ALLOCATABLE :: XRI             ! Richardson number               
 REAL, DIMENSION(:)  , ALLOCATABLE :: XUSTAR          ! Friction velocity              
+!
+REAL, DIMENSION(:) , ALLOCATABLE    :: XTRAD_IN       ! body MRT inside building (K)
+REAL, DIMENSION(:) , ALLOCATABLE    :: XTRAD_SUN      ! body MRT in the exposed street (K)
+REAL, DIMENSION(:) , ALLOCATABLE    :: XTRAD_SHADE    ! body MRT in the shaded street (K)
+REAL, DIMENSION(:) , ALLOCATABLE    :: XTRAD_RFSUN      ! body MRT on the exposed roof (K)
+REAL, DIMENSION(:) , ALLOCATABLE    :: XTRAD_RFSHADE    ! body MRT on the shaded roof (K)
+REAL, DIMENSION(:) , ALLOCATABLE    :: XUTCI_IN       ! UTCI inside building
+REAL, DIMENSION(:) , ALLOCATABLE    :: XUTCI_OUTSUN   ! UTCI in the exposed street
+REAL, DIMENSION(:) , ALLOCATABLE    :: XUTCI_OUTSHADE ! UTCI in the shaded street
+REAL, DIMENSION(:) , ALLOCATABLE    :: XUTCI_RFSUN    ! UTCI on the exposed roof
+REAL, DIMENSION(:) , ALLOCATABLE    :: XUTCI_RFSHADE  ! UTCI on the shaded roof
+REAL, DIMENSION(:) , ALLOCATABLE    :: XWBGT_OUTSUN    ! WBGT  wet bulb globe temperature in the street (C)
+REAL, DIMENSION(:) , ALLOCATABLE    :: XWBGT_OUTSHADE  ! WBGT  wet bulb globe temperature in the street (C)
+REAL, DIMENSION(:) , ALLOCATABLE    :: XWBGT_RFSUN     ! WBGT  wet bulb globe temperature on the roof (C)
+REAL, DIMENSION(:) , ALLOCATABLE    :: XWBGT_RFSHADE   ! WBGT  wet bulb globe temperature on the roof (C)
+REAL, DIMENSION(:) , ALLOCATABLE    :: XUTCIC_IN       ! UTCI inside building
+REAL, DIMENSION(:) , ALLOCATABLE    :: XUTCIC_OUTSUN   ! UTCI in the exposed street
+REAL, DIMENSION(:) , ALLOCATABLE    :: XUTCIC_OUTSHADE ! UTCI in the shaded street
+REAL, DIMENSION(:) , ALLOCATABLE    :: XUTCIC_RFSUN   ! UTCI in the exposed street
+REAL, DIMENSION(:) , ALLOCATABLE    :: XUTCIC_RFSHADE ! UTCI in the shaded street
+!
+REAL, DIMENSION(:) , ALLOCATABLE    :: XTGLOBE_SUN      ! Globe Temperature in the exposed street (K)
+REAL, DIMENSION(:) , ALLOCATABLE    :: XTGLOBE_SHADE    ! Globe Temperature in the shaded street (K)
+REAL, DIMENSION(:) , ALLOCATABLE    :: XTGLOBE_RFSUN    ! Globe Temperature  on the exposed roof (K)
+REAL, DIMENSION(:) , ALLOCATABLE    :: XTGLOBE_RFSHADE  ! Globe Temperature  on the shaded roof  (K)
+REAL, DIMENSION(:) , ALLOCATABLE    :: XTWETB           ! wet-bulb temperature on the ground (K)
+REAL, DIMENSION(:) , ALLOCATABLE    :: XTWETB_ROOF      ! wet-bulb tempertaure over the roof  (K)
+!
+REAL, DIMENSION(:) , ALLOCATABLE    :: XTRFZT  ! 
+REAL, DIMENSION(:) , ALLOCATABLE    :: XTRDZT  ! 
+REAL, DIMENSION(:) , ALLOCATABLE    :: XURDZU  ! 
+!
+REAL, DIMENSION(:) , ALLOCATABLE    :: XQ1  ! 
+REAL, DIMENSION(:) , ALLOCATABLE    :: XQ2  ! 
+REAL, DIMENSION(:) , ALLOCATABLE    :: XQ3  ! 
+REAL, DIMENSION(:) , ALLOCATABLE    :: XQ4  ! 
+REAL, DIMENSION(:) , ALLOCATABLE    :: XQ5  ! 
+REAL, DIMENSION(:) , ALLOCATABLE    :: XQ6  ! 
+REAL, DIMENSION(:) , ALLOCATABLE    :: XQ7  ! 
+REAL, DIMENSION(:) , ALLOCATABLE    :: XQ8  ! 
+REAL, DIMENSION(:) , ALLOCATABLE    :: XQ9  ! 
+REAL, DIMENSION(:) , ALLOCATABLE    :: XQ10  ! 
+REAL, DIMENSION(:) , ALLOCATABLE    :: XQ11  ! 
+REAL, DIMENSION(:) , ALLOCATABLE    :: XQ12  ! 
+REAL, DIMENSION(:) , ALLOCATABLE    :: XQ13  ! 
 
 !
 END MODULE MODD_TOWN

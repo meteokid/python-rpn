@@ -10,9 +10,10 @@
 !/@*
 module phy_output_mod
    use phy_itf
+   use phygridmap, only: phydim_ni, phydim_nk
    use output_mod
    use config_mod
-   use cmcdate_mod
+   use mu_jdate_mod
    use hgrid_wb
    use vgrid_wb
    use ptr_store
@@ -27,7 +28,7 @@ module phy_output_mod
    !        Test on 4 character instead of 2 for unit conversions
    !        in phy_output1 
    !@public_functions
-   public :: phy_output,phy_output0,phy_output1
+   public :: phy_output,phy_output0,phy_output1_4,phy_output1_8
    !@public_params
    !@public_vars
 !*@/
@@ -39,7 +40,8 @@ module phy_output_mod
 
    interface phy_output
       module procedure phy_output0
-      module procedure phy_output1
+      module procedure phy_output1_4
+      module procedure phy_output1_8
    end interface
 
 contains
@@ -54,15 +56,16 @@ contains
       integer :: F_istat
    !*@/
       character(len=*),parameter :: OUTCFG_NAME = 'outcfg.out'
-      integer,save :: dateo = -1, reduc_core(4)
+      integer,save :: reduc_core(4)
+      integer(IDOUBLE),save :: jdateo = -1
       real(RDOUBLE),save :: dt_8 = 0.D0
       character(len=1024),save :: outcfg_S,basedir_S
       character(len=1024) :: dateo_S,config_dir0_S,pwd_S
       !---------------------------------------------------------------------
       F_istat = RMN_OK
-      if (dateo == -1) then
+      if (jdateo == -1) then
          F_istat = min(wb_get('time_run_start',dateo_S),F_istat)
-         dateo = cmcdate_fromprint(dateo_S)
+         jdateo = jdate_from_print(dateo_S)
          F_istat = min(wb_get('time_dt',dt_8),F_istat)
          F_istat = min(wb_get('path/output',basedir_S),F_istat)
          F_istat = min(wb_get('path/config_dir0',config_dir0_S),F_istat)
@@ -73,26 +76,46 @@ contains
       endif
       if (.not.RMN_IS_OK(F_istat)) then
          call msg(MSG_WARNING,'(phy_output) Problem getting config info, cannot produce output')
-         dateo = -1
+         jdateo = -1
          return
       endif
-      F_istat = phy_output1(dateo,nint(dt_8),F_step,outcfg_S,basedir_S,reduc_core)
+      F_istat = phy_output1_8(jdateo,nint(dt_8),F_step,outcfg_S,basedir_S,reduc_core)
       !---------------------------------------------------------------------
       return
    end function phy_output0
 
 
    !/@*
-   function phy_output1(F_dateo,F_dt,F_step,F_outcfg_S,F_basedir_S,F_reduc_core) result(F_istat)
+   function phy_output1_4(F_dateo,F_dt,F_step,F_outcfg_S,F_basedir_S,F_reduc_core) result(F_istat)
       implicit none
       !@objective
       !@arguments
-      integer,intent(in) :: F_dateo,F_dt,F_step,F_reduc_core(4)
+      integer,intent(in) :: F_dateo
+      integer,intent(in) :: F_dt,F_step,F_reduc_core(4)
+      character(len=*),intent(in) :: F_outcfg_S,F_basedir_S
+      !@return
+      integer :: F_istat
+      !*@/
+      integer(IDOUBLE) :: jdateo
+      !---------------------------------------------------------------------
+      jdateo = jdate_from_cmc(F_dateo)
+      F_istat = phy_output1_8(jdateo,F_dt,F_step,F_outcfg_S,F_basedir_S,F_reduc_core)
+      !---------------------------------------------------------------------
+      return
+   end function phy_output1_4
+
+
+   !/@*
+   function phy_output1_8(F_dateo,F_dt,F_step,F_outcfg_S,F_basedir_S,F_reduc_core) result(F_istat)
+      implicit none
+      !@objective
+      !@arguments
+      integer(IDOUBLE),intent(in) :: F_dateo
+      integer,intent(in) :: F_dt,F_step,F_reduc_core(4)
       character(len=*),intent(in) :: F_outcfg_S,F_basedir_S
       !@return
       integer :: F_istat
    !*@/
-#include "phygrd.cdk"
 
       character(len=*),parameter :: PHYTAG = 'p'
       character(len=*),parameter :: HGRID_S = 'local#'
@@ -210,6 +233,10 @@ contains
             select case(trim(mylist_S(ivar)(1:4)))
             case('sd')
                istat = convert_units(data3dr4,'m','cm')
+            case('sndp')
+               istat = convert_units(data3dr4,'m','cm')
+            case('svdp')
+               istat = convert_units(data3dr4,'m','cm')
             case('la')
                istat = convert_units(data3dr4,'rad','deg')
             case('lo')
@@ -237,7 +264,7 @@ contains
       endif
       !---------------------------------------------------------------------
       return
-   end function phy_output1
+   end function phy_output1_8
 
 
    !/@*

@@ -63,9 +63,8 @@ subroutine compz0(optz0, z0, z0t, fm, va, fcor, n)
    ! Z0HCON    fixed value for deep convection zone
    ! ac        Charnock's formulae constant
    ! z0tz0     z0t / z0 constant ratio over land
-   ! Z0GLA     z0 over glaciers
 
-   include "thermoconsts.inc"
+#include "tdpack_const.hf"
 
       integer j
       real ac, Z0MAX, VISCOSITY
@@ -73,14 +72,11 @@ subroutine compz0(optz0, z0, z0t, fm, va, fcor, n)
       real trrn(n)      
       real lat(n)   
       real z0tz0
-      real Z0GLA
-      save Z0GLA
 ! 
        DATA VISCOSITY / 1.461E-5/
        DATA Z0MAX / 5.E-3 /
 ! DATA Z0MIN          /1.5E-5/        ! in sfc_opt.ftn90
 !       DATA Z0HCON/ 4.E-5/           ! in sfc_opt.ftn90
-       DATA Z0GLA  / 3.0E-4 /
           ac = 0.018       
           z0tz0=0.2
 !

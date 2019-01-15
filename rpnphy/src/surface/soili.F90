@@ -14,9 +14,10 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
 
-subroutine SOILI(TS, WG, W2, WF, WS, RHOS, VEG, &
-     CGSAT, WSAT, WWILT, BCOEF, C1SAT, C2REF, ACOEF, PCOEF, CV, Z0, &
-     CG, ZC1, ZC2, WGEQ, CT, ZCS, PSN, PSNG, PSNV, PSNZ0, Z0TOT, Z0H, N)
+subroutine SOILI2(TS, WG, W2, WF, WS, RHOS, VEG, &
+     CGSAT, WSAT, WWILT, BCOEF, C1SAT, C2REF, ACOEF, PCOEF, CV, Z0, Z0VEG, &
+     CG, ZC1, ZC2, WGEQ, CT, ZCS, PSN, PSNG, PSNV, PSNZ0, Z0TOT, Z0H, Z0HVEG, N)
+   use sfc_options, only: isba_snow_z0veg
    implicit none
 #include <arch_specific.hf>
    !@Object
@@ -42,6 +43,7 @@ subroutine SOILI(TS, WG, W2, WF, WS, RHOS, VEG, &
    ! PCOEF    p coefficient for the wgeq formulation
    ! CV       heat capacity of the vegetation
    ! Z0       roughness length
+   ! Z0VEG    vegetation roughness length
    !           - Output -
    ! CG       heat capacity of the bare soil
    ! ZC1, ZC2 coefficients for the moisture calculations
@@ -55,14 +57,15 @@ subroutine SOILI(TS, WG, W2, WF, WS, RHOS, VEG, &
    !          calculation of Z0
    ! Z0TOT    total roughness length (including the effect of snow)
    ! Z0H      roughness length for the heat transfers
+   ! Z0HVEG   roughness length for the heat transfers (vegetation only)
 
    integer N
    real TS(N), WG(N), W2(N), WF(N), WS(N), RHOS(N), VEG(N)
    real CGSAT(N), WSAT(N), WWILT(N), BCOEF(N), C1SAT(N)
-   real C2REF(N), ACOEF(N), PCOEF(N), CV(N), Z0(N)
+   real C2REF(N), ACOEF(N), PCOEF(N), CV(N), Z0(N), Z0VEG(N)
    real CG(N), ZC1(N), ZC2(N), WGEQ(N), CT(N), ZCS(N)
    real PSN(N), PSNG(N), PSNV(N), PSNZ0(N), Z0TOT(N)
-   real Z0H(N)
+   real Z0H(N), Z0HVEG(N)
 
    !@Author S. Belair (January 1997)
    !@Revisions
@@ -82,14 +85,14 @@ subroutine SOILI(TS, WG, W2, WF, WS, RHOS, VEG, &
    ! 006      S. Belair and L.-P. Crevier (February 2001)
    !             Put roughness length of snow equal to Z0
    !             Cap Z0H at 0.2 m
-   include "thermoconsts.inc"
+#include "tdpack_const.hf"
 
    integer i
 
    real LAMI, CI, DAY, WCRN, BETAS, Z0SNOW
    real LAMTYP, LAMW, CW
    real, dimension(n) :: LAMS, CW1MAX, ETA, WMAX, SIGSQUARE, BETA, &
-        X, CTYP,   LAMC, CGCOR
+        X, CTYP, LAMC, CGCOR, Z0_PSNV
 
    !***********************************************************************
    !  Define some constants for the ice
@@ -156,7 +159,12 @@ subroutine SOILI(TS, WG, W2, WF, WS, RHOS, VEG, &
 
 
    !4. FRACTIONS OF SNOW COVERAGE
-   !    --------------------------
+   !    -------------------------
+   if (isba_snow_z0veg) then
+      Z0_PSNV(:) = Z0VEG(:)
+   else
+      Z0_PSNV(:) = Z0(:)
+   endif
    do I=1,N
 
       !# fraction of ground covered by snow
@@ -167,7 +175,7 @@ subroutine SOILI(TS, WG, W2, WF, WS, RHOS, VEG, &
       end if
 
       !# fraction of vegetation covered by snow
-      PSNV(I) = WS(I) / (WS(I)+RHOS(I)*5000.*Z0(I))
+      PSNV(I) = WS(I) / (WS(I)+RHOS(I)*5000.*Z0_PSNV(I))
 
       !# fraction of the grid covered by snow
       PSN(I) = ( 1-VEG(I) )*PSNG(I) + VEG(I)*PSNV(I)
@@ -266,7 +274,8 @@ subroutine SOILI(TS, WG, W2, WF, WS, RHOS, VEG, &
    do I=1,N
       ! Z0H(I) = MAX(   0.1 * Z0TOT(I)  ,  1.E-5   )
       Z0H(I) = min(   0.2 * Z0TOT(I)  ,  0.2   )
+      Z0HVEG(I) = min(   0.2 * Z0VEG(I)  ,  0.2   )
    end do
 
    return
-end subroutine SOILI
+end subroutine SOILI2

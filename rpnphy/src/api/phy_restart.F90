@@ -14,8 +14,6 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 module phy_restart_mod
-  use phy_options, only: phy_init_ctrl, PHY_CTRL_INI_OK
-  use phy_typedef, only: PHY_NONE
   use cpl_itf, only: cpl_restart
   implicit none
   private
@@ -46,17 +44,6 @@ contains
     character(len=32) :: WorR_S
 
     ! ------------------------------------------------------------------
-!!$This portion of code was probably not tested.
-!!$One cannot assume when this routine will be called
-!!$    F_istat = RMN_ERR
-!!$    if (phy_init_ctrl == PHY_NONE) then
-!!$       F_istat = PHY_NONE
-!!$       return
-!!$    else if (phy_init_ctrl /= PHY_CTRL_INI_OK) then
-!!$       call msg(MSG_ERROR,'(phy_restart) Physics not properly initialized.')
-!!$       return
-!!$    endif
-
     WorR_S = adjustl(F_WorR_S)
     istat = clib_toupper(WorR_S)
 

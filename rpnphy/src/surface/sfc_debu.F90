@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN ------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,9 +12,9 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!-------------------------------------- LICENCE END --------------------------
 
-
+!@*
 function sfc_init(p_ni,p_nj,p_nk) result(F_istat)
    use sfc_options
    implicit none
@@ -25,7 +25,7 @@ function sfc_init(p_ni,p_nj,p_nk) result(F_istat)
    !          - Input -
    ! N        horizontal dimension
    ! P_NK       vertical   dimension
-   
+
    integer,intent(in) :: p_ni,p_nj,p_nk
    integer :: F_istat
 
@@ -37,16 +37,11 @@ function sfc_init(p_ni,p_nj,p_nk) result(F_istat)
    !          1) it initializes a few constants necessary
    !             for the execution of the surface package.
    !          2) call iniptsurf to construct the surface bus
-
+!*@/
 #include <rmnlib_basics.hf>
+   integer, external :: iniptsurf4
    !---------------------------------------------------------------------
-   F_istat = RMN_ERR
-
-!!$   call iniptsurf2(p_ni,p_nk)
-   call iniptsurf3(p_ni,p_nk)
-   call sfcexch_options2()
-   do_surface = any(fluvert == (/'SURFACE', 'CLEF   ', 'MOISTKE'/))
-
-   F_istat = RMN_OK
+   !#TODO: remove this useless step
+   F_istat = iniptsurf4(p_ni,p_nk)
    !----------------------------------------------------------------------
 end function sfc_init

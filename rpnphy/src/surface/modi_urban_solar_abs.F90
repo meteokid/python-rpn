@@ -28,7 +28,9 @@ INTERFACE
                                PDN_ROOF, PDF_ROOF, PDN_ROAD, PDF_ROAD,       &
                                PABS_SW_ROOF, PABS_SW_ROAD, PABS_SW_WALL,     &
                                PABS_SW_SNOW_ROOF, PABS_SW_SNOW_ROAD,         &
-                               PDIR_ALB_TOWN, PSCA_ALB_TOWN                  )
+                               PDIR_ALB_TOWN, PSCA_ALB_TOWN ,                &
+                               PREF_SW_ROOF, PREF_SW_ROAD, PREF_SW_WALL,     &
+                               PREF_SW_SNOW_ROOF, PREF_SW_SNOW_ROAD          )
 !
 !
 !*      0.1    declarations of arguments 
@@ -65,6 +67,12 @@ REAL, DIMENSION(:), INTENT(OUT)   :: PABS_SW_SNOW_ROAD ! solar radiation absorbe
 !                                                      ! by snow-covered roads
 REAL, DIMENSION(:), INTENT(OUT)   :: PDIR_ALB_TOWN     ! town direct albedo
 REAL, DIMENSION(:), INTENT(OUT)   :: PSCA_ALB_TOWN     ! town diffuse albedo
+!
+REAL, DIMENSION(:), INTENT(OUT)   :: PREF_SW_ROAD      ! reflected solar radiations
+REAL, DIMENSION(:), INTENT(OUT)   :: PREF_SW_WALL      ! by roads and walls and roofs
+REAL, DIMENSION(:), INTENT(OUT)   :: PREF_SW_ROOF      ! 
+REAL, DIMENSION(:), INTENT(OUT)   :: PREF_SW_SNOW_ROOF ! reflected solar radiations
+REAL, DIMENSION(:), INTENT(OUT)   :: PREF_SW_SNOW_ROAD ! by snow over road and roof
 !
 END SUBROUTINE URBAN_SOLAR_ABS
 !

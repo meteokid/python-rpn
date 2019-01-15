@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN -------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,11 +12,12 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!-------------------------------------- LICENCE END ---------------------------
 
 !/@*
 subroutine seaice2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, TRNCH, KOUNT, &
      N, M, NK)
+   use tdpack
    use sfclayer_mod, only: sl_prelim,sl_sfclayer,SL_OK
    use cpl_itf     , only: cpl_update
    use sfc_options
@@ -46,6 +47,9 @@ subroutine seaice2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, TRNCH, KOUNT, &
    real,target :: bus(bussiz)
 
    !@Author J. Mailhot (April 1999)
+   !Revisions
+   ! 001     M. Carrera and V. Fortin (Nov 2007) - Compute total runoff
+   !                as precipitation - evaporation (no storage)
    !@Notes
    !          One-dimensional thermodynamic sea ice model:
    !          - based on modified version of nl-layer model of Semtner (1976, JPO 6, 379-389).
@@ -65,10 +69,6 @@ subroutine seaice2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, TRNCH, KOUNT, &
    !          The routine works with an arbitrary number of levels, but needs at least 2
    !          (NL .GE. 2).
    !*@/
-   
-   include "thermoconsts.inc"
-   include "dintern.inc"
-   include "fintern.inc"
 
    integer SURFLEN
 #define x(fptr,fj,fk) ptsurf(vd%fptr%i)+(fk-1)*surflen+fj-1
@@ -83,21 +83,30 @@ subroutine seaice2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, TRNCH, KOUNT, &
 
    integer,dimension(n) :: nsnow
 
-   real,dimension(n) :: dqsat, emist, qsat, rhoa, scr1, scr2, scr3, scr4
+   real,dimension(n) :: dqsat, qsat, rhoa, scr1, scr2, scr3, scr4
    real,dimension(n) :: scr5,  scr6,  scr7, scr8, scr9, scr10,scr11
    real,dimension(n) :: tb,    vmod,  vdir, zsnodp_m
    real,dimension(n) :: my_ta,my_qa
+   real,dimension(n) :: zu10, zusr   ! wind at 10m and at sensor level
+   real,dimension(n) :: zref_sw_surf, zemit_lw_surf, zzenith
 
    real,dimension(n,nl) :: a, b, c, cap, cond, d, dz, sour, tp, z
 
    real,pointer,dimension(:) :: albsfc, cmu, ctu, fc_ice
-   real,pointer,dimension(:) :: fsol, fv_ice
+   real,pointer,dimension(:) :: fsol, fv_ice, zemisr
    real,pointer,dimension(:) :: hice, hst_ice, hu, ilmo_ice
    real,pointer,dimension(:) :: ps, qsice, th, ts, tt, uu, vv
    real,pointer,dimension(:) :: z0h, z0m, zalfaq, zalfat
    real,pointer,dimension(:) :: zdlat, zfcor, zfdsi, zftemp, zfvap
-   real,pointer,dimension(:) :: zqdiag, zsnodp, zsnowrate, ztdiag
+   real,pointer,dimension(:) :: zqdiag, zrainrate, zrunofftot
+   real,pointer,dimension(:) :: zsnodp, zsnowrate, ztdiag
    real,pointer,dimension(:) :: ztsrad, zudiag, zvdiag, zfrv, zzusl, zztsl
+   real,pointer,dimension(:) :: zfsd, zfsf, zcoszeni
+   real,pointer,dimension(:) :: zutcisun, zutcishade, zwbgtsun, zwbgtshade
+   real,pointer,dimension(:) :: zradsun, zradshade, ztglbsun, ztglbshade
+   real,pointer,dimension(:) :: ztwetb, zq1, zq2, zq3, zq4, zq5, zq6, zq7
+   real,pointer,dimension(:) :: zqdiagtyp, ztdiagtyp, zudiagtyp, zvdiagtyp
+   real,pointer,dimension(:) :: zqdiagtypv, ztdiagtypv, zudiagtypv, zvdiagtypv
 
    real,pointer,dimension(:,:) :: t
 
@@ -107,13 +116,14 @@ subroutine seaice2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, TRNCH, KOUNT, &
    real, save :: CON1,CON2,CON3,CON4,CON5,CON6
    real, save :: CON7,CON8,CON9,CON10,CON11,CON12
    real, save :: FI0,CONDFI,TFRZW,TMELI,TMELS
-   real, save :: ALBOW,ALBDI,ALBMI,ALBDS,ALBMS,EMISI,EMISNO,EMISW
+   real, save :: ALBOW,ALBDI,ALBMI,ALBDS,ALBMS,EMISW
    real, save :: COEFCOND,COEFHCAP,COEFEXT
    real, save :: ROICE,ROSNOW(2),ROSWTR
    real, save :: Z0ICE,Z0W
    real, save :: BASEHF
    real, save :: HCAPI,HCAPW,VHFICE,VHFBAS,VHFSNO
    real, save :: HSMIN,DMIX
+   real :: EMISNO,EMISI
 
    data   CON1     , CON2   , CON3  , CON4    / &
         2.845E-6 , 2.7E-4 , 233.0 , 0.2   /
@@ -126,7 +136,7 @@ subroutine seaice2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, TRNCH, KOUNT, &
         0.08    ,  0.57   ,  0.50  ,  0.83   ,  0.77  /
    data  FI0   ,  CONDFI , COEFCOND , COEFHCAP , COEFEXT / &
         0.17  ,  2.034  , 0.1172   , 1.715E+7 , 1.5     /
-   data  EMISI , EMISNO , EMISW / 0.99 , 0.99 , 0.97 /
+   data  EMISW / 0.97 /
    data  ROICE ,  ROSWTR  / 913.0 ,  1025.0  /
    data  ROSNOW / 330.0 , 450.0 /
    data  Z0ICE ,  Z0W  / 1.6E-4 , 3.2E-5 /
@@ -146,41 +156,82 @@ subroutine seaice2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, TRNCH, KOUNT, &
    fv_ice   (1:n) => bus( x(fv,1,indx_sfc)    : )
    hice     (1:n) => bus( x(icedp,1,1)        : )
    hst_ice  (1:n) => bus( x(hst,1,indx_sfc)   : )
-   hu       (1:n) => bus( x(humoins,1,nk)     : )
    ilmo_ice (1:n) => bus( x(ilmo,1,indx_sfc)  : )
-   ps       (1:n) => bus( x(pmoins,1,1)       : )
    qsice    (1:n) => bus( x(qsurf,1,indx_sfc) : )
-   th       (1:n) => bus( x(thetaa,1,1)       : )
    ts       (1:n) => bus( x(tsurf,1,1)        : )
-   tt       (1:n) => bus( x(tmoins,1,nk)      : )
-   uu       (1:n) => bus( x(umoins,1,nk)      : )
-   vv       (1:n) => bus( x(vmoins,1,nk)      : )
    z0h      (1:n) => bus( x(z0t,1,indx_sfc)   : )
    z0m      (1:n) => bus( x(z0,1,indx_sfc)    : )
    zalfaq   (1:n) => bus( x(alfaq,1,1)        : )
    zalfat   (1:n) => bus( x(alfat,1,1)        : )
+   zcoszeni (1:n) => bus( x(cang,1,1)         : )
    zdlat    (1:n) => bus( x(dlat,1,1)         : )
+   zemisr   (1:n) => bus( x(emisr,1,1)        : )
    zfcor    (1:n) => bus( x(fcor,1,1)         : )
    zfdsi    (1:n) => bus( x(fdsi,1,1)         : )
    zfrv     (1:n) => bus( x(frv,1,indx_sfc)   : )
    zftemp   (1:n) => bus( x(ftemp,1,indx_sfc) : )
    zfvap    (1:n) => bus( x(fvap,1,indx_sfc)  : )
+   zrainrate(1:n) => bus( x(rainrate,1,1)     : )
+   zrunofftot(1:n) => bus( x(runofftot,1,indx_sfc) : )
    zsnodp   (1:n) => bus( x(snodp,1,indx_sfc) : )
    zsnowrate(1:n) => bus( x(snowrate,1,1)     : )
    ztsrad   (1:n) => bus( x(tsrad,1,1)        : )
    zudiag   (1:n) => bus( x(udiag,1,1)        : )
+   zudiagtyp(1:n) => bus( x(udiagtyp,1,indx_sfc) : )
+   zudiagtypv(1:n) => bus( x(udiagtypv,1,indx_sfc) : )
    zvdiag   (1:n) => bus( x(vdiag,1,1)        : )
+   zvdiagtyp(1:n) => bus( x(vdiagtyp,1,indx_sfc) : )
+   zvdiagtypv(1:n) => bus( x(vdiagtypv,1,indx_sfc) : )
    ztdiag   (1:n) => bus( x(tdiag,1,1)        : )
+   ztdiagtyp(1:n) => bus( x(tdiagtyp,1,indx_sfc) : )
+   ztdiagtypv(1:n) => bus( x(tdiagtypv,1,indx_sfc) : )
    zqdiag   (1:n) => bus( x(qdiag,1,1)        : )
+   zqdiagtyp(1:n) => bus( x(qdiagtyp,1,indx_sfc) : )
+   zqdiagtypv(1:n) => bus( x(qdiagtypv,1,indx_sfc) : )
    zzusl    (1:n) => bus( x(zusl,1,1)         : )
    zztsl    (1:n) => bus( x(ztsl,1,1)         : )
 
+   zfsd (1:n)       => bus( x(fsd,1,1)         : )
+   zfsf (1:n)       => bus( x(fsf,1,1)         : )
+   zutcisun (1:n)   => bus( x(yutcisun,1,indx_sfc)    : )
+   zutcishade (1:n) => bus( x(yutcishade,1,indx_sfc)  : )
+   zwbgtsun (1:n)   => bus( x(ywbgtsun,1,indx_sfc)    : )
+   zwbgtshade (1:n) => bus( x(ywbgtshade,1,indx_sfc)  : )
+   zradsun (1:n)    => bus( x(yradsun,1,indx_sfc)     : )
+   zradshade (1:n)  => bus( x(yradshade,1,indx_sfc)   : )
+   ztglbsun (1:n)   => bus( x(ytglbsun,1,indx_sfc)    : )
+   ztglbshade (1:n) => bus( x(ytglbshade,1,indx_sfc)  : )
+   ztwetb (1:n)     => bus( x(ytwetb,1,indx_sfc)      : )
+   zq1 (1:n)        => bus( x(yq1,1,indx_sfc)         : )
+   zq2 (1:n)        => bus( x(yq2,1,indx_sfc)         : )
+   zq3 (1:n)        => bus( x(yq3,1,indx_sfc)         : )
+   zq4 (1:n)        => bus( x(yq4,1,indx_sfc)         : )
+   zq5 (1:n)        => bus( x(yq5,1,indx_sfc)         : )
+   zq6 (1:n)        => bus( x(yq6,1,indx_sfc)         : )
+   zq7 (1:n)        => bus( x(yq7,1,indx_sfc)         : )
+
    t(1:n,1:nl)    => bus( x(tmice,1,1)        : )
+
+   if (atm_tplus) then
+      hu       (1:n) => bus( x(huplus,1,nk)      : )
+      ps       (1:n) => bus( x(pplus,1,1)        : )
+      th       (1:n) => bus( x(thetaap,1,1)      : )
+      tt       (1:n) => bus( x(tplus,1,nk)       : )
+      uu       (1:n) => bus( x(uplus,1,nk)       : )
+      vv       (1:n) => bus( x(vplus,1,nk)       : )
+   else
+      hu       (1:n) => bus( x(humoins,1,nk)     : )
+      ps       (1:n) => bus( x(pmoins,1,1)       : )
+      th       (1:n) => bus( x(thetaa,1,1)       : )
+      tt       (1:n) => bus( x(tmoins,1,nk)      : )
+      uu       (1:n) => bus( x(umoins,1,nk)      : )
+      vv       (1:n) => bus( x(vmoins,1,nk)      : )
+   endif
 
 !                               test on minimum value for number of layers
       if( NL .lt. 2 ) then
-         print *,'******* FATAL ERROR IN ICE MODULE - NL < 2  *******'
-         stop
+         call physeterror('seaice', 'NL < 2')
+         return
       endif
 
 !                               fully-implicit time scheme
@@ -193,9 +244,19 @@ subroutine seaice2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, TRNCH, KOUNT, &
       i = sl_prelim(tt,hu,uu,vv,ps,zzusl,spd_air=vmod,dir_air=vdir,rho_air=rhoa, &
            min_wind_speed=sqrt(vamin))
       if (i /= SL_OK) then
-         print*, 'Aborting in seaice() because of error returned by sl_prelim()'
-         stop
+         call physeterror('seaice', 'error returned by sl_prelim()')
+         return
       endif 
+
+      ! Set emissivity values
+      select case (snow_emiss)
+      case DEFAULT
+         EMISNO = snow_emiss_const
+      end select
+      select case (ice_emiss)
+      case DEFAULT
+         EMISI = ice_emiss_const
+      end select
 
       do I=1,N
 
@@ -253,14 +314,15 @@ subroutine seaice2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, TRNCH, KOUNT, &
         TS(I)    = T(I,1)
         QSAT(I)  = FOQST ( TS  (I), PS(I) )
         DQSAT(I) = FODQS ( QSAT(I), TS(I) )
+        QSICE(I) = QSAT(I)
       end do
 
       i = sl_sfclayer(th,hu,vmod,vdir,zzusl,zztsl,ts,qsice,z0m,z0h,zdlat,zfcor, &
            coefm=cmu,coeft=ctu,flux_t=zftemp,flux_q=zfvap,ilmo=ilmo_ice,ue=zfrv, &
            h=hst_ice)
       if (i /= SL_OK) then
-         print*, 'Aborting in seaice() because of error returned by sl_sfclayer()'
-         stop
+         call physeterror('seaice', 'error returned by sl_sfclayer()')
+         return
       endif 
 
 
@@ -293,19 +355,19 @@ subroutine seaice2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, TRNCH, KOUNT, &
         if( HICE(I) .ge. HIMIN ) then
           if( ZSNODP(I) .gt. CON10 ) then
             ALBSFC(I) = SCR2(I)
-            EMIST(I) = EMISNO
+            ZEMISR(I) = EMISNO
             SCR6(I) = 1.0
           else
             ALBSFC(I) = min( SCR2(I) , SCR3(I)+ZSNODP(I)* &
                             (SCR2(I)-SCR3(I))/CON10 )
-            EMIST(I) = EMISI
+            ZEMISR(I) = EMISI
             SCR6(I) = 1.0 - FI0
             SCR6(I) = min( 1.0 , SCR6(I)+ZSNODP(I)* &
                             (1.0-SCR6(I))/CON10 )
           endif
         else
           ALBSFC(I) = ALBOW
-          EMIST(I) = EMISW
+          ZEMISR(I) = EMISW
           SCR6(I) = 1.0
           SCR9(I) = CHLC
         endif
@@ -442,16 +504,16 @@ subroutine seaice2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, TRNCH, KOUNT, &
 !                                              linearized terms in surface heat budget
       do I=1,N
 
-        SCR1(I) = 4. * EMIST(I) * STEFAN * TS(I)**3 &
+        SCR1(I) = 4. * ZEMISR(I) * STEFAN * TS(I)**3 &
            +  RHOA(I) * CTU(I) * (DQSAT(I) * SCR9(I) + CPD)
       
 
-        SCR2(I) = 3. * EMIST(I) * STEFAN  * TS(I)**4 &
+        SCR2(I) = 3. * ZEMISR(I) * STEFAN  * TS(I)**4 &
            + RHOA(I) * CTU(I) * DQSAT(I) * SCR9(I) * TS(I)
 
         SCR3(I) = RHOA(I)*CTU(I)*(CPD*TH(I)-SCR9(I)*(QSAT(I)-HU(I))) &
            + SCR6(I)*FSOL(I)*(1.-ALBSFC(I)) &
-           + EMIST(I)*ZFDSI(I)
+           + ZEMISR(I)*ZFDSI(I)
 
       end do
 
@@ -683,7 +745,7 @@ subroutine seaice2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, TRNCH, KOUNT, &
           SCR5(I) = RHOA(I)*CTU(I)* &
                     ( CPD*(TS(I)-TH(I))+SCR9(I)*(QSICE(I)-HU(I)) ) &
            - SCR6(I)*FSOL(I)*(1.-ALBSFC(I)) &
-                   + EMIST(I)*( STEFAN*TS(I)**4 - ZFDSI(I) )
+                   + ZEMISR(I)*( STEFAN*TS(I)**4 - ZFDSI(I) )
 
           SCR3(I) = SCR5(I) - SCR11(I)
 
@@ -852,8 +914,8 @@ subroutine seaice2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, TRNCH, KOUNT, &
       i = sl_sfclayer(th,hu,vmod,vdir,zzusl,zztsl,ts,qsice,z0m,z0h,zdlat,zfcor, &
            hghtt_diag=zt_rho,t_diag=my_ta,q_diag=my_qa,tdiaglim=SEAICE_TDIAGLIM)
       if (i /= SL_OK) then
-         print*, 'Aborting in seaice() because of error returned by sl_sfclayer()'
-         stop
+         call physeterror('seaice', 'error 2 returned by sl_sfclayer()')
+         return
       endif
 
       do I=1,N
@@ -866,6 +928,8 @@ subroutine seaice2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, TRNCH, KOUNT, &
         ZALFAQ   (I) = - CTU(I) * ( QSICE (I) - HU(I) )
         if (.not.IMPFLX) CTU (I) = 0.
         RHOA     (I) = PS(I)/(RGASD * my_ta(I)*(1.+DELTA*my_qa(I)))
+        ZRUNOFFTOT(I) = (1000.*(ZRAINRATE(I) +ZSNOWRATE(I)) &
+             + RHOA(I)*ZALFAQ(I)) * DELT
         FC_ICE(I)    = -CPD *RHOA(I)*ZALFAT(I)
         FV_ICE(I)    = -(CHLC+CHLF)*RHOA(I)*ZALFAQ(I)
 
@@ -881,9 +945,19 @@ subroutine seaice2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, TRNCH, KOUNT, &
            hghtm_diag=zu,hghtt_diag=zt,t_diag=ztdiag,q_diag=zqdiag,u_diag=zudiag, &
            v_diag=zvdiag,tdiaglim=SEAICE_TDIAGLIM)
       if (i /= SL_OK) then
-         print*, 'Aborting in seaice() because of error returned by sl_sfclayer()'
-         stop
+         call physeterror('seaice', 'error 3 returned by sl_sfclayer()')
+         return
       endif
+
+      ! Fill surface type-specific diagnostic values
+      zqdiagtyp = zqdiag
+      ztdiagtyp = ztdiag
+      zudiagtyp = zudiag
+      zvdiagtyp = zvdiag
+      zqdiagtypv = zqdiag
+      ztdiagtypv = ztdiag
+      zudiagtypv = zudiag
+      zvdiagtypv = zvdiag
 
       if (cplocn) then
          ! Update with fluxes and diagnostic variables from ocean model
@@ -909,8 +983,8 @@ subroutine seaice2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, TRNCH, KOUNT, &
              my_ta(1:n)=ztdiag(1:n)
              my_qa(1:n)=zqdiag(1:n)
            else
-             print*, 'Aborting in seaice() because of inconsistent density level'
-             stop
+             call physeterror('seaice', 'inconsistent density level')
+             return
            endif
            do I=1,N
               RHOA  (I)= PS(I)/(RGASD * my_ta(I)*(1.+DELTA*my_qa(I)))
@@ -942,6 +1016,46 @@ subroutine seaice2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, TRNCH, KOUNT, &
            ! ==> CM=ustar/vmod (ustar**2=tau/rho=CM*CM*vmod**2)
          endif
       endif
+
+      !--------------------------------------
+      !   8.     Heat Stress Indices
+      !------------------------------------
+      !#TODO: at least 4 times identical code in surface... separeted s/r to call
+      IF_TERMAL_STRESS: if (thermal_stress) then
+
+         do I=1,N
+
+            if (abs(zzusl(i)-zu) <= 2.0)then
+               zu10(i) = sqrt(uu(i)**2+vv(i)**2)
+            else
+               zu10(i) = sqrt(zudiag(i)**2+zvdiag(i)**2)
+            endif
+
+            ! wind  at SensoR level
+            zusr(i) = zu10(i)
+
+            zref_sw_surf(i) = ALBSFC(I) * fsol(i)
+            zemit_lw_surf(i) = (1. -ZEMISR(I)) * zfdsi(i) + ZEMISR(I)*STEFAN *ztsrad(i)**4
+            ZZENITH(I) = acos(ZCOSZENI(I))      ! direct use of bus zenith
+            if (fsol(I) > 0.0 ) then
+               ZZENITH(I) = min(ZZENITH(I), PI/2.)
+            else
+               ZZENITH(I) = max(ZZENITH(I), PI/2.)
+            endif
+
+         end do
+
+         call SURF_THERMAL_STRESS(ZTDIAG, ZQDIAG,         &
+              ZU10,ZUSR,  ps,                             &
+              ZFSD, ZFSF, ZFDSI, ZZENITH,                 &
+              ZREF_SW_SURF,ZEMIT_LW_SURF,                 &
+              Zutcisun ,Zutcishade,                       &
+              zwbgtsun, zwbgtshade,                       &
+              zradsun, zradshade,                         &
+              ztglbsun, ztglbshade, ztwetb,               &
+              ZQ1, ZQ2, ZQ3, ZQ4, ZQ5,                    &
+              ZQ6,ZQ7, N)
+      endif IF_TERMAL_STRESS
 
 !     FILL THE ARRAYS TO BE AGGREGATED LATER IN S/R AGREGE
       call FILLAGG ( BUS, BUSSIZ, PTSURF, PTSURFSIZ, INDX_ICE, &

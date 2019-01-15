@@ -23,7 +23,7 @@
       implicit none
 #include <arch_specific.hf>
 !
-      integer ilg, lay, ib, ig, mcont, lev1, il1, il2
+      integer ilg, lay, ib, ig, mcont(ilg), lev1, il1, il2
       real taug(ilg,lay), gwgh
 !
       real dp(ilg,lay), o3(ilg,lay), qq(ilg,lay), co2(ilg,lay), &

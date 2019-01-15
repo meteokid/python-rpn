@@ -90,7 +90,7 @@ subroutine UPDATE3( TS, T2, WG, W2, WF, WL, WR, WS, &
    ! ALFAQ     inhomogeneous boundary term in the diffusion equation for Q
    ! FQ        surface momentum flux
 
-   include "thermoconsts.inc"
+#include "tdpack_const.hf"
 
    integer I
 

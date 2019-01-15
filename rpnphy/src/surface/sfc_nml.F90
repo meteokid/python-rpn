@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN -------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,11 +12,11 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!-------------------------------------- LICENCE END ---------------------------
 
 !/@*
 function sfc_nml2(F_namelist) result(F_istat)
-   use str_mod, only: str_concat
+   use str_mod, only: str_concat, str_toreal
    use sfc_options
    use sfcbus_mod
    use cpl_itf, only: cpl_nml
@@ -73,7 +73,7 @@ function sfc_nml2(F_namelist) result(F_istat)
 
 
 contains
-   
+ 
 
    function sfc_nml_read(m_namelist) result(m_istat)
       implicit none
@@ -134,18 +134,29 @@ contains
 
 
    function sfc_nml_check() result(m_istat)
+      use sfc_options, only : nl_svs_default, dp_svs_default
+      use svs_configs, only : nl_svs,dl_svs
       implicit none
       integer :: m_istat
 
-      integer :: istat
+      integer :: istat,k,nk
       character(len=512) :: str512
       !----------------------------------------------------------------
       m_istat = RMN_ERR
 
+      istat = clib_toupper(diusst)
+      istat = clib_toupper(ice_emiss)
       istat = clib_toupper(schmsol)
       istat = clib_toupper(schmurb)
-      istat = clib_toupper(diusst)
+      istat = clib_toupper(sl_func_stab)
+      istat = clib_toupper(sl_func_unstab)
+      istat = clib_toupper(snow_emiss)
+      istat = clib_toupper(isba_soil_emiss)
+      istat = clib_toupper(soiltext)
+      istat = clib_toupper(water_emiss)
       istat = clib_toupper(z0mtype)
+      istat = clib_toupper(z0ttype)
+      istat = clib_toupper(z0tevol)
 
       if (.not.any(schmsol == SCHMSOL_OPT)) then
          call str_concat(str512, SCHMSOL_OPT,', ')
@@ -171,6 +182,18 @@ contains
          return
       endif
 
+     if (.not.any(z0ttype == Z0TTYPE_OPT)) then
+         call str_concat(str512, Z0TTYPE_OPT,', ')
+         call msg(MSG_ERROR,'(sfc_nml_check) z0ttype = '//trim(z0ttype)//' : Should be one of: '//trim(str512))
+         return
+      endif
+
+     if (.not.any(z0tevol == Z0TEVOL_OPT)) then
+         call str_concat(str512, Z0TEVOL_OPT,', ')
+         call msg(MSG_ERROR,'(sfc_nml_check) z0tevol = '//trim(z0tevol)//' : Should be one of: '//trim(str512))
+         return
+      endif
+
       if ( (min(z0tlat(1), z0tlat(2)) <  0.0)    .or. &
            (max(z0tlat(1), z0tlat(2)) > 90.0)    .or. &
            (z0tlat(1) > z0tlat(2))         )    then
@@ -178,6 +201,110 @@ contains
          call msg(MSG_ERROR, '(sfc_nml_check) zz0tlat = '//trim(str512)//' : should be in 0. to 90. and z0tlat(1) < z0tlat(2)')
          return
       endif
+
+      if (.not.any(sl_func_stab == SL_FUNC_STAB_OPT)) then
+         call str_concat(str512, SL_FUNC_STAB_OPT,', ')
+         call msg(MSG_ERROR,'(sfc_nml_check) sl_func_stab = '//trim(sl_func_stab)//' : Should be one of: '//trim(str512))
+         return
+      endif
+      if (sl_func_stab /= 'DELAGE97' .and. .not.sl_z0ref) then
+         call msg(MSG_ERROR,'(sfc_nml_check) sl_z0ref must be .TRUE. for any class of stability functions (sl_func_stab) other than DELAGE97')
+         return
+      endif
+
+      if (.not.any(sl_func_unstab == SL_FUNC_UNSTAB_OPT)) then
+         call str_concat(str512, SL_FUNC_UNSTAB_OPT,', ')
+         call msg(MSG_ERROR,'(sfc_nml_check) sl_func_unstab = '//trim(sl_func_unstab)//' : Should be one of: '//trim(str512))
+         return
+      endif
+      if (sl_func_unstab /= 'DELAGE92' .and. .not.sl_z0ref) then
+         call msg(MSG_ERROR,'(sfc_nml_check) sl_z0ref must be .TRUE. for any class of stability functions (sl_func_unstab) other than DELAGE92')
+         return
+      endif
+ 
+      if (.not.RMN_IS_OK(str_toreal(ice_emiss_const,ice_emiss))) then
+         call msg(MSG_ERROR,'(sfc_nml_check) ice_emiss = '//trim(ice_emiss)//' : Should be a floating point number between 0 and 1')
+         return
+      endif
+
+      if (.not.RMN_IS_OK(str_toreal(snow_emiss_const,snow_emiss))) then
+         call msg(MSG_ERROR,'(sfc_nml_check) snow_emiss = '//trim(snow_emiss)//' : Should be a floating point number between 0 and 1')
+         return
+      endif
+
+      if (.not.RMN_IS_OK(str_toreal(isba_soil_emiss_const,isba_soil_emiss))) then
+         if (.not.any(isba_soil_emiss == ISBA_SOIL_EMISS_OPT)) then
+            call str_concat(str512, ISBA_SOIL_EMISS_OPT,', ')
+            call msg(MSG_ERROR,'(sfc_nml_check) isba_soil_emiss = '//trim(isba_soil_emiss)//' : Should be a number or one of: '//trim(str512))
+            return
+         endif
+      endif
+
+      if (.not.RMN_IS_OK(str_toreal(water_emiss_const,water_emiss))) then
+         call msg(MSG_ERROR,'(sfc_nml_check) water_emiss = '//trim(water_emiss)//' : Should be a floating point number between 0 and 1')
+         return
+      endif
+
+      ! ------ CHECK SVS OPTIONS --------------
+      if( schmsol == 'SVS') then
+         ! check number of SOIL LEVELS
+         nk=0
+         do k=1,size(dp_svs)
+            if (dp_svs(k)< 0.) exit
+            nk=nk+1
+         enddo
+
+         ! USE DEFAULT NUMBER & DEPTH of LAYES if NOT SPECIFIED
+         ! BY DEFAULT SET PERMEABLE LAYER EQUAL TO LAST SVS SOIL LAYER
+         if (nk == 0) then
+            call msg(MSG_INFO,'(sfc_nml_check) SVS soil layer depth dp_svs NOT SPECIFIED by user, will use DEFAULT VALUE')
+            ! default number of soil layers
+            nk=nl_svs_default
+            ! default permeable layer LEVEL
+            kdp=nl_svs_default
+            ! default values for depth of SVS values [in meters]
+            do k=1,nk
+               dp_svs(k) = dp_svs_default(k)
+            enddo
+         else if ( nk < 3 ) then
+            write(str512,*) ' (sfc_nml_check) SVS requires a minimum of 3 soil layers. Only ',nk, ' depths were specified in dp_svs=' , dp_svs(1:nk)
+            call msg(MSG_ERROR, str512)
+            return
+         else if ( nk >= 3 .and. kdp .le. 1 ) then
+              write(str512,*) ' (sfc_nml_check)  Permeable layer level: KDP needs to be specified by USER because not using DEFAULT SVS set-up'
+            call msg(MSG_ERROR, str512)
+            return
+         endif
+
+         ! CHECK THAT DEPTH IS INCREASING and SAVE NUMBER OF LAYERS
+         do k=1,nk-1
+            if ( dp_svs(k) >= dp_svs(k+1) ) then
+               write(str512,*) ' (sfc_nml_check) SVS layer depths badly specified: dp_svs(k)=',dp_svs(k),' (k=',k,') should be shallower than dl_svs(k+1)=',dp_svs(k+1),' (k+1=',k+1,')'
+               call msg(MSG_ERROR, str512)
+               return
+            endif
+         enddo
+         ! Save depth in dl_svs ... to be used by svs
+         nl_svs=nk
+         if ( .not. allocated(dl_svs) ) allocate( dl_svs(nl_svs) )
+         do k=1,nl_svs
+            dl_svs(k)=dp_svs(k)
+         enddo
+ 
+         if ( kdp > nl_svs ) then
+            write(str512, '(a,i3,a,i3)') '(sfc_nml_check) Permeable layer in SVS kdp=',kdp,' cannot exceed number of SVS soil layers =', nl_svs
+            call msg(MSG_ERROR, str512)
+            return
+         endif
+
+         if (.not.any(soiltext == SOILTEXT_OPT)) then
+            call str_concat(str512, SOILTEXT_OPT,', ')
+            call msg(MSG_ERROR,'(sfc_nml_check) soiltext = '//trim(soiltext)//' : Should be one of: '//trim(str512))
+            return
+         endif
+
+      endif
+
 
       m_istat = RMN_OK
       !----------------------------------------------------------------
@@ -189,14 +316,12 @@ contains
       implicit none
       integer :: m_istat
 
-   include "thermoconsts.inc"
+#include "tdpack_const.hf"
 
-      integer, external :: msg_getUnit
-      integer :: istat, unout, options, iverb, idxmax
-      character(len=512) :: str512
+      integer :: istat, options, iverb, idxmax
       !----------------------------------------------------------------
       m_istat = RMN_ERR
-      
+ 
       !# nsurf nb of surface types (schemes)
       !# phybusinit / gesdict defines nrow = nagg = nsurf+1
       idxmax = max(indx_soil, indx_glacier, indx_water, indx_ice, indx_agrege)
@@ -228,16 +353,15 @@ contains
       istat = wb_get('itf_phy/OFFLINE', offline)
       if (istat /= WB_OK) offline = .false.
       istat = wb_verbosity(iverb)
-      if (offline) then
-         isba_i1_minval = .false.
-         call msg(MSG_INFO,'(sfc_nml_post_init) Offline - forcing isba_i1_minval = .false.')
-      endif
 
       !# Surface Layer module init
-      unout = msg_getUnit(MSG_INFO)
-      istat = sl_put('stderr', unout)
+      istat = SL_OK
       if (istat == SL_OK) istat = sl_put('beta', beta)
+      if (istat == SL_OK) istat = sl_put('rineutral',sl_rineutral)
       if (istat == SL_OK) istat = sl_put('tdiaglim',tdiaglim)
+      if (istat == SL_OK) istat = sl_put('sl_stabfunc_stab',sl_func_stab)
+      if (istat == SL_OK) istat = sl_put('sl_stabfunc_unstab',sl_func_unstab)
+      if (istat == SL_OK) istat = sl_put('z0ref',sl_z0ref)
       if (istat /= SL_OK) then
          call msg(MSG_ERROR,'(sfc_nml) Problem initializing the surface layer module')
          return

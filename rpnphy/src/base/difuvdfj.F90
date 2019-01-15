@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN -------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,19 +12,18 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
-!**S/P DIFUVDFj
-!
-      SUBROUTINE DIFUVDFj(TU, U, KU, GU, R, ALFA, BETA, S, SK, &
-                          TAU, TYPE, F, A, B, C, D, NU, NR, N, NK)
-!
-      implicit none
+!-------------------------------------- LICENCE END ---------------------------
+
+!/@*
+SUBROUTINE DIFUVDFj1(TU, U, KU, GU, JNG, R, ALFA, BETA, S, SK, &
+                           TAU, TYPE, F, NU, NR, N, NK)
+   implicit none
 #include <arch_specific.hf>
       INTEGER NU, NR, N, NK
       REAL TU(NU, NK), U(NU, NK), KU(NR, NK), GU(NR, NK), R(NR,NK)
+      REAL JNG(NR, NK)
       REAL ALFA(N), BETA(N), S(n,NK), SK(n,NK), TAU, F
       INTEGER TYPE
-      REAL A(N, NK), B(N, NK), C(N, NK), D(N, NK)
 !
 !Author
 !          R. Benoit (Mar 89)
@@ -37,6 +36,8 @@
 ! 004      A. PLante (June 2003) - IBM conversion
 !             - calls to vrec routine (from massvp4 library)
 ! 005      J. Mailhot/L. Spacek (Dec 07) - Add type 5='ET' and cleanup
+! 006      J. Mailhot (Aug 12) - Add argument and modifications (non-gradient flux,
+!                                geometric averaging) and change name to difuvdfj1
 !
 !Object
 !          to solve a vertical diffusion equation by finite
@@ -52,6 +53,7 @@
 ! U        variable to diffuse (U,V,T,Q,E)
 ! KU       diffusion coefficient
 ! GU       optional countergradient term
+! JNG      optional non-gradient flux term
 ! R        optional inhomogeneous term
 ! ALFA     inhomogeneous term for the surface flux (for type 1='U', 2='UT' or 5='ET'or 6='ST')
 !          surface boundary condition (for type 4='EB')
@@ -61,19 +63,15 @@
 !          (or staggered variables) levels
 ! TAU      length of timestep
 ! TYPE     type of variable to diffuse (1='U',2='UT',3='E',4='EB' or 5='ET' or 6='ST')
-! F        waiting factor for time 'N+1'
-! A        work space (N,NK)
-! B        work space (N,NK)
-! C        work space (N,NK)
-! D        work space (N,NK)
+! F        weighting factor for time 'N+1'
 ! NU       1st dimension of TU and U
-! NR       1st dimension of KU, GU and R
+! NR       1st dimension of KU, GU, JNG and R
 ! N        number of columns to process
 ! NK       vertical dimension
 !
 !Notes
 !          D/DT U = D(U) + R
-!          D(U) = D/DS J(U)
+!          D(U) = D/DS ( J(U) + JNG )
 !          J(U) = KU*(D/DS U + GU)
 !          Limiting Conditions where S=ST: J=0(for 'U'/'ET'), D=0(for 'UT'
 !          and ST=1)
@@ -84,22 +82,16 @@
 !          ST = S(1)-1/2 (S(2)-S(1)) (except for 'TU')
 !          SB = SK(NK) = 1.
 !
-!*
+!*@/
 !
       INTEGER I, K, NKX
       REAL ST, SB, HM, HP, KUM, KUP, SCK1
       REAL, DIMENSION(N) :: HD
+      REAL, DIMENSION(N,NK) :: VHM,VHP,A,B,C,D
+      REAL(KIND=8), DIMENSION(N,NK) :: RHD,RHMD,RHPD
       LOGICAL :: SFCFLUX
+      character(len=16) :: msg_S
       EXTERNAL DIFUVD1, DIFUVD2
-!***********************************************************************
-!     AUTOMATIC ARRAYS
-!***********************************************************************
-!
-      REAL, dimension(N,NK) :: VHM
-      REAL, dimension(N,NK) :: VHP
-      REAL*8, dimension(N,NK) :: RHD
-      REAL*8, dimension(N,NK) :: RHMD
-      REAL*8, dimension(N,NK) :: RHPD
 !
       st(i)=s(i,1)-0.5*(s(i,2)-s(i,1))
       sb(i)=1.
@@ -115,8 +107,9 @@
       ELSE IF (TYPE.EQ.5 .OR. TYPE.EQ.6) THEN
          NKX=NK
       ELSE
-         PRINT *,' S/R DIFUVDFj. TYPE INCONNU= ',TYPE,' STOP...'
-         CALL QQEXIT(1)
+         write(msg_S, *), type
+         call physeterror('difuvdfj', 'Type inconnu: '//trim(msg_S))
+         return
       ENDIF
 !
 ! (1) CONSTRUIRE L'OPERATEUR TRIDIAGONAL DE DIFFUSION N=(A,B,C)
@@ -133,7 +126,7 @@
             A(I,1)=0
             C(I,1)=SCK1*KU(I,1)/(HP*HD(I))
             B(I,1)=-A(I,1)-C(I,1)
-10          D(I,1)=SCK1*KU(I,1)*GU(I,1)/HD(I)
+10          D(I,1)=SCK1*(KU(I,1)*GU(I,1)+JNG(I,1))/HD(I)
 !
 !     K=2...NK-1
 !
@@ -157,8 +150,8 @@
                A(I,K)=KU(I,K-1)*RHMD(I,K)
                C(I,K)=KU(I,K)*RHPD(I,K)
                B(I,K)=-A(I,K)-C(I,K)
-               D(I,K)=(KU(I,K)*GU(I,K)-KU(I,K-1)*GU(I,K-1))* &
-                    RHD(I,K)
+               D(I,K)=( KU(I,K)*GU(I,K)-KU(I,K-1)*GU(I,K-1) &
+                             +JNG(I,K)-JNG(I,K-1) )*RHD(I,K)
             ENDDO
          ENDDO
 !
@@ -171,7 +164,7 @@
             A(I,NK)=KU(I,NK-1)/(HM*HD(I))
             C(I,NK)=0
             B(I,NK)=-A(I,NK)-C(I,NK)
-12          D(I,NK)=(0-KU(I,NK-1)*GU(I,NK-1))/HD(I)
+12          D(I,NK)=(0-KU(I,NK-1)*GU(I,NK-1)-JNG(I,NK-1))/HD(I)
 !
       ELSE IF (TYPE.EQ.3 .OR. TYPE.EQ.4 .OR. TYPE.EQ.5 .OR. TYPE.EQ.6) THEN
 !
@@ -191,7 +184,8 @@
             A(I,1)=KUM/(HM*HD(I))
             C(I,1)=KUP/(HP*HD(I))
             B(I,1)=-A(I,1)-C(I,1)
-13          D(I,1)=(KUP*(GU(I,1)+GU(I,2))-KUM*GU(I,1))/(2*HD(I))
+13          D(I,1)=(KUP*(GU(I,1)+GU(I,2))-KUM*GU(I,1) &
+                        +(JNG(I,1)+JNG(I,2)) )/(2.*HD(I))
 !
 !     K=2...NKX-1
 !
@@ -225,7 +219,9 @@
                C(I,K)=KUP*RHPD(I,K)
                B(I,K)=-A(I,K)-C(I,K)
                D(I,K)=.5*(KUP*(GU(I,K)+GU(I,K+1)) &
-                      -KUM*(GU(I,K-1)+GU(I,K)))*RHD(I,K)
+                      -KUM*(GU(I,K-1)+GU(I,K)) &
+                       +(JNG(I,K)+JNG(I,K+1)) &
+                       -(JNG(I,K-1)+JNG(I,K)))*RHD(I,K)
             ENDDO
          ENDDO
 !
@@ -251,7 +247,8 @@
               A(I,NKX)=KUM/(HM*HD(I))
               C(I,NKX)=0
               B(I,NKX)=-A(I,NKX)-C(I,NKX)
-              D(I,NKX)=(0-KUM*(GU(I,NKX)+GU(I,NKX-1)))/(2*HD(I))
+              D(I,NKX)=(0-KUM*(GU(I,NKX)+GU(I,NKX-1)) &
+                           -(JNG(I,NKX)+JNG(I,NKX-1)) )/(2.*HD(I))
            ENDDO
 !
         ELSE IF (TYPE.EQ.4) THEN
@@ -268,7 +265,9 @@
               B(I,NKX)=-A(I,NKX) -KUP/(HP*HD(I))
               C(I,NKX)=0
               D(I,NKX)=(KUP*(GU(I,NK)+GU(I,NK-1)) &
-                       -KUM*(GU(I,NK-1)+GU(I,NK-2)))/(2*HD(I)) &
+                       -KUM*(GU(I,NK-1)+GU(I,NK-2)) &
+                       +(JNG(I,NK)+JNG(I,NK-1)) &
+                       -(JNG(I,NK-1)*JNG(I,NK-2)))/(2.*HD(I)) &
                        +KUP*ALFA(I)/(HD(I)*HP)
            ENDDO
 !
@@ -277,7 +276,7 @@
       ENDIF
 !
 !
-! (2) CALCULER LE COTE DROIT D=TAU*(N(U)+R+D/DS(KU*GU))
+! (2) CALCULER LE COTE DROIT D=TAU*(N(U)+R+D/DS(KU*GU+JNG))
 !
       CALL DIFUVD1 (D, 1., A, B, C, U, D, N, NU, NKX)
       DO 20 K=1,NKX

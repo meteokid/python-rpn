@@ -22,7 +22,7 @@
       implicit none
 #include <arch_specific.hf>
 #include "nbsnbl.cdk"
-include "thermoconsts.inc"
+#include "tdpack_const.hf"
 #include "ccc_aeros.cdk"
 !
       integer ilg,lay,lev,il1,il2

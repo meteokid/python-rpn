@@ -47,20 +47,18 @@
 !
 !=============================================================================
 
-subroutine chm_exe(busent ,busdyn ,busper ,busvol , &
-                   busent_size   ,busdyn_size   ,busper_size   ,busvol_size   , &
-                   timestep, slab_index, step, ithread, ni, nk)
+subroutine chm_exe(busent, busdyn, busper, busvol, &
+     busent_size, busdyn_size, busper_size, busvol_size, &
+     timestep, slab_index, step, ni, nk)
 
    implicit none
 
-! Subroutine arguments
+   ! Subroutine arguments
    integer, intent(in) :: busent_size, busdyn_size, busper_size, busvol_size 
    real, intent(inout) :: busent(busent_size), busdyn(busdyn_size), busper(busper_size), busvol(busvol_size)
-   integer, intent(in) :: timestep, slab_index, step, ithread, ni, nk
+   integer, intent(in) :: timestep, slab_index, step, ni, nk
 
 
 
    return
 end subroutine chm_exe
-
-

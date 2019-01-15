@@ -53,52 +53,78 @@ function check_options2() result(F_istat)
    !-------------------------------------------------------------------
    F_istat = RMN_ERR
 
-   IF_CONV_STDC: if (any(convec == (/'MANABE', 'SEC   '/)) .and. &
-        stcond /= 'NIL') then
-      call msg(MSG_ERROR,'(check_options) stcond must be NIL when convec='//trim(convec))
+   IF_CONV_STDC: if (convec == 'SEC' .and. stcond /= 'NIL') then
+      call msg(MSG_ERROR,'(check_options) stcond must be NIL when convec='// &
+           trim(convec))
       return
 
-   else if (convec == 'NEWKUO' .and. stcond /= 'NEWSUND')     then
-      call msg(MSG_ERROR,'(check_options) stcond must be NEWSUND when convec='//trim(convec))
-      return
-
-   else if (stcond == 'CONSUN'.and. &
+   else if (stcond == 'CONSUN' .and. &
         .not.any(convec == (/ &
-        'KUOSTD  ', 'KUOSYM  ', 'KUOSUN  ', 'RAS     ', 'FCP     ', &
-        'KFC     ', 'FCPKUO  ', 'BECHTOLD', 'NIL     ' &
+        'KUOSTD  ', &
+        'KFC     ', &
+        'KFC2    ', &
+        'KFC3    ', &
+        'BECHTOLD', &
+        'NIL     '  &
         /))) then
-      call msg(MSG_ERROR,'(check_options) option mismatch: stcond='//trim(stcond)//' and convec='//trim(convec))
+      call msg(MSG_ERROR,'(check_options) option mismatch: stcond='// &
+           trim(stcond)//' and convec='//trim(convec))
       return
 
-   else if (stcond /= 'CONSUN'.and. &
-        any(convec == (/ &
-        'FCPKUO', 'KUOSYM', 'KUOSTD', 'KUOSUN' &
-        /))) then
-      call msg(MSG_ERROR,'(check_options) option mismatch: stcond='//trim(stcond)//' and convec='//trim(convec))
+   else if (stcond /= 'CONSUN' .and. convec == 'KUOSTD') then
+      call msg(MSG_ERROR,'(check_options) option mismatch: stcond='// &
+           trim(stcond)//' and convec='//trim(convec))
       return
 
    endif IF_CONV_STDC
 
    if (fluvert == 'MOISTKE' .and. &
         .not.any(convec == (/ &
-        'KFC     ', 'KFCKUO2 ', 'FCP     ', 'BECHTOLD', 'NIL     '&
+        'KFC     ', &
+        'KFC2    ', &
+        'KFC3    ', &
+        'BECHTOLD', &
+        'NIL     '  &
         /))) then
-      call msg(MSG_ERROR,'(check_options) option mismatch: fluvert='//trim(fluvert)//' and convec='//trim(convec))
+      call msg(MSG_ERROR,'(check_options) option mismatch: fluvert='// &
+           trim(fluvert)//' and convec='//trim(convec))
       return
    endif
 
    if (fluvert == 'MOISTKE' .and. &
         .not.any(stcond == (/ &
-        'NIL       ', 'CONSUN    ', &
-        'MP_MY2_OLD', 'MP_MY2    ', 'MP_P3     ' &
+        'NIL       ', &
+        'CONSUN    ', &
+        'MP_MY2_OLD', &
+        'MP_MY2    ', &
+        'MP_P3     '  &
         /))) then
-      call msg(MSG_ERROR,'(check_options) option mismatch: fluvert='//trim(fluvert)//' and stcond='//trim(stcond))
+      call msg(MSG_ERROR,'(check_options) option mismatch: fluvert='// &
+           trim(fluvert)//' and stcond='//trim(stcond))
       return
    endif
 
+   if (fluvert == 'CLEF' .and. &
+        .not.any(longmel == (/ &
+        'TURBOUJO', &
+        'BOUJO   ', &
+        'BLAC62  '  &
+        /))) then
+      call msg(MSG_ERROR,'(check_options) option mismatch: fluvert='//&
+           trim(fluvert)//' and longmel='//trim(longmel))
+      return
+   endif
+
+  if (fluvert == 'CLEF' .and. &
+        .not.(pbl_nonloc == 'NIL')) then
+      call msg(MSG_ERROR,'(check_options) option mismatch: fluvert='//&
+           trim(fluvert)//' and pbl_nonloc='//trim(pbl_nonloc))
+      return
+   endif
 
    if (NSLOFLUX > MAXSLOFLUX) then
-      write(str512, '(a,i3)') '(check_options) NSLOFLUX CANNOT EXCEED A VALUE OF ', MAXSLOFLUX
+      write(str512, '(a,i3)') &
+           '(check_options) NSLOFLUX CANNOT EXCEED A VALUE OF ', MAXSLOFLUX
       call msg(MSG_ERROR, str512)
       return
    endif
@@ -118,32 +144,43 @@ function check_options2() result(F_istat)
 
    endif
 
-
    if (LIGHTNING_DIAG) then
-      if (STCOND(1:6) /= 'MP_MY2')   then
-         call msg(MSG_ERROR,'(check_options) option mismatch: with LIGHTNING_DIAG you have to use STCOND=MP_MY2_OLD, MP_MY2')
+      if (STCOND(1:3) /= 'MP_')   then
+         call msg(MSG_ERROR,'(check_options) option mismatch: with ' // &
+              'LIGHTNING_DIAG you have to use STCOND=MP_MY2_OLD, MP_MY2, MP_P3')
          return
       endif
    endif
 
-
-   if (PCPTYPE == 'BOURGE3D') then
-      if (.not.(STCOND == 'CONSUN' .or. STCOND(1:2) == 'MP') .or. &
-          (CONVEC /= 'KFC' .and. CONVEC /= 'BECHTOLD') ) then
-         call msg(MSG_ERROR,'(check_options) option mismatch: with PCPTYPE=BOURGE3D you can only use STCOND=CONSUN or KFC')
+   if ( PCPTYPE == 'BOURGE3D')then
+      if (STCOND /= 'CONSUN'    .or. &
+           (CONVEC /= 'KFC' .and. CONVEC /= 'KFC2' .and. &
+           CONVEC /= 'KFC3' .and. CONVEC /= 'BECHTOLD'))   then
+         call msg(MSG_ERROR,'(check_options) option mismatch: with ' // &
+              'PCPTYPE=BOURGE3D you can only use STCOND=CONSUN or KFC')
          return
       endif
    endif
 
-
-   if (stcond == 'MP_P3' .and. (mp_p3_ncat < 1 .or. mp_p3_ncat > 4)) then
-      write(str512, '(a,i2,a)') '(check_options) STCOND = MP_P3 option MP_P3_NCAT=',mp_p3_ncat,' (MUST BE BETWEEN 1 AND 4)'
+   if (stcond == 'MP_P3' .and. (p3_ncat < 1 .or. p3_ncat > 4)) then
+      write(str512, '(a,i2,a)') '(check_options) STCOND = MP_P3 option ' // &
+           'P3_NCAT=',p3_ncat,' (MUST BE BETWEEN 1 AND 4)'
       call msg(MSG_ERROR, str512)
       return
    endif
 
    if (RADSLOPE .and. RADIA(1:8) /= 'CCCMARAD') then
-      call msg(MSG_ERROR,'(check_options) option mismatch: RADSLOPE=.true. and RADIA='//trim(RADIA))
+      call msg(MSG_ERROR,'(check_options) option mismatch: ' // &
+           'RADSLOPE=.true. and RADIA='//trim(RADIA))
+      return
+   endif
+
+   if (shal == 'BECHTOLD' .and. bkf_closures == 'EQUILIBRIUM' .and. &
+        any((/bkf_entrains, bkf_detrains/) == 'BECHTOLD01')) then
+      call msg(MSG_ERROR,'(check_options) Bechtold shallow ' // &
+           'bkf_closures="equilibrium" closure is incompatible '// &
+           'with "bechtold01" entrainment/detrainment rates '// &
+           '(bkf_entrains, bkf_detrains)')
       return
    endif
 

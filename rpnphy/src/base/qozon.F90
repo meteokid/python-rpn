@@ -29,7 +29,7 @@
       real pref(lref)
       real ozotoit(NMAX)
 !
-include "thermoconsts.inc"
+#include "tdpack_const.hf"
 #include "tables.cdk"
 !
 !Author

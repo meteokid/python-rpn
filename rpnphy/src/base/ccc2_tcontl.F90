@@ -21,7 +21,7 @@
       implicit none
 #include <arch_specific.hf>
 !
-      integer ilg, lay, lc, il1, il2, mcont
+      integer ilg, lay, lc, il1, il2, mcont(ilg)
       real taug(ilg,lay), coef1(5,lc), coef2(5,lc)
       real s1(ilg,lay), dp(ilg,lay), dip(ilg,lay), dt(ilg,lay)
       integer inpt(ilg,lay)
@@ -71,9 +71,9 @@
         nc =  19 - lc
       endif
 !
-      do 200 k = mcont, lay
+      do 300 i = il1, il2
+      do 200 k = mcont(i), lay
         if (inpt(1,k) .lt. 950)                                     then
-          do 100 i = il1, il2
             j =  inpt(i,k)
             if (j .ge. nc)                                          then
               m  =  j - nc + 1
@@ -100,13 +100,11 @@
                              y1 + (y2 - y1) * dip(i,k) ) * &
                             s1(i,k) * dp(i,k)
             endif
-  100     continue
         else
           j =  inpt(1,k) - 1000
           m  =  j - nc + 1
           n  =  m + 1
           if (j .ge. nc)                                          then
-            do 150 i = il1, il2
               x1        =  coef1(1,m) + dt(i,k) * (coef1(2,m) + &
                            dt(i,k) * (coef1(3,m) + dt(i,k) * &
                           (coef1(4,m) + dt(i,k) * coef1(5,m))))
@@ -128,10 +126,10 @@
                            dip(i,k)) * 1.608 * s1(i,k) + &
                              y1 + (y2 - y1) * dip(i,k) ) * &
                             s1(i,k) * dp(i,k)
-  150     continue
           endif
         endif
-  200 continue
+  200   continue
+  300 continue
 !
       return
       end

@@ -20,7 +20,7 @@
                          NPROF,NT,SURFACE,PROFILS,NUM,DLAT,DLON, &
                          STORE, DIAGNOS, DATE, ETIKET, H0, NK, &
                          SATUES, SATUCO,COMPRESS)
-!
+      use tdpack
       implicit none
 #include <arch_specific.hf>
       INTEGER NSURF,NPROF
@@ -53,7 +53,7 @@
 ! 009      B. Bilodeau (Mar 2007) - Compression
 ! 010      R. McTaggart-Cowan (
 ! 011      L. Spacek   (Oct 2010) - Profils limited to nk-1 levels
-! 012      V. Lee (Jan 2018) - ser_write defines NK so no need to limit here.
+! 012      V. Lee (Jan 2018) - series_write defines NK so no need to limit here.
 !
 !Object
 !          to write the time-series for one point in a standard file
@@ -98,10 +98,6 @@
 !MODULES
       INTEGER INDSERI
       EXTERNAL FSTECR,INDSERI
-      EXTERNAL sthtaw3
-      REAL sthtaw3
-!
-!
 !*
       INTEGER, PARAMETER :: STDERR=0
       CHARACTER*1 VT
@@ -111,12 +107,8 @@
       INTEGER NPAS,IP1,IP2,IP3,IG1,IG2,IG3,IG4,NPAK,DATYP
       INTEGER IELAQ,IELAT,IELAP0
       SAVE    IELAQ,IELAT,IELAP0
-include "thermoconsts.inc"
-include "dintern.inc"
-include "fintern.inc"
-!
-! N.B. Profils are what is defined in phydim_nk in ser_write
-! Thus, NK=phydim_nk 
+
+! N.B. Profils are what is defined in series_write nk = phydim_nk - 1
 
       allocate(fldm1(nk,nt),stat=err)
       if (err /= 0) then

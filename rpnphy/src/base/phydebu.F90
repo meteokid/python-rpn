@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN ------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,22 +12,23 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!-------------------------------------- LICENCE END --------------------------
 
 !/@*
 function phydebu2(p_ni, p_nj, p_nk, F_path_S) result(F_istat)
    use iso_c_binding
-   use phy_typedef, only: PHY_ERROR, PHY_OK
+   use phy_status, only: PHY_ERROR, PHY_OK, phy_error_L
    use phy_options
    use phybus, only: entbus, perbus, dynbus, volbus
-   use phybusalloc_mod
-   use mp_p3, only: p3_init
+   use phybusalloc, only: phybusalloc1
+   use module_mp_p3, only: p3_init
+   use ghg_mod, only: ghg_init
    implicit none
 #include <arch_specific.hf>
    !@Object Init physics at the beginning of each execution of the model
    !@Arguments
    character(len=*), intent(in) :: F_path_S !# data/tables dir
-   integer, intent(in) :: p_ni,p_nj,p_nk    !# horiz and vert dimensions
+   integer, intent(in) :: p_ni, p_nj, p_nk  !# horiz and vert dimensions
    !@return
    integer :: F_istat
    !@Author B. Bilodeau (Spring 1994)
@@ -97,29 +98,25 @@ function phydebu2(p_ni, p_nj, p_nk, F_path_S) result(F_istat)
    !          3) it constructs the 3 main buses dictionaries.
    !*@/
 #include <msg.h>
-#include <WhiteBoard.hf>
+#include <rmnlib_basics.hf>
    include "rpn_comm.inc"
-   include "thermoconsts.inc"
    include "clefcon.cdk"
    include "machcon.cdk"
-   include "ens.cdk"
 
    logical, save :: okinit = .false.
 
    character(len=1024) :: fichier, path
-   integer :: i, nv, myproc, ier, type, sizeof, ntr, options
-   real    :: dt0, dti0
+   integer :: i, nv, myproc, ier
    !---------------------------------------------------------------------
    F_istat = PHY_ERROR
 
-   if (date(14) == 0 .or. delt == 0.) then
-      call msg(MSG_ERROR,'(phydebu) VARIABLES: date,delt NOT INITIALIZED')
+   if (jdateo == 0 .or. delt == 0.) then
+      call msg(MSG_ERROR,'(phydebu) VARIABLES: jdateo,delt NOT INITIALIZED')
       return
    endif
 
    ! INITIALISATION DE VARIABLES POUR CLEF
    ! - - - - - - - - - - - - - - - - - - -
-   PBL_NK = (2*PBL_ZSPLIT) * ((P_NK-1) - PBL_KTOP) + 1
    ETRMIN = ETRMIN2
    EXPLIM = 75.
    TANLIM = exp(12. * ALOG(2.))
@@ -180,11 +177,10 @@ function phydebu2(p_ni, p_nj, p_nk, F_path_S) result(F_istat)
          endif
       enddo
    endif
-   
+ 
    !# lecture des tableaux de radiation
    IF_RADIA: if (any(radia(1:8) == (/'NEWRAD  ','CCCMARAD'/))) then
       if (.not.okinit) then
-         okinit = .true.
 
          call rpn_comm_rank(RPN_COMM_GRID, myproc, ier)
          fichier = trim(F_path_S)//'ozone_clim.fst'
@@ -192,6 +188,7 @@ function phydebu2(p_ni, p_nj, p_nk, F_path_S) result(F_istat)
 
          fichier = trim(F_path_S) //'/rad_table.fst'
          call litblrad(fichier, myproc)
+         if (phy_error_L) return
 
          if (simisccp) then
             !# compute the table needed to generate variability
@@ -200,53 +197,44 @@ function phydebu2(p_ni, p_nj, p_nk, F_path_S) result(F_istat)
 
             !# read in data blocks for ISCCP simulator code
             call READ_ISCCPDATA()
+            if (phy_error_L) return
          endif
+
+         !# read GHG concentration factor file
+         path = trim(F_path_S)//'/CLIMATO' !#ghg-table-1950-2015_v1'
+         ier = ghg_init(path, jdateo)
+         if (.not. RMN_IS_OK(ier)) then
+            call msg(MSG_ERROR,'(phydebu) Problem in ghg_init')
+            return
+         endif
+
+         okinit = .true.
       endif
    endif IF_RADIA
-
-   ier = wb_get_meta('ens/STOCHPHY',type,sizeof,ntr,options)
-   if (WB_IS_OK(ier)) then
-      ier = min(wb_get('ens/STOCHPHY'   , stochphy)   ,ier)
-   else
-      stochphy = .false.
-   endif
-   if (stochphy) then
-      ier = WB_OK
-      ier = min(wb_get('ens/IMRKV2'     , imrkv2)     ,ier)
-      ier = min(wb_get('ens/PTPENVU'    , ptpenvu)    ,ier)
-      ier = min(wb_get('ens/PTPENVB'    , ptpenvb)    ,ier)
-      ier = min(wb_get('ens/PTPCAPE'    , ptpcape)    ,ier)
-      ier = min(wb_get('ens/PTPTLC'     , ptptlc)     ,ier)
-      ier = min(wb_get('ens/PTPCRITW'   , ptpcritw)   ,ier)
-      ier = min(wb_get('ens/PTPFACREDUC', ptpfacreduc),ier)
-      if (.not.WB_IS_OK(ier)) then
-         call msg(MSG_ERROR,'(phydebu) Problem with wb_get')
-         return
-      endif
-   endif
 
    ! MICROPHYSICS (preliminary calculations for P3 scheme)
    ! - - - - - - - - - - - - - - - - - - - - - - - - - - -
    if (stcond == 'MP_P3') then
       path = trim(F_path_S)//'MODEL_INPUT/'
-      call p3_init(trim(path)//'p3_lookup_table_1b.dat',  &
-           trim(path)//'p3_lookup_table_2b.dat')
+      call p3_init(path, p3_ncat, stat=ier)
+      if (ier < 0) then
+         call msg_toall(MSG_ERROR,'(phydebu) Problem in p3_init')
+         return
+      endif
    endif
 
    ! CONSTRUCTION OF THE 4 MAIN BUSES DICTIONARIES:
    ! BUSENT, BUSDYN, BUSPER and BUSVOL
    ! - - - - - - - - - - - - - - - - -
-   call phybusinit(p_ni,p_nk)
-   nullify(entbus, perbus, dynbus, volbus)
-   call phybusalloc(p_nj, entbus, perbus, dynbus, volbus)
-
-   if (.not.(associated(entbus).and.associated(perbus).and.associated(dynbus).and.associated(volbus))) then
-      call msg(MSG_ERROR,'(phydebu) Problem getting physics bus pointers')
+   call phybusinit(p_ni, p_nk)
+   if (phy_error_L) then
+      call msg(MSG_ERROR,'(phydebu) Problem in phybusinit')
       return
    endif
 
-   dynbus = 0.
-   entbus = 0.
+   nullify(entbus, perbus, dynbus, volbus)
+   ier = phybusalloc1(p_nj, entbus, perbus, dynbus, volbus)
+   if (phy_error_L .or. .not.RMN_IS_OK(ier)) return
 
    ! moyhr (acchr) est la periode de moyennage (accumulation) des diagnostics.
    ! conversion : nombre d'heures --> nombre de pas de temps.
@@ -255,7 +243,6 @@ function phydebu2(p_ni, p_nj, p_nk, F_path_S) result(F_istat)
    acchr = nint(acchr * 3600./delt)
 
    F_istat = PHY_OK
-!!$   phy_init_ctrl = PHY_CTRL_INI_OK
    !----------------------------------------------------------------------
    return
 end function phydebu2

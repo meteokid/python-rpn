@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN ------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,28 +12,28 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!-------------------------------------- LICENCE END --------------------------
 
 module sfcbus_mod
-   implicit none 
+   implicit none
    public
    save
 
-#define SFCVAR(MYVAR,MYNAME) type(PHYVAR_T) :: MYVAR = PHYVAR_T(-1,0,0,0,0,.false.,MYNAME)
+#define SFCVAR(MYVAR,MYNAME) type(SFCVAR_T) :: MYVAR = SFCVAR_T(-1,0,0,0,0,.false.,MYNAME)
 
    type :: sfcptr
       sequence
-      real, pointer :: ptr(:,:)
+      real, pointer, contiguous :: ptr(:,:)
    end type sfcptr
 
-   type :: PHYVAR_T
+   type :: SFCVAR_T
       sequence
       integer :: i, agg, mul, niveaux, mosaik
       logical :: doagg_L
       character(len=32) :: n
-   end type PHYVAR_T
+   end type SFCVAR_T
 
-   type :: PHYVARLIST_T
+   type :: SFCVARLIST_T
       sequence
 
       SFCVAR(umoins , 'PW_UU:M')
@@ -47,17 +47,24 @@ module sfcbus_mod
       SFCVAR(huplus , 'TR/HU:P')
 
       SFCVAR(acoef, 'acoef')
+      SFCVAR(acroot, 'acroot')
+      SFCVAR(accevap, 'accevap')
       SFCVAR(alb_road, 'alb_road')
       SFCVAR(alb_roaden, 'alb_roaden')
       SFCVAR(alb_roof, 'alb_roof')
       SFCVAR(alb_roofen, 'alb_roofen')
       SFCVAR(alb_wall, 'alb_wall')
       SFCVAR(alb_wallen, 'alb_wallen')
-      SFCVAR(alen, 'alen')
       SFCVAR(alfaq, 'alfaq')
       SFCVAR(alfat, 'alfat')
+      SFCVAR(algr, 'algr')
+      SFCVAR(alscatw, 'alscatw')
       SFCVAR(alveg, 'alveg')
+      SFCVAR(alvh, 'alvh')
       SFCVAR(alvis, 'alvis')
+      SFCVAR(alvl, 'alvl')
+      SFCVAR(alwater, 'alwater')
+      SFCVAR(avg_gwsol, 'avg_gwsol')
       SFCVAR(azim, 'azim')
       SFCVAR(bcoef, 'bcoef')
       SFCVAR(bld, 'bld')
@@ -69,38 +76,57 @@ module sfcbus_mod
       SFCVAR(c1sat, 'c1sat')
       SFCVAR(c2ref, 'c2ref')
       SFCVAR(c3ref, 'c3ref')
+      SFCVAR(cang, 'cang')
       SFCVAR(can_hw_ratio, 'can_hw_ratio')
       SFCVAR(cgsat, 'cgsat')
       SFCVAR(clay, 'clay')
       SFCVAR(clayen, 'clayen')
+      SFCVAR(co2i1, 'co2i1')
       SFCVAR(cosz, 'cosz')
       SFCVAR(cveg, 'cveg')
+      SFCVAR(cvh, 'cvh')
+      SFCVAR(cvl, 'cvl')
+      SFCVAR(d50, 'd50')
+      SFCVAR(d95, 'd95')
       SFCVAR(d_road, 'd_road')
       SFCVAR(d_roaden, 'd_roaden')
       SFCVAR(d_roof, 'd_roof')
       SFCVAR(d_roofen, 'd_roofen')
       SFCVAR(d_wall, 'd_wall')
       SFCVAR(d_wallen, 'd_wallen')
+      SFCVAR(deciduous, 'deciduous')
       SFCVAR(dhdx, 'dhdx')
       SFCVAR(dhdxdy, 'dhdxdy')
-      SFCVAR(dhdxdyen, 'dhdxdyen')
-      SFCVAR(dhdxen, 'dhdxen')
       SFCVAR(dhdy, 'dhdy')
-      SFCVAR(dhdyen, 'dhdyen')
       SFCVAR(dlat, 'dlat')
       SFCVAR(dlon, 'dlon')
       SFCVAR(drain, 'drain')
+      SFCVAR(draindens, 'draindens')
+      SFCVAR(drainaf, 'drainaf')
       SFCVAR(dsst, 'dsst')
       SFCVAR(dtdiag, 'dtdiag')
       SFCVAR(eflux, 'eflux')
+      SFCVAR(eg, 'eg')
+      SFCVAR(emis, 'emis')
+      SFCVAR(emisr, 'emisr')
       SFCVAR(emis_road, 'emis_road')
       SFCVAR(emis_roaden, 'emis_roaden')
       SFCVAR(emis_roof, 'emis_roof')
       SFCVAR(emis_roofen, 'emis_roofen')
       SFCVAR(emis_wall, 'emis_wall')
       SFCVAR(emis_wallen, 'emis_wallen')
+      SFCVAR(emisgr, 'emisgr')
+      SFCVAR(emistg, 'emistg')
+      SFCVAR(emistgen, 'emistgen')
+      SFCVAR(emsvc, 'emsvc')
+      SFCVAR(emisvh, 'emisvh')
+      SFCVAR(emisvl, 'emisvl')
+      SFCVAR(emtw, 'emtw')
       SFCVAR(en, 'en')
-      SFCVAR(epstfn, 'epstfn')
+      SFCVAR(er, 'er')
+      SFCVAR(etr, 'etr')
+      SFCVAR(evergreen, 'evergreen')
+      SFCVAR(fbcof, 'fbcof')
       SFCVAR(fc, 'fc')
       SFCVAR(fcor, 'fcor')
       SFCVAR(fdsi, 'fdsi')
@@ -109,21 +135,28 @@ module sfcbus_mod
       SFCVAR(flusolis, 'flusolis')
       SFCVAR(fluslop, 'fluslop')
       SFCVAR(fq, 'fq')
+      SFCVAR(frootd, 'frootd')
       SFCVAR(frv, 'frv')
+      SFCVAR(fsd, 'fsd')
+      SFCVAR(fsf, 'fsf')
       SFCVAR(ftemp, 'ftemp')
       SFCVAR(fv, 'fv')
       SFCVAR(fvap, 'fvap')
+      SFCVAR(fvapliq, 'fvapliq')
+      SFCVAR(fvapliqaf, 'fvapliqaf')
       SFCVAR(g_road, 'g_road')
       SFCVAR(g_roof, 'g_roof')
       SFCVAR(g_town, 'g_town')
       SFCVAR(g_wall, 'g_wall')
       SFCVAR(gamveg, 'gamveg')
+      SFCVAR(gamvh, 'gamvh')
+      SFCVAR(gamvl, 'gamvl')      
       SFCVAR(gc, 'gc')
-      SFCVAR(glacen, 'glacen')
       SFCVAR(glacier, 'glacier')
       SFCVAR(glsea, 'glsea')
       SFCVAR(glsea0, 'glsea0')
-      SFCVAR(glseaen, 'glseaen')
+      SFCVAR(grkef, 'grkef')
+      SFCVAR(grksat, 'grksat')
       SFCVAR(gztherm, 'gztherm')
       SFCVAR(h, 'h')
       SFCVAR(h_industry, 'h_industry')
@@ -140,20 +173,31 @@ module sfcbus_mod
       SFCVAR(hc_roofen, 'hc_roofen')
       SFCVAR(hc_wall, 'hc_wall')
       SFCVAR(hc_wallen, 'hc_wallen')
+      SFCVAR(hfluxsa, 'hfluxsa')
+      SFCVAR(hfluxsv, 'hfluxsv')
       SFCVAR(hst, 'hst')
       SFCVAR(husurf, 'husurf')
       SFCVAR(hv, 'hv')
       SFCVAR(icedp, 'icedp')
-      SFCVAR(icedpen, 'icedpen')
       SFCVAR(iceline, 'iceline')
-      SFCVAR(icelinen, 'icelinen')
       SFCVAR(ilmo, 'ilmo')
+      SFCVAR(impervu, 'impervu')
       SFCVAR(isoil, 'isoil')
-      SFCVAR(isoilen, 'isoilen')
       SFCVAR(kcl, 'kcl')
+      SFCVAR(khc, 'khc')
       SFCVAR(km, 'km')
+      SFCVAR(ksat, 'ksat')
+      SFCVAR(ksatc, 'ksatc')
       SFCVAR(kt, 'kt')
       SFCVAR(lai, 'lai')
+      SFCVAR(laictem, 'laictem')
+      SFCVAR(laideci, 'laideci')
+      SFCVAR(laiva, 'laiva')
+      SFCVAR(laivf26, 'laivf26')
+      SFCVAR(laivh, 'laivh')
+      SFCVAR(laivl, 'laivl')
+      SFCVAR(latflaf, 'latflaf')
+      SFCVAR(latflw, 'latflw')
       SFCVAR(le_industry, 'le_industry')
       SFCVAR(le_industryen, 'le_industryen')
       SFCVAR(le_road, 'le_road')
@@ -165,15 +209,14 @@ module sfcbus_mod
       SFCVAR(leg, 'leg')
       SFCVAR(ler, 'ler')
       SFCVAR(les, 'les')
+      SFCVAR(lesv, 'lesv')
       SFCVAR(letr, 'letr')
       SFCVAR(lev, 'lev')
       SFCVAR(lhtg, 'lhtg')
-      SFCVAR(lhtgen, 'lhtgen')
       SFCVAR(melts, 'melts')
       SFCVAR(meltsr, 'meltsr')
       SFCVAR(mf, 'mf')
       SFCVAR(mg, 'mg')
-      SFCVAR(mgen, 'mgen')
       SFCVAR(ml, 'ml')
       SFCVAR(mt, 'mt')
       SFCVAR(mtdir, 'mtdir')
@@ -183,42 +226,73 @@ module sfcbus_mod
       SFCVAR(paven, 'paven')
       SFCVAR(pcoef, 'pcoef')
       SFCVAR(pmoins, 'pmoins')
+      SFCVAR(pplus, 'pplus')
+      SFCVAR(psi, 'psi')
+      SFCVAR(psisat, 'psisat')
       SFCVAR(psn, 'psn')
       SFCVAR(psng, 'psng')
+      SFCVAR(psngrvl, 'psngrvl')
       SFCVAR(psnv, 'psnv')
+      SFCVAR(psnvh, 'psnvh')
+      SFCVAR(psnvha, 'psnvha')
       SFCVAR(q_canyon, 'q_canyon')
       SFCVAR(q_canyonen, 'q_canyonen')
       SFCVAR(qdiag, 'qdiag')
+      SFCVAR(qdiagstn, 'qdiagstn')
+      SFCVAR(qdiagstnv, 'qdiagstnv')
+      SFCVAR(qdiagtyp, 'qdiagtyp')
+      SFCVAR(qdiagtypv, 'qdiagtypv')
       SFCVAR(qsurf, 'qsurf')
       SFCVAR(rainrate, 'rainrate')
+      SFCVAR(rcctem, 'rcctem')
       SFCVAR(resa, 'resa')
+      SFCVAR(resagr, 'resagr')
+      SFCVAR(resavg, 'resavg')
+      SFCVAR(resasa, 'resasa')
+      SFCVAR(resasv, 'resasv')
+      SFCVAR(resaef, 'resaef')
       SFCVAR(rgl, 'rgl')
+      SFCVAR(rglvh, 'rglvh')
+      SFCVAR(rglvl, 'rglvl')
       SFCVAR(rib, 'rib')
       SFCVAR(rn_road, 'rn_road')
       SFCVAR(rn_roof, 'rn_roof')
       SFCVAR(rn_town, 'rn_town')
       SFCVAR(rn_wall, 'rn_wall')
       SFCVAR(rnet_s, 'rnet_s')
+      SFCVAR(rnetsa, 'rnetsa')
+      SFCVAR(rnetsv, 'rnetsv')
       SFCVAR(rootdp, 'rootdp')
+      SFCVAR(rsnowsa, 'rsnowsa')
+      SFCVAR(rsnowsv, 'rsnowsv')
       SFCVAR(rst, 'rst')
       SFCVAR(rt, 'rt')
+      SFCVAR(runofftot, 'runofftot')
+      SFCVAR(runofftotaf, 'runofftotaf')
+      SFCVAR(rveg, 'rveg')
       SFCVAR(sand, 'sand')
       SFCVAR(sanden, 'sanden')
-      SFCVAR(scl, 'scl')
       SFCVAR(sfcwgt, 'sfcwgt')
       SFCVAR(skin_depth, 'skin_depth')
       SFCVAR(skin_inc, 'skin_inc')
+      SFCVAR(skyview, 'skyview')
+      SFCVAR(slop, 'slop')
       SFCVAR(slope, 'slope')
+      SFCVAR(snden, 'snden')
       SFCVAR(snoagen, 'snoagen')
       SFCVAR(snoal, 'snoal')
       SFCVAR(snoalen, 'snoalen')
       SFCVAR(snoden, 'snoden')
       SFCVAR(snodp, 'snodp')
-      SFCVAR(snodpen, 'snodpen')
+      SFCVAR(snodpl, 'snodpl')
       SFCVAR(snoma, 'snoma')
       SFCVAR(snoro, 'snoro')
-      SFCVAR(snoroen, 'snoroen')
       SFCVAR(snowrate, 'snowrate')
+      SFCVAR(snval, 'snval')
+      SFCVAR(snvden, 'snvden')
+      SFCVAR(snvdp, 'snvdp')
+      SFCVAR(snvma, 'snvma')
+      SFCVAR(snvro, 'snvro')  
       SFCVAR(sroad_alb, 'sroad_alb')
       SFCVAR(sroad_alben, 'sroad_alben')
       SFCVAR(sroad_emis, 'sroad_emis')
@@ -244,8 +318,11 @@ module sfcbus_mod
       SFCVAR(sroof_wsnow, 'sroof_wsnow')
       SFCVAR(sroof_wsnowen, 'sroof_wsnowen')
       SFCVAR(stomr, 'stomr')
+      SFCVAR(stomrvh, 'stomrvh')
+      SFCVAR(stomrvl, 'stomrvl')
       SFCVAR(svf_road, 'svf_road')
       SFCVAR(svf_wall, 'svf_wall')
+      SFCVAR(svs_wta, 'svs_wta')    
       SFCVAR(t_canyon, 't_canyon')
       SFCVAR(t_canyonen, 't_canyonen')
       SFCVAR(t_road, 't_road')
@@ -260,36 +337,61 @@ module sfcbus_mod
       SFCVAR(tc_roofen, 'tc_roofen')
       SFCVAR(tc_wall, 'tc_wall')
       SFCVAR(tc_wallen, 'tc_wallen')
+      SFCVAR(tddiagtyp, 'tddiagtyp')
+      SFCVAR(tddiagtypv, 'tddiagtypv')
       SFCVAR(tdiag, 'tdiag')
-      SFCVAR(tglacen, 'tglacen')
+      SFCVAR(tdiagstn, 'tdiagstn')
+      SFCVAR(tdiagstnv, 'tdiagstnv')
+      SFCVAR(tdiagtyp, 'tdiagtyp')
+      SFCVAR(tdiagtypv, 'tdiagtypv')
       SFCVAR(tglacier, 'tglacier')
+      SFCVAR(tground, 'tground')
       SFCVAR(thetaa, 'thetaa')
+      SFCVAR(thetaap, 'thetaap')
       SFCVAR(ti_bld, 'ti_bld')
       SFCVAR(ti_blden, 'ti_blden')
       SFCVAR(ti_road, 'ti_road')
       SFCVAR(ti_roaden, 'ti_roaden')
       SFCVAR(tmice, 'tmice')
-      SFCVAR(tmicen, 'tmicen')
       SFCVAR(tnolim, 'tnolim')
+      SFCVAR(tsa, 'tsa')
+      SFCVAR(tsnavg, 'tsnavg')
+      SFCVAR(tsnow, 'tsnow')
+      SFCVAR(tsnowveg, 'tsnowveg')
       SFCVAR(tsoil, 'tsoil')
-      SFCVAR(tsoilen, 'tsoilen')
       SFCVAR(tsrad, 'tsrad')
+      SFCVAR(tsradtw, 'tsradtw')
       SFCVAR(tss, 'tss')
       SFCVAR(tsun, 'tsun')
       SFCVAR(tsurf, 'tsurf')
+      SFCVAR(tsvavg, 'tsvavg')
       SFCVAR(tve, 'tve')
+      SFCVAR(tvege, 'tvege')
       SFCVAR(twater, 'twater')
-      SFCVAR(twateren, 'twateren')
       SFCVAR(u_canyon, 'u_canyon')
       SFCVAR(udiag, 'udiag')
+      SFCVAR(udiagstn, 'udiagstn')
+      SFCVAR(udiagstnv, 'udiagstnv')
+      SFCVAR(udiagtyp, 'udiagtyp')
+      SFCVAR(udiagtypv, 'udiagtypv')
       SFCVAR(urban, 'urban')
       SFCVAR(vdiag, 'vdiag')
+      SFCVAR(vdiagstn, 'vdiagstn')
+      SFCVAR(vdiagstnv, 'vdiagstnv')
+      SFCVAR(vdiagtyp, 'vdiagtyp')
+      SFCVAR(vdiagtypv, 'vdiagtypv')
       SFCVAR(vegf, 'vegf')
-      SFCVAR(vegfen, 'vegfen')
       SFCVAR(vegfrac, 'vegfrac')
+      SFCVAR(vegh, 'vegh')
+      SFCVAR(vegl, 'vegl')
+      SFCVAR(vegtrans, 'vegtrans')
+      SFCVAR(vgctem, 'vgctem')
       SFCVAR(wall_o_hor, 'wall_o_hor')
       SFCVAR(wall_o_horen, 'wall_o_horen')
+      SFCVAR(watflow, 'watflow')
       SFCVAR(wfc, 'wfc')
+      SFCVAR(wfcdp, 'wfcdp')
+      SFCVAR(wfcint, 'wfcint')
       SFCVAR(wflux, 'wflux')
       SFCVAR(ws_road, 'ws_road')
       SFCVAR(ws_roaden, 'ws_roaden')
@@ -297,13 +399,53 @@ module sfcbus_mod
       SFCVAR(ws_roofen, 'ws_roofen')
       SFCVAR(wsat, 'wsat')
       SFCVAR(wsnow, 'wsnow')
-      SFCVAR(wsnowen, 'wsnowen')
+      SFCVAR(wsnv, 'wsnv')
       SFCVAR(wsoil, 'wsoil')
-      SFCVAR(wsoilen, 'wsoilen')
+      SFCVAR(wsoilm, 'wsoilm')
       SFCVAR(wveg, 'wveg')
-      SFCVAR(wvegen, 'wvegen')
       SFCVAR(wwilt, 'wwilt')
       SFCVAR(xcent, 'xcent')
+      SFCVAR(yradin, 'yradin')
+      SFCVAR(yradsun, 'yradsun')
+      SFCVAR(yradshade, 'yradshade')
+      SFCVAR(yradrfsun, 'yradrfsun')
+      SFCVAR(yradrfshade, 'yradrfshade')
+      SFCVAR(yutciin, 'yutciin')
+      SFCVAR(yutcisun, 'yutcisun')
+      SFCVAR(yutcishade, 'yutcishade')
+      SFCVAR(yutcirfsun, 'yutcirfsun')
+      SFCVAR(yutcirfshade, 'yutcirfshade')
+      SFCVAR(ywbgtsun, 'ywbgtsun')
+      SFCVAR(ywbgtshade, 'ywbgtshade')
+      SFCVAR(ywbgtrfsun, 'ywbgtrfsun')
+      SFCVAR(ywbgtrfshade, 'ywbgtrfshade')
+      SFCVAR(yutcicin, 'yutcicin')
+      SFCVAR(yutcicsun, 'yutcicsun')
+      SFCVAR(yutcicshade, 'yutcicshade')
+      SFCVAR(yutcicrfsun, 'yutcicrfsun')
+      SFCVAR(yutcicrfshade, 'yutcicrfshade')
+      SFCVAR(ytglbsun, 'ytglbsun')
+      SFCVAR(ytglbshade, 'ytglbshade')
+      SFCVAR(ytglbrfsun, 'ytglbrfsun')
+      SFCVAR(ytglbrfshade, 'ytglbrfshade')
+      SFCVAR(ytwetb, 'ytwetb')
+      SFCVAR(ytwetbrf, 'ytwetbrf')
+      SFCVAR(ytrfzt, 'ytrfzt')
+      SFCVAR(ytrdzt, 'ytrdzt')
+      SFCVAR(yurdzu, 'yurdzu')
+      SFCVAR(yQ1, 'yQ1')
+      SFCVAR(yQ2, 'yQ2')
+      SFCVAR(yQ3, 'yQ3')
+      SFCVAR(yQ4, 'yQ4')
+      SFCVAR(yQ5, 'yQ5')
+      SFCVAR(yQ6, 'yQ6')
+      SFCVAR(yQ7, 'yQ7')
+      SFCVAR(yQ8, 'yQ8')
+      SFCVAR(yQ9, 'yQ9')
+      SFCVAR(yQ10, 'yQ10')
+      SFCVAR(yQ11, 'yQ11')
+      SFCVAR(yQ12, 'yQ12')
+      SFCVAR(yQ13, 'yQ13')
       SFCVAR(z0, 'z0')
       SFCVAR(z0_road, 'z0_road')
       SFCVAR(z0_roaden, 'z0_roaden')
@@ -312,14 +454,19 @@ module sfcbus_mod
       SFCVAR(z0_town, 'z0_town')
       SFCVAR(z0_townen, 'z0_townen')
       SFCVAR(z0en, 'z0en')
+      SFCVAR(z0ha, 'z0ha')
+      SFCVAR(z0mvh, 'z0mvh')
+      SFCVAR(z0mvl, 'z0mvl')
+      SFCVAR(z0veg, 'z0veg')
       SFCVAR(z0t, 'z0t')
+      SFCVAR(z0tveg, 'z0tveg')
       SFCVAR(za, 'za')
       SFCVAR(ze, 'ze')
       SFCVAR(zenith, 'zenith')
       SFCVAR(ztsl, 'ztsl')
       SFCVAR(zusl, 'zusl')
 
-   end type PHYVARLIST_T
+   end type SFCVARLIST_T
 
    integer, parameter :: INDX_SOIL    =  1
    integer, parameter :: INDX_GLACIER =  2
@@ -329,8 +476,8 @@ module sfcbus_mod
    integer, parameter :: INDX_URB     =  6
    integer, parameter :: INDX_MAX     =  6
 
-   type(PHYVARLIST_T), target  :: vd
-   type(PHYVAR_T), allocatable :: vl(:)
+   type(SFCVARLIST_T), target  :: vd
+   type(SFCVAR_T), allocatable :: vl(:)
    type(sfcptr), allocatable :: busptr(:)
    integer, allocatable :: statut(:,:)
 
@@ -364,7 +511,7 @@ contains
 
 
    function sfcbus_init() result(F_istat)
-      use phy_itf, only: phymeta
+      use phy_typedef, only: phymeta
       use phygetmetaplus_mod, only: phymetaplus, phygetmetaplus
       use sfc_options, only: schmurb
       implicit none
@@ -375,7 +522,7 @@ contains
 #include <clib_interface_mu.hf>
 
       integer :: i, istat, mulmax, idxmax
-      type(PHYVAR_T) :: vl0(1)
+      type(SFCVAR_T) :: vl0(1)
       type(phymeta) :: mymeta
       type(phymetaplus) :: mymetaplus
 
@@ -386,7 +533,7 @@ contains
          if (schmurb /= 'NIL') idxmax = max(idxmax, INDX_URB)
          nsurf = idxmax - 1
       endif
-      
+ 
       nvarsurf = size(transfer(vd, vl0))
       allocate(vl(nvarsurf))
       allocate(busptr(nvarsurf))
@@ -396,20 +543,66 @@ contains
          vl(i)%i = i
          istat = clib_toupper(vl(i)%n)
          nullify(busptr(i)%ptr)
-         istat = phygetmetaplus(mymetaplus, vl(i)%n, F_npath='V', F_bpath='DPVE', F_quiet=.true., F_shortmatch=.false.)
+         istat = phygetmetaplus(mymetaplus, vl(i)%n, F_npath='V', &
+              F_bpath='DPVE', F_quiet=.true., F_shortmatch=.false.)
          if (istat >= 0) then
             mymeta = mymetaplus%meta
-            !#TODO: put an upper bound on ptr so -C would bite!
-            busptr(i)%ptr => mymetaplus%ptr(mymetaplus%index:,:)
+            busptr(i)%ptr => mymetaplus%vptr
             vl(i)%doagg_L = (mymeta%bus(1:1) /= 'E')
             vl(i)%mul = mymeta%fmul
             vl(i)%niveaux = mymeta%nk
             vl(i)%mosaik = mymeta%mosaic + 1
             mulmax = max(mulmax, vl(i)%mul)
          endif
-         if (vl(i)%n == 'TSRAD') tsrad_i = i
-         if (vl(i)%n == 'Z0')    z0_i = i
-         if (vl(i)%n == 'Z0T')   z0t_i = i
+
+         select case(vl(i)%n)
+         case('TSRAD')
+            tsrad_i = i
+         case('Z0')
+            z0_i = i
+         case('Z0T')
+            z0t_i = i
+         case('DRAIN')
+            drain = mymetaplus%index
+         case('DRAINAF')
+            drainaf = mymetaplus%index
+         case('INSMAVG')
+            insmavg = mymetaplus%index
+         case('ISOIL')
+            isoil = mymetaplus%index
+         case('LEG')
+            leg = mymetaplus%index
+         case('LEGAF')
+            legaf = mymetaplus%index
+         case('LER')
+            ler = mymetaplus%index
+         case('LERAF')
+            leraf = mymetaplus%index
+         case('LES')
+            les = mymetaplus%index
+         case('LESAF')
+            lesaf = mymetaplus%index
+         case('LETR')
+            letr = mymetaplus%index
+         case('LETRAF')
+            letraf = mymetaplus%index
+         case('LEV')
+            lev = mymetaplus%index
+         case('LEVAF')
+            levaf = mymetaplus%index
+         case('OVERFL')
+            overfl = mymetaplus%index
+         case('OVERFLAF')
+            overflaf = mymetaplus%index
+         case('ROOTDP')
+            rootdp = mymetaplus%index
+         case('WFLUX')
+            wflux = mymetaplus%index
+         case('WFLUXAF')
+            wfluxaf = mymetaplus%index
+         case('WSOIL')
+            wsoil = mymetaplus%index
+         end select
 
       enddo
       vd = transfer(vl, vd)

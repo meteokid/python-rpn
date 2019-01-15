@@ -1,9 +1,7 @@
 module phy_typedef
+   use phy_status, only: PHY_ERROR, PHY_NONE, PHY_OK
    implicit none
    public
-   integer, parameter :: PHY_ERROR = -1
-   integer, parameter :: PHY_NONE  = 0
-   integer, parameter :: PHY_OK    = 1
    integer, parameter :: PHY_MAXNAMELENGTH=32
 
    character(len=*), parameter :: NPATH_DEFAULT='VOI'

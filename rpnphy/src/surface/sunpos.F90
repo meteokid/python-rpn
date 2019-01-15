@@ -13,8 +13,8 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
-!     ####################################################################################
-      SUBROUTINE SUNPOS (KYEAR, KMONTH, KDAY, PTIME, PLON, PLAT, PTSUN, PZENITH, PAZIMSOL)
+      SUBROUTINE SUNPOS (KYEAR, KMONTH, KDAY, PTIME, &
+                         PLON, PLAT, PTSUN, PZENITH, PAZIMSOL)
 !     ####################################################################################
 !
 !!****  *SUNPOS * - routine to compute the position of the sun
@@ -49,7 +49,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	J.-P. Pinty      * Laboratoire d'Aerologie*
+!!      J.-P. Pinty      * Laboratoire d'Aerologie*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -58,6 +58,8 @@
 !!      (J.Stein)            01:04/96  bug correction for ZZEANG     
 !!      (K. Suhre)           14/02/97  bug correction for ZLON0     
 !!      (V. Masson)          01/03/03  add zenithal angle output
+!!      (V. Masson)          14/03/14  avoid discontinuous declination at 00UTC each day
+!!      (S. Leroyer/ F. Roberge) 30/08/18  avoid negativ sqrt for ZSINZEN
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -67,6 +69,7 @@ USE MODD_CSTS,          ONLY : XPI, XDAY
 !
 implicit none
 #include <arch_specific.hf>
+!
 !
 !*       0.1   Declarations of dummy arguments :
 !
@@ -84,56 +87,46 @@ REAL, DIMENSION(:),           INTENT(OUT)  :: PTSUN      ! Solar time
 !*       0.2   declarations of local variables
 !
 !
-REAL                                       :: ZTIME      ! Centered current time for radiation calculations
 REAL                                       :: ZUT        ! Universal time
 !
 REAL, DIMENSION(SIZE(PLON))                :: ZTUT    ,&! True (absolute) Universal Time
-                                              ZSOLANG ,&! Hourly solar angle
-                                              ZSINAZI ,&! Sine of the solar azimuthal angle
-                                              ZCOSAZI ,&! Cosine of the solar azimuthal angle
-                                              ZLAT,    &
-                                              ZLON,    &! Array of latitudes and longitudes
-                                              ZSINZEN, &!Sine of zenithal angle
-                                              ZCOSZEN, &!Cosine of zenithal angle
-                                              ZAZIMSOL,&!azimuthal angle
-                                              ZTSIDER, &!
-                                              ZSINDEL, &!azimuthal angle
-                                              ZCOSDEL  !azimuthal angle
-
+                                                ZSOLANG ,&! Hourly solar angle
+                                                ZSINAZI ,&! Sine of the solar azimuthal angle
+                                                ZCOSAZI ,&! Cosine of the solar azimuthal angle
+                                                ZLAT,    &
+                                                ZLON,    &! Array of latitudes and longitudes
+                                                ZSINZEN, &!Sine of zenithal angle
+                                                ZCOSZEN   !Cosine of zenithal angle  
 INTEGER, DIMENSION(0:11)                   :: IBIS, INOBIS ! Cumulative number of days per month
                                                            ! for bissextile and regular years
 REAL                                       :: ZDATE         ! Julian day of the year
 REAL                                       :: ZAD           ! Angular Julian day of the year
 REAL                                       :: ZDECSOL       ! Daily solar declination angle 
 REAL                                       :: ZA1, ZA2      ! Ancillary variables
-
-INTEGER                                    :: JI
+REAL                                       :: ZTSIDER, &
+                                                ZSINDEL, &!azimuthal angle
+                                                ZCOSDEL !azimuthal angle  
+!                                            
+INTEGER                                    :: JI, JJ
+INTEGER    :: IINDX1, IINDX2
 !
 !-------------------------------------------------------------------------------
 !
-!*       1.    LOADS THE ZLAT, ZLON ARRAYS
-!              ---------------------------
+!*       1.    TO COMPUTE THE TRUE SOLAR TIME
+!              -------------------------------
 !
-ZLAT = PLAT*(XPI/180.)
-ZLON = PLON*(XPI/180.)
-!
-!-------------------------------------------------------------------------------
-!
-!*       2.    COMPUTES THE TRUE SOLAR TIME
-!              ----------------------------
-!
-ZUT  = AMOD( 24.0+AMOD(PTIME/3600.,24.0),24.0 )
+ZUT  = MOD( 24.0+MOD(PTIME/3600.,24.0),24.0 )
 
 INOBIS(:) = (/0,31,59,90,120,151,181,212,243,273,304,334/)
-IBIS(0) = INOBIS(0)
-DO JI=1,11
+IBIS(0:1) = INOBIS(0:1)
+DO JI=2,11
   IBIS(JI) = INOBIS(JI)+1
 END DO
-IF( MOD(KYEAR,4).EQ.0 ) THEN
-  ZDATE = FLOAT(KDAY +   IBIS(KMONTH-1)) - 1
+IF( MOD(KYEAR,4).EQ.0 .AND. (MOD(KYEAR,100).NE.0 .OR. MOD(KYEAR,400).EQ.0)) THEN
+  ZDATE = FLOAT(KDAY +   IBIS(KMONTH-1)) - 1 + PTIME/XDAY
   ZAD = 2.0*XPI*ZDATE/366.0
 ELSE
-  ZDATE = FLOAT(KDAY + INOBIS(KMONTH-1)) - 1
+  ZDATE = FLOAT(KDAY + INOBIS(KMONTH-1)) - 1 + PTIME/XDAY
   ZAD = 2.0*XPI*ZDATE/365.0
 END IF
 
@@ -141,52 +134,74 @@ ZA1 = (1.00554*ZDATE- 6.28306)*(XPI/180.0)
 ZA2 = (1.93946*ZDATE+23.35089)*(XPI/180.0)
 ZTSIDER = (7.67825*SIN(ZA1)+10.09176*SIN(ZA2)) / 60.0
 !
-ZTUT = ZUT - ZTSIDER + ZLON(:)*((180./XPI)/15.0)
-!
-PTSUN = AMOD(PTIME -ZTSIDER*3600. +PLON*240., XDAY)
 !-------------------------------------------------------------------------------
 !
-!*       3.     COMPUTES THE SOLAR DECLINATION ANGLE
-!	        ------------------------------------
+!*       2.     COMPUTE THE SOLAR DECLINATION ANGLE
+!               -----------------------------------
 !
 ZDECSOL = 0.006918-0.399912*COS(ZAD)   +0.070257*SIN(ZAD)    &
-         -0.006758*COS(2.*ZAD)+0.000907*SIN(2.*ZAD) &
-         -0.002697*COS(3.*ZAD)+0.00148 *SIN(3.*ZAD)
+           -0.006758*COS(2.*ZAD)+0.000907*SIN(2.*ZAD) &
+           -0.002697*COS(3.*ZAD)+0.00148 *SIN(3.*ZAD)  
 ZSINDEL = SIN(ZDECSOL)
 ZCOSDEL = COS(ZDECSOL)
 !-------------------------------------------------------------------------------
 !
+IINDX1 = 1
+IINDX2 = SIZE(PLON)
+!
+DO JJ = IINDX1,IINDX2
+!
+!*       3.    LOADS THE ZLAT, ZLON ARRAYS
+!              ---------------------------
+!
+  ZLAT(JJ) = PLAT(JJ)*(XPI/180.)
+  ZLON(JJ) = PLON(JJ)*(XPI/180.)
+!
+!-------------------------------------------------------------------------------
+!
+!*       4.    COMPUTE THE TRUE SOLAR TIME
+!              ----------------------------
+!
+  ZTUT(JJ) = ZUT - ZTSIDER + ZLON(JJ)*((180./XPI)/15.0)
+!
+  PTSUN(JJ) = MOD(PTIME -ZTSIDER*3600. +PLON(JJ)*240., XDAY)
+!
+!-------------------------------------------------------------------------------
 !*       3.    COMPUTES THE COSINE AND SINUS OF THE ZENITHAL SOLAR ANGLE
 !              ---------------------------------------------------------
 !
-ZSOLANG = (ZTUT-12.0)*15.0*(XPI/180.)          ! hour angle in radians
+  ZSOLANG(JJ) = (ZTUT(JJ)-12.0)*15.0*(XPI/180.)          ! hour angle in radians
 !
-ZCOSZEN = SIN(ZLAT)*ZSINDEL +                 &! Cosine of the zenithal
-               COS(ZLAT)*ZCOSDEL*COS(ZSOLANG)  !       solar angle
+  ZCOSZEN(JJ) = SIN(ZLAT(JJ))*ZSINDEL +                 &! Cosine of the zenithal
+                 COS(ZLAT(JJ))*ZCOSDEL*COS(ZSOLANG(JJ))  !       solar angle  
 !
-ZSINZEN  = SQRT( 1. - ZCOSZEN*ZCOSZEN )
-!
+!  ZSINZEN(JJ)  = SQRT( 1. - ZCOSZEN(JJ)*ZCOSZEN(JJ) )
+   ZSINZEN(JJ)  = SQRT( MAX( 1. - ZCOSZEN(JJ)*ZCOSZEN(JJ), 0. ) )
+
 !-------------------------------------------------------------------------------
 !
-!*       4.    ZENITHAL SOLAR ANGLE
+!*       5.    ZENITHAL SOLAR ANGLE
 !              --------------------
 !
-PZENITH = ACOS(ZCOSZEN)
+  PZENITH(JJ) = ACOS(ZCOSZEN(JJ))
 !
 !-------------------------------------------------------------------------------
 !
-!*       5.    COMPUTE THE AZINUTHAL SOLAR ANGLE (PAZIMSOL)
+!*       6.    COMPUTE THE AZIMUTHAL SOLAR ANGLE (PAZIMSOL)
 !              --------------------------------------------
 !
-WHERE (ZSINZEN/=0.)
-  ZSINAZI  = - ZCOSDEL * SIN(ZSOLANG) / ZSINZEN
-  ZCOSAZI  = (-SIN(ZLAT)*ZCOSDEL*COS(ZSOLANG)     & 
-                   +COS(ZLAT)*ZSINDEL                       &
-                  ) / ZSINZEN
-  PAZIMSOL = XPI - ATAN2(ZSINAZI,ZCOSAZI)
-ELSEWHERE
-  PAZIMSOL = 0.
-END WHERE
+  IF (ZSINZEN(JJ)/=0.) THEN
+    !Azimuth is measured clockwise from north
+    ZSINAZI(JJ)  = - ZCOSDEL * SIN(ZSOLANG(JJ)) / ZSINZEN(JJ)
+    ZCOSAZI(JJ)  = (-SIN(ZLAT(JJ))*ZCOSDEL*COS(ZSOLANG(JJ))      &
+                       +COS(ZLAT(JJ))*ZSINDEL                       &
+                      ) / ZSINZEN(JJ)  
+    PAZIMSOL(JJ) = ATAN2(ZSINAZI(JJ),ZCOSAZI(JJ))
+  ELSE
+    PAZIMSOL(JJ) = XPI
+  ENDIF
+!
+ENDDO
 !
 !-------------------------------------------------------------------------------
 !

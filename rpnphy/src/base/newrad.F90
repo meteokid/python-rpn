@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN --------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,26 +12,40 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!-------------------------------------- LICENCE END ----------------------------
 
-      subroutine newrad5 ( d, sized, f, sizef, v, vsiz, &
+module newrad
+   implicit none
+   private
+   public :: newrad6
+
+contains
+
+   !/@*
+   subroutine newrad6(d, sized, f, sizef, v, vsiz, &
                            liqwcin, icewcin, liqwp, icewp, nuage, &
                            tau, kount, &
-                           trnch , n , m , nk , istak, itask, &
+                           trnch , n , m , nk , &
                            nkp, nkrd, nkprd, inrd)
+      use iso_c_binding
+      use mu_jdate_mod, only: jdate_day_of_year, mu_js2ymdhms
+      use tdpack, only: CONSOL, PI
+      use series_mod, only: series_xst
       use phy_options
+      use phy_status, only: phy_error_L
       use phybus
       implicit none
 #include <arch_specific.hf>
+#include <rmnlib_basics.hf>
 
-      integer sized,sizef,kount,trnch, vsiz, &
-              n,m,nk,istak,itask,nkp,nkrd,nkprd
+      integer, intent(in) :: sized,sizef,kount,trnch, vsiz, &
+              n,m,nk,nkp,nkrd,nkprd
       integer inrd(nkprd)
-      real, target ::  d(sized), f(sizef), v(vsiz)
+      real, target, intent(inout) ::  d(sized), f(sizef), v(vsiz)
       real, target ::  nuage(n*nk)
       real liqwcin(m,nk), icewcin(m,nk)
       real liqwp(m,nk), icewp(m,nk)
-      real tau
+      real, intent(in) :: tau
 
 !Author
 !          L. Garand and J. Mailhot RPN  (June 1989)
@@ -64,8 +78,6 @@
 ! n        horizontal dimension
 ! m        1st dimension of T and Q
 ! nk       number of layers
-! istak    stack number to use
-! itask    task number
 ! nkp      number of layers including ground
 ! nkrd     number of reduced layers
 ! nkprd    number of reduced layers including ground
@@ -92,29 +104,23 @@
 #include "radiation.cdk"
 #include "nocld.cdk"
 
-      include "thermoconsts.inc"
-
-      real juliand
-      external juliand
-!
 ! Seuil du cos de l'angle solaire a partir duquel on considere
 ! que le soleil est leve
       real, parameter :: seuil=1.E-5
 
-      real fbas,hzp,julien,press,r0r
+      real fbas,hzp,julien,r0r
 
 ! Dimensions des champs necessaires
 ! pour l'option de reduction des niveaux
       integer i, kk, rednk, rednkp, redm
 !
 
-      real v1,v2
+      real v1
       real hz0,hz
-      integer j,k,ja,nnk,is, it
-      integer ierget
+      integer j,k,ja,nnk, yy, mo, dd, hh, mn, sec
       logical opnua
       integer nncl,iopt
-      integer nnkp,nnkp2, ik
+      integer nnkp,nnkp2
       real alb, delp
       real ozpak
 
@@ -156,7 +162,8 @@
 !     Pointers to busper
       real, pointer, dimension(:)   :: zalvis_ag, zcosas, zcosz, zei, zev, &
                                        zev0, zfdsi, zfdss, zfdss0,  &
-                                       zflusolis, znt, zvozo
+                                       zflusolis, znt, zvozo, &
+                                       zctp, zctt, ztopthw, ztopthi
       real, pointer, dimension(:,:) :: zt2, zt20, zti
 !     Pointers to busvol
       real, pointer, dimension(:)   :: zap, zcang, ziv
@@ -190,19 +197,20 @@
       zt2      (1:n,1:nkp) => f( t2:)
       zt20     (1:n,1:nkp) => f( t20:)
       zti      (1:n,1:nkp) => f( ti:)
+      ztopthi  (1:n)       => f( topthi:)
+      ztopthw  (1:n)       => f( topthw:)
 !     Pointers to busvol
       zap      (1:n)       => v( ap:)
       zcang    (1:n)       => v( cang:)
+      zctp     (1:n)       => v( ctp:)
+      zctt     (1:n)       => v( ctt:)
       ziv      (1:n)       => v( iv:)
       ztrad    (1:n,1:nkp) => v( trad:)
 !
       call raddel(del,ss,s,n,nk,nkp)
 
-      is = istak
-      it = itask
-!
       ja = n*(nk-1)
-      nkp=nk+1
+!!$      nkp=nk+1
 ! nkp est nb de niveaux de flux
       nnkp  = n*nkp
       nnk   = n*nk
@@ -211,7 +219,8 @@
 ! date(5)=the hour of the day at the start of the run.
 ! date(6)=hundreds of a second of the day at the start of the run.
 !
-      hz0 = date(5) + float(date(6))/360000.0
+      call mu_js2ymdhms(jdateo, yy, mo, dd, hh, mn, sec)
+      hz0 = hh + float(mn)/60. + float(sec)/3600.
       hz = amod ( hz0+(float(kount)*tau)/3600. , 24. )
 !
 !
@@ -232,10 +241,11 @@
        call cldoptx5 (liqwcin,icewcin,liqwp,icewp,nuage,t,s,ps, &
                       f(dlat),f(mg),f(ml),m,n,nk, &
                       pbl,ipb,dzz,sdz, nef,opd,asy, &
-                      f(topthw),f(topthi), &
-                      v(ctp),v(ctt), &
+                      ztopthw,ztopthi, &
+                      zctp,zctt, &
                       ssa,aer,satuco,cw_rad,ioptix)
-!
+       if (phy_error_L) return
+
 ! Boucle sur le pas de radiation kntrad
 !
       IF (KOUNT == 0 .OR. MOD(KOUNT-1,KNTRAD) == 0) THEN
@@ -245,11 +255,12 @@
                     p2, p3, p4, p5, p6, p7, p8, p10, &
                     p11,nlacl, goz(fozon), goz(clat), &
                     goz(pref))
-!
+      if (phy_error_L) return
+
       if( reduc ) then
         if(TS_FLXIR)then
-           write(*,"(/,'!!',/,a,/,'!!')")'You cannot use TS_FLXIR and REDUC'
-           call qqexit(1)
+           call physeterror('newrad', 'You cannot use TS_FLXIR and REDUC')
+           return
         endif
 
         do kk=1,nkrd
@@ -290,12 +301,9 @@
         redm   = m
 
       endif
-!
-      call pntg123
-!
+
       iopt=0
       opnua=.true.
-!
 
       call radir8 ( f(ti) , p7 , p5 , fnrd , trd , qrd , srd , &
               f(tsrad),ps,rednkp,rednk,p0rd, &
@@ -310,7 +318,7 @@
               p13, p14, p15, p16, p17, &
               ozpak, ozpak, &
               s,ss,del,nk,nkp)
-!
+
       if( fomic ) then
          call fomichev( f(ti), t,p0,s,ps, m,n,n,nk )
       endif
@@ -336,16 +344,16 @@
 !
 ! Calcul de la variation de la constante solaire
 !
-      julien = juliand(tau,kount,date)
-      alf    = julien/365.*2*pi
+      julien = real(jdate_day_of_year(jdateo + kount*int(tau) + MU_JDATE_HALFDAY))
+      alf    = julien/365.*2*PI
       r0r    = solcons(alf)
 !
 ! Parametres d'entree pour le solaire
 !
-      call setvis2(delrd, p2, p3, p4, p6, &
+      call setvis3(delrd, p2, p3, p4, p6, &
                    p0rd,srd,trd,ps,p0rd,f(dlat),f(dlon),hz, &
-                   julien,date,n,rednk,redm,satuco)
-!
+                   julien,n,rednk,redm,satuco)
+
        do i=1,n
            zcosz(i) = p6(i)
        end do
@@ -360,18 +368,19 @@
         call cldoptx5 (p7,p8,lwprd,iwprd,fnrd,trd,srd,ps, &
                        f(dlat),f(mg),f(ml),n,n,nkrd, &
                        pbl,ipb,dzz,sdz,nef,opd,asy, &
-                       f(topthw),f(topthi), &
-                       v(ctp),v(ctt), &
+                       ztopthw,ztopthi, &
+                       zctp,zctt, &
                        ssa,aer,satuco,cw_rad,ioptix)
+        if (phy_error_L) return
       else
         fnrd => nuage(1:)
       endif
 !
 ! Calcul du cosinus de l'angle solaire a kount+kntrad-1
       hzp=amod(hz0+ (float(kount+kntrad-1)*tau)/3600., 24.)
-      call suncos1(f(cosas),dummy1, dummy2, dummy3, dummy4,n, &
-                   f(dlat),f(dlon),hzp,julien,date,.false.)
-!
+      call suncos2(f(cosas),dummy1, dummy2, dummy3, dummy4,n, &
+                   f(dlat),f(dlon),hzp,julien,.false.)
+
 ! Initialisation de fdss,t2,ev.
 ! f(cosas) contiendra la valeur moyenne des cosinus
 ! entre 2 appels a sun7
@@ -453,10 +462,10 @@
 ! Ajustement du solaire aux pas non multiples de kntrad
 ! par modulation avec cosinus de l'angle solaire
 ! Calcul du jour julien
-      julien = juliand(tau,kount,date)
-      call suncos1(p1,dummy1, dummy2, dummy3, dummy4,n, &
-                   f(dlat),f(dlon),hz,julien,date, .false.)
-!
+      julien = real(jdate_day_of_year(jdateo + kount*int(tau) + MU_JDATE_HALFDAY))
+      call suncos2(p1,dummy1, dummy2, dummy3, dummy4,n, &
+                   f(dlat),f(dlon),hz,julien,.false.)
+
 ! Moduler par le cosinus de l'angle solaire. mettre a zero les
 ! valeurs appropriees de fdss, ev et t2.
 ! v1 - Rapport des cosinus de l'angle present et de l'angle moyen.
@@ -501,14 +510,14 @@
 ! Extraction des series temporelles et
 ! es diagnostics zonaux des tendances
 
-      call serxst2(f(ti), 'ti', trnch, n, nk, 0.0, 1.0, -1)
-      call serxst2(f(t2), 't2', trnch, n, nk, 0.0, 1.0, -1)
+      call series_xst(zti, 'ti', trnch)
+      call series_xst(zt2, 't2', trnch)
 
 ! Calcul du jour julien
-      julien = juliand(tau,kount,date)
-      call suncos1(p1, dummy1, dummy2, dummy3, dummy4,n,f(dlat), &
-                   f(dlon),hz,julien,date,.false.)
-      alf = julien/365.*2.*pi
+      julien = real(jdate_day_of_year(jdateo + kount*int(tau) + MU_JDATE_HALFDAY))
+      call suncos2(p1, dummy1, dummy2, dummy3, dummy4,n,f(dlat), &
+                   f(dlon),hz,julien,.false.)
+      alf = julien/365.*2.*PI
       r0r = solcons(alf)
 
       do j=1,n
@@ -517,7 +526,7 @@
 
 !vdir nodep
       do 508 j=1,n
-         ziv(j)=consol*r0r*p1(j)*zvozo(j)
+         ziv(j)=CONSOL*r0r*p1(j)*zvozo(j)
          if (ziv(j).gt.1.) then
             zap(j) = zev(j)/ziv(j)
          else
@@ -529,18 +538,18 @@
   509    p1(j)=ziv(j)-zev(j)-zei(j)
 !
 ! Extraction pour diagnostics
-      call serxst2(v(ctp )  , 'bp', trnch, n, 1, 0.0, 1.0, -1)
-      call serxst2(v(ctt)   , 'be', trnch, n, 1, 0.0, 1.0, -1)
-      call serxst2(f(topthw), 'w3', trnch, n, 1, 0.0, 1.0, -1)
-      call serxst2(f(topthi), 'w4', trnch, n, 1, 0.0, 1.0, -1)
-      call serxst2(v(iv)    , 'iv', trnch, n, 1, 0.0, 1.0, -1)
-      call serxst2(p1       , 'nr', trnch, n, 1, 0.0, 1.0, -1)
-      call serxst2(f(nt)    , 'nt', trnch, n, 1, 0.0, 1.0, -1)
-      call serxst2(f(ev)    , 'ev', trnch, n, 1, 0.0, 1.0, -1)
-      call serxst2(f(ei)    , 'ei', trnch, n, 1, 0.0, 1.0, -1)
-      call serxst2(v(ap)    , 'ap', trnch, n, 1, 0.0, 1.0, -1)
-      call serxst2(f(fdss)  , 'fs', trnch, n, 1, 0.0, 1.0, -1)
-      call serxst2(f(flusolis), 'fu', trnch, n, 1, 0.0, 1.0, -1)
+      call series_xst(zctp, 'bp', trnch)
+      call series_xst(zctt, 'be', trnch)
+      call series_xst(ztopthw, 'w3', trnch)
+      call series_xst(ztopthi, 'w4', trnch)
+      call series_xst(ziv, 'iv', trnch)
+      call series_xst(p1, 'nr', trnch)
+      call series_xst(znt, 'nt', trnch)
+      call series_xst(zev, 'ev', trnch)
+      call series_xst(zei, 'ei', trnch)
+      call series_xst(zap, 'ap', trnch)
+      call series_xst(zfdss, 'fs', trnch)
+      call series_xst(zflusolis, 'fu', trnch)
 
       do j=1,n
          delp=ps(j)*0.5*(s(j,2)-s(j,1))
@@ -562,8 +571,8 @@
           p3(j)=p3(j)+zt2(j,nk)*delp
        end do
 
-       call serxst2(p2, 't3', trnch, n, 1, 0.0, 1.0, -1)
-       call serxst2(p3, 't4', trnch, n, 1, 0.0, 1.0, -1)
+       call series_xst(p2, 't3', trnch)
+       call series_xst(p3, 't4', trnch)
 
 ! Tendances de la radiation
        do k = 1,nk
@@ -571,4 +580,6 @@
        end do
 
       RETURN
-      END
+      END subroutine newrad6
+
+end module newrad

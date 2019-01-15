@@ -47,7 +47,18 @@
                      PRN_TOWN, PH_TOWN, PLE_TOWN, PGFLUX_TOWN, PEVAP_TOWN,    &
                      PRUNOFF_TOWN, PUSTAR_TOWN, PCH_TOWN, PRI_TOWN,           &
                      PTS_TOWN, PEMIS_TOWN, PDIR_ALB_TOWN, PSCA_ALB_TOWN,      &
-                     PRESA_TOWN)
+                     PRESA_TOWN,                                              &
+            PTRAD_IN, PTRAD_SUN, PTRAD_SHADE, PTRAD_RFSUN, PTRAD_RFSHADE,     &
+            PTGLOBE_SUN, PTGLOBE_SHADE, PTGLOBE_RFSUN, PTGLOBE_RFSHADE,       &
+                    PTWETB,PTWETB_ROOF,                                       &
+                    PUTCI_IN, PUTCI_OUTSUN, PUTCI_OUTSHADE,                   &
+                    PUTCI_RFSUN, PUTCI_RFSHADE,                               &
+                    WBGT_SUN, WBGT_SHADE, WBGT_RFSUN, WBGT_RFSHADE,           &
+                    PUTCIC_IN,PUTCIC_OUTSUN,PUTCIC_OUTSHADE,                  &
+                    PUTCIC_RFSUN,PUTCIC_RFSHADE,                              &
+                    PTRFZT,PTRDZT,PURDZU,	                                    &
+                    PQ1,PQ2,PQ3,PQ4,PQ5,PQ6,PQ7,PQ8,PQ9,PQ10,PQ11,PQ12,PQ13  )
+
 !   ##########################################################################
 !
 !!****  *TEB*  
@@ -308,8 +319,9 @@
 !*       0.     DECLARATIONS
 !               ------------
 !
-USE MODD_CSTS,     ONLY : XTT
+USE MODD_CSTS,     ONLY : XTT, XSTEFAN
 USE MODD_SNOW_PAR, ONLY : XEMISSN, XANSMAX,SWE_CRIT
+USE SFC_OPTIONS,   ONLY : THERMAL_STRESS
 !
 USE MODE_THERMOS
 USE MODE_SURF_SNOW_FRAC
@@ -322,6 +334,7 @@ USE MODI_ROAD_WALL_LAYER_E_BUDGET
 USE MODI_URBAN_FLUXES
 USE MODI_URBAN_HYDRO
 USE MODI_BLD_E_BUDGET
+USE MODI_URBAN_THERMAL_STRESS
 !
 implicit none
 #include <arch_specific.hf>
@@ -454,6 +467,53 @@ REAL, DIMENSION(:), INTENT(OUT)   :: PEMIS_TOWN    ! town equivalent emissivity
 REAL, DIMENSION(:), INTENT(OUT)   :: PDIR_ALB_TOWN ! town equivalent direct albedo
 REAL, DIMENSION(:), INTENT(OUT)   :: PSCA_ALB_TOWN ! town equivalent diffuse albedo
 REAL, DIMENSION(:), INTENT(OUT)   :: PRESA_TOWN    ! town aerodynamical resistance
+!
+REAL, DIMENSION(:), INTENT(OUT)   :: PTRAD_IN       ! body MRT inside building (K)
+REAL, DIMENSION(:), INTENT(OUT)   :: PTRAD_SUN     ! body MRT in the exposed street (K)
+REAL, DIMENSION(:), INTENT(OUT)   :: PTRAD_SHADE   ! body MRT in the shaded street (K)
+REAL, DIMENSION(:), INTENT(OUT)   :: PTRAD_RFSUN   ! body MRT on the exposed roof (K)
+REAL, DIMENSION(:), INTENT(OUT)   :: PTRAD_RFSHADE ! body MRT on the shaded roof (K)
+REAL, DIMENSION(:), INTENT(OUT)   :: PUTCI_IN       ! UTCI inside building
+REAL, DIMENSION(:), INTENT(OUT)   :: PUTCI_OUTSUN   ! UTCI in the exposed street
+REAL, DIMENSION(:), INTENT(OUT)   :: PUTCI_OUTSHADE ! UTCI in the shaded street
+REAL, DIMENSION(:), INTENT(OUT)   :: PUTCI_RFSUN    ! UTCI on the exposed roof
+REAL, DIMENSION(:), INTENT(OUT)   :: PUTCI_RFSHADE  ! UTCI on the shaded roof
+
+REAL, DIMENSION(:), INTENT(OUT)   :: PUTCIC_IN       ! UTCI inside building
+REAL, DIMENSION(:), INTENT(OUT)   :: PUTCIC_OUTSUN   ! UTCI in the exposed street
+REAL, DIMENSION(:), INTENT(OUT)   :: PUTCIC_OUTSHADE ! UTCI in the shaded street
+REAL, DIMENSION(:), INTENT(OUT)   :: PUTCIC_RFSUN   ! UTCI in the exposed street
+REAL, DIMENSION(:), INTENT(OUT)   :: PUTCIC_RFSHADE ! UTCI in the shaded street
+
+REAL, DIMENSION(:), INTENT(OUT)   :: WBGT_SUN         ! WBGT  wet bulb globe temperature in the street (C)
+REAL, DIMENSION(:), INTENT(OUT)   :: WBGT_SHADE       ! WBGT  wet bulb globe temperature in the street (C)
+REAL, DIMENSION(:), INTENT(OUT)   :: WBGT_RFSUN       ! WBGT  wet bulb globe temperature on the roof (C)
+REAL, DIMENSION(:), INTENT(OUT)   :: WBGT_RFSHADE     ! WBGT  wet bulb globe temperature on the roof (C)
+
+ REAL, DIMENSION(:), INTENT(OUT)   :: PTGLOBE_SUN      ! Globe Temperature in the exposed street (K)
+ REAL, DIMENSION(:), INTENT(OUT)   :: PTGLOBE_SHADE    ! Globe Temperature in the shaded street (K)
+ REAL, DIMENSION(:), INTENT(OUT)   :: PTGLOBE_RFSUN    ! Globe Temperature  on the exposed roof (K)
+ REAL, DIMENSION(:), INTENT(OUT)   :: PTGLOBE_RFSHADE  ! Globe Temperature  on the shaded roof  (K)
+ REAL, DIMENSION(:), INTENT(OUT)   :: PTWETB           ! wet-bulb Temperature  on the ground (K)
+ REAL, DIMENSION(:), INTENT(OUT)   :: PTWETB_ROOF      ! wet-bulb temperature on the  roof  (K)
+!
+ REAL, DIMENSION(:), INTENT(OUT)   :: PTRFZT           ! T at z=zt above the RooF
+ REAL, DIMENSION(:), INTENT(OUT)   :: PTRDZT           ! T at z=zt above the RoaD
+ REAL, DIMENSION(:), INTENT(OUT)   :: PURDZU           ! U at z=zt above the RoaD
+!
+ REAL, DIMENSION(:), INTENT(OUT)   :: PQ1       ! energy fluxes received by a body (here for a human)
+ REAL, DIMENSION(:), INTENT(OUT)   :: PQ2
+ REAL, DIMENSION(:), INTENT(OUT)   :: PQ3
+ REAL, DIMENSION(:), INTENT(OUT)   :: PQ4
+ REAL, DIMENSION(:), INTENT(OUT)   :: PQ5
+ REAL, DIMENSION(:), INTENT(OUT)   :: PQ6
+ REAL, DIMENSION(:), INTENT(OUT)   :: PQ7
+ REAL, DIMENSION(:), INTENT(OUT)   :: PQ8
+ REAL, DIMENSION(:), INTENT(OUT)   :: PQ9
+ REAL, DIMENSION(:), INTENT(OUT)   :: PQ10
+ REAL, DIMENSION(:), INTENT(OUT)   :: PQ11
+ REAL, DIMENSION(:), INTENT(OUT)   :: PQ12
+ REAL, DIMENSION(:), INTENT(OUT)   :: PQ13
 
 !
 !*      0.2    declarations of local variables
@@ -462,6 +522,10 @@ LOGICAL                    :: GTI_EVOL       ! true --> internal temperature
 !                                            !          of buildings evolves
 !                                            ! false--> it is fixed
 !
+REAL, DIMENSION(SIZE(PTA)) :: PTRAD_GSUN     ! globe MRT in the exposed street (K)
+REAL, DIMENSION(SIZE(PTA)) :: PTRAD_GSHADE   ! globe MRT in the shaded street (K)
+REAL, DIMENSION(SIZE(PTA)) :: PTRAD_GRFSUN   ! globe MRT on the exposed roof (K)
+REAL, DIMENSION(SIZE(PTA)) :: PTRAD_GRFSHADE ! globe MRT on the shaded roof (K)
 REAL, DIMENSION(SIZE(PTA)) :: ZVMOD          ! wind
 REAL, DIMENSION(SIZE(PTA)) :: ZWS_ROOF_MAX   ! maximum deepness of roof
 REAL, DIMENSION(SIZE(PTA)) :: ZWS_ROAD_MAX   ! and road water reservoirs
@@ -521,6 +585,28 @@ REAL, DIMENSION(SIZE(PTA)) :: ZABS_LW_ROAD
 REAL, DIMENSION(SIZE(PTA)) :: ZABS_LW_WALL
 REAL, DIMENSION(SIZE(PTA)) :: ZABS_LW_ROOF
 !
+! reflected solar and infra-red radiation by road, wall and roof
+!                                                      
+REAL, DIMENSION(SIZE(PTA)) :: ZREF_SW_ROAD
+REAL, DIMENSION(SIZE(PTA)) :: ZREF_SW_WALL
+REAL, DIMENSION(SIZE(PTA)) :: ZREF_SW_ROOF
+REAL, DIMENSION(SIZE(PTA)) :: ZREF_SW_SNOW_ROAD
+REAL, DIMENSION(SIZE(PTA)) :: ZREF_SW_SNOW_ROOF
+REAL, DIMENSION(SIZE(PTA)) :: ZREF_SW_TOT_ROAD
+REAL, DIMENSION(SIZE(PTA)) :: ZREF_SW_TOT_ROOF
+REAL, DIMENSION(SIZE(PTA)) :: ZEMI_LW_SNOW_ROAD
+REAL, DIMENSION(SIZE(PTA)) :: ZEMI_LW_SNOW_ROOF
+REAL, DIMENSION(SIZE(PTA)) :: ZEMI_LW_TOT_ROAD
+REAL, DIMENSION(SIZE(PTA)) :: ZEMI_LW_TOT_ROOF
+REAL, DIMENSION(SIZE(PTA)) :: ZEMI_LW_ROAD
+REAL, DIMENSION(SIZE(PTA)) :: ZEMI_LW_WALL
+REAL, DIMENSION(SIZE(PTA)) :: ZEMI_LW_ROOF
+!
+REAL, DIMENSION(SIZE(PTA)) :: ZU10           ! wind speed at 10 m AGL 
+REAL, DIMENSION(SIZE(PTA)) :: ZUOBS          ! wind speed at 2.5 m ARL 
+REAL, DIMENSION(SIZE(PTA)) :: PURFZU         ! U at z=zu above the RooF (zu=zt in urban_drag)
+REAL, DIMENSION(SIZE(PTA)) :: PVRFZU         ! V at z=zu above the RooF (zu=zt in urban_drag)
+!
 ! coefficients for LW computations over snow (from previous time-step)
 !
 REAL, DIMENSION(SIZE(PTA)) :: ZTSSNOW_ROAD ! road snow temperature
@@ -529,6 +615,8 @@ REAL, DIMENSION(SIZE(PTA)) :: ZESNOW_ROOF  ! snow emissivity
 !                                          ! at previous time-step
 REAL, DIMENSION(SIZE(PTA)) :: ZESNOW_ROAD  ! snow emissivity
 !                                          ! at previous time-step
+REAL, DIMENSION(SIZE(PTA)) :: ZTSSNOW_ROOF ! road snow temperature
+!                                          ! at previous time-step
 !
 ! coefficients for contributions of sky long wave to wall, road, snow on road
 !
@@ -536,6 +624,13 @@ REAL, DIMENSION(SIZE(PTA)) :: ZLW_S_TO_W
 REAL, DIMENSION(SIZE(PTA)) :: ZLW_S_TO_R
 REAL, DIMENSION(SIZE(PTA)) :: ZLW_S_TO_N
 !
+!
+INTEGER :: IWALL           ! number of wall layers
+INTEGER :: IROOF           ! number of roof layers
+!-------------------------------------------------------------------------------
+INTEGER :: JJ           
+      REAL UNDEF
+      PARAMETER (UNDEF = -999)
 !-------------------------------------------------------------------------------
 !
 !*      1.     initializations
@@ -617,8 +712,10 @@ END WHERE
 !              ----------------------------------------------
 !
 ZESNOW_ROAD (:)=PESNOW_ROAD (:)
-ZESNOW_ROOF (:)=PESNOW_ROOF (:)
 ZTSSNOW_ROAD(:)=PTSSNOW_ROAD(:)
+!
+ZESNOW_ROOF (:)=PESNOW_ROOF (:)
+ZTSSNOW_ROOF(:)=PTSSNOW_ROOF(:)
 !
 !-------------------------------------------------------------------------------
 !
@@ -641,7 +738,16 @@ CALL URBAN_SOLAR_ABS(PDIR_SW_RAD, PSCA_SW_RAD, PZENITH,            &
                      ZDN_ROOF, ZDF_ROOF, ZDN_ROAD, ZDF_ROAD,       &
                      ZABS_SW_ROOF, ZABS_SW_ROAD, ZABS_SW_WALL,     &
                      ZABS_SW_SNOW_ROOF, ZABS_SW_SNOW_ROAD,         &
-                     PDIR_ALB_TOWN,PSCA_ALB_TOWN                   )
+                     PDIR_ALB_TOWN,PSCA_ALB_TOWN,                  &
+                     ZREF_SW_ROOF, ZREF_SW_ROAD, ZREF_SW_WALL,     &
+                     ZREF_SW_SNOW_ROOF, ZREF_SW_SNOW_ROAD          )
+!
+! added
+WHERE (PWSNOW_ROAD(:)<SWE_CRIT) ZREF_SW_SNOW_ROAD(:)=0.0
+WHERE (PWSNOW_ROOF(:)<SWE_CRIT) ZREF_SW_SNOW_ROOF(:)=0.0
+!
+ZREF_SW_TOT_ROAD(:) = ZDF_ROAD(:) * ZREF_SW_ROAD(:) + ZDN_ROAD(:) * ZREF_SW_SNOW_ROAD(:)
+ZREF_SW_TOT_ROOF(:) = ZDF_ROOF(:) * ZREF_SW_ROOF(:) + ZDN_ROOF(:) * ZREF_SW_SNOW_ROOF(:)
 !
 !-------------------------------------------------------------------------------
 !
@@ -660,7 +766,8 @@ CALL URBAN_DRAG2(PTSTEP, PT_CANYON, PQ_CANYON,                       &
                 ZQSAT_ROOF, ZQSAT_ROAD, ZDELT_ROOF, ZDELT_ROAD,      &
                 ZCD, ZAC_ROOF, ZAC_ROOF_WAT,                         &
                 ZAC_WALL, ZAC_ROAD, ZAC_ROAD_WAT, ZAC_TOP,           &
-                PU_CANYON, PRI_TOWN                                  )
+                PU_CANYON, PRI_TOWN,                                 &
+                PTRDZT,PTRFZT,PURFZU,PVRFZU                        )
 !
 !* area-averaged heat transfer coefficient
 !
@@ -809,6 +916,124 @@ CALL URBAN_HYDRO(ZWS_ROOF_MAX,ZWS_ROAD_MAX, PWS_ROOF, PWS_ROAD,        &
 !
 PRESA_TOWN(:) = 1. / ( PBLD(:) * ZAC_ROOF(:)  + ( 1. - PBLD(:)) * ZAC_TOP (:))
 !
+!
+!*     13.     Compute thermal indices
+!              --------------------------------
+   if ( thermal_stress ) then
+! input: Wind module effectively at 10 m AGL 
+! note ; we may take zu instead of 10 ? but inidices built with 10-m wind speed...
+
+     DO JJ=1,SIZE(PTA)
+ IF( PBLD_HEIGHT(JJ) .le. 10.)  THEN 
+! log law. above roof level -  same as in urban_drag
+ZU10(JJ) =  PVMOD(JJ)              &
+           * LOG( (     10.    - 2 * PBLD_HEIGHT(JJ)/3.) / PZ0_TOWN(JJ))   &
+           / LOG( (PUREF(JJ)   + 1.* PBLD_HEIGHT(JJ)/3.) / PZ0_TOWN(JJ))
+!  linear interpolation between two cases du/dz=Utop-Ucan / H-2H/3
+!  Uz U10 = (30/H-2) Utop + 3/H(H-10) Ucan
+ ELSEIF( PBLD_HEIGHT(JJ) .gt. 10. .and. PBLD_HEIGHT(JJ) .lt. 15.)  THEN 
+ZU10(JJ) =  (30. /PBLD_HEIGHT(JJ) -2.) * PVMOD(JJ)              &
+           * LOG( (     10.    - 2 * PBLD_HEIGHT(JJ)/3.) / PZ0_TOWN(JJ))   &
+           / LOG( (PUREF(JJ)   + 1.* PBLD_HEIGHT(JJ)/3.) / PZ0_TOWN(JJ))   &
+           + (3.*(PBLD_HEIGHT(JJ) -10.)/PBLD_HEIGHT(JJ)) * PU_CANYON(JJ)
+ELSE
+! exp  law. in the street canyon  ~ constant 
+ZU10(JJ) = PU_CANYON(JJ)
+ ENDIF
+    ENDDO 
+!* IMPOSE MINIMUM OF 0.01 for PU10 ????
+ PURDZU(:) = MAX(ZU10(:),0.01)
+
+! ZUobs at zu=zt  for globe temperature calculation over the roof
+!  ZUOBS (JJ) = MAX(SQRT(PURFZU(JJ)**2+PVRFZU(JJ)**2),0.01)
+  ZUOBS (:) = MAX( PVMOD(:)               &
+           * LOG(      2.5 / max (0.1, PZ0_TOWN(:)) ) &
+           / LOG( PUREF(:)/ max (0.1, PZ0_TOWN(:)) )  ,0.2)
+!  ZUOBS (:) = ZU10(:)             
+
+! WHERE (zuobs(:) <= 1.0) print*,'error  u near-roof= zuobs(:) <= 1.0'
+! WHERE (zuobs(:) >= 20.0) print*,'error  u near-roof= zuobs(:) >= 20.0'
+
+! input: longwave infrared rad
+ ZEMI_LW_WALL(:) = XSTEFAN * PEMIS_WALL(:) * PT_WALL(:,1)**4
+ ZEMI_LW_ROAD(:) = XSTEFAN * PEMIS_ROAD(:) * PT_ROAD(:,1)**4
+ ZEMI_LW_ROOF(:) = XSTEFAN * PEMIS_ROOF(:) * PT_ROOF(:,1)**4
+! add snow contribution
+ ZEMI_LW_SNOW_ROAD(:) = XSTEFAN * ZESNOW_ROAD(:) * ZTSSNOW_ROAD(:)**4
+ ZEMI_LW_SNOW_ROOF(:) = XSTEFAN * ZESNOW_ROOF(:) * ZTSSNOW_ROOF(:)**4
+! total contrib ?
+  ZEMI_LW_TOT_ROAD(:) = ZDF_ROAD(:) * ZEMI_LW_ROAD(:) + ZDN_ROAD(:) * ZEMI_LW_SNOW_ROAD(:)
+  ZEMI_LW_TOT_ROOF(:) = ZDF_ROOF(:) * ZEMI_LW_ROOF(:) + ZDN_ROOF(:) * ZEMI_LW_SNOW_ROOF(:) 
+
+! input:  radiative temperature inside buildings (no BEM version) check 19
+!       ZTS_FLOOR(:) = 19. + XTT
+ IWALL = SIZE(PT_WALL,2)
+ IROOF = SIZE(PT_ROOF,2)
+! 
+      PTRAD_IN(:) = (PWALL_O_HOR(:) / PBLD(:) * PT_WALL(:,IWALL)+ &
+                     PT_ROOF(:,IROOF) + (23. + XTT)  )             &
+                    / (PWALL_O_HOR(:) / PBLD(:) + 1. + 1.)
+
+! ZUobs at zu=zt  for globe temperature calculation over the roof
+!  ZUOBS (JJ) = MAX(SQRT(PURFZU(JJ)**2+PVRFZU(JJ)**2),0.01)
+  ZUOBS (:) = MAX( PVMOD(:)               &
+           * LOG(      2.5 / max (0.1, PZ0_TOWN(:)) ) &
+           / LOG( PUREF(:)/ max (0.1, PZ0_TOWN(:)) )  ,0.2)
+!  ZUOBS (:) = ZU10(:)             
+
+! WHERE (zuobs(:) <= 1.0) print*,'error  u near-roof= zuobs(:) <= 1.0'
+! WHERE (zuobs(:) >= 20.0) print*,'error  u near-roof= zuobs(:) >= 20.0'
+
+! input: longwave infrared rad
+ ZEMI_LW_WALL(:) = XSTEFAN * PEMIS_WALL(:) * PT_WALL(:,1)**4
+ ZEMI_LW_ROAD(:) = XSTEFAN * PEMIS_ROAD(:) * PT_ROAD(:,1)**4
+ ZEMI_LW_ROOF(:) = XSTEFAN * PEMIS_ROOF(:) * PT_ROOF(:,1)**4
+! add snow contribution
+ ZEMI_LW_SNOW_ROAD(:) = XSTEFAN * ZESNOW_ROAD(:) * ZTSSNOW_ROAD(:)**4
+ ZEMI_LW_SNOW_ROOF(:) = XSTEFAN * ZESNOW_ROOF(:) * ZTSSNOW_ROOF(:)**4
+! total contrib ?
+  ZEMI_LW_TOT_ROAD(:) = ZDF_ROAD(:) * ZEMI_LW_ROAD(:) + ZDN_ROAD(:) * ZEMI_LW_SNOW_ROAD(:)
+  ZEMI_LW_TOT_ROOF(:) = ZDF_ROOF(:) * ZEMI_LW_ROOF(:) + ZDN_ROOF(:) * ZEMI_LW_SNOW_ROOF(:) 
+
+! input:  radiative temperature inside buildings (no BEM version) check 19
+!       ZTS_FLOOR(:) = 19. + XTT
+ IWALL = SIZE(PT_WALL,2)
+ IROOF = SIZE(PT_ROOF,2)
+! 
+      PTRAD_IN(:) = (PWALL_O_HOR(:) / PBLD(:) * PT_WALL(:,IWALL)+ &
+                     PT_ROOF(:,IROOF) + (19. + XTT)  )             &
+                    / (PWALL_O_HOR(:) / PBLD(:) + 1. + 1.)
+
+ CALL URBAN_THERMAL_STRESS(PT_CANYON, PQ_CANYON, PTI_BLD, PQ_CANYON,    &
+             PU_CANYON,PURDZU, ZVMOD, ZVMOD, PPS, PPA,                  &
+             ZREF_SW_TOT_ROAD, ZREF_SW_WALL, PSCA_SW_RAD, PDIR_SW_RAD,  &
+             PZENITH, ZEMI_LW_WALL, ZEMI_LW_TOT_ROAD,PLW_RAD,PTRAD_IN,  &
+  	          ZTA, ZQA, ZREF_SW_TOT_ROOF, ZEMI_LW_TOT_ROOF,              &
+             PBLD, PBLD_HEIGHT, PWALL_O_HOR,                            &
+             PUTCI_IN, PUTCI_OUTSUN, PUTCI_OUTSHADE,                    &
+             PUTCI_RFSUN, PUTCI_RFSHADE,                                &
+             WBGT_SUN,WBGT_SHADE,WBGT_RFSUN,WBGT_RFSHADE,               &  
+             PTRAD_SUN, PTRAD_SHADE, PTRAD_RFSUN, PTRAD_RFSHADE,        &
+             PTRAD_GSUN, PTRAD_GSHADE, PTRAD_GRFSUN, PTRAD_GRFSHADE,    &
+             PTGLOBE_SUN,	PTGLOBE_SHADE,                               &
+             PTGLOBE_RFSUN,PTGLOBE_RFSHADE,PTWETB, PTWETB_ROOF,         &
+             PQ1,PQ2,PQ3,PQ4,PQ5,PQ6,PQ7,PQ8,PQ9,PQ10,PQ11,PQ12,PQ13 )
+!
+!not used for now
+!CALL UTCIC_STRESS(PTSTEP, PUTCI, PUTCIC )
+!CALL UTCIC_STRESS(PTSTEP, PUTCI_IN, PUTCIC_IN )
+!CALL UTCIC_STRESS(PTSTEP, PUTCI_OUTSUN, PUTCIC_OUTSUN )
+!CALL UTCIC_STRESS(PTSTEP, PUTCI_OUTSHADE, PUTCIC_OUTSHADE )
+!CALL UTCIC_STRESS(PTSTEP, PUTCI_RFSUN, PUTCIC_RFSUN )
+!CALL UTCIC_STRESS(PTSTEP, PUTCI_RFSHADE, PUTCIC_RFSHADE)
+!
+PUTCIC_IN(:)       = PUTCI_IN(:)
+PUTCIC_OUTSUN(:)   = PUTCI_OUTSUN(:)
+PUTCIC_OUTSHADE(:) = PUTCI_OUTSHADE(:)
+PUTCIC_RFSUN(:)    = PUTCI_RFSUN(:)
+PUTCIC_RFSHADE(:)  = PUTCI_RFSHADE(:)
+
+ endif
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE TEB2

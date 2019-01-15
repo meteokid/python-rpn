@@ -21,6 +21,11 @@
       integer, parameter :: BUSPAR_VMAX=14
       integer, parameter :: BUSPAR_MAXPAR=14  !increment when adding new params
 
+      integer, parameter :: BUSPAR_STAG_SFC=0
+      integer, parameter :: BUSPAR_STAG_MOM=0
+      integer, parameter :: BUSPAR_STAG_THERMO=1
+      integer, parameter :: BUSPAR_STAG_ENERGY=2
+
       character(len=16) entnm(maxbus,BUSNM_MAX),dynnm(maxbus,BUSNM_MAX)
       character(len=16) pernm(maxbus,BUSNM_MAX),volnm(maxbus,BUSNM_MAX)
       common   /busesc/ entnm, dynnm, pernm, volnm

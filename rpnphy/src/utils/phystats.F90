@@ -18,9 +18,10 @@ subroutine phystats(F_stepcount, F_delt)
    use timestr_mod, only: timestr2step
    use statfld_dm_mod, only: statfld_dm
    use phy_itf, only: phy_get
-   use phy_options, only: phystat_freq_S, phystat_dble_l, phystat_2d_l, phystat_list_s
+   use phy_options, only: phystat_freq_S, phystat_dble_l, phystat_2d_l, phystat_list_s, debug_mem_L
    use phy_typedef
    use phy_getmeta_mod, only: phy_getmeta
+   use debug_mod, only: assert_not_naninf
    implicit none
    !@objective 
    integer, intent(in) :: F_stepcount     !Step kount incrementing from 0
@@ -34,10 +35,11 @@ subroutine phystats(F_stepcount, F_delt)
 
    integer, save :: phystat_freq = -1
 
-   integer :: stat_precision, ivar, k, istat, nvars
+   integer :: stat_precision, ivar, n, k, istat, nvars, k0, kn, k1
    real, pointer :: tmpptr(:,:,:)
    character(len=64) :: msg_S,bpath_S
    type(phymeta), pointer :: metalist(:)
+   type(phymeta) :: mymeta
    !---------------------------------------------------------------
    if (phystat_freq == -1) then
       istat = timestr2step(phystat_freq, phystat_freq_S, dble(F_delt))
@@ -58,7 +60,7 @@ subroutine phystats(F_stepcount, F_delt)
 
    stat_precision = 4
    if (phystat_dble_l) stat_precision = 8
-   
+
    bpath_S = ''
    if (phystat_list_s(1)(1:8) == 'ALLVARS=') then
       bpath_S = phystat_list_s(1)(9:)
@@ -80,16 +82,53 @@ subroutine phystats(F_stepcount, F_delt)
       if (phystat_list_s(ivar) == ' ') exit
 
       nullify(tmpptr)
-      istat = phy_get(tmpptr, phystat_list_s(ivar), F_quiet=.true.)
+      istat = phy_get(tmpptr, phystat_list_s(ivar), F_meta=mymeta, F_quiet=.true.)
       if (associated(tmpptr)) then
          if (phystat_2d_l .and. ubound(tmpptr,3) > 1) then
-            do k = lbound(tmpptr,3), ubound(tmpptr,3)
-               write(msg_S,'(a,i4.4,a)') trim(phystat_list_s(ivar))//' (',k,')'
-
-               call statfld_dm(tmpptr(:,:,k:k), msg_S, F_stepcount, 'phystats', stat_precision)
+            do k1 = lbound(tmpptr,3), ubound(tmpptr,3)
+               if (mymeta%nk > 1 .and. mymeta%fmul > 1) then
+                  n = 1 + (k1-1) / mymeta%nk
+                  k = k1 - (n-1) * mymeta%nk
+                  write(msg_S,'(a,i3.3,a,i3.3,a)') trim(phystat_list_s(ivar))//' (',n,',',k,')'
+               elseif (mymeta%nk > 1 .or. mymeta%fmul > 1) then
+                  write(msg_S,'(a,i3.3,a)') trim(phystat_list_s(ivar))//' (',k1,')'
+               else
+                  write(msg_S,'(a)') trim(phystat_list_s(ivar))
+               endif
+               istat = RMN_OK
+               if (debug_mem_L) istat = assert_not_naninf(tmpptr(:,:,k1:k1))
+               if (RMN_IS_OK(istat)) then
+                  call statfld_dm(tmpptr(:,:,k1:k1), msg_S, F_stepcount, 'phystats', stat_precision)
+               else
+                  write(msg_S,"(i4,x,a16,' Mean:',a)") F_stepcount,trim(msg_S),' NaN'
+                  call msg(MSG_INFO, msg_S)
+               endif
             enddo
          else
-            call statfld_dm(tmpptr, phystat_list_s(ivar), F_stepcount, 'phystats', stat_precision)
+            if (mymeta%nk > 1 .and. mymeta%fmul > 1) then
+               do n = 1, mymeta%fmul
+                  k0 = 1 + (n-1) * mymeta%nk
+                  kn = k0 + mymeta%nk - 1
+                  write(msg_S,'(a,i3.3,a)') trim(phystat_list_s(ivar))//' (',n,')'
+                  istat = RMN_OK
+                  if (debug_mem_L) istat = assert_not_naninf(tmpptr(:,:,k0:kn))
+                  if (RMN_IS_OK(istat)) then
+                     call statfld_dm(tmpptr(:,:,k0:kn), msg_S, F_stepcount, 'phystats', stat_precision)
+                  else
+                     write(msg_S,"(i4,x,a16,' Mean:',a)") F_stepcount,trim(msg_S),' NaN'
+                     call msg(MSG_INFO, msg_S)
+                  endif
+               enddo
+            else
+               istat = RMN_OK
+               if (debug_mem_L) istat = assert_not_naninf(tmpptr)
+               if (RMN_IS_OK(istat)) then
+                  call statfld_dm(tmpptr, phystat_list_s(ivar), F_stepcount, 'phystats', stat_precision)
+               else
+                  write(msg_S,"(i4,x,a16,' Mean:',a)") F_stepcount,trim(phystat_list_s(ivar)),' NaN'
+                  call msg(MSG_INFO, msg_S)
+               endif
+            endif
          endif
          deallocate(tmpptr)
       else

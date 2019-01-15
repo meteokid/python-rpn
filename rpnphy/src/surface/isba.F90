@@ -1,5 +1,5 @@
 
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN -------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -13,12 +13,14 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!-------------------------------------- LICENCE END ---------------------------
 
 !/@*
 subroutine isba3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
+   use phy_status, only: phy_error_L
    use sfclayer_mod, only: sl_prelim,sl_sfclayer,SL_OK
-   use sfc_options
+   use sfc_options, only: atm_external, atm_tplus, radslope, vamin, sl_Lmin_soil, &
+        zu, zt, impflx, thermal_stress, z0tevol
    use sfcbus_mod
    implicit none
 #include <arch_specific.hf>
@@ -46,7 +48,7 @@ subroutine isba3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
    !@Author S. Belair (January 1997)
    !*@/
 
-   include "thermoconsts.inc"
+#include "tdpack_const.hf"
 
    integer SURFLEN
 #define x(fptr,fj,fk) ptsurf(vd%fptr%i)+(fk-1)*surflen+fj-1
@@ -54,23 +56,27 @@ subroutine isba3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
    integer, parameter :: INDX_SFC = INDX_SOIL
    logical, parameter :: ISBA_TDIAGLIM = .false.
 
-   integer I,k,j,ik,m, sommet
+   integer I,m,zopt
 
    real,dimension(n) :: alphast, cd,      cg,     ch,     ct,     del
    real,dimension(n) :: dsnowdt, dwaterdt,freezs, hrsurf, leff,   psnz0
-   real,dimension(n) :: rhoa,    rhomax,  rhost,  rnice,  rnwater,rsnow
-   real,dimension(n) :: t2t,     tst,     tva,    vdir,   vmod,   w2t 
+   real,dimension(n) :: rhoa,    rhomax,  rhost,  rsnow
+   real,dimension(n) :: t2t,     tst,     tva,    vdir,   w2t 
    real,dimension(n) :: wft,     wgeq,    wgt,    wlt,    wrt,    wst
    real,dimension(n) :: z0tot,   zc1,     zc2,    zcs
-   real,dimension(n) :: my_ta,   my_ua,   my_va
+   real,dimension(n) :: my_ta,   my_ua,   my_va,  vmod,   vmod0
+   real,dimension(n) :: zsca_sw, zref_sw_surf, zemit_lw_surf
+   real,dimension(n) :: zu10, zuobs
+   real,dimension(n) :: zusurfzt, zvsurfzt
+   real,dimension(n) :: zzenith
 
    real,pointer,dimension(:) :: cmu
    real,pointer,dimension(:) :: ctu
-   real,pointer,dimension(:) :: hum
-   real,pointer,dimension(:) :: psm
-   real,pointer,dimension(:) :: ttm
-   real,pointer,dimension(:) :: uum
-   real,pointer,dimension(:) :: vvm
+   real,pointer,dimension(:) :: hu
+   real,pointer,dimension(:) :: ps
+   real,pointer,dimension(:) :: tt
+   real,pointer,dimension(:) :: uu
+   real,pointer,dimension(:) :: vv
    real,pointer,dimension(:) :: z0h
    real,pointer,dimension(:) :: z0m
    real,pointer,dimension(:) :: zacoef
@@ -87,6 +93,8 @@ subroutine isba3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
    real,pointer,dimension(:) :: zdlat
    real,pointer,dimension(:) :: zdrain
    real,pointer,dimension(:) :: zeflux
+   real,pointer,dimension(:) :: zemisr
+   real,pointer,dimension(:) :: zemsvc
    real,pointer,dimension(:) :: zfc
    real,pointer,dimension(:) :: zfcor
    real,pointer,dimension(:) :: zfdsi
@@ -117,6 +125,8 @@ subroutine isba3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
    real,pointer,dimension(:) :: zpsng
    real,pointer,dimension(:) :: zpsnv
    real,pointer,dimension(:) :: zqdiag
+   real,pointer,dimension(:) :: zqdiagtyp
+   real,pointer,dimension(:) :: zqdiagtypv
    real,pointer,dimension(:) :: zqsurf
    real,pointer,dimension(:) :: zrainrate
    real,pointer,dimension(:) :: zresa
@@ -124,6 +134,7 @@ subroutine isba3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
    real,pointer,dimension(:) :: zrnet_s
    real,pointer,dimension(:) :: zrootdp
    real,pointer,dimension(:) :: zrst
+   real,pointer,dimension(:) :: zrunofftot
    real,pointer,dimension(:) :: zsnoal
    real,pointer,dimension(:) :: zsnoden
    real,pointer,dimension(:) :: zsnodp
@@ -132,13 +143,19 @@ subroutine isba3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
    real,pointer,dimension(:) :: zsnowrate
    real,pointer,dimension(:) :: zstomr
    real,pointer,dimension(:) :: ztdiag
+   real,pointer,dimension(:) :: ztdiagtyp
+   real,pointer,dimension(:) :: ztdiagtypv
    real,pointer,dimension(:) :: zthetaa
    real,pointer,dimension(:) :: ztsoil1
    real,pointer,dimension(:) :: ztsoil2
    real,pointer,dimension(:) :: ztsrad
    real,pointer,dimension(:) :: ztsurf
    real,pointer,dimension(:) :: zudiag
+   real,pointer,dimension(:) :: zudiagtyp
+   real,pointer,dimension(:) :: zudiagtypv
    real,pointer,dimension(:) :: zvdiag
+   real,pointer,dimension(:) :: zvdiagtyp
+   real,pointer,dimension(:) :: zvdiagtypv
    real,pointer,dimension(:) :: zvegfrac
    real,pointer,dimension(:) :: zwfc
    real,pointer,dimension(:) :: zwflux
@@ -148,24 +165,41 @@ subroutine isba3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
    real,pointer,dimension(:) :: zwsoil2
    real,pointer,dimension(:) :: zwveg
    real,pointer,dimension(:) :: zwwilt
+   real,pointer,dimension(:) :: zz0veg
+   real,pointer,dimension(:) :: zz0tveg
    real,pointer,dimension(:) :: zza
    real,pointer,dimension(:) :: zzusl
    real,pointer,dimension(:) :: zztsl
    !      real,pointer,dimension(:,:) :: ts
+
+   real,pointer,dimension(:) :: zfsd
+   real,pointer,dimension(:) :: zfsf
+   real,pointer,dimension(:) :: zcoszeni
+   real,pointer,dimension(:) :: zutcisun
+   real,pointer,dimension(:) :: zutcishade
+   real,pointer,dimension(:) :: zradsun
+   real,pointer,dimension(:) :: zradshade
+   real,pointer,dimension(:) :: zwbgtsun
+   real,pointer,dimension(:) :: zwbgtshade
+   real,pointer,dimension(:) :: ztglbsun
+   real,pointer,dimension(:) :: ztglbshade
+   real,pointer,dimension(:) :: ztwetb
+   real,pointer,dimension(:) :: zq1
+   real,pointer,dimension(:) :: zq2
+   real,pointer,dimension(:) :: zq3
+   real,pointer,dimension(:) :: zq4
+   real,pointer,dimension(:) :: zq5
+   real,pointer,dimension(:) :: zq6
+   real,pointer,dimension(:) :: zq7
    !------------------------------------------------------------------------
 
    !# In offline mode the t-step 0 is (correctly) not performed
-   if (FLUVERT.eq.'SURFACE'.and.KOUNT.eq.0) return
+   if (atm_external .and. kount == 0) return
 
    SURFLEN = M
 
    cmu      (1:n) => bus( x(bm,1,1)           : )
    ctu      (1:n) => bus( x(bt,1,indx_sfc)    : )
-   hum      (1:n) => bus( x(humoins,1,nk)     : )
-   psm      (1:n) => bus( x(pmoins,1,1)       : )
-   ttm      (1:n) => bus( x(tmoins,1,nk)      : )
-   uum      (1:n) => bus( x(umoins,1,nk)      : )
-   vvm      (1:n) => bus( x(vmoins,1,nk)      : )
    z0h      (1:n) => bus( x(z0t,1,indx_sfc)   : )
    z0m      (1:n) => bus( x(z0,1,indx_sfc)    : )
    zacoef   (1:n) => bus( x(acoef,1,1)        : )
@@ -182,6 +216,8 @@ subroutine isba3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
    zdlat    (1:n) => bus( x(dlat,1,1)         : )
    zdrain   (1:n) => bus( x(drain,1,1)        : )
    zeflux   (1:n) => bus( x(eflux,1,1)        : )
+   zemisr   (1:n) => bus( x(emisr,1,1)        : )
+   zemsvc  (1:n) => bus( x(emsvc,1,1)        : )
    zfc      (1:n) => bus( x(fc,1,indx_sfc)    : )
    zfcor    (1:n) => bus( x(fcor,1,1)         : )
    zfdsi    (1:n) => bus( x(fdsi,1,1)         : )
@@ -211,6 +247,8 @@ subroutine isba3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
    zpsng    (1:n) => bus( x(psng,1,1)         : )
    zpsnv    (1:n) => bus( x(psnv,1,1)         : )
    zqdiag   (1:n) => bus( x(qdiag,1,1)        : )
+   zqdiagtyp(1:n) => bus( x(qdiagtyp,1,indx_sfc) : )
+   zqdiagtypv(1:n) => bus( x(qdiagtypv,1,indx_sfc) : )
    zqsurf   (1:n) => bus( x(qsurf,1,indx_sfc) : )
    zrainrate(1:n) => bus( x(rainrate,1,1)     : )
    zresa    (1:n) => bus( x(resa,1,1)         : )
@@ -218,6 +256,7 @@ subroutine isba3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
    zrnet_s  (1:n) => bus( x(rnet_s,1,1)       : )
    zrootdp  (1:n) => bus( x(rootdp,1,1)       : )
    zrst     (1:n) => bus( x(rst,1,1)          : )
+   zrunofftot(1:n) => bus( x(runofftot,1,indx_sfc) : )
    zsnoal   (1:n) => bus( x(snoal,1,1)        : )
    zsnoden  (1:n) => bus( x(snoden,1,1)       : )
    zsnodp   (1:n) => bus( x(snodp,1,indx_sfc) : )
@@ -226,13 +265,18 @@ subroutine isba3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
    zsnowrate(1:n) => bus( x(snowrate,1,1)     : )
    zstomr   (1:n) => bus( x(stomr,1,1)        : )
    ztdiag   (1:n) => bus( x(tdiag,1,1)        : )
-   zthetaa  (1:n) => bus( x(thetaa,1,1)       : )
+   ztdiagtyp(1:n) => bus( x(tdiagtyp,1,indx_sfc) : )
+   ztdiagtypv(1:n) => bus( x(tdiagtypv,1,indx_sfc) : )
    ztsoil1  (1:n) => bus( x(tsoil,1,1)        : )
    ztsoil2  (1:n) => bus( x(tsoil,1,2)        : )
    ztsrad   (1:n) => bus( x(tsrad,1,1)        : )
    ztsurf   (1:n) => bus( x(tsurf,1,1)        : )
    zudiag   (1:n) => bus( x(udiag,1,1)        : )
+   zudiagtyp(1:n) => bus( x(udiagtyp,1,indx_sfc) : )
+   zudiagtypv(1:n) => bus( x(udiagtypv,1,indx_sfc) : )
    zvdiag   (1:n) => bus( x(vdiag,1,1)        : )
+   zvdiagtyp(1:n) => bus( x(vdiagtyp,1,indx_sfc) : )
+   zvdiagtypv(1:n) => bus( x(vdiagtypv,1,indx_sfc) : )
    zvegfrac (1:n) => bus( x(vegfrac,1,1)      : )
    zwfc     (1:n) => bus( x(wfc,1,1)          : )
    zwflux   (1:n) => bus( x(wflux,1,1)        : )
@@ -242,24 +286,68 @@ subroutine isba3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
    zwsoil2  (1:n) => bus( x(wsoil,1,2)        : )
    zwveg    (1:n) => bus( x(wveg,1,1)         : )
    zwwilt   (1:n) => bus( x(wwilt,1,1)        : )
+   zz0tveg  (1:n) => bus( x(z0tveg,1,1)       : )
+   zz0veg   (1:n) => bus( x(z0veg,1,1)        : )
    zza      (1:n) => bus( x(za,1,1)           : )
    zzusl    (1:n) => bus( x(zusl,1,1)         : )
    zztsl    (1:n) => bus( x(ztsl,1,1)         : )
+
+   zfsd     (1:n) => bus( x(fsd,1,1)          : )
+   zfsf     (1:n) => bus( x(fsf,1,1)          : )
+   zcoszeni (1:n) => bus( x(cang,1,1)         : )
+
+   zutcisun     (1:n) => bus( x(yutcisun     , 1, indx_sfc) : )
+   zutcishade   (1:n) => bus( x(yutcishade   , 1, indx_sfc) : )
+   zwbgtsun     (1:n) => bus( x(ywbgtsun     , 1, indx_sfc) : )
+   zwbgtshade   (1:n) => bus( x(ywbgtshade   , 1, indx_sfc) : )
+   ztglbsun     (1:n) => bus( x(ytglbsun     , 1, indx_sfc) : )
+   ztglbshade   (1:n) => bus( x(ytglbshade   , 1, indx_sfc) : )
+   zradsun      (1:n) => bus( x(yradsun      , 1, indx_sfc) : )
+   zradshade    (1:n) => bus( x(yradshade    , 1, indx_sfc) : )
+   ztwetb       (1:n) => bus( x(ytwetb       , 1, indx_sfc) : )
+   zq1          (1:n) => bus( x(yq1          , 1, indx_sfc) : )
+   zq2          (1:n) => bus( x(yq2          , 1, indx_sfc) : )
+   zq3          (1:n) => bus( x(yq3          , 1, indx_sfc) : )
+   zq4          (1:n) => bus( x(yq4          , 1, indx_sfc) : )
+   zq5          (1:n) => bus( x(yq5          , 1, indx_sfc) : )
+   zq6          (1:n) => bus( x(yq6          , 1, indx_sfc) : )
+   zq7          (1:n) => bus( x(yq7          , 1, indx_sfc) : )
+
+   if (atm_tplus) then
+      hu       (1:n) => bus( x(huplus,1,nk)      : )
+      ps       (1:n) => bus( x(pplus,1,1)        : )
+      tt       (1:n) => bus( x(tplus,1,nk)       : )
+      zthetaa  (1:n) => bus( x(thetaap,1,1)      : )
+      uu       (1:n) => bus( x(uplus,1,nk)       : )
+      vv       (1:n) => bus( x(vplus,1,nk)       : )
+   else
+      hu       (1:n) => bus( x(humoins,1,nk)     : )
+      ps       (1:n) => bus( x(pmoins,1,1)       : )
+      zthetaa  (1:n) => bus( x(thetaa,1,1)       : )
+      tt       (1:n) => bus( x(tmoins,1,nk)      : )
+      uu       (1:n) => bus( x(umoins,1,nk)      : )
+      vv       (1:n) => bus( x(vmoins,1,nk)      : )
+   endif
 
    if (RADSLOPE) then
       zFSOLIS(1:n)   => bus( x(fluslop,1,1)      : )
    else
       zFSOLIS(1:n)   => bus( x(flusolis,1,1)     : )
    endif
-
-   i = sl_prelim(ttm,hum,uum,vvm,psm,zzusl,VMOD,VDIR,TVA,RHOA, &
-        min_wind_speed=2.5,min_wind_reduc='linear')
+ 
+   i = sl_prelim(tt,hu,uu,vv,ps,zzusl,VMOD0,VDIR,TVA,RHOA,min_wind_speed=VAMIN)
+   if (sl_Lmin_soil > 0.) then
+      VMOD(:) = VMOD0(:)
+   elseif (i == SL_OK) then
+      i = sl_prelim(tt,hu,uu,vv,ps,zzusl,VMOD,VDIR,TVA,RHOA, &
+           min_wind_speed=2.5,min_wind_reduc='linear')
+   endif
    if (i /= SL_OK) then
-      print*, 'Aborting in isba() because of error returned by sl_prelim()'
-      stop
+      call physeterror('isba', 'error returned by sl_prelim()')
+      return
    endif
 
-   call SOILI(zTSOIL1, zWSOIL1, &
+   call SOILI2(zTSOIL1, zWSOIL1, &
         zWSOIL2, zISOIL, &
         zSNOMA, zSNORO, &
         zVEGFRAC, zCGSAT, &
@@ -267,25 +355,25 @@ subroutine isba3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
         zBCOEF, zC1SAT, &
         zC2REF, zACOEF, &
         zPCOEF, zCVEG, &
-        z0m, &
+        z0m, zz0veg, &
         CG, ZC1, ZC2, WGEQ, CT, ZCS, &
         zPSN, &
         zPSNG, zPSNV, &
-        PSNZ0, Z0TOT, z0h, N)
+        PSNZ0, Z0TOT, z0h, zz0tveg, N)
 
    call VEGI(zfsolis, &
-        ttm, ztsoil1, &
-        hum, psm, &
+        tt, ztsoil1, &
+        hu, ps, &
         zWSOIL2, zRGL, &
         zLAI, zSTOMR, &
         zGAMVEG, zWWILT, &
         zWFC, zRST, &
         N)
 
-   call DRAG5(ztsoil1, zWSOIL1, &
+   call DRAG6(ztsoil1, zWSOIL1, &
         zWVEG, zthetaa, &
-        VMOD, VDIR, hum, &
-        psm, zRST, &
+        VMOD, VDIR, hu, &
+        ps, zRST, &
         zVEGFRAC, &
         z0h, Z0TOT, zWFC, &
         zPSNG, zPSNV, &
@@ -299,17 +387,18 @@ subroutine isba3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
         DEL, zqsurf, &
         ctu, &
         N)
+   if (phy_error_L) return
 
-   call EBUDGET2(ttm, &
+   call EBUDGET3(tt, &
         ztsoil1, ztsoil2, &
         zWSOIL2, zISOIL, &
         zWSNOW, zSNOMA, DT, &
         zSNOAL, CD, zRAINRATE, &
         zfsolis, &
-        zALVEG, zALVIS, &
+        zALVEG, zALVIS, zemisr, zemsvc,&
         zFDSI, zthetaa, &
-        hum, psm, RHOA, &
-        uum, vvm, &
+        hu, ps, RHOA, &
+        uu, vv, &
         zVEGFRAC, HRSURF, &
         zHV, DEL, &
         zRESA, zRST, &
@@ -329,27 +418,38 @@ subroutine isba3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
         zMELTS, zMELTSR, &
         zFTEMP, zFVAP, &
         N)
-   
+ 
    ! Local calculation of temperature and winds at chosen levels
-   ! (for now, screen level heights are chosen, i.e. 1.5 and 10m) 
-   ! which are used in the calculation of "density of falling snow" 
+   ! (for now, screen level heights are chosen, i.e. 1.5 and 10m)
+   ! which are used in the calculation of "density of falling snow"
    ! in hydro1
-   
+
+   ! option for z0t calculation over vegetation
+    if (z0tevol == 'ZILI95') then
+      zopt = 9
+   elseif (z0tevol == 'FIXED') then
+      zopt = 0
+   else
+      call physeterror('isba', 'unknown option for z0tevol='//trim(z0tevol))
+      return
+   endif
+
    if (kount.eq.0) then
       my_ta = ztdiag
       my_ua = zudiag
       my_va = zvdiag
    else
-      i = sl_sfclayer(zthetaa,hum,vmod,vdir,zzusl,zztsl,ztsoil1,zqsurf, &
-           z0m,z0h,zdlat,zfcor,hghtm_diag=zu,hghtt_diag=zt,             &
-           t_diag=my_ta,u_diag=my_ua,v_diag=my_va,tdiaglim=ISBA_TDIAGLIM) 
+      i = sl_sfclayer(zthetaa,hu,vmod,vdir,zzusl,zztsl,ztsoil1,zqsurf, &
+           z0m,z0h,zdlat,zfcor,optz0=zopt,L_min=sl_Lmin_soil, &
+           hghtm_diag=zu,hghtt_diag=zt,t_diag=my_ta,u_diag=my_ua, &
+           v_diag=my_va,tdiaglim=ISBA_TDIAGLIM)
       if (i /= SL_OK) then
-         print*, 'Aborting in isba() because of error returned by sl_sfclayer()'
-         stop
+         call physeterror('isba', 'error returned by sl_sfclayer()')
+         return
       endif
    endif
 
-   call HYDRO1(DT, ztsoil1, &
+   call HYDRO2(DT, tt, ztsoil1, &
         ztsoil2, zWSOIL1, &
         zWSOIL2, zISOIL, &
         zWSNOW, zWVEG, &
@@ -387,19 +487,39 @@ subroutine isba3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
         zALFAQ, &
         ctu, &
         zthetaa, &
-        hum, &
+        hu, &
         zZA, N)
 
-   !# Compute values at the diagnostic level
-   i = sl_sfclayer(zthetaa,hum,vmod,vdir,zzusl,zztsl,ztsoil1,zqsurf, &
-        z0m,z0h,zdlat,zfcor,hghtm_diag=zu,hghtt_diag=zt,           &
-        t_diag=ztdiag,q_diag=zqdiag,u_diag=zudiag,v_diag=zvdiag, &
-        tdiaglim=ISBA_TDIAGLIM) 
+   !# Compute values at the diagnostic level,optz0=9
+   i = sl_sfclayer(zthetaa,hu,vmod,vdir,zzusl,zztsl,ztsoil1,zqsurf, &
+        z0m,z0h,zdlat,zfcor,optz0=zopt,L_min=sl_Lmin_soil,spdlim=vmod, &
+        hghtm_diag=zu,hghtt_diag=zt,t_diag=ztdiag,q_diag=zqdiag, &
+        u_diag=zudiag,v_diag=zvdiag,tdiaglim=ISBA_TDIAGLIM)
    if (i /= SL_OK) then
-      print*, 'Aborting in isba() because of error returned by sl_sfclayer()'
-      stop
+      call physeterror('isba', 'error 2 returned by sl_sfclayer()')
+      return
    endif
+   zudiag = zudiag * vmod0 / vmod
+   zvdiag = zvdiag * vmod0 / vmod
 
+   !# Fill surface type-specific diagnostic values
+   zqdiagtyp = zqdiag
+   ztdiagtyp = ztdiag
+   zudiagtyp = zudiag
+   zvdiagtyp = zvdiag
+
+   !# Compute diagnostics using vegetation-only roughness
+   i = sl_sfclayer(zthetaa,hu,vmod,vdir,zzusl,zztsl,ztsoil1,zqsurf, &
+        zz0veg,zz0tveg,zdlat,zfcor,optz0=zopt,   &
+        L_min=sl_Lmin_soil,spdlim=vmod, &
+        hghtm_diag=zu,hghtt_diag=zt,t_diag=ztdiagtypv,q_diag=zqdiagtypv, &
+        u_diag=zudiagtypv,v_diag=zvdiagtypv,tdiaglim=ISBA_TDIAGLIM) 
+   if (i /= SL_OK) then
+      call physeterror('isba', 'error 3 returned by sl_sfclayer()')
+      return
+   endif
+   zudiagtypv = zudiagtypv * vmod0 / vmod
+   zvdiagtypv = zvdiagtypv * vmod0 / vmod
 
 !VDIR NODEP
    do i=1,n
@@ -411,8 +531,57 @@ subroutine isba3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
       zWFLUX(I) = RHOA(I)*zEFLUX(I)
 
       if (.not.IMPFLX) CTU (I) = 0.
+      ! Fill runoff variable
+      zRUNOFFTOT(i) = zOVERFL(i)
 
    end do
+!-----------------------------------------------------
+   !#TODO: at least 4 times identical code in surface... separeted s/r to call
+   IF_THERMAL_STRESS: if (thermal_stress) then
+      ! Compute wind at z=zt
+      i = sl_sfclayer(zthetaa,hu,vmod,vdir,zztsl,zztsl,ztsoil1,zqsurf,  &
+           z0m,z0h,zdlat,zfcor,optz0=zopt,hghtm_diag=zu,hghtt_diag=zt,  &
+           u_diag=zusurfzt,v_diag=zvsurfzt, &
+           tdiaglim=ISBA_TDIAGLIM)
+      if (i /= SL_OK) then
+         call physeterror('isba', 'error returned by sl_sfclayer(heat-stress)')
+         return
+      endif
+
+      do i=1,n
+         if (abs(zzusl(i)-zu) <= 2.0) then
+            zu10(i) = sqrt(uu(i)**2+vv(i)**2)
+         else
+            zu10(i) = sqrt(zudiag(i)**2+zvdiag(i)**2)
+         endif
+
+         ! wind  zubos at z=zt and zu10 at z=zu
+         zuobs(i) = sqrt( zusurfzt(i)**2 + zvsurfzt(i)**2)
+
+         ! for the mean radiant temperature (including snow covers)
+         ZREF_SW_SURF (I)  = zalvis(i) * zfsolis(i)
+         ZEMIT_LW_SURF(I)  = zfsolis(i) - ZREF_SW_SURF (i) + ZFDSI(i) - zrnet_s(i)
+
+         ZZENITH(I) = acos(ZCOSZENI(I))
+         if (ZFSOLIS(I) > 0.0) then
+            ZZENITH(I) = min(ZZENITH(I), PI/2.)
+         else
+            ZZENITH(I) = max(ZZENITH(I), PI/2.)
+         endif
+
+      enddo
+
+      call SURF_THERMAL_STRESS(ZTDIAG, ZQDIAG,         &
+           ZU10,ZUOBS,  ps,                            &
+           ZFSD, ZFSF, ZFDSI, ZZENITH,                 &
+           ZREF_SW_SURF,ZEMIT_LW_SURF,                 &
+           Zutcisun ,Zutcishade,                       &
+           zwbgtsun, zwbgtshade,                       &
+           zradsun, zradshade,                         &
+           ztglbsun, ztglbshade, ztwetb,               &
+           ZQ1, ZQ2, ZQ3, ZQ4, ZQ5,                    &
+           ZQ6, ZQ7, N)
+   endif IF_THERMAL_STRESS
 
    !# FILL THE ARRAYS TO BE AGGREGATED LATER IN S/R AGREGE
    call FILLAGG(BUS, BUSSIZ, PTSURF, PTSURFSIZ, INDX_SOIL, &
