@@ -54,7 +54,7 @@ if [[ x$mydiropt == x-r ]] ; then
    SEARCH_PATH_BASE="$(rdevar srcpath)"
 fi
 if [[ x$mydiropt == x-b ]] ; then
-   SEARCH_PATH_BASE="$(rdevar build/src) $(rdevar build/pre)"
+   SEARCH_PATH_BASE="${CONST_BUILDSRC} ${CONST_BUILDPRE}"
 fi
 
 tagprogs="etags"

@@ -19,7 +19,7 @@ Options:
 EOF
 }
 
-EC_ARCH_LIST="${EC_ARCH_LIST:-Linux_x86-64 AIX-powerpc7}"
+EC_ARCH_LIST="${EC_ARCH_LIST:-Linux_x86-64}"
 
 myverbose=
 mybndl=''

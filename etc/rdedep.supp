@@ -5,7 +5,7 @@ include_missing arch_specific.hf
 include_missing gmm.hf
 include_missing WhiteBoard.hf
 include_missing clib_interface.cdk
-include_missing rpn_comm.inc sched.h
+include_missing rpn_comm.inc
 include_missing sys/syscall.h
 include_missing stdio.h
 include_missing stdlib.h

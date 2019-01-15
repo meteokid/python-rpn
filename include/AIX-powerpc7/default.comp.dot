@@ -1,1 +1,0 @@
-export COMP_ARCH=${COMP_ARCH:-xlf13}

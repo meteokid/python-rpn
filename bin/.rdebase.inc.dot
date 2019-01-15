@@ -14,27 +14,29 @@ EOF
    exit 1
 fi
 
+eval $(rdevar --shdump)
+
 verbose=${verbose:-0}
 quiet=${quiet:-0}
 MYSELF=${0##*/}
-RDE_BASE_ARCH=$(rdevar rde_base_arch)
-RDE_COMP_ARCH=$(rdevar rde_comp_arch)
-RDE_ARCH=$(rdevar rde_arch)
+RDE_BASE_ARCH=${CONST_RDE_BASE_ARCH}
+RDE_COMP_ARCH=${CONST_RDE_COMP_ARCH}
+RDE_ARCH=${CONST_RDE_ARCH}
 ROOT=$(pwd)
-BUILDOBJ=$(rdevar build/obj)
-BUILDBIN=$(rdevar build/bin)
+BUILDOBJ=${CONST_BUILDOBJ}
+BUILDBIN=${CONST_BUILDBIN}
 
-RDE_INCLUDE=$(rdevar rdeinc)
+RDE_INCLUDE=${CONST_RDEINC}
 
-SRC_PATH_FILE=$(rdevar srcpathfile)
+SRC_PATH_FILE=${CONST_SRCPATHFILE}
 RDE_BASE_MAKEFILES="Makefile Makefile.build.mk Makefile.rules.mk"
 
 RDE_BASE_DIR0="$BUILDOBJ $BUILDBIN"
 RDE_BASE_DIR="$RDE_BASE_DIR0"
 RDE_BASE_FILE="$RDE_BASE_MAKEFILES $SRC_PATH_FILE"
 
-INCSUFFIXES="$(rdevar rdesuffix/inc)"
-SRCSUFFIXES="$(rdevar rdesuffix/src)"
+INCSUFFIXES="${CONST_RDESUFFIXINC}"
+SRCSUFFIXES="${CONST_RDESUFFIXSRC}"
 VALIDEXT="$INCSUFFIXES $SRCSUFFIXES"
 
 ##

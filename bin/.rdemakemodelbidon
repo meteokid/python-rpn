@@ -3,7 +3,7 @@
 DESC='Create a main/program file calling a function/subroutine'
 
 if [[ x$1 == x-h || x$1 == x--help ]] ; then
-	 more <<EOF
+   more <<EOF
 $DESC
 
 USAGE: .rdemakemodelbidon [-c] MAIN
@@ -73,6 +73,25 @@ cat <<EOF
           is_official_L = ${ISOFFICIAL:-.false.}
           return
        end subroutine atm_model_getversion2
+
+       subroutine atm_model_getversion3(name_S,version_S,date_S,arch_S,compil_S,user_S,buildname_S,is_official_L)
+          implicit none
+          character(len=*),intent(out) :: name_S,version_S,date_S,arch_S,compil_S,user_S,buildname_S
+          logical,intent(out) :: is_official_L
+          name_S = "$(echo ${ATM_MODEL_NAME:-$1} | tr 'a-z' 'A-Z')"
+          version_S = "${ATM_MODEL_VERSION:-?.?}"
+          date_S = "$(date '+%Y-%m-%d %H:%M %Z')"
+          arch_S = "${BASE_ARCH}:${ORDENV_PLAT:-$MYARCH}"
+          compil_S = "${COMP_ARCH:-${EC_ARCH#*/}} [${PGI_VERSION}${XLF_VERSION}]"
+          user_S   = "${COMP_USER:-$USER}"
+          is_official_L = ${ISOFFICIAL:-.false.}
+          buildname_S = "${RDE_BUILDNAME}"
+          !#TODO: add list of linked libs... can be searched by "strings abs"
+          !#TODO: add compiler_rule_file
+          !#TODO: add FFLAGS
+          !#TODO: add full compiler cmd?
+          return
+       end subroutine atm_model_getversion3
 
 EOF
 

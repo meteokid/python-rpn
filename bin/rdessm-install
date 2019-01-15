@@ -15,7 +15,7 @@ $toto
 
 Options:
     -h, --help     : print this help
-    -v, --verbose  :  
+    -v, --verbose  : increase verbosity level
         --dest     : dest domain dir
         --bndl     : dest bndl file
         --pre      : preprend this file content to the bndl
@@ -23,7 +23,9 @@ Options:
         --depot    : location of ssm pkg files
         --base     : Base insall dir [will only put rel path in bndl]
                      [default: ~/SsmDepot]
+        --skip-installed : skip fully installed pkg instead of causing an error
         --uninstall: remove installed domain and bndl
+        --git      : make a git repos of ssm 'all' packages
 
    SSMPKGLIST : space separated list of ssm pkg files
 EOF
@@ -39,6 +41,8 @@ depot=~/SsmDepot
 ssmbase=
 ssmpkglist=''
 uninstall=0
+myskip=0
+dogit=0
 while [[ $# -gt 0 ]] ; do
     case $1 in
         (-h|--help) usage_long; exit 0;;
@@ -50,6 +54,8 @@ while [[ $# -gt 0 ]] ; do
         (--depot=*) depot=${1#*=};;
         (--base=*) ssmbase=${1#*=};;
         (--uninstall) uninstall=1;;
+        (--skip-installed) myskip=1;;
+        (--git) dogit=1;;
         (--) shift ; break;;
         (-*) echo "ERROR: Unrecognized option $1"
             echo -e $USAGE
@@ -90,6 +96,22 @@ fi
 
 echo "Packages to install: $ssmpkglist"
 
+if [[ ${myskip} == 1 ]] ; then
+   _status=installed
+   rdessm-install-check --dest=${domain} --bndl=${bndl} --pre=${prebndl} \
+      --post=${postbndl} --base=${ssmbase} ${ssmpkglist} || _status=
+   if [[ x${_status} == installed ]] ; then
+      cat <<EOF
+WARNING: Domain, packages and bundle already fully installed and published
+         domain: ${domain}
+         bndl  : ${bndl}
+         ---- Skipping ----
+EOF
+      exit 0
+   fi
+fi
+
+
 if [[ -e $domain ]] ; then
    cat 1>&2 <<EOF
 ERROR: SSM Domain already exists: $domain
@@ -124,6 +146,13 @@ for ssmpkg in ${ssmpkglist} ; do
    fi
    ssm install $myverbose -d $domain -p $ssmpkg -u $depot
    ssm publish $myverbose -d $domain -p $ssmpkg --yes
+
+   if [[ $dogit == 1 && x"${ssmpkg##*_}" == x"all" ]] ; then
+      (cd $domain/${ssmpkg##*/} && \
+         git init && git add . && \
+         git commit -a -m "Original commit of ${ssmpkg%_*}" && \
+         git tag ${ssmpkg%_*})
+   fi
 done
 
 chmod a-w $domain

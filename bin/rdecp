@@ -83,35 +83,55 @@ if [[ -z "${dst_path}" ]] ; then
    dst_path=${previous}
 fi
 
+mkdir -p ${dst_path}
+#mkdir -p ${dst_path}/{$(echo ${CONST_EXTRADIRS} | tr ' ' ',')}
 
 if [[ ! -d ${dst_path} || ! -w ${dst_path} ]] ; then
-   mystderr 0 "ERROR: destination does does not exists or is not writable: ${dst_path}"
+   mystderr 0 "ERROR: destination does not exists or is not writable: ${dst_path}"
    usage_long; exit 1
 fi
 
 myecho 1 "Files will be copied to ${dst_path}"
 
+mycpfn() {
+   src=$1
+   srcfile=$2
+   dst_path=$3
+   subdir=${srcfile%/*}
+   [[ x"${subdir}" = x"${srcfile}" ]] && subdir=. || true
+   if [[ -f ${dst_path}/${srcfile} ]] ; then
+      if [[ ${myforce} == 1 ]] ; then
+         rm -f ${dst_path}/${subdir}/${srcfile} && cp ${src}/${srcfile} ${dst_path}/${subdir}
+         myecho 1 "Overriting ${srcfile} with ${src}/${srcfile}"
+      else
+         mystderr 0 "WARNING: File $srcfile already exists, ignoring ${src}/${srcfile}"
+         mystderr 0 "Use '${MYSELF} -f' to overwrite"
+      fi
+   else
+      #TODO: check if source is a file before cp
+      [[ x"${subdir}" != x"." ]] && mkdir -p ${dst_path}/${subdir} || true
+      cp ${src}/${srcfile} ${dst_path}/${subdir}
+      myecho 1 "cp ${src}/${srcfile} ${dst_path}/${subdir}"
+   fi
+}
+
 # Import source files from specified path
-mywild="$(rdevar rdesuffix | sed 's/\./*./g')"
+mywild="$(echo ${CONST_RDESUFFIX} | sed 's/\./*./g')"
 mywild="${mywild} $(rdevar rde_setenv_dot rde_config_file srcpathfile Makefile_user Makefile_root)"
-for src in ${src_path} ; do     
+for src in ${src_path} ; do
    if [[ ! -d ${src} ]] ; then
       mystderr 0 "WARNING: Ignoring not dir: $src"
    else
       for srcfile in $(cd ${src} && ls ${mywild} 2>/dev/null || true) ; do
-         if [[ -f ${dst_path}/${srcfile} ]] ; then
-            if [[ ${myforce} == 1 ]] ; then
-               rm -f ${dst_path}/${srcfile} && cp ${src}/${srcfile} ${dst_path}
-               myecho 1 "Overriting ${srcfile} with ${src}/${srcfile}"
-            else
-               mystderr 0 "WARNING: File $srcfile already exists, ignoring ${src}/${srcfile}"
-               mystderr 0 "Use '${MYSELF} -f' to overwrite"
+         mycpfn ${src} ${srcfile} ${dst_path}
+      done
+      for extradir in ${CONST_EXTRADIRS} ; do
+         for srcfile in $(cd ${src} && find ${extradir} -type f 2>/dev/null || true) ; do
+            if [[ ! -d ${dst_path}/${extradir%/*} ]] ; then
+               mkdir -p ${dst_path}/${extradir%/*}
             fi
-         else
-            #TODO: check if source is a file before cp
-            cp ${src}/${srcfile} ${dst_path}
-            myecho 1 "cp ${src}/${srcfile} ${dst_path}"
-         fi
+            mycpfn ${src} ${srcfile} ${dst_path}
+         done
       done
    fi
 done

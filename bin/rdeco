@@ -8,8 +8,8 @@ DESC='Checkout library version of a source file'
 USAGE="USAGE: ${MYSELF} [-h] [-v] [-f] FILES"
 
 usage_long() {
-	 toto=$(echo -e $USAGE)
-	 more <<EOF
+    toto=$(echo -e $USAGE)
+    more <<EOF
 $DESC
 
 $toto
@@ -20,6 +20,8 @@ Options:
     -q, --quiet        : silence every comment and errors
     -t, --touch        : touch file even if already checked out
     -f, --force        : force replace existing file
+    -i, --inc          : Also look into SRCPATH_INCLUDE
+    -x, --extra        : Look only into "${EXTRADIRS}" subdirs
         --ext          : No error if file.ext not in ext list
     FILES              : space separated list of src files or dir
 
@@ -32,6 +34,9 @@ myquiet=''
 myforce=0
 mytouch=0
 myextlist=""
+myinc=0
+myextra=0
+SRCPATH_TOPDIRS=""
 while [[ $# -gt 0 ]] ; do
    case $1 in
       (-h|--help) usage_long; exit 0;;
@@ -41,6 +46,10 @@ while [[ $# -gt 0 ]] ; do
       (-t|--touch) mytouch=1;;
       (--ext=*) myextlist="$myextlist ${1#*=}";;
       (--ext) ;;
+      (-i|--inc)   myinc=1;;
+      (-x|--extra) myextra=1;
+         SRCPATH_TOPDIRS="${CONST_SRCPATH_TOPDIRS}";
+         EXTRADIRS="${CONST_EXTRADIRS}";;
       (--) shift ; break;;
       (-*) myerror "Option Not recognized: $1";;
       *)
@@ -53,7 +62,10 @@ while [[ $# -gt 0 ]] ; do
     shift
 done
 PATHLIST="$PATHLIST $@"
-SRCPATH="$(mysrcpath)"
+SRCPATH="${CONST_SRCPATH}"
+if  [[ $myinc == 1 ]] ; then
+   SRCPATH="${CONST_SRCPATH} ${CONST_SRCPATH_INCLUDE}"
+fi
 if [[ $quiet == 1 ]] ; then
    verbose=0
    myquiet='-q'
@@ -71,12 +83,19 @@ find_src() {
          return 0
       fi
    done
+   if [[ $myextra == 1 ]] ; then
+      _myfile1=$(rdelocate -r -R ${_myfile})
+      if [[ x"${_myfile1}" != x"" ]] ; then
+         echo ${_myfile1}
+         return 0
+      fi
+   fi
    return 1
 }
 
 for myfile in $PATHLIST ; do
    if [[ x"$myextlist" != x"" ]] ; then
-      ext=${myfile##*.} 
+      ext=${myfile##*.}
       if [[ x$ext == x$myfile ]] ; then ext="" ; fi
       isSrc="$(echo $myextlist | grep -F .${ext:-_______})"
       if [[ x"$isSrc" == x ]] ; then
@@ -93,37 +112,57 @@ for myfile in $PATHLIST ; do
    fi
    if [[ x${mypathlist} == x ]] ; then
       mystderr 1 "ERROR: File $myfile is not found in SRCPATH ($SRC_PATH_FILE)"
-      mystderr 1 "Maybe you meant one of: $mysimfile"
+      mystderr 1 "Maybe you you should try with: ${MYSELF} -x $myfile"
+      mystderr 1 "Or Maybe you meant one of: $mysimfile"
       mystatus=1
    else
       for mypath in ${mypathlist} ; do
          topath=${mypath##*/}
+         subdir=''
+         if [[ $myextra == 1 ]] ; then
+            for mydir in ${SRCPATH_TOPDIRS} ; do
+               for mydir2 in ${EXTRADIRS} ; do
+                  mypath2=$(echo ${mypath} | sed "s|${mydir}/${mydir2}||g")
+                  if [[ x"${mypath2}" != x"${mypath}" ]] ; then
+                     subdir=$(echo ${mypath} | sed "s|${mydir}/||g")
+                     subdir=${subdir%/*}
+                     break
+                  fi
+               done
+               if [[ x"${subdir}" != x"" ]] ; then
+                  break
+               fi
+            done
+         fi
+         subdir=${subdir:-.}
          myecho 1 "Retrieving $mypath"
          isdir=0
          replaced=""
-         if [[ -e ${ROOT}/$topath ]] ; then
+         if [[ -e ${ROOT}/${subdir}/$topath ]] ; then
             if [[ $myforce == 0 ]] ; then
                mypath=""
-               mystderr 1 "WARNING: File $topath already exists, overwrite with:"
+               mystderr 1 "WARNING: File ${subdir}/$topath already exists, overwrite with:"
                mystderr 1 "${MYSELF} -f $myfile"
                mystatus=1
             else
-               rm -f ${ROOT}/$topath
+               rm -f ${ROOT}/${subdir}/$topath
                replaced="(overwritting existing file)"
             fi
          fi
-
-         if [[ x$mypath != x ]] ; then
-            cp $mypath ${ROOT}/$topath
-            chmod -R u+w ${ROOT}/$topath
-            if [[ x${replaced} != x ]] ; then
-               touch ${ROOT}/$topath
-            fi
-            myecho 1 "Checking out ${topath} ${replaced}"
+         if [[ $myextra == 1 && ! -d ${ROOT}/${subdir} ]] ; then
+            mkdir -p ${ROOT}/${subdir}
          fi
-         if [[ -e ${ROOT}/$topath && $mytouch == 1 ]] ; then
-            touch ${ROOT}/$topath
-            myecho 1 "Touch ${topath}"
+         if [[ x$mypath != x ]] ; then
+            cp $mypath ${ROOT}/${subdir}/$topath
+            chmod -R u+w ${ROOT}/${subdir}/$topath
+            if [[ x${replaced} != x ]] ; then
+               touch ${ROOT}/${subdir}/$topath
+            fi
+            myecho 1 "Checking out ${subdir}/${topath} ${replaced}"
+         fi
+         if [[ -e ${ROOT}/${subdir}/$topath && $mytouch == 1 ]] ; then
+            touch ${ROOT}/${subdir}/$topath
+            myecho 1 "Touch ${subdir}/${topath}"
          fi
       done
    fi

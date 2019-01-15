@@ -93,7 +93,7 @@ for myfile in $PATHLIST ; do
       if [[ x$myfiler != x && $localonly != 0 ]] ; then
          myecho 1 "Library verion will be used for: $myfile"
          isfile0="Removed (local) "
-      fi      
+      fi
    fi
    if [[ x$myfiler != x && $localonly == 0 ]] ; then
       myecho 1 "Making stub for: $myfile"

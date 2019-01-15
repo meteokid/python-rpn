@@ -1,6 +1,6 @@
 SHELL = /bin/bash
 
-RDE_VERSION0  = 1.0.6
+RDE_VERSION0  = 1.1.2
 RDE_VERSION   = $(notdir $(RDE_VERSION0))
 RDE_VERSION_X = $(dir $(RDE_VERSION0))
 
@@ -57,6 +57,7 @@ rde_install:
 	fi
 	cd $(SSM_DEPOT_DIR) ;\
 	$(RDE_SSM_INSLALL) -v \
+			--git \
 			--dest=$(RDE_SSM_BASE_DOM)/rde_$(RDE_VERSION) \
 			--bndl=$(RDE_SSM_BASE_BNDL)/$(RDE_VERSION).bndl \
 			--base=$(SSM_BASE2) \

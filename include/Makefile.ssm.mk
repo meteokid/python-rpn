@@ -11,8 +11,8 @@ endif
 ## ==== Pkg Building Macros
 
 BUILDSSM    := $(ROOT)/$(shell rdevar build/ssm)
-SSMARCH_OLD := $(shell .rdessmarch)
-SSMORDARCH  := $(shell .rdessmarch --ord)
+#SSMARCH_OLD := $(shell .rdessmarch)
+SSMORDARCH  := $(ORDENV_PLAT)
 SSMARCH     = $(SSMORDARCH)
 
 SSMDEPOTDIR = $(HOME)/SsmDepot

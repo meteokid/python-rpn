@@ -6,9 +6,9 @@ endif
 
 ifeq (,$(CONST_BUILD))
    ifneq (,$(DEBUGMAKE))
-      $(info include $(ROOT)/include $(MAKEFILE_CONST))
+      $(info include $(MAKEFILE_CONST))
    endif
-   include $(ROOT)/$(MAKEFILE_CONST)
+   include $(MAKEFILE_CONST)
 endif
 
 INCSUFFIXES = $(CONST_RDESUFFIXINC)
@@ -52,6 +52,7 @@ BUILDCC_NOMPI = export EC_INCLUDE_PATH="" ; $(RDECC)  $(RDEALL_LFLAGS_NOMPI) $(R
 
 DORBUILD4BIDONF = \
 	mkdir .bidon 2>/dev/null ; cd .bidon ;\
+	if [[ x"$(VERBOSEV)" != x"" ]] ; then .rdemakemodelbidon $${MAINSUBNAME} ; fi ;\
 	.rdemakemodelbidon $${MAINSUBNAME} > bidon_$${MAINSUBNAME}.f90 ;\
 	$(FC90aNoInclude) bidon_$${MAINSUBNAME}.f90 >/dev/null || status=1 ;\
 	rm -f bidon_$${MAINSUBNAME}.f90 ;\
@@ -67,7 +68,9 @@ DORBUILD4EXTRAOBJ = \
 DORBUILD4COMMSTUBS = \
 	lRBUILD_COMM_STUBS="" ;\
 	if [[ x"$${RBUILD_COMM_STUBS}" != x"" ]] ; then \
-	   lRBUILD_COMM_STUBS="-l$${RBUILD_COMM_STUBS}";\
+		for mylib in $${RBUILD_COMM_STUBS} ; do \
+	   	lRBUILD_COMM_STUBS="$${lRBUILD_COMM_STUBS} -l$${mylib}";\
+		done ;\
 	fi
 DORBUILDEXTRALIBS = \
 	lRBUILD_EXTRA_LIB="" ;\
@@ -140,32 +143,6 @@ RBUILD4NOMPI_C = \
 	   .bidon/bidon_$${MAINSUBNAME}.o $${RBUILD_EXTRA_OBJ1} $(CODEBETA) || status=1 ;\
 	$(DORBUILD4FINALIZE)
 
-
-ifneq (,$(filter aix-%,$(RDE_BASE_ARCH))$(filter AIX-%,$(RDE_BASE_ARCH)))
-
-#	$${LRBUILD_RPATH} : -Wl,-rpath not understood by xlf13 !?!
-
-RBUILD4MPI_SO = \
-	status=0 ;\
-	$(DORBUILD4EXTRAOBJ) ;\
-	$(DORBUILDLIBSAPPL) ; $(DORBUILDEXTRALIBS) ;\
-	$(BUILDFC) -mpi -o $${RBUILD_LIBSO_NAME:-$@}.o $${lRBUILD_EXTRA_LIB} $${lRBUILD_LIBAPPL} $(RDEALL_LIBS) \
-	    -G -qmkshrobj $${RBUILD_EXTRA_OBJ1} $(CODEBETA) || status=1 ;\
-	ar rcv $${RBUILD_LIBSO_NAME:-$@} $${RBUILD_LIBSO_NAME:-$@}.o ;\
-	$(DORBUILD4FINALIZE)
-
-RBUILD4NOMPI_SO = \
-	status=0 ;\
-	$(DORBUILD4EXTRAOBJ) ;\
-	$(DORBUILD4COMMSTUBS) ;\
-	$(DORBUILDLIBSAPPL) ; $(DORBUILDEXTRALIBS) ;\
-	$(BUILDFC_NOMPI) -shared -mpi -o $${RBUILD_LIBSO_NAME:-$@}.o $${lRBUILD_EXTRA_LIB} $${lRBUILD_LIBAPPL} $(RDEALL_LIBS) $${lRBUILD_COMM_STUBS}\
-	   -G -qmkshrobj $${RBUILD_EXTRA_OBJ1} $(CODEBETA) || status=1 ;\
-	ar rcv $${RBUILD_LIBSO_NAME:-$@} $${RBUILD_LIBSO_NAME:-$@}.o ;\
-	$(DORBUILD4FINALIZE)
-
-else
-
 RBUILD4MPI_SO = \
 	status=0 ;\
 	$(DORBUILD4EXTRAOBJ) ;\
@@ -184,8 +161,6 @@ RBUILD4NOMPI_SO = \
 	$(BUILDFC_NOMPI) -shared -o $${RBUILD_LIBSO_NAME:-$@} $${LRBUILD_RPATH} $${lRBUILD_EXTRA_LIB} $${lRBUILD_LIBAPPL} $(RDEALL_LIBS) \
 	   $${RBUILD_EXTRA_OBJ1} $(CODEBETA) || status=1 ;\
 	$(DORBUILD4FINALIZE)
-
-endif
 
 
 ## ==== Implicit Rules

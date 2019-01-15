@@ -57,15 +57,15 @@ rde_exit_if_not_rdetopdir
 
 files2=" "
 for item in $files ; do
-   item2="$(rdelocate ${mydiropt} $item 2>/dev/null | cut -d' ' -f1)"
+   item2="$(rdelocate ${mydiropt} ${item} 2>/dev/null | cut -d' ' -f1)"
    if [[ x"$item2" == x"" ]] ; then
       mysimfile="$(.rdesimilnames $item)"
       mynbsim="$(echo $(echo $mysimfile | wc -w))"
       if [[ x$mynbsim == x1 && ${mysimfile%.*} ==  $item ]] ; then
-         item2="$(rdelocate ${mydiropt} $mysimfile 2>/dev/null | cut -d' ' -f1)"
+         item2="$(rdelocate ${mydiropt} ${mysimfile} 2>/dev/null | cut -d' ' -f1)"
          files2="$files2 $item2"
       else
-         mystderr 0 "WARNING: file $item was not found"   
+         mystderr 0 "WARNING: file $item was not found"
          mystderr 0 ".. . . . Maybe you meant one of: $mysimfile"
          mystderr 0 ".. . . . Or try ${MYSELF} $item with --local or --build or --ref"
       fi

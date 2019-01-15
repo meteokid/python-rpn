@@ -1,0 +1,162 @@
+#!/bin/ksh
+
+myself=$0
+DESC='RDE helper to check installation of ssm pkgs with bundles'
+USAGE="USAGE: ${myself##*/} [-h] [-v] --dest=DEST --bndl=BNDL [--pre=PREFILE] [--post=POSTFILE] SSMPKGLIST"
+
+#---- Functions ------------------------------------------------------
+#====
+usage_long() {
+         toto=$(echo -e $USAGE)
+         more <<EOF
+$DESC
+
+$toto
+
+Options:
+    -h, --help     : print this help
+    -v, --verbose  : increase verbosity level
+        --dest     : dest domain dir
+        --bndl     : dest bndl file
+        --pre      : preprend this file content to the bndl
+        --post     : postpend this file content to the bndl
+        --base     : Base insall dir [will only put rel path in bndl]
+                     [default: ~/SsmDepot]
+
+   SSMPKGLIST : space separated list of ssm pkg files
+EOF
+}
+
+myverbose=
+domaine=''
+bndl=''
+prebndl=''
+postbndl=''
+#ssmbase=$HOME/SsmBundle/
+ssmbase=
+ssmpkglist=''
+while [[ $# -gt 0 ]] ; do
+    case $1 in
+        (-h|--help) usage_long; exit 0;;
+        (-v|--verbose) myverbose=--verbose ;;
+        (--dest=*) domain=${1#*=};;
+        (--bndl=*) bndl=${1#*=};;
+        (--pre=*) prebndl=${1#*=};;
+        (--post=*) postbndl=${1#*=};;
+        (--base=*) ssmbase=${1#*=};;
+        (--) shift ; break;;
+        (-*) echo "ERROR: Unrecognized option $1"
+            echo -e $USAGE
+            echo "---- ABORT ----"
+            exit 1;;
+       (*) ssmpkglist="$ssmpkglist $1"
+    esac
+    shift
+done
+ssmpkglist="$(set -x;cd $depot && ls -1 $ssmpkglist $* 2>/dev/null)"
+
+_status=0
+
+if [[ -e $domain ]] ; then
+   printf "SSM domain dir already exists: $domain"
+else
+   printf "SSM domain dir does NOT exists: $domain"
+   _status=1
+fi
+
+if [[ ${_status} == 0 ]] ; then
+   ssm listd -d ${domain} > /dev/null
+   _status=$?
+fi
+
+if [[ ${_status} == 0 ]] ; then
+   for ssmpkg in ${ssmpkglist} ; do
+      if [[ x${ssmpkg##*.} == xssm ]] ; then
+         ssmpkg=${ssmpkg%.*}
+      fi
+      state="$(ssm listd -d ${domain} -p ${ssmpkg} -o state)"
+      if [[ "x${state}" == "xIP" ]] ; then
+         printf "SSM package state IP: ${ssmpkg}"
+      else
+         printf "SSM package state NOT IP (${state}): ${ssmpkg}"
+         _status=1
+      fi
+   done
+fi
+
+if [[ ${_status} == 0 ]] ; then
+   _tmp1=${TMPDIR}/${myself##*/}-$$-1
+   _tmp2=${TMPDIR}/${myself##*/}-$$-2
+   rm -f ${_tmp1} ${_tmp2}
+   for ssmpkg in ${ssmpkglist} ; do
+      if [[ x${ssmpkg##*.} == xssm ]] ; then
+         ssmpkg=${ssmpkg%.*}
+      fi
+      echo ${ssmpkg} > ${_tmp1}
+   done
+   cat ${myself##*/}-$$-1 | sort -u >  ${_tmp1}b
+   ssm listd -d ${domain} -o name | tr ' ' '\n' | sort -u > ${_tmp2}
+   diff -B -w -q ${_tmp1}b ${_tmp2}
+   _status=$?
+   if [[ ${_status} != 0 ]] ; then
+      printf "SSM domain contains extra packages: $domain"
+      set -x
+      diff -B -w ${_tmp1}b ${_tmp2}
+      set +x
+   fi
+fi
+
+if [[ -e $bndl ]] ; then
+   printf "SSM bndl already exists: $bndl"
+else
+   printf "SSM bndl does NOT exists: $bndl"
+   _status=1
+fi
+
+bndl2=${TMPDIR}/${myself##*/}-$$-1
+rm -f ${bndl2}
+touch ${bndl2}
+if [[ x$prebndl != x ]] ; then
+   cat $prebndl >> ${bndl2}
+fi
+
+if [[ x$ssmbase != x ]] ; then
+   if [[ x${ssmbase%/*} != x ]] ; then
+      ssmbase=${ssmbase}/
+   fi
+   domain=$(echo $domain | sed "s|$ssmbase||")
+fi
+echo $domain >> ${bndl2}
+
+if [[ x$postbndl != x ]] ; then
+   cat $postbndl >> ${bndl2}
+fi
+
+if [[ "$(cat ${bndl2})" == "$domain" ]] ; then
+   rm -f ${bndl2}
+   if [[ x$ssmbase != x ]] ; then
+      ln -s $ssmbase/$domain ${bndl2}
+   else
+      ln -s $domain ${bndl2}
+   fi
+fi
+
+if [[ -l ${bndl2} || -l ${bndl} ]] ; then
+   if [[ ! -l ${bndl2} || ! -l ${bndl} ]] ; then
+      _status=1
+   fi
+fi
+if [[ ! -l ${bndl2} && ! -l ${bndl} ]] ; then
+   diff -B -w -q ${bndl2} ${bndl}
+   _status=$?
+fi
+
+if [[ ${_status} != 0 ]] ; then
+   printf "SSM bndl differs: ${bndl2} ${bndl}"
+   ls -l ${bndl2} ${bndl}
+   set -x
+   diff -B -w ${bndl2} ${bndl}
+   set +x
+fi
+
+exit ${_status}

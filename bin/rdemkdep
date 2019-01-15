@@ -4,7 +4,7 @@
 # @Date:   Oct 2014
 . .rdebase.inc.dot
 
-DESC='Build depedecies list'
+DESC='Build dependencies list'
 USAGE="USAGE: ${MYSELF} [-h] [-v] [--supp myfile.supp] [--arch ARCH]"
 
 usage_long() {
@@ -42,7 +42,7 @@ DEP_SUPP_FILE_GEM=$rde/etc/rdedep-gem.supp
 #DEP_SUPP_FILE_PATH0="$DEP_SUPP_FILE_GEM"
 DEP_SUPP_FILE_PATH0=":"
 DEP_SUPP_FILE_PATH=""
-DEP_ARCH="$(rdevar rde_arch)"
+DEP_ARCH="${CONST_RDE_ARCH}"
 VERBOSE=''
 PERLPROF=''
 DEP_DUP_OK=''
@@ -96,6 +96,7 @@ mkdepfn() {
    MYARCH_OLD="$(rdevar --arch $MYARCH -- base_arch)"
    MAKEFILEDEP="$(rdevar --arch $MYARCH -- Makefile_dep)"
    SRCPATH="$(rdevar --arch $MYARCH_OLD -- srcpath)"
+   SRCPATH_INCLUDE="$(rdevar --arch $MYARCH_OLD -- srcpath_include)"
    SRCPATH_MAXDEPTH="$(rdevar --arch $MYARCH_OLD -- srcpath_maxdepth)"
    TOPDIROPT=""
    TOPDIRLIST="$(rdevar --arch $MYARCH_OLD -- srcpath_topdirs)"
@@ -112,41 +113,42 @@ mkdepfn() {
    fi
    if [[ x$OVERRIDEDIR != x ]] ; then
       OVERRIDEDIR2=$(true_path ${OVERRIDEDIR#*=})
-      for item in $SRCPATH ; do
-         if [[ x$OVERRIDEDIR2 == x$(true_path $item) ]] ; then
+      for item in ${SRCPATH} ${SRCPATH_INCLUDE}; do
+         if [[ x${OVERRIDEDIR2} == x$(true_path $item) ]] ; then
          #TODO: should remove it from srcpath instead
             OVERRIDEDIR=""
          fi
       done
    fi
 
-   rm -f $TMPDIR/${MAKEFILEDEP}
+   rm -f ${TMPDIR}/${MAKEFILEDEP}
    ${MYTIME} ${PERLPROF}rdedep.pl ${VERBOSE} ${DEP_DUP_OK} ${DEP_FLAT} \
       --deep-include \
       --any_inc \
       --soft-restriction \
-      --libext=.a.fl \
+      --libext=-${USER:${LOGNAME:--local}}.a \
       --out=$TMPDIR/${MAKEFILEDEP} \
-      $DEP_SUPP_FILE_ARG \
-      $TOPDIROPT \
-      $OVERRIDEDIR \
-      $SRCPATH
+      ${DEP_SUPP_FILE_ARG} \
+      ${TOPDIROPT} \
+      ${OVERRIDEDIR} \
+      ${SRCPATH} ${SRCPATH_INCLUDE}
    mystatus=$?
-   if [[ $mystatus  == 0 ]] ; then
+   if [[ ${mystatus}  == 0 ]] ; then
       rm -f ${MAKEFILEDEP} 
-      mv $TMPDIR/${MAKEFILEDEP} ${MAKEFILEDEP}
+      mv ${TMPDIR}/${MAKEFILEDEP} ${MAKEFILEDEP}
    fi
 }
 
 mystatus=0
-for item in $DEP_ARCH ; do
-   mkdepfn $item
-   if [[ x$mystatus != x0 ]] ; then
-      exit $mystatus
+for item in ${DEP_ARCH} ; do
+   myecho 0 "==== rdemkdep for ${MYARCH}"
+   mkdepfn ${item}
+   if [[ x${mystatus} != x0 ]] ; then
+      exit ${mystatus}
    fi
 done
 
 #TODO: remove --any when code is clean from cross dir includes
 #TODO:   --inc="$(echo $SRCPATH | sed 's| |/include:|g')
 
-exit $mystatus
+exit ${mystatus}

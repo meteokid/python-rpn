@@ -6,8 +6,8 @@ DESC='Add a path to SRCPATH for RPN Code Dev Env'
 USAGE="USAGE: ${MYSELF} [-v] [-f] [-R] [-k] [--reset] DIRLIST"
 
 usage_long() {
-   toto=$(echo -e $USAGE)
-   more <<EOF
+	 toto=$(echo -e $USAGE)
+	 more <<EOF
 $DESC
 
 $toto
@@ -19,7 +19,7 @@ Options:
     -R  --recurse      : recursively include dirs
         --reset        : replace existing SRCPATH if any
     -k, --keep         : keep existing SRCPATHFILE as backup if any
-        --arch [ARCH]  : restrict SRCPATH to
+        --arch [ARCH]  : restrict SRCPATH to 
                          BASE_ARCH, EC_ARCH or ORDENV_PLAT == ARCH
                          default: no restriction
                          default ARCH=ORDENV_PLAT
@@ -55,7 +55,7 @@ while [[ $# -gt 0 ]] ; do
       (--include) myinclude=1;;
       (--) shift ; break;;
       (-*) myerror "Option Not recognized: $1";;
-        *)
+        *) 
          case $previous in
             (-R|--recurse) mymaxdepth=$1;;
             (--arch) myarch=$1;;
@@ -89,7 +89,6 @@ if [[ x$myarch != x ]] ; then
 fi
 eval $(rdevar -k srcpath srcpath_r srcpath_maxdepth srcpath_include)
 SRCPATH="${CONTS_SRCPATH}"
-SRCPATH_R="${CONTS_SRCPATH_R}"
 SRCPATH_INCLUDE="${CONTS_SRCPATH_INCLUDE}"
 if [[ x$myreset == x0 ]] ; then
    mymaxdepth0="${CONTS_SRCPATH_MAXDEPTH}"
@@ -182,12 +181,14 @@ SRCPATH_ARCH_LIST="\$SRCPATH_ARCH_LIST $myarch"
 if [[ x\${RDE_BASE_ARCH:-NIL} == x$myarch || x\${RDE_BASE_ARCH_EQUIV:-NIL} == x$myarch || x\${RDE_ARCH:-NIL} == x$myarch || x\$BASE_ARCH == x$myarch || x\$EC_ARCH == x$myarch || x\$COMP_ARCH == x$myarch || x\$ORDENV_PLAT == x$myarch || x\$ORDENV_PLAT/\$COMP_ARCH == x$myarch ]] ; then
 EOF
 fi
+
 if [[ x$myinclude == x0 ]] ; then
    cat >> $SRC_PATH_FILE <<EOF
 SRCPATH_MAXDEPTH=$mymaxdepth
 SRCPATH_R="$SRCPATH_R"
 SRCPATH="$SRCPATH"
 SRCPATH_TOPDIRS="${mytopdirs}"
+SRCPATH_INCLUDE="${SRCPATH_INCLUDE}"
 EOF
 else
    cat >> $SRC_PATH_FILE <<EOF
@@ -200,6 +201,3 @@ cat >> $SRC_PATH_FILE <<EOF
 fi
 EOF
 fi
-
-# Invalidate the rdevar cache
-rm -f ${CONST_SH_CONST_WILD} ${CONST_MAKEFILE_CONST_WILD} || true

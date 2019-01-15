@@ -19,7 +19,7 @@ get_comp_rules_file() {
    done
    echo "$(s.get_compiler_rules \"$@\")"
 }
-   
+
 get_filename() {
    _prev=''
    for _item in $@ ; do
