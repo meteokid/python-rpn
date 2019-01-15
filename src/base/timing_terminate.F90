@@ -27,7 +27,7 @@
       include "rpn_comm.inc"
       include "timing.cdk"
 
-      character*64 fmt,nspace,nspace2,nspace3
+      character*64 fmt,nspace,nspace2,nspace3,tmp1_s,tmp2_s
       logical flag(MAX_instrumented)
       integer i,j,k,elem,lvl,lvlel(0:100),err,maxlen
       integer(IDOUBLE),dimension(MAX_instrumented) :: timer_cnt2
@@ -62,9 +62,13 @@
 
       if (myproc.ne.0) return
 
-      print *,'___________________________________________________________'
-      print *,'__________________TIMINGS MIN : MAX________________________'
+      #TODO: Add Mean and Var/Std to timings
 
+      write(6,'(a)') '________________________________________________________________________________________'
+      write(6,'(a)') '|____ TIMINGS __________________________________________________________________________|'
+      write(6,'(a)') '|   |                               |   Wallclock [%]| Wallclock [Sec]         |        |'
+      write(6,'(a)') '| ID| NAME                          |   Min%:    Max%| MinSec     : MaxSec     |  Count |'
+      write(6,'(a)') '|---|-------------------------------|----------------|-------------------------|--------|'
       flag=.false.
       mymax = maxval(sum_tb_mx2)
       write (nspace3,'(i3)') max(5, maxlen)
@@ -78,13 +82,15 @@
             write (nspace,'(i3)') 3*lvl+1
             write (nspace2,'(i3)') max(1,18-(3*lvl+1))
             fmt = '(a,i3,a,'//trim(nspace)//'x,a'//trim(nspace3)//','// &
-                 trim(nspace2)//'x,a,f6.2,a,f6.2,a,'// &
-                 'a,1pe8.2,a,1pe8.2,a,i8)'
-            write(6, trim(fmt)) &
-                 "(", elem, ")", nam_subr_S(elem), &
-                 "(", 100.*sum_tb_per_mn, " : ", 100.*sum_tb_per_mx, "%) ", &
-                 'WallClock= ', sum_tb_mn2(elem), " : ", sum_tb_mx2(elem), &
-                 '  Count= ', timer_cnt2(elem)
+                 trim(nspace2)//'x,a,f6.2,a,f6.2,a)'
+            write(tmp1_S, fmt) &
+                 "|", elem, "|", nam_subr_S(elem), &
+                 "|", 100.*sum_tb_per_mn, "%: ", 100.*sum_tb_per_mx, "%|"
+            fmt = '(1pe10.4,a,1pe10.4,a,i8,a)'
+            write(tmp2_S, fmt) &
+                 sum_tb_mn2(elem), " : ", sum_tb_mx2(elem), &
+                 ' |', timer_cnt2(elem), '|'
+            write(6, '(a,x,a)') trim(tmp1_S),trim(tmp2_S)
             flag(elem) = .true. ; lvlel(lvl) = elem
  65         do j = 1,MAX_instrumented
                if ((timer_level(j) .eq. elem) .and. (.not.flag(j)) )then
@@ -101,7 +107,7 @@
          endif
       enddo
 
-      print *,'___________________________________________________________' 
+      write(6,'(a)') '________________________________________________________________________________________'
 
       return
       end

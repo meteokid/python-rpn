@@ -17,6 +17,7 @@
 module fstmpi_read_mod
    use iso_c_binding
    use vGrid_Descriptors
+   use vgrid_ov, only: vgrid_nullify
    use ezgrid_mod
    use fst_mod
    use hinterp4yy_mod
@@ -516,6 +517,7 @@ contains
       integer :: itype
       ! ---------------------------------------------------------------------
       F_istat = RMN_OK
+      call vgrid_nullify(F_vgrid) 
       itype = 0
       if (ptopo_isblocmaster_L) then
          F_istat = fst_get_vgrid(F_fileid,F_key,F_vgrid,F_ip1list,F_lvltyp_S)

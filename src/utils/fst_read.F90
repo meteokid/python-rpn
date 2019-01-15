@@ -17,6 +17,7 @@
 !/@
 module fst_read_mod
    use vGrid_Descriptors
+   use vgrid_ov, only: vgrid_nullify
    use vgrid_wb
    use vgrid_from_file_mod
    use cmcdate_mod
@@ -323,11 +324,11 @@ contains
       implicit none
       !@objective Try to find rec key for given field params
       !@arguments
-      integer, pointer, contiguous :: F_keys1(:)  !# out
+      integer, pointer :: F_keys1(:)  !# out
       integer, intent(in) :: F_fileid
       character(len=*), intent(in) :: F_nomvar1
       integer, intent(inout) :: F_datev
-      integer, pointer, contiguous :: F_ip1s(:)  !# inout
+      integer, pointer :: F_ip1s(:)  !# inout
       integer, intent(in) :: F_ip2, F_ip3
       integer, intent(in), optional :: F_datevfuzz, F_fuzzopr
       character(len=*), intent(in), optional :: F_typvar_S  !#TODO:inout
@@ -336,7 +337,7 @@ contains
       !@return
       integer :: F_nkeys
       !@/
-      integer, pointer, contiguous :: ip1s(:)
+      integer, pointer :: ip1s(:)
       integer :: key, istat, i, datevfuzz, fuzzopr, datev, vb0, ikind
       real :: zp1
       type(vgrid_descriptor) :: vgrid
@@ -354,7 +355,7 @@ contains
       if (present(F_fuzzopr)) fuzzopr = F_fuzzopr
       if (present(F_typvar_S)) typvar_S = F_typvar_S
       if (present(F_lvltyp_S)) F_lvltyp_S = ' '
-      if (present(F_vgrid)) F_vgrid = vgrid
+      if (present(F_vgrid)) call vgrid_nullify(F_vgrid) 
       datev = F_datev
       if (datevfuzz > 0) datev = -1
       needvgd_L = .not.associated(F_ip1s)
@@ -456,10 +457,10 @@ contains
       !@objective Try to find rec key for given field params
       !@arguments
       integer, intent(in) :: F_fileid
-      integer, pointer, contiguous :: F_keys1(:), F_keys2(:)  !# out
+      integer, pointer :: F_keys1(:), F_keys2(:)  !# out
       character(len=*), intent(in) :: F_nomvar1, F_nomvar2
       integer, intent(inout) :: F_datev
-      integer, pointer, contiguous :: F_ip1s(:)  !# inout
+      integer, pointer :: F_ip1s(:)  !# inout
       integer, intent(in) :: F_ip2, F_ip3
       integer, intent(in), optional :: F_datevfuzz, F_fuzzopr
       character(len=*), intent(in), optional :: F_typvar_S  !#TODO:inout
@@ -470,7 +471,7 @@ contains
       !@author
       !@revision
       !@/
-      integer, pointer, contiguous :: ip1s(:)
+      integer, pointer :: ip1s(:)
       integer :: key, istat, i, datevfuzz, fuzzopr, datev, vb0, ikind
       real :: zp1
       type(vgrid_descriptor) :: vgrid
@@ -488,7 +489,7 @@ contains
       if (present(F_fuzzopr)) fuzzopr = F_fuzzopr
       if (present(F_typvar_S)) typvar_S = F_typvar_S
       if (present(F_lvltyp_S)) F_lvltyp_S = ' '
-      if (present(F_vgrid)) F_vgrid = vgrid
+      if (present(F_vgrid)) call vgrid_nullify(F_vgrid) 
       datev = F_datev
       if (datevfuzz > 0) datev = -1
       needvgd_L = .not.associated(F_ip1s)
@@ -594,7 +595,7 @@ contains
       !@objective 
       !@arguments
       integer,intent(in) :: F_key
-      real,pointer, contiguous :: F_data(:,:,:)
+      real,pointer :: F_data(:,:,:)
       integer,intent(in),optional :: F_fileid
       integer,intent(out),optional :: F_gridid
       character(len=*),intent(out),optional :: F_nomvar_S, F_etiket_S,F_typvar_S
@@ -688,7 +689,7 @@ contains
       !@objective 
       !@arguments
       integer, intent(in) :: F_key1, F_key2
-      real, pointer, contiguous :: F_data1(:,:,:), F_data2(:,:,:)
+      real, pointer :: F_data1(:,:,:), F_data2(:,:,:)
       integer, intent(in), optional :: F_fileid
       integer, intent(out), optional :: F_gridid
       character(len=*), intent(out), optional :: F_nomvar1_S, F_nomvar2_S, F_etiket_S,F_typvar_S
@@ -752,7 +753,7 @@ contains
       implicit none
       !@objective
       !@arguments
-      real, pointer, contiguous :: F_data(:,:,:)
+      real, pointer :: F_data(:,:,:)
       integer, intent(out) :: F_status(:)
       integer, intent(in) :: F_keylist(:)
       character(len=*), intent(in) :: F_hintlist_S(:)
@@ -765,7 +766,7 @@ contains
       !@return
       integer :: F_istat
       !@/
-      real, pointer, contiguous :: indata(:,:,:)
+      real, pointer :: indata(:,:,:)
       integer :: istat, coregridid, nij(2), nkeys, nhint, nfids, ikey, ingridid
       character(len=12) :: nomvar_S
       logical :: realloc_L
@@ -838,7 +839,7 @@ contains
       implicit none
       !@objective
       !@arguments
-      real, pointer, contiguous :: F_data1(:,:,:), F_data2(:,:,:)
+      real, pointer :: F_data1(:,:,:), F_data2(:,:,:)
       integer, intent(out) :: F_status(:)
       integer, intent(in) :: F_keys1(:), F_keys2(:)
       character(len=*), intent(in) :: F_hintlist_S(:)
@@ -851,7 +852,7 @@ contains
       !@return
       integer :: F_istat
       !@/
-      real, pointer, contiguous :: indata1(:,:,:), indata2(:,:,:)
+      real, pointer :: indata1(:,:,:), indata2(:,:,:)
       integer :: istat, coregridid, nij(2), nkeys, nhint, nfids, ikey, ingridid
       character(len=12) :: nomvar1_S, nomvar2_S
       logical :: realloc_L
@@ -1026,7 +1027,7 @@ contains
       !@arguments
       integer,intent(in) :: F_fileid,F_key
       type(vgrid_descriptor),intent(out) :: F_vgrid
-      integer,pointer, contiguous :: F_ip1s(:)
+      integer,pointer :: F_ip1s(:)
       character(len=*),intent(out) :: F_lvltyp_S
       !@author Ron McTaggartCowan, Aug 2012
       !@return
@@ -1044,6 +1045,8 @@ contains
       ! ---------------------------------------------------------------------
       call msg(MSG_DEBUG, '(fst) get_vgrid [BEGIN]')
       F_istat = RMN_ERR
+      call vgrid_nullify(F_vgrid) 
+      F_lvltyp_S = ' '
       if (F_fileid <= 0 .or. F_key < 0) return
 
       istat = fstprm(F_key, dateo,deet,npas, ni1,nj1,nk1, &
@@ -1061,7 +1064,7 @@ contains
       if (.not.RMN_IS_OK(istat)) return
 
       F_lvltyp_S = 'M'
-      istat = vgd_get(F_vgrid,'VIP'//trim(F_lvltyp_S),F_ip1s)
+      istat = vgd_get(F_vgrid,'VIP'//trim(F_lvltyp_S),F_ip1s,quiet=.true.)
       if (.not.(RMN_IS_OK(istat) .and. associated(F_ip1s))) return
       if (any(ip1 == F_ip1s)) then
          F_istat = size(F_ip1s)
@@ -1069,7 +1072,7 @@ contains
       endif
 
       F_lvltyp_S = 'T'
-      istat = vgd_get(F_vgrid,'VIP'//trim(F_lvltyp_S),F_ip1s)
+      istat = vgd_get(F_vgrid,'VIP'//trim(F_lvltyp_S),F_ip1s,quiet=.true.)
       if (.not.(RMN_IS_OK(istat) .and. associated(F_ip1s))) return
       if (any(ip1 == F_ip1s)) then
          F_istat = size(F_ip1s)
@@ -1110,7 +1113,7 @@ contains
       implicit none
       !@objective Check F_data dims and optionally alloc/re-alloc
       !@arguments
-      real, pointer, contiguous :: F_data(:,:,:)
+      real, pointer :: F_data(:,:,:)
       integer, intent(in) :: F_ni, F_nj, F_nk
       logical, intent(in) :: F_realloc_L
       !@author
@@ -1149,7 +1152,7 @@ contains
       implicit none
       !@objective Check F_data dims and optionally alloc/re-alloc
       !@arguments
-      real, pointer, contiguous :: F_data(:,:,:)
+      real, pointer :: F_data(:,:,:)
       integer, intent(in) :: F_mini, F_maxi, F_minj, F_maxj, F_nk
       logical, intent(in) :: F_realloc_L
       !@author

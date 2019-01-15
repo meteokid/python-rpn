@@ -363,7 +363,7 @@ contains
          F_istat = priv_input_data(fld,F_id,fileidx,filetype)
       enddo DOFILES
       if (associated(fld%ip1list) .and. ip1list_alloc_L) then
-         istat = vgd_free(fld%vgrid)
+         if (fld%vint_S /= 'none') istat = vgd_free(fld%vgrid)
          deallocate(fld%ip1list,stat=istat)
       endif
       write(tmp_S,*) F_istat

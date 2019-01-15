@@ -9,7 +9,7 @@ endif
 #    $(error Not found: $(modelutils)/VERSION)
 # endif
 # MODELUTILS_VERSION0  = $(shell cat $(modelutils)/VERSION | sed 's|x/||')
-MODELUTILS_VERSION0  = x/1.5.rc1
+MODELUTILS_VERSION0  = x/1.5.rc2
 MODELUTILS_VERSION   = $(notdir $(MODELUTILS_VERSION0))
 MODELUTILS_VERSION_X = $(dir $(MODELUTILS_VERSION0))
 
@@ -19,6 +19,7 @@ MODELUTILS_SFX = $(RDE_LIBS_SFX)
 MODELUTILS_COMP_RULES_DEBUG = $(modelutils)/include/$(CONST_BASE_ARCH_OLD)/$(CONST_RDE_COMP_ARCH)/Compiler_rules_debug
 MODELUTILS_DEBUG = -g -traceback
 MODEL1_FFLAGS = $(MODELUTILS_DEBUG)
+MODEL1_DEFINE = -DECCCGEM
 
 ## Some Shortcut/Alias to Lib Names
 RMN_VERSION_NUMBER = 016.2

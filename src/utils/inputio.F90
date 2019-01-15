@@ -97,9 +97,9 @@ module inputio_mod
       integer(IDOUBLE) :: jdatev
       logical :: salloc_L, dalloc_L
       real, dimension(:,:,:), pointer :: sfc !# SFC + SLS
-      real, dimension(:,:,:), pointer, contiguous :: psfc !# SFC + SLS
+      real, dimension(:,:,:), pointer :: psfc !# SFC + SLS
       real, dimension(:,:,:), pointer :: d1, d2
-      real, dimension(:,:,:), pointer, contiguous :: p1, p2
+      real, dimension(:,:,:), pointer :: p1, p2
       integer :: k1(NMAX_LEVELS)
       integer :: k2(NMAX_LEVELS)
       integer :: ks(2)
@@ -637,7 +637,7 @@ contains
       integer(IDOUBLE) :: jdatev, jdatev0, jdatevm1, jdatevp1
       integer,target :: ip1list(NMAX_LEVELS)
       type(vgrid_descriptor) :: vgrid, vgrid0
-      integer, pointer, contiguous :: pip1list(:), pk1(:), pk2(:)
+      integer, pointer :: pip1list(:), pk1(:), pk2(:)
       character(len=32) :: dummy_S, typvar_S, vn_S, msg_S, lvl_type_S, typvarlist_S(5)
       !------------------------------------------------------------------
       call msg(MSG_DEBUG, '(inputio) find [BEGIN]')
@@ -847,10 +847,10 @@ contains
       real,parameter :: MB2PA = 100.
       character(len=64) :: msg_S, vn_S
       character(len=8), target :: hints_S(1)
-      character(len=8), pointer, contiguous :: phints_S(:)
+      character(len=8), pointer :: phints_S(:)
       integer :: istat, ivar
       integer, target :: funit(1), hstats(2)
-      integer, pointer, contiguous :: pfunit(:), phstats(:), pk1(:), pk2(:)
+      integer, pointer :: pfunit(:), phstats(:), pk1(:), pk2(:)
       logical :: isassoc_L, isassoc2_L
       !------------------------------------------------------------------
       call msg(MSG_DEBUG, '(inputio) read [BEGIN]')
@@ -1151,7 +1151,7 @@ contains
       character(len=256) :: vn_S, msg_S
       real, pointer, dimension(:,:,:) :: din, dout
       real, pointer, dimension(:,:) :: sfcin, sfcout, slsin, slsout
-      integer,pointer, contiguous :: ip1list(:)
+      integer,pointer :: ip1list(:)
       type(vgrid_descriptor) :: vgrid
       !------------------------------------------------------------------
       call msg(MSG_DEBUG, '(inputio) vint [BEGIN]')

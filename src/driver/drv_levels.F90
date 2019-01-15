@@ -83,13 +83,13 @@ contains
 
       nullify(std_p_prof,ip1_m,ip1_t,p_ip1,p_ip1_m,p_ip1_t)
       IF_LVL_OK: if (RMN_IS_OK(F_istat)) then
-         F_istat = min(vgd_get(vcoor,key='VIPM',value=ip1_m),F_istat)
+         F_istat = min(vgd_get(vcoor,key='VIPM',value=ip1_m,quiet=.true.),F_istat)
          !# If type 5005 skip level nk+1 (diag level)
          nkm = min(surf_idx, size(ip1_m))
          p_ip1_m(1:nkm) => ip1_m(1:nkm)
          F_istat = min(vgrid_wb_put('ref-m',vcoor,p_ip1_m),F_istat)
          if (stag_L) then
-            F_istat = min(vgd_get(vcoor,key='VIPT',value=ip1_t),F_istat)
+            F_istat = min(vgd_get(vcoor,key='VIPT',value=ip1_t,quiet=.true.),F_istat)
          else
             ip1_t => ip1_m
          endif

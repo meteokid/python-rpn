@@ -19,6 +19,7 @@
 module vgrid_wb
    use iso_c_binding
    use vGrid_Descriptors
+   use vgrid_ov, only: vgrid_nullify
    implicit none
    private
    !@objective Whiteboard (data store) for vgrid + ip1 <=> index association
@@ -398,6 +399,7 @@ contains
       character(len=256) :: msg_S
       !---------------------------------------------------------------------
       call msg(MSG_DEBUG, '(vgrid_wb) get [BEGIN] '//trim(F_name_S))
+      call vgrid_nullify(F_vgrid) 
       vgrid_idx = priv_id(F_name_S)
 
       if (present(F_ip1list)) then
@@ -458,6 +460,7 @@ contains
       type(gmm_metadata) :: i4meta1d, r8meta3d
       !---------------------------------------------------------------------
       F_istat = RMN_ERR
+      call vgrid_nullify(F_vgrid) 
       write(id_S, '(i16.16)') F_id
       name_S = id_S
       if (present(F_name_S)) name_S = trim(F_name_S)//':'//trim(name_S)
