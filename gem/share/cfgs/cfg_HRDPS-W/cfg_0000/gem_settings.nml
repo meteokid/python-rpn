@@ -132,6 +132,7 @@
 
  debug_mem_l     = .false
  debug_trace_l   = .false
+ timings_l = .true.
 
  rad_esfc=T,
 

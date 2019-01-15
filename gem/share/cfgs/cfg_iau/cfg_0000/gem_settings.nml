@@ -87,7 +87,6 @@
  limsnodp  = .true., salty_qsat = .false.
  impflx    = .true.,
  z0tlat    = 25., 30.
- zta       = -1.   , zua        = -1.
  diusst    = 'fairall'
 /
 
@@ -117,6 +116,7 @@
 
  debug_mem_l     = .false
  debug_trace_l   = .false
+ timings_l = .true.
 
  rad_esfc=T,
 

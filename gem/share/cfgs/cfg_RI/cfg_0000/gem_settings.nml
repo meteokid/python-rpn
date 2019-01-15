@@ -75,7 +75,6 @@
  limsnodp  = .true., salty_qsat = .false.
  impflx    = .true.
  z0tlat    = 25., 30.
- zta       = -1.   , zua        = -1.
  diusst    = 'fairall'
 /
 
@@ -102,6 +101,7 @@
  phystat_freq_s = '3h'
  phystat_list_s = 'ALLVARS=EDPV'
  phystat_input_l = .true.
+ timings_l = .true.
 
  debug_mem_l     = .false
  debug_trace_l   = .false

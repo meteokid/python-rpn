@@ -212,6 +212,7 @@ tr3d_list_s =  'HU,wload=0,mono=2,mass=1,hzd=0,min=0.',
 
  debug_mem_l     = .false
  debug_trace_l   = .false
+ timings_l = .true.
 
  input_type = 'DIST'
 /

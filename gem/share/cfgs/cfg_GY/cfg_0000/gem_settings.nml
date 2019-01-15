@@ -146,7 +146,6 @@
  icelac    = .true., icemelt    = .true.
  limsnodp  = .true., salty_qsat = .true.
  impflx    = .true.,
- zta       = -1.   , zua        = -1.
  z0mtype   = 'beljaars'
  diusst    = 'fairall'
  z0tlat    = 25., 30.
@@ -184,6 +183,7 @@
 
  debug_mem_l     = .false
  debug_trace_l   = .false
+ timings_l = .true.
 
  input_type = 'DIST'
 /
