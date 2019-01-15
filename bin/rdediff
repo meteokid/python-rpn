@@ -1,4 +1,10 @@
 #!/bin/bash
+#TODO: set RDEFULLCODE according to some conditions
+if [[ "x${RDEFULLCODE}" == "x1" ]] ; then
+   echo "No-Op in FULLCODE mode: rdediff $@; use 'git diff ...' instead" 1>&2
+   exit 0
+fi
+
 . .rdebase.inc.dot
 
 DESC='Diff locally modified src compared to library version'

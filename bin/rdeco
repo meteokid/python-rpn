@@ -2,7 +2,14 @@
 # @Object: Checkout library version of a source file
 # @Author: S.Chamberland
 # @Date:   March 2014
+#TODO: set RDEFULLCODE according to some conditions
+if [[ "x${RDEFULLCODE}" == "x1" ]] ; then
+   echo "No-Op in FULLCODE mode: rdeco $@" 1>&2
+   exit 0
+fi
+
 . .rdebase.inc.dot
+
 
 DESC='Checkout library version of a source file'
 USAGE="USAGE: ${MYSELF} [-h] [-v] [-f] FILES"
