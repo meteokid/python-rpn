@@ -1,0 +1,115 @@
+/*
+Module librmn_c contains some helper functions to use librmn fn
+@author: Stephane Chamberland <stephane.chamberland@ec.gc.ca>
+@date: 2015-03
+*/
+/* #define DEBUG On */
+
+#include <Python.h>
+
+static PyObject *Fstdc_version(PyObject *self, PyObject *args);
+static char Fstdc_version__doc__[] = "(version,lastUpdate) = Fstdc.version()";
+static PyObject *Fstdc_version(PyObject *self, PyObject *args) {
+    return Py_BuildValue("(ss)",VERSION,LASTUPDATE);
+}
+
+static PyObject *FstdcError;
+static PyObject *FstdcTooManyRecError;
+
+static PyObject *cxgaig(PyObject *self, PyObject *args);
+static char cxgaig__doc__[] =
+        "Encode grid descriptors (Interface to cxgaig)\n\
+        (ig1,ig2,ig3,ig4) = cxgaig(grtyp,xg1,xg2,xg3,xg4) \n\
+        @param ...TODO...\n\
+        @return (ig1,ig2,ig3,ig4)\n\
+        @exception TypeError\n\
+        @exception librmn_c.error";
+static PyObject *cxgaig(PyObject *self, PyObject *args) {
+    F77_INTEGER fig1,fig2,fig3,fig4;
+    F77_REAL fxg1,fxg2,fxg3,fxg4;
+    float xg1,xg2,xg3,xg4;
+    char *grtyp;
+    if (!PyArg_ParseTuple(args, "sffff:cxgaig",&grtyp,&xg1,&xg2,&xg3,&xg4)) {
+        return NULL;
+    }
+    fxg1 = (F77_REAL)xg1;
+    fxg2 = (F77_REAL)xg2;
+    fxg3 = (F77_REAL)xg3;
+    fxg4 = (F77_REAL)xg4;
+    f77name(cxgaig)(grtyp,&fig1,&fig2,&fig3,&fig4,&fxg1,&fxg2,&fxg3,&fxg4);
+    return Py_BuildValue("(iiii)",(int)fig1,(int)fig2,(int)fig3,(int)fig4);
+}
+
+
+static PyObject *cigaxg(PyObject *self, PyObject *args);
+static char cigaxg__doc__[] =
+        "Decode grid descriptors (Interface to cigaxg)\n\
+        (xg1,xg2,xg3,xg4) = cigaxg(grtyp,ig1,ig2,ig3,ig4)\n\
+        @param ...TODO...\n\
+        @return (xg1,xg2,xg3,xg4)\n\
+        @exception TypeError\n\
+        @exception librmn_c.error";
+static PyObject *cigaxg(PyObject *self, PyObject *args) {
+    int ig1,ig2,ig3,ig4;
+    F77_INTEGER fig1,fig2,fig3,fig4;
+    F77_REAL fxg1=0,fxg2=0,fxg3=0,fxg4=0;
+    char *grtyp;
+    if (!PyArg_ParseTuple(args, "siiii:cigaxg",&grtyp,&ig1,&ig2,&ig3,&ig4)) {
+        return NULL;
+    }
+    fig1 = (F77_INTEGER)ig1;
+    fig2 = (F77_INTEGER)ig2;
+    fig3 = (F77_INTEGER)ig3;
+    fig4 = (F77_INTEGER)ig4;
+    f77name(cigaxg)(grtyp,&fxg1,&fxg2,&fxg3,&fxg4,&fig1,&fig2,&fig3,&fig4);
+    return Py_BuildValue("(ffff)",(float)fxg1,(float)fxg2,(float)fxg3,(float)fxg4);
+}
+
+
+/* ---------------------------------------------------------------------
+   Initialization function for the module (*must* be called initlibrmn_c) 
+   --------------------------------------------------------------------- */
+
+static char Fstdc_module_documentation[] =
+"Module librmn_c contains some helper functions to use librmn fn\n@author: Stephane Chamberland <stephane.chamberland@ec.gc.ca>";
+
+static struct PyMethodDef Fstdc_methods[] = {
+    {"version", (PyCFunction)Fstdc_version, METH_VARARGS, Fstdc_version__doc__},
+    {"cxgaig",	(PyCFunction)Fstdc_cxgaig,	METH_VARARGS,	Fstdc_cxgaig__doc__},
+    {"cigaxg",	(PyCFunction)Fstdc_cigaxg,	METH_VARARGS,	Fstdc_cigaxg__doc__},
+    {NULL,	 (PyCFunction)NULL, 0, NULL}		/* sentinel */
+};
+
+void initlibrmn_c(void) {
+    PyObject *m, *d;
+    int istat;
+    char *msglvl="MSGLVL";
+    char *tolrnc="TOLRNC";
+
+    m = Py_InitModule4("librmn_c", librmn_c_methods,
+            librmn_c_module_documentation,
+            (PyObject*)NULL,PYTHON_API_VERSION);
+
+    import_array();
+
+    librmn_cError = PyErr_NewException("librmn_c.error", NULL, NULL);
+    Py_INCREF(librmn_cError);
+    PyModule_AddObject(m, "error", librmn_cError);
+    librmn_cTooManyRecError = PyErr_NewException("librmn_c.tooManyRecError", NULL, NULL);
+    Py_INCREF(librmn_cTooManyRecError);
+    PyModule_AddObject(m, "tooManyRecError", librmn_cTooManyRecError);
+
+    d = PyModule_GetDict(m);
+    //Define Const as follow
+    //PyDict_SetItemString(d, "KIND_ABOVE_SEA", PyInt_FromLong((long)KIND_ABOVE_SEA));
+
+    istat = c_fstopi(msglvl,8,0); //8 - print fatal error messages and up;10 - print system (internal) error messages only
+    istat = c_fstopi(tolrnc,6,0); //6 - tolerate warning level and lower;8 - tolerate error level and lower
+
+    if (PyErr_Occurred())
+        Py_FatalError("Can't initialize module librmn_c");
+}
+
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*- */
+// vim: set expandtab ts=4 sw=4:
+// kate: space-indent on; indent-mode cstyle; indent-width 4; mixedindent off;

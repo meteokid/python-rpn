@@ -1,0 +1,28 @@
+#!/bin/ksh
+set -x
+domainHome=$1
+packageHome=$2
+profileDirPath=${packageHome}/etc/profile.d
+packageFullName=${packageHome##*/}
+packageNameVersion=${packageFullName%_*}
+packageName=${packageNameVersion%%_*}
+packageVersion=${packageNameVersion##*_}
+packageArch=${packageFullName##*_}
+profilePath=${profileDirPath}/${packageFullName}.sh
+
+mkdir ${packageHome}/bin 2>/dev/null || true
+cp ${packageHome}/.ssm.d/r.pkg-config \
+   ${packageHome}/bin/r.${packageName}_${packageFullName##*_}-config
+cp ${packageHome}/.ssm.d/r.pkg-config \
+   ${packageHome}/bin/r.config_${packageName}_${packageFullName##*_}
+
+#==== Define needed vars in package profile
+mkdir -p ${profileDirPath} 2>/dev/null || true
+
+if [[ -e ${packageHome}/bin/.env_setup.dot ]] ; then
+   cat > ${profilePath} << EOF
+[[ -e ${packageHome}/bin/.env_setup.dot ]] && . ${packageHome}/bin/.env_setup.dot ${packageName} ${packageVersion} ${packageArch} ${packageHome} ${domainHome}
+EOF
+fi
+
+exit 0
