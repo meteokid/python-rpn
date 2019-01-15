@@ -158,7 +158,7 @@ subroutine seaice2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, TRNCH, KOUNT, &
    hst_ice  (1:n) => bus( x(hst,1,indx_sfc)   : )
    ilmo_ice (1:n) => bus( x(ilmo,1,indx_sfc)  : )
    qsice    (1:n) => bus( x(qsurf,1,indx_sfc) : )
-   ts       (1:n) => bus( x(tsurf,1,1)        : )
+   ts       (1:n) => bus( x(tsurf,1,indx_sfc) : )
    z0h      (1:n) => bus( x(z0t,1,indx_sfc)   : )
    z0m      (1:n) => bus( x(z0,1,indx_sfc)    : )
    zalfaq   (1:n) => bus( x(alfaq,1,1)        : )

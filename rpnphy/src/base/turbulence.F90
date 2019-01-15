@@ -79,6 +79,7 @@ contains
       real, pointer, dimension(:,:,:), contiguous :: zvcoef
       !----------------------------------------------------------------
       call msg_toall(MSG_DEBUG, 'turbulence [BEGIN]')
+      if (timings_L) call timing_start_omp(430, 'turbulence', 46)
 
       ! Reshape bus entries
       MKPTR1D(zpmoins, pmoins, f)
@@ -154,6 +155,7 @@ contains
          if (phy_error_L) return
       endif
 
+      if (timings_L) call timing_stop_omp(430)
       call msg_toall(MSG_DEBUG, 'turbulence [END]')
       !----------------------------------------------------------------
       return

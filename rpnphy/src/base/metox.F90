@@ -59,6 +59,7 @@ contains
 
       if (.not.lmetox) return
       call msg_toall(MSG_DEBUG, 'metox [BEGIN]')
+      if (timings_L) call timing_start_omp(415, 'metox', 46)
 
       MKPTR1D(psp, pmoins, f)
       MKPTR1D(ztdmask, tdmask, f)
@@ -84,6 +85,7 @@ contains
 
       call apply_tendencies(zhuplus, oxme, ztdmask, ni, nk, nk-1)
 
+      if (timings_L) call timing_stop_omp(415)
       call msg_toall(MSG_DEBUG, 'metox [END]')
       !----------------------------------------------------------------
       return

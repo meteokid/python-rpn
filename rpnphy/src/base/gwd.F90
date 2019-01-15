@@ -107,6 +107,7 @@ contains
 
       if (gwdrag == 'NIL' .and. .not.non_oro) return
       call msg_toall(MSG_DEBUG, 'gwd [BEGIN]')
+      if (timings_L) call timing_start_omp(417, 'gwd', 46)
 
       MKPTR1D(p, pmoins, f)
       MKPTR1D(zdhdx, dhdx, f)
@@ -285,6 +286,7 @@ contains
 
       endif IF_NON_ORO
 
+      if (timings_L) call timing_stop_omp(417)
       call msg_toall(MSG_DEBUG, 'gwd [END]')
       !--------------------------------------------------------------------
       return

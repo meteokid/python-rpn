@@ -63,8 +63,8 @@ subroutine lightning2(foudre_rt, zp0_plus, zsigm, ztplus, zwplus, q_grpl, iiwc, 
    r2  = 0.05
    k1  = 0.042
    k2  = 0.20
-   i_conv = 1.0/conv
-   i_grav = grav
+   i_conv = 1./conv
+   i_grav = 1./grav
 
    !  Graupel flux (at -15 deg C level) contribution
    !  f1 = k1 * (wplus*QG); vertical velocity and graupel mixing ratio , both at -15 deg C level

@@ -1,6 +1,17 @@
 module svs_configs
+  !!!!! ------------- IMPORTANT OPEN MP INFORMATION --- PLEASE READ   ---------------  !!!!!
+  ! The physics of GEM is in open-mp by default. SVS_CONFIG is mostly called in the PHYSICS and should thus be coded
+  ! with open-mp "safe" code.
+  ! In open-mp, "save" and  conditional allocates can lead to problems (race condition) 
+  ! The save/allocate below are OK because they are ACTUALLY used in the DYNAMICS in areas with no open-mp. Specifically :
+  ! 1) the config reading section of GEM: sfc_nml --> phy_nml --> itf_phy_nml --> set_world_view --> gemdm
+  ! 2) the physics/surface bus initialization of GEM : sfc_businit --> phybusinit --> phydebu --> phy_init --> itf_phy_init --> gemdm
+  ! >>>> If you plan to add save or allocates... please make sure they are done in NO OPENMP regions <<<<< 
+  !----------------------------------------------------------------------------------  !!!!!
 
-  !use sfc_options
+  ! MODULE to SAVE SVS INFORMATION SPECIFIED in NML, to initialize SVS variables that are NML dependent 
+  ! ALSO contains 2 function used in SVS to aggregate the SVS surface tiles (bare ground, vegetation and 2 snowpacks)
+
 
   implicit none
 
@@ -116,6 +127,9 @@ contains
     use sfc_options
     implicit none
 
+    ! OBJECT:  Initialize number of levels of GEOPHY soil texture based on sfc nml input
+    !          Calculate weights to map GEOPHY soil texture unto SVS layers
+    !          Also calculate thickness of SVS soil layers here for OPEN MP reasons
     nl_ste = 3
     nl_stp = 3
 
@@ -146,7 +160,9 @@ contains
        call weights_soil_texture()	
 
     endif
-
+    ! Calculate SVS soil layer thickness from layer Depths specified by sfc nml
+    call layer_thickness()
+    
     return
   end subroutine INIT_SOIL_TEXT_LEVELS
 

@@ -46,7 +46,7 @@
    MKPTR1D(ztdmask, tdmask, f)
    MKPTR1D(ztlc, tlc, f)
    MKPTR1D(ztsc, tsc, f)
-   MKPTR1D(ztsurf, tsurf, f)
+   MKPTR1DK(ztsurf, tsurf, indx_agrege, f)
 
    MKPTR2D(sigma, sigw, d)
 

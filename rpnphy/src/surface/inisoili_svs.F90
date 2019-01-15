@@ -62,9 +62,6 @@ subroutine inisoili_svs(ni, trnch)
    MKPTR2D(zwsat, wsat)
    MKPTR2D(zwwilt , wwilt)
    
-   !call subroutine to compute layer thicknesses
-   call layer_thickness()
-
 
    ! calculate soil parameters on native GEO layers, and then map them unto model layers. 
    ! calculate weights to be used in phybusinit.... because here... we are

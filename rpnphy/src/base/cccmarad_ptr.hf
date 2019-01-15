@@ -65,7 +65,7 @@
       MKPTR2D(zti, ti, f)
       MKPTR1D(ztopthi, topthi, f)
       MKPTR1D(ztopthw, topthw, f)
-      MKPTR1D(ztsurf, tsurf, f)
+      MKPTR1DK(ztsurf, tsurf, indx_agrege, f)
       MKPTR1DK(zqsurf, qsurf, indx_agrege, f)
       MKPTR1DK(zz0_ag, z0, indx_agrege, f)
       MKPTR1DK(zz0t_ag, z0t, indx_agrege, f)

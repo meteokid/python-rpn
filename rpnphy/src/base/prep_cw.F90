@@ -53,12 +53,14 @@ contains
       integer :: nkm1
       !----------------------------------------------------------------
       call msg_toall(MSG_DEBUG, 'prep_cw [BEGIN]')
+      if (timings_L) call timing_start_omp(445, 'prep_cw', 46)
       if (stcond(1:3) == 'MP_') then
          nkm1 = nk-1
          call prep_cw_MP(f, fsiz, v, vsiz, ficebl, ni, nk, nkm1)
       else
          call prep_cw_noMP(f, fsiz, d, dsiz, v, vsiz, ficebl, ni, nk)
       endif
+      if (timings_L) call timing_stop_omp(445)
       call msg_toall(MSG_DEBUG, 'prep_cw [END]')
       !----------------------------------------------------------------
       return
@@ -318,8 +320,8 @@ contains
 
       do k=1,nkm1
          do i=1,ni
-            zlwcimp(i,k) = zlwcimp(i,k) + zqldi(i,k) + zqlsc(i,k)
-            ziwcimp(i,k) = ziwcimp(i,k) + zqsdi(i,k) + zqssc(i,k)
+            zlwcimp(i,k) = zlwcimp(i,k) + zqldi(i,k) + zqlsc(i,k) + zqlmi(i,k)
+            ziwcimp(i,k) = ziwcimp(i,k) + zqsdi(i,k) + zqssc(i,k) + zqsmi(i,k)
          enddo
       enddo
 

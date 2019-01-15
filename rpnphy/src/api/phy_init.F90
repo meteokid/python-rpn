@@ -261,6 +261,10 @@ contains
       ier = min(wb_put('phy/z0veg_only', (tofd /= 'NIL'), options),ier)
       ier = min(wb_put('phy/test_phy',test_phy , options),ier)
       ier = min(wb_put('phy/deep_cloudobj', deep_cloudobj, options), ier)
+      ier = min(wb_put('phy/timings', timings_L, options), ier)
+      ier = min(wb_put('phy/nphyoutlist', nphyoutlist, options), ier)
+      if (nphyoutlist > 0) ier = min(wb_put('phy/phyoutlist', phyoutlist_S, options), ier)
+      ier = min(wb_put('phy/input_type', input_type, options), ier)
       if (.not.WB_IS_OK(ier)) then
          call msg_toall(MSG_ERROR,'(phy_init) Problem with WB_put')
       endif
@@ -351,9 +355,7 @@ contains
       ier = min(wb_get('sfc/veg_rs_mult' ,veg_rs_mult ),ier)
       ier = min(wb_get('sfc/z0dir'       ,z0dir       ),ier)
       ier = min(wb_get('sfc/zt'          ,zt          ),ier)
-      ier = min(wb_get('sfc/zta'         ,zta         ),ier)
       ier = min(wb_get('sfc/zu'          ,zu          ),ier)
-      ier = min(wb_get('sfc/zua'         ,zua         ),ier)
       if (.not.WB_IS_OK(ier)) then
          call msg_toall(MSG_ERROR,'(phy_init) Problem with WB_get #2')
          ier = RMN_ERR

@@ -30,7 +30,7 @@
       ztsrad   (1:n) => bus( x( tsrad,1,1)        : )
       ztsradtw (1:n) => bus( x( tsradtw,1,1)      : )
       ztsun    (1:n) => bus( x( tsun,1,1)         : )
-      ztsurf   (1:n) => bus( x( tsurf,1,1)        : )
+      ztsurf   (1:n) => bus( x( tsurf,1,indx_urb) : )
       zudiag   (1:n) => bus( x( udiag,1,1)        : )
       zudiagtyp(1:n) => bus( x(udiagtyp,1,indx_urb) : )
       zudiagtypv(1:n) => bus( x(udiagtypv,1,indx_urb) : )

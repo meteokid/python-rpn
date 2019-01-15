@@ -22,7 +22,7 @@ module calcdiag
 contains
 
    !/@*
-   subroutine calcdiag1(tplus0, huplus0, qcplus0, d, f, v, dt, trnch, kount, ni, nk)
+   subroutine calcdiag1(tplus0, huplus0, qcplus0, d, f, v, dt, kount, ni, nk)
       !@Object Calculates averages and accumulators of tendencies and diagnostics
       use debug_mod, only: init2nan
       use tdpack_const, only: CHLC, CPD, GRAV, TCDK, RAUW, CAPPA
@@ -44,13 +44,12 @@ contains
       ! dsiz     dimension of d
       ! fsiz     dimension of f
       ! vsiz     dimension of v
-      ! trnch    slice number
       ! kount    timestep number
       ! dt       length of timestep
       ! n        horizontal running length
       ! nk       vertical dimension
 
-      integer, intent(in) :: trnch, kount, ni, nk
+      integer, intent(in) :: kount, ni, nk
       real, intent(in) :: dt
       real, target :: d(:), f(:), v(:)
       real, dimension(:,:), intent(in) :: tplus0,huplus0,qcplus0
@@ -64,10 +63,17 @@ contains
       include "surface.cdk"
       include "physteps.cdk"
 
-      logical :: lmoyhr, laccum, lreset, lavg, lkount0
+      real, parameter :: EC_Z0M_GRASS=0.03             !Threshold "flat grass" roughness for ECMWF diagnostics
+      real, parameter :: EC_Z0T_GRASS=0.003            !Grass thermodynamic roughness for ECMWF diagnostics
+      real, parameter :: EC_Z_ROUGH=40.                !Fixed height for ECMWF diagnostics in rough terrain
+      real, parameter :: EC_MIN_LAND=0.1               !Minimum land fraction for soil-only ECMWF diagnostics
+      character(len=*), parameter :: EC_INTERP='cubic' !Type of vertical interpolation for ECMWF diagnostics
+
+      logical :: lmoyhr, laccum, lreset, lavg, lkount0, ecdiag
       integer :: i, k, moyhr_steps, istat, istat1, nkm1
       real :: moyhri, tempo, tempo2, sol_stra, sol_conv, liq_stra, liq_conv, sol_mid, liq_mid
-      real, dimension(ni) :: uvs, vmod, vdir, th_air
+      real, dimension(ni) :: uvs, vmod, vdir, th_air, hblendm, ublend, vblend, z0m_ec, z0t_ec, esdiagec, &
+           tsurfec, qsurfec
       real(RDOUBLE), dimension(ni) :: enm, pwm, en0, pw0, enp, pwp, enr, pwr
       real, dimension(ni,nk) :: presinv, t2inv, tiinv
       real, dimension(ni,nk-1) :: q_grpl,iiwc
@@ -78,6 +84,7 @@ contains
 
       !----------------------------------------------------------------
       call msg_toall(MSG_DEBUG, 'calcdiag [BEGIN]')
+      if (timings_L) call timing_start_omp(470, 'calcdiag', 46)
 
       nkm1 = nk-1
 
@@ -124,16 +131,17 @@ contains
       endif
 
       !****************************************************************
-      !     Derived screen-level fields
+      !     Screen-level fields
       !     ---------------------------
 
+      ! Derived screen-level fields
       if (.not.(lkount0 .and. fluvert /= 'NIL')) then
 
          ! Clip the screen level relative humidity to a range from 0-1
          call mfohr4(zrhdiag, zqdiag, ztdiag, zpplus, ni, 1, ni ,satuco)
          zrhdiag(1:ni) = max(min(zrhdiag(1:ni), 1.0), 0.)
 
-         ! Screen level dewpoint depression (warning, esdiag can be negative, what do we want for output?)
+         ! Screen level dewpoint depression
          call mhuaes3(zesdiag, zqdiag, ztdiag, zpplus, .false., ni, 1, ni)
          zesdiag(1:ni) = max(zesdiag(1:ni),0.)
          ztdew(1:ni) = ztdiag(1:ni) - zesdiag(1:ni)
@@ -142,9 +150,58 @@ contains
          ztddiagstn(1:ni) = ztdiagstn(1:ni) - zesdiag(1:ni)
          call mhuaes3(zesdiag, zqdiagstnv, ztdiagstnv, zpplus, .false., ni, 1, ni)
          zesdiag(1:ni) = max(zesdiag(1:ni),0.)
-         ztddiagstnv(1:ni) = ztdiagstnv(1:ni) - zesdiag(1:ni)
+         ztddiagstnv(1:ni) = ztdiagstnv(1:ni) - zesdiag(1:ni)         
 
       endif
+
+      ! ECMWF screen-level calculations performed on request
+      ecdiag = .false.
+      i = 1
+      do while (.not.ecdiag .and. i <= nphyoutlist)
+         if (any(phyoutlist_S(i) == (/'dqec','tdec','tjec','udec','vdec'/))) ecdiag = .true.
+         i = i+1
+      enddo
+      ECMWF_SCREEN: if (ecdiag) then
+
+         ! Prepare surface and height information for ECMWF diagnostic formulation
+         where (zz0_ag(:) > EC_Z0M_GRASS)
+            hblendm(:) = EC_Z_ROUGH
+            z0m_ec(:) = EC_Z0M_GRASS
+            z0t_ec(:) = EC_Z0T_GRASS
+         elsewhere
+            hblendm(:) = zgzmom(:,nkm1)
+            z0m_ec(:) = zz0_ag(:)
+            z0t_ec(:) = min(zz0t_ag(:),EC_Z0T_GRASS)
+         endwhere
+         where (zsfcwgt_soil(:) > .1)
+            tsurfec(:) = ztsurf_soil(:)
+            qsurfec(:) = zqsurf_soil(:)
+         elsewhere
+            tsurfec(:) = ztsurf(:)
+            qsurfec(:) = zqsurf(:)
+         endwhere
+
+         ! Anemometer-level winds computed using the ECMWF formulation
+         call vte_intvertx3(ublend, zuplus, zgzmom, hblendm, ni, nk, 1, 'UU', EC_INTERP)
+         call vte_intvertx3(vblend, zvplus, zgzmom, hblendm, ni, nk, 1, 'VV', EC_INTERP)
+         if ( sl_prelim(ztplus(:,nkm1), zhuplus(:,nkm1), ublend, vblend, zpplus, hblendm,  &
+              spd_air=vmod, dir_air=vdir, min_wind_speed=VAMIN) /= SL_OK ) then
+            call physeterror('calcdiag', 'Problem preparing EC screen-level calculations')
+            return
+         endif
+         th_air(:) = ztplus(:,nkm1)*zsigt(:,nkm1)**(-CAPPA)
+         if ( sl_sfclayer(th_air, zhuplus(:,nkm1), vmod, vdir, hblendm, zgztherm(:,nkm1),  &
+              tsurfec, qsurfec, z0m_ec, z0t_ec, zdlat, zfcor, hghtt_diag=zt,               &
+              hghtm_diag=zu, t_diag=ztdiagec, q_diag=zqdiagec, u_diag=zudiagec,            &
+              v_diag=zvdiagec) /= SL_OK )  then
+            call physeterror('calcdiag', 'Problem with EC screen-level diagnostic')
+            return
+         endif
+         call mhuaes3(esdiagec, zqdiagec, ztdiagec, zpplus, .false., ni, 1, ni)
+         esdiagec(:) = max(esdiagec(:), 0.)
+         ztddiagec(:) = ztdiagec(:) - esdiagec(:)
+
+      endif ECMWF_SCREEN
 
       !****************************************************************
       !     PRECIPITATION RATES AND ACCUMULATIONS
@@ -361,6 +418,9 @@ contains
             !pz : accumulation des precipitations de la convection restreinte
             zpz(i) = zalcs(i) + zascs(i)
 
+            !acm: accumulation des precipitations de la mid-level convective scheme
+            zacm(i) = zalcm(i)
+
             !ae : accumulation des precipitations, grid-scale condensation scheme
             zae(i) = zals(i) + zass(i)
 
@@ -460,7 +520,7 @@ contains
       if (lightning_diag) then
          if (stcond(1:5)=='MP_P3') then
             q_grpl(:,:) = a_qi_4(:,:) + a_qi_5(:,:)
-            iiwc(:,:)   = a_qi_1(:,:) + a_qi_1(:,:) + a_qi_1(:,:) +     &
+            iiwc(:,:)   = a_qi_1(:,:) + a_qi_2(:,:) + a_qi_3(:,:) +     &
                           a_qi_4(:,:) + a_qi_5(:,:) + a_qi_6(:,:)
          elseif (stcond(1:6)=='MP_MY2') then
             q_grpl(:,:) = zqgplus(:,1:nk-1)
@@ -615,6 +675,7 @@ contains
             if (associated(zmtem)) zmtem(:,1:nk-1) = 0.0
             if (associated(zumim)) zumim(:,1:nk-1) = 0.0
             if (associated(zvmim)) zvmim(:,1:nk-1) = 0.0
+            if (associated(zkmidm)) zkmidm(:) = 0.0
 
             !#Note: all convec str in the if below must have same len
             if (any(convec == (/ &
@@ -853,8 +914,6 @@ contains
                   if (associated(zmtem).and.associated(zmte)) zmtem(i,k) = zmtem(i,k) * moyhri
                   if (associated(zumim).and.associated(zumid)) zumim(i,k) = zumim(i,k)* moyhri
                   if (associated(zvmim).and.associated(zvmid)) zvmim(i,k) = zvmim(i,k)* moyhri
-                  if (associated(ztusc) .and. associated(zuscm)) &
-                     zuscm(:,1:nk-1) = zuscm(:,1:nk-1) + ztusc(:,1:nk-1)
                endif IF_AVG_1
 
             end do
@@ -902,6 +961,7 @@ contains
                zzbaskfcm (i) = zzbaskfcm(i) + zzbasekfc(i)
                zztopkfcm (i) = zztopkfcm(i) + zztopkfc(i)
                zkkfcm    (i) = zkkfcm(i) + zkkfc(i)
+               if (associated(zkmidm)) zkmidm(i) = zkmidm(i) + zkmid(i)
 
                if (lavg) then
                   zabekfcm (i) = zabekfcm (i) * moyhri
@@ -911,6 +971,7 @@ contains
                   zzbaskfcm(i) = zzbaskfcm(i) * moyhri
                   zztopkfcm(i) = zztopkfcm(i) * moyhri
                   zkkfcm(i) = zkkfcm(i) * moyhri
+                  if (associated(zkmidm)) zkmidm(i) = zkmidm(i) * moyhri
                endif
 
             end do
@@ -1026,6 +1087,7 @@ contains
       zuplus(:,nk)  = zudiag
       zvplus(:,nk)  = zvdiag
 
+      if (timings_L) call timing_stop_omp(470)
       call msg_toall(MSG_DEBUG, 'calcdiag [END]')
       !----------------------------------------------------------------
       return

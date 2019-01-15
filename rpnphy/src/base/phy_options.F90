@@ -888,6 +888,11 @@ module phy_options
    namelist /physics_cfgs/ test_phy
    namelist /physics_cfgs_p/ test_phy
 
+   !# Print runtime timings
+   logical           :: timings_L    = .false.
+   namelist /physics_cfgs/ timings_L
+   namelist /physics_cfgs_p/ timings_L
+
    !# Select a turbulent orographic form drag scheme
    !# * 'NIL'        : No turbulent orographic form drag scheme
    !# * 'BELJAARS04' : Form drag scheme described by Beljaars et al. (2006; QJRMS)

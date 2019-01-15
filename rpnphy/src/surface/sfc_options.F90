@@ -46,8 +46,6 @@ module sfc_options
    real, parameter :: SNOH0 = 0.1
    real, parameter :: VAMIN = 1.0e-4
    real, parameter :: Z0GLA = 0.0003
-   real, parameter :: ZU = 10.
-   real, parameter :: ZT = 1.5
 
    !#
    logical           :: atm_external = .false.
@@ -60,7 +58,11 @@ module sfc_options
    logical           :: radslope   = .false.
    logical           :: update_alwater = .false.
    logical           :: z0veg_only = .false.
+   logical           :: thermal_stress = .false.
    integer           :: kntveg     = -1
+   logical           :: timings_L  = .false.
+   integer           :: nphyoutlist = -1
+   character(len=32), pointer, contiguous :: phyoutlist_S(:) => NULL()
 
    !# Surface layer coefficients for exchange with PBL
    real :: bh91_a, bh91_b, bh91_c, bh91_d, d97_as, dg92_ci, l07_ah, l07_am
@@ -260,7 +262,6 @@ module sfc_options
    logical           :: tdiaglim    = .false.
    namelist /surface_cfgs/ tdiaglim
 
-
    !# OPTION FOR CALCULATION of AVERAGE LAND SURFACE TEMPERATURE AND HUMIDITY IN SVS
    !# .FALSE. :  Area-average only calculation for sfc T and Hum.
    !# .TRUE.  :  Option that uses effective surface temperature  and specific humidity instead
@@ -334,18 +335,13 @@ module sfc_options
    real              :: z0tlat(2)   = 0.
    namelist /surface_cfgs/ z0tlat
 
-   !# Height (m) of T and Q input for sfc fluxes calc.
-   real              :: zta         = -1.
-   namelist /surface_cfgs/ zta
+   !# Height at which to compute screen-level temperature (m)
+   real              :: zt = 1.5
+   namelist /surface_cfgs/ zt
 
-   !# Height (m) of wind input for sfc fluxes calc.
-   real              :: zua         = -1.
-   namelist /surface_cfgs/ zua
-
-
-   !# Compute thermal stress indicators (comfort) if .true.
-   logical           :: thermal_stress = .false.
-   namelist /surface_cfgs/ thermal_stress
+   !# Height at which to compute anemomenter-level winds (m)
+   real              :: zu = 10.
+   namelist /surface_cfgs/ zu
 
 contains
 

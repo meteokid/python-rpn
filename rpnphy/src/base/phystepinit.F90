@@ -96,6 +96,7 @@ contains
       real, pointer, dimension(:,:,:), contiguous :: zvcoef
       !----------------------------------------------------------------
       call msg_toall(MSG_DEBUG, 'phystepinit [BEGIN]')
+      if (timings_L) call timing_start_omp(405, 'phystepinit', 46)
 
       MKPTR1D(zdlat, dlat, fbus)
       MKPTR1D(zfcor, fcor, vbus)
@@ -380,12 +381,6 @@ contains
          zthetaap(i) = sc*ztplus(i,nk-1)
          zfcor  (i)= 2.*OMEGA*sin(zdlat(i))
       end do
-      if (zua > 0..and.zta > 0.) then
-         do i=1,ni
-            zztsl(i) = zta
-            zzusl(i) = zua
-         enddo
-      endif
 
       if (any(pcptype == (/ &
            'NIL   ', &
@@ -397,6 +392,7 @@ contains
               zrlc, ztls, zrsc, ztss, zrainrate, zsnowrate, &
               zfneige(:,nk), zfip(:,nk), ni)
       endif
+      if (timings_L) call timing_stop_omp(405)
       call msg_toall(MSG_DEBUG, 'phystepinit [END]')
       !-------------------------------------------------------------
       return

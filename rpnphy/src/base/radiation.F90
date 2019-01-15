@@ -70,6 +70,7 @@ contains
       real, pointer, dimension(:,:), contiguous :: ztmoins, zhumoins, zsigw
       !----------------------------------------------------------------
       call msg_toall(MSG_DEBUG, 'radiation [BEGIN]')
+      if (timings_L) call timing_start_omp(410, 'radiation', 46)
 
       MKPTR1D(zpmoins, pmoins, f)
 
@@ -137,6 +138,7 @@ contains
 
       call radslop3(f, fsiz, v, vsiz, ni, hz, julien, trnch)
 
+      if (timings_L) call timing_stop_omp(410)
       call msg_toall(MSG_DEBUG, 'radiation [END]')
       !----------------------------------------------------------------
       return

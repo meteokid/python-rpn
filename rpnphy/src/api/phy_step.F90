@@ -96,7 +96,9 @@ contains
 
     if (phy_error_L) return
 
+    call timing_start2(460, 'phystats', 46)
     call phystats(F_stepcount, delt)
+    call timing_stop(460)
     if (phy_error_L) return
 
     F_istat = RMN_OK

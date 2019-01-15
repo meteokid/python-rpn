@@ -25,6 +25,7 @@ contains
         cvb, dynini, stagg, F_vmin, F_vmax, F_wload, F_hzd, F_monot, F_massc, &
         F_string_S) result(F_istat)
       use str_mod
+      use tracers_attributes_mod, only: tracers_attributes
       use phy_options
       implicit none
 #include <arch_specific.hf>
@@ -132,8 +133,7 @@ contains
          attr_S = cvn(ind+1: )
          cvn  = cvn(1:ind-1)
       endif
-      call tracers_attributes2(trim(attr_S), &
-           iwload, ihzd, imonot, imassc, rvmin)
+      istat = tracers_attributes(attr_S, iwload, ihzd, imonot, imassc, rvmin, F_ignore_L=.true.)
       !#TODO: should we allow use of this syntax anymore? if yes, apply these... warning, default values can be changed in tracers_attributes
 
       con  = kv_S(VAL,IDX_ON)

@@ -106,7 +106,7 @@ contains
       MKPTR1D(zsdtswd, sdtswd, v)
       MKPTR1D(zsdtsws, sdtsws, v)
       MKPTR1D(ztstar, tstar, v)
-      MKPTR1D(ztsurf, tsurf, f)
+      MKPTR1DK(ztsurf, tsurf, indx_agrege, f)
       MKPTR1D(zudiag, udiag, f)
       MKPTR1D(zvdiag, vdiag, f)
       MKPTR1D(zwge, wge, v)

@@ -222,6 +222,13 @@ contains
       zfsv  = 0.0
       zfsi  = 0.0
       zparr = 0.0
+      zfatb = 0.0
+      zfadb = 0.0
+      zfafb = 0.0
+      zfctb = 0.0
+      zfcdb = 0.0
+      zfcfb = 0.0
+
 
       ! calculate the variation of solar constant
 
@@ -511,12 +518,12 @@ contains
                zfluxds(i,nk)       = zfluxds0(i,nk)       * v1(i)
                zfluxus(i,nk)       = zfluxus0(i,nk)       * v1(i)
                do iuv=1, RAD_NUVBRANDS
-                 zfatb(:,iuv)= zfatb0(:,iuv) * v1(i)
-                 zfadb(:,iuv)= zfatb0(:,iuv) * v1(i)
-                 zfafb(:,iuv)= zfatb0(:,iuv) * v1(i)
-                 zfctb(:,iuv)= zfatb0(:,iuv) * v1(i)
-                 zfcdb(:,iuv)= zfatb0(:,iuv) * v1(i)
-                 zfcfb(:,iuv)= zfatb0(:,iuv) * v1(i)
+                 zfatb(i,iuv)= zfatb0(i,iuv) * v1(i)
+                 zfadb(i,iuv)= zfadb0(i,iuv) * v1(i)
+                 zfafb(i,iuv)= zfafb0(i,iuv) * v1(i)
+                 zfctb(i,iuv)= zfctb0(i,iuv) * v1(i)
+                 zfcdb(i,iuv)= zfcdb0(i,iuv) * v1(i)
+                 zfcfb(i,iuv)= zfcfb0(i,iuv) * v1(i)
                enddo
             endif
          enddo
@@ -558,12 +565,12 @@ contains
                zfsi(i)      = zfsi0(i)          * v1(i)
                zparr(i)     = zparr0(i)         * v1(i)
                do iuv=1, RAD_NUVBRANDS
-                 zfatb(:,iuv)= zfatb0(:,iuv) * v1(i)
-                 zfadb(:,iuv)= zfatb0(:,iuv) * v1(i)
-                 zfafb(:,iuv)= zfatb0(:,iuv) * v1(i)
-                 zfctb(:,iuv)= zfatb0(:,iuv) * v1(i)
-                 zfcdb(:,iuv)= zfatb0(:,iuv) * v1(i)
-                 zfcfb(:,iuv)= zfatb0(:,iuv) * v1(i)
+                 zfatb(i,iuv)= zfatb0(i,iuv) * v1(i)
+                 zfadb(i,iuv)= zfadb0(i,iuv) * v1(i)
+                 zfafb(i,iuv)= zfafb0(i,iuv) * v1(i)
+                 zfctb(i,iuv)= zfctb0(i,iuv) * v1(i)
+                 zfcdb(i,iuv)= zfcdb0(i,iuv) * v1(i)
+                 zfcfb(i,iuv)= zfcfb0(i,iuv) * v1(i)
                enddo
             endif
          enddo

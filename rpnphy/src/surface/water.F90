@@ -147,7 +147,7 @@ subroutine water1(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, &
    zsnowrate(1:n) => bus( x(snowrate,1,1)     : )
    zskin_depth(1:n) => bus( x(skin_depth,1,1) : )
    zskin_inc(1:n) => bus( x(skin_inc,1,1)     : )
-   ztsurf   (1:n) => bus( x(tsurf,1,1)        : )
+   ztsurf   (1:n) => bus( x(tsurf,1,indx_sfc) : )
    ztsrad   (1:n) => bus( x(tsrad,1,1)        : )
    zudiag   (1:n) => bus( x(udiag,1,1)        : )
    zudiagtyp(1:n) => bus( x(udiagtyp,1,indx_sfc) : )

@@ -53,7 +53,9 @@ contains
 #define PTR1D(NAME2,IDX) busptr(vd%NAME2%i)%ptr(1+IDX:1+IDX+ni-1,trnch)
 
       if (.not.series_isstep()) return
+
       call msg_toall(MSG_DEBUG, 'diagnosurf [BEGIN]')
+      if (timings_L) call timing_start_omp(490, 'diagnosurf', 46)
 
       ! inverse of Monin-Obukhov length
       call series_xst(PTR1D(ILMO,(indx_agrege-1)*NI), 'IL', trnch)
@@ -81,7 +83,7 @@ contains
       call series_xst(PTR1D(ALVIS, (indx_agrege-1)*NI), 'AL', trnch)
 
       ! soil temperature
-      call series_xst(PTR1D(TSURF, 0), 'TS', trnch) !J8
+      call series_xst(PTR1D(TSURF,(indx_agrege-1)*NI), 'TS', trnch)
       call series_xst(PTR1D(TSOIL, 0), 'TS1', trnch)
 
       ! deep soil temperature
@@ -174,6 +176,7 @@ contains
 
       endif IF_ISBA
 
+      if (timings_L) call timing_stop_omp(490)
       call msg_toall(MSG_DEBUG, 'diagnosurf [END]')
 
       return

@@ -58,6 +58,7 @@ contains
       real(RDOUBLE), dimension(ni) :: l_en0, l_pw0, l_en, l_pw, l_enr, l_pwr
       !----------------------------------------------------------------
       call msg_toall(MSG_DEBUG, 'apply_rad_tendencies [BEGIN]')
+      if (timings_L) call timing_start_omp(422, 'apply_rad_td', 46)
 
       ! Bus pointer association
       MKPTR1D(zconerad, conerad, v)
@@ -83,6 +84,7 @@ contains
       if (radia == 'NIL') then
          if (associated(zconerad)) zconerad = 0.
          if (associated(zconqrad)) zconqrad = 0.
+         if (timings_L) call timing_stop_omp(422)
          return
       endif
 
@@ -140,6 +142,7 @@ contains
          zconqrad(:) = real(l_pwr)
       endif
 
+      if (timings_L) call timing_stop_omp(422)
       call msg_toall(MSG_DEBUG, 'apply_rad_tendencies [END]')
       !----------------------------------------------------------------
       return
