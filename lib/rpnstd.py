@@ -28,21 +28,21 @@ FILE_MODE_RW_OLD = Fstdc.FSTDC_FILE_RW_OLD
 class RPNFile:
     """
     Python Class implementation of the RPN standard file interface.
-    
+
     Instanciating this class actually opens the file.
     Deleting the instance close the file.
-            
+
     Attributes:
-       filename  : 
+       filename  :
        lastread  :
-       lastwrite : 
+       lastwrite :
        options   :
        iun       :
 
     Raises:
        TypeError
        IOError    if unable to open file
-    
+
     Examples:
     myRPNFile = RPNFile(name, mode)      #opens the file
     params = myRPNFile.info(seachParams) #get matching record params
@@ -64,7 +64,7 @@ class RPNFile:
     See Also:
        RPNRec
     """
-    
+
     def __init__(self, name=None, mode=FILE_MODE_RW):
         """
         Constructor.
@@ -75,16 +75,16 @@ class RPNFile:
            mode : string, optional
               Type of file, FILE_MODE_RO, FILE_MODE_RW, FILE_MODE_RW_OLD
         """
-        if (not name) or type(name) <> type(''):
-            raise TypeError, 'RPNFile, need to provide a name for the file'
-        self.filename=name
-        self.lastread=None
-        self.lastwrite=None
-        self.options=mode
+        if not (isinstance(name, str) and name):
+            raise TypeError('RPNFile, need to provide a name for the file')
+        self.filename = name
+        self.lastread = None
+        self.lastwrite = None
+        self.options = mode
         self.iun = None
         self.iun = Fstdc.fstouv(0, self.filename, self.options)
-        if (self.iun == None):
-          raise IOError, (-1, 'failed to open standard file', self.filename)
+        if self.iun == None:
+            raise IOError(-1, 'failed to open standard file', self.filename)
 
     def voir(self, options='NEWSTYLE'):
         """
@@ -93,10 +93,10 @@ class RPNFile:
         Fstdc.fstvoi(self.iun, options)
 
     def close(self):
-        if (self.iun != None):
-          Fstdc.fstfrm(self.iun)
-          #print 'file ', self.iun, ' is closed, filename=', self.filename
-          self.iun = None
+        if self.iun != None:
+            Fstdc.fstfrm(self.iun)
+            #print 'file ', self.iun, ' is closed, filename=', self.filename
+            self.iun = None
 
     def rewind(self):
         pass
@@ -129,10 +129,10 @@ class RPNFile:
         if params == None:              # oops !! not found
             return None
         target = params.handle
-        array=Fstdc.fstluk(target)   # 2 - get data
+        array = Fstdc.fstluk(target)   # 2 - get data
         #TODO: make ni, nj, nk consistent?
         #TODO: update self.grid?
-        if (params.datyp==7):
+        if params.datyp == 7:
             # String types need some special handling.  They are returned from
             # Fstdc.fstluk as N-dimensional arrays of one character, but we can
             # do better.  For datyp=7, ni corresponds to the maximum length of
@@ -164,13 +164,14 @@ class RPNFile:
             # Reshape a potentially 1D or 3D array into a 2D array
             array = array.reshape(params.ni, -1)
 
-            if ( numpy.sum( array[params.ni-1, :].view(numpy.uint8) > 127) > 0.5*params.nj*params.nk):
+            if numpy.sum(array[params.ni-1, :].view(numpy.uint8) > 127) > \
+                    0.5*params.nj*params.nk:
                 # Correct the error
                 array = (array.view(numpy.uint8) ^ 128).view((numpy.str_, 1))
 
             # Replace the array view with one that collapses individual characters
             array = array.view(dtype_str).reshape((1, -1))
-            
+
             # Remove the space padding
             for kk in range(0, array.shape[1]):
                 array[0, kk] = array[0, kk].rstrip(' ')
@@ -180,13 +181,13 @@ class RPNFile:
             # that are simply one single string, and for variables such as the gem
             # timeseries station list we'll get a 1D array for what was a 1D array
             # of strings in the original Fortran
-            if (params.nk > 1):
+            if params.nk > 1:
                 array = array.reshape((params.nj, params.nk))
-            elif (params.nj > 1):
+            elif params.nj > 1:
                 array = array.reshape(params.nj)
             else:
                 array = array.reshape(1)
-            
+
         return RPNRec(array, params)
 
     def __contains__(self, key):
@@ -207,20 +208,23 @@ class RPNFile:
             return False
 
     def edit_dir_entry(self, key):
-      """
-      Edit (zap) directory entry referenced by handle
+        """
+        Edit (zap) directory entry referenced by handle
 
-      myRPNdfile.edit_dir_entry(myNewRPNParams)
+        myRPNdfile.edit_dir_entry(myNewRPNParams)
 
-      myNewRPNParams.handle must be a valid rec/file handle as retrieved by myRPNdfile.info()
-      """
-      return(Fstdc.fst_edit_dir(key.handle, key.date, key.deet, key.npas, -1, -1, -1, key.ip1, key.ip2, key.ip3,
-                                key.type, key.nom, key.etiket, key.grtyp, key.ig1, key.ig2, key.ig3, key.ig4, key.datyp))
+        myNewRPNParams.handle must be a valid rec/file handle as retrieved by myRPNdfile.info()
+        """
+        return(Fstdc.fst_edit_dir(key.handle, key.date, key.deet, key.npas,
+                                  -1, -1, -1, key.ip1, key.ip2, key.ip3,
+                                  key.type, key.nom, key.etiket, key.grtyp,
+                                  key.ig1, key.ig2, key.ig3, key.ig4,
+                                  key.datyp))
 
     def info(self, key, list=False):
         """
         Seach file for next record corresponding to search keys
-        
+
         Successive calls will go further in the file.
         Search index can be reset to begining of file with myRPNfile.info(FirstRecord)
         If key.handle >=0, return key w/o search and w/o checking the file
@@ -257,7 +261,7 @@ class RPNFile:
                     # but that's useful for searching later on (it's
                     # part of RPNKeys).  We can calculate datev, however,
                     # from dateo, npas, and deet
-                    if (item['dateo'] != -1):
+                    if item['dateo'] != -1:
                         dateo = item['dateo']
                         npas = item['npas']
                         deet = item['deet']
@@ -266,7 +270,7 @@ class RPNFile:
                                       RPNDate(dateo).toDateTime() +
                                       npas* datetime.timedelta(seconds=deet)
                                     ).stamp
-                            item['datev']=datev
+                            item['datev'] = datev
                         except ValueError:
                             # A ValueError here indicates that dateo wasn't
                             # a valid date to begin with.  This will happen
@@ -274,15 +278,15 @@ class RPNFile:
                             # case, it doesn't make sense to try to compute
                             # a datev
                             pass
-                    result=RPNMeta()
+                    result = RPNMeta()
                     result.update_by_dict(item)
-                    result.fileref=self
+                    result.fileref = self
                     mylist2.append(result)
-                if (len(mylist) > 0):
-                  self.lastread=mylist[-1]
+                if len(mylist) > 0:
+                    self.lastread = mylist[-1]
                 return mylist2
             elif key.nxt == 1:               # get NEXT one thatmatches
-                self.lastread=Fstdc.fstinf(self.iun, key.nom, key.type,
+                self.lastread = Fstdc.fstinf(self.iun, key.nom, key.type,
                               key.etiket, key.ip1, key.ip2, key.ip3,
                               key.datev, key.handle)
             else:                          # get FIRST one that matches
@@ -290,21 +294,21 @@ class RPNFile:
                 # if it is, then the key will be a full RPNMeta, which has
                 # the necessary information for __getitem__ and we can return
                 # the key without further processing.  If it is not such an
-                # instance (aka, a bare RPNKeys), then the handle isn't 
+                # instance (aka, a bare RPNKeys), then the handle isn't
                 # useful and we should ignore it.
-                if (isinstance(key, RPNMeta) and key.handle >= 0) :
+                if isinstance(key, RPNMeta) and key.handle >= 0:
                     return key #TODO: may want to check if key.handle is valid
-                self.lastread=Fstdc.fstinf(self.iun, key.nom, key.type,
-                              key.etiket, key.ip1, key.ip2, key.ip3,
-                              key.datev, -2)
-        elif key==NextMatch:               # fstsui, return FstHandle instance
-            self.lastread=Fstdc.fstinf(self.iun, ' ', ' ', ' ', 0, 0, 0, 0, -1)
+                self.lastread = Fstdc.fstinf(self.iun, key.nom, key.type,
+                                             key.etiket, key.ip1, key.ip2,
+                                             key.ip3, key.datev, -2)
+        elif key == NextMatch:               # fstsui, return FstHandle instance
+            self.lastread = Fstdc.fstinf(self.iun, ' ', ' ', ' ', 0, 0, 0, 0, -1)
         else:
-            raise TypeError, 'RPNFile.info(), search keys arg is not of a valid type'
-        result=RPNMeta()
+            raise TypeError('RPNFile.info(), search keys arg is not of a valid type')
+        result = RPNMeta()
         if self.lastread != None:
 #            self.lastread.__dict__['fileref']=self
-            if (self.lastread['dateo'] != -1):
+            if self.lastread['dateo'] != -1:
                 dateo = self.lastread['dateo']
                 npas = self.lastread['npas']
                 deet = self.lastread['deet']
@@ -313,7 +317,7 @@ class RPNFile:
                               RPNDate(dateo).toDateTime() +
                               npas* datetime.timedelta(seconds=deet)
                             ).stamp
-                    self.lastread['datev']=datev
+                    self.lastread['datev'] = datev
                 except ValueError:
                     # A ValueError here indicates that dateo wasn't
                     # a valid date to begin with.  This will happen
@@ -323,7 +327,7 @@ class RPNFile:
                     pass
 
             result.update_by_dict(self.lastread)
-            result.fileref=self
+            result.fileref = self
 #            print 'DEBUG result=', result
         else:
             return None
@@ -341,7 +345,7 @@ class RPNFile:
         @exception TypeError if myRPNrec.handle is not of accepted type
         @exception ValueError if invalid record handle is provided (or not found from myRPNparms)
         """
-        if (isinstance(index, RPNDesc)): # set of keys
+        if isinstance(index, RPNDesc): # set of keys
             meta = index
             if index.handle < 0:
                 meta = self.info(index)
@@ -349,12 +353,12 @@ class RPNFile:
         elif type(index) == type(0):  # handle
             target = index
         else:
-            raise TypeError, 'RPNFile: index must provide a valid handle to erase a record'
+            raise TypeError('RPNFile: index must provide a valid handle to erase a record')
         if meta.handle >= 0:
             #print 'erasing record with handle=', target, ' from file'
-            self.lastwrite=Fstdc.fsteff(target)
+            self.lastwrite = Fstdc.fsteff(target)
         else:
-            raise ValueError, 'RPNFile: invalid record handle'
+            raise ValueError('RPNFile: invalid record handle')
 
 
     def __setitem__(self, index, value):
@@ -374,19 +378,19 @@ class RPNFile:
         if value == None:
             self.erase(index)
         elif isinstance(index, RPNMeta) and type(value) == numpy.ndarray:
-            self.lastwrite=0
+            self.lastwrite = 0
             #print 'writing data', value.shape, ' to file, keys=', index
             #print 'dict = ', index.__dict__
 
             # Check to see if we're writing string data, with strings of greater
             # than one length.  If the strings have length 1, then we can presume
             # we're writing a character array and can proceed.
-            if (value.dtype.kind == 'S' and value.dtype.itemsize > 1):
+            if value.dtype.kind == 'S' and value.dtype.itemsize > 1:
                 # Get the maximum number of characters per string in the existing array
                 max_strlen = value.dtype.itemsize
                 # If this is less than implied by the Meta's .ni value, expand these strings
                 # into an enclosing array
-                if (max_strlen > index.ni):
+                if max_strlen > index.ni:
                     value = numpy.array(value, dtype=(numpy.str_, index.ni))
                 # Now, re-interperet these values as a multidimensional array of single
                 # characters.
@@ -404,7 +408,7 @@ class RPNFile:
                 value1d = value.reshape([-1]) # This creates an alternate view of the memory
                 for kk in range(0, len(value1d)):
                     value1d[kk] = value1d[kk] + ' '*(max_strlen-len(value1d[kk]))
-                
+
                 # Second, view this array as consisting of 1D characters.  This will
                 # screw up the shape, to be fixed next.
 
@@ -415,24 +419,27 @@ class RPNFile:
 
                 print(value)
 
-            if (value.flags.farray):
-              #print 'fstecr Fortran style array'
-              # Check to see if the memory order is contiguous, else make
-              # a contiguous, Fortran-ordered copy for writing.
-              if (value.flags.f_contiguous == False):
-                  value = numpy.array(value, order='F')
-              Fstdc.fstecr(value,
-                         self.iun, index.nom, index.type, index.etiket, index.ip1, index.ip2,
-                         index.ip3, index.dateo, index.grtyp, index.ig1, index.ig2, index.ig3,
-                         index.ig4, index.deet, index.npas, index.nbits, index.datyp)
+            if value.flags.farray:
+                #print 'fstecr Fortran style array'
+                # Check to see if the memory order is contiguous, else make
+                # a contiguous, Fortran-ordered copy for writing.
+                if value.flags.f_contiguous == False:
+                    value = numpy.array(value, order='F')
+                Fstdc.fstecr(value, self.iun, index.nom, index.type,
+                                 index.etiket, index.ip1, index.ip2, index.ip3,
+                                 index.dateo, index.grtyp, index.ig1,
+                                 index.ig2, index.ig3, index.ig4, index.deet,
+                                 index.npas, index.nbits, index.datyp)
             else:
-              #print 'fstecr C style array'
-              Fstdc.fstecr(numpy.reshape(numpy.transpose(value), value.shape),
-                         self.iun, index.nom, index.type, index.etiket, index.ip1, index.ip2,
-                         index.ip3, index.dateo, index.grtyp, index.ig1, index.ig2, index.ig3,
-                         index.ig4, index.deet, index.npas, index.nbits, index.datyp)
+                #print 'fstecr C style array'
+                Fstdc.fstecr(numpy.reshape(numpy.transpose(value), value.shape),
+                             self.iun, index.nom, index.type, index.etiket,
+                             index.ip1, index.ip2, index.ip3, index.dateo,
+                             index.grtyp, index.ig1, index.ig2, index.ig3,
+                             index.ig4, index.deet, index.npas, index.nbits,
+                             index.datyp)
         else:
-           raise TypeError, 'RPNFile write: value must be an array and index must be RPNMeta or RPNRec'
+           raise TypeError('RPNFile write: value must be an array and index must be RPNMeta or RPNRec')
 
     def write(self, data, meta=None, rewrite=False):
         """Write a RPNRec to the file
@@ -447,13 +454,13 @@ class RPNFile:
         @param myRPNMeta an instance of RPNMeta with meta/params to be written
         @exception TypeError if args are of wrong type
         """
-        meta2=meta
-        data2=data
+        meta2 = meta
+        data2 = data
         if meta == None and isinstance(data, RPNRec):
             meta2 = data
             data2 = data.d
         elif not(isinstance(meta, RPNMeta) and type(data) == numpy.ndarray):
-            raise TypeError, 'RPNFile write: value must be an array and index must be RPNMeta or RPNRec'
+            raise TypeError('RPNFile write: value must be an array and index must be RPNMeta or RPNRec')
         if rewrite:
             try:
                 self.erase(meta2)
@@ -505,11 +512,33 @@ class RPNKeys(RPNParm):
 
     def searchKeysVals(self):
         """Return a dict of search Keys/Vals"""
-        return {'nom':'    ', 'type':'  ', 'etiket':'            ', 'datev':-1, 'ip1':-1, 'ip2':-1, 'ip3':-1, 'handle':-2, 'nxt':0, 'fileref':None}
+        return {
+            'nom' : '    ',
+            'type' : '  ',
+            'etiket' : '            ',
+            'datev' : -1,
+            'ip1' : -1,
+            'ip2' : -1,
+            'ip3' : -1,
+            'handle' : -2,
+            'nxt' : 0,
+            'fileref' : None
+            }
 
     def defaultKeysVals(self):
         """Return a dict of sensible default Keys/Vals"""
-        return {'nom':'    ', 'type':'  ', 'etiket':'            ', 'datev':0, 'ip1':0, 'ip2':0, 'ip3':0, 'handle':-2, 'nxt':0, 'fileref':None}
+        return {
+            'nom' : '    ',
+            'type' : '  ',
+            'etiket' : '            ',
+            'datev' : 0,
+            'ip1' : 0,
+            'ip2' : 0,
+            'ip3' : 0,
+            'handle' : -2,
+            'nxt' : 0,
+            'fileref' : None
+            }
 
 class RPNDesc(RPNParm):
     """RPN standard file Auxiliary descriptors class, used when writing a record or getting descriptors from a record.
@@ -527,15 +556,44 @@ class RPNDesc(RPNParm):
 
     def searchKeysVals(self):
         """Return a dict of search Keys/Vals"""
-        return {'grtyp':' ', 'dateo':-1, 'deet':-1, 'npas':-1, 'ig1':-1, 'ig2':-1, 'ig3':-1, 'ig4':-1, 'datyp':-1, 'nbits':-1, 'ni':-1, 'nj':-1, 'nk':-1}
+        return {
+            'grtyp':' ',
+            'dateo':-1,
+            'deet':-1,
+            'npas':-1,
+            'ig1':-1,
+            'ig2':-1,
+            'ig3':-1,
+            'ig4':-1,
+            'datyp':-1,
+            'nbits':-1,
+            'ni':-1,
+            'nj':-1,
+            'nk':-1
+            }
 
     def defaultKeysVals(self):
         """Return a dict of sensible default Keys/Vals"""
-        return {'grtyp':'X', 'dateo':0, 'deet':0, 'npas':0, 'ig1':0, 'ig2':0, 'ig3':0, 'ig4':0, 'datyp':-1, 'nbits':16, 'ni':1, 'nj':1, 'nk':1}
+        return {
+            'grtyp' : 'X',
+            'dateo' : 0,
+            'deet' : 0,
+            'npas' : 0,
+            'ig1' : 0,
+            'ig2' : 0,
+            'ig3' : 0,
+            'ig4' : 0,
+            'datyp' : -1,
+            'nbits' : 16,
+            'ni' : 1,
+            'nj' : 1,
+            'nk' : 1
+            }
 
 
 class RPNMeta(RPNKeys, RPNDesc):
-    """RPN standard file Full set (Primary + Auxiliary) of descriptors class, needed to write a record, can be used for search.
+    """RPN standard file Full set (Primary + Auxiliary) of descriptors class,
+       needed to write a record, can be used for search.
 
     myRPNMeta = RPNMeta()
     myRPNMeta = RPNMeta(anRPNMeta)
@@ -567,12 +625,12 @@ class RPNMeta(RPNKeys, RPNDesc):
     Examples of use (also doctests):
 
     >>> myRPNMeta = RPNMeta() #New RPNMeta with default/wildcard descriptors
-    >>> d = myRPNMeta.__dict__.items()
+    >>> d = [x for x in myRPNMeta.__dict__.items()]
     >>> d.sort()
     >>> d
     [('dateo', -1), ('datev', -1), ('datyp', -1), ('deet', -1), ('etiket', '            '), ('fileref', None), ('grtyp', ' '), ('handle', -2), ('ig1', -1), ('ig2', -1), ('ig3', -1), ('ig4', -1), ('ip1', -1), ('ip2', -1), ('ip3', -1), ('nbits', -1), ('ni', -1), ('nj', -1), ('nk', -1), ('nom', '    '), ('npas', -1), ('nxt', 0), ('type', '  ')]
     >>> myRPNMeta = RPNMeta(nom='GZ', ip2=1)  #New RPNMeta with all descriptors to wildcard but nom, ip2
-    >>> d = myRPNMeta.__dict__.items()
+    >>> d = [x for x in myRPNMeta.__dict__.items()]
     >>> d.sort()
     >>> d
     [('dateo', -1), ('datev', -1), ('datyp', -1), ('deet', -1), ('etiket', '            '), ('fileref', None), ('grtyp', ' '), ('handle', -2), ('ig1', -1), ('ig2', -1), ('ig3', -1), ('ig4', -1), ('ip1', -1), ('ip2', 1), ('ip3', -1), ('nbits', -1), ('ni', -1), ('nj', -1), ('nk', -1), ('nom', 'GZ  '), ('npas', -1), ('nxt', 0), ('type', '  ')]
@@ -605,7 +663,7 @@ class RPNMeta(RPNKeys, RPNDesc):
             elif type(model) == type({}):
                 self.update(model)
             else:
-                raise TypeError, 'RPNMeta: cannot initialize from arg #1'
+                raise TypeError('RPNMeta: cannot initialize from arg #1')
         for name in args.keys(): # and update with specified attributes
             setattr(self, name, args[name])
 
@@ -639,10 +697,11 @@ class RPNMeta(RPNKeys, RPNDesc):
         @exception TypeError if RPNMeta.fileref is not an RPNFile
         @exception ValueError if grid descriptors records (>>, ^^) are not found in RPNMeta.fileref
         """
-        if not (self.grtyp in ('Z', 'Y', '#')):
-            raise ValueError, 'getaxis error: can not get axis from grtyp='+self.grtyp
+        if not self.grtyp in ('Z', 'Y', '#'):
+            raise ValueError('getaxis error: can not get axis from grtyp=' +
+                             self.grtyp)
         if not isinstance(self.fileref, RPNFile):
-            raise TypeError, 'RPNMeta.getaxis: ERROR - cannot get axis, no fileRef'
+            raise TypeError('RPNMeta.getaxis: ERROR - cannot get axis, no fileRef')
         searchkeys = RPNKeys(ip1=self.ig1, ip2=self.ig2)
         if self.grtyp != '#':
             searchkeys.update_by_dict({'ip3':self.ig3})
@@ -650,8 +709,8 @@ class RPNMeta(RPNKeys, RPNDesc):
         xaxisrec = self.fileref[searchkeys]
         searchkeys.nom = '^^'
         yaxisrec = self.fileref[searchkeys]
-        if (xaxisrec == None or yaxisrec == None): # csubich -- variable name typo
-            raise ValueError, 'RPNMeta.getaxis: ERROR - axis grid descriptors (>>, ^^) not found'
+        if xaxisrec == None or yaxisrec == None: # csubich -- variable name typo
+            raise ValueError('RPNMeta.getaxis: ERROR - axis grid descriptors (>>, ^^) not found')
         if type(axis) == type(' '):
             if axis.upper() == 'X':
                 return xaxisrec
@@ -730,24 +789,24 @@ class RPNGrid(RPNParm):
         if args is None:
             args = {}
         if type(args) != type({}):
-            raise TypeError, 'RPNGrid: args should be of type dict'
+            raise TypeError('RPNGrid: args should be of type dict')
         if keys:
             if 'grtyp' in args.keys():
-                raise ValueError, 'RPNGrid: cannot provide both keys and grtyp: '+repr(args)
+                raise ValueError('RPNGrid: cannot provide both keys and grtyp: '+repr(args))
             elif isinstance(keys, RPNMeta) or isinstance(keys, RPNGrid):
                 grtyp = keys.grtyp
             elif type(keys) == type({}):
                 if 'grtyp' in keys.keys():
                     grtyp = keys['grtyp']
                 else:
-                    raise ValueError, 'RPNGrid: not able to find grtyp'
+                    raise ValueError('RPNGrid: not able to find grtyp')
             else:
-                raise TypeError, 'RPNGrid: wrong type for keys'
+                raise TypeError('RPNGrid: wrong type for keys')
         else:
             if 'grtyp' in args.keys():
                 grtyp = args['grtyp']
             else:
-                raise ValueError, 'RPNGrid: not able to find grtyp'
+                raise ValueError('RPNGrid: not able to find grtyp')
         return grtyp
 
     def parseArgs(self, keys, args=None):
@@ -755,16 +814,17 @@ class RPNGrid(RPNParm):
         if args is None:
             args = {}
         if type(args) != type({}):
-            raise TypeError, 'RPNGrid: args should be of type dict'
+            raise TypeError('RPNGrid: args should be of type dict')
         kv = self.allowedKeysVals().copy()
         if keys:
             if 'grtyp' in args.keys():
-                raise ValueError, 'RPNGrid: cannot provide both keys and grtyp: '+repr(args)
+                raise ValueError('RPNGrid: cannot provide both keys and grtyp: '+repr(args))
             elif isinstance(keys, RPNMeta):
                 kv['grtyp'] = keys.grtyp
                 kv['ig14']  = (keys.ig1, keys.ig2, keys.ig3, keys.ig4)
                 kv['shape'] = (keys.ni, keys.nj)
-                if 'grid' in keys.__dict__.keys() and isinstance(keys.grid, RPNRec):
+                if 'grid' in keys.__dict__.keys() and \
+                        isinstance(keys.grid, RPNRec):
                     kv.update(keys.grid.__dict__)
             elif isinstance(keys, RPNGrid):
                 kv.update(keys.__dict__)
@@ -784,7 +844,7 @@ class RPNGrid(RPNParm):
             and (type(shape[0]) == type(shape[1]) == type(0))
             and type(ig14) in (type([]), type(())) and len(ig14)==4 \
             and (type(ig14[0]) == type(ig14[1]) == type(ig14[2]) == type(ig14[3]) == type(0)) ):
-            raise ValueError, 'RPNGrid: invalid arg value'
+            raise ValueError('RPNGrid: invalid arg value')
         if self.helper:
             self.helper.argsCheck(d)
 
@@ -792,7 +852,7 @@ class RPNGrid(RPNParm):
         grtyp = self.getGrtyp(keys, args)
         if type(grtyp) == type(' '):
             grtyp = grtyp.upper()
-        className = "RPNGrid%s" % grtyp
+        className = "RPNGrid{0}".format(grtyp)
         if grtyp in self.base_grtyp:
             className = "RPNGridBase"
         elif grtyp in self.ref_grtyp:
@@ -803,7 +863,7 @@ class RPNGrid(RPNParm):
         except:
             pass
         if not self.helper:
-            raise ValueError, 'RPNGrid: unrecognize grtyp '+repr(grtyp)
+            raise ValueError('RPNGrid: unrecognize grtyp '+repr(grtyp))
         RPNParm.__init__(self, None, self.allowedKeysVals().copy(), {})
         self.update(self.parseArgs(keys, args))
 
@@ -835,32 +895,32 @@ class RPNGrid(RPNParm):
             try:
                 recx.setGrid(fromGrid)
             except:
-                raise ValueError, 'RPNGrid.interpolVect: fromGrid incompatible with fromDataX'
-            if (type(fromDataY) == numpy.ndarray):
+                raise ValueError('RPNGrid.interpolVect: fromGrid incompatible with fromDataX')
+            if type(fromDataY) == numpy.ndarray:
                 recy = RPNRec()
                 recy.d = fromDataY
                 try:
                     recy.setGrid(fromGrid)
                 except:
-                    raise ValueError, 'RPNGrid.interpolVect: fromGrid incompatible with fromDataY'
+                    raise ValueError('RPNGrid.interpolVect: fromGrid incompatible with fromDataY')
             elif fromDataY:
-                raise TypeError, 'RPNGrid.interpolVect: fromDataY should be of same type as fromDataX'
+                raise TypeError('RPNGrid.interpolVect: fromDataY should be of same type as fromDataX')
         elif isinstance(fromDataX, RPNRec):
             isRec = True
             if fromGrid:
-                raise TypeError, 'RPNGrid.interpolVect: cannot provide both an RPNRec for fromDataX and fromGrid'
+                raise TypeError('RPNGrid.interpolVect: cannot provide both an RPNRec for fromDataX and fromGrid')
             recx = fromDataX
             recx.setGrid()
             if isinstance(fromDataY, RPNRec):
                 recy = fromDataY
                 recy.setGrid()
                 if recx.grid != recy.grid:
-                    raise ValueError, 'RPNGrid.interpolVect: data X and Y should be on the same grid'
+                    raise ValueError('RPNGrid.interpolVect: data X and Y should be on the same grid')
             elif fromDataY:
-                raise TypeError, 'RPNGrid.interpolVect: fromDataY should be of same type as fromDataX'
+                raise TypeError('RPNGrid.interpolVect: fromDataY should be of same type as fromDataX')
         else:
-            raise TypeError, 'RPNGrid.interpolVect: data should be of numpy.ndarray or RPNRec type'
-        isVect = (recy!=None)
+            raise TypeError('RPNGrid.interpolVect: data should be of numpy.ndarray or RPNRec type')
+        isVect = (recy != None)
         return (recx, recy, isVect, isRec)
 
     def getEzInterpArgs(self, isSrc):
@@ -892,12 +952,12 @@ class RPNGrid(RPNParm):
             coordinates for every grid point."""
 
         # Step zero: if called with (None, None), build coordinate arrays
-        if (xin is None and yin is None):
+        if xin is None and yin is None:
             xin = numpy.zeros(self.shape, dtype=numpy.float32, order='F');
             yin = numpy.zeros(self.shape, dtype=numpy.float32, order='F');
             xin[:, :] = numpy.array(range(1, self.shape[0]+1)).reshape((self.shape[0], -1))
             yin[:, :] = numpy.array(range(1, self.shape[1]+1)).reshape((-1, self.shape[1]))
-        
+
         # Step one: check to see if xin and yin are the right kind of arrays
         # we need: numpy arrays of dtype float32 that have contiguous allocation.
         # In order to be liberal about what we'll accept, we can do this as a
@@ -915,9 +975,9 @@ class RPNGrid(RPNParm):
             # data to a numpy array.  Any further incompatibility,
             # such as for the datatype, will raise an exception that
             # propagates up.  For best compatibility with other routines,
-            # we'll also default to Fortran-ordering.  
+            # we'll also default to Fortran-ordering.
             xin = numpy.array(xin, dtype=numpy.float32, order='F')
-        
+
         # Step two: check whether the ordering of xin and yin match:
         try:
             assert(isinstance(yin, numpy.ndarray))
@@ -954,8 +1014,8 @@ class RPNGrid(RPNParm):
             yin = numpy.zeros(self.shape, dtype=numpy.float32, order='F');
             xin[:, :] = numpy.array(range(1, self.shape[0]+1)).reshape((self.shape[0], -1))
             yin[:, :] = numpy.array(range(1, self.shape[1]+1)).reshape((-1, self.shape[1]))
-            return(xin, yin)
-       
+            return (xin, yin)
+
         # Step one: Perform the same set of input checks as getLatLon
         try:
             assert(isinstance(latin, numpy.ndarray))
@@ -963,7 +1023,7 @@ class RPNGrid(RPNParm):
             assert(latin.flags.c_contiguous or latin.flags.f_contiguous)
         except (AssertionError):
             latin = numpy.array(latin, dtype=numpy.float32, order='F')
-        
+
         # Step two: check whether the ordering of latin and lonin match:
         try:
             assert(isinstance(lonin, numpy.ndarray))
@@ -974,7 +1034,7 @@ class RPNGrid(RPNParm):
             lonin = numpy.array(lonin, dtype=numpy.float32,
                             order=(latin.flags.c_contiguous and 'C' or 'F'))
 
-        if (latin.shape != lonin.shape):
+        if latin.shape != lonin.shape:
             raise ValueError('Input arays latin and lonin must have the same shape')
 
         # Get interpolation arguments
@@ -992,25 +1052,27 @@ class RPNGrid(RPNParm):
                 1) At provided (latin, lonin) coordinates, or
                 2) Over the full grid (ni x nj) extent"""
 
-        if (latin is None and lonin is None): # Full grid conversion
+        if latin is None and lonin is None: # Full grid conversion
             # Verify that uu and vv are full-grid numpy arrays
             try:
                 assert(isinstance(uu, numpy.ndarray))
                 assert(uu.dtype == numpy.float32)
                 assert(uu.flags.f_contiguous == True)
-            except (AssertionError):
+            except AssertionError:
                 uu = numpy.array(uu, dtype=numpy.float32, order='F')
 
             try:
                 assert(isinstance(vv, numpy.ndarray))
                 assert(vv.dtype == numpy.float32)
                 assert(vv.flags.f_contiguous == True)
-            except (AssertionError):
+            except AssertionError:
                 vv = numpy.array(vv, dtype=numpy.float32, order='F')
 
             # The array shapes must match this grid
-            if (uu.shape != self.shape or vv.shape != self.shape):
-                raise(ValueError('Full-grid winds UU and VV must match this grid\'s shape ({0}, {1})'.format(self.shape[0], self.shape[1])))
+            if uu.shape != self.shape or vv.shape != self.shape:
+                raise ValueError('Full-grid winds UU and VV must match this '+
+                                 'grid\'s shape ({0}, {1})'.
+                                 format(self.shape[0], self.shape[1]))
 
             # Since we'll still be using a scattered-coordinate function to perform the conversion,
             # grab the lat/lon coordinates from getLatLon()
@@ -1022,7 +1084,7 @@ class RPNGrid(RPNParm):
                 assert(isinstance(uu, numpy.ndarray))
                 assert(uu.dtype == numpy.float32)
                 assert(uu.flags.f_contiguous or uu.flags.c_contiguous)
-            except (AssertionError):
+            except AssertionError:
                 uu = numpy.array(uu, dtype=numpy.float32, order='F')
             orderchar = uu.flags.f_contiguous and 'F' or 'C' # Keep this around for other arrays
 
@@ -1031,29 +1093,29 @@ class RPNGrid(RPNParm):
                 assert(vv.dtype == numpy.float32)
                 assert(vv.flags.f_contiguous == uu.flags.f_contiguous)
                 assert(vv.flags.c_contiguous == uu.flags.c_contiguous)
-            except (AssertionError):
+            except AssertionError:
                 vv = numpy.array(vv, dtype=numpy.float32, order=orderchar)
-            if (uu.shape != vv.shape):
-                raise(ValueError('Wind fields UU and VV must have the same shape'))
+            if uu.shape != vv.shape:
+                raise ValueError('Wind fields UU and VV must have the same shape')
 
             try:
                 assert(isinstance(latin, numpy.ndarray))
                 assert(latin.dtype == numpy.float32)
                 assert(latin.flags.f_contiguous == uu.flags.f_contiguous)
                 assert(latin.flags.c_contiguous == uu.flags.c_contiguous)
-            except (AssertionError):
+            except AssertionError:
                 latin = numpy.array(latin, dtype=numpy.float32, order=orderchar)
-            if (latin.shape != uu.shape):
-                raise(ValueError('Coordinate array shape must match that of the wind fields'))
+            if latin.shape != uu.shape:
+                raise ValueError('Coordinate array shape must match that of the wind fields')
             try:
                 assert(isinstance(lonin, numpy.ndarray))
                 assert(lonin.dtype == numpy.float32)
                 assert(lonin.flags.f_contiguous == uu.flags.f_contiguous)
                 assert(lonin.flags.c_contiguous == uu.flags.c_contiguous)
-            except (AssertionError):
+            except AssertionError:
                 lonin = numpy.array(lonin, dtype=numpy.float32, order=orderchar)
-            if (lonin.shape != uu.shape):
-                raise(ValueError('Coordinate array shape must match that of the wind fields'))
+            if lonin.shape != uu.shape:
+                raise ValueError('Coordinate array shape must match that of the wind fields')
 
         # Now we have UU, VV, and coordinate arrays that match.  Grab the grid
         # interpolation parameters
@@ -1068,23 +1130,25 @@ class RPNGrid(RPNParm):
             directed (UU, VV) form.  The provided (UV, WD) values must be:
                 1) At given (latin, lonin) coordinates, or
                 2) Over the full (ni x nj) grid extent"""
-        if (latin is None and lonin is None): # Full grid conversion
+        if latin is None and lonin is None: # Full grid conversion
             try:
                 assert(isinstance(uv, numpy.ndarray))
                 assert(uv.dtype == numpy.float32)
                 assert(uv.flags.f_contiguous == True)
-            except (AssertionError):
+            except AssertionError:
                 uv = numpy.array(uv, dtype=numpy.float32, order='F')
 
             try:
                 assert(isinstance(wd, numpy.ndarray))
                 assert(wd.dtype == numpy.float32)
                 assert(wd.flags.f_contiguous == True)
-            except (AssertionError):
+            except AssertionError:
                 wd = numpy.array(wd, dtype=numpy.float32, order='F')
 
-            if (uv.shape != self.shape or wd.shape != self.shape):
-                raise(ValueError('Full-grid winds UV and WD must match this grid\'s shape ({0}, {1})'.format(self.shape[0], self.shape[1])))
+            if uv.shape != self.shape or wd.shape != self.shape:
+                raise ValueError('Full-grid winds UV and WD must match this '+
+                                 'grid\'s shape ({0}, {1})'.
+                                 format(self.shape[0], self.shape[1]))
 
             (latin, lonin) = self.getLatLon()
         else:
@@ -1094,7 +1158,7 @@ class RPNGrid(RPNParm):
                 assert(isinstance(uv, numpy.ndarray))
                 assert(uv.dtype == numpy.float32)
                 assert(uv.flags.f_contiguous or uv.flags.c_contiguous)
-            except (AssertionError):
+            except AssertionError:
                 uv = numpy.array(uv, dtype=numpy.float32, order='F')
             orderchar = uv.flags.f_contiguous and 'F' or 'C' # Keep this around for other arrays
 
@@ -1103,33 +1167,33 @@ class RPNGrid(RPNParm):
                 assert(wd.dtype == numpy.float32)
                 assert(wd.flags.f_contiguous == uv.flags.f_contiguous)
                 assert(wd.flags.c_contiguous == uv.flags.c_contiguous)
-            except (AssertionError):
+            except AssertionError:
                 wd = numpy.array(wd, dtype=numpy.float32, order=orderchar)
-            if (uv.shape != wd.shape):
-                raise(ValueError('Wind fields UU and VV must have the same shape'))
+            if uv.shape != wd.shape:
+                raise ValueError('Wind fields UU and VV must have the same shape')
 
             try:
                 assert(isinstance(latin, numpy.ndarray))
                 assert(latin.dtype == numpy.float32)
                 assert(latin.flags.f_contiguous == uv.flags.f_contiguous)
                 assert(latin.flags.c_contiguous == uv.flags.c_contiguous)
-            except (AssertionError):
+            except AssertionError:
                 latin = numpy.array(latin, dtype=numpy.float32, order=orderchar)
-            if (latin.shape != uv.shape):
-                raise(ValueError('Coordinate array shape must match that of the wind fields'))
+            if latin.shape != uv.shape:
+                raise ValueError('Coordinate array shape must match that of the wind fields')
             try:
                 assert(isinstance(lonin, numpy.ndarray))
                 assert(lonin.dtype == numpy.float32)
                 assert(lonin.flags.f_contiguous == uv.flags.f_contiguous)
                 assert(lonin.flags.c_contiguous == uv.flags.c_contiguous)
-            except (AssertionError):
+            except AssertionError:
                 lonin = numpy.array(lonin, dtype=numpy.float32, order=orderchar)
-            if (lonin.shape != uv.shape):
-                raise(ValueError('Coordinate array shape must match that of the wind fields'))
+            if lonin.shape != uv.shape:
+                raise ValueError('Coordinate array shape must match that of the wind fields')
 
         ezia = self.getEzInterpArgs(False)
 
-        return(Fstdc.gduvfwd(uv, wd, latin, lonin,
+        return (Fstdc.gduvfwd(uv, wd, latin, lonin,
             ezia['shape'], ezia['grtyp'], ezia['g_ig14'],
             ezia['xy_ref'], ezia['hasRef'], ezia['ij0']))
 
@@ -1147,35 +1211,39 @@ class RPNGrid(RPNParm):
             assert(isinstance(zz, numpy.ndarray))
             assert(zz.dtype == numpy.float32)
             assert(zz.flags.f_contiguous == True)
-        except (AssertionError):
+        except AssertionError:
             zz = numpy.array(zz, dtype=numpy.float32, order='F')
 
-        if (zz.shape != self.shape):
-            raise(ValueError('Full-grid field ZZ must match this grid\'s shape ({0}, {1})'.format(self.shape[0], self.shape[1])))
+        if zz.shape != self.shape:
+            raise ValueError('Full-grid field ZZ must match this '+
+                             'grid\'s shape ({0}, {1})'.
+                             format(self.shape[0], self.shape[1]))
 
-        if (vv is not None):
+        if vv is not None:
             try:
                 assert(isinstance(vv, numpy.ndarray))
                 assert(vv.dtype == numpy.float32)
                 assert(vv.flags.f_contiguous == True)
-            except (AssertionError):
+            except AssertionError:
                 vv = numpy.array(vv, dtype=numpy.float32, order='F')
-            if (vv.shape != self.shape):
-                raise(ValueError('Full-grid field VV must match this grid\'s shape ({0}, {1})'.format(self.shape[0], self.shape[1])))
+            if vv.shape != self.shape:
+                raise ValueError('Full-grid field VV must match this ' +
+                                 'grid\'s shape ({0}, {1})'.
+                                 format(self.shape[0], self.shape[1]))
 
         # Now for latin and lonin -- these are the same checks as getXY
         try:
             assert(isinstance(latin, numpy.ndarray))
             assert(latin.dtype == numpy.float32)
             assert(latin.flags.c_contiguous or latin.flags.f_contiguous)
-        except (AssertionError):
+        except AssertionError:
             latin = numpy.array(latin, dtype=numpy.float32, order='F')
         try:
             assert(isinstance(lonin, numpy.ndarray))
             assert(lonin.dtype == numpy.float32)
             assert(latin.flags.c_contiguous == lonin.flags.c_contiguous)
             assert(latin.flags.f_contiguous == lonin.flags.f_contiguous)
-        except (AssertionError):
+        except AssertionError:
             lonin = numpy.array(lonin, dtype=numpy.float32,
                             order=(latin.flags.c_contiguous and 'C' or 'F'))
 
@@ -1184,7 +1252,7 @@ class RPNGrid(RPNParm):
 
         ezia = self.getEzInterpArgs(False)
 
-        return(Fstdc.gdllval(zz, vv, latin, lonin,
+        return (Fstdc.gdllval(zz, vv, latin, lonin,
             ezia['shape'], ezia['grtyp'], ezia['g_ig14'],
             ezia['xy_ref'], ezia['hasRef'], ezia['ij0']))
 
@@ -1194,40 +1262,44 @@ class RPNGrid(RPNParm):
             grid-directed winds) will be performed."""
         # The structure of this method follows exactly from interpolLatLon,
         # starting with input verification
-        
+
         # zz and vv have the strictest conditions, so start with those
         try:
             assert(isinstance(zz, numpy.ndarray))
             assert(zz.dtype == numpy.float32)
             assert(zz.flags.f_contiguous == True)
-        except (AssertionError):
+        except AssertionError:
             zz = numpy.array(zz, dtype=numpy.float32, order='F')
 
-        if (zz.shape != self.shape):
-            raise(ValueError('Full-grid field ZZ must match this grid\'s shape ({0}, {1})'.format(self.shape[0], self.shape[1])))
+        if zz.shape != self.shape:
+            raise ValueError('Full-grid field ZZ must match this ' +
+                             'grid\'s shape ({0}, {1})'.
+                             format(self.shape[0], self.shape[1]))
 
-        if (vv is not None):
+        if vv is not None:
             try:
                 assert(isinstance(vv, numpy.ndarray))
                 assert(vv.dtype == numpy.float32)
                 assert(vv.flags.f_contiguous == True)
-            except (AssertionError):
+            except AssertionError:
                 vv = numpy.array(vv, dtype=numpy.float32, order='F')
-            if (vv.shape != self.shape):
-                raise(ValueError('Full-grid field VV must match this grid\'s shape ({0}, {1})'.format(self.shape[0], self.shape[1])))
+            if vv.shape != self.shape:
+                raise ValueError('Full-grid field VV must match this ' +
+                                 'grid\'s shape ({0}, {1})'.
+                                 format(self.shape[0], self.shape[1]))
 
         try:
             assert(isinstance(xin, numpy.ndarray))
             assert(xin.dtype == numpy.float32)
             assert(xin.flags.c_contiguous or xin.flags.f_contiguous)
-        except (AssertionError):
+        except AssertionError:
             xin = numpy.array(xin, dtype=numpy.float32, order='F')
         try:
             assert(isinstance(yin, numpy.ndarray))
             assert(yin.dtype == numpy.float32)
             assert(xin.flags.c_contiguous == yin.flags.c_contiguous)
             assert(xin.flags.f_contiguous == yin.flags.f_contiguous)
-        except (AssertionError):
+        except AssertionError:
             yin = numpy.array(yin, dtype=numpy.float32,
                             order=(xin.flags.c_contiguous and 'C' or 'F'))
 
@@ -1236,7 +1308,7 @@ class RPNGrid(RPNParm):
 
         ezia = self.getEzInterpArgs(False)
 
-        return(Fstdc.gdxyval(zz, vv, xin, yin,
+        return (Fstdc.gdxyval(zz, vv, xin, yin,
             ezia['shape'], ezia['grtyp'], ezia['g_ig14'],
             ezia['xy_ref'], ezia['hasRef'], ezia['ij0']))
 
@@ -1244,7 +1316,8 @@ class RPNGrid(RPNParm):
     def interpolVect(self, fromDataX, fromDataY=None, fromGrid=None):
         """Interpolate some gridded scalar/vectorial data to grid
         """
-        (recx, recy, isVect, isRec) = self.interpolVectValidateArgs(fromDataX, fromDataY, fromGrid)
+        (recx, recy, isVect, isRec) = \
+            self.interpolVectValidateArgs(fromDataX, fromDataY, fromGrid)
         recyd = None
         if isVect:
             recyd = recy.d
@@ -1261,17 +1334,19 @@ class RPNGrid(RPNParm):
             dg_a = a
             dataxy = None
             dataxy = Fstdc.ezinterp(recx.d, recyd,
-                    sg_a['shape'], sg_a['grtyp'], sg_a['g_ig14'], sg_a['xy_ref'], sg_a['hasRef'], sg_a['ij0'],
-                    dg_a['shape'], dg_a['grtyp'], dg_a['g_ig14'], dg_a['xy_ref'], dg_a['hasRef'], dg_a['ij0'],
+                    sg_a['shape'], sg_a['grtyp'], sg_a['g_ig14'],
+                    sg_a['xy_ref'], sg_a['hasRef'], sg_a['ij0'],
+                    dg_a['shape'], dg_a['grtyp'], dg_a['g_ig14'],
+                    dg_a['xy_ref'], dg_a['hasRef'], dg_a['ij0'],
                     isVect)
-            if isVect==0:
+            if isVect == 0:
                 dataxy = (dataxy, None)
         else:
-            raise TypeError, 'RPNGrid.interpolVect: Cannot perform interpolation between specified grids type'
+            raise TypeError('RPNGrid.interpolVect: Cannot perform interpolation between specified grids type')
 ##             #if verbose: print "using SCRIP"
 ##             if isVect!=1:
 ##                 #TODO: remove this exception when SCRIP.interp() does vectorial interp
-##                 raise TypeError, 'RPNGrid.interpolVect: SCRIP.interp() Cannot perform vectorial interpolation yet!'
+##                 raise TypeError('RPNGrid.interpolVect: SCRIP.interp() Cannot perform vectorial interpolation yet!')
 ##             #Try to interpolate with previously computed addr&weights (if any)
 ##             sg_a = sg.toScripGridPreComp()
 ##             dg_a = dg.toScripGridPreComp()
@@ -1287,7 +1362,7 @@ class RPNGrid(RPNParm):
 ##                 datax2 = scrip.scripObj.interp(datax)
 ##                 dataxy = (dg.reshapeDataFromScrip(datax2), None)
 ##             else:
-##                 raise TypeError, 'RPNGrid.interpolVect: Cannot perform interpolation between specified grids type'
+##                 raise TypeError('RPNGrid.interpolVect: Cannot perform interpolation between specified grids type')
         if isRec:
             recx.d = dataxy[0]
             recx.setGrid(self)
@@ -1317,8 +1392,9 @@ class RPNGridBase(RPNGridHelper):
     #@static
     def argsCheck(self, d):
         """Check Grid params, raise an error if not ok"""
-        if not (d['grtyp'] in RPNGrid.base_grtyp):
-            raise ValueError, 'RPNGridBase: invalid grtyp value:'+repr(d['grtyp'])
+        if not d['grtyp'] in RPNGrid.base_grtyp:
+            raise ValueError('RPNGridBase: invalid grtyp value:' +
+                             repr(d['grtyp']))
 
     def getEzInterpArgs(self, keyVals, isSrc):
         """Return the list of needed args for Fstdc.ezinterp from the provided params"""
@@ -1345,7 +1421,7 @@ class RPNGridBase(RPNGridHelper):
 
 class RPNGridRef(RPNGridHelper):
     """RPNGrid Helper class for RPNSTD-type grid description for grid reference.
-    
+
     Preferably use the generic RPNGrid class to indirectly get an instance
     """
     addAllowedKeysVals = {
@@ -1359,7 +1435,7 @@ class RPNGridRef(RPNGridHelper):
         if args is None:
             args = {}
         if type(args) != type({}):
-            raise TypeError, 'RPNGridRef: args should be of type dict'
+            raise TypeError('RPNGridRef: args should be of type dict')
         #if keys is another grid or FstRec w/ grid
         #   or xyaxis was present in keys, args
         #   then it would already have been included
@@ -1378,10 +1454,10 @@ class RPNGridRef(RPNGridHelper):
         xyaxis = d['xyaxis']
         if not (d['grtyp'] in RPNGrid.ref_grtyp
             and type(xyaxis) in (type([]), type(()))
-            and len(xyaxis)==2
+            and len(xyaxis) == 2
             and isinstance(xyaxis[0], RPNRec)
-            and isinstance(xyaxis[1], RPNRec) ):
-            raise ValueError, 'RPNGridRef: invalid value'
+            and isinstance(xyaxis[1], RPNRec)):
+            raise ValueError('RPNGridRef: invalid value')
 
     def getEzInterpArgs(self, keyVals, isSrc):
         """Return the list of needed args for Fstdc.ezinterp from the provided params"""
@@ -1459,7 +1535,7 @@ class RPNRec(RPNMeta):
     'X'
     >>> r = RPNRec([1, 2, 3, 4])
     >>> r2 = RPNRec(r)
-    >>> d = r2.__dict__.items()
+    >>> d = [x for x in r2.__dict__.items()]
     >>> d.sort()
     >>> d
     [('d', array([1, 2, 3, 4])), ('dateo', -1), ('datev', -1), ('datyp', -1), ('deet', -1), ('etiket', '            '), ('fileref', None), ('grid', None), ('grtyp', ' '), ('handle', -2), ('ig1', -1), ('ig2', -1), ('ig3', -1), ('ig4', -1), ('ip1', -1), ('ip2', -1), ('ip3', -1), ('nbits', -1), ('ni', -1), ('nj', -1), ('nk', -1), ('nom', '    '), ('npas', -1), ('nxt', 0), ('type', '  ')]
@@ -1488,30 +1564,30 @@ class RPNRec(RPNMeta):
             self.d = numpy.array(data)
         elif isinstance(data, RPNRec):
             if meta:
-                raise TypeError, 'RPNRec: cannot initialize with both an RPNRec and meta'
+                raise TypeError('RPNRec: cannot initialize with both an RPNRec and meta')
             self.d = data.d.copy()
             meta = RPNMeta(data)
         else:
-            raise TypeError, 'RPNRec: cannot initialize data from arg #1'
+            raise TypeError('RPNRec: cannot initialize data from arg #1')
         if meta:
             if isinstance(meta, RPNMeta):
                 self.update(meta)
             elif type(meta) == type({}):
                 self.update_by_dict(meta)
             else:
-                raise TypeError, 'RPNRec: cannot initialize parameters from arg #2'
+                raise TypeError('RPNRec: cannot initialize parameters from arg #2')
 
     def __setattr__(self, name, value):   # this method cannot create new attributes
         if name == 'd':
             if type(value) == numpy.ndarray:
-                self.__dict__[name]=value
+                self.__dict__[name] = value
             else:
-                raise TypeError, 'RPNRec: data should be an instance of numpy.ndarray'
+                raise TypeError('RPNRec: data should be an instance of numpy.ndarray')
         elif name == 'grid':
             if isinstance(value, RPNGrid):
-                self.__dict__[name]=value
+                self.__dict__[name] = value
             else:
-                raise TypeError, 'RPNRec: grid should be an instance of RPNGrid'
+                raise TypeError('RPNRec: grid should be an instance of RPNGrid')
         else:
             RPNMeta.__setattr__(self, name, value)
 
@@ -1530,9 +1606,9 @@ class RPNRec(RPNMeta):
                 self.d = togrid.interpol(self.d, self.grid)
                 self.setGrid(togrid)
             else:
-                raise ValueError, 'RPNRec.interpol(togrid): unable to determine actual grid of RPNRec'
+                raise ValueError('RPNRec.interpol(togrid): unable to determine actual grid of RPNRec')
         else:
-            raise TypeError, 'RPNRec.interpol(togrid): togrid should be an instance of RPNGrid'
+            raise TypeError('RPNRec.interpol(togrid): togrid should be an instance of RPNGrid')
 
     def setGrid(self, newGrid=None):
         """Associate a grid to the RPNRec (or try to get grid from rec metadata)
@@ -1558,17 +1634,17 @@ class RPNRec(RPNMeta):
             if isinstance(newGrid, RPNGrid):
                 ni = max(self.d.shape[0], 1)
                 nj = 1
-                if len(self.d.shape)>1:
+                if len(self.d.shape) > 1:
                     nj = max(self.d.shape[1], 1)
                 if (ni, nj) != newGrid.shape:
-                    raise ValueError, 'RPNRec.setGrid(newGrid): rec data and newGrid do not have the same shape'
-                else :
+                    raise ValueError('RPNRec.setGrid(newGrid): rec data and newGrid do not have the same shape')
+                else:
                     self.grid = newGrid
                     self.grtyp = newGrid.grtyp
                     (self.ig1, self.ig2, self.ig3, self.ig4) = newGrid.ig14
                     (self.ni, self.nj) = newGrid.shape
             else:
-                raise TypeError, 'RPNRec.setGrid(newGrid): newGrid should be an instance of RPNGrid'
+                raise TypeError('RPNRec.setGrid(newGrid): newGrid should be an instance of RPNGrid')
         else:
             self.grid = RPNGrid(self)
             if self.grid:
@@ -1576,7 +1652,7 @@ class RPNRec(RPNMeta):
                 (self.ig1, self.ig2, self.ig3, self.ig4) = self.grid.ig14
                 (self.ni, self.nj) = self.grid.shape
             else:
-                raise ValueError, 'RPNRec.setGrid(): unable to determine actual grid of RPNRec'
+                raise ValueError('RPNRec.setGrid(): unable to determine actual grid of RPNRec')
 
     def __repr__(self):
         kv = self.__dict__.copy()
@@ -1617,7 +1693,7 @@ class RPNDate:
     >>> d3
     RPNDate(20030423, 13153500)
     >>> utc = pytz.timezone("UTC")
-    >>> d4 = datetime.datetime(2003, 04, 23, 11, 45, 35, 0, tzinfo=utc)
+    >>> d4 = datetime.datetime(2003, 4, 23, 11, 45, 35, 0, tzinfo=utc)
     >>> d5 = RPNDate(d4)
     >>> d5
     RPNDate(20030423, 11453500)
@@ -1636,23 +1712,24 @@ class RPNDate:
         if isinstance(word1, RPNDate):
             self.stamp = word1.stamp
         elif isinstance(word1, RPNMeta):
-            if word1.deet<0 or word1.npas<0 or word1.dateo<=0 :
-                raise ValueError, 'RPNDate: Cannot compute date from RPNMeta'
+            if word1.deet < 0 or word1.npas < 0 or word1.dateo <= 0:
+                raise ValueError('RPNDate: Cannot compute date from RPNMeta')
             nhours = (1.*word1.deet*word1.npas)/3600.
-            self.stamp=Fstdc.incdatr(word1.dateo, nhours)
+            self.stamp = Fstdc.incdatr(word1.dateo, nhours)
         elif type(word1) == type(0):
-            if (word2 == -1):
+            if word2 == -1:
                 self.stamp = word1
             else:
-                dummy=0
+                dummy = 0
 #TODO: define named Cst for newdate in Fstdc
-                (self.stamp, dummy1, dummy2) = Fstdc.newdate(dummy, word1, word2, Fstdc.NEWDATE_PRINT2STAMP)
+                (self.stamp, dummy1, dummy2) = \
+                    Fstdc.newdate(dummy, word1, word2, Fstdc.NEWDATE_PRINT2STAMP)
         else:
-            raise TypeError, 'RPNDate: arguments should be of type int'
+            raise TypeError('RPNDate: arguments should be of type int')
 
     def __sub__(self, other):
         "Time difference between 2 dates"
-        return(Fstdc.difdatr(self.stamp, other.stamp))
+        return Fstdc.difdatr(self.stamp, other.stamp)
 
     def incr(self, temps):
         """Increase Date by the specified number of hours
@@ -1662,13 +1739,13 @@ class RPNDate:
 
         @exception TypeError if temps is not of int or real type
         """
-        if ((type(temps) == type(1)) or (type(temps) == type(1.0))):
+        if type(temps) == type(1) or type(temps) == type(1.0):
             nhours = 0.0
             nhours = temps
-            self.stamp=Fstdc.incdatr(self.stamp, nhours)
-            return(self)
+            self.stamp = Fstdc.incdatr(self.stamp, nhours)
+            return self
         else:
-            raise TypeError, 'RPNDate.incr: argument should be int or real'
+            raise TypeError('RPNDate.incr: argument should be int or real')
 
     def toDateTime(self):
         """Return the DateTime obj representing the RPNDate
@@ -1681,8 +1758,9 @@ class RPNDate:
         #TODO: oups 1 sec diff!!!
         """
         word1 = word2 = 0
-        (dummy, word1, word2) = Fstdc.newdate(self.stamp, word1, word2, Fstdc.NEWDATE_STAMP2PRINT)
-        d = "%8.8d.%8.8d" % (word1, word2)
+        (dummy, word1, word2) = Fstdc.newdate(self.stamp, word1, word2,
+                                              Fstdc.NEWDATE_STAMP2PRINT)
+        d = "{0:08d}.{1:08d}".format(word1, word2)
         yyyy = int(d[0:4])
         mo = int(d[4:6])
         dd = int(d[6:8])
@@ -1695,8 +1773,9 @@ class RPNDate:
 
     def __repr__(self):
         word1 = word2 = 0
-        (dummy, word1, word2) = Fstdc.newdate(self.stamp, word1, word2, Fstdc.NEWDATE_STAMP2PRINT)
-        return "RPNDate(%8.8d, %8.8d)" % (word1, word2)
+        (dummy, word1, word2) = Fstdc.newdate(self.stamp, word1, word2,
+                                              Fstdc.NEWDATE_STAMP2PRINT)
+        return "RPNDate({0:08d}, {1:08d})".format(word1, word2)
 
 
 #TODO: make dateRange a sequence obj with .iter() methode to be ableto use it in a for statement
@@ -1730,19 +1809,20 @@ class RPNDateRange:
     >>> dr.next() #returns None because it is past the end of DateRange
     """
     #TODO: make this an iterator
-    dateDebut=-1
-    dateFin=-1
-    delta=0.0
-    now=-1
+    dateDebut = -1
+    dateFin = -1
+    delta = 0.0
+    now = -1
 
     def __init__(self, debut=-1, fin=-1, delta=0.0):
-        if isinstance(debut, RPNDate) and isinstance(fin, RPNDate) and ((type(delta) == type(1)) or (type(delta) == type(1.0))):
-            self.dateDebut=debut
-            self.now=debut
-            self.dateFin=fin
-            self.delta=delta
+        if isinstance(debut, RPNDate) and isinstance(fin, RPNDate) and \
+                (type(delta) == type(1) or type(delta) == type(1.0)):
+            self.dateDebut = debut
+            self.now = debut
+            self.dateFin = fin
+            self.delta = delta
         else:
-            raise TypeError, 'RPNDateRange: arguments type error RPNDateRange(RPNDate, RPNDate, Real)'
+            raise TypeError('RPNDateRange: arguments type error RPNDateRange(RPNDate, RPNDate, Real)')
 
     def length(self):
         """Provide the duration of the date range
@@ -1756,11 +1836,11 @@ class RPNDateRange:
         """
         return self.length()
 
-    def remains():
+    def remains(self):
         """Provide the number of hours left in the date range
         @return Number of hours left in the range
         """
-        return abs(self.dateFin-self.now)
+        return abs(self.dateFin - self.now)
 
     def next(self):
         """Return the next date/time in the range (step of delta hours)
@@ -1773,17 +1853,18 @@ class RPNDateRange:
 
     def reset(self):
         """Reset the RPNDateRange iterator to the range start date"""
-        self.now=self.dateDebut
+        self.now = self.dateDebut
 
     def __repr__(self):
         d1 = repr(self.dateDebut)
         d2 = repr(self.dateFin)
         d0 = repr(self.now)
-        return "RPNDateRage(from:%s, to:%s, delta:%d) at %s" % (d1[7:27], d2[7:27], self.delta, d0[7:27])
+        return "RPNDateRage(from:{0}, to:{1}, delta:{2}) at {3}".\
+                format(d1[7:27], d2[7:27], self.delta, d0[7:27])
 
 
-FirstRecord=RPNMeta()
-NextMatch=None
+FirstRecord = RPNMeta()
+NextMatch = None
 
 
 if __name__ == "__main__":

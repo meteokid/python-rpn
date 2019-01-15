@@ -4,26 +4,27 @@
 # Author: Stephane Chamberland <stephane.chamberland@canada.ca>
 # Copyright: LGPL 2.1
 """
-rpy.nml_clean -f phydict.nml -t 'xst_stn_latlon(lat=-999.,lon=-999.,name=UNDEFINED)' --nbmax 300 -c'
+rpy.nml_clean -f phydict.nml -t 'xst_stn_latlon(lat=-999., lon=-999., name=UNDEFINED)' --nbmax 300 -c'
 """
 import re
 import sys
 import copy
 import shutil
-import optparse
+import argparse
+import logging
 from rpnpy.ftnnml import *
 
 
-def ftnNmlDtype2List(cfg,dtypename,dtypeattr,dtypeattrval):
+def ftnNmlDtype2List(cfg, dtypename, dtypeattr, dtypeattrval):
     """
     """
-    print("+ Merging derived type: %s %s" % (dtypename,repr(dtypeattr)))
+    print("+ Merging derived type: {} {} ".format(dtypename, repr(dtypeattr)))
     for nmlname in cfg.keys():
         nml = cfg.get(nmlname)
         values = {}
         for nmlkeyname in nml.keys():
             m = re.match(dtypename+r'(\((?P<index>[0-9]+)\))?%(?P<attr>\w+)'
-                         ,nmlkeyname,re.I)
+                         , nmlkeyname, re.I)
             if m:
                 ii = 0
                 ii2= 0
@@ -32,48 +33,48 @@ def ftnNmlDtype2List(cfg,dtypename,dtypeattr,dtypeattrval):
                 try:
                     ii2 = dtypeattr.index(m.group('attr').lower())
                 except:
-                    sys.strerr.write('ERROR: unknown %s attribute for %s\n'
-                                     % (m.group('attr'),dtypename))
+                    logging.error('unknown {} attribute for {}\n'
+                                  .format(m.group('attr'), dtypename))
                     sys.exit(0)
                 if not ii in values.keys():
                     values[ii] = copy.copy(dtypeattrval)
                 values[ii][ii2] = nml.get(nmlkeyname).get('v')
-                if isinstance(values[ii][ii2],FtnNmlVal):
+                if isinstance(values[ii][ii2], FtnNmlVal):
                     values[ii][ii2] = values[ii][ii2].data
                 try:
-                    values[ii][ii2] = values[ii][ii2].rstrip(),rstrip(',')
+                    values[ii][ii2] = values[ii][ii2].rstrip(), rstrip(', ')
                 except:
                     pass
-                if values[ii][ii2] == ',':
+                if values[ii][ii2] == ', ':
                     values[ii][ii2] = ' '
                 nml.rm(nmlkeyname)
         if values:
             valuelist = []
-            for ii in xrange(max(values.keys())):
+            for ii in range(max(values.keys())):
                 valuelist.append(copy.copy(dtypeattrval))
             for ii in values.keys():
                 #valuelist[int(ii)-1] = ', '.join([x.data for x in values[ii]])
                 valuelist[int(ii)-1] = ', '.join(values[ii])
-            nml.add(FtnNmlKeyVal(dtypename,FtnNmlVal(', '.join(valuelist))))
+            nml.add(FtnNmlKeyVal(dtypename, FtnNmlVal(', '.join(valuelist))))
     return cfg
 
 
-def ftnNmlNbMax(cfg,nbmax,lenmax=32):
+def ftnNmlNbMax(cfg, nbmax, lenmax=32):
     """
     """
-    print("+ Triming lists to nb max items: %d" % (nbmax))
+    print("+ Triming lists to nb max items: {}".format(nbmax))
     for nmlname in cfg.keys():
         nml = cfg.get(nmlname)
         for nmlkeyname in nml.keys():
             keyVal = nml.get(nmlkeyname)
-            ## valList = ','.join(keyVal.get('v').data.split()).split(',')
-            ##valList = ','.join(keyVal.get('v').data.replace('\n ','').split()).split(',')
-            val = ' '.join(keyVal.get('v').data.replace('\n ','').split())
-            valList = val.split(',')
+            ## valList = ', '.join(keyVal.get('v').data.split()).split(', ')
+            ##valList = ', '.join(keyVal.get('v').data.replace('\n ', '').split()).split(', ')
+            val = ' '.join(keyVal.get('v').data.replace('\n ', '').split())
+            valList = val.split(', ')
             if len(valList) == 1: valList = val.split()
             if len(valList) > nbmax:
-                ## print nmlname,nmlkeyname,val[0:nbmax]
-                ## print nmlname,nmlkeyname,valList[0:nbmax]
+                ## print nmlname, nmlkeyname, val[0:nbmax]
+                ## print nmlname, nmlkeyname, valList[0:nbmax]
                 keyVal.set(FtnNmlVal(', '.join(valList[0:nbmax])))
             else:
                 val = keyVal.get('v').data
@@ -85,62 +86,80 @@ def ftnNmlNbMax(cfg,nbmax,lenmax=32):
 
 
 if __name__ == "__main__":
+    logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
     
     # Command line arguments
-    #usage = "usage: \n\t%prog [options] key1 [key2] ...\n\t%prog [options] nml1/key1 [nml2/key2] ..."
-    parser = optparse.OptionParser()#usage=usage)
-    parser.add_option("-f","--file", dest="nml_file",
-                      default="./gem_settings.nml",
-                      help="Name of FILE containing namelist [default 'gem_settings.nml']",
-                      metavar="FILE")
-    parser.add_option("-b","--backup",dest="backup", action="store_true",
-                      help="Create a backup (.bkp) of the input FILE",
-                      metavar="FILE")
-    parser.add_option("-c","--clean", dest="clean", action="store_true",
-                      help="Clean up nml file from supurious content",
-                      metavar="FILE")
-    parser.add_option("-d","--downcase", dest="downcase", action="store_true",
-                      help="Downcase all nml and var names",
-                      metavar="FILE")
-    parser.add_option("-s","--sort", dest="updnsort", action="store_true",
-                      help="Sort all nml and var names",
-                      metavar="FILE")
+    desc="Write a cleaned/formatted namelist."
+    usage="""
+    %(prog)s [options] -f NAMELIST
+    %(prog)s -f phydict.nml -t 'xst_stn_latlon(lat=-999., lon=-999., name=UNDEFINED)' --nbmax 300 -c
+    """
+    epilog="""
+    """
+    parser = argparse.ArgumentParser(
+        description=desc, usage=usage, epilog=epilog, 
+        prefix_chars='-+', formatter_class=argparse.RawDescriptionHelpFormatter)
 
-    ## parser.add_option("-n","--namelist",dest="namelist",default=None,
-    ##                   help="NAMELIST to search for keys [default all]",metavar="NAMELIST")
+    parser.add_argument("-f", "--file", dest="nml_file", 
+                        type=str, default="./gem_settings.nml", 
+                        help="Name of FILE containing namelist [default 'gem_settings.nml']", 
+                        metavar="FILE")
+    parser.add_argument("-b", "--backup", dest="backup",
+                        action="store_true", 
+                        help="Create a backup (.bkp) of the input FILE")
+    parser.add_argument("-c", "--clean", dest="clean",
+                        action="store_true", 
+                        help="Clean up nml file from supurious content")
+    parser.add_argument("-d", "--downcase", dest="downcase",
+                        action="store_true", 
+                        help="Downcase all nml and var names")
+    parser.add_argument("-s", "--sort", dest="updnsort",
+                        action="store_true", 
+                        help="Sort all nml and var names")
+
+    ## parser.add_argument("-n", "--namelist", dest="namelist", default=None, 
+    ##                   help="NAMELIST to search for keys [default all]", metavar="NAMELIST")
     
-    parser.add_option("-t","--types", dest="types", default=None,
-                      help="Space separated list of types: typename(attr1=defval,attr2=defval,...) [default None]",
-                      metavar="LIST_OF_TYPES")
-    parser.add_option("-m","--nbmax", dest="nbmax", default=None,
-                      help="Max number of values for a key [default None]",
-                      metavar="NB_MAX_VALUES")
-    ## parser.add_option("-l","--lenmax", dest="lenmax", default=512,
-    ##                   help="Max values strlen for a key [default 512]",
+    parser.add_argument("-t", "--types", dest="types",
+                        nargs="*", type=str, default=[], 
+                        help="List of types definition", 
+                        metavar="'TYPENAME(ATTR1=DEFVAL)'")
+    parser.add_argument("-m", "--nbmax", dest="nbmax",
+                        type=int, default=-1,
+                        help="Max number of values for a key", 
+                        metavar="NB_MAX_VALUES")
+    ## parser.add_argument("-l", "--lenmax", dest="lenmax", default=512, 
+    ##                   help="Max values strlen for a key [default 512]", 
     ##                   metavar="MAX_STR_LEN")
-    (options,args) = parser.parse_args()
+
+    args = parser.parse_args()
 
     # Create backup if requested
-    if options.backup:
-        bkpfile = options.nml_file+'.bkp'
+    if args.backup:
+        bkpfile = args.nml_file+'.bkp'
         try:
-            shutil.copy(options.nml_file,bkpfile)
+            shutil.copy(args.nml_file, bkpfile)
         except IOError:
-            sys.stderr.write('ERROR: Aborting because requested backup cannot be created\n')
-            raise
+            logging.error('Aborting because requested backup cannot be created\n')
+            sys.exit(1)
 
-    print("Cleaning File: %s" % options.nml_file)
-    print("+ Reading File: %s" % options.nml_file)
-    cfg = FtnNmlFile(options.nml_file)
-    
-    if options.types:
-        for mytype in options.types.split(')'):
+    print("Cleaning File: {}".format(args.nml_file))
+    print("+ Reading File: {}".format(args.nml_file))
+    try:
+        cfg = FtnNmlFile(args.nml_file)
+    except:
+        logging.warning('{}\n'.format(str(sys.exc_info()[1])))
+        sys.exit(1)
+        
+    if len(args.types) > 0:
+        for mytype in args.types:
+            mytype = mytype.split(')')[0]
             if not mytype: break
-            (dtypename,dtypeattrstr) = mytype.split('(')
+            (dtypename, dtypeattrstr) = mytype.split('(')
             dtypename = dtypename.strip().lower()
             dtypeattr = []
             dtypeattrval = []
-            for myattr in dtypeattrstr.split(','):
+            for myattr in dtypeattrstr.split(', '):
                 x = myattr.split('=')
                 dtypeattr.append(x[0].strip().lower())
                 try:
@@ -149,16 +168,16 @@ if __name__ == "__main__":
                     dtypeattrval.append('')
             cfg = ftnNmlDtype2List(cfg, dtypename, dtypeattr, dtypeattrval)
 
-    if options.nbmax:
-        cfg = ftnNmlNbMax(cfg, int(options.nbmax)) #, int(options.lenmax))
+    if args.nbmax >= 0:
+        cfg = ftnNmlNbMax(cfg, int(args.nbmax)) #, int(args.lenmax))
         
     # Write modified settings file
-    print("+ Writing File: %s" % options.nml_file)
+    print("+ Writing File: {}".format(args.nml_file))
     try:
-        cfg.write(options.nml_file,
-                  clean=options.clean,
-                  uplowcase=options.downcase,
-                  updnsort=options.updnsort)
+        cfg.write(args.nml_file, 
+                  clean=args.clean, 
+                  uplowcase=args.downcase, 
+                  updnsort=args.updnsort)
     except IOError:
-        sys.stderr.write('ERROR: Cannot write to '+options.nml_file+'\n')
-        raise
+        logging.error('Cannot write to {}\n'.format(args.nml_file))
+        sys.exit(1)

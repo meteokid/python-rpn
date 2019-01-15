@@ -18,6 +18,6 @@ my_assert_equal "$toto" "1" "rpy.nml_get case insensitive"
 
 rpy.nml_set -f $nmlfile  abc/Asd=3
 toto="$(rpy.nml_get -f $nmlfile abc/asd)"
-my_assert_equal "$toto" "3" "rpy.nml_tet case insensitive"
+my_assert_equal "$toto" "3" "rpy.nml_set case insensitive"
 
 rm -f $nmlfile

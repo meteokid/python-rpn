@@ -8,13 +8,31 @@
 """
 Module librmn_const defines a set of helper constants to make code
 using the librmn module more readable.
+
+Notes:
+    This module is a very close ''port'' from the original
+    [[librmn]]'s [[Librmn/FSTDfunctions|FSTD]] package.<br>
+    You may want to refer to the [[Librmn/FSTDfunctions|FSTD]]
+    documentation for more details.
+
+See Also:
+    rpnpy.librmn.base
+    rpnpy.librmn.fstd98
+    rpnpy.librmn.interp
+    rpnpy.librmn.grids
+
+Details:
+    See Source Code
 """
 import numpy  as _np
+
+##DETAILS_START
+#== Constants Details ==
 
 #=== primitives ===
 #<source lang=python>
 ## Python dict with wkoffit file type codes
-WKOFFIT_TYPE_LIST = { #TODO:
+WKOFFIT_TYPE_LIST = {
     'INEXISTANT' : -3,
     'VIDE' : -2,
     'INCONNU' : -1,
@@ -55,15 +73,17 @@ WKOFFIT_TYPE_LIST = { #TODO:
     'NETCDF' : 35
     }
 
-WKOFFIT_TYPE_LIST_INV = dict((v, k) for k, v in WKOFFIT_TYPE_LIST.iteritems())
+WKOFFIT_TYPE_LIST_INV = dict([(v, k) for k, v in WKOFFIT_TYPE_LIST.items()])
 #</source>
 #=== base ===
 
 #<source lang=python>
-NEWDATE_PRINT2TRUE  = 2
+NEWDATE_PRINT2TRUE  =  2
 NEWDATE_TRUE2PRINT  = -2
-NEWDATE_PRINT2STAMP = 3
+NEWDATE_PRINT2STAMP =  3
 NEWDATE_STAMP2PRINT = -3
+NEWDATE_ARRAY2STAMP =  4
+NEWDATE_STAMP2ARRAY = -4
 
 NEWDATE_OPT_360DAYS   = 'year=360_day'
 NEWDATE_OPT_365DAYS   = 'year=365_day'
@@ -97,7 +117,7 @@ FSTOPI_TOL_INFO    = 4
 FSTOPI_TOL_WARNING = 6
 FSTOPI_TOL_ERROR   = 8
 FSTOPI_TOL_FATAL   = 10
- 
+
 FSTOPS_MSG_DEBUG   = "DEBUG"
 FSTOPS_MSG_INFO    = "INFORM"
 FSTOPS_MSG_WARNING = "WARNIN"
@@ -206,28 +226,29 @@ FST_DATYP_LIST = {
 
 ## Numpy versus FSTD data type equivalence
 FST_DATYP2NUMPY_LIST = { #TODO: review
-    0: _np.uint32  , # binary, transparent
-    1: _np.float32 , # floating point
-    2: _np.uint32  , # unsigned integer
-    3: _np.uint32  , # character (R4A in an integer)
-    4: _np.int32   , # signed integer
-    5: _np.float32 , # IEEE floating point
-    6: _np.float32 , # floating point (16 bit, made for compressor)
-    7: _np.uint8   , # character string
-    8: _np.complex64 , # complex IEEE
+    0: _np.uint32,   # binary, transparent
+    1: _np.float32,  # floating point
+    2: _np.uint32,   # unsigned integer
+    3: _np.uint32,   # character (R4A in an integer)
+    4: _np.int32,    # signed integer
+    5: _np.float32,  # IEEE floating point
+    6: _np.float32,  # floating point (16 bit, made for compressor)
+    7: _np.uint8,    # character string
+    8: _np.complex64 # complex IEEE
 }
 
 FST_DATYP2NUMPY_LIST64 = { #TODO: review
-    0: _np.uint64  , # binary, transparent
-    1: _np.float64 , # floating point
-    2: _np.uint64  , # unsigned integer
-    3: _np.uint64  , # character (R4A in an integer)
-    4: _np.int64   , # signed integer
-    5: _np.float64 , # IEEE floating point
-    6: _np.float64 , # floating point (16 bit, made for compressor)
-    #7: _np.uint8   , # character string
-    8: _np.complex128 , # complex IEEE
+    0: _np.uint64,  # binary, transparent
+    1: _np.float64, # floating point
+    2: _np.uint64,  # unsigned integer
+    3: _np.uint64,  # character (R4A in an integer)
+    4: _np.int64,   # signed integer
+    5: _np.float64, # IEEE floating point
+    6: _np.float64, # floating point (16 bit, made for compressor)
+    #7: _np.uint8,  # character string
+    8: _np.complex128  # complex IEEE
 }
+FST_DATYP2NUMPY_LIST_ITEMS = [x for x in FST_DATYP2NUMPY_LIST.items()] + [x for x in FST_DATYP2NUMPY_LIST64.items()]
 #</source>
 
 #=== Convip / Convert IP ===
@@ -241,7 +262,7 @@ FST_DATYP2NUMPY_LIST64 = { #TODO: review
 ## KIND = 5, coordonnee hybride        (0.0 -> 1.0)
 ## KIND = 6, coordonnee theta (1 -> 200, 000)
 ## KIND =10, temps en heure    (0.0 -> 200, 000.0)
-## KIND =15, reserve (entiers)        
+## KIND =15, reserve (entiers)
 ## KIND =17, indice x de la matrice de conversion (1.0 -> 1.0e10)
 ##           (partage avec kind=1 a cause du range exclusif
 ## KIND =21, p est en metres-pression
@@ -330,3 +351,14 @@ EZ_CLOUD_INTERP_LINEAR = 'LINEAR'
 EZ_OPT_USE_1SUBGRID = 'USE_1SUBGRID'
 ## YES or NO
 #</source>
+##DETAILS_END
+
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
+
+
+# -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
+# vim: set expandtab ts=4 sw=4:
+# kate: space-indent on; indent-mode cstyle; indent-width 4; mixedindent off;

@@ -76,8 +76,8 @@ if __name__ == "__main__":
     print("+ Writing %s to file: %s" %  (options.varname, options.outfile))
     (ni,nj) = data.shape
     outfile = open(options.outfile, 'w')
-    for jj in xrange(nj):
-        for ii in xrange(ni):
+    for jj in range(nj):
+        for ii in range(ni):
             outfile.write("%e " % (data[ii,jj]))
         outfile.write("\n")
     outfile.close()

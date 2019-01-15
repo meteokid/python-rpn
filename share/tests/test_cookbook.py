@@ -26,6 +26,7 @@ Here we load all the librmn functions and constants into a python object. The na
 
   python
   >>> import rpnpy.librmn.all as rmn
+  >>> import rpnpy.vgd.all as vgd
 
 See Also:
   * RPNpy Tutorial
@@ -95,6 +96,7 @@ class rpnpyCookbook(unittest.TestCase):
             # Close file even if an error occured above
             rmn.fstcloseall(fileId)
 
+
     def test_11qd(self):
         import os, sys
         import rpnpy.librmn.all as rmn
@@ -143,7 +145,7 @@ class rpnpyCookbook(unittest.TestCase):
             sys.exit(1)
 
         try:
-            #Encode selection criteria
+            # Encode selection criteria
             ip1   = rmn.ip1_all(500., rmn.LEVEL_KIND_PMB)
             datev = rmn.newdate(rmn.NEWDATE_PRINT2STAMP, 20150707, 6000000)
 
@@ -200,7 +202,7 @@ class rpnpyCookbook(unittest.TestCase):
         import os, sys
         import rpnpy.librmn.all as rmn
 
-        # Restric to the minimum the number of messages printed by librmn
+        # Restrict to the minimum the number of messages printed by librmn
         rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)
 
         # Open all RPNStd files in the $ATM_MODEL_DFILES/bcmk/ directory
@@ -265,7 +267,7 @@ class rpnpyCookbook(unittest.TestCase):
         import os, sys
         import rpnpy.librmn.all as rmn
 
-        # Restric to the minimum the number of messages printed by librmn
+        # Restrict to the minimum the number of messages printed by librmn
         rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)
 
         # Open file
@@ -340,13 +342,13 @@ class rpnpyCookbook(unittest.TestCase):
         import rpnpy.librmn.all as rmn
         import rpnpy.vgd.all as vgd
 
-        # Restric to the minimum the number of messages printed by librmn
+        # Restrict to the minimum the number of messages printed by librmn
         rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)
 
         # Open file
         fdate    = datetime.date.today().strftime('%Y%m%d') + '00_048'
         CMCGRIDF = os.getenv('CMCGRIDF').strip()
-        fileName  = os.path.join(CMCGRIDF, 'prog', 'regpres', fdate)
+        fileName  = os.path.join(CMCGRIDF, 'prog', 'regeta', fdate)
         try:
             fileId = rmn.fstopenall(fileName, rmn.FST_RO)
         except:
@@ -360,12 +362,14 @@ class rpnpyCookbook(unittest.TestCase):
             # Get Some info about the vgrid
             vkind    = vgd.vgd_get(v, 'KIND')
             vver     = vgd.vgd_get(v, 'VERS')
-            ip1diagt = vgd.vgd_get(v, 'DIPT')
             tlvl     = vgd.vgd_get(v, 'VIPT')
-            
-            VGD_KIND_VER_INV = dict((v, k) for k, v in vgd.VGD_KIND_VER.iteritems())
-            vtype = VGD_KIND_VER_INV[(vkind,vver)]
+            try:
+                ip1diagt = vgd.vgd_get(v, 'DIPT')
+            except:
+                ip1diagt = 0
             (ldiagval, ldiagkind) = rmn.convertIp(rmn.CONVIP_DECODE, ip1diagt)
+            VGD_KIND_VER_INV = dict((v, k) for k, v in vgd.VGD_KIND_VER.items())
+            vtype = VGD_KIND_VER_INV[(vkind,vver)]
             print("CB14: Found vgrid type=%s (kind=%d, vers=%d) with %d levels and diag level=%7.2f%s (ip1=%d)" %
                 (vtype, vkind, vver, len(tlvl), ldiagval, rmn.kindToString(ldiagkind), ip1diagt))
         except:
@@ -402,13 +406,13 @@ class rpnpyCookbook(unittest.TestCase):
         import rpnpy.librmn.all as rmn
         import rpnpy.vgd.all as vgd
 
-        # Restric to the minimum the number of messages printed by librmn
+        # Restrict to the minimum the number of messages printed by librmn
         rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)
 
         # Open file
         fdate     = datetime.date.today().strftime('%Y%m%d') + '00_048'
         CMCGRIDF  = os.getenv('CMCGRIDF').strip()
-        fileName  = os.path.join(CMCGRIDF, 'prog', 'regpres', fdate)
+        fileName  = os.path.join(CMCGRIDF, 'prog', 'regeta', fdate)
         try:
             fileId = rmn.fstopenall(fileName, rmn.FST_RO)
         except:
@@ -469,7 +473,7 @@ class rpnpyCookbook(unittest.TestCase):
         # Print a profile of TT and stats by level
         (i1, j1) = (rshape[0]//2, rshape[1]//2)
         print("CB14b: The TT profile at point (%d, %d) is:" % (i1, j1))
-        for k in xrange(rshape[2]):
+        for k in range(rshape[2]):
             ip1 = r3d['ip1list'][k]
             (ldiagval, ldiagkind) = rmn.convertIp(rmn.CONVIP_DECODE, ip1)
             print("CB14b: TT(%d, %d, %7.2f %s) = %6.1f C [mean=%6.1f, std=%6.1f, min=%6.1f, max=%6.1f]" %
@@ -485,7 +489,7 @@ class rpnpyCookbook(unittest.TestCase):
         rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)
         fdate     = datetime.date.today().strftime('%Y%m%d') + '00_048'
         CMCGRIDF  = os.getenv('CMCGRIDF').strip()
-        fileId = rmn.fstopenall(CMCGRIDF+'/prog/regpres/'+fdate, rmn.FST_RO)
+        fileId = rmn.fstopenall(CMCGRIDF+'/prog/regeta/'+fdate, rmn.FST_RO)
         v = vgd.vgd_read(fileId)
         (tlvlkeys, rshape) = ([], None)
         for ip1 in vgd.vgd_get(v, 'VIPT'):
@@ -504,7 +508,7 @@ class rpnpyCookbook(unittest.TestCase):
         r3d.update({'vgd':v, 'ip1list':[x[0] for x in tlvlkeys], 'shape':rshape, 'nk':rshape[2]})
         (i1, j1) = (rshape[0]//2, rshape[1]//2)
         print("CB14bqd: The TT profile at point (%d, %d) is:" % (i1, j1))
-        for k in xrange(rshape[2]):
+        for k in range(rshape[2]):
             (ldiagval, ldiagkind) = rmn.convertIp(rmn.CONVIP_DECODE, r3d['ip1list'][k])
             print("CB14bqd: TT(%d, %d, %7.2f %s) = %6.1f C [mean=%6.1f, std=%6.1f, min=%6.1f, max=%6.1f]" %
                   (i1, j1, ldiagval, rmn.kindToString(ldiagkind), r3d['d'][i1,j1,k],
@@ -560,6 +564,7 @@ class rpnpyCookbook(unittest.TestCase):
             rmn.fstcloseall(fileId)
             os.unlink(fileName)  # Remove test file
 
+
     def test_21qd(self):
         import sys, os, os.path, stat, shutil
         import rpnpy.librmn.all as rmn
@@ -592,7 +597,7 @@ class rpnpyCookbook(unittest.TestCase):
         rpnpy.librmn.fstd98.fsrecr
         rpnpy.librmn.const
         """
-        import os, os.path
+        import os, os.path, sys
         import rpnpy.librmn.all as rmn
         ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
         fileNameIn  = os.path.join(ATM_MODEL_DFILES,'bcmk')
@@ -681,7 +686,7 @@ class rpnpyCookbook(unittest.TestCase):
         fileNameIn  = os.path.join(CMCGRIDF, 'prog', 'regeta', fdate)
         fileNameOut = 'uvfstfile.fst'
 
-        # Restric to the minimum the number of messages printed by librmn
+        # Restrict to the minimum the number of messages printed by librmn
         rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)
 
         # Open Files
@@ -745,6 +750,7 @@ class rpnpyCookbook(unittest.TestCase):
             rmn.fstcloseall(fileIdIn)
             rmn.fstcloseall(fileIdOut)
             os.unlink(fileNameOut)  # Remove test file
+
 
     def test_23qd(self):
         import os, sys, datetime
@@ -810,7 +816,7 @@ class rpnpyCookbook(unittest.TestCase):
         import rpnpy.librmn.all as rmn
         import rpnpy.vgd.all as vgd
         
-        # Restric to the minimum the number of messages printed by librmn
+        # Restrict to the minimum the number of messages printed by librmn
         rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)
 
         # Create Record grid

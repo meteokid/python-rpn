@@ -1,58 +1,78 @@
 #!/usr/bin/env python
-import optparse,sys,re,shutil
+import re
+import sys
+import shutil
+import argparse
+import logging
 from rpnpy.ftnnml import *
 
 if __name__ == "__main__":
+    logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
     
     # Command line arguments
     desc="Delete a variable or namelist from a Fortran namelist file"
     usage = """
-    %prog [options] key1 [key2] ...
-    %prog [options] nml1/key1 [nml2/key2] ..."""
-    parser = optparse.OptionParser(usage=usage,description=desc)
-    parser.add_option("-f","--file",dest="nml_file",default="./gem_settings.nml",
-                      help="Name of FILE containing namelist [default 'gem_settings.nml']",metavar="FILE")
-    parser.add_option("-b","--backup",dest="backup",action="store_true",
-                      help="Create a backup (.bkp) of the input FILE",metavar="FILE")
-    parser.add_option("-n","--namelist",dest="namelist",default=None,
-                      help="NAMELIST to search for keys [default all]",metavar="NAMELIST")
-    parser.add_option("-c","--clean",dest="clean",action="store_true",
-                      help="Clean up nml file from supurious content",metavar="FILE")
-    parser.add_option("-d","--downcase",dest="downcase",action="store_true",
-                      help="Downcase all nml and var names",metavar="FILE")
-    (options,args) = parser.parse_args()
-    if not len(args):
-        parser.print_help()
-        sys.exit(1)   
+    %(prog)s [options] key1 [key2] ...
+    %(prog)s [options] nml1/key1 [nml2/key2] ...
+    %(prog)s [options] -- nml1/key1 [nml2/key2] ..."""
+    epilog="""
+    """
+    parser = argparse.ArgumentParser(
+        description=desc, usage=usage, epilog=epilog, 
+        prefix_chars='-+', formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("-f", "--file", dest="nml_file", 
+                        type=str, default="./gem_settings.nml", 
+                        metavar="NML_FILE", 
+                        help="Name of FILE containing namelist [default 'gem_settings.nml']")
+    parser.add_argument("-b", "--backup", dest="backup", 
+                        action="store_true", 
+                        help="Create a backup (.bkp) of the input FILE")
+    parser.add_argument("-n", "--namelist", dest="nml_name", 
+                        type=str, default="", 
+                        metavar="NAMELIST", 
+                        help="NAMELIST to search for keys")
+    parser.add_argument("-c", "--clean", dest="clean", 
+                        action="store_true", 
+                        help="Clean up nml file from supurious content")
+    parser.add_argument("-d", "--downcase", dest="downcase", 
+                        action="store_true", 
+                        help="Downcase all nml and var names")
 
+    parser.add_argument(dest="nml_keys", 
+                        nargs='+', type=str, default=[], 
+                        metavar='[key1] [nml2/key2]', 
+                        help="")
+    args = parser.parse_args()
+    
     # Create backup if requested
-    if options.backup:
-        bkpfile = options.nml_file+'.bkp'
+    if args.backup:
+        bkpfile = args.nml_file+'.bkp'
         try:
-            shutil.copy(options.nml_file,bkpfile)
+            shutil.copy(args.nml_file, bkpfile)
         except IOError:
-            sys.stderr.write('ERROR: Aborting because requested backup cannot be created\n')
-            raise
+            logging.error('Aborting because requested backup cannot be created\n')
+            sys.exit(1)   
 
     # Add/modify value for key in settings file
-    cfg = FtnNmlFile(options.nml_file)
-    for key in args:
+    cfg = FtnNmlFile(args.nml_file)
+    for key in args.nml_keys:
         try:
-            (nml2,key2) = re.split('/',key)
+            (nml2, key2) = re.split('/', key)
         except ValueError:
-            (nml2, key2) = (options.namelist, key)
+            (nml2, key2) = (args.nml_name, key)
         try:
             cfg.get(nml2).rm(key2)
         except:
-            sys.stdout.write('WARNING: Key not found ... skipping '+key+'\n')
+            logging.warning('Key not found ... skipping {}\n'.format(key))
             continue
         
     # Write modified settings file
     try:
-        cfg.write(options.nml_file,clean=options.clean,uplowcase=options.downcase)
+        cfg.write(args.nml_file, clean=args.clean, uplowcase=args.downcase)
     except IOError:
-        sys.stderr.write('ERROR: Cannot write to '+options.nml_file+'\n')
-        raise
+        logging.error('Cannot write to {}\n'.format(args.nml_file))
+        sys.exit(1)   
+
 
 
 # -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-

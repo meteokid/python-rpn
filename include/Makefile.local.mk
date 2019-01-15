@@ -15,7 +15,7 @@ RPNPY_VERSION_X = $(dir $(RPNPY_VERSION0))
 ## Some Shortcut/Alias to Lib Names
 
 # ifeq (,$(RPNPY_RMN_VERSION))
-#    $(error RPNPY_RMN_VERSION not defined; export RPNPY_RMN_VERSION=_015.2)
+#    $(error RPNPY_RMN_VERSION not defined; export RPNPY_RMN_VERSION=_016.2)
 # endif
 
 # RMN_VERSION    = rmn$(RPNPY_RMN_VERSION)# RPNPY_LIBS_MERGED = rpnpy_main rpnpy_driver rpnpy_utils rpnpy_tdpack rpnpy_base
@@ -41,24 +41,22 @@ RPNPY_VERSION_X = $(dir $(RPNPY_VERSION0))
 ## Base Libpath and libs with placeholders for abs specific libs
 ##MODEL1_LIBAPPL = $(RPNPY_LIBS_V)
 
-# STATIC_COMPILER = -static -static-intel
-# STATIC_COMPILER = -static
-# STATIC_COMPILER = -static-intel
+#STATIC_COMPILER = -static -static-intel
+STATIC_COMPILER = -static
+#STATIC_COMPILER = -static-intel
 
 ##
 .PHONY: rpnpy_vfiles rpnpy_version.inc rpnpy_version.h rpnpy_version.py
-#RPNPY_VFILES = rpnpy_version.inc rpnpy_version.h rpnpy_version.py
-RPNPY_VFILES = $(rpnpy)/lib/rpnpy/version.py
+RPNPY_VFILES = rpnpy_version.inc rpnpy_version.h rpnpy_version.py
 rpnpy_vfiles: $(RPNPY_VFILES)
 rpnpy_version.inc:
-	.rdemkversionfile "rpnpy" "$(RPNPY_VERSION)" $(rpnpy)/include f
+	.rdemkversionfile "rpnpy" "$(RPNPY_VERSION)" $(ROOT)/include f
 rpnpy_version.h:
-	.rdemkversionfile "rpnpy" "$(RPNPY_VERSION)" $(rpnpy)/include c
+	.rdemkversionfile "rpnpy" "$(RPNPY_VERSION)" $(ROOT)/include c
 LASTUPDATE = $(shell date '+%Y-%m-%d %H:%M %Z')
-rpnpy_version.py: $(rpnpy)/lib/rpnpy/version.py
-$(rpnpy)/lib/rpnpy/version.py:
-	echo "__VERSION__ = '$(RPNPY_VERSION)'" > $(rpnpy)/lib/rpnpy/version.py
-	echo "__LASTUPDATE__ = '$(LASTUPDATE)'" >> $(rpnpy)/lib/rpnpy/version.py
+rpnpy_version.py:
+	echo "__VERSION__ = '$(RPNPY_VERSION)'" > $(ROOT)/lib/rpnpy/version.py
+	echo "__LASTUPDATE__ = '$(LASTUPDATE)'" >> $(ROOT)/lib/rpnpy/version.py
 
 
 #---- ARCH Specific overrides -----------------------------------------
@@ -66,12 +64,12 @@ $(rpnpy)/lib/rpnpy/version.py:
 # LIBMASSWRAP = rpnpy_massvp7_wrap
 # endif
 
-# RDE_MKL=
+RDE_MKL=
 
 #---- Abs targets -----------------------------------------------------
-# .PHONY: sharedlibs_cp sharedlibs extlibdotfile
-# sharedlibs_cp: $(LIBDIR)/librmnshared_rpnpy_cp.so $(LIBDIR)/libdescripshared_rpnpy.so
-# sharedlibs: $(LIBDIR)/librmnshared_rpnpy.so $(LIBDIR)/libdescripshared_rpnpy.so
+.PHONY: sharedlibs_cp sharedlibs extlibdotfile
+sharedlibs_cp: $(LIBDIR)/librmnshared_rpnpy_cp.so $(LIBDIR)/libdescripshared_rpnpy.so
+sharedlibs: $(LIBDIR)/librmnshared_rpnpy.so $(LIBDIR)/libdescripshared_rpnpy.so
 
 forced_extlibdotfile: 
 	rm -f $(rpnpy)/.setenv.__extlib__.${ORDENV_PLAT}.dot
@@ -90,48 +88,71 @@ $(rpnpy)/.setenv.__extlib__.${ORDENV_PLAT}.dot:
 		libvgdpath=`rdefind $(EC_LD_LIBRARY_PATH)  --maxdepth 0 --name libdescripshared*.so | head -1`;\
 	fi ;\
 	libvgdname=`echo $${libvgdpath##*/} | cut -c17-`;\
-	echo "export RPNPY_RMN_LIBPATH=$${librmnpath%/*}" >> $@ ;\
-	echo "export RPNPY_RMN_VERSION=$${librmnname%.so}" >> $@ ;\
-	echo "export RPNPY_VGD_LIBPATH=$${libvgdpath%/*}" >> $@ ;\
-	echo "export RPNPY_VGD_VERSION=$${libvgdname%.so}" >> $@ ;\
+	libburpcpath=`rdefind $(EC_LD_LIBRARY_PATH)  --maxdepth 0 --name libburp_c_shared_*.so | head -1`;\
+	if [[ x$${libburpcpath##*/} == x ]] ; then \
+		libburpcpath=`rdefind $(EC_LD_LIBRARY_PATH)  --maxdepth 0 --name libburp_c_shared*.so | head -1`;\
+	fi ;\
+	libburpcname=*;\
+	echo "export RPNPY_RMN_LIBPATH=\$${RPNPY_RMN_LIBPATH_FORCED:-\$${RPNPY_RMN_LIBPATH:-$${librmnpath%/*}}}" >> $@ ;\
+	echo "export RPNPY_RMN_VERSION=\$${RPNPY_RMN_VERSION_FORCED:-\$${RPNPY_RMN_VERSION:-$${librmnname%.so}}}" >> $@ ;\
+	echo "export RPNPY_VGD_LIBPATH=\$${RPNPY_VGD_LIBPATH_FORCED:-\$${RPNPY_VGD_LIBPATH:-$${libvgdpath%/*}}}" >> $@ ;\
+	echo "export RPNPY_VGD_VERSION=\$${RPNPY_VGD_VERSION_FORCED:-\$${RPNPY_VGD_VERSION:-$${libvgdname%.so}}}" >> $@ ;\
+	echo "export RPNPY_BURPC_LIBPATH=\$${RPNPY_BURPC_LIBPATH_FORCED:-\$${RPNPY_BURPC_LIBPATH:-$${libburpcpath%/*}}}" >> $@ ;\
+	echo "export RPNPY_BURPC_VERSION=\$${RPNPY_BURPC_VERSION_FORCED:-\$${RPNPY_BURPC_VERSION:-$${libburpcname%.so}}}" >> $@ ;\
 	echo "export LD_LIBRARY_PATH=\$${RPNPY_RMN_LIBPATH}:\$${LD_LIBRARY_PATH}" >> $@ ;\
-	echo "export LIBPATH=\$${RPNPY_RMN_LIBPATH}:\$${LIBPATH}" >> $@
+	echo "export LIBPATH=\$${RPNPY_RMN_LIBPATH}:\$${LIBPATH}" >> $@ ;\
+	echo "export AFSISIO=\$${AFSISIO:-${AFSISIO}}" >> $@ ;\
+	echo "export CMCGRIDF=\$${CMCGRIDF:-${CMCGRIDF}}" >> $@ ;\
+	echo "export ATM_MODEL_DFILES=\$${ATM_MODEL_DFILES:-${ATM_MODEL_DFILES}}" >> $@
+	cat $@
 
-# $(LIBDIR)/librmnshared_rpnpy_cp.so:
-# 	libfullpath=`rdefind $(EC_LD_LIBRARY_PATH)  --maxdepth 0 --name librmnshared*.so | head -1`;\
-# 	cp $$libfullpath $@ ;\
-# 	cd $(LIBDIR) ;\
-# 	rm -rf librmnshared_rpnpy.so;\
-# 	ln -s $(notdir $@) librmnshared_rpnpy.so
+#CMCGRIDP
+#CMCPROD
+#CMCADE
+#CMCTRANS
+#CMCSAT
+#CMCCONST
 
-# $(LIBDIR)/librmnshared_rpnpy.so:
-# 	libfullpath=`rdefind $(EC_LD_LIBRARY_PATH)  --maxdepth 0 --name librmn.a | head -1`;\
-# 	mytmpdir=librmnshared_rpnpy.so_dir_$$  ;\
-# 	mkdir $$mytmpdir 2> /dev/null ;\
-# 	cd $$mytmpdir ;\
-# 	rm -f *.o ;\
-# 	ar x $$libfullpath ;\
-# 	rm -rf vpow_ibm.o whiteboard_omp.o whiteboard_st.o *ccard*.o *ccard* \
-# 		fmain2cmain.o resident_time.o non_preempt_clock.o ;\
-# 	$(BUILDFC_NOMPI) -shared -openmp $(STATIC_COMPILER) -o $@ *.o ;\
-# 	cd .. ; rm -rf $$mytmpdir
-# 	#rde.f90_ld $(VERBOSEVL) -shared -L$(LIBDIR)  -o $@ *.o
-# 	#rde.f90_ld $(VERBOSEVL) -shared -openmp -static -static-intel -l -o $@ *.o
-# 	#$(BUILDFC_NOMPI) -shared -openmp -static -static-intel -o $@ *.o
 
-# $(LIBDIR)/libdescripshared_rpnpy.so: $(LIBDIR)/librmnshared_rpnpy.so
-# 	libfullpath=`rdefind $(EC_LD_LIBRARY_PATH)  --maxdepth 0 --name libdescrip.a | head -1`;\
-# 	mytmpdir=librmnshared_rpnpy.so_dir_$$  ;\
-# 	mkdir $$mytmpdir 2> /dev/null ;\
-# 	cd $$mytmpdir ;\
-# 	rm -f *.o ;\
-# 	ar x $$libfullpath ;\
-# 	export EC_INCLUDE_PATH="" ;\
-# 	$(RDEF90_LD) -shared $(RDEALL_LIBPATH) $(STATIC_COMPILER) -L$(LIBDIR) -lrmnshared_rpnpy $(foreach item,$(RDEALL_LIBPATH_NAMES),-Wl,-rpath,$(item)) -o $@ *.o ;\
-# 	cd .. ; rm -rf $$mytmpdir
-# 	#rde.f90_ld $(VERBOSEVL) -shared -L$(LIBDIR) -lrmnshared_rpnpy -o $@ *.o
-# 	#$(BUILDFC_NOMPI) -shared -openmp -static -static-intel -lrmnshared_rpnpy -o $@ *.o
-# 	#$(BUILDFC_NOMPI) -shared -openmp $(STATIC_COMPILER) -L$(LIBDIR) -lrmnshared_rpnpy -o $@ *.o ;\
+
+$(LIBDIR)/librmnshared_rpnpy_cp.so:
+	libfullpath=`rdefind $(EC_LD_LIBRARY_PATH)  --maxdepth 0 --name librmnshared*.so | head -1`;\
+	cp $$libfullpath $@ ;\
+	cd $(LIBDIR) ;\
+	rm -rf librmnshared_rpnpy.so;\
+	ln -s $(notdir $@) librmnshared_rpnpy.so
+
+$(LIBDIR)/librmnshared_rpnpy.so:
+	libfullpath=`rdefind $(EC_LD_LIBRARY_PATH)  --maxdepth 0 --name librmn.a | head -1`;\
+	mytmpdir=librmnshared_rpnpy.so_dir_$$  ;\
+	mkdir $$mytmpdir 2> /dev/null ;\
+	cd $$mytmpdir ;\
+	rm -f *.o ;\
+	ar x $$libfullpath ;\
+	rm -rf vpow_ibm.o whiteboard_omp.o whiteboard_st.o *ccard*.o *ccard* \
+		fmain2cmain.o resident_time.o non_preempt_clock.o ;\
+	$(BUILDFC_NOMPI) -shared -openmp $(STATIC_COMPILER) -o $@ *.o ;\
+	cd .. ; rm -rf $$mytmpdir
+	#rde.f90_ld $(VERBOSEVL) -shared -L$(LIBDIR)  -o $@ *.o
+	#rde.f90_ld $(VERBOSEVL) -shared -openmp -static -static-intel -l -o $@ *.o
+	#$(BUILDFC_NOMPI) -shared -openmp -static -static-intel -o $@ *.o
+
+$(LIBDIR)/libdescripshared_rpnpy.so: $(LIBDIR)/librmnshared_rpnpy.so
+	libfullpath=`rdefind $(EC_LD_LIBRARY_PATH)  --maxdepth 0 --name libdescrip.a | head -1`;\
+	mytmpdir=librmnshared_rpnpy.so_dir_$$  ;\
+	mkdir $$mytmpdir 2> /dev/null ;\
+	cd $$mytmpdir ;\
+	rm -f *.o ;\
+	ar x $$libfullpath ;\
+	export EC_INCLUDE_PATH="" ;\
+	$(RDEF90_LD) -shared $(RDEALL_LIBPATH) $(STATIC_COMPILER) -L$(LIBDIR) -lrmnshared_rpnpy $(foreach item,$(RDEALL_LIBPATH_NAMES),-Wl,-rpath,$(item)) -o $@ *.o ;\
+	cd .. ; rm -rf $$mytmpdir
+	#rde.f90_ld $(VERBOSEVL) -shared -L$(LIBDIR) -lrmnshared_rpnpy -o $@ *.o
+	#$(BUILDFC_NOMPI) -shared -openmp -static -static-intel -lrmnshared_rpnpy -o $@ *.o
+	#$(BUILDFC_NOMPI) -shared -openmp $(STATIC_COMPILER) -L$(LIBDIR) -lrmnshared_rpnpy -o $@ *.o ;\
+
+#TODO: $(LIBDIR)/libburp_c_shared_rpnpy.so:
+
 
 #---- Lib target - automated ------------------------------------------
 

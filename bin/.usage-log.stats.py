@@ -16,7 +16,7 @@ def getmonth(month):
 
 def getversionlist(versionstr,vfilter,lmergeminor):
     versionstr = str(versionstr).lstrip().strip()
-    versions = versionstr.replace('rpnpy','').replace('GEM/x','').replace('_all','').replace('_','').split(' ')
+    versions = versionstr.replace('rpnpy','').replace('GEM/x','').replace('_all','').replace('_','').replace('//','/').replace('/home/ordenv/ssm-domains9/ENV/py/2.7/','').replace('/home/ordenv/ssm-domains9/ENV/py/2.6/','').replace('/',' ').split(' ')
     versions = [a.strip() for a in versions if a.strip() != '']
         
     if len(versions) > 0:
@@ -198,9 +198,9 @@ def printstats2(mymsg,myarray,ldetails,ufilter,vfilter,imode,luserNotUsage,ltabl
     imode = 2 : user  version
     imode = 3 : month user
     """
-    print mymsg
+    print(mymsg)
     if ufilter or vfilter:
-        print '# Filter: user=',ufilter,'; version=',vfilter
+        print('# Filter: user={0}; version={1}'.format(ufilter,vfilter))
 
     (mytot,myarray1,myarray2) = arrayreduce(myarray,imode,luserNotUsage)
 
@@ -212,7 +212,8 @@ def printstats2(mymsg,myarray,ldetails,ufilter,vfilter,imode,luserNotUsage,ltabl
             k2list += myarray2[k1].keys()
         k2list = sorted(set(k2list))
     for k1 in k1list:
-        print '%8s = %6d' % (k1,myarray1[k1]),        
+        mystr = ''
+        mystr += '{0:>8} = {1:6d} '.format(k1, myarray1[k1])
         if  myarray1[k1] == 1:
             onetime += 1
         if ldetails:
@@ -220,11 +221,10 @@ def printstats2(mymsg,myarray,ldetails,ufilter,vfilter,imode,luserNotUsage,ltabl
                 k2list = sorted(myarray2[k1].keys())
             for k2 in k2list:
                 try:
-                    #print ':%8s @ %-8s = %6d' % (k1,k2,myarray2[k1][k2]),
-                    print '[%-6s = %6d]' % (k2,myarray2[k1][k2]),
+                    mystr += '[{0:7s} = {1:6d}] '.format(k2, myarray2[k1][k2])
                 except:
-                    print '[%-6s = %6d]' % (k2,0),
-        print
+                    mystr += '[{0:7s} = {1:6d}] '.format(k2, 0)
+        print(mystr)
     
     return (mytot,onetime,len(myarray1.keys()),len(myarray2.keys()))
 
@@ -286,11 +286,11 @@ if __name__ == "__main__":
     if options.lusers and options.lmonths:
         (totaluser,onetime1,n1,totalmonth) = printstats2('#==== Per Month User Stats ====',myarray,options.ldetails,options.ufilter,options.vfilter,STATMODS['m,v'],True,True)
 
-    print '#==== Stats Summary ===='
+    print('#==== Stats Summary ====')
     if options.ufilter or options.vfilter:
-        print '# Filter: user=',options.ufilter,'; version=',options.vfilter
-    print 'Nb of Months  = ',totalmonth
-    print 'Total Version = ',totalversion
-    print 'Total User    = ',totaluser, "(onetime user=",onetimeuser,')'
-    print 'Total Usage   = ',totalusage
+        print('# Filter: user={0}; version={1}'.format(options.ufilter,options.vfilter))
+    print('Nb of Months  = {0}'.format(totalmonth))
+    print('Total Version = {0}'.format(totalversion))
+    print('Total User    = {0} (onetime user={1})'.format(totaluser, onetimeuser))
+    print('Total Usage   = {0}'.format(totalusage))
 
