@@ -1,0 +1,5 @@
+#!/bin/ksh    
+
+printf "\n=====>  Transfer.tsk starts: `date` ###########\n\n"
+
+printf "\n=====>  Transfer.tsk ends: `date` ###########\n\n"

@@ -1,0 +1,15 @@
+SEQ_DEFAULT_MACHINE=pollux
+
+SERVER_FRONT=pollux
+SERVER_BACK=hadar
+SERVER_CPU=8
+SERVER_MEM=1G
+SERVER_TIME=60
+SERVER_SOUMET_ARGS='-mpi'
+#SERVER_SOUMET_ARGS='-immediate'
+SERVER_IMMEDIATE_PRE_POST='-immediate'
+
+QUEUE_Upload=xfer
+QUEUE_Prep=development
+QUEUE_Make=development
+QUEUE_Transfer=xfer

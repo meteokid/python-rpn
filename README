@@ -1,0 +1,525 @@
+#!/bin/ksh
+
+## ==========================================================================
+## Developing or Building and Installing GEM
+## ==========================================================================
+
+## ==========================================================================
+## Common preparation steps to all operations
+## ==========================================================================
+
+## --- Create working dir
+
+mkdir mybuildtmpdir$$
+cd mybuildtmpdir$$
+
+cat <<EOF > .git-tree-setenv
+
+## --- Load recent Git
+
+## Note: It is probably best to always use a recent version og Git
+##       version 1.7 on Ubuntu 12 is probably too old
+## Update (to git version 2.3.1) with:
+. s.ssmuse.dot /ssm/net/rpn/utils/15.2
+. r.module.dot
+module load git
+
+## --- Define repositories
+
+## Note: Need bare repositories
+## gitdepotbase=ssh://localhost/~armnsch/GitDepots
+gitdepotbase=ssh://armnenv@localhost/~armnenv/GitDepots
+mysuffix=.git
+
+## Note: List of components dependent on versions
+##       Format: space separated list of COMPONENT:GIT_BRANCH
+
+## TODO: It would be best to have a file with this info in the repository
+## TODO: put the GEM version number and dependencies in a file
+##       then update Makefile, ssmusedep.bndl from it
+##       and use that file in here to build mycomponents
+
+# mygittreecomponents="modelutils:modelutils_1.2-branch rpnphy:rpnphy_5.6-branch gemdyn:gemdyn_4.6-branch gem:gem_4.6-branch"
+
+# mygittreecomponents="modelutils:modelutils_1.3-branch rpnphy:rpnphy_5.7-branch gemdyn:gemdyn_4.7-branch gem:gem_4.7-branch"
+
+mygittreecomponents="
+   modelutils:master 
+   rpnphy:master 
+   gemdyn:master 
+   gem:master
+   modelscripts:master
+   gem-mod:master
+   gem-ref:master
+   rde:master
+   "
+
+## WARNING: for --depth a recent Git verion is needed
+##          See above to update (version 1.7 on Ubuntu 12 is too old)
+## WARNING: present git-subtree version doesn't seem to work with shallow clone
+##          push fails with "protocol error"; too old git on receiving end?
+#myfetchshallow='git fetch --depth=1'
+myfetchshallow='echo'
+
+## --- Pushing back local modifications upstream -----------------------------
+
+my-git-tree-push-all() {
+   if [[ "x\${mygittreecomponents}" == "x" ]] ; then
+      echo "ERROR: empty mygittreecomponents var" 1>&2
+   else
+      for mymodule in \${mygittreecomponents} ; do
+         myname=\${mymodule%%:*}
+         mybranch=\${mymodule##*:}
+         git subtree push --prefix=\${myname}/ \${myname} \${mybranch}
+      done
+   fi
+}
+
+## --- pulling upstream modifications ----------------------------------------
+
+my-git-tree-pull-all() {
+   if [[ "x\${mygittreecomponents}" == "x" ]] ; then
+      echo "ERROR: empty mygittreecomponents var" 1>&2
+   else
+      for mymodule in \${mygittreecomponents} ; do
+         myname=\${mymodule%%:*}
+         mybranch=\${mymodule##*:}
+         git subtree pull --squash --prefix=\${myname}/ \${myname} \${mybranch}
+      done
+   fi
+}
+EOF
+. ./.git-tree-setenv
+
+
+## ==========================================================================
+## Building and Installing GEM
+## See other section below for Development instructions
+## ==========================================================================
+
+## === Option 0: Batch Buil GEM along with all its components ===============
+
+## Use gembuild maestro suite
+## update config file
+## install using instructions from "Option 1... Installing" below
+
+## === Option 1: Building GEM along with all its components =================
+
+## --- Getting the source code ----------------------------------------------
+
+## TODO: use shallow clones: git clone --depth $depth 
+##       use recent Git (see above)
+# myshallow="--depth 1"
+
+## TODO: use single branch clone: 
+##       git clone URL --branch branch_name --single-branch [folder]
+
+for mymodule in ${mygittreecomponents} ; do
+   myname=${mymodule%%:*}
+   mytag=${mymodule##*:}
+   git clone ${myshallow} ${gitdepotbase}/${myname}${mysuffix}
+   cd ${myname} ; git checkout -b tmp ${mytag} ; cd ..
+done
+
+## --- Building -------------------------------------------------------------
+
+export RDENETWORK='science'
+export RDENETWORK='cmc'
+. ./gem/.setenv-withdeps.dot
+cp $gem/Makefile.user.* .
+$gem/bin/ouv_exp_gem -v
+rdemklink -v
+make buildclean
+make components_objects -j 6
+make components_libs  MAKE_NO_LIBSO=1
+make components_abs 
+make components_ssm
+make buildclean
+
+#For additional ARCH
+     ssh MYMACH
+     cd /PATH/
+     . ./gem/.setenv-withdeps.dot
+     rdemklink -v
+     make buildclean
+     make components_objects -j 6 
+     make components_libs  MAKE_NO_LIBSO=1
+     make components_abs 
+     make components_ssm_arch
+     make buildclean
+
+#For Debug libs (for each ARCH)
+      ssh MYMACH
+      cd /PATH/
+     . ./gem/.setenv-withdeps.dot
+      #./bin/ouv_exp_modelutils #optional if build in same dir as above
+      export RDE_BUILDDIR_SFX=-d
+      rdemklink -v
+      make buildclean
+      make components_objects -j 6
+      make components_libs  MAKE_NO_LIBSO=1
+      make components_ssm_arch  COMPONENTS="modelutils rpnphy gemdyn" \
+        MAKE_SSM_NOMOD=1 MAKE_SSM_NOABS=1 MAKE_SSM_NOINC=1
+     make buildclean
+
+
+## --- Installing -----------------------------------------------------------
+## NOTE: This will install ssm pkg on all ARCH
+## TODO: if you install as another user, you may have to copy the .ssm files 
+##       from ~user/SsmDepot/ to ~/SsmDepot/ before make components_install 
+
+ssh MY_INSTALL_MACH
+# mkdir $TMPDIR/gem-install
+# cd  $TMPDIR/gem-install
+# git clone of modelutils, rpnphy, gemdyn, gem
+. ./gem/.setenv-withdeps.dot
+cp $gem/Makefile.user.* .
+$gem/bin/ouv_exp_gem
+rdemklink
+make components_install CONFIRM_INSTALL=yes
+## make components_install CONFIRM_INSTALL=yes SSM_BASE=/ssm/net/rpn/MIG SSM_BASE2=""
+## make components_install CONFIRM_INSTALL=yes SSM_BASE=/fs/ssm/eccc/mrd/rpn/MIG SSM_BASE2=""
+
+## NOTE: Need to run within new shell env (ordenv)
+. s.ssmuse.dot GEM/gem/VERSION
+bndl2dom.sh GEM/gem/${gem_version} GEM/gem/${gem_version}-s
+
+cd ~/SsmBundles/GEM/tests
+cp ~/SsmBundles/GEM/gem/${gem_version}-s.bndl ${gem_version}.bndl
+chmod u+w ${gem_version}.bndl
+echo GEM/others/renametotest >> ${gem_version}.bndl
+
+cd ~/SsmBundles/GEM
+ln -s gem/${gem_version}-s.bndl ${gem_version}.bndl 
+
+
+## --- test installation ---------------------------------------------------
+## NOTE: On a Linux machine, in a new shell
+
+#TODO: update
+# . s.ssmuse.dot GEM/gem/VERSION
+# . gemdev.dot test -v -cd -mach hadar
+# gemview -exp base &
+# gemlaunch -mach hadar
+# # Wait for run to end (in the gemview window)
+# # if the run  ended w/o error, validate results with:
+# gemvalidate
+
+
+## --- Uninstalling --------------------------------------------------------
+
+## This will uninstall ssm pkg on all ARCH
+
+ssh MY_INSTALL_MACH
+cd /PATH/
+. ./gem/.setenv-withdeps.dot
+make components_uninstall UNINSTALL_CONFIRM=yes
+## make components_uninstall UNINSTALL_CONFIRM=yes SSM_BASE=/ssm/net/rpn/MIG
+## make components_uninstall UNINSTALL_CONFIRM=yes SSM_BASE=/fs/ssm/eccc/mrd/rpn/MIG
+
+## TODO: rm -f ~/SsmBundles/GEM/${gem_version}.bndl 
+## TODO: rm -f ~/SsmBundles/GEM/gem/${gem_version}-s.bndl 
+## TODO: rm -rf ~/SsmBundles/GEM/d/gem/${gem_version}-s/
+
+
+## === Option 2: Building GEM Only ==========================================
+
+#Note: this suppose you already installed modelutils, rpnphy, gemdyn and that
+#      it could be found in the location specified in ssmusedep.bndl
+
+#git clone ssh://armnenv@localhost/~armnenv/GitDepots/gem.git
+git clone ssh://localhost/~armnenv/GitDepots/gem.git
+cd gem
+#git checkout -b tmp gem_VERSION
+#update version number (including leading 'x/') in ./include/Makefile.local.mk
+. ./.setenv.dot
+./bin/ouv_exp_gem --nodeps
+rdemklink
+make components_abs COMPONENTS=gem
+make components_ssm COMPONENTS=gem
+
+#For additional ARCH
+     ssh MYMACH
+     cd /PATH/
+     . ./.setenv.dot
+     rdemklink
+     make components_abs COMPONENTS=gem
+     make components_ssm_arch COMPONENTS=gem
+
+#--- Installing ------------------------------------------------------------
+
+#This will install ssm pkg on all ARCH
+
+ssh MY_INSTALL_MACH
+cd /PATH/
+. ./.setenv.dot
+make components_install COMPONENTS=gem CONFIRM_INSTALL=yes
+## make components_install COMPONENTS=gem CONFIRM_INSTALL=yes SSM_BASE=/ssm/net/rpn/MIG
+
+#TODO: post-install in a ...-s domain/bndl as above
+
+#--- Uninstalling ---------------------------------------------------------
+
+#This will uninstall ssm pkg on all ARCH
+
+ssh MY_INSTALL_MACH
+cd /PATH/
+. ./.setenv.dot
+make components_uninstall COMPONENTS=gem UNINSTALL_CONFIRM=yes
+## make components_uninstall COMPONENTS=gem UNINSTALL_CONFIRM=yes SSM_BASE=/ssm/net/rpn/MIG
+
+#TODO: rm -f  ~/SsmBundles/GEM/${gem_version}.bndl 
+#TODO: rm -f  ~/SsmBundles/GEM/gem/${gem_version}-s.bndl 
+#TODO: rm -rf ~/SsmBundles/GEM/d/gem/${gem_version}-s/
+
+
+## ==========================================================================
+## Developing GEM and other components without full src code (mods only)
+## ==========================================================================
+
+## Preparing the RDE workdir
+
+. s.ssmuse.dot GEM/VERSION
+. gemdev.dot mybuildtmpdir$$ -v -cd -mach hadar
+
+## Preparing the git-repos
+git init
+cp $gem/.gitignore .
+git add .gitignore Makefile.user.mk
+git commit -a -m 'initial commit'
+
+## Playing with code
+
+rdeco FILENAME
+vi FILENAME
+
+make obj -j 
+make gem
+
+## Committing your changes locally
+
+git status
+git add FILENAME
+git commit -a -m 'Message'
+
+## Pushing back local modifications upstream
+## Note: It is not possible to push modifications upstreams, 
+##       you'll need to commit your changes into each component's repository
+## Before committing, split your code changes into components with:
+gemexp-flat2tree .
+
+
+
+
+## ==========================================================================
+## Developing GEM and other components with full src code
+## ==========================================================================
+
+## === Option 1: Developing GEM with git-subtree ============================
+## Rely on git-subtree: https://github.com/git/git/tree/master/contrib/subtree
+
+## --- Preparing the git repos and Getting the source code --------------------
+
+git init
+git add .git-tree-setenv
+git commit -a -m 'initial commit'
+gitk --all &
+
+set -x
+. .git-tree-setenv
+for mymodule in ${mygittreecomponents} ; do
+   myname=${mymodule%%:*}
+   mybranch=${mymodule##*:}
+   git remote add -t ${mybranch} ${myname} ${gitdepotbase}/${myname}${mysuffix}
+   ${myfetchshallow} ${myname}
+   git subtree add --squash --prefix=${myname}/ ${myname} ${mybranch}
+done
+set +x
+ 
+## --- Preparing the workdir git-repos --------------------------------------
+
+mylist="
+  gem/.gitignore 
+  gem/Makefile.user.mk 
+  gem/Makefile.user.root.mk 
+  gem/.setenv-withdeps.dot
+  $(/bin/ls -d gem/share/cfgs/*)
+"
+for item in $mylist ; do
+   ln -s $item .
+   git add ${item##*/}
+done
+git commit -m 'link Makefiles and test configs'
+
+git tag gem_dev0
+
+## --- Preparing the RDE workdir
+
+. ./.setenv-withdeps.dot
+ouv_exp_gem -v
+linkit      -v  ## rdemklink
+make vfiles2
+
+
+## --- Playing with code ----------------------------------------------------
+## WARNING: Avoid "rdeco, rderm" as the local mods will not be pushed upsteam
+##          Edit/rename/remove files directly in the components subdirs
+
+rdeed FILENAME 
+
+make obj2 -j 
+make lib2
+make abs2
+
+## Committing your changes locally
+## WARNING: Avoid doing a commit with modifications to several components,
+##          split into one commit per component instead
+
+## Usefull diff options:
+## -M, --find-renames
+## -C, --find-copies-harder
+## --diff-filter=[(A|C|D|M|R|T|U|X|B)...[*]]
+## --text
+## --ignore-space-at-eol
+## -b, --ignore-space-change
+## -w, --ignore-all-space
+## --ignore-blank-lines
+git diff gem_dev0 #[path]
+git diff gem_dev0 --summary --name-status  #[path]
+git diff gem_dev0 --summary --stat         #--numstat #[path] 
+git diff gem_dev0 --summary --name-only    #[path] 
+
+git mv OLD NEW
+git add FILENAME
+git rm FILENAME
+
+git status
+git commit -m 'Message' ## Avoid "-a" since it is more prone to merge 
+                        ## changes from several subrepo into one commit
+
+## --- Pushing back local modifications upstream -----------------------------
+
+. .git-tree-setenv
+my-git-tree-push-all
+
+## --- pulling upstream modifications ----------------------------------------
+
+. .git-tree-setenv
+my-git-tree-pull-all
+
+## --- Tag compnents version and push the tag upstream -----------------------
+
+## Note: Needs to be done after "git subtree push" above
+
+. .git-tree-setenv
+for mymodule in ${mygittreecomponents} ; do
+   myname=${mymodule%%:*}
+   mybranch=${mymodule##*:}
+   git checkout -b ${myname}-${mybranch}-b ${myname}/${mybranch}
+   #VERSION=$(cat VERSION)
+   #git tag ${myname}_${VERSION##*/}
+   #git push --tags
+done
+
+
+
+
+
+
+
+
+
+
+## === Option 2: Developing GEM with git-submodule ==========================
+
+## TODO:
+
+## === Option 3: Developing GEM with git-subrepo ============================
+## Rely on git-subrepo: https://github.com/ingydotnet/git-subrepo
+## WARNING: avoid UFN since stree seems to have dealbreaker bugs (promissing)
+
+## WARNING: need a recent verion of Git, version 1.7 on Ubuntu 12 is too old
+##          See above to update 
+
+## Preparing the git-repos
+
+for mymodule in ${mygittreecomponents} ; do
+   myname=${mymodule%%:*}
+   mybranch=${mymodule##*:}
+   git subrepo clone \
+       ${gitdepotbase}/${myname}${mysuffix} \
+       ${myname} \
+       --branch=${mybranch}
+done
+
+rm -f .gitignore
+ln -s gem/.gitignore .
+ln -s gem/Makefile.user.mk .
+ln -s gem/Makefile.user.root.mk .
+
+## Preparing the RDE workdir
+
+# ...
+
+## Playing with code
+## WARNING: Avoid "rdeco, rderm" as the local mods will not be pushed upsteam
+##          Edit/rename/remove files directly in the components subdirs
+
+# ...
+
+## Committing your changes locally
+## WARNING: Avoid doing a commit with modifications to several components
+##          split into one commit per component instead
+
+# ...
+
+## Pushing back local modifications upstream
+
+for mymodule in ${mygittreecomponents} ; do
+   myname=${mymodule%%:*}
+   git subrepo push ${myname}
+done
+
+
+## === Option 4: Developing GEM with git-stree ==============================
+## Rely on git-stree: https://github.com/tdd/git-stree
+## WARNING: avoid UFN since stree seems to have dealbreaker bugs (promissing)
+
+## Preparing the git-repos
+
+for mymodule in ${mygittreecomponents} ; do
+   myname=${mymodule%%:*}
+   mybranch=${mymodule##*:}
+   git stree add ${myname} -P ${myname}   \
+       ${gitdepotbase}/${myname}${suffix} \
+       ${mybranch}
+   git stree pull ${myname}
+done
+
+rm -f .gitignore
+ln -s gem/.gitignore .
+ln -s gem/Makefile.user.mk .
+ln -s gem/Makefile.user.root.mk .
+
+## Preparing the RDE workdir
+
+# ...
+
+## Playing with code
+## WARNING: Avoid "rdeco, rderm" as the local mods will not be pushed upsteam
+##          Edit/rename/remove files directly in the components subdirs
+
+# ...
+
+## Committing your changes locally
+## WARNING: Avoid doing a commit with modifications to several components
+##          split into one commit per component instead
+
+# ...
+
+## Pushing back local modifications upstream
+
+for mymodule in ${mygittreecomponents} ; do
+   myname=${mymodule%%:*}
+   git subrepo push ${myname}
+done

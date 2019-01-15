@@ -1,0 +1,13 @@
+eccc/mrd/rpn/MIG/GEM/others/gem-prep-1
+
+Linux_x86-64:eccc/mrd/rpn/MIG/ENV/hpcs-rpn/h201402.06-r16.2.2-intel2016.1.156
+sles-11-broadwell-64-xc40:eccc/mrd/rpn/MIG/ENV/hpcs-rpn/h201402.06-r16.2.2-PrgEnv-intel-5.2.82
+
+Linux_x86-64:eccc/cmd/cmdn/vgrid/5.6.9/intel-2016.1.156
+sles-11-broadwell-64-xc40:eccc/cmd/cmdn/vgrid/5.6.9/PrgEnv-intel-5.2.82
+
+eccc/mrd/rpn/MIG/ENV/d/modelutils/modelutils_1.4-LTS.7
+eccc/mrd/rpn/MIG/ENV/d/rpnphy/rpnphy_5.8-LTS.9
+eccc/mrd/rpn/MIG/GEM/d/gemdyn/gemdyn_4.8-LTS.15
+
+eccc/mrd/rpn/MIG/ENV/rde/1.0.6

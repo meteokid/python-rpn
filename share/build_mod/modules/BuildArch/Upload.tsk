@@ -1,0 +1,18 @@
+#!/bin/bash
+# Upload data files to backend
+
+printf "\n=====>  Upload.tsk starts: `date` ###########\n\n"
+
+echo PWD=$(pwd)
+echo SEQ_EXP_HOME=${SEQ_EXP_HOME}
+echo gem_build_git=$(which ${TASK_BIN}/gem_build_git)
+env | grep TASK
+env | grep SEQ_
+
+${TASK_BIN}/gem_build_git -v -d ${TASK_WORK} \
+   --cfg ${TASK_INPUT}/gem_build.cfg \
+   --action upload --clean
+
+ln -s ${TASK_WORK} ${TASK_OUTPUT}/build_exp
+   
+printf "\n=====>  Upload.tsk ends: `date` ###########\n\n"

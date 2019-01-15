@@ -1,0 +1,4 @@
+<NODE_RESOURCES>
+   <BATCH catchup="3" cpu="1x1" cpu_multiplier="1" machine="hadar" memory="${SERVER_MEM}" mpi="1" queue="${QUEUE_Make}" soumet_args="${SERVER_SOUMET_ARGS}" wallclock="30" />
+   <ABORT_ACTION name="stop" />
+</NODE_RESOURCES>

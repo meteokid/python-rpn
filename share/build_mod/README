@@ -1,0 +1,18 @@
+## import_maestro_exp -n -y -s SRC -d DEST
+## export SEQ_EXP_HOME=$(pwd)
+## makelinks --force
+
+## . s.ssmuse.dot /net/ssm/rpn/utils/15.2 ## was needed for r.date
+vi Configs/gem_build.cfg
+export SEQ_EXP_HOME=$(pwd)
+bin/gem_build_launch -v -t 30 --cfg=Configs/gem_build.cfg
+bin/gem_build_xflow &
+
+r.sge qstat
+r.sge qdel
+
+=====
+
+ln -s modules/... EntryModule
+
+# EntryModule/xflow

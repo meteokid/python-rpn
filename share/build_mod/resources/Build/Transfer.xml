@@ -1,0 +1,4 @@
+<NODE_RESOURCES>
+   <BATCH catchup="3" cpu="1" machine="hadar" memory="1G" mpi="0" queue="${QUEUE_Transfer}" soumet_args="${SERVER_IMMEDIATE_PRE_POST}" wallclock="30" />
+   <ABORT_ACTION name="rerun" />
+</NODE_RESOURCES>

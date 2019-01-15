@@ -1,0 +1,4 @@
+#!/bin/bash
+
+export SEQ_EXP_HOME=$(pwd)
+xflow -d 00000000000000 >/dev/null

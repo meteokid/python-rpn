@@ -1,0 +1,20 @@
+#!/bin/ksh
+
+printf "\n=====>  MakeAll.tsk starts: `date` ###########\n\n"
+
+echo build_debug=$build_debug
+echo BUILDGEM_DEBUG=$BUILDGEM_DEBUG
+env | grep TASK
+env | grep SEQ_
+
+ln -sf ${TASK_INPUT}/build_exp ${TASK_WORK}/build_exp
+mkdir -p ${TASK_OUTPUT}/ssm
+
+${TASK_BIN}/gem_build_git -v -d ${TASK_WORK}/build_exp \
+   --cfg ${TASK_INPUT}/gem_build.cfg \
+   --action make ${BUILDGEM_DEBUG} \
+   --ssm ${TASK_OUTPUT}/ssm
+
+ln -sf ${TASK_WORK}/build_exp ${TASK_OUTPUT}/build_exp
+
+printf "\n=====>  MakeAll.tsk ends: `date` ###########\n\n"
