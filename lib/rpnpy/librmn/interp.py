@@ -63,9 +63,61 @@ class EzscintError(RMNError):
 
 #---- Set Functions
 
+def ezsetival(option, value):
+    """
+    Sets an integer numerical ezscint option
+    
+    ezsetival(option, value)
+    
+    Args:
+        option : option name (string)
+        value  : option value (float)
+    Returns:
+        None
+    Raises:
+        TypeError    on wrong input arg types
+        EzscintError on any other error
+
+    See Also:
+        ezsetval
+        ezsetopt
+        ezgetopt
+        rpnpy.librmn.const
+    """
+    return ezsetopt(option, value)
+
+
+def ezsetval(option, value):
+    """
+    Sets a floating point numerical ezscint option
+    
+    ezsetval(option, value)
+    
+    Args:
+        option : option name (string)
+        value  : option value (float)
+    Returns:
+        None
+    Raises:
+        TypeError    on wrong input arg types
+        EzscintError on any other error
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> rmn.ezsetval(rmn.EZ_OPT_EXTRAP_VALUE, 999.)
+
+    See Also:
+        ezsetival
+        ezsetopt
+        ezgetopt
+        rpnpy.librmn.const
+    """
+    return ezsetopt(option, value)
+
+
 def ezsetopt(option, value):
     """
-    Sets a floating point numerical option from the package
+    Sets ezscint option: float, integer or string
     
     ezsetopt(option, value)
     
@@ -78,12 +130,18 @@ def ezsetopt(option, value):
         TypeError    on wrong input arg types
         EzscintError on any other error
 
+    Notes:
+        This function replaces the following C/Fortran functions:
+        ezsetival, ezsetval, ezsetopt
+
     Examples:
     >>> import rpnpy.librmn.all as rmn
     >>> rmn.ezsetopt(rmn.EZ_OPT_INTERP_DEGREE, rmn.EZ_INTERP_LINEAR)
     >>> rmn.ezsetopt(rmn.EZ_OPT_USE_1SUBGRID,  rmn.EZ_YES)
 
     See Also:
+        ezsetval
+        ezsetival
         ezgetopt
         rpnpy.librmn.const
     """
@@ -473,9 +531,55 @@ def gdsetmask(gdid, mask):
 #---- Query Functions
 
 
+def ezgetival(option):
+    """
+    Gets an ezscint integer option value
+    
+    value = ezgetival(option)
+    
+    Args:
+        option : option name (string)
+    Returns:
+        integer, option value
+    Raises:
+        TypeError    on wrong input arg types
+        EzscintError on any other error
+        
+    See Also:
+        ezgetval
+        ezgetopt
+        ezsetopt
+        rpnpy.librmn.const
+    """
+    return ezgetopt(option, vtype=int)
+
+
+def ezgetval(option):
+    """
+    Gets an ezscint float option value
+    
+    value = ezgetval(option)
+    
+    Args:
+        option : option name (string)
+    Returns:
+        float, option value
+    Raises:
+        TypeError    on wrong input arg types
+        EzscintError on any other error
+        
+    See Also:
+        ezgetival
+        ezgetopt
+        ezsetopt
+        rpnpy.librmn.const
+    """
+    return ezgetopt(option, vtype=float)
+
+
 def ezgetopt(option, vtype=int):
     """
-    Gets an option value from the package
+    Gets an ezscint option value
     
     value = ezgetopt(option)
     value = ezgetopt(option, vtype)
@@ -490,6 +594,10 @@ def ezgetopt(option, vtype=int):
         TypeError    on wrong input arg types
         EzscintError on any other error
         
+    Notes:
+        This function replaces the following C/Fortran functions:
+        ezgetival, ezgetval, ezgetopt
+
     Examples:
     >>> import rpnpy.librmn.all as rmn
     >>> interp_degree = rmn.ezgetopt(rmn.EZ_OPT_INTERP_DEGREE, vtype=str)
@@ -497,6 +605,8 @@ def ezgetopt(option, vtype=int):
     # Field will be interpolated with type: linear
 
     See Also:
+        ezgetival
+        ezgetval
         ezsetopt
         rpnpy.librmn.const
     """
