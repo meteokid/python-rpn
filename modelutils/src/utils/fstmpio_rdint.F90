@@ -112,7 +112,7 @@ contains
 
       mysize = size(mydata)
       call rpn_comm_bcast(mydata, mysize, RPN_COMM_INTEGER, comm_ipe_io_master, &
-           communicator_S, istat)
+           trim(communicator_S), istat)
 
       if (.not.isiomaster_L) then
          F_key = mydata(1)
@@ -183,7 +183,7 @@ contains
 
       mysize = size(mydata)
       call rpn_comm_bcast(mydata, mysize, RPN_COMM_INTEGER, comm_ipe_io_master, &
-           communicator_S, istat)
+           trim(communicator_S), istat)
 
       if (.not.isiomaster_L) then
          F_istat = min(mydata(1), RMN_OK)
@@ -280,12 +280,14 @@ contains
             if (size(F_ip1s) > 0) then
                mydata(NMAX/2:NMAX/2+size(F_ip1s)-1) = F_ip1s(:)
             endif
+         else
+            mydata(1:4) = (/F_datev, F_nkeys, 0, 0/)
          endif
       endif IF_MASTER
 
       mysize = size(mydata)
       call rpn_comm_bcast(mydata, mysize, RPN_COMM_INTEGER, comm_ipe_io_master, &
-           communicator_S, istat)
+           trim(communicator_S), istat)
 
       IF_SLAVE: if (.not.isiomaster_L) then
          F_datev = mydata(1)
@@ -429,12 +431,14 @@ contains
             if (size(F_ip1s) > 0) then
                mydata(2*NMAX/3:2*NMAX/3+size(F_ip1s)-1) = F_ip1s(:)
             endif
+         else
+            mydata(1:4) = (/F_datev, F_nkeys, 0, 0/)
          endif
       endif IF_MASTER
 
       mysize = size(mydata)
       call rpn_comm_bcast(mydata, mysize, RPN_COMM_INTEGER, comm_ipe_io_master, &
-           communicator_S, istat)
+           trim(communicator_S), istat)
 
       IF_SLAVE: if (.not.isiomaster_L) then
          F_datev = mydata(1)
@@ -630,7 +634,7 @@ contains
       end do
       zlist_o = .false.
       call rpn_comm_bcast(lnkeys2, 1, RPN_COMM_INTEGER, &
-           comm_ipe_io_master, communicator_S, istat) !#TODO: reduce max?
+           comm_ipe_io_master, trim(communicator_S), istat) !#TODO: reduce max?
       if (.not.RMN_IS_OK(istat)) then
          call msg(MSG_WARNING, '(fstmpio) rdhint: Problem in rpn_comm_bcast')
          F_istat = RMN_ERR
@@ -787,7 +791,7 @@ contains
       end do
 
       call rpn_comm_bcast(lnkeys2, 1, RPN_COMM_INTEGER, &
-           comm_ipe_io_master, communicator_S, istat) !#TODO: reduce max?
+           comm_ipe_io_master, trim(communicator_S), istat) !#TODO: reduce max?
       if (.not.RMN_IS_OK(istat)) then
          call msg(MSG_WARNING, '(fstmpio) rdhint: Problem in rpn_comm_bcast')
          F_istat = RMN_ERR
@@ -917,7 +921,7 @@ contains
       endif
       mysize = size(buffer)
       call rpn_comm_bcast(buffer, mysize, RPN_COMM_INTEGER, comm_ipe_io_master, &
-           communicator_S, istat) !#TODO: review, costly
+           trim(communicator_S), istat) !#TODO: review, costly
       F_istat = buffer(1)
       if (.not.RMN_IS_OK(F_istat)) return
 
@@ -1031,7 +1035,7 @@ contains
          F_istat = fst_get_vgrid(F_fileid, F_key, F_vgrid, F_ip1s, lvltyp_S)
       endif
       call rpn_comm_bcast(F_istat, 1, RPN_COMM_INTEGER, comm_ipe_io_master, &
-           communicator_S, istat)
+           trim(communicator_S), istat)
       if (.not.RMN_IS_OK(F_istat)) return
       F_istat = vgrid_wb_bcast(F_vgrid, F_ip1s, itype, lvltyp_S, communicator_S, &
            comm_ipe_io_master)

@@ -328,7 +328,7 @@ contains
       cfg => F_inputobj%cfg
       cfgvar => F_inputobj%cfg%v(F_ivar)
       cfgfile => F_inputobj%fid
- 
+
       call inputio_files_set_iotype(cfgfile)
 
       fld = priv_newfld(F_inputobj)
@@ -611,7 +611,7 @@ contains
       enddo
       if (RMN_IS_OK(F_istat)) then
          F_istat = priv_read(F_cfg, F_cfgvar, F_cfgfile, fileidx, F_fld)
-     endif
+      endif
       write(msg_S, *) F_istat
       call msg(MSG_DEBUG, '(inputio) frh [END] '//trim(msg_S))
       !------------------------------------------------------------------
@@ -709,6 +709,7 @@ contains
       else
          pip1list => ip1list(1:nip1)
       endif
+
       IF_VINT: if (F_cfgvar%vint_S /= 'none') then
          if (F_fld%vn2_S == '') then
             F_fld%nkeys = fstmpio_find_3d_0(pk1, funit, F_fld%vn1_S, &
@@ -732,7 +733,7 @@ contains
                  datevfuzz, fuzztype, F_typvar_S=F_cfgvar%typvar_S)
          endif
       endif IF_VINT
- 
+
       if (ftype == INPUT_FILES_CLIM .or. ftype == INPUT_FILES_GEOP) then
          F_fld%jdatev = jdatev0
       else
@@ -1003,6 +1004,11 @@ contains
       F_istat = RMN_ERR
 
       IF_NONE: if (any(F_cfgvar%tint_S(1:4) == (/'none', 'any '/))) then
+         !#TODO: what if (F_fld%nkeys == 0)
+         if (F_fld%nkeys == 0) then
+            print *,'WARNING: (inputio) priv_tint_status nkeys==0'
+            call flush(6)
+         endif
          if (F_fld%nkeys > 0) F_istat = RMN_OK
          if (F_fld%nkeys < 0) then
             F_istat = TIME_INTERP_NOT_FOUND
