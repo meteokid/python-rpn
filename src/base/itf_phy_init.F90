@@ -49,6 +49,7 @@
 ! v4_70 - authors          - initial version
 
 #include <msg.h>
+#include <rmnlib_basics.hf>
 
       character(len=32), parameter  :: VGRID_M_S = 'ref-m'
       character(len=32), parameter  :: VGRID_T_S = 'ref-t'
@@ -69,7 +70,7 @@
 !For sorting the output
       integer istat, iverb
       character(len=32) :: varname_S,outname_S,bus0_S,refp0_S,refp0ls_S
-      character(len=32) :: varlist_S(MAXELEM*MAXSET)
+      character(len=32) :: varlist_S(MAXELEM*MAXSET), input_type_S
       integer k,j,n,ibus,multxmosaic
       type(phymeta) :: pmeta
 !
@@ -129,11 +130,22 @@
 ! Complete physics initialization (see phy_init for interface content)
 
       istat = ptopo_io_set(Inp_npes) !#TODO mv this in phy... pass npes as arg
+      call timing_start2(41, 'PHY_init', 40 )
       err= phy_init ( Path_phy_S, Step_CMCdate0, real(Cstv_dt_8), &
                       'model/Hgrid/lclphy', 'model/Hgrid/lclcore', &
                       'model/Hgrid/global', 'model/Hgrid/local'  , &
                       'model/Hgrid/glbphy', 'model/Hgrid/glbphycore', &
                       G_nk+1, Ver_std_p_prof%m)
+      call timing_stop(41)
+
+! Option consistency check
+      if (WB_IS_OK(wb_get('phy/input_type', input_type_S))) then
+         istat = clib_toupper(input_type_S)
+         if (Iau_interval >0. .and. input_type_S /= Iau_input_type_S) then
+            err = RMN_ERR
+            call msg(MSG_ERROR, '(itf_phy_init) input_type for IAU ('//trim(Iau_input_type_S)//') and physics ('//trim(input_type_S)//') must be the same.')
+         endif
+      end if
 
 ! Initialize filter weights for smoothing
       if (.not.WB_IS_OK(wb_get('phy/cond_infilter',cond_sig))) cond_sig=-1.
