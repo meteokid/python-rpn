@@ -1,0 +1,286 @@
+#!/usr/bin/env python
+#!/usr/bin/env python2
+# -*- coding: utf-8 -*-
+# Author: Stephane Chamberland <stephane.chamberland@canada.ca>
+# Copyright: LGPL 2.1
+"""
+
+Example:
+   rpy.series  -v \
+        --var 'nomvar=tt, ip1=11733' 'nomvar=tt, ip1=8034' \
+        --ll '45.,273.5' '46.,274.' \
+        --title "TT for levels: 0.9733 sg and 0.6034 sg"\
+        --axe "TT [C]"\
+        -i $CMCGRIDF/prog/regeta/$(date '+%Y%m%d')00_*
+"""
+
+import sys
+import matplotlib.pyplot as plt
+import numpy as np
+
+import rpnpy.librmn.all as rmn
+from rpnpy.rpndate import RPNDate
+
+
+def get_data_serie(fileId, xy, ll,
+             nomvar, dateo=-1, ip1=-1, ip3=-1, typvar=' ', etiket=' ',
+             verbose=False):
+    """
+    """
+    # Get the list of times, sort and filter
+    rlist = {}
+    if ip1 != -1:
+        (lval, lkind) = rmn.convertIp(rmn.CONVIP_DECODE, ip1)
+        ip1 = rmn.ip1_all(lval, lkind)
+    key  = rmn.fstinf(fileId, nomvar=nomvar, ip1=ip1, ip3=ip3,
+                      typvar=typvar, etiket=etiket)
+    meta  = rmn.fstprm(key['key'])
+    ip1   = int(meta['ip1'])
+    dateo = int(meta['dateo'])
+    for key in rmn.fstinl(fileId, nomvar=nomvar, ip1=ip1, ip3=ip3,
+                          typvar=typvar, etiket=etiket):
+        meta = rmn.fstprm(key)
+        if  dateo in (None, -1 , meta['dateo']) and \
+            ip1   in (None, -1 , meta['ip1'])   and \
+            ip3   in (None, -1 , meta['ip3'])   and \
+            typvar in (None, '' , ' ', meta['typvar'])  and \
+            etiket in (None, '' , ' ', meta['etiket']):
+            ip1   = int(meta['ip1'])
+            dateo = int(meta['dateo'])
+            rlist[float(meta['npas']*meta['deet'])/3600.] = key
+
+    if verbose or len(rlist.keys()) == 0:
+        print("Found %d record for %s ip1=%d ip3=%d dateo=%d typv=%s etk=%s" % (len(rlist.keys()), nomvar, ip1, ip3, dateo, typvar, etiket))
+    if len(rlist.keys()) == 0:
+        return None
+
+    # Allocate and read
+    shape = (len(xy)+len(ll), len(rlist.keys()))
+    data  = np.empty(shape, dtype=np.float32, order='F')
+    itime = 0
+    rec   = {}
+    rec['d'] = None
+    hGrid = None
+    xpts = [x[0] for x in xy]
+    ypts = [x[1] for x in xy]
+    lats = [l[0] for l in ll]
+    lons = [l[1] for l in ll]
+    for hour in sorted(rlist.keys()):
+        rec = rmn.fstluk(rlist[hour], dataArray=rec['d'])
+        if hGrid is None:
+            hGrid = rmn.readGrid(fileId, rec)
+        if len(xpts) > 0:
+            vals = rmn.gdxysval(hGrid['id'], xpts, ypts, rec['d'])
+            data[0:len(xy),itime] = vals[:]
+        if len(lats) > 0:
+            vals = rmn.gdllsval(hGrid['id'], lats, lons, rec['d'])
+            data[len(xy):len(xy)+len(ll),itime] = vals[:]
+        if verbose:
+            (lval, lkind) = rmn.convertIp(rmn.CONVIP_DECODE, rec['ip1'])
+            print("Read %s (ip1=%d ; %8f %s) (ip2=%d ip3=%d typv=%s etk=%s) v=%s" %
+                  (rec['nomvar'], rec['ip1'], lval, rmn.kindToString(lkind),
+                   rec['ip2'], rec['ip3'], rec['typvar'], rec['etiket'],
+                   data[:,itime]))
+        itime +=1
+
+    rec.update({
+        'd'   : data,
+        'hrs' : sorted(rlist.keys()),
+        'xy'  : xy,
+        'll'  : ll
+        })
+    return rec
+
+
+def get_level_str(ip1, ip2, ip3):
+    """
+    """
+    level = -1
+    try:
+        (rp1, rp2, rp3) = rmn.DecodeIp(ip1, ip2, ip3)
+        units = rmn.kindToString(rp1.kind)
+        if rp1.v1 == rp1.v2:
+            level = "%6f%s" % (rp1.v1,units)
+        else:
+            level = '['+str(rp1.v1)+' - '+str(rp1.v1)+'] '+units
+    except:
+        pass
+    return level
+
+
+def plot_series(varlist, title=None, axename=None):
+    """
+    """
+    #TODO: get full name and units from dict
+    if title is None:
+        title = 'Time Serie of: %s' % varlist[0]['nomvar']
+    plt.title(title)
+    if axename is None:
+        axename = varlist[0]['nomvar']
+    plt.ylabel(axename)        
+    plt.xlabel('Time: %s + H' % str(RPNDate(varlist[0]['dateo'])))
+
+    font    = {'family': 'monospace', 'weight': 'normal', 'size': 'x-small'}
+    markers = ('-', '-.', '--', ':')
+    imark   = 0
+    for var in varlist:
+        if var is None:
+            continue
+        (nomvar, ip1, xy, ll, d, hrs, etk) = \
+            (var['nomvar'], var['ip1'], var['xy'], var['ll'], var['d'],
+             var['hrs'], var['etiket'])
+
+        level = get_level_str(var['ip1'], var['ip2'], var['ip3'])
+        for istat in xrange(len(xy)):
+            (i,j) = xy[istat]
+            y = d[istat,:]
+            plt.plot(hrs, y, markers[imark], label="%s xy:(%6.1f,%6.1f, %s) %12s" % (nomvar,i,j, level, etk))        
+        for istat in xrange(len(ll)):
+            (i,j) = ll[istat]
+            y = d[len(xy)+istat,:]
+            plt.plot(hrs, y, markers[imark], label="%s ll:(%6.1f,%6.1f, %s) %12s" % (nomvar,i,j, level, etk))
+        imark += 1
+        if imark >= len(markers): imark=0
+
+    # Tweak spacing to prevent clipping of ylabel
+    #plt.subplots_adjust(left=0.15)
+    plt.xticks(np.arange(min(varlist[0]['hrs']), max(varlist[0]['hrs'])+1, 6.0))
+    plt.legend(prop=font)
+    plt.grid()
+    plt.show()
+
+
+def xy2list(xy):
+    """
+    Split string with format
+    x1,y1
+    x1,y1,x2,y2
+    (x1,y1),(x2,y2)
+    """
+    if xy is None or xy == '':
+        return []
+    if isinstance(xy, str):
+        xy = (xy, )
+    xy2 = []
+    for xy1 in xy:
+        xy2 += xy1.replace('(','').replace(')','').split(',')
+    return [(float(xy2[i*2]),float(xy2[i*2+1])) for i in xrange(len(xy2)//2)]
+
+    
+def varstr2dict(var):
+    """
+    Split string with format
+    ...
+    """
+    mydict = {
+        'nomvar' : ' ',
+        'dateo' : -1,
+        'ip1' : -1,
+        'ip3' : -1,
+        'typvar' : ' ',
+        'etiket' : ' '
+        }
+    mydict.update(dict([[k.strip() for k in keyval.split('=',1)] for keyval in var.split(',')]))
+    if 'vdateo' in mydict.keys():
+        (yyyymmdd, hhmmsshh0) = mydict['vdateo'].split('.')
+        hhmmsshh = int(hhmmsshh0) * 10**(8-len(hhmmsshh0))
+        dateo = rmn.newdate(rmn.NEWDATE_PRINT2STAMP, int(yyyymmdd), hhmmsshh)
+        if dateo is not None:
+            mydict['dateo'] = dateo
+    for k in ('ip1', 'ip3', 'dateo'):
+        mydict[k] = int(mydict[k])
+    return mydict
+
+
+if __name__ == "__main__":
+    import argparse
+    import glob
+
+    # Command line arguments
+    desc="Draw time series"
+    usage = """
+    %(prog)s -i filenames [options]
+    """
+    epilog = "For var, accepted keywords are: \n   nomvar, ip1, ip3, typvar, etiket, dateo, vdateo\nnomvar is mandatory\nany ommited keyword is equivalent to wildcard (select any)\ndateo is the CMC datetime stamp\nvdateo is the date human readable format: YYYYMMDD.hhmm\nif both dateo and vdateo are provided, dateo is ignored (using vdateo)"
+    
+    parser = argparse.ArgumentParser(
+        description=desc, usage=usage, epilog=epilog,
+        prefix_chars='-+', formatter_class=argparse.RawDescriptionHelpFormatter)
+
+    parser.add_argument("-i", "--input", dest="inputFile",
+                        nargs='+', required=True, type=str, default=[],
+                        help="Input RPN Std File name")
+
+    parser.add_argument("--var", dest="varlist",
+                        nargs='+', required=True, type=str, default=[],
+                        metavar="'nomvar=AA, ip1=99, ...'",
+                        help="Var selection criteria, e.g.: 'nomvar=AA, ip1=99, ip3=-1, typvar=A, etiket=myetk, dateo=-1, vdateo=20160314.0000'")
+
+
+    ## parserg1 = parser.add_mutually_exclusive_group()
+    parser.add_argument("--xy", dest="xy",
+                        nargs='+', type=str, default=[],
+                        metavar="'x,y'",
+                        help="x,y position of stations to plot: 'x1,y1' 'x2,y2' ...")
+
+    parser.add_argument("--ll", dest="ll",
+                        nargs='+', type=str, default=[],
+                        metavar="'lat,lon'",
+                        help="lat,lon of stations to plot: 'la1,lo1' 'la2,lo2' ...")
+
+    #TODO: add time range option
+    
+    parser.add_argument("--title", dest="title", default=None,
+                        help="Figure Title")
+    parser.add_argument("--axe", dest="axename", default=None,
+                        help="Figure Y axe name and utils")
+
+    parser.add_argument("-v", "--verbose", dest="verbose", action="store_true",
+                        help="Verbose mode")
+
+    args = parser.parse_args()
+
+    if len(args.xy) + len(args.ll) == 0:
+        sys.stderr.write("\nError: Need to provide at least one xy or ll.\n\n")
+        parser.print_help()
+        sys.exit(1)
+            
+    files = args.inputFile if len(args.inputFile) > 1 else glob.glob(args.inputFile[0])
+    xy    = xy2list(args.xy)
+    ll    = xy2list(args.ll)
+    
+    try:
+        rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)
+        fileId = rmn.fstopenall(files, verbose=args.verbose)
+    except:
+        sys.stderr.write('ERROR: Problem opening: %s\n' % str(files))
+        raise #sys.exit(1)
+
+    try:
+        varlist = []
+        for var in args.varlist:
+            vardict = varstr2dict(var)
+            if not vardict['nomvar'].strip():
+                sys.stderr.write("\nWARNING: Skippping, no nomvar: {0}.\n\n".\
+                                 format(var))
+                continue
+            varlist.append(
+                get_data_serie(
+                    fileId, xy, ll, vardict['nomvar'], vardict['dateo'],
+                    vardict['ip1'], vardict['ip3'], vardict['typvar'],
+                    vardict['etiket'], verbose=args.verbose))
+    except:
+        raise #pass
+    finally:
+        rmn.fstcloseall(fileId)
+
+    if None in varlist or len(varlist) == 0:
+        sys.stderr.write('ERROR: Problem getting requested fields\n')
+        sys.exit(1)
+
+    plot_series(varlist, args.title, args.axename)
+    
+        
+# -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
+# vim: set expandtab ts=4 sw=4:
+# kate: space-indent on; indent-mode cstyle; indent-width 4; mixedindent off;

@@ -1,0 +1,64 @@
+#if !defined(_VECT_MOD_MACROS_)
+#define _VECT_MOD_MACROS_
+
+#define NULL_VECT_2D vect_2d()/0.,0./_)
+#define NULL_VECT_2D_8 vect_2d_8((/0.D0,0.D0/))
+#define NULL_VECT_3D vect_3d((/0.,0.,0./))
+#define NULL_VECT_3D_8 vect_3d_8((/0.D0,0.D0,0.D0/))
+
+#define VECT_DOT_2D(V1,V2) (V1%v(1)*V2%v(1) + V1%v(2)*V2%v(2))
+#define VECT_DOT_3D(V1,V2) (V1%v(1)*V2%v(1) + V1%v(2)*V2%v(2) + V1%v(3)*V2%v(3))
+
+#define VECT_NORM_2D(VV) sqrt(VECT_DOT_2D(VV,VV))
+#define VECT_NORM_3D(VV) sqrt(VECT_DOT_3D(VV,VV))
+#define VECT_NORM_2D_8(VV) dsqrt(VECT_DOT_2D(VV,VV))
+#define VECT_NORM_3D_8(VV) dsqrt(VECT_DOT_3D(VV,VV))
+
+#define VECT_NORMILIZE_2D(VV) (VV/VECT_NORM_2D(VV))
+#define VECT_NORMILIZE_3D(VV) (VV/VECT_NORM_3D(VV))
+
+#define VECT_DBLE_2D(V1) vect_2d_8((/dble(V1%v(1)),dble(V1%v(2))/))
+#define VECT_DBLE_3D(V1) vect_3d_8((/dble(V1%v(1)),dble(V1%v(2)),dble(V1%v(3))/))
+
+#define VECT_SNGL_2D(V1) vect_2d((/real(V1%v(1)),real(V1%v(2))/))
+#define VECT_SNGL_3D(V1) vect_3d((/real(V1%v(1)),real(V1%v(2)),real(V1%v(3))/))
+
+#define VECT_ADD_2D(V1,V2)   vect_2d((/V1%v(1)+V2%v(1),V1%v(2)+V2%v(2)/))
+#define VECT_ADD_3D(V1,V2)   vect_3d((/V1%v(1)+V2%v(1),V1%v(2)+V2%v(2),V1%v(3)+V2%v(3)/))
+#define VECT_ADD_2D_8(V1,V2) vect_2d_8((/V1%v(1)+V2%v(1),V1%v(2)+V2%v(2)/))
+#define VECT_ADD_3D_8(V1,V2) vect_3d_8((/V1%v(1)+V2%v(1),V1%v(2)+V2%v(2),V1%v(3)+V2%v(3)/))
+
+#define VECT_SUB_2D(V1,V2)   vect_2d((/V1%v(1)-V2%v(1),V1%v(2)-V2%v(2)/))
+#define VECT_SUB_3D(V1,V2)   vect_3d((/V1%v(1)-V2%v(1),V1%v(2)-V2%v(2),V1%v(3)-V2%v(3)/))
+#define VECT_SUB_2D_8(V1,V2) vect_2d_8((/V1%v(1)-V2%v(1),V1%v(2)-V2%v(2)/))
+#define VECT_SUB_3D_8(V1,V2) vect_3d_8((/V1%v(1)-V2%v(1),V1%v(2)-V2%v(2),V1%v(3)-V2%v(3)/))
+
+#define VECT_MUL_X_S_2D(V1,S)   vect_2d((/V1%v(1)*S,V1%v(2)*S/))
+#define VECT_MUL_X_S_3D(V1,S)   vect_3d((/V1%v(1)*S,V1%v(2)*S,V1%v(3)*S/))
+#define VECT_MUL_X_S_2D_8(V1,S) vect_2d_8((/V1%v(1)*S,V1%v(2)*S/))
+#define VECT_MUL_X_S_3D_8(V1,S) vect_3d_8((/V1%v(1)*S,V1%v(2)*S,V1%v(3)*S/))
+
+#define VECT_DIVBY_S_2D(V1,S)   vect_2d((/V1%v(1)/S,V1%v(2)/S/))
+#define VECT_DIVBY_S_3D(V1,S)   vect_3d((/V1%v(1)/S,V1%v(2)/S,V1%v(3)/S/))
+#define VECT_DIVBY_S_2D_8(V1,S) vect_2d_8((/V1%v(1)/S,V1%v(2)/S/))
+#define VECT_DIVBY_S_3D_8(V1,S) vect_3d_8((/V1%v(1)/S,V1%v(2)/S,V1%v(3)/S/))
+
+#define VECT_CROSS_2D(V1,V2)   vect_2d((/0.,0.,V1%v(1)*V2%v(2)-V1%v(2)*V2%v(1)/))
+#define VECT_CROSS_2D_8(V1,V2) vect_2d_8((/0.D0,0.D0,V1%v(1)*V2%v(2)-V1%v(2)*V2%v(1)/))
+#define VECT_CROSS_3D(V1,V2)   vect_3d((/V1%v(2)*V2%v(3)-V1%v(3)*V2%v(2),V1%v(3)*V2%v(1)-V1%v(1)*V2%v(3),V1%v(1)*V2%v(2)-V1%v(2)*V2%v(1)/))
+#define VECT_CROSS_3D_8(V1,V2) vect_3d_8((/V1%v(2)*V2%v(3)-V1%v(3)*V2%v(2),V1%v(3)*V2%v(1)-V1%v(1)*V2%v(3),V1%v(1)*V2%v(2)-V1%v(2)*V2%v(1)/))
+
+#define VECT_AREA_2D(V1,V2,V3)   (0.5   * VECT_NORM_2D(VECT_CROSS_2D(VECT_SUB_2D(V2,V1),VECT_SUB_2D(V3,V1))))
+#define VECT_AREA_2D_8(V1,V2,V3) (0.5D0 * VECT_NORM_2D(VECT_CROSS_2D_8(VECT_SUB_2D_8(V2,V1),VECT_SUB_2D_8(V3,V1))))
+#define VECT_AREA_3D(V1,V2,V3)   (0.5   * VECT_NORM_3D(VECT_CROSS_3D(VECT_SUB_3D(V2,V1),VECT_SUB_3D(V3,V1))))
+#define VECT_AREA_3D_8(V1,V2,V3) (0.5D0 * VECT_NORM_3D(VECT_CROSS_3D_8(VECT_SUB_3D_8(V2,V1),VECT_SUB_3D_8(V3,V1))))
+
+
+#define VECT_CAR2SPH_3D_8_LMB(V1) (atan2(V1%v(V_Y),V1%v(V_X)))
+#define VECT_CAR2SPH_3D_8_PHI(V1) (asin(V1%v(V_Z)/VECT_NORM_3D_8(V1)))
+#define VECT_CAR2SPH_3D_8_PHI2(V1,VNORM) (asin(V1%v(V_Z)/VNORM))
+#define VECT_CAR2SPH_3D_8_RAY(V1) (VECT_NORM_3D_8(V1))
+
+#define VECT_CAR2SPH_3D_8(V1) vect_3d_8((/VECT_CAR2SPH_3D_8_LMB(V1),VECT_CAR2SPH_3D_8_PHI(V1),VECT_CAR2SPH_3D_8_RAY(V1)/))
+
+#endif
