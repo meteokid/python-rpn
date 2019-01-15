@@ -79,7 +79,7 @@ contains
       implicit none
       character(len=*), intent(in) :: m_namelist
       integer :: m_istat
-      character(len=256) :: msg_S, namelist_S, name_S
+      character(len=1024) :: msg_S, namelist_S, name_S
       integer :: istat, unf
       !----------------------------------------------------------------
       m_istat = RMN_ERR
@@ -140,7 +140,7 @@ contains
       integer :: m_istat
 
       integer :: istat,k,nk
-      character(len=512) :: str512
+      character(len=1024) :: msg_S
       !----------------------------------------------------------------
       m_istat = RMN_ERR
 
@@ -159,52 +159,52 @@ contains
       istat = clib_toupper(z0tevol)
 
       if (.not.any(schmsol == SCHMSOL_OPT)) then
-         call str_concat(str512, SCHMSOL_OPT,', ')
-         call msg(MSG_ERROR,'(sfc_nml_check) schmsol = '//trim(schmsol)//' : Should be one of: '//trim(str512))
+         call str_concat(msg_S, SCHMSOL_OPT,', ')
+         call msg(MSG_ERROR,'(sfc_nml_check) schmsol = '//trim(schmsol)//' : Should be one of: '//trim(msg_S))
          return
       endif
 
       if (.not.any(schmurb == SCHMURB_OPT)) then
-         call str_concat(str512, SCHMURB_OPT,', ')
-         call msg(MSG_ERROR,'(sfc_nml_check) schmurb = '//trim(schmurb)//' : Should be one of: '//trim(str512))
+         call str_concat(msg_S, SCHMURB_OPT,', ')
+         call msg(MSG_ERROR,'(sfc_nml_check) schmurb = '//trim(schmurb)//' : Should be one of: '//trim(msg_S))
          return
       endif
 
       if (.not.any(diusst == DIUSST_OPT)) then
-         call str_concat(str512, DIUSST_OPT,', ')
-         call msg(MSG_ERROR,'(sfc_nml_check) diusst = '//trim(diusst)//' : Should be one of: '//trim(str512))
+         call str_concat(msg_S, DIUSST_OPT,', ')
+         call msg(MSG_ERROR,'(sfc_nml_check) diusst = '//trim(diusst)//' : Should be one of: '//trim(msg_S))
          return
       endif
 
       if (.not.any(z0mtype == Z0MTYPE_OPT)) then
-         call str_concat(str512, Z0MTYPE_OPT,', ')
-         call msg(MSG_ERROR,'(sfc_nml_check) z0mtype = '//trim(z0mtype)//' : Should be one of: '//trim(str512))
+         call str_concat(msg_S, Z0MTYPE_OPT,', ')
+         call msg(MSG_ERROR,'(sfc_nml_check) z0mtype = '//trim(z0mtype)//' : Should be one of: '//trim(msg_S))
          return
       endif
 
      if (.not.any(z0ttype == Z0TTYPE_OPT)) then
-         call str_concat(str512, Z0TTYPE_OPT,', ')
-         call msg(MSG_ERROR,'(sfc_nml_check) z0ttype = '//trim(z0ttype)//' : Should be one of: '//trim(str512))
+         call str_concat(msg_S, Z0TTYPE_OPT,', ')
+         call msg(MSG_ERROR,'(sfc_nml_check) z0ttype = '//trim(z0ttype)//' : Should be one of: '//trim(msg_S))
          return
       endif
 
      if (.not.any(z0tevol == Z0TEVOL_OPT)) then
-         call str_concat(str512, Z0TEVOL_OPT,', ')
-         call msg(MSG_ERROR,'(sfc_nml_check) z0tevol = '//trim(z0tevol)//' : Should be one of: '//trim(str512))
+         call str_concat(msg_S, Z0TEVOL_OPT,', ')
+         call msg(MSG_ERROR,'(sfc_nml_check) z0tevol = '//trim(z0tevol)//' : Should be one of: '//trim(msg_S))
          return
       endif
 
       if ( (min(z0tlat(1), z0tlat(2)) <  0.0)    .or. &
            (max(z0tlat(1), z0tlat(2)) > 90.0)    .or. &
            (z0tlat(1) > z0tlat(2))         )    then
-         write(str512,*) z0tlat(1), z0tlat(2)
-         call msg(MSG_ERROR, '(sfc_nml_check) zz0tlat = '//trim(str512)//' : should be in 0. to 90. and z0tlat(1) < z0tlat(2)')
+         write(msg_S,*) z0tlat(1), z0tlat(2)
+         call msg(MSG_ERROR, '(sfc_nml_check) zz0tlat = '//trim(msg_S)//' : should be in 0. to 90. and z0tlat(1) < z0tlat(2)')
          return
       endif
 
       if (.not.any(sl_func_stab == SL_FUNC_STAB_OPT)) then
-         call str_concat(str512, SL_FUNC_STAB_OPT,', ')
-         call msg(MSG_ERROR,'(sfc_nml_check) sl_func_stab = '//trim(sl_func_stab)//' : Should be one of: '//trim(str512))
+         call str_concat(msg_S, SL_FUNC_STAB_OPT,', ')
+         call msg(MSG_ERROR,'(sfc_nml_check) sl_func_stab = '//trim(sl_func_stab)//' : Should be one of: '//trim(msg_S))
          return
       endif
       if (sl_func_stab /= 'DELAGE97' .and. .not.sl_z0ref) then
@@ -213,8 +213,8 @@ contains
       endif
 
       if (.not.any(sl_func_unstab == SL_FUNC_UNSTAB_OPT)) then
-         call str_concat(str512, SL_FUNC_UNSTAB_OPT,', ')
-         call msg(MSG_ERROR,'(sfc_nml_check) sl_func_unstab = '//trim(sl_func_unstab)//' : Should be one of: '//trim(str512))
+         call str_concat(msg_S, SL_FUNC_UNSTAB_OPT,', ')
+         call msg(MSG_ERROR,'(sfc_nml_check) sl_func_unstab = '//trim(sl_func_unstab)//' : Should be one of: '//trim(msg_S))
          return
       endif
       if (sl_func_unstab /= 'DELAGE92' .and. .not.sl_z0ref) then
@@ -234,8 +234,8 @@ contains
 
       if (.not.RMN_IS_OK(str_toreal(isba_soil_emiss_const,isba_soil_emiss))) then
          if (.not.any(isba_soil_emiss == ISBA_SOIL_EMISS_OPT)) then
-            call str_concat(str512, ISBA_SOIL_EMISS_OPT,', ')
-            call msg(MSG_ERROR,'(sfc_nml_check) isba_soil_emiss = '//trim(isba_soil_emiss)//' : Should be a number or one of: '//trim(str512))
+            call str_concat(msg_S, ISBA_SOIL_EMISS_OPT,', ')
+            call msg(MSG_ERROR,'(sfc_nml_check) isba_soil_emiss = '//trim(isba_soil_emiss)//' : Should be a number or one of: '//trim(msg_S))
             return
          endif
       endif
@@ -267,20 +267,20 @@ contains
                dp_svs(k) = dp_svs_default(k)
             enddo
          else if ( nk < 3 ) then
-            write(str512,*) ' (sfc_nml_check) SVS requires a minimum of 3 soil layers. Only ',nk, ' depths were specified in dp_svs=' , dp_svs(1:nk)
-            call msg(MSG_ERROR, str512)
+            write(msg_S,*) ' (sfc_nml_check) SVS requires a minimum of 3 soil layers. Only ',nk, ' depths were specified in dp_svs=' , dp_svs(1:nk)
+            call msg(MSG_ERROR, msg_S)
             return
          else if ( nk >= 3 .and. kdp .le. 1 ) then
-              write(str512,*) ' (sfc_nml_check)  Permeable layer level: KDP needs to be specified by USER because not using DEFAULT SVS set-up'
-            call msg(MSG_ERROR, str512)
+              write(msg_S,*) ' (sfc_nml_check)  Permeable layer level: KDP needs to be specified by USER because not using DEFAULT SVS set-up'
+            call msg(MSG_ERROR, msg_S)
             return
          endif
 
          ! CHECK THAT DEPTH IS INCREASING and SAVE NUMBER OF LAYERS
          do k=1,nk-1
             if ( dp_svs(k) >= dp_svs(k+1) ) then
-               write(str512,*) ' (sfc_nml_check) SVS layer depths badly specified: dp_svs(k)=',dp_svs(k),' (k=',k,') should be shallower than dl_svs(k+1)=',dp_svs(k+1),' (k+1=',k+1,')'
-               call msg(MSG_ERROR, str512)
+               write(msg_S,*) ' (sfc_nml_check) SVS layer depths badly specified: dp_svs(k)=',dp_svs(k),' (k=',k,') should be shallower than dl_svs(k+1)=',dp_svs(k+1),' (k+1=',k+1,')'
+               call msg(MSG_ERROR, msg_S)
                return
             endif
          enddo
@@ -292,14 +292,14 @@ contains
          enddo
  
          if ( kdp > nl_svs ) then
-            write(str512, '(a,i3,a,i3)') '(sfc_nml_check) Permeable layer in SVS kdp=',kdp,' cannot exceed number of SVS soil layers =', nl_svs
-            call msg(MSG_ERROR, str512)
+            write(msg_S, '(a,i3,a,i3)') '(sfc_nml_check) Permeable layer in SVS kdp=',kdp,' cannot exceed number of SVS soil layers =', nl_svs
+            call msg(MSG_ERROR, msg_S)
             return
          endif
 
          if (.not.any(soiltext == SOILTEXT_OPT)) then
-            call str_concat(str512, SOILTEXT_OPT,', ')
-            call msg(MSG_ERROR,'(sfc_nml_check) soiltext = '//trim(soiltext)//' : Should be one of: '//trim(str512))
+            call str_concat(msg_S, SOILTEXT_OPT,', ')
+            call msg(MSG_ERROR,'(sfc_nml_check) soiltext = '//trim(soiltext)//' : Should be one of: '//trim(msg_S))
             return
          endif
 

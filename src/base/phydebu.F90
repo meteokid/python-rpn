@@ -202,7 +202,7 @@ function phydebu2(p_ni, p_nj, p_nk, F_path_S) result(F_istat)
 
          !# read GHG concentration factor file
          path = trim(F_path_S)//'/CLIMATO' !#ghg-table-1950-2015_v1'
-         ier = ghg_init(path, jdateo)
+         ier = ghg_init(path, jdateo, myproc)
          if (.not. RMN_IS_OK(ier)) then
             call msg(MSG_ERROR,'(phydebu) Problem in ghg_init')
             return

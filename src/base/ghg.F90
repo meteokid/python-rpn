@@ -29,26 +29,31 @@ module ghg_mod
 #include <msg.h>
 #include <rmnlib_basics.hf>
 #include <clib_interface_mu.hf>
+   include "rpn_comm.inc"
+
+   integer, parameter :: GHG_YEAR = 1
+   integer, parameter :: GHG_CO2 = 2
+   integer, parameter :: GHG_NO2 = 3
+   integer, parameter :: GHG_CH4 = 4
+   integer, parameter :: GHG_CFC1 = 5
+   integer, parameter :: GHG_CFC2 = 6
+   integer, parameter :: NGHG = 6
 
 contains
 
-   function ghg_init(F_path, F_jdateo) result(F_istat)
+   function ghg_init(F_path, F_jdateo, F_myproc) result(F_istat)
       implicit none
       character(len=*), intent(in) :: F_path
       integer(IDOUBLE), intent(in) :: F_jdateo
+      integer, intent(in) :: F_myproc
       integer :: F_istat
-      
-      character(len=256), parameter :: GHG_FILENAME = 'ghg-table-1950-2015_v1'
-      character(len=256), parameter :: GHG_VERSION  = 'version=ghg_concentrations_v1'
-      !# File format: YYYY co2 n2o ch4 cfc11 cfc12
-      character(len=256) :: fullpath_S, string_S, firstyear_S, lastyear_S, parts_S(6)
-      integer :: fileid, istat, yyyy, yyyy0
-      logical :: version_ok, found_L
 
-      real :: ghg_co2, ghg_n2o, ghg_ch4, ghg_cfc11, ghg_cfc12
+      character(len=256) :: string_S
+      real :: data(NGHG)
+      integer :: yyyy0
       !----------------------------------------------------------------------
       F_istat = RMN_ERR
-      
+ 
       if (.not.(radia == 'CCCMARAD2' .and. radghg_L)) then
          if (qcfc11 < 0.) qcfc11 = QCFC11_DEFAULT
          if (qcfc12 < 0.) qcfc12 = QCFC12_DEFAULT
@@ -69,6 +74,63 @@ contains
          F_istat = RMN_OK
          return
       endif
+
+      F_istat = RMN_OK
+      if (F_myproc == 0) then
+         F_istat = priv_read(string_S, F_path, F_jdateo)
+         if (RMN_IS_OK(F_istat)) &
+              F_istat = priv_split(data, string_S)
+      endif
+      call collect_error(F_istat)
+
+      if (RMN_IS_OK(F_istat)) &
+           F_istat = priv_bcast(data)
+
+      if (.not.RMN_IS_OK(F_istat)) return
+
+      if (qcfc11 < 0.) qcfc11 = data(GHG_CFC1)
+      if (qcfc12 < 0.) qcfc12 = data(GHG_CFC2)
+      if (qch4 < 0.)   qch4   = data(GHG_CH4)
+      if (qco2 < 0.)   qco2   = data(GHG_CO2)
+      if (qn2o < 0.)   qn2o   = data(GHG_NO2)
+
+      yyyy0 = jdate_year(F_jdateo)
+
+      write(string_S, '(a,i4,a,f9.4,a,f9.4,a,f9.4,a,f9.4,a,f9.4)') &
+           '(', yyyy0, &
+           ') CO2=', data(GHG_CO2), ', N2O=', data(GHG_NO2), ', CH4=', data(GHG_CH4), &
+           ', CFC11=', data(GHG_CFC1), ', CFC12=', data(GHG_CFC2)
+      call msg(MSG_INFOPLUS,'(ghg_init) Found: '//trim(string_S))
+
+      write(string_S, '(a,i4,a,f9.4,a,f9.4,a,f9.4,a,f9.4,a,f9.4)') &
+           '(', yyyy0, &
+           ') CO2=', qco2, ', N2O=', qn2o, ', CH4=', qch4, &
+           ', CFC11=', qcfc11, ', CFC12=', qcfc12
+      call msg(MSG_INFO,'(ghg_init) Using: '//trim(string_S))
+
+      F_istat = RMN_OK
+      !----------------------------------------------------------------------
+      return
+   end function ghg_init
+
+
+   function priv_read(F_str, F_path, F_jdateo) result(F_istat)
+      implicit none
+      character(len=*), intent(out) :: F_str
+      character(len=*), intent(in) :: F_path
+      integer(IDOUBLE), intent(in) :: F_jdateo
+      integer :: F_istat
+ 
+      character(len=256), parameter :: GHG_FILENAME = 'ghg-table-1950-2015_v1'
+      character(len=256), parameter :: GHG_VERSION  = 'version=ghg_concentrations_v1'
+
+      !# File format: YYYY co2 n2o ch4 cfc11 cfc12
+      character(len=256) :: fullpath_S, string_S, firstyear_S, lastyear_S
+      integer :: fileid, istat, yyyy, yyyy0
+      logical :: version_ok, found_L
+      !----------------------------------------------------------------------
+      F_str = ''
+      F_istat = RMN_ERR
 
       fullpath_S = trim(F_path)//'/'//trim(GHG_FILENAME)
       istat = clib_isreadok(fullpath_S)
@@ -135,38 +197,47 @@ contains
          write(string_S,'(i4)') yyyy0
          call msg(MSG_WARNING,'(ghg_init) : Did not find data for year='//trim(string_S)//', using value of year='//lastyear_S(1:5))
       endif
-      call str_split2list(parts_S, lastyear_S, ' ', size(parts_S))
-      istat = str_toreal(ghg_co2, parts_S(2))
-      istat = min(str_toreal(ghg_n2o, parts_S(3)), istat)
-      istat = min(str_toreal(ghg_ch4, parts_S(4)), istat)
-      istat = min(str_toreal(ghg_cfc11, parts_S(5)), istat)
-      istat = min(str_toreal(ghg_cfc12, parts_S(6)), istat)
-      if (.not.RMN_IS_OK(istat)) then
-         call msg(MSG_WARNING,'(ghg_init) Problem interpreting: '//trim(lastyear_S))
-         return
-      endif
 
-      if (qcfc11 < 0.) qcfc11 = ghg_cfc11
-      if (qcfc12 < 0.) qcfc12 = ghg_cfc12
-      if (qch4 < 0.)   qch4   = ghg_ch4
-      if (qco2 < 0.)   qco2   = ghg_co2
-      if (qn2o < 0.)   qn2o   = ghg_n2o
-
-      write(string_S, '(a,i4,a,f9.4,a,f9.4,a,f9.4,a,f9.4,a,f9.4)') &
-           '(', yyyy0, &
-           ') CO2=',ghg_co2, ', N2O=', ghg_n2o, ', CH4=', ghg_ch4, &
-           ', CFC11=', ghg_cfc11, ', CFC12=', ghg_cfc12
-      call msg(MSG_INFOPLUS,'(ghg_init) Found: '//trim(string_S))
-
-      write(string_S, '(a,i4,a,f9.4,a,f9.4,a,f9.4,a,f9.4,a,f9.4)') &
-           '(', yyyy0, &
-           ') CO2=', qco2, ', N2O=', qn2o, ', CH4=', qch4, &
-           ', CFC11=', qcfc11, ', CFC12=', qcfc12
-      call msg(MSG_INFO,'(ghg_init) Using: '//trim(string_S))
-
+      F_str = lastyear_S
       F_istat = RMN_OK
       !----------------------------------------------------------------------
       return
-   end function ghg_init
+   end function priv_read
+
+
+   function priv_split(F_data, F_str) result(F_istat)
+      implicit none
+      real, intent(out) :: F_data(:)
+      character(len=*), intent(in) :: F_str
+      integer :: F_istat
+
+      character(len=256) :: parts_S(NGHG+1)
+      integer :: i
+      !----------------------------------------------------------------------
+      call str_split2list(parts_S, F_str, ' ', size(parts_S))
+      F_istat = RMN_OK
+      do i=1,NGHG
+         F_istat = min(str_toreal(F_data(i), parts_S(i)), F_istat)
+      enddo
+      if (.not.RMN_IS_OK(F_istat)) then
+         call msg(MSG_WARNING,'(ghg_init) Problem interpreting: '//trim(F_str))
+         return
+      endif
+      !----------------------------------------------------------------------
+      return
+   end function priv_split
+
+
+   function priv_bcast(F_data) result(F_istat)
+      implicit none
+      real, intent(inout) :: F_data(:)
+      integer :: F_istat
+      !----------------------------------------------------------------------
+      call rpn_comm_bcast(F_data, size(F_data), RPN_COMM_REAL, &
+           RPN_COMM_MASTER, RPN_COMM_GRID, F_istat)
+      !----------------------------------------------------------------------
+      return
+   end function priv_bcast
+
 
 end module ghg_mod
