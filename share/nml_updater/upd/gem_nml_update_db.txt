@@ -956,3 +956,14 @@ New: surface_cfgs / kntveg_s = ''
 New: surface_cfgs / thermal_stress = F
 New: surface_cfgs / z0tevol = FIXED
 
+#------
+fileVersion: 5.0.b9 > 5.0.rc1
+
+New: physics_cfgs/timings_l = F
+
+rm: surface_cfgs/thermal_stres
+
+#------
+fileVersion: 5.0.rc1 > 5.0.rc2
+
+#------

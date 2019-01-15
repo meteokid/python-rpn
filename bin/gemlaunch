@@ -13,6 +13,7 @@ for arg in ${arguments} ; do
    fi
    case ${arg} in
       -exp) found_exp=1 ;;
+      --exp) found_exp=1 ;;
    esac
 done
 if [[ ${found_exp} -gt 0 ]] ; then

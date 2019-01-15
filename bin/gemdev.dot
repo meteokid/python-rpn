@@ -38,7 +38,7 @@ ${_DESC}
 
 $toto
 
-Note: This script must be sourced using the "." command
+Note: This script must be sourced using the "." or "source" command
 
 Options:
     -h,  --help     : print this help
@@ -54,14 +54,29 @@ Options:
                       default: \${home_model:-\${HOME}/home}/gem/${ATM_MODEL_VERSION}/
     -e,  --exp      : Create additional experiments in suite
 
-    -u,  --update  : List of additional packages to load
+    -u,  --update   : List of additional packages to load
 
-    -c,  --copy    : copy code and suites from existing gemdev exp dir
-    -ln, --ln      : Link back copied configs in \${GEM_DEV_SUITE}/gem/GEM_cfgs_NAME
+    -c,  --copy     : copy code and suites from existing gemdev exp dir
+    -ln, --ln       : Link back copied configs in \${GEM_DEV_SUITE}/gem/GEM_cfgs_NAME
 
-    -t,  -tests    : import test suite as well as gem RI
+    -t,  --tests    : import test suite as well as GEM RI
+
+         --gitinit  : run "rdegit init" in the experiment dir
+                      The git repos/tag is expected to be found at
+                         RDEEXPREPOSTAG="${RDEEXPREPOSTAG}"  # URL/TAG
+         --gitlocal : Does the exp setup expecting that the CWD is a clone of MIG/GEM's git repos.
+                      You are then working with the full code.
+                      Note: --dev value is then ignored, set to CWD.
 EOF
 }
+         # --gitclone : clone MIG/GEM's git repos/tag then do the setup.
+         #              You are then working with the full code.
+         #              The git repos/tag is defined by
+         #                 RDEEXPREPOSTAG=${RDEEXPREPOSTAG}
+         #              Similar to --gitlocal but performs the "git clone" beforehand.
+         #              WARNING: this will create a big experiement dir
+         #                       it is best to specify --gitclone along with
+         #                       --dev /BIG/DISK/DIR
 
 
 myverb=""
@@ -77,6 +92,8 @@ mysuite=""
 mycopy=""
 myln=""
 mytest=0
+mygit=0
+myfull=0
 previous=""
 while [[ $# -gt 0 ]] ; do
    case ${1} in
@@ -88,6 +105,9 @@ while [[ $# -gt 0 ]] ; do
       (-cd|--cd) mycd=1;;
       (-ln|--ln) myln="-ln";;
       (-t|--tests) mytest=1;;
+      (-gitinit|--gitinit) mygit=init;;
+      (-gitlocal|--gitlocal) mygit=local; myfull=1;;
+      (-gitclone|--gitclone) mygit=clone; myfull=1;;
 
       (-M|-mach|--mach) ;;
       (--mach=*) mymach="${1#*=}";;
@@ -147,7 +167,13 @@ if [[ ${_verbose} -gt 1 ]] ; then
    myverb2="-v"
 fi
 
+
+
 if [[ x"${mycopy}" != x"" ]] ; then
+   if [[ "${myfull}" != "0" ]] ; then
+      myechoerror "Cannot use --copy and --gitclone/--gitlocal together"
+      return 1
+   fi
    if [[ ! -d ${mycopy} ]] ; then
       myechoerror "Could not copy from existing dev dir. Not Found: ${mycopy}"
       return 1
@@ -167,7 +193,13 @@ else
    dev_home=${home_model:-${HOME}/home}/gem/${ATM_MODEL_VERSION}/${mysuite}
    dev_home=${dev_home% }
 fi
-if [[ -e ${dev_home} ]] ; then
+if [[ "x${mygit}" == "xlocal" ]] ; then
+   dev_home=$(pwd)
+elif [[ "x${mygit}" == "xclone" ]] ; then
+   #TODO: find where to put dev_home in this case....
+   myechoerror "--gitclone not fully suported yet"
+   return 1  #TODO: enable --gitclone/gitlocal
+elif [[ -e ${dev_home} ]] ; then
    if [[ ${myforce} -gt 0 ]] ; then
       myecho 1 "+ Removing existing GEM dev. dir.: ${dev_home}"
       gemrm ${dev_home} -f
@@ -177,8 +209,45 @@ if [[ -e ${dev_home} ]] ; then
       return 1
    fi
 fi
+
 myecho 1 "+ Creating GEM dev. dir.: ${dev_home}"
 mkdir -p ${dev_home}
+if [[ ${myfull} == 1 ]] ; then
+   export RDEFULLCODE=1
+   if [[ "x${mygit}" == "xclone" ]] ; then
+      myechoerror "--gitclone not fully suported yet"
+      return 1  #TODO: enable --gitclone/gitlocal
+#       _REMOTEURL=${RDEEXPREPOSTAG%/*}
+#       _REMOTETAG=${RDEEXPREPOSTAG##*/}
+#       if [[ "x${_REMOTEURL}" != "x" ]] ; then
+#          _ok="$(git ls-remote ${_REMOTEURL} | egrep "/\b${_REMOTETAG}\b")"
+#       fi
+#       if [[ "x${_ok}" == "x" ]] ; then
+#          cat 1>&2 <<EOF
+# ERROR: Cannot find URL or tag/branch for
+#           RDEEXPREPOSTAG=${RDEEXPREPOSTAG}
+#           _REMOTEURL=${_REMOTEURL}
+#           _REMOTETAG=${_REMOTETAG}
+#        Try re-running ". gemdev.dot -f --git${mygit} -cd -v ..."
+#        after redefining this variable with
+#           export RDEEXPREPOSTAG="URL/TAG"
+# EOF
+#          return 1
+#       fi
+#       cd ..
+#       rm -rf ${dev_home}
+#       myecho 1 "+ Git clone: ${REMOTEURL} (${REMOTETAG})"
+#       git clone --no-checkout ${REMOTEURL} ${dev_home##*/}
+#       cd ${dev_home##*/}
+#       git checkout -b master >/dev/null 2>&1 || git checkout master
+#       git merge -X theirs ${REMOTETAG}
+#       git remote set-branches origin ${REMOTETAG}-branch
+#       # git remote set-head origin ${REMOTETAG}
+#       git commit -a -m "Initial commit of code from ROOT dir"
+   fi
+   # git tag -f original
+   #TODO: re-define all components's vars for srcpath... done in _gemexpdirinit.dot below
+fi
 
 
 #==== Update environment
@@ -187,6 +256,10 @@ if [[ -n "${GEM_DEV_UPDATES}" && "${GEM_DEV_UPDATES}" != "${myupdate}" ]] ; then
    return 1
 fi
 if [[ -n "${myupdate}" ]] ; then
+   if [[ "${myfull}" != "0" ]] ; then
+      myechoerror "Cannot use --update and --gitclone/gitlocal together"
+      return 1
+   fi
    myecho 1 "+ Update env. with: ${myupdate}"
    r.check_shortcuts ${myupdate}
    if [[ $? -ne 0 ]] ; then
@@ -224,15 +297,25 @@ base_exp="base"
 export SEQ_EXP_HOME=$(normpath.py -p ${suite_home}/${base_exp})
 export GEM_DEV_SUITE=$(dirname ${SEQ_EXP_HOME})
 
+
 #==== Finalise experiment directory setup
 cd ${dev_home}
 myecho 1 "+ Setting up GEM development experiment"
 myecho 1 "++ _gemexpdirinit.dot"
 . _gemexpdirinit.dot ${myverb} ${myforcestr}
-myecho 1 "++ ouv_exp_gem"
-ouv_exp_gem ${myverb} ${myforcestr}
+if [[ ${myfull} == 1 && "x$(which ouv_exp_mig)" != "x" ]] ; then
+   myecho 1 "++ ouv_exp_mig"
+   ouv_exp_mig ${myverb} ${myforcestr}
+else
+   myecho 1 "++ ouv_exp_gem"
+   ouv_exp_gem ${myverb} ${myforcestr}
+fi
 myecho 1 "++ linkit"
 linkit ${myverb2} ${myforcestr}
+
+if [[ ${mygit} == "init" ]] ; then
+   rdegit init
+fi
 
 
 #==== Create suite convenience links
@@ -244,22 +327,6 @@ ln -s ${dev_home}/.ssmuse_gem ${GEM_DEV_SUITE}/.ssmuse_gem
 if [[ ! -d ${dev_home}/suite || ! -d ${GEM_DEV_SUITE}/gem || ! -d ${GEM_DEV_SUITE} ]] ; then
    myecho 0 "WARNING: Problem creating convenience links"
    ls -dl ${dev_home}/suite ${GEM_DEV_SUITE}/gem ${GEM_DEV_SUITE}
-fi
-
-
-#==== Import the tests maestro suite in a experiment
-if [[ ${mytest} == 1 ]] ; then
-   myecho 1 "+ Import the tests maestro suite in a experiment"
-   cd ${dev_home}
-   base_exp="tests"
-   export SEQ_EXP_HOME=$(normpath.py -p ${suite_home}/${base_exp})
-   export GEM_DEV_SUITE=$(dirname ${SEQ_EXP_HOME})
-   myecho 1 "+ devadd ${base_exp} ${myverb} ${myforcestr} --tests ${myln}"
-   devadd ${base_exp} ${myverb} ${myforcestr} --tests ${myln}
-   if [[ $? -ne 0 ]] ; then
-      myechoerror "Problem while adding test experiment '${base_exp}'"
-      return 1
-   fi
 fi
 
 
@@ -305,6 +372,7 @@ myfront="$(echo ${myfront} | tr ' ' '\n' | sort -u)"
 _machlist="$(echo ${mymach} ${myfront} | tr ' ' '\n' | sort -u)"
 update_exp ${SEQ_EXP_HOME} ${EXEC_HOST} ${myfront}
 
+
 #==== Create links on requested remote hosts
 for host in ${_machlist}; do
    myecho 1 "+ Configuring for ${host}"
@@ -332,12 +400,20 @@ done
 
 #====  copy existing devdir source and experiments
 if [[ x"${mycopy}" != x"" ]] ; then
-   cd ${dev_home}
-   myecho 0 "+ Copy existing code from: ${mycopy}"
-   mkdir -p ${TMPDIR}/$$ && cp .rde.* ${TMPDIR}/$$
-   rdecp -f ${mycopy} ${dev_home}
-   cp ${TMPDIR}/$$/.rde.* .
+   if [[ ${myfull} == 0 ]] ; then
+      cd ${dev_home}
+      myecho 0 "+ Copy existing code from: ${mycopy}"
+      mkdir -p ${TMPDIR}/$$ && cp .rde.* ${TMPDIR}/$$
+      rdecp -f ${mycopy} ${dev_home}
+      cp ${TMPDIR}/$$/.rde.* .
+   else
+      myecho 0 "WARNING: with gitclone/gitlocal skipping code copy"
+      myecho 0 "....use: git pull ${mycopy}"
+   fi
+
+   myecho 0 "+ Copy existing experiments from: ${mycopy}"
    [[ ${_verbose} -gt 1 ]] && myverb='-v' || myverb=''
+   #TODO: should it devadd interactive configs
    for entry in ${mycopy%/}/suite/* ; do
       entry=${entry%/}
       if [[ -d ${entry} && -h ${entry}/EntryModule ]] ; then
@@ -346,6 +422,21 @@ if [[ x"${mycopy}" != x"" ]] ; then
       fi
    done
    unset entry
+fi
+
+#==== Import the tests maestro suite in a experiment
+if [[ ${mytest} == 1 ]] ; then
+   myecho 1 "+ Import the tests maestro suite in a experiment"
+   cd ${dev_home}
+   base_exp="tests"
+   export SEQ_EXP_HOME=$(normpath.py -p ${suite_home}/${base_exp})
+   export GEM_DEV_SUITE=$(dirname ${SEQ_EXP_HOME})
+   myecho 1 "+ devadd ${base_exp} ${myverb} ${myforcestr} --tests ${myln}"
+   devadd ${base_exp} ${myverb} ${myforcestr} --tests ${myln}
+   if [[ $? -ne 0 ]] ; then
+      myechoerror "Problem while adding test experiment '${base_exp}'"
+      return 1
+   fi
 fi
 
 
@@ -381,3 +472,5 @@ unset myexp
 unset myupdate
 unset mysuite
 unset mycopy
+unset mygit
+unset myfull

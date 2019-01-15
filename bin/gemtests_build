@@ -27,9 +27,8 @@ _MAX_MEMBERS = 999
 
 
 class GemTestSummary(MtaskCopy):
-    def __init__(self, moduleDst, testlist=[]):
+    def __init__(self, moduleDst):
         MtaskCopy.__init__(self, 'Summary', 'gemVerif', moduleDst)
-        self.testlist = testlist
         self.resOkKeys = ['immediate',]
 
     def writeCfgMine(self, basepath=None):
@@ -39,9 +38,12 @@ class GemTestSummary(MtaskCopy):
         cpath = os.path.join(os.path.dirname(self.cfgPath(basepath)), 'container') + '.cfg'
         mpath = self.parent.getNodesPathStr(basepath='')
         with open(cpath, 'a') as fh:
-            fh.write('basepath="{}"\n'.format(spath))
-            fh.write('nodepath="{}"\n'.format(mpath))
-            fh.write('testlist="{}"\n'.format(" ".join(self.testlist)))
+             fh.write(r"""
+## Added by gemtest-build scripts
+printf "\n=====> {0}/containter.cfg Starts: $(date) ###########\n\n"
+nodepath={0}
+printf "\n=====> {0}/containter.cfg Ends: $(date) ###########\n\n"
+""".format(mpath))
 
 
 class GemMod(MmoduleCopy):
@@ -232,14 +234,20 @@ class GemTestMachMod(Mmodule):
                 self.add(s)
         self.ntests += 1
 
-    def addSummary(self):
-        self.hasSummary = True
+    def getTestList(self):
         if self.maxConcurent == 1 and len(self.members) > 0:
             testlist = [t.name for t in self.members]
         else:
             testlist = ['{}/{}'.format(m.name, t.name)
                         for m in self.members for t in m.members]
-        s = GemTestSummary(self.name, testlist)
+        return testlist
+
+    def getMachPath(self):
+        return self.getNodesPathStr(basepath='')
+
+    def addSummary(self):
+        self.hasSummary = True
+        s = GemTestSummary(self.name)
         for a in self.members:
             s.addDep(a)
         self.add(s)
@@ -254,7 +262,13 @@ class GemTestMach(Mfamily):
 
     def addTest(self, name, nrun=None):
         self.module.addTest(name, nrun, self.name)
- 
+
+    def getTestList(self):
+        return self.module.getTestList()
+
+    def getMachPath(self):
+        return self.module.getMachPath()
+
     def addSummary(self):
         self.module.addSummary()
 
@@ -270,9 +284,45 @@ class GemTestAll(Mmodule):
         for a in self.members:
             a.addTest(name, nrun)
 
+    def getTestList(self):
+        try:
+            return self.members[0].getTestList()
+        except:
+            return []
+
+    def getMachPath(self):
+        machpath = []
+        for m in self.members:
+            machpath.append(m.getMachPath())
+        return machpath
+
     def addSummary(self):
         for m in self.members:
             m.addSummary()
+
+
+def writeExpCfg(spath, cfgParams):
+    cpath = os.path.join(spath, 'experiment' + '.cfg')
+    machpath = cfgParams["machpath"]
+    if isinstance(cfgParams["machpath"], (list, tuple)):
+        machpath = " ".join(cfgParams["machpath"])
+    machlist = " ".join(cfgParams["machlist"])
+    testlist = " ".join(cfgParams["testlist"])
+    with open(cpath, 'w') as fh:
+        fh.write(r"""
+## Added by gemtest-build scripts
+printf "\n=====> experiment.cfg Starts: $(date) ###########\n\n"
+basepath={basepath}
+machfront={machfront}
+machlist="{}"
+machpath="{}"
+testlist="{}"
+xferlog={xferlog}
+xferout={xferout}
+reflog={reflog}
+refout={refout}
+printf "\n=====> experiment.cfg Ends: $(date) ###########\n\n"
+""".format(machlist, machpath, testlist, **cfgParams))
 
 
 def writeResDef(mach_front, mach_back, immediate, mach_seq, wj, rpath):
@@ -318,7 +368,7 @@ def _parse_user_args():
 
 # Add all tests and build suite
     for item in $(devadd --list | grep cfg_) ; do echo "Importing: ${item}" ; devadd -f -i --copy $item ; done
-    gem_tests_build --wj --clean --tests GEM_cfg_* --nwide=1 --ptopo=2x2x1
+    gemtests_build --wj --clean --tests GEM_cfg_* --nwide=1 --ptopo=2x2x1
     gemview -exp ${SEQ_EXP_HOME##*/} &
 
     """
@@ -368,6 +418,20 @@ def _parse_user_args():
     parser.add_argument("--ptopo2", dest="ptopo2",
                         type=str, default='2x2x1',
                         help="Default Alternate CPU Topology for diff test types (NPXxNPYxOMP")
+
+    parser.add_argument("--xferlog", dest="xferlog",
+                        type=str, default='',
+                        help="Path where to xfer log files")
+    parser.add_argument("--xferout", dest="xferout",
+                        type=str, default='',
+                        help="Path where to xfer output files")
+
+    parser.add_argument("--reflog", dest="reflog",
+                        type=str, default='',
+                        help="Path where to find log files to compare to")
+    parser.add_argument("--refout", dest="refout",
+                        type=str, default='',
+                        help="Path where to find output files to compare to")
 
     args = parser.parse_args()
 
@@ -466,6 +530,18 @@ if __name__ == "__main__":
 
     m.setEntryModule()
 
+    cfgParams = {
+        'basepath' : spath,
+        'machfront': args.mach_front,
+        'machlist' : args.mach_list,
+        'machpath' : m.getMachPath(),
+        'testlist' : m.getTestList(),
+        'xferlog' : args.xferlog,
+        'xferout' : args.xferout,
+        'reflog'  : args.reflog,
+        'refout'  : args.refout
+        }
+    writeExpCfg(spath, cfgParams)
 
 # -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
 # vim: set expandtab ts=4 sw=4:

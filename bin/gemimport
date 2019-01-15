@@ -92,6 +92,14 @@ if [[ $? -ne 0 ]] ; then
    rm -f ${tmpfile}
    exit 1
 fi
+if [[ ${dry_run} -lt 1 ]] ; then
+   # Fix modules link if need be
+   if [[ -d ${MAESTRO_CURRENT_REF}/modules/gem && ! -d ./${expname}/modules/gem ]] ; then
+      rm -f ./${expname}/modules/gem
+      ln -s $(true_path ${MAESTRO_CURRENT_REF}/modules/gem) ./${expname}/modules/gem
+   fi
+fi
+
 if [[ ${v} -gt 0 ]] ; then cat ${tmpfile} ; fi
 rm -f ${tmpfile}
 if [[ $? -ne 0 ]] ; then

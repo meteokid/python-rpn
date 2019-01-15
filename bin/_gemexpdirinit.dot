@@ -31,11 +31,18 @@ Options:
     -v,  --verbose  : increase verbosity
     -q,  --quiet    : quiet mode
     -f,  --force    : Force overwrite of existing directories
-    -u,  --update  : List of additional packages to load
+    -u,  --update   : List of additional packages to load
+
+         --cmc      : set dependencies for CMC network
+         --science  : set dependencies for Sience network
 EOF
 }
 
-
+if [[ -d /ssm/net ]] ; then
+   export RDENETWORK=${RDENETWORK:-'cmc'}
+else
+   export RDENETWORK=${RDENETWORK:-'science'}
+fi
 myverb=""
 myforce=0
 myforcestr=""
@@ -50,6 +57,8 @@ while [[ $# -gt 0 ]] ; do
       (-f|--force) myforce=1; myforcestr="-f";;
       (-u|-update|--update) ;;
       (--update=*) myupdate="${1#*=}";;
+      (--cmc) RDENETWORK=cmc ;;
+      (--science) RDENETWORK=science ;;
       (--) shift ; previous=""; break;;
       (-*) echo "ERROR: Option Not recognized: ${1}" 1>&2; _usage_long; return 1;;
       (*)
@@ -72,7 +81,33 @@ if [[ x${SEQ_EXP_HOME} == x ]] ; then
 fi
 
 _setenvfile=$(rdevar RDE_SETENV_DOT)
-cat > ${_setenvfile} <<EOF
+
+_fullcode=${RDEFULLCODE:-0}
+if [[ -f .setenv.dot && -d .git && -d gem ]] ; then
+   _fullcode=1
+fi
+if [[ "x${_fullcode}" == "x1" ]] ; then
+   cat > ${_setenvfile} <<EOF
+# if [[ ! -z "\${ATM_MODEL_BNDL}" ]] ; then
+#    cat 1>&2 <<EOF1
+
+#    ** WARNING **
+#    A model is already loaded since \${ATM_MODEL_BNDL} is set.
+#    You should probably load this experiment in a new shell.
+# EOF1
+#    return 1
+# fi
+export RDEFULLCODE=1
+export RDENETWORK=${RDENETWORK:-'science'}
+. ./.setenv.dot --${RDENETWORK}
+export GEM_DEV_SUITE=${GEM_DEV_SUITE}
+export SEQ_EXP_HOME=${SEQ_EXP_HOME}
+export PATH=\${GEM_DEV_SUITE}/gem/bin/\${ORDENV_PLAT}:\${GEM_DEV_SUITE}/gem/bin:\${PATH}
+EOF
+
+else
+
+   cat > ${_setenvfile} <<EOF
 if [[ -z "\${ATM_MODEL_BNDL}" ]] ; then
    . s.ssmuse.dot ${ATM_MODEL_BNDL:-NO_ATM_BNDL}
 elif [[ \${ATM_MODEL_BNDL} != ${ATM_MODEL_BNDL:-NO_ATM_BNDL} ]] ; then
@@ -91,6 +126,7 @@ export SEQ_EXP_HOME=${SEQ_EXP_HOME}
 export PATH=\${GEM_DEV_SUITE}/gem/bin/\${ORDENV_PLAT}:\${GEM_DEV_SUITE}/gem/bin:\${PATH}
 export PYTHONPATH=\${GEM_DEV_SUITE}/gem/lib:\${GEM_DEV_SUITE}/gem/bin:\${PYTHONPATH}
 EOF
+fi
 
 if [[ x$myforce == x1 ]] ; then
    rm -f .ssmuse_gem
@@ -100,4 +136,4 @@ if [[ ! -f .ssmuse_gem ]] ; then
 fi
 
 . ./${_setenvfile}
-unset _setenvfile
+unset _setenvfile _fullcode
