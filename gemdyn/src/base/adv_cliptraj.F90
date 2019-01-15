@@ -18,6 +18,7 @@
       use glb_ld
       use adv_grid
       use outgrid
+      use tracers
       implicit none
 #include <arch_specific.hf>
 
@@ -42,7 +43,7 @@
       integer :: BCS_BASE       ! BCS points for Yin-Yang, normal LAM
 
       character(len=MSG_MAXLEN) :: msg_S
-      integer :: n, i,j,k, cnt, sum_cnt, err, totaln
+      integer :: n, i,j,k, cnt, sum_cnt, err, totaln, i0_s, in_s, j0_s, jn_s
       real :: minposx,maxposx,minposy,maxposy
 !
 !---------------------------------------------------------------------
@@ -60,6 +61,18 @@
       maxposy = adv_yy_8(adv_lmaxy-1) - EPS_8
       if (l_north) maxposy = adv_yy_8(F_nj-BCS_BASE) - EPS_8
 
+      i0_s = i0 
+      in_s = in 
+      j0_s = j0 
+      jn_s = jn 
+
+      if (Tr_extension_L) then
+         i0_s = 1+pil_w
+         in_s = l_ni-pil_e
+         j0_s = 1+pil_s
+         jn_s = l_nj-pil_n
+      end if
+
       cnt=0
 
 !- Clipping to processor boundary
@@ -68,7 +81,7 @@
             do i=i0,in
                if ( (F_x(i,j,k)<minposx).or.(F_x(i,j,k)>maxposx).or. &
                (F_y(i,j,k)<minposy).or.(F_y(i,j,k)>maxposy) ) then
-               cnt=cnt+1
+               if (i>=i0_s.and.i<=in_s.and.j>=j0_s.and.j<=jn_s) cnt=cnt+1
             endif
 
             F_x(i,j,k) = min(max(F_x(i,j,k),minposx),maxposx)
