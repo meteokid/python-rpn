@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -15,13 +15,15 @@
 !**s/r hzd_nudeln
 
       subroutine hzd_nudeln2(rfd,sfd,Minx,Maxx,Miny,Maxy,lnk,nu,m,n)
+      use grid_options
+      use glb_ld
       implicit none
 #include <arch_specific.hf>
 !
       integer Minx,Maxx,Miny,Maxy,lnk,m,n
       real rfd (Minx:Maxx,Miny:Maxy,lnk), &
            sfd (Minx:Maxx,Miny:Maxy,lnk)
-      real*8 nu(lnk)
+      real*8 nu
 
 !AUTHORs    C. Girard & M. Desgagne
 !
@@ -53,8 +55,6 @@
 !    *                                                                 *
 !    *******************************************************************
 
-#include "glb_ld.cdk"
-#include "grd.cdk"
 
       integer i,j,k,id,jd,iff,jf,i0,in,j0,jn
       real wk(l_minx:l_maxx,l_miny:l_maxy)
@@ -74,25 +74,26 @@
          iff= l_ni - pil_e
          jf = l_nj - pil_n
       endif
+      c1 = nu*(one-two*nu)
+      c2 = nu**2
+      c3 = nu*four*(nu-one)
 
-!$omp parallel private (wk,c1,c2,c3)
+!$omp parallel private (i,j,k,wk,i0,j0,in,jn) &
+!$omp shared(c1,c2,c3,id,jd,iff,jf)
 !$omp do
       do k=1,lnk
-         c1 = nu(k)*(one-two*nu(k))
-         c2 = nu(k)**2
-         c3 = nu(k)*four*(nu(k)-one)
          i0= id-1 ; in= iff+1
          j0= jd-1 ; jn= jf +1
-         if (m.eq.1) then
+         if (m == 1) then
             sfd(i0:in,j0:jn,k) = rfd(i0:in,j0:jn,k)
-         else if (m.eq.2) then
+         else if (m == 2) then
             sfd(i0:in,j0:jn,k) = rfd(i0:in,j0:jn,k) - sfd(i0:in,j0:jn,k)
          else
             i0= i0+west  ; in= in-east
             j0= j0+south ; jn= jn-north
             sfd(i0:in,j0:jn,k) = rfd(i0:in,j0:jn,k) - sfd(i0:in,j0:jn,k)
          endif
-         if (m.eq.n) then
+         if (m == n) then
             do j=jd,jf
             do i=id,iff
                rfd(i,j,k)= rfd(i,j,k) +  &
@@ -118,7 +119,7 @@
       end do
 !$omp enddo
 !$omp end parallel
-!     
+!
 !----------------------------------------------------------------------
 !
       return

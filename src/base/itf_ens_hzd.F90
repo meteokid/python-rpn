@@ -17,15 +17,22 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 
-      subroutine itf_ens_hzd ( F_ut1, F_vt1, F_tt1, Minx,Maxx,Miny,Maxy, Nk )
+      subroutine itf_ens_hzd (F_ut1, F_vt1, F_tt1, Minx, Maxx, Miny, Maxy, Nk)
       use phy_itf, only: phy_get
+      use ens_gmm_var
+      use ens_options
+      use grid_options
+
+      use glb_ld
+      use cstv
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 !
-      integer Minx,Maxx,Miny,Maxy, Nk
-      real    F_ut1(Minx:Maxx,Miny:Maxy,Nk), &
-              F_vt1(Minx:Maxx,Miny:Maxy,Nk), &
-              F_tt1(Minx:Maxx,Miny:Maxy,Nk)
+      integer, intent(in) :: Minx, Maxx, Miny, Maxy, Nk
+      real, intent(in) :: F_ut1(Minx:Maxx,Miny:Maxy,Nk), &
+                          F_vt1(Minx:Maxx,Miny:Maxy,Nk), &
+                          F_tt1(Minx:Maxx,Miny:Maxy,Nk)
 
 !author  Lubos Spacek - February 2010
 !
@@ -36,18 +43,10 @@
 !                                non-ensemble users.
 
 #include <rmnlib_basics.hf>
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "geomg.cdk"
-#include "dcst.cdk"
-#include "cstv.cdk"
-#include "ens_param.cdk"
-#include "ens_gmm_var.cdk"
-#include "grd.cdk"
 
-      character*4, save :: mode= "SAVE"
-      integer i,j,k,istat
-      real dummy
+      character(len=4), save :: mode= "SAVE"
+      integer k,istat,iend(3)
+      real, allocatable, dimension(:,:,:) :: dummy
       real, dimension(:,:,:), pointer :: ptr3d
       real, allocatable, dimension(:,:,:) :: ug, vg, ug_s, vg_s
 !     _________________________________________________________________
@@ -75,45 +74,40 @@
             if(Ens_skeb_gwd)then
 
                ptr3d => ugwdt1(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,:)
-               istat = phy_get(ptr3d,'phytd_ugwd',F_npath='V',F_bpath='V',F_end=(/-1,-1,l_nk/))
+               iend = (/-1,-1,l_nk/)
+               istat = phy_get(ptr3d,'phytd_ugwd',F_npath='V',F_bpath='V',F_end=iend)
                if (.not.RMN_IS_OK(istat))write(*,6000)'ugwdt1-s'
-                ptr3d => vgwdt1(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,:)
-                istat = phy_get(ptr3d,'phytd_vgwd',F_npath='V',F_bpath='V',F_end=(/-1,-1,l_nk/))
-             if (G_LAM) then
-                allocate(ug(l_minx:l_maxx,l_miny:l_maxy,l_nk) , vg(l_minx:l_maxx,l_miny:l_maxy,l_nk) )
-                allocate(ug_s(l_minx:l_maxx,l_miny:l_maxy,l_nk) , vg_s(l_minx:l_maxx,l_miny:l_maxy,l_nk) )
-              do k= 1, G_nk
-               ug(l_minx:l_maxx, l_miny:Grd_lphy_j0-1, k) = 0. ; ug(l_minx:l_maxx,Grd_lphy_jn+1:l_maxy,k) = 0.
-               vg(l_minx:l_maxx, l_miny:Grd_lphy_j0-1, k) = 0. ; vg(l_minx:l_maxx,Grd_lphy_jn+1:l_maxy,k) = 0.
-               ug(l_minx:Grd_lphy_i0-1,  l_miny:l_maxy,k) = 0. ; ug(Grd_lphy_in+1:l_maxx,l_miny:l_maxy,k) = 0.
-               vg(l_minx:Grd_lphy_i0-1,  l_miny:l_maxy,k) = 0. ; vg(Grd_lphy_in+1:l_maxx,l_miny:l_maxy,k) = 0.
-               ug(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,k) = ugwdt1(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,k)
-               vg(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,k) = vgwdt1(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,k)
-              end do
-               ug_s= 0.d0 ; vg_s=0.d9
+                  ptr3d => vgwdt1(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,:)
+                  istat = phy_get(ptr3d,'phytd_vgwd',F_npath='V',F_bpath='V',F_end=iend)
+                  allocate(ug(l_minx:l_maxx,l_miny:l_maxy,l_nk) , vg(l_minx:l_maxx,l_miny:l_maxy,l_nk) )
+                  allocate(ug_s(l_minx:l_maxx,l_miny:l_maxy,l_nk) , vg_s(l_minx:l_maxx,l_miny:l_maxy,l_nk) )
+                  do k= 1, G_nk
+                     ug(l_minx:l_maxx, l_miny:Grd_lphy_j0-1, k) = 0. ; ug(l_minx:l_maxx,Grd_lphy_jn+1:l_maxy,k) = 0.
+                     vg(l_minx:l_maxx, l_miny:Grd_lphy_j0-1, k) = 0. ; vg(l_minx:l_maxx,Grd_lphy_jn+1:l_maxy,k) = 0.
+                     ug(l_minx:Grd_lphy_i0-1,  l_miny:l_maxy,k) = 0. ; ug(Grd_lphy_in+1:l_maxx,l_miny:l_maxy,k) = 0.
+                     vg(l_minx:Grd_lphy_i0-1,  l_miny:l_maxy,k) = 0. ; vg(Grd_lphy_in+1:l_maxx,l_miny:l_maxy,k) = 0.
+                     ug(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,k) = ugwdt1(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,k)
+                     vg(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,k) = vgwdt1(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,k)
+                  end do
+                  ug_s= 0.d0 ; vg_s=0.d9
 !Stager ug, vg
-              call hwnd_stag ( ug_s, vg_s, ug, vg ,l_minx,l_maxx,l_miny,l_maxy,l_nk,.true. )
+                  call hwnd_stag ( ug_s, vg_s, ug, vg ,l_minx,l_maxx,l_miny,l_maxy,l_nk,.true. )
 
 !NG         Multiplication of gravity wave drag tendencies by the time step to convert to wind units as in GEM4.6
-                ugwdt1 = ug_s * Cstv_dt_8
-                vgwdt1 = vg_s * Cstv_dt_8
-                deallocate(ug,vg, ug_s, vg_s)
-             else
-               call itf_phy_uvgridscal (ugwdt1,vgwdt1,l_minx,l_maxx,l_miny,l_maxy,l_nk,.false.)
-                ugwdt1 = ugwdt1 * Cstv_dt_8
-                vgwdt1 = vgwdt1 * Cstv_dt_8
-             endif
+                  ugwdt1 = ug_s * Cstv_dt_8
+                  vgwdt1 = vg_s * Cstv_dt_8
+                  deallocate(ug,vg, ug_s, vg_s)
+               endif
+
+               difut1 = F_ut1 - difut1
+               difvt1 = F_vt1 - difvt1
+
+               diout1 = difut1
+               diovt1 = difvt1
+
+               call ens_filter (ugwdt1,vgwdt1,difut1,difvt1, F_ut1,F_vt1,F_tt1,&
+                                l_minx,l_maxx,l_miny,l_maxy, Nk)
             endif
-
-            difut1 = F_ut1 - difut1
-            difvt1 = F_vt1 - difvt1
-
-            diout1 = difut1
-            diovt1 = difvt1
-
-            call ens_filter (ugwdt1,vgwdt1,difut1,difvt1, F_ut1,F_vt1,F_tt1,&
-                             l_minx,l_maxx,l_miny,l_maxy, Nk)
-         endif
 !
 ! Case II: ens_skeb_conf = .false. however, in the same time
 !          ens_ptp_conf  = .true.
@@ -123,8 +117,10 @@
          if (mode == "SAVE") then
             goto 999
          elseif (mode == "CENS") then
+            allocate( dummy(l_minx:l_maxx,l_miny:l_maxy,l_nk) )
             call ens_filter (dummy,dummy,dummy,dummy, F_ut1,F_vt1,F_tt1, &
                              l_minx,l_maxx,l_miny,l_maxy, Nk)
+            deallocate( dummy )
          endif
 
       endif

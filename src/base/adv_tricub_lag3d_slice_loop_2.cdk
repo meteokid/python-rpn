@@ -18,8 +18,8 @@
 
             o2 = (kk-1)*adv_nijag + (jj-adv_int_j_off-1)*adv_nit + (ii-adv_int_i_off)
 
-         !!!m_ijk_8(i,j,k) = F_in_rho(o2) * (Geomg_area_8(i,j) * Ver_dz_8%t(k) * Geomg_mask_8(i,j))
-            m_ijk_8(i,j,k) = F_in_rho(o2) * (Geomg_area_8(i,j) * Ver_dz_8%t(k))
+         !!!m_ijk_8(i,j,k) = F_in_rho(o2) * (Geomh_area_8(i,j) * Ver_dz_8%t(k) * Geomh_mask_8(i,j))
+            m_ijk_8(i,j,k) = F_in_rho(o2) * (Geomh_area_8(i,j) * Ver_dz_8%t(k))
 
          enddo
       enddo
@@ -45,7 +45,7 @@
       do j=1,l_nj
          do i=1,l_ni
 
-            m_ecv_8(i,j,k) = m_ijk_8(i,j,k) 
+            m_ecv_8(i,j,k) = m_ijk_8(i,j,k)
 
          enddo
       enddo
@@ -69,14 +69,14 @@
 
       do j=j_ps,j_pn
 
-      !!!L1=c1_w(j,k) 
-      !!!R1=c1_e(j,k) 
-         L1=i_bw(j) 
-         R1=i_be(j) 
+      !!!L1=c1_w(j,k)
+      !!!R1=c1_e(j,k)
+         L1=i_bw(j)
+         R1=i_be(j)
 
-         L2=i0_e 
-         R2=in_e 
- 
+         L2=i0_e
+         R2=in_e
+
          m_ecv_X_8(L1:R1) = m_ecv_8(L1:R1,j,k)
 
          s_LEFT_ecv_8 (L1-1:R1) = dist_LEFT_ecv_8 (L1-1:R1,j,k)
@@ -85,9 +85,9 @@
 
          if (.NOT.slice_old_L) then
 
-         ds_ecv_8(L1:R1) = s_LEFT_ecv_8(L1:R1)-s_LEFT_ecv_8(L1-1:R1-1) 
+         ds_ecv_8(L1:R1) = s_LEFT_ecv_8(L1:R1)-s_LEFT_ecv_8(L1-1:R1-1)
 
-         !Compute values of RHO at LEFT boundary of ECV  
+         !Compute values of RHO at LEFT boundary of ECV
          !---------------------------------------------
          call adv_compute_cv_LEFT_boundary_values (m_ecv_X_8(L1:R1), slope_rho_X_8(L1:R1), s_LEFT_ecv_8(L1-1:R1), &
                                                    rho_LEFT_ecv_8(L1-1:R1), R1-L1+1, Tr_SLICE_rebuild)
@@ -100,7 +100,7 @@
          call adv_Fast_Loc_1D (s_LEFT_iecv_8(L2-1:R2),s_LEFT_ecv_8(L1-1:R1),R2-(L2-1),R1-(L1-1),iecv_location(L2-1:R2),1)
 
       !!!do i=L2,R2
-      !!! 
+      !!!
       !!!   s_iecv_start_8     = s_LEFT_iecv_8(i-1)
       !!!   s_iecv_finish_8    = s_LEFT_iecv_8(i)
       !!!   ecv_at_iecv_start  = iecv_location(i-1)
@@ -141,9 +141,9 @@
    !Compute mass for LCVs
    !--------------------------------------------------
    !    rho_LEFT_ilcv   = rho at LEFT boundary of ILCV
-   !   slope_rho_ilcv   = slope at the center of ILCV  
-   !       lcv_location = location of LCV amongst ILCV 
-   !              m_lcv = mass of ILCV 
+   !   slope_rho_ilcv   = slope at the center of ILCV
+   !       lcv_location = location of LCV amongst ILCV
+   !              m_lcv = mass of ILCV
    !--------------------------------------------------
    do k=k0,F_nk
 
@@ -158,11 +158,11 @@
          m_ilcv_Y_8(L1:R1) = m_iecv_8(i,L1:R1,k)
 
          s_LEFT_ilcv_8(L1-1:R1) = dist_LEFT_ilcv_8(i,L1-1:R1,k)
-         s_LEFT_lcv_8 (L2-1:R2) = dist_LEFT_lcv_8 (i,L2-1:R2,k) 
+         s_LEFT_lcv_8 (L2-1:R2) = dist_LEFT_lcv_8 (i,L2-1:R2,k)
 
          if (.NOT.slice_old_L) then
 
-         ds_ilcv_8(L1:R1) = s_LEFT_ilcv_8(L1:R1)-s_LEFT_ilcv_8(L1-1:R1-1) 
+         ds_ilcv_8(L1:R1) = s_LEFT_ilcv_8(L1:R1)-s_LEFT_ilcv_8(L1-1:R1-1)
 
          !Compute values of RHO at LEFT boundary of ILCV
          !----------------------------------------------
@@ -204,7 +204,7 @@
          call adv_remapping (m_lcv_Y_8 (L2:R2),s_LEFT_lcv_8 (L2-1:R2),R2-L2+1, &
                              m_ilcv_Y_8(L1:R1),s_LEFT_ilcv_8(L1-1:R1),R1-L1+1)
 
-         m_lcv_8(i,L2:R2,k) = m_lcv_Y_8(L2:R2) 
+         m_lcv_8(i,L2:R2,k) = m_lcv_Y_8(L2:R2)
 
          endif
 
@@ -216,7 +216,7 @@
    call timing_start2 (73, 'MASS', 86)
 
    !--------
-   !Finalize 
+   !Finalize
    !--------
    do k=k0,F_nk
       idxk = (k-1)*l_ni*l_nj
@@ -226,8 +226,8 @@
 
             n = idxjk + i
 
-         !!!F_cub_rho(n) = m_lcv_8(i,j,k) / (Geomg_area_8(i,j) * Ver_dz_8%t(k) *  Geomg_mask_8(i,j)) !TO BE REVISED
-            F_cub_rho(n) = m_lcv_8(i,j,k) / (Geomg_area_8(i,j) * Ver_dz_8%t(k))                      !TO BE REVISED
+         !!!F_cub_rho(n) = m_lcv_8(i,j,k) / (Geomh_area_8(i,j) * Ver_dz_8%t(k) *  Geomh_mask_8(i,j)) !TO BE REVISED
+            F_cub_rho(n) = m_lcv_8(i,j,k) / (Geomh_area_8(i,j) * Ver_dz_8%t(k))                      !TO BE REVISED
 
          enddo
       enddo

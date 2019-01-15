@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -15,17 +15,33 @@
 
 !**s/r inp_data  - Reads FST input files
 
-      subroutine inp_data ( F_u, F_v, F_w, F_t, F_zd, F_s, F_q, F_topo,&
-                            Mminx,Mmaxx,Mminy,Mmaxy, Nk               ,&
-                            F_trprefix_S, F_trsuffix_S, F_datev )
+      subroutine inp_data ( F_u, F_v, F_w, F_t, F_zd, F_s, F_q, &
+                            F_topo,Mminx,Mmaxx,Mminy,Mmaxy, Nk, &
+                            F_stag_L,F_trprefix_S,F_trsuffix_S,F_datev )
       use vgrid_wb, only: vgrid_wb_get
       use vGrid_Descriptors
       use vertical_interpolation, only: vertint2
       use nest_blending, only: nest_blend
+      use inp_base, only: inp_get, inp_read, inp_3dpres, inp_hwnd2
+      use step_options
+      use gmm_pw
+      use gmm_geof
+      use inp_mod
+      use grid_options
+      use gem_options
+      use tdpack
+      use glb_ld
+      use cstv
+      use lun
+      use tr3d
+      use ver
+      use gmm_itf_mod
+      use wb_itf_mod
       implicit none
 #include <arch_specific.hf>
 
-      character* (*) F_trprefix_S, F_trsuffix_S, F_datev
+      character(len=*) F_trprefix_S, F_trsuffix_S, F_datev
+      logical F_stag_L
       integer Mminx,Mmaxx,Mminy,Mmaxy,Nk
       real F_u (Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
            F_v (Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
@@ -33,86 +49,43 @@
            F_t (Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
            F_zd(Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
            F_s (Mminx:Mmaxx,Mminy:Mmaxy   ), &
-           F_q (Mminx:Mmaxx,Mminy:Mmaxy,2:Nk+1), &
+           F_q (Mminx:Mmaxx,Mminy:Mmaxy,Nk+1), &
            F_topo(Mminx:Mmaxx,Mminy:Mmaxy)
 
-#include <WhiteBoard.hf>
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "dcst.cdk"
-#include "cstv.cdk"
-#include "bcsgrds.cdk"
-#include "lam.cdk"
-#include "schm.cdk"
-#include "tr3d.cdk"
-#include "inp.cdk"
-#include "lun.cdk"
-#include "ver.cdk"
-#include "step.cdk"
-#include "p_geof.cdk"
-#include "vtopo.cdk"
-#include "grd.cdk"
 #include <rmnlib_basics.hf>
 
-Interface
-      integer function inp_read ( F_var_S, F_hgrid_S, F_dest, &
-                                  F_ip1, F_nka, F_hint_S )
-      implicit none
-      character*(*)                     ,intent(IN)  :: F_var_S,F_hgrid_S
-      character*(*),            optional,intent(IN)  :: F_hint_S
-      integer                           ,intent(OUT) :: F_nka
-      integer, dimension(:    ), pointer,intent(OUT) :: F_ip1
-      real   , dimension(:,:,:), pointer,intent(OUT) :: F_dest
-      end function inp_read
-
-      integer function inp_get ( F_var_S, F_hgrid_S, F_ver_ip1,&
-                                 F_vgd_src, F_vgd_dst         ,&
-                                 F_sfc_src, F_sfc_dst, F_dest ,&
-                                 Minx,Maxx,Miny,Maxy, F_nk    ,&
-                                 F_inttype_S )
-      use vGrid_Descriptors
-      implicit none
-      character(len=*)          , intent(IN) :: F_var_S,F_hgrid_S
-      character(len=*), optional, intent(IN) :: F_inttype_S
-      integer                , intent(IN)  :: Minx,Maxx,Miny,Maxy, F_nk
-      integer                , intent(IN)  :: F_ver_ip1(F_nk)
-      type(vgrid_descriptor) , intent(IN)  :: F_vgd_src, F_vgd_dst
-      real, dimension(Minx:Maxx,Miny:Maxy     ), target, &
-                                   intent(IN) :: F_sfc_src, F_sfc_dst
-      real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(OUT):: F_dest
-      end function inp_get
-End Interface
-
       character(len=4) vname
-      logical initial_data, blend_oro, urt1_l, ut1_l, sfcTT_L
-      integer fst_handle, i,j,k,n, nia,nja,nka, istat, err, kind
-      integer nka_gz, nka_tt, nka_hu, ip1_w(G_nk)
-      integer, dimension (:), pointer :: ip1_list, ip1_dum
-      real topo_temp(l_minx:l_maxx,l_miny:l_maxy),step_current,&
-           p0(1:l_ni,1:l_nj), lev
-      real, dimension (:    ), allocatable :: rna
-      real, dimension (:,:  ), allocatable :: ssu0,ssv0
-      real, dimension (:,:  ), pointer     :: ssq0,pres
-      real, dimension (:,:,:), allocatable, target :: dstlev,srclev
-      real, dimension (:,:,:), pointer :: ssqr,ssur,ssvr,&
-                                          meqr,ttr,hur,gzr,trp,ptr3d
-      real*8 diffd, pref_a_8
+      logical urt1_l, ut1_l, sfcTT_L
+      integer i,j,k,n, nka, istat, err, kind,kt,kh
+      integer nka_gz, nka_tt, nka_hu
+      integer, dimension (:), pointer :: ip1_list, HU_ip1_list, &
+                                         ip1_dum, ip1_w
+      real topo_temp(l_minx:l_maxx,l_miny:l_maxy),step_current,lev
+      real, dimension (:    ), allocatable  :: rna
+      real, dimension (:,:  ), pointer :: S_q,S_u,S_v
+      real, dimension (:,:  ), pointer :: ssq0,ssu0,ssv0
+      real, dimension (:,:  ), pointer :: p0lsq0,p0lsu0,p0lsv0,dummy
+      real, dimension (:,:,:), pointer :: dstlev,srclev
+      real, dimension (:,:,:), pointer :: ssqr,ssur,ssvr,meqr,&
+                                          tv,ttr,hur,gzr,trp
+      real*8 diffd
       type(vgrid_descriptor) :: vgd_src, vgd_dst
 !
 !-----------------------------------------------------------------------
 !
-      if (Lun_out.gt.0) write(lun_out,9000) trim(F_datev)
+      if (Lun_out > 0) write(lun_out,9000) trim(F_datev)
 
       if (.not.Lun_debug_L) istat= fstopc ('MSGLVL','SYSTEM',.false.)
 
-      initial_data= ( trim(F_datev) .eq. trim(Step_runstrt_S) )
-
       call inp_open ( F_datev, vgd_src )
 
-      nullify (meqr, ip1_list)
+      nullify (meqr, ip1_list, HU_ip1_list)
       err= inp_read ( 'OROGRAPHY', 'Q', meqr, ip1_list, nka )
+      if ( associated(ip1_list) ) then
+         deallocate (ip1_list) ; nullify (ip1_list)
+      endif
 
-      if ( initial_data ) then
+      if ( trim(F_datev) == trim(Step_runstrt_S) ) then
          if ( associated(meqr) ) then
             istat= gmm_get(gmmk_topo_low_s , topo_low )
             topo_low(1:l_ni,1:l_nj)= meqr(1:l_ni,1:l_nj,1)
@@ -126,38 +99,66 @@ End Interface
       call var_topo2 ( F_topo, step_current, &
                        l_minx,l_maxx,l_miny,l_maxy )
 
-      if ( associated(meqr) .and. G_lam .and. .not. Grd_yinyang_L) then
+      if ( associated(meqr) .and. .not. Grd_yinyang_L) then
       if ( Lam_blendoro_L ) then
          topo_temp(1:l_ni,1:l_nj)= meqr(1:l_ni,1:l_nj,1)
          call nest_blend ( F_topo, topo_temp, l_minx,l_maxx, &
-              l_miny,l_maxy, 'M', level=G_nk+1 ) 
+                           l_miny,l_maxy, 'M', level=G_nk+1 )
       endif
       endif
 
-      nullify (ssqr,ssur,ssvr,ttr,hur)
-      err= inp_read ( 'SFCPRES'    , 'Q', ssqr, ip1_list, nka    )
-      err= inp_read ( 'SFCPRES'    , 'U', ssur, ip1_list, nka    )
-      err= inp_read ( 'SFCPRES'    , 'V', ssvr, ip1_list, nka    )
-      err= inp_read ( 'TEMPERATURE', 'Q', ttr , ip1_list, nka_tt )
-      err= inp_read ( 'TR/HU'      , 'Q', hur , ip1_list, nka_hu )
+      nullify (ssqr,ssur,ssvr,ttr,hur,p0lsq0,p0lsu0,p0lsv0,dummy)
 
-      if ((nka_tt.lt.1).or.(nka_hu.lt.1).or.(nka_tt.ne.nka_hu)) &
-      call gem_error ( -1, 'inp_data', &
-      'Missing or inconsistent input data: temperature and/or humidity')
+      err = inp_read ( 'SFCPRES'    , 'Q', ssqr,    ip1_list, nka    )
+
+      if (associated(ssqr)) then
+         err = inp_read ( 'SFCPRES'    , 'U', ssur,    ip1_list, nka    )
+         if (nka < 1) then
+            call gem_error (-1,'inp_data','Missing field: SFCPRES on hgrid U')
+         end if
+
+         err = inp_read ( 'SFCPRES'    , 'V', ssvr,    ip1_list, nka    )
+         if (nka < 1) then
+            call gem_error (-1,'inp_data','Missing field: SFCPRES on hgrid V')
+         end if
+      end if
+
+      err = inp_read ( 'TR/HU'      , 'Q', hur , HU_ip1_list, nka_hu )
+      if (nka_hu < 1) then
+         call gem_error (-1,'inp_data','Missing field: TR/HU - humidity TR/HU')
+      end if
+
+      err = inp_read ( 'TEMPERATURE', 'Q', ttr ,    ip1_list, nka_tt )
+      if (nka_tt < 1) then
+         call gem_error (-1,'inp_data','Missing field: TT - temperature TT')
+      end if
 
       nka= nka_tt
-      if (Inp_kind /= 105) &
-      call mfottv2 ( ttr, ttr, hur, l_minx,l_maxx,l_miny,l_maxy,&
-                     nka, 1,l_ni,1,l_nj, .true. )
+      allocate (tv(l_minx:l_maxx,l_miny:l_maxy,nka))
+      tv=ttr
+
+      if (Inp_kind /= 105) then
+         do kt=1, nka_tt
+         do kh=1, nka_hu
+            if (ip1_list(kt) == HU_ip1_list(kh)) then
+               call mfottv2 ( tv(l_minx,l_miny,kt),tv(l_minx,l_miny,kt),&
+                             hur(l_minx,l_miny,kh),l_minx,l_maxx       ,&
+                             l_miny,l_maxy,1, 1,l_ni,1,l_nj, .true. )
+               goto 67
+            endif
+         end do
+ 67      end do
+      endif
 
       call convip (ip1_list(nka), lev, i,-1, vname, .false.)
       sfcTT_L = (i == 4) .or. ( (i /= 2) .and. (abs(lev-1.) <= 1.e-5) )
 
-      allocate ( srclev(l_minx:l_maxx,l_miny:l_maxy,nka) ,&
+      allocate ( srclev(l_minx:l_maxx,l_miny:l_maxy,max(nka,nka_hu)) ,&
                  dstlev(l_minx:l_maxx,l_miny:l_maxy,G_nk),&
                  ssq0  (l_minx:l_maxx,l_miny:l_maxy)     ,&
                  ssu0  (l_minx:l_maxx,l_miny:l_maxy)     ,&
                  ssv0  (l_minx:l_maxx,l_miny:l_maxy) )
+      nullify (S_q,S_u,S_v)
 
       if (.not.associated(ssqr)) then
          ! check for input on pressure vertical coordinate
@@ -172,40 +173,47 @@ End Interface
                call gz2p02 ( ssq0, gzr, F_topo, rna     ,&
                              l_minx,l_maxx,l_miny,l_maxy,&
                              nka,1,l_ni,1,l_nj )
-               do k=1,nka
-                  srclev(1:l_ni,1:l_nj,k)= rna(k)*100.
-               enddo
+               allocate (S_q(l_minx:l_maxx,l_miny:l_maxy))
+               allocate (S_u(l_minx:l_maxx,l_miny:l_maxy))
+               allocate (S_v(l_minx:l_maxx,l_miny:l_maxy))
+               S_q(:,1:nka) = rna(nka)
+               S_u(:,1:nka) = rna(nka)
+               S_v(:,1:nka) = rna(nka)
                deallocate (rna,gzr) ; nullify (gzr)
-               allocate (ssqr(l_minx:l_maxx,l_miny:l_maxy,1))
-               allocate (ssur(l_minx:l_maxx,l_miny:l_maxy,1))
-               allocate (ssvr(l_minx:l_maxx,l_miny:l_maxy,1))
-               ssqr(1:l_ni,1:l_nj,1) = srclev(1:l_ni,1:l_nj,nka)
-               ssur(1:l_ni,1:l_nj,1) = srclev(1:l_ni,1:l_nj,nka)
-               ssvr(1:l_ni,1:l_nj,1) = srclev(1:l_ni,1:l_nj,nka)
             endif
          endif
       else
-         pres  => ssqr(1:l_ni,1:l_nj,1)
-         ptr3d => srclev(1:l_ni,1:l_nj,1:nka)
-         istat= vgd_levels (vgd_src, ip1_list(1:nka), ptr3d, pres)
+         allocate (S_q(l_minx:l_maxx,l_miny:l_maxy))
+         allocate (S_u(l_minx:l_maxx,l_miny:l_maxy))
+         allocate (S_v(l_minx:l_maxx,l_miny:l_maxy))
+         S_q(:,:) = ssqr(:,:,1)
+         S_u(:,:) = ssur(:,:,1)
+         S_v(:,:) = ssvr(:,:,1)
+         deallocate (ssqr,ssur,ssvr) ; nullify(ssqr,ssur,ssvr)
+
+         call inp_3dpres ( vgd_src, ip1_list, S_q, dummy, srclev, 1,nka )
+
          if ( associated(meqr) .and. sfcTT_L ) then
-            srclev(1:l_ni,1:l_nj,nka)= ssqr(1:l_ni,1:l_nj,1)
-            if (lun_out.gt.0) &
-            write(lun_out,'(" PERFORMING surface pressure adjustment")')
-            call adj_ss2topo2 ( ssq0, F_topo, srclev, meqr, ttr , &
+            if (lun_out > 0) then
+               write(lun_out,'(" PERFORMING surface pressure adjustment")')
+            end if
+            srclev(1:l_ni,1:l_nj,nka)= S_q(1:l_ni,1:l_nj)
+            call adj_ss2topo2 ( ssq0, F_topo, srclev, meqr, tv  , &
                                 l_minx,l_maxx,l_miny,l_maxy, nka, &
                                 1,l_ni,1,l_nj )
             deallocate (meqr) ; nullify (meqr)
          else
-            if (lun_out.gt.0) &
-            write(lun_out,'(" NO surface pressure adjustment")')
-            ssq0(1:l_ni,1:l_nj)= ssqr(1:l_ni,1:l_nj,1)
+            if (lun_out > 0) then
+               write(lun_out,'(" NO surface pressure adjustment")')
+            end if
+            ssq0(1:l_ni,1:l_nj)= S_q(1:l_ni,1:l_nj)
          endif
       endif
 
-      if (.not.associated(ssqr)) &
-      call gem_error ( -1, 'inp_data', &
-          'Missing input data: surface pressure')
+      if (.not.associated(S_q)) then
+         call gem_error ( -1, 'inp_data', &
+                          'Missing input data: surface pressure')
+      end if
 
       call rpn_comm_xch_halo ( ssq0, l_minx,l_maxx,l_miny,l_maxy,&
            l_ni,l_nj,1,G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
@@ -226,29 +234,62 @@ End Interface
 
       F_s(1:l_ni,1:l_nj) = log(ssq0(1:l_ni,1:l_nj)/Cstv_pref_8)
 
+      if ( Schm_sleve_L ) then
+         allocate ( p0lsu0(l_minx:l_maxx,l_miny:l_maxy),&
+                    p0lsv0(l_minx:l_maxx,l_miny:l_maxy) )
+         istat = gmm_get (gmmk_pw_p0_ls_s, p0lsq0 )
+         call rpn_comm_xch_halo ( p0lsq0, l_minx,l_maxx,l_miny,l_maxy,&
+              l_ni,l_nj,1,G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+         do j=1,l_nj
+         do i=1,l_ni-east
+            p0lsu0(i,j)= (p0lsq0(i,j)+p0lsq0(i+1,j  ))*.5d0
+         enddo
+         enddo
+         if (l_east) p0lsu0(l_ni,1:l_nj)= p0lsq0(l_ni,1:l_nj)
+
+         do j=1,l_nj-north
+         do i=1,l_ni
+            p0lsv0(i,j)= (p0lsq0(i,j)+p0lsq0(i  ,j+1))*.5d0
+         enddo
+         enddo
+         if (l_north) p0lsv0(1:l_ni,l_nj)= p0lsq0(1:l_ni,l_nj)
+      endif
+
       nullify (ip1_dum)
       istat= vgrid_wb_get ('ref-m', vgd_dst, ip1_dum )
       deallocate (ip1_dum); nullify (ip1_dum)
 
-      pres  => ssqr(1:l_ni,1:l_nj,1)
-      ptr3d => srclev(1:l_ni,1:l_nj,1:nka)
-      istat= vgd_levels ( vgd_src, ip1_list(1:nka), ptr3d, &
-                          pres, in_log=.true. )
+      call inp_3dpres ( vgd_src,  ip1_list,  S_q,  dummy, srclev, &
+                        1, nka, F_inlog_S='in_log')
+      call inp_3dpres ( vgd_dst, Ver_ip1%t, ssq0, p0lsq0, dstlev, &
+                        1,G_nk, F_inlog_S='in_log')
 
-      pres  => ssq0  (1:l_ni,1:l_nj)
-      ptr3d => dstlev(1:l_ni,1:l_nj,1:G_nk)
-      istat= vgd_levels ( vgd_dst, Ver_ip1%t(1:G_nk), ptr3d, &
-                          pres, in_log=.true. )
-      call vertint2 ( F_t,dstlev,G_nk, ttr,srclev,nka, &
-                      l_minx,l_maxx,l_miny,l_maxy    , &
-                      1,l_ni, 1,l_nj, varname='TT' )
+      if (F_stag_L) then
+         call vertint2 ( F_t,dstlev,G_nk, tv,srclev,nka, &
+                         l_minx,l_maxx,l_miny,l_maxy   , &
+                         1,l_ni, 1,l_nj, varname='TT' )
+      else
+         call vertint2 ( F_t,dstlev,G_nk,ttr,srclev,nka, &
+                         l_minx,l_maxx,l_miny,l_maxy   , &
+                         1,l_ni, 1,l_nj, varname='TT' )
+      endif
+
       nullify (trp)
       istat= gmm_get (trim(F_trprefix_S)//'HU'//trim(F_trsuffix_S),trp)
-      call vertint2 ( trp,dstlev,G_nk, hur,srclev,nka, &
-                      l_minx,l_maxx,l_miny,l_maxy    , &
-                      1,l_ni, 1,l_nj, inttype=Inp_vertintype_tracers_S )
-      deallocate (ttr,hur,srclev,dstlev) ; nullify (ttr,hur)
-      if (associated(ip1_list)) deallocate (ip1_list)
+      if ( nka_hu > 1 ) then
+         err= inp_read ( 'TR/HU', 'Q', hur, HU_ip1_list, nka_hu )
+         call inp_3dpres ( vgd_src, HU_ip1_list, S_q, dummy, srclev, 1, &
+                           nka_hu, F_inlog_S='in_log')
+         call vertint2 ( trp,dstlev,G_nk, hur,srclev,nka_hu         ,&
+                         l_minx,l_maxx,l_miny,l_maxy, 1,l_ni, 1,l_nj,&
+                         inttype=Inp_vertintype_tracers_S )
+      else
+         trp = 0.
+      endif
+
+      deallocate (tv,ttr,hur,srclev,dstlev) ; nullify (tv,ttr,hur,srclev,dstlev)
+      if (associated(ip1_list   )) deallocate (ip1_list   )
+      if (associated(HU_ip1_list)) deallocate (HU_ip1_list)
 
       NTR_Tr3d_ntr= 0
       do n=1,Tr3d_ntr
@@ -258,7 +299,7 @@ End Interface
                trim(F_trprefix_S)//trim(vname)//trim(F_trsuffix_S),trp)
          if (trim(vname) /= 'HU') then
             err= inp_get ( 'TR/'//trim(vname),'Q', Ver_ip1%t,&
-                           vgd_src, vgd_dst, ssqr, ssq0, trp,&
+                           vgd_src, vgd_dst, S_q, ssq0, p0lsq0, trp,&
                            l_minx,l_maxx,l_miny,l_maxy,G_nk ,&
                            F_inttype_S=Inp_vertintype_tracers_S )
             if (err == 0) then
@@ -269,54 +310,76 @@ End Interface
          trp= max(trp,Tr3d_vmin(n))
       end do
 
+      allocate (ip1_w(1:G_nk))
       ip1_w(1:G_nk)= Ver_ip1%t(1:G_nk)
-      if (.not. Schm_lift_ltl_L) ip1_w(G_nk)=Ver_ip1%t(G_nk+1)
+      if (.not. Schm_trapeze_L) ip1_w(G_nk)=Ver_ip1%t(G_nk+1)
       err= inp_get ('WT1',  'Q', ip1_w            ,&
-                    vgd_src,vgd_dst,ssqr,ssq0,F_w ,&
-                    l_minx,l_maxx,l_miny,l_maxy,G_nk )
-      ana_w_L= ( err == 0 )
+                    vgd_src,vgd_dst,S_q,ssq0,p0lsq0,F_w ,&
+                    l_minx,l_maxx,l_miny,l_maxy,G_nk)
+      deallocate (ip1_w) ; nullify(ip1_w)
+      Inp_w_L= ( err == 0 )
 
       err= inp_get ('ZDT1', 'Q', Ver_ip1%t        ,&
-                    vgd_src,vgd_dst,ssqr,ssq0,F_zd,&
-                    l_minx,l_maxx,l_miny,l_maxy,G_nk )
-      ana_zd_L= ( err == 0 )
+                    vgd_src,vgd_dst,S_q,ssq0,p0lsq0,F_zd,&
+                    l_minx,l_maxx,l_miny,l_maxy,G_nk)
+      Inp_zd_L= ( err == 0 )
 
-      if (.not.Schm_hydro_L) &
-      err= inp_get ( 'QT1', 'Q', Ver_ip1%m(2:G_nk+1),&
-                      vgd_src,vgd_dst,ssqr,ssq0,F_q ,&
-                      l_minx,l_maxx,l_miny,l_maxy,G_nk )
+      if (.not.Schm_hydro_L) then
+         allocate (ip1_w(1:G_nk+1))
+         ip1_w(1:G_nk+1)=Ver_ip1%m(1:G_nk+1)
+         err= inp_get ( 'QT1', 'Q', ip1_w,&
+                        vgd_src,vgd_dst,S_q,ssq0,p0lsq0,F_q ,&
+                        l_minx,l_maxx,l_miny,l_maxy,G_nk+1 )
+         deallocate (ip1_w) ; nullify(ip1_w)
+      endif
 
-      ut1_L= .false.
+      ut1_L= .false. ; urt1_L= .false.
+
+      if (F_stag_L) then
       err= inp_get ( 'URT1', 'U', Ver_ip1%m       ,&
-                     vgd_src,vgd_dst,ssur,ssu0,F_u,&
+                     vgd_src,vgd_dst,S_u,ssu0,p0lsu0,F_u,&
                      l_minx,l_maxx,l_miny,l_maxy,G_nk )
-      if ( err == 0 ) &
-      err= inp_get ( 'VRT1', 'V', Ver_ip1%m       ,&
-                     vgd_src,vgd_dst,ssvr,ssv0,F_v,&
-                     l_minx,l_maxx,l_miny,l_maxy,G_nk )
+      if ( err == 0 ) then
+         err= inp_get ( 'VRT1', 'V', Ver_ip1%m       ,&
+                        vgd_src,vgd_dst,S_v,ssv0,p0lsv0,F_v,&
+                        l_minx,l_maxx,l_miny,l_maxy,G_nk )
+      end if
       urt1_L= ( err == 0 )
 
       if (.not. urt1_L) then
          err= inp_get ( 'UT1', 'U', Ver_ip1%m        ,&
-                        vgd_src,vgd_dst,ssur,ssu0,F_u,&
+                        vgd_src,vgd_dst,S_u,ssu0,p0lsu0,F_u,&
                         l_minx,l_maxx,l_miny,l_maxy,G_nk )
-         if ( err == 0 ) &
-         err= inp_get ( 'VT1', 'V', Ver_ip1%m        ,&
-                        vgd_src,vgd_dst,ssvr,ssv0,F_v,&
-                        l_minx,l_maxx,l_miny,l_maxy,G_nk )
+         if ( err == 0 ) then
+            err= inp_get ( 'VT1', 'V', Ver_ip1%m        ,&
+                           vgd_src,vgd_dst,S_v,ssv0,p0lsv0,F_v,&
+                           l_minx,l_maxx,l_miny,l_maxy,G_nk )
+         end if
          ut1_L= ( err == 0 )
-         ! Remove the .and. part of this test be 2021
-         if ( ut1_L .and. Inp_ut1_is_urt1 == -1 ) &
+         ! Remove the .and. part of this test by 2021
+         if ( ut1_L .and. Inp_ut1_is_urt1 == -1 ) then
               call image_to_real_winds ( F_u,F_v, l_minx,l_maxx,&
                                          l_miny,l_maxy, G_nk )
+         end if
 
       endif
+      endif
 
-      if ((.not. urt1_L) .and. (.not. ut1_L)) &
-      call inp_hwnd ( F_u,F_v, vgd_src,vgd_dst, ssur,ssvr, &
-                      ssu0,ssv0, l_minx,l_maxx,l_miny,l_maxy,G_nk )
+      if ((.not. urt1_L) .and. (.not. ut1_L)) then
+         call inp_hwnd2 ( F_u,F_v, vgd_src,vgd_dst, F_stag_L,&
+                          S_q,S_u,S_v, ssq0,ssu0,ssv0       ,&
+                          p0lsq0,p0lsu0,p0lsv0              ,&
+                          l_minx,l_maxx,l_miny,l_maxy,G_nk )
+      end if
 
-      deallocate (ssqr,ssur,ssvr,ssq0,ssu0,ssv0)
+      deallocate (S_q,S_u,S_v,ssq0,ssu0,ssv0)
+      nullify    (S_q,S_u,S_v,ssq0,ssu0,ssv0)
+      if ( Schm_sleve_L ) then
+         deallocate (p0lsu0,p0lsv0)
+         nullify    (p0lsq0,p0lsu0,p0lsv0)
+      endif
+      err = vgd_free(vgd_dst)
+!!$      err = vgd_free(vgd_src) !#TODO: should it be done here?
 
       call inp_close ()
 
@@ -329,4 +392,3 @@ End Interface
 !
       return
       end
-

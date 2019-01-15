@@ -17,8 +17,16 @@
 
       subroutine spn_init
       use spn_work_mod
-#include <arch_specific.hf>
+      use grid_options
+      use gem_options
+      use glb_ld
+      use cstv
+      use lun
+      use ver
+      use ldnh
+      use glb_pil
       implicit none
+#include <arch_specific.hf>
 
 !author
 !     Minwei Qian (CCRD) & Bernard Dugas, Syed Husain  (MRB)  - summer 2015
@@ -27,15 +35,6 @@
 ! v4_80 - Qian, Dugas, Hussain            - initial version
 ! v4_80 - Baek - correction for NK
 
-#include "lun.cdk"
-#include "glb_ld.cdk"
-#include "glb_pil.cdk"
-#include "grd.cdk"
-#include "lam.cdk"
-#include "cstv.cdk"
-#include "ldnh.cdk"
-#include "ver.cdk"
-#include "spn.cdk"
 
       integer i,j,k,err1,next_down
       real t_turn, b_turn, pi2, nudging_tau
@@ -48,16 +47,16 @@
 
       i = G_ni-Lam_pil_w-Lam_pil_e
       call itf_fft_nextfactor2 ( i, next_down )
-      if ( i.ne.G_ni-Lam_pil_w-Lam_pil_e ) then
-         if (Lun_out.gt.0) write (Lun_out,3001) &
+      if ( i /= G_ni-Lam_pil_w-Lam_pil_e ) then
+         if (Lun_out > 0) write (Lun_out,3001) &
          'G_ni',G_ni-Lam_pil_w-Lam_pil_e,i,next_down
          err1= -1
       endif
 
       j = G_nj-Lam_pil_s-Lam_pil_n
       call itf_fft_nextfactor2 ( j, next_down )
-      if ( j.ne.G_nj-Lam_pil_s-Lam_pil_n ) then
-         if (Lun_out.gt.0) write (Lun_out,3001) &
+      if ( j /= G_nj-Lam_pil_s-Lam_pil_n ) then
+         if (Lun_out > 0) write (Lun_out,3001) &
          'G_nj',G_nj-Lam_pil_s-Lam_pil_n,j,next_down
          err1= -1
       endif

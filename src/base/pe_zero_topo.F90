@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -18,6 +18,11 @@
 
 !
       subroutine pe_zero_topo (F_npx, F_npy )
+      use clib_itf_mod
+      use component_mod
+      use path
+      use ptopo
+      use version
       implicit none
 #include <arch_specific.hf>
 !
@@ -29,12 +34,6 @@
 !revision
 ! v4_03 - Desgagne M.       - initial version, ISST
 !
-
-#include "component.cdk"
-#include "ptopo.cdk"
-#include "version.cdk"
-#include "path.cdk"
-#include <clib_interface_mu.hf>
       include 'gemdyn_version.inc'
 !
       integer,external :: exdb,ptopo_nml
@@ -62,7 +61,7 @@
 !
 ! Read namelist ptopo from file model_settings
 !
-      if (ptopo_nml (trim(Path_work_S)//'/model_settings.nml') .eq. 1 ) then
+      if (ptopo_nml (trim(Path_work_S)//'/model_settings.nml') == 1 ) then
          F_npx = Ptopo_npex
          F_npy = Ptopo_npey
          err = ptopo_nml ('print')

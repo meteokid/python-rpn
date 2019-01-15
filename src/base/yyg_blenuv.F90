@@ -17,13 +17,17 @@
 
 !
       subroutine yyg_blenuv (F_u, F_v, Minx,Maxx,Miny,Maxy, Nk )
+      use gem_options
+      use glb_ld
+      use lun
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
-      integer  Minx,Maxx,Miny,Maxy, Nk
+      integer, intent(in) :: Minx,Maxx,Miny,Maxy, Nk
 !
-      real     F_u  (Minx:Maxx,Miny:Maxy,  Nk)  ,  F_v (Minx:Maxx,Miny:Maxy,  Nk)
+      real, dimension(Minx:Maxx, Miny:Maxy, Nk) :: F_u, F_v
 !
-!author 
+!author
 !     Michel Desgagne   - Spring 2006
 !
 !revision
@@ -36,18 +40,10 @@
 !       none
 !
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "schm.cdk"
-#include "lun.cdk"
-#include "geomg.cdk"
 !
-      type(gmm_metadata) :: mymeta
-      character(len=GMM_MAXNAMELENGTH) :: tr_name
 !     temp variables to manipulate winds for Yin-Yang
-      real tempu   (Minx:Maxx,Miny:Maxy,  NK)
-      real tempv   (Minx:Maxx,Miny:Maxy,  NK)
-      integer err,i,j,k
+      real, dimension(Minx:Maxx, Miny:Maxy, NK) :: tempu, tempv
+      integer :: i,j,k
 
 !----------------------------------------------------------------------
 !
@@ -56,7 +52,7 @@
       tempu = 0.
       tempv = 0.
 !
-!$omp parallel private(i,j)
+!$omp parallel private(i,j,k) shared(tempu,tempv)
 !$omp do
        do k= 1, NK
         do j= 1, l_nj

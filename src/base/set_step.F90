@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -15,16 +15,22 @@
 
 !**s/r set_step - initialization of common block TIMESTEP
 !
-
-!
       integer function set_step(F_argc,F_argv_S,F_cmdtyp,F_v1,F_v2)
-!
+      use step_options
+      use gem_options
+      use glb_ld
+      use cstv
+      use lun
+      use dimout
+      use out_mod
+      use out3
+      use timestep
       implicit none
 #include <arch_specific.hf>
 !
         integer F_argc,F_v1,F_v2
-        character *(*) F_argv_S(0:F_argc),F_cmdtyp
-        character*5 stuff
+        character(len=*) F_argv_S(0:F_argc),F_cmdtyp
+        character(len=5) :: stuff
 !
 !author Vivian Lee - RPN - April 1999
 !
@@ -51,7 +57,7 @@
 !       The "rpn_fortran_callback" routine will process the above
 !       statement and return 5 arguments to this function. For more
 !       information to how this is processed, see "SREQUET".
-!	
+!
 !arguments
 !  Name        I/O                 Description
 !----------------------------------------------------------------
@@ -90,17 +96,7 @@
 ! month could be shorter than expected.
 !
 
-#include "glb_ld.cdk"
-#include "cstv.cdk"
-#include "dimout.cdk"
-#include "timestep.cdk"
-#include "lctl.cdk"
-#include "step.cdk"
-#include "lun.cdk"
 
-
-!*
-!
       integer i,j,k,ii,num,istep
       logical month_flag,day_flag,hour_flag,step_flag,found_L
       real frarg,month,day,hour,rstep
@@ -109,11 +105,12 @@
       transtep2(frarg) = nint(86400.0 * frarg / Cstv_dt_8)
 !
       integer,external ::  transtep3
+      integer,external ::  dcmip_div_X
 !
       argc_out=min(F_argc,6)
-      if (Lun_out.gt.0) then
+      if (Lun_out > 0) then
           write(Lun_out,*)
-          if (argc_out.lt.F_argc) then
+          if (argc_out < F_argc) then
           write(Lun_out,*) F_argv_S(0),'=',F_argv_S(1),',',F_argv_S(2),',',(F_argv_S(i),i=3,argc_out),'...'
           else
           write(Lun_out,*) F_argv_S(0),'=',F_argv_S(1),',',F_argv_S(2),',',(F_argv_S(i),i=3,argc_out)
@@ -123,9 +120,10 @@
       read(F_argv_S(1),*)stepset
       Timestep_sets = Timestep_sets + 1
 
-      if (Timestep_sets.gt.MAXSET) then
-          if (Lun_out.gt.0) &
-          write(Lun_out,*)'SET_STEP WARNING: too many TIMESTEP sets'
+      if (Timestep_sets > MAXSET) then
+          if (Lun_out > 0) then
+            write(Lun_out,*)'SET_STEP WARNING: too many TIMESTEP sets'
+          end if
           Timestep_sets = Timestep_sets - 1
           set_step=1
           return
@@ -140,67 +138,72 @@
       Timestep_id(j)=stepset
       Timestep_init_L(j)=.false.
       do 100 ii=2,F_argc
-         if (index(F_argv_S(ii),'[').gt.0) then
+         if (index(F_argv_S(ii),'[') > 0) then
              stuff=F_argv_S(ii)
              read(stuff(2:4),*) num
-         else if (F_argv_S(ii).eq.'month' ) then
+         else if (F_argv_S(ii) == 'month' ) then
              month_flag= .true.
              day_flag  = .false.
              hour_flag = .false.
              step_flag = .false.
-         else if (F_argv_S(ii).eq.'day' ) then
+         else if (F_argv_S(ii) == 'day' ) then
              month_flag= .false.
              day_flag  = .true.
              hour_flag = .false.
              step_flag = .false.
-         else if (F_argv_S(ii).eq.'hour') then
+         else if (F_argv_S(ii) == 'hour') then
              hour_flag = .true.
              step_flag = .false.
              day_flag  = .false.
              month_flag= .false.
-         else if (F_argv_S(ii).eq.'step') then
+         else if (F_argv_S(ii) == 'step') then
              step_flag = .true.
              hour_flag = .false.
              day_flag  = .false.
              month_flag= .false.
-         else if (F_argv_S(ii).eq.'init') then
+         else if (F_argv_S(ii) == 'init') then
              Timestep_init_L(j)=.true.
          else if (step_flag) then
              i = i+1
              read(F_argv_S(ii),*)rstep
-             if (rstep.eq.-1) then
+             if (rstep == -1) then
              i = i-1
              do 70 istep=lctl_step,Step_total
              i = i+1
-             Timestep(i,j)=istep
+             Timestep_tbl(i,j)=istep
  70          continue
              else
-             Timestep(i,j)=int(rstep)
+             Timestep_tbl(i,j)=int(rstep)
              endif
          else if (hour_flag) then
              i = i+1
              read(F_argv_S(ii),*)hour
-             Timestep(i,j)=transtep(hour) 
+             Timestep_tbl(i,j)=transtep(hour)
+             if ( Schm_canonical_dcmip_L ) then
+               Timestep_tbl(i,j)= dcmip_div_X(transtep(hour))
+             end if
          else if (day_flag) then
              i = i+1
              read(F_argv_S(ii),*)day
-             Timestep(i,j)=transtep2(day) 
+             Timestep_tbl(i,j)=transtep2(day)
          else if (month_flag) then
              i = i+1
              read(F_argv_S(ii),*)month
-             Timestep(i,j)=transtep3(month) 
+             Timestep_tbl(i,j)=transtep3(month)
          else
-             if (Lun_out.gt.0) &
-             write(Lun_out,*)'SET_STEP WARNING: Timestep type not recognizable'
+             if (Lun_out > 0) then
+               write(Lun_out,*)'SET_STEP WARNING: Timestep type not recognizable'
+             end if
              Timestep_sets = Timestep_sets - 1
              set_step=1
              return
-         endif 
+         endif
  100  continue
 
-      if (i.gt.MAXSTEP) then
-          if (Lun_out.gt.0) &
-          write(Lun_out,*)'SET_STEP WARNING: Requested timesteps > MAXSTEP'
+      if (i > MAXSTEP) then
+          if (Lun_out > 0) then
+            write(Lun_out,*)'SET_STEP WARNING: Requested timesteps > MAXSTEP'
+          end if
           Timestep_sets = Timestep_sets - 1
           set_step=1
           return
@@ -211,24 +214,24 @@
       do ii = 2, i
          found_L = .false.
          do k = 1, ii-1
-            if ( Timestep(ii,j).eq.Timestep(k,j) ) found_L = .true.
+            if ( Timestep_tbl(ii,j) == Timestep_tbl(k,j) ) found_L = .true.
          enddo
          if (.not. found_L) then
              istep = istep + 1
-             Timestep(istep,j) = Timestep(ii,j)
+             Timestep_tbl(istep,j) = Timestep_tbl(ii,j)
          endif
       enddo
 
       Timestep_max(Timestep_sets)=istep
 
-      if (Lun_out.gt.0) then
+      if (Lun_out > 0) then
       write(Lun_out,*) ' Timestep_set(',j,') : Timestep_id=',Timestep_id(j)
       write(Lun_out,*) ' Timestep_init_L=',Timestep_init_L(j)
-         if (Timestep_max(j).gt.30) then
+         if (Timestep_max(j) > 30) then
              write(Lun_out,*) ' Timestep=', &
-                      (Timestep(i,j),i=1,30),',... up to ,',Timestep(Timestep_max(j),j)
+                      (Timestep_tbl(i,j),i=1,30),',... up to ,',Timestep_tbl(Timestep_max(j),j)
          else
-             write(Lun_out,*) ' Timestep=',(Timestep(i,j),i=1,Timestep_max(j))
+             write(Lun_out,*) ' Timestep=',(Timestep_tbl(i,j),i=1,Timestep_max(j))
          endif
       endif
       return
@@ -238,7 +241,14 @@
 
 !author Bernard Dugas - RPN - Sep 2008
 !
+      use glb_ld
+      use cstv
+      use lun
+      use dimout
+      use out_mod
+      use out3
       implicit none
+
 #include <arch_specific.hf>
       real     month
 !
@@ -253,9 +263,6 @@
 ! be shorter than expected.
 !
 
-#include "cstv.cdk"
-#include "out3.cdk"
-#include "lun.cdk"
 
 
 !*
@@ -282,7 +289,7 @@
          Dts_month1(3) = 1                ! day   (1-31)
          Dts_month1(4) = Start_date(4)    ! year
          Dts_month1(5) = 0                ! zulu  (0-23)
-         Dts_month1(6) = 0                ! 100*seconds since last hour 
+         Dts_month1(6) = 0                ! 100*seconds since last hour
          if(Dts_month1(2) == 13) then
             Dts_month1(2) = 1
             Dts_month1(4) = Dts_month1(4)+1
@@ -309,8 +316,8 @@
 
       elseif(month == 1) then
 
-         transtep3 = Steps_month1 
-         
+         transtep3 = Steps_month1
+
       elseif(month > 1) then
 
 !        define the current month

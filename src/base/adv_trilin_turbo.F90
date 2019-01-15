@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -17,6 +17,9 @@ subroutine adv_trilin_turbo3 (F_out, F_in, F_dt, &
                               F_x, F_y, F_capz, F_ii, F_jj, F_kk, &
                               F_bsx_8, F_bsy_8, F_xbc_8, F_ybc_8, &
                               F_num, i0, in, j0, jn, k0, F_nk)
+      use glb_ld
+      use adv_grid
+      use outgrid
    implicit none
 #include <arch_specific.hf>
 !
@@ -31,21 +34,19 @@ subroutine adv_trilin_turbo3 (F_out, F_in, F_dt, &
         F_ii, F_jj, F_kk                !I, localisation indices
    real,dimension(F_num) :: &
         F_capz, &                       !I, precomputed displacements along the z-dir
-        F_x, F_y                        !I, x,y positions 
+        F_x, F_y                        !I, x,y positions
    real,dimension(*)     :: F_in        !I, field to interpolate
    real,dimension(F_num) :: F_out       !O, F_dt * result of interpolation
    real*8, dimension(*)  :: F_bsx_8,F_bsy_8
    real*8 F_xbc_8, F_ybc_8
 !
-   !@author Valin, Tanguay  
+   !@author Valin, Tanguay
    !@revisions
-   ! v3_20 -Valin & Tanguay -  initial version 
-   ! v3_21 -Tanguay M.      -  evaluate min-max vertical CFL as function of k 
+   ! v3_20 -Valin & Tanguay -  initial version
+   ! v3_21 -Tanguay M.      -  evaluate min-max vertical CFL as function of k
    ! v4_10 -Plante A.       -  Replace single locator vector with 3 vectors.
    ! V4_14 -Plante A.       - Scope on loop k
 
-#include "glb_ld.cdk"
-#include "adv_grid.cdk"
 
    integer :: n, n0, o1, o2
    integer :: i, j, k, ii, jj, kk
@@ -54,7 +55,8 @@ subroutine adv_trilin_turbo3 (F_out, F_in, F_dt, &
 
    !---------------------------------------------------------------------
 
-!$omp parallel do private(n,n0,ii,jj,kk,rri,rrj,rrk,capx,capy,capz,o1,o2,prf1,prf2,prf3,prf4)
+!$omp parallel do private(i,j,k,n,n0,ii,jj,kk,rri,rrj,rrk, &
+!$omp                capx,capy,capz,o1,o2,prf1,prf2,prf3,prf4)
    do k=k0,F_nk
       do j=j0,jn
 
@@ -72,7 +74,6 @@ subroutine adv_trilin_turbo3 (F_out, F_in, F_dt, &
             o1 = (kk)*adv_nijag + (jj-adv_int_j_off-1)*adv_nit + (ii-adv_int_i_off)
             o2 = o1 + adv_nit
 
-
             !- x interpolation
             capx = (rri-F_bsx_8(ii)) *F_xbc_8
 
@@ -87,7 +88,7 @@ subroutine adv_trilin_turbo3 (F_out, F_in, F_dt, &
             prf4 = (1. - capx) * F_in(o2) + capx * F_in(o2+1)
 
             !- y interpolation
-            capy = (rrj-F_bsy_8(jj)) *F_ybc_8  
+            capy = (rrj-F_bsy_8(jj)) *F_ybc_8
 
             prf1 = (1. - capy) * prf1 + capy  * prf2
             prf2 = (1. - capy) * prf3 + capy  * prf4
@@ -97,8 +98,8 @@ subroutine adv_trilin_turbo3 (F_out, F_in, F_dt, &
             F_out(n) = ((1. - capz) * prf1 + capz  * prf2) * F_dt
          enddo
 
-      enddo 
-   enddo 
+      enddo
+   enddo
 !$omp end parallel do
 
    !---------------------------------------------------------------------

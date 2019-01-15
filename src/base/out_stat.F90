@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -16,6 +16,7 @@
 !**s/r out_stat2
 
       subroutine out_stat2
+      use out_meta
       implicit none
 #include <arch_specific.hf>
 !
@@ -24,15 +25,12 @@
 !
 !revision
 ! v4_80 - Desgagne M. - Initial version
-      include "out_meta.cdk"
 !
 !--------------------------------------------------------------------
 !
       print*, 'OUTPUT_STAT: stack size: ', out_stk_size
-      write(6,1000) out_stk_full, out_stk_part
-      write(6,1001) out_stk_partbin
- 1000 format (' OUTPUT_STAT: full / partial number of calls: ',2i6)
- 1001 format (' OUTPUT_STAT: partial calls distribution bins (2,4,8,16,32,64,>64%):',7i6)
+      print*, 'OUTPUT_STAT: full stack called: ',out_stk_full,' times'
+      print*, 'OUTPUT_STAT: partial stack called: ',out_stk_part,' times'
 !
 !--------------------------------------------------------------------
 !

@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -15,34 +15,35 @@
 
 !**s/r ens_setmem - initialize ensemble prevision system
 !
-      subroutine ens_setmem (l_minx,l_maxx,G_halox,l_ni,     &
-                                 l_miny,l_maxy,G_haloy,l_nj,l_nk,Lun_out)
+      subroutine ens_setmem (l_ni, l_nj, l_nk, Lun_out)
+      use ens_param
+      use ens_gmm_dim
+      use ens_gmm_var
+      use ens_options
+      use gmm_itf_mod
+      use var_gmm
       implicit none
 #include <arch_specific.hf>
 !
-      integer l_minx,l_maxx,G_halox,l_ni
-      integer l_miny,l_maxy,G_haloy,l_nj,l_nk,Lun_out
+      integer, intent(in) :: l_ni, l_nj, l_nk, Lun_out
 !
-!     author   
+!     author
 !     Lubos Spacek - February 2010
-!     
+!
 !     revision
 ! v4_12 - Spacek L.        - Initial version
 ! v_4.1.3 - N. Gagnon      - Change name of most parameters in the NAMELIST
 !
 
-#include "gmm.hf"
-#include "var_gmm.cdk"
-#include "ens_gmm_dim.cdk"
-#include "ens_gmm_var.cdk"
-#include "ens_param.cdk"
+!#include "ens_gmm_dim.cdk"
+!#include "ens_param.cdk"
 
       integer :: istat
 !-------------------------------------------------------------------
 !
       if (.not.Ens_conf) return
 
-      if (Lun_out.gt.0) write(Lun_out,6010)
+      if (Lun_out > 0) write(Lun_out,6010)
 
       call gmm_build_meta3D(meta3d_sh2,          &
                             1,l_ni,0,0,l_ni,     &

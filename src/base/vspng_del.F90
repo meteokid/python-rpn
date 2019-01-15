@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -21,6 +21,10 @@
                               F_aix_8,F_bix_8,F_cix_8,F_dix_8, &
                               F_aiy_8,F_biy_8,F_ciy_8        , &
                               Minx,Maxx,Miny,Maxy, nke, ntrp12, ntrp22, fnjb)
+      use glb_ld
+      use ldnh
+      use trp
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 !
@@ -37,7 +41,7 @@
 !     Michel Desgagne  - October 2000
 !
 !revision
-! v2_11 - Desgagne M.       - initial version 
+! v2_11 - Desgagne M.       - initial version
 ! v2_21 - Corbeil  L.       - ldnh_maxx and ldnh_maxy for transposes
 !
 !object
@@ -45,15 +49,11 @@
 !arguments
 !  Name        I/O                 Description
 !----------------------------------------------------------------
-!  F_sol       I/O           
-!  
+!  F_sol       I/O
+!
 !----------------------------------------------------------------
 !
 
-#include "glb_ld.cdk"
-#include "trp.cdk"
-#include "ldnh.cdk"
-#include "ptopo.cdk"
 !
       integer i, j, k, cnt
       real*8 w1_8(ldnh_maxx,nke,ldnh_maxy),  &
@@ -66,7 +66,7 @@
 !*
 !     __________________________________________________________________
 !
-      do j = 1, l_nj 
+      do j = 1, l_nj
       do k = 1, nke
       do i = 1, l_ni
          w1_8(i,k,j) = dble(F_sol(i,j,k))
@@ -88,7 +88,7 @@
          enddo
          g1(cnt,G_ni) = F_opsxp0_8(G_ni)*t1_8(k,j,G_ni)
       enddo
-      enddo 
+      enddo
 !
       do i = 2, G_ni-1
       do k = 1, cnt
@@ -118,7 +118,7 @@
       call rpn_comm_transpose ( w1_8 , 1, ldnh_maxx, G_ni, nke, &
                                 1, Trp_12emax, ldnh_maxy, t1_8,  -1, 2 )
 !
-      do j = 1, l_nj 
+      do j = 1, l_nj
       do k = 1, nke
       do i = 1, l_ni
          w2_8(j,k,i) = w1_8(i,k,j)

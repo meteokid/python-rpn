@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -15,7 +15,15 @@
 
 !**s/r gemgrid - grille program
       subroutine gemgrid
+      use clib_itf_mod
+      use step_options
       use nest_blending
+      use glb_ld
+      use grid_options
+      use gem_options
+      use hgc
+      use lun
+      use path
       implicit none
 #include <arch_specific.hf>
 !
@@ -28,21 +36,13 @@
 !     Computes positional parameters (>>=lat ^^=lon)
 !
       integer, external :: fnom,fstouv,fstecr,fstfrm,fclos,wkoffit,&
-                           grid_nml2,gem_nml,exdb
-#include "grd.cdk"
-#include "hgc.cdk"
-#include "lam.cdk"
-#include "lun.cdk"
-#include "path.cdk"
-#include "step.cdk"
-#include "glb_ld.cdk"
-#include "glb_pil.cdk"
-#include <clib_interface_mu.hf>
+                           grid_nml2,gem_nml,exdb,step_nml
 
-      integer, external :: gemdm_config,domain_decomp3
-      character*2024 outfile,dumc,fn,etk,etk_ext,dum1,st
-      logical lam,radians
-      integer unf1,unf2,err,npack,i,j,k
+      integer, external :: gemdm_config,domain_decomp3,grid_nml3
+      character(len=120) :: outfile,etk,etk_ext
+      character(len=2024) :: fn
+      logical radians
+      integer unf1,unf2,err,npack,i
 
       logical, parameter :: gauss_L = .false.
       logical uniform_L
@@ -60,24 +60,31 @@
 
       etk = 'PARPOS'
       fn  = trim(Path_input_S)//'/model_settings.nml'
-      Step_runstrt_S='20160415.000000'
       Step_dt= 1.
       radians= .false.
 
       outfile= 'tape1'
       if (Grd_yinyang_L .and. Grd_yinyang_S == 'YAN') outfile= 'tape2'
 
- 88   if (grid_nml2(fn,G_lam).lt.0) then
+ 88   if (grid_nml3(fn) < 0) then
          print *,'STOP: problem with NAMELIST GRID'
          print *,"Use checknml to verify: \'checknml grid\'"
          stop
       endif
-      if (gem_nml(fn).lt.0) then
+!!$      if (step_nml(fn) < 0) then
+!!$         print *,'STOP: problem with NAMELIST STEP'
+!!$         print *,"Use checknml to verify: \'checknml step\'"
+!!$         stop
+!!$      endif
+      if (gem_nml(fn) < 0) then
          print *,'STOP: problem with NAMELIST GEM_CFGS'
          print *,"Use checknml to verify: \'checknml gem_cfgs\'"
          stop
       endif
-      err= grid_nml2 ('print',G_lam)
+
+      Step_runstrt_S='20160825.000000'
+      err= grid_nml3 ('print')
+!      err= step_nml  ('print'    )
       err= gem_nml   ('print'    )
 
       err= gemdm_config ()
@@ -88,14 +95,12 @@
 
       dxmax = 360. ; dymax = 180. ; nila= G_ni ; njla= G_nj
 
-      call set_gemHgrid3 ( x_8, y_8, G_ni, G_nj, Grd_dx, Grd_dy,   & 
+      call set_gemHgrid3 ( x_8, y_8, G_ni, G_nj, Grd_dx, Grd_dy,   &
                            Grd_x0_8, Grd_xl_8, left,               &
                            Grd_y0_8, Grd_yl_8, belo,               &
                            nila, njla, dxmax, dymax,               &
-                           Grd_yinyang_L,gauss_L,G_lam, uniform_L, &
+                           Grd_yinyang_L,gauss_L,.true., uniform_L,&
                            ierx, iery, .true. )
-
-      if (.not.G_lam) G_ni= G_ni + 1
 
       xpos(1:G_ni) = x_8(1:G_ni)
       ypos(1:G_nj) = y_8(1:G_nj)
@@ -109,12 +114,12 @@
       err = clib_remove(outfile)
 
       unf1= 0
-      if (fnom(unf1,outfile,'RND',0).ge.0) then
+      if (fnom(unf1,outfile,'RND',0) >= 0) then
          err= fstouv (unf1, 'RND')
       else
          print *,'problem opening', trim(outfile)
          stop
-      endif  
+      endif
 
       i0=1    ; j0=1
       i1=G_ni ; j1=G_nj
@@ -127,7 +132,7 @@
 
  777  format(2i8,4e15.7,2i10,x,2I5)
  778  format(4(i5,e15.7))
-  
+
       if (Grd_yinyang_L) then
          etk_ext=trim(etk)//'_'//trim(Grd_yinyang_S)
       else
@@ -146,98 +151,98 @@
       err= fstfrm(unf1)
       err= fclos (unf1)
 
-      if (G_lam) then
-         err= domain_decomp3 (1, 1, .false.)
-         call set_gmm
-         call nest_set_gmmvar
-         unf2=0
-         if (fnom(unf2,trim(outfile)//'_core','RND',0).ge.0) then
-            err= fstouv (unf2, 'RND')
-         else
-            print *,'problem opening', trim(outfile//'_core')
-            stop
-         endif
-
-         i0= 1      + Grd_extension 
-         in= G_ni - Grd_extension
-         j0= 1      + Grd_extension
-         jn= G_nj - Grd_extension
-         ni = in-i0+1
-         nj = jn-j0+1
-
-         xpos(1:ni) = x_8(i0:in)
-         ypos(1:nj) = y_8(j0:jn)
-         
-         call set_igs2 ( Grd_ip1,Grd_ip2, xpos,ypos,ni,nj, &
-                         Hgc_ig1ro,Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, &
-                         1,ni,1,1,nj,1)
-         err= fstecr ( xpos,xpos, npack, unf2, 0, 0, 0, ni, 1, 1, &
-                       Grd_ip1,Grd_ip2,Grd_ip3,'X','>>',etk_ext,Hgc_gxtyp_s, &
-                       Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
-         err= fstecr ( ypos,ypos, npack, unf2, 0, 0, 0, 1, nj, 1, &
-                       Grd_ip1,Grd_ip2,Grd_ip3,'X','^^',etk_ext,Hgc_gxtyp_s, &
-                       Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
-
-         unf1= 0
-         err= fnom(unf1,outfile,'RND',0)
-         err= fstouv (unf1, 'RND')
-
-         allocate (mask(G_ni, G_nj))
-         allocate (wrk1(l_minx:l_maxx,l_miny:l_maxy))
-         allocate (wrk2(l_minx:l_maxx,l_miny:l_maxy))
-         wrk2=1. ; wrk1=0.
-         call nest_blend (wrk2,wrk1,l_minx,l_maxx,l_miny,l_maxy,'M',level=G_nk+1)
-         mask(1:G_ni,1:G_nj) = wrk2(1:G_ni,1:G_nj)
-
-         err= fstecr ( mask,mask, npack, unf1, 0, 0, 0, G_ni, G_nj, 1, &
-                       0,0,0,'X','MSKC',etk_ext,'Z'    , &
-                       ip1,ip2,Grd_ip3,0, 5, .true. )
-         deallocate (mask,wrk1,wrk2)
-
-         err= fstfrm(unf1)
-         err= fclos (unf1)
-         err= fstfrm(unf2)
-         err= fclos (unf2)
-        
-         unf1=0
-         if (fnom(unf1,trim(outfile)//'_free','RND',0).ge.0) then
-            err= fstouv (unf1, 'RND')
-         else
-            print *,'problem opening', trim(outfile//'_core')
-            stop
-         endif
-
-         i0= 1    + Grd_extension + Lam_blend_H
-         in= G_ni - Grd_extension - Lam_blend_H
-         j0= 1    + Grd_extension + Lam_blend_H
-         jn= G_nj - Grd_extension - Lam_blend_H
-         ni = in-i0+1
-         nj = jn-j0+1
-
-         xpos(1:ni) = x_8(i0:in)
-         ypos(1:nj) = y_8(j0:jn)
-         
-         call set_igs2 ( Grd_ip1,Grd_ip2, &
-                         xpos,ypos,ni,nj, &
-                         Hgc_ig1ro,Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, &
-                         1,ni,1,1,nj,1)
-         err= fstecr ( xpos,xpos, npack, unf1, 0, 0, 0, ni, 1, 1, &
-                       Grd_ip1,Grd_ip2,Grd_ip3,'X','>>',etk_ext,Hgc_gxtyp_s, &
-                       Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
-         err= fstecr ( ypos,ypos, npack, unf1, 0, 0, 0, 1, nj, 1, &
-                       Grd_ip1,Grd_ip2,Grd_ip3,'X','^^',etk_ext,Hgc_gxtyp_s, &
-                       Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
-
-         err= fstfrm(unf1)
-         err= fclos (unf1)         
+      err= domain_decomp3 (1, 1, .false.)
+      call set_gmm
+      call nest_set_gmmvar
+      unf2=0
+      if (fnom(unf2,trim(outfile)//'_core','RND',0) >= 0) then
+         err= fstouv (unf2, 'RND')
+      else
+         print *,'problem opening', trim(outfile//'_core')
+         stop
       endif
 
+      i0= 1      + Grd_extension
+      in= G_ni - Grd_extension
+      j0= 1      + Grd_extension
+      jn= G_nj - Grd_extension
+      ni = in-i0+1
+      nj = jn-j0+1
+
+      xpos(1:ni) = x_8(i0:in)
+      ypos(1:nj) = y_8(j0:jn)
+
+      call set_igs2 ( Grd_ip1,Grd_ip2, xpos,ypos,ni,nj, &
+                      Hgc_ig1ro,Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, &
+                      1,ni,1,1,nj,1)
+      err= fstecr ( xpos,xpos, npack, unf2, 0, 0, 0, ni, 1, 1, &
+                    Grd_ip1,Grd_ip2,Grd_ip3,'X','>>',etk_ext,Hgc_gxtyp_s, &
+                    Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
+      err= fstecr ( ypos,ypos, npack, unf2, 0, 0, 0, 1, nj, 1, &
+                    Grd_ip1,Grd_ip2,Grd_ip3,'X','^^',etk_ext,Hgc_gxtyp_s, &
+                    Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
+
+      unf1= 0
+      err= fnom(unf1,outfile,'RND',0)
+      err= fstouv (unf1, 'RND')
+
+      allocate (mask(G_ni, G_nj))
+      allocate (wrk1(l_minx:l_maxx,l_miny:l_maxy))
+      allocate (wrk2(l_minx:l_maxx,l_miny:l_maxy))
+      wrk2=1. ; wrk1=0.
+      call nest_blend (wrk2,wrk1,l_minx,l_maxx,l_miny,l_maxy,'M',level=G_nk+1)
+      mask(1:G_ni,1:G_nj) = wrk2(1:G_ni,1:G_nj)
+
+      err= fstecr ( mask,mask, npack, unf1, 0, 0, 0, G_ni, G_nj, 1, &
+                    0,0,0,'X','MSKC',etk_ext,'Z'    , &
+                    ip1,ip2,Grd_ip3,0, 5, .true. )
+      deallocate (mask,wrk1,wrk2)
+
+      err= fstfrm(unf1)
+      err= fclos (unf1)
+      err= fstfrm(unf2)
+      err= fclos (unf2)
+
+      unf1=0
+      if (fnom(unf1,trim(outfile)//'_free','RND',0) >= 0) then
+         err= fstouv (unf1, 'RND')
+      else
+         print *,'problem opening', trim(outfile//'_core')
+         stop
+      endif
+
+      i0= 1    + Grd_extension + Lam_blend_H
+      in= G_ni - Grd_extension - Lam_blend_H
+      j0= 1    + Grd_extension + Lam_blend_H
+      jn= G_nj - Grd_extension - Lam_blend_H
+      ni = in-i0+1
+      nj = jn-j0+1
+
+      xpos(1:ni) = x_8(i0:in)
+      ypos(1:nj) = y_8(j0:jn)
+
+      call set_igs2 ( Grd_ip1,Grd_ip2, &
+                      xpos,ypos,ni,nj, &
+                      Hgc_ig1ro,Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, &
+                      1,ni,1,1,nj,1)
+      err= fstecr ( xpos,xpos, npack, unf1, 0, 0, 0, ni, 1, 1, &
+                    Grd_ip1,Grd_ip2,Grd_ip3,'X','>>',etk_ext,Hgc_gxtyp_s, &
+                    Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
+      err= fstecr ( ypos,ypos, npack, unf1, 0, 0, 0, 1, nj, 1, &
+                    Grd_ip1,Grd_ip2,Grd_ip3,'X','^^',etk_ext,Hgc_gxtyp_s, &
+                    Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
+
+      err= fstfrm(unf1)
+      err= fclos (unf1)
+
       deallocate (x_8, y_8, xpos, ypos)
+
+      call gemtim4 ( Lun_out, 'AFTER set_opr', .false. )
 
       call memusage (6)
 
       call rpn_comm_FINALIZE(err)
-!      
+!
 !-------------------------------------------------------------------
 !
       return

@@ -18,6 +18,9 @@
       subroutine cal_div ( F_DD, F_uu, F_vv  , &
                            F_filtdd, F_coefdd, &
                            Minx,Maxx,Miny,Maxy,Nk )
+
+      use geomh
+      use glb_ld
       implicit none
 #include <arch_specific.hf>
 
@@ -31,8 +34,6 @@
 !revision
 ! v4_80 - Desgagne M.       - initial version
 
-#include "glb_ld.cdk"
-#include "geomg.cdk"
 
       integer i, j, k, i0, in, j0, jn
 !
@@ -42,24 +43,24 @@
       in = l_niu
       j0 = 1
       jn = l_njv
-      if ((G_lam).and.(l_west)) i0 = 2
-      if (l_south)              j0 = 2
+      if (l_west ) i0 = 2
+      if (l_south) j0 = 2
 
       do k = 1 , Nk
          do j = j0, jn
          do i = i0, in
             F_DD(i,j,k) = &
-            ((F_uu(i,j,k) - F_uu(i-1,j,k)) * geomg_invDX_8(j)) &
-          + ( (F_vv(i,j  ,k)*geomg_cyv_8(j  )   &
-             - F_vv(i,j-1,k)*geomg_cyv_8(j-1))  &
-             * Geomg_invDY_8 * geomg_invcy_8(j) )
+            ((F_uu(i,j,k) - F_uu(i-1,j,k)) * geomh_invDX_8(j)) &
+          + ( (F_vv(i,j  ,k)*geomh_cyv_8(j  )   &
+             - F_vv(i,j-1,k)*geomh_cyv_8(j-1))  &
+             * geomh_invDY_8 * geomh_invcy_8(j) )
          end do
          end do
          F_DD(1:i0-1,:,k) = 0. ; F_DD(in+1:l_ni,:,k)= 0.
          F_DD(:,1:j0-1,k) = 0. ; F_DD(:,jn+1:l_nj,k)= 0.
       end do
 
-      if (F_filtdd.gt.0) call filter2 ( F_DD, F_filtdd,F_coefdd, &
+      if (F_filtdd > 0) call filter2 ( F_DD, F_filtdd,F_coefdd, &
                                   l_minx,l_maxx,l_miny,l_maxy,Nk )
 !
 !----------------------------------------------------------------------

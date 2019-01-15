@@ -16,16 +16,23 @@
 !               Available only for LAM configurations
 
    subroutine sol_3d ( F_rhs_sol, F_lhs_sol, F_ni, F_nj, F_nk, &
-                       F_iln, F_print_L, F_offi, F_offj )
+                       F_print_L, F_offi, F_offj )
 
-      use matvec_mod, only: matvec_3d
-      use krylov_mod, only: krylov_fgmres, krylov_fbicgstab
+      use matvec, only: matvec_3d
+      use krylov, only: krylov_fgmres, krylov_fbicgstab
 
+      use grid_options
+      use gem_options
+      use glb_ld
+      use lun
+      use ldnh
+      use sol
+      use opr
       implicit none
 #include <arch_specific.hf>
 
       logical, intent(in) :: F_print_L
-      integer, intent(in) :: F_ni,F_nj,F_nk,F_iln,F_offi, F_offj
+      integer, intent(in) :: F_ni,F_nj,F_nk,F_offi, F_offj
       real*8, dimension(F_ni,F_nj,F_nk), intent(in) ::  F_rhs_sol
       real*8, dimension(F_ni,F_nj,F_nk), intent(inout) ::  F_lhs_sol
 
@@ -36,13 +43,6 @@
 ! v4-70 - Qaddouri A.      - initial version
 ! v4-70 - Gaudreault S.    - new Krylov solvers
 
-#include "glb_ld.cdk"
-#include "grd.cdk"
-#include "ldnh.cdk"
-#include "lun.cdk"
-#include "schm.cdk"
-#include "sol.cdk"
-#include "opr.cdk"
 
       integer i,j,k,iter,its
       real    linfini
@@ -104,13 +104,13 @@
             end do
 
             if (Lun_debug_L.and.F_print_L) write(Lun_out,1001) linfini,iter
-            if ((iter.gt.1).and.(linfini.lt.Sol_yyg_eps)) exit
+            if ((iter > 1).and.(linfini < Sol_yyg_eps)) exit
 
          end do
 
          if (F_print_L) then
             write(Lun_out,1002) linfini,iter
-            if (linfini.gt.Sol_yyg_eps) write(Lun_out,9001) Sol_yyg_eps
+            if (linfini > Sol_yyg_eps) write(Lun_out,9001) Sol_yyg_eps
          endif
 
       else

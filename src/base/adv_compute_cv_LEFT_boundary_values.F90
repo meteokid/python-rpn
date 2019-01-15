@@ -14,7 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/p adv_compute_cv_boundary_values: Estimate RHO at LEFT boundary of the control volume CV
-!                                      together with the slope of RHO at the center of CV.  
+!                                      together with the slope of RHO at the center of CV.
 !                                      Based on CODE Zerroukat et al(2002)/Mahidjiba et al(2008)
 
       subroutine adv_compute_cv_LEFT_boundary_values (mass_8,slope_rho_8,x_left_cv_8,rho_left_cv_8,n,F_rebuild)
@@ -31,26 +31,26 @@
       ! v4_80 - Tanguay/Qaddouri - SLICE
 
       !------------------------------------------------------
-      !CAUTION: BOUNDARY AND CENTER INDEXES DIFFERED FROM GEM    
-      !         X_LEFT(I) < X_CENTER(I) < X_RIGHT(I+1) 
+      !CAUTION: BOUNDARY AND CENTER INDEXES DIFFERED FROM GEM
+      !         X_LEFT(I) < X_CENTER(I) < X_RIGHT(I+1)
       !------------------------------------------------------
 
       !Local variables
       !---------------
       real*8, dimension(n) :: x_centre_cv_8
       real*8, dimension(:), allocatable :: cumulative_mass_8,mass_of_4cvs_8,x_left_of_4cvs_8
-      real*8, dimension(2) :: xp_i_8,slope_i_8,slope_previous_8 
-      integer :: i,im,ip,cv_start,cv_finish                                                          
-      integer, parameter :: standard_number_of_cvs = 4   
-         
-      do i = 1,n     
+      real*8, dimension(2) :: xp_i_8,slope_i_8,slope_previous_8
+      integer :: i,im,ip,cv_start,cv_finish
+      integer, parameter :: standard_number_of_cvs = 4
+
+      do i = 1,n
          x_centre_cv_8(i) = 0.5*(x_left_cv_8(i)+x_left_cv_8(i+1))
-      enddo              
-                         
+      enddo
+
       allocate( cumulative_mass_8(standard_number_of_cvs+1), &
                    mass_of_4cvs_8(standard_number_of_cvs),   &
                  x_left_of_4cvs_8(standard_number_of_cvs+1) )
-                              
+
       do i = 1,n+1
 
          !Compute Cumulative mass
@@ -62,12 +62,12 @@
              cv_finish = n
              cv_start  = cv_finish-(standard_number_of_cvs-1)
          endif
-                     
+
            mass_of_4cvs_8 =      mass_8(cv_start:cv_finish)
          x_left_of_4cvs_8 = x_left_cv_8(cv_start:cv_finish+1)
-	 
+
          call discrete_cumulative_mass (mass_of_4cvs_8,cumulative_mass_8,standard_number_of_cvs)
-                                                                             
+
          !Compute First Derivate of Cumulative mass at LEFT boundary
          !----------------------------------------------------------
          call diff_polynome (x_left_cv_8(i),rho_left_cv_8(i),1,x_left_of_4cvs_8,cumulative_mass_8, &
@@ -78,16 +78,16 @@
             !Compute Second Derivative of Cumulative mass at CENTER cell
             !-----------------------------------------------------------
             im = max(1,i-1)               ! CV index of CV(i-1)
-            ip = min(i,n)                 ! CV index at CV(i)   
+            ip = min(i,n)                 ! CV index at CV(i)
             xp_i_8(1) = x_centre_cv_8(im) !   centre of CV(i-1)
             xp_i_8(2) = x_centre_cv_8(ip) !   centre of CV(i)
 
-                                                                             
+
             call diff2_polynome (xp_i_8,slope_i_8,2,x_left_of_4cvs_8,cumulative_mass_8, &
-                                 standard_number_of_cvs+1)                    
-                             
-            if (i > 1) then                  
-               slope_rho_8(i-1) = 0.5*(slope_i_8(1)+slope_previous_8(2))                        
+                                 standard_number_of_cvs+1)
+
+            if (i > 1) then
+               slope_rho_8(i-1) = 0.5*(slope_i_8(1)+slope_previous_8(2))
             endif
 
             slope_previous_8(1) = slope_i_8(1)
@@ -100,16 +100,16 @@
             endif
 
          endif
-                     
-      enddo                      
-                              
-      deallocate( cumulative_mass_8,mass_of_4cvs_8,x_left_of_4cvs_8 )                                                        
 
-      return 
+      enddo
+
+      deallocate( cumulative_mass_8,mass_of_4cvs_8,x_left_of_4cvs_8 )
+
+      return
       end
 
 !-------------------------------------------------------
-!**s/r discrete_cumulative_mass - Return cumulative mass 
+!**s/r discrete_cumulative_mass - Return cumulative mass
 !-------------------------------------------------------
 
       subroutine discrete_cumulative_mass (mass_8,cumulative_mass_8,n)
@@ -121,7 +121,7 @@
       integer n
       real*8 mass_8(n),cumulative_mass_8(n+1)
 
-      !Local variables 
+      !Local variables
       !---------------
       integer i
 
@@ -131,7 +131,7 @@
          cumulative_mass_8(i) = cumulative_mass_8(i-1)+mass_8(i-1)
       enddo
 
-      return 
+      return
       end
 
 !-------------------------------------------------------------------------------------------------------
@@ -148,11 +148,11 @@
       integer n,np
       real*8 x_8(n),y_8(n),xp_8(np),yp_8(np)
 
-      !Local variables 
+      !Local variables
       !---------------
       integer i,j
-      real*8 w_8(np) 
-              
+      real*8 w_8(np)
+
       call polynomial_coefficients (xp_8,yp_8,np,w_8)
 
       do i = 1,n
@@ -161,12 +161,12 @@
             y_8(i) = y_8(i)+(j-1)*w_8(j)*(x_8(i)**(j-2))
          enddo
       enddo
-           
+
       return
-      end 
-       
+      end
+
 !--------------------------------------------------------------------------------------------------------
-!**s/r diff2_polynome - Return the 2nd derivatives (d^2p/dx^2)(x(i)),i=1,n of the 
+!**s/r diff2_polynome - Return the 2nd derivatives (d^2p/dx^2)(x(i)),i=1,n of the
 !                       polynomial p(x) of degree (np-1) that fits the given points (xp(i),yp(i)), i=1,np
 !--------------------------------------------------------------------------------------------------------
 
@@ -179,16 +179,16 @@
       integer n,np
       real*8 x_8(n),y_8(n),xp_8(np),yp_8(np)
 
-      !Local variables 
+      !Local variables
       !---------------
       integer i,j
-      real*8 w_8(np) 
+      real*8 w_8(np)
 
-      if (np.lt.3) then
+      if (np < 3) then
          do i = 1,n
             y_8(i) = 0.d0
          enddo
-      else                
+      else
          call polynomial_coefficients (xp_8,yp_8,np,w_8)
          do i = 1,n
             y_8(i) = 0.d0
@@ -197,9 +197,9 @@
             enddo
          enddo
       endif
-           
+
       return
-      end           
+      end
 
 !-----------------------------------------------------------------------------------------------------------------
 !**s/r polynomial_coefficients - Return the array {coeff} which are the coefficients
@@ -217,11 +217,11 @@
       integer n
       real*8 coeff_8(n),x_8(n),y_8(n)
 
-      !Local variables 
+      !Local variables
       !---------------
       integer i,j,k
       real*8 b_8,ff_8,phi_8,s_8(n)
-         
+
       do i = 1,n
          s_8(i) = 0.0d0
          coeff_8(i) = 0.d0
@@ -245,6 +245,6 @@
             b_8 = s_8(k)+x_8(j)*b_8
          enddo
       enddo
-           
+
       return
-      end 
+      end

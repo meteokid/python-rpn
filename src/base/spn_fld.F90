@@ -13,14 +13,24 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END --------------------------------
 
-!*s/r spn_fld - doing forward 2-D FFT, applying a filter, doing backward FFT 
+!*s/r spn_fld - doing forward 2-D FFT, applying a filter, doing backward FFT
 !             - and applying nudging tendency
 
       subroutine spn_fld ( F_Minx, F_Maxx, F_Miny, F_Maxy, F_Njl,   &
                            F_Minz, F_Maxz, F_Nk, F_Nkl, F_Gni, F_Gnj, &
                            F_Minij, F_Maxij, F_nij, F_nij0,      &
                            F_npex1, F_npey1, Fld_S )
+
+      use cstv
+      use gem_options
+      use glb_ld
+      use gmm_itf_mod
+      use gmm_vt1
+      use gmm_nest
       use spn_work_mod
+      use step_options
+      use tdpack
+      use glb_pil
       implicit none
 #include <arch_specific.hf>
 
@@ -36,7 +46,7 @@
 !revision
 ! v4_80 - Qian, Dugas, Hussain            - initial version
 ! v4_80 - Baek - correction for spn_wt, removed unused variables
-! 
+!
 !arguments
 !  Name        I/O                 Description
 !----------------------------------------------------------------
@@ -59,18 +69,6 @@
 ! F_npey1      I    - number of processors in Y
 ! Fld_S        I    - name of variable to treat (either of 't','u','v')
 
-#include "gmm.hf"
-#include "ptopo.cdk"
-#include "glb_ld.cdk"
-#include "glb_pil.cdk"
-#include "vt1.cdk"
-#include "nest.cdk"
-#include "lctl.cdk"
-#include "dcst.cdk"
-#include "cstv.cdk"
-#include "step.cdk"
-#include "lam.cdk"
-#include "spn.cdk"
 
       external ffft8, rpn_comm_transpose
 
@@ -78,7 +76,6 @@
       real*8   fdg2(F_Minz:F_Maxz,F_Minij:F_Maxij,F_Gnj+2+F_npey1)
       real*8  pri
 
-      integer  err(3),key(2),nvar
       integer gmmstat
       type(gmm_metadata):: metadata
       real, dimension(:,:,:), pointer :: fld3d=>null(), fld_nest3d=>null()
@@ -95,10 +92,10 @@
       spn_wt = 1.0
 
       if (Spn_weight_L) then
-        spn_wt = sqrt((cos(Dcst_pi_8*(float(Lctl_step)/float(no_steps))))**2)**Spn_wt_pwr
+        spn_wt = sqrt((cos(pi_8*(float(Lctl_step)/float(no_steps))))**2)**Spn_wt_pwr
       endif
 
-      if (Fld_S.eq.'t') then
+      if (Fld_S == 't') then
 
          gmmstat = gmm_getmeta (gmmk_tt1_s, metadata)
          gmmstat = gmm_get (gmmk_tt1_s, fld3d, metadata)
@@ -115,7 +112,7 @@
 
       endif
 
-      if (Fld_S.eq.'u') then
+      if (Fld_S == 'u') then
 
          gmmstat = gmm_getmeta (gmmk_ut1_s, metadata)
          gmmstat = gmm_get (gmmk_ut1_s, fld3d, metadata)
@@ -137,7 +134,7 @@
 
       endif
 
-      if (Fld_S.eq.'v') then
+      if (Fld_S == 'v') then
 
          gmmstat = gmm_getmeta (gmmk_vt1_s, metadata)
          gmmstat = gmm_get (gmmk_vt1_s, fld3d, metadata)
@@ -269,7 +266,7 @@
          fld3d(1:l_ni,1:l_nj,kk) + &
          prof(kk)*SNGL(Ldiff3D(1:l_ni,1:l_nj,kk))*spn_wt
       enddo
-!     
+!
 !----------------------------------------------------------------------
 !
       return

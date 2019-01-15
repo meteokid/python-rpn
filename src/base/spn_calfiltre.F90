@@ -16,7 +16,13 @@
 !*s/r spn_calfiltre - compute a filter for spectral nudging
 
       subroutine spn_calfiltre ( F_nis, F_njs )
+      use dcst
       use spn_work_mod
+      use grid_options
+      use gem_options
+      use tdpack
+      use lun
+      use glb_pil
       implicit none
 #include <arch_specific.hf>
 
@@ -29,12 +35,6 @@
 ! v4_80 - Qian, Dugas, Hussain            - initial version
 ! v4_80 - Baek - clarification
 
-#include "lun.cdk"
-#include "grd.cdk"
-#include "dcst.cdk"
-#include "glb_pil.cdk"
-#include "lam.cdk"
-#include "spn.cdk"
 
       integer i,j
       integer ni_trunc, ni_truncx, nj_trunc
@@ -43,8 +43,8 @@
 !
 !----------------------------------------------------------------------
 !
-      DX = Grd_dx*Dcst_pi_8*Dcst_rayt_8/(180.*1000.)
-      DY = Grd_dy*Dcst_pi_8*Dcst_rayt_8/(180.*1000.)
+      DX = Grd_dx*pi_8*Dcst_rayt_8/(180.*1000.)
+      DY = Grd_dy*pi_8*Dcst_rayt_8/(180.*1000.)
       WXL= Spn_cutoff_scale_large
       WXS= Spn_cutoff_scale_small
 
@@ -79,7 +79,7 @@
             else if ( nkx > 1.0 ) then
 
                fxy(i+Lam_pil_w+1,j+Lam_pil_s+1) = &
-               (cos( (Dcst_pi_8/2.0) * ((nkx-1.)/(nk_cut-1.)) ))**2
+               (cos( (pi_8/2.0) * ((nkx-1.)/(nk_cut-1.)) ))**2
 
             else
 

@@ -2,21 +2,23 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r  sol_mat_vec - call 2D or 3D matrix_vector subroutine  
-!                 
+!**s/r  sol_mat_vec - call 2D or 3D matrix_vector subroutine
+!
       subroutine  sol_matvec ( wk22, wk11, Minx, Maxx, Miny, Maxy,  &
                                nil,njl, nk, minx1,maxx1,minx2,maxx2 )
+      use gem_options
+      use sol
       implicit none
 #include <arch_specific.hf>
 !
@@ -29,12 +31,11 @@
 !revision
 ! v4_6 - Qaddouri A.      - initial version
 !
-#include "sol.cdk"
 !
       integer i0,in,j0,jn,minx3,maxx3
       real*8 fdg1   ( minx1:maxx1, minx2:maxx2,nk ), &
              wint_8 (  Minx:Maxx ,  Miny:Maxy ,nk ), &
-             wint_81(  Minx:Maxx ,  Miny:Maxy ,nk )     
+             wint_81(  Minx:Maxx ,  Miny:Maxy ,nk )
 !
 !     ---------------------------------------------------------------
 !
@@ -48,7 +49,7 @@
       call  tab_vec ( wint_81, Minx,Maxx,Miny,Maxy,nk, &
                       wk11   , i0,in,j0,jn, -1 )
 
-      if (Sol_type_S(11:12).eq.'2D') then
+      if (Sol_type_S(11:12) == '2D') then
 
          call mat_vecs2D ( wint_81, wint_8, Minx, Maxx, Miny, Maxy,nil, &
                            njl,minx1, maxx1, minx2, maxx2,nk, fdg1 )

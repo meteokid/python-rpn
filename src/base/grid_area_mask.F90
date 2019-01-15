@@ -12,139 +12,459 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-!**s/r grid_area_mask - Evaluate area and mask 
 
-      subroutine grid_area_mask (F_area_8,F_mask_8,Ni,Nj) 
+!**s/r grid_area_mask - Evaluate area and mask
+
+      subroutine grid_area_mask (F_area_8,F_mask_8,F_ni,F_nj)
+
+      use adv_options
+      use geomh
+      use glb_ld
+      use grid_options
+      use lun
+      use tdpack
+
       implicit none
+
 #include <arch_specific.hf>
 
-      integer,                   intent(in)  :: Ni,Nj   
-      real*8 , dimension(Ni,Nj), intent(out) :: F_area_8
-      real*8 , dimension(Ni,Nj), intent(out) :: F_mask_8
- 
-!author
-!     Author Qaddouri/Tanguay -- Summer 2014
-!
-!revision
-! v4_70 - Qaddouri/Tanguay     - initial version
-! v4_73 - Lee V.  - optimization for MPI
-
-#include "glb_ld.cdk"
-#include "glb_pil.cdk"
-#include "geomg.cdk"
-#include "ptopo.cdk"
-#include "grd.cdk"
-
-      real*8, external :: yyg_weight
-      integer i,j,k,np_subd,ierr
-      real*8, parameter :: HALF_8 = 0.5
-      real*8 poids(l_ni,l_nj), area_4(l_ni,l_nj), &
-             dx,dy,x_a_4,y_a_4,sf(2),sp(2)
-!
-!     ---------------------------------------------------------------
-!
-      do j = 1,l_nj
-         do i = 1,l_ni
-            F_area_8(i,j)= ( Geomg_x_8(i+1)-Geomg_x_8(i-1) )   * HALF_8 * &
-                           (sin((Geomg_y_8(j+1)+Geomg_y_8(j  ))* HALF_8)- &
-                            sin((Geomg_y_8(j  )+Geomg_y_8(j-1))* HALF_8))
-         enddo
-      enddo
-
+      !arguments
       !---------
-      !GU or LAM
-      !---------
-      if (.not.Grd_yinyang_L) F_mask_8 = 1.0d0
+      integer,                       intent(in)  :: F_ni,F_nj
+      real*8 , dimension(F_ni,F_nj), intent(out) :: F_area_8
+      real*8 , dimension(F_ni,F_nj), intent(out) :: F_mask_8
 
-      !-------------
-      !Yin-Yang grid 
-      !-------------
-      if (Grd_yinyang_L) then
+      !object
+      !===========================
+      !     Evaluate area and mask
+      !===========================
 
-         !1) Find out where YIN lat lon points are in (YAN) grid with call to smat.
-         !2) If they are not outside of Yin grid, put area to zero for those points.
-         !--------------------------------------------------------------------------
-         np_subd = 4*(G_ni-Lam_pil_e-Lam_pil_w)
+      !------------------------------------------------------------------------
 
-         sp    = 0.d0
-         sf    = 0.d0
+      integer :: i,j,n,r_j1,r_j2,r_i1,r_i2,r_ish,r_jsh,i_north,j_north, &
+                 i_middle,j_middle,err,i1,j1,i2,j2,i_sh,j_sh
 
-         do j = 1+pil_s, l_nj-pil_n
+      integer, parameter :: MAXB=100000
 
-            y_a_4 = Geomg_y_8(j)
+      real*8 :: blon_8(MAXB+1),blat_8(MAXB+1),iu_8(0:G_ni),jv_8(0:G_nj), &
+                g_mask_8(G_ni,G_nj),l_mask_8(l_minx:l_maxx,l_miny:l_maxy), &
+                r_ic1_8,r_jc1_8,r_ic2_8,r_jc2_8,h1_8,h2_8,h3_8,ib_8,jb_8, &
+                ic1_8,jc1_8,ic2_8,jc2_8,slope_8,sf_8(2),sp_8(2), &
+                rlat_8,rlon_8,s_8(2,2),x_8,y_8
 
-            do i = 1+pil_w, l_ni-pil_e
+      logical :: almost_zero,nj_even_L,ni_even_L,between_L,line_L
 
-               x_a_4 = Geomg_x_8(i)-acos(-1.d0)
-               dx    = ( Geomg_x_8(i+1)-Geomg_x_8(i-1) ) * HALF_8
-               dy    = (sin((Geomg_y_8(j+1)+Geomg_y_8(j  ))* HALF_8) -  &
-                        sin((Geomg_y_8(j  )+Geomg_y_8(j-1))* HALF_8))
+      !------------------------------------------------------------------------
 
-               area_4(i,j) = dx*dy
-               poids (i,j) = yyg_weight (x_a_4,y_a_4,dx,dy,np_subd)
+      do j = 1,F_nj
+         do i = 1,F_ni
+            F_area_8(i,j) = geomh_hx_8 * cos(geomh_y_8(j)) * geomh_hy_8
+         end do
+      end do
 
-               !Check if poids <0
-               !-----------------
-               if (poids(i,j)*(1.d0-poids(i,j)) .gt. 0.d0) then
-                   sp(1) = sp(1) + poids(i,j)*area_4(i,j)
-               elseif (abs(poids(i,j)-1.d0) .lt. 1.d-14) then
-                   sp(2) = sp(2) + poids(i,j)*area_4(i,j)
-               endif
+      !-------
+      !GEM LAM
+      !-------
+      if (.not.Grd_yinyang_L) then
 
-            enddo
+         F_mask_8 = 1.d0
 
-         enddo
+         return
 
-!MPI reduce to get the global value for sp into sf
-         call RPN_COMM_allreduce(sp,sf,2,"MPI_DOUBLE_PRECISION","MPI_SUM","GRID",ierr)
+      end if
 
-         !Correct and scale poids
-         !-----------------------
-         sp = 0.d0
+      !------------
+      !GEM Yin-Yang
+      !------------
 
-         do j = 1+pil_s, l_nj-pil_n
-         do i = 1+pil_w, l_ni-pil_e
+      !Prepare list of Mask Boundary points
+      !------------------------------------
+      do n = 1,MAXB+1
 
-            x_a_4 = poids(i,j)*(2.d0*acos(-1.d0) - sf(2))/sf(1)
+         rlat_8 = -0.25*pi_8
 
-            if (poids(i,j)*(1.d0-poids(i,j)) .gt. 0.d0) then
-                poids(i,j) = min( 1.0d0, x_a_4 )
+         rlon_8 = (dble(n-1)/dble(MAXB))*0.5d0*pi_8 + pi_8 !Range [0,2 PI]
+
+         x_8 = rlon_8 - pi_8
+         y_8 = rlat_8
+
+         call smat(s_8,rlon_8,rlat_8,x_8,y_8)
+
+         rlon_8 = rlon_8 + pi_8
+
+         blon_8(n) = rlon_8
+         blat_8(n) = rlat_8
+
+      end do
+
+      !Initialize Global staggered grid indices
+      !----------------------------------------
+      do i = 0,G_ni
+         iu_8(i) = .5d0 + i
+      end do
+
+      do j = 0,G_nj
+         jv_8(j) = .5d0 + j
+      end do
+
+      ni_even_L = .false.
+
+      if ((G_ni/2)*2==G_ni) ni_even_L = .true.
+
+      i_middle = int((G_ni+1)/2) !West Range
+
+      !Find NORTHERN cell containing (-PI/2,PI/4)
+      !------------------------------------------
+      ic1_8 = 1+(0.50*pi_8-G_xg_8(1))/geomh_hx_8 !Range [0,2 PI]
+      jc1_8 = 1+(0.25*pi_8-G_yg_8(1))/geomh_hy_8
+
+   L1:do j = (G_nj+1)/2,G_nj
+         do i = 1,i_middle
+
+            if (iu_8(i-1)<=ic1_8.and.ic1_8<=iu_8(i).and. &
+                jv_8(j-1)<=jc1_8.and.jc1_8<=jv_8(j)) exit L1
+
+         end do
+      end do L1
+
+      i_north = i
+      j_north = j
+
+      !Check if (-3 PI/4,0) is at cell_corner
+      !--------------------------------------
+      nj_even_L = .false.
+
+      if ((G_nj/2)*2==G_nj) nj_even_L = .true.
+
+      j_middle = int((G_nj+1)/2)
+
+      if (nj_even_L) j_middle = j_middle + 1 !North Range
+
+      g_mask_8 = 0.
+
+      !---------------------------------------------------------
+      !Summation of trapezoids to estimate area of Mask Boundary
+      !---------------------------------------------------------
+      do n = 1,MAXB
+
+         !Convert lon,lat to grid indices for 2 consecutive Mask Boundary points
+         !----------------------------------------------------------------------
+         ic1_8 = 1+(blon_8(n  )-G_xg_8(1))/geomh_hx_8
+         jc1_8 = 1+(blat_8(n  )-G_yg_8(1))/geomh_hy_8
+
+         ic2_8 = 1+(blon_8(n+1)-G_xg_8(1))/geomh_hx_8
+         jc2_8 = 1+(blat_8(n+1)-G_yg_8(1))/geomh_hy_8
+
+         !Find cell locations
+         !-------------------
+         j1 = nint(jc1_8)
+         j2 = nint(jc2_8)
+
+         i1 = nint(ic1_8)
+         i2 = nint(ic2_8)
+
+         !Set P1=Mask Boundary point(n) and P2=Mask Boundary point(n+1)
+         !-------------------------------------------------------------
+         r_i1 = i1
+         r_j1 = j1
+
+         r_ic1_8 = ic1_8
+         r_jc1_8 = jc1_8
+
+         r_i2 = i2
+         r_j2 = j2
+
+         r_ic2_8 = ic2_8
+         r_jc2_8 = jc2_8
+
+         r_ish = 0
+         r_jsh = 0
+
+         !Estimate slope between 2 consecutives Mask Boundary points
+         !----------------------------------------------------------
+         slope_8 = (jc2_8-jc1_8)/(ic2_8-ic1_8)
+
+         between_L = .true.
+
+         !----------------------------------------------------------
+         !Calculate area between 2 consecutives Mask Boundary points
+         !----------------------------------------------------------
+         do while (between_L)
+
+            !Calculate underlying area between P1 and P2 in the same cell location
+            !---------------------------------------------------------------------
+            if (r_i1==r_i2.and.r_j1==r_j2) then
+
+               if (r_j1/=j_middle.or.nj_even_L) then
+                  h1_8 = r_jc1_8    - jv_8(r_j1-1)
+                  h2_8 = r_jc2_8    - jv_8(r_j1-1)
+                  h3_8 = jv_8(r_j1) - jv_8(r_j1-1)
+               else
+                  h1_8 = r_jc1_8    - j_middle
+                  h2_8 = r_jc2_8    - j_middle
+                  h3_8 = jv_8(r_j1) - j_middle
+               end if
+
+               g_mask_8(r_i1,r_j1) = g_mask_8(r_i1,r_j1) + abs(0.5*(h1_8 + h2_8)*(r_ic2_8 - r_ic1_8))
+
+               if (almost_zero(r_jc2_8-jv_8(r_j1))) &
+               g_mask_8(r_i1,r_j1) = g_mask_8(r_i1,r_j1) + abs(0.5*(h2_8 + h3_8)*(iu_8(r_i1) - r_ic2_8))
+
+               !We go to next Mask Boundary point
+               !---------------------------------
+               if (r_i2==i2.and.r_j2==j2) then
+
+                  between_L = .false.
+
+                  cycle
+
+               end if
+
+               !Set P1=P2 and P2=Mask Boundary point(n+1)
+               !-----------------------------------------
+               r_i1 = r_i2 + r_ish
+               r_j1 = r_j2 + r_jsh
+
+               r_ic1_8 = r_ic2_8
+               r_jc1_8 = r_jc2_8
+
+               r_i2 = i2
+               r_j2 = j2
+
+               r_ic2_8 = ic2_8
+               r_jc2_8 = jc2_8
+
+               r_ish = 0
+               r_jsh = 0
+
+            !If points P1 and P2 are not at the same cell location,
+            !find which of (ib,jv(r_j1)) or (iu(r_i1),jb) are in the cell location of P1
+            !---------------------------------------------------------------------------
+            else
+
+               !Calculate i intersection
+               !------------------------
+               jb_8 = slope_8 * (iu_8(r_i1) - r_ic1_8) + r_jc1_8
+
+               !Calculate j intersection
+               !------------------------
+               ib_8 = (jv_8(r_j1) - r_jc1_8)/slope_8 + r_ic1_8
+
+               !Point (ib,jb) is in the cell location of P1
+               !-------------------------------------------
+               if (((iu_8(r_i1-1)<=ib_8.and.ib_8<=iu_8(r_i1)).or.almost_zero(abs(iu_8(r_i1)-ib_8))).and. &
+                   ((jv_8(r_j1-1)<=jb_8.and.jb_8<=jv_8(r_j1)).or.almost_zero(abs(jv_8(r_j1)-jb_8)))) then
+
+                  r_i2 = r_i1
+                  r_j2 = r_j1
+
+                  r_ic2_8 = ib_8
+                  r_jc2_8 = jb_8
+
+                  r_ish   = 1
+                  r_jsh   = 1
+
+               !Point (ib,jv(r_j1)) is in the cell location of P1
+               !-------------------------------------------------
+               else if ((iu_8(r_i1-1)<=ib_8.and.ib_8<=iu_8(r_i1)).or.almost_zero(abs(iu_8(r_i1)-ib_8))) then
+
+                  r_i2 = r_i1
+                  r_j2 = r_j1
+
+                  r_ic2_8 = ib_8
+                  r_jc2_8 = jv_8(r_j1)
+
+                  r_ish   = 0
+                  r_jsh   = 1
+
+               !Point (iu(r_i1),jb) is in the cell location of P1
+               !-------------------------------------------------
+               else if ((jv_8(r_j1-1)<=jb_8.and.jb_8<=jv_8(r_j1)).or.almost_zero(abs(jv_8(r_j1)-jb_8))) then
+
+                  r_i2 = r_i1
+                  r_j2 = r_j1
+
+                  r_ic2_8 = iu_8(r_i1)
+                  r_jc2_8 = jb_8
+
+                  r_ish   = 1
+                  r_jsh   = 0
+
+               else
+
+                  call handle_error (-1,'grid_area_mask','BOUNDARY: We are lost')
+
+               end if
+
+            end if
+
+         end do
+
+      end do
+
+      !(-3 PI/4,0) is not a cell_corner: Complete area of those cells by symmetry
+      !--------------------------------------------------------------------------
+      if (.not.nj_even_L) then
+         do i = 1,i_middle
+            g_mask_8(i,j_middle) = 2.*g_mask_8(i,j_middle)
+         end do
+      end if
+
+      !Complete area of NORTHERN cell containing (-PI/2,PI/4)
+      !------------------------------------------------------
+      ic2_8 = 1+(blon_8(MAXB+1)-G_xg_8(1))/geomh_hx_8
+      jc2_8 = 1+(blat_8(MAXB+1)-G_yg_8(1))/geomh_hy_8
+
+   L2:do j = j_north,j_north
+         do i = i_middle,1,-1
+            if (.not.almost_zero(g_mask_8(i,j))) then
+                g_mask_8(i,j) = g_mask_8(i,j) + abs((iu_8(i_north)-ic2_8)*(jc2_8-jv_8(j_north-1)))
+                exit L2
+            end if
+         end do
+      end do L2
+
+      !Fill up NORTH-WEST quarter of Mask
+      !----------------------------------
+      do j = j_middle,j_north
+
+         i = i_middle
+
+         line_L = .true.
+
+         !Fill up the line
+         !----------------
+         do while (line_L)
+
+            if (.not.almost_zero(g_mask_8(i,j))) then
+
+               line_L = .false.
+
+               cycle
+
+            end if
+
+            if (j==j_north) g_mask_8(i,j) = abs((iu_8(i)-iu_8(i-1))*(jc2_8-jv_8(j_north-1)))
+            if (j/=j_north) g_mask_8(i,j) = 1.d0
+
+            i = i-1
+
+            if (i<1) then
+
+               line_L = .false.
+
+               cycle
+
             endif
-            if (poids(i,j)*(1.0-poids(i,j)) .gt. 0.d0) then
-                sp(1) = sp(1) + poids(i,j)*area_4(i,j)
-            elseif (abs(poids(i,j)-1.d0) .lt. 1.d-14) then
-                sp(2) = sp(2) + poids(i,j)*area_4(i,j)
-            endif
 
-         enddo
-         enddo
+         end do
 
-!MPI reduce to get the global value for sp into sf
-         call RPN_COMM_allreduce(sp,sf,2,"MPI_DOUBLE_PRECISION","MPI_SUM","GRID",ierr)
+      end do
 
-         !Correct
-         !-------
-         do j = 1+pil_s, l_nj-pil_n
-         do i = 1+pil_w, l_ni-pil_e
-            x_a_4 = poids(i,j)*(2.d0*acos(-1.d0) - sf(2))/sf(1)
+      j_sh = 0
+      if (nj_even_L) j_sh = 1
 
-            if (poids(i,j)*(1.d0-poids(i,j)) .gt. 0.d0) then
-                poids(i,j) = min( 1.d0, x_a_4 )
-            endif
- 
-         enddo
-         enddo
+      !Fill up SOUTH-WEST quarter of Mask
+      !----------------------------------
+      do j = j_middle,j_north
+         do i = 1,i_middle
+            g_mask_8(i,2*j_middle-j-j_sh) = g_mask_8(i,j)
+         end do
+      end do
 
-         F_mask_8 = 0.d0
-         do j=1+pil_s,l_nj-pil_n
-            do i = 1+pil_w,l_ni-pil_e
-               F_mask_8(i,j) = poids(i,j)
-            enddo
-         enddo
+      i_sh = 0
+      if (ni_even_L) i_sh = 1
 
-      endif
-!
-!     ---------------------------------------------------------------
-!
+      !Fill up EAST half of Mask
+      !-------------------------
+      do j = 1,j_north
+         do i = 1,i_middle
+            g_mask_8(2*i_middle-i+i_sh,j) = g_mask_8(i,j)
+         end do
+      end do
+
+      !Distribute Global Mask
+      !----------------------
+      call RPN_COMM_dist (g_mask_8,1,G_ni,1,G_nj,G_ni,G_nj,1,0,0,2, &
+                          l_mask_8,l_minx,l_maxx,l_miny,l_maxy,0,0,G_periodx,G_periody,err)
+
+      !Preparation to set area of Mask closer to 2*PI
+      !----------------------------------------------
+      sp_8 = 0.d0
+
+      do j = 1+pil_s,l_nj-pil_n
+
+         do i = 1+pil_w,l_ni-pil_e
+
+            l_mask_8(i,j) = max(0.d0,min(1.d0,l_mask_8(i,j)))
+
+            if (.NOT.almost_zero(l_mask_8(i,j)-1.d0)) then
+               sp_8(1) = sp_8(1) + l_mask_8(i,j)*geomh_area_8(i,j)
+            else
+               sp_8(2) = sp_8(2) + l_mask_8(i,j)*geomh_area_8(i,j)
+            end if
+
+         end do
+
+      end do
+
+      sf_8 = 0.d0
+
+      !MPI reduce to get the global value for sp into sf
+      !-------------------------------------------------
+      call RPN_COMM_allreduce(sp_8,sf_8,2,"MPI_DOUBLE_PRECISION","MPI_SUM","GRID",err)
+
+      if (Adv_verbose==1.and.Lun_out>0) then
+         write(Lun_out,*) ''
+         write(Lun_out,*) 'NEW MASK AREA correction_0 = ',sf_8(1) + sf_8(2)
+         write(Lun_out,*) 'NEW MASK AREA SF(1)        = ',sf_8(1)
+         write(Lun_out,*) 'NEW MASK AREA SF(2)        = ',sf_8(2)
+         write(Lun_out,*) 'NEW MASK AREA target       = ',2.0*pi_8
+         write(Lun_out,*) 'NEW MASK AREA error        = ',sf_8(1) + sf_8(2) - 2.0*pi_8
+         write(Lun_out,*) ''
+      end if
+
+      !Do Mask correction
+      !------------------
+      sp_8 = 0.d0
+
+      do j = 1+pil_s,l_nj-pil_n
+
+         do i = 1+pil_w,l_ni-pil_e
+
+            x_8 = l_mask_8(i,j)*(2.d0*pi_8 - sf_8(2))/sf_8(1)
+
+            if (.NOT.almost_zero(l_mask_8(i,j)-1.d0)) l_mask_8(i,j) = min( 1.d0, x_8 )
+
+            if (.NOT.almost_zero(l_mask_8(i,j)-1.d0)) then
+               sp_8(1) = sp_8(1) + l_mask_8(i,j)*geomh_area_8(i,j)
+            else
+               sp_8(2) = sp_8(2) + l_mask_8(i,j)*geomh_area_8(i,j)
+            end if
+
+         end do
+
+      end do
+
+      sf_8 = 0.d0
+
+      !MPI reduce to get the global value for sp into sf
+      !-------------------------------------------------
+      call RPN_COMM_allreduce(sp_8,sf_8,2,"MPI_DOUBLE_PRECISION","MPI_SUM","GRID",err)
+
+      if (Adv_verbose==1.and.Lun_out>0) then
+         write(Lun_out,*) 'NEW MASK AREA correction_1 = ',sf_8(1) + sf_8(2)
+         write(Lun_out,*) 'NEW MASK AREA SF(1)        = ',sf_8(1)
+         write(Lun_out,*) 'NEW MASK AREA SF(2)        = ',sf_8(2)
+         write(Lun_out,*) 'NEW MASK AREA target       = ',2.0*pi_8
+         write(Lun_out,*) 'NEW MASK AREA error        = ',sf_8(1) + sf_8(2) - 2.0*pi_8
+      end if
+
+      do j = 1,F_nj
+         do i = 1,F_ni
+            F_mask_8(i,j) = l_mask_8(i,j)
+         end do
+      end do
+
       return
       end

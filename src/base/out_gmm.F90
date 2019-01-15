@@ -15,11 +15,20 @@
 
 !**s/r out_gmm - output GMM fields
 !
-      subroutine out_gmm2 (levset,set)
+      subroutine out_gmm (levset, set)
+      use gem_options
+      use glb_ld
+      use lun
+      use out3
+      use levels
+      use outd
+      use ver
+      use gmm_itf_mod
+      use outgrid
       implicit none
 #include <arch_specific.hf>
 
-      integer levset,set
+      integer, intent(in) :: levset,set
 
 !author
 !     Lee V.                    - rpn July 2009 (from output VMM)
@@ -54,44 +63,37 @@
 ! ===========2*G_nk+3 -                              X
 ! model surface
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "out3.cdk"
-#include "grid.cdk"
-#include "outd.cdk"
-#include "lun.cdk"
-#include "ver.cdk"
-#include "level.cdk"
-#include "schm.cdk"
 
       type(gmm_metadata) :: tmp_meta
       character(len=GMM_MAXNAMELENGTH), dimension(:), pointer :: keylist
-      character(len=2) class_var(100,3)
+      character(len=4) class_var(100,3)
       logical periodx_L,write_diag_lev
       integer nkeys,nko,i,ii,gridset,istat,id,cid
       integer, dimension(:), allocatable::indo
-      integer, parameter :: numvars = 19
+      integer, parameter :: numvars = 34
       real, pointer, dimension(:,:,:) :: tr3
       real, pointer, dimension(:,:  ) :: tr2
       real, pointer, dimension(:    ) :: level_type
       real, pointer, dimension(:    ), save :: hybt_w=>null()
+      real hyb0(1)
+      integer ind0(1)
 !_______________________________________________________________________
 !
-      if ( Level_typ_S(levset).eq.'P') return
+      if ( Level_typ_S(levset) == 'P') return
 
       if ( .not. associated (hybt_w) ) then
          allocate(hybt_w(G_nk))
          hybt_w(1:G_nk)= Ver_hyb%t(1:G_nk)
-         if (.not. Schm_lift_ltl_L) hybt_w(G_nk)=1.
+         if (.not. Schm_trapeze_L) hybt_w(G_nk)=1.
       endif
+      hyb0(1)=0.0
+      ind0(1)=1
 
       nkeys= gmm_nkeys()
       allocate (keylist(nkeys))
       nkeys= gmm_keys(keylist)
 
       periodx_L = .false.
-      if (.not.G_lam .and. (Grid_x1(Outd_grid(set))- &
-            Grid_x0(Outd_grid(set))+1).eq. G_ni ) periodx_L=.true.
 
       class_var( 1,1) = 'UT' ; class_var( 1,2) = 'UU' ; class_var( 1,3) = 'MM'
       class_var( 2,1) = 'VT' ; class_var( 2,2) = 'VV' ; class_var( 2,3) = 'MM'
@@ -112,6 +114,23 @@
       class_var(17,1) = 'TD' ; class_var(17,2) = 'QQ' ; class_var(17,3) = 'TT'
       class_var(18,1) = 'UR' ; class_var(18,2) = 'UU' ; class_var(18,3) = 'MM'
       class_var(19,1) = 'VR' ; class_var(19,2) = 'VV' ; class_var(19,3) = 'MM'
+      class_var(20,1) = 'SM' ; class_var(20,2) = 'QQ' ; class_var(20,3) = 'TT'
+      class_var(21,1) = 'SL' ; class_var(21,2) = 'QQ' ; class_var(21,3) = 'SF'
+      class_var(22,1) = 'PTH'; class_var(22,2) = 'QQ' ; class_var(22,3) = 'TT'
+      class_var(23,1) = 'DTV'; class_var(23,2) = 'QQ' ; class_var(23,3) = 'TT'
+      class_var(24,1) = 'CLY'; class_var(24,2) = 'QQ' ; class_var(24,3) = 'TT'
+      class_var(25,1) = 'AC' ; class_var(25,2) = 'QQ' ; class_var(25,3) = 'SF'
+      class_var(26,1) = 'IRT'; class_var(26,2) = 'QQ' ; class_var(26,3) = 'SF'
+      class_var(27,1) = 'ART'; class_var(27,2) = 'QQ' ; class_var(27,3) = 'SF'
+      class_var(28,1) = 'WRT'; class_var(28,2) = 'QQ' ; class_var(28,3) = 'SF'
+      class_var(29,1) = 'RWR'; class_var(29,2) = 'QQ' ; class_var(29,3) = 'TT'
+      class_var(30,1) = 'QR' ; class_var(30,2) = 'QQ' ; class_var(30,3) = 'TT'
+      class_var(31,1) = 'QE' ; class_var(31,2) = 'QQ' ; class_var(31,3) = 'TT'
+      class_var(32,1) = 'UPT'; class_var(32,2) = 'UU' ; class_var(32,3) = 'MM'
+      class_var(33,1) = 'VPT'; class_var(33,2) = 'VV' ; class_var(33,3) = 'MM'
+      class_var(34,1) = 'TVPT';class_var(34,2) = 'QQ' ; class_var(34,3) = 'TT'
+
+
 !     Setup the indexing for output
       allocate (indo   ( min(Level_max(levset),G_nk) ))
       call out_slev2 ( Level(1,levset), Level_max(levset),G_nk,indo,nko,write_diag_lev)
@@ -119,45 +138,47 @@
       do ii=1,Outd_var_max(set)
       do  i=1,nkeys
 
-         if (Outd_varnm_S(ii,set)(1:4).eq.keylist(i)(1:4)) then
+         if (Outd_varnm_S(ii,set)(1:4) == keylist(i)(1:4)) then
             gridset = Outd_grid(set)
             id = -1
             do cid=1,numvars
-               if (keylist(i)(1:2) == class_var(cid,1)) id=cid
+               if (trim(keylist(i)(1:4)) == trim(class_var(cid,1)).or. &
+                   trim(keylist(i)(1:3)) == trim(class_var(cid,1)).or. &
+                   trim(keylist(i)(1:2)) == trim(class_var(cid,1))) id=cid
             end do
-            if (id.lt.0) then
-               if (Lun_out.gt.0) write(Lun_out,1001) trim(keylist(i))
+            if (id < 0) then
+               if (Lun_out > 0) write(Lun_out,1001) trim(keylist(i))
                cycle
             endif
             level_type => Ver_hyb%t
-            if (class_var(id,3) == 'MM') level_type => Ver_hyb%m
-            if (class_var(id,3) == 'MQ') level_type => Ver_hyb%m(2:G_nk+1)
-            if (class_var(id,3) == 'TW') level_type => hybt_w
+            if (trim(class_var(id,3)) == 'MM') level_type => Ver_hyb%m
+            if (trim(class_var(id,3)) == 'MQ') level_type => Ver_hyb%m
+            if (trim(class_var(id,3)) == 'TW') level_type => hybt_w
 
-            select case (class_var(id,2))
+            select case (trim(class_var(id,2)))
             case('UU')
                call out_href3 ( 'U_point', &
-                    Grid_x0 (gridset), Grid_x1 (gridset), 1, &
-                    Grid_y0 (gridset), Grid_y1 (gridset), 1 )
+                    OutGrid_x0 (gridset), OutGrid_x1 (gridset), 1, &
+                    OutGrid_y0 (gridset), OutGrid_y1 (gridset), 1 )
             case('VV')
                call out_href3 ( 'V_point', &
-                    Grid_x0 (gridset), Grid_x1 (gridset), 1, &
-                    Grid_y0 (gridset), Grid_y1 (gridset), 1 )
+                    OutGrid_x0 (gridset), OutGrid_x1 (gridset), 1, &
+                    OutGrid_y0 (gridset), OutGrid_y1 (gridset), 1 )
             case default
                call out_href3 ( 'Mass_point', &
-                    Grid_x0 (gridset), Grid_x1 (gridset), 1, &
-                    Grid_y0 (gridset), Grid_y1 (gridset), 1 )
+                    OutGrid_x0 (gridset), OutGrid_x1 (gridset), 1, &
+                    OutGrid_y0 (gridset), OutGrid_y1 (gridset), 1 )
             end select
 
             nullify(tr2,tr3)
             istat = gmm_getmeta(keylist(i),tmp_meta)
-            if (tmp_meta%l(3)%high.le.1) then
+            if (tmp_meta%l(3)%high <= 1) then
                istat = gmm_get(trim(keylist(i)),tr2,tmp_meta)
                call out_fstecr3 (tr2, tmp_meta%l(1)%low,tmp_meta%l(1)%high,&
                                       tmp_meta%l(2)%low,tmp_meta%l(2)%high,&
-                                       0,keylist(i),Outd_convmult(ii,set) ,&
+                                       hyb0,keylist(i),Outd_convmult(ii,set) ,&
                                        Outd_convadd(ii,set),Level_kind_ip1,&
-                                       -1,1,1,1, Outd_nbit(ii,set),.false. )
+                                       -1,1,ind0,1, Outd_nbit(ii,set),.false. )
             else
                istat = gmm_get(trim(keylist(i)),tr3,tmp_meta)
                call out_fstecr3 (tr3, tmp_meta%l(1)%low,tmp_meta%l(1)%high,&
@@ -165,6 +186,15 @@
                                level_type,keylist(i),Outd_convmult(ii,set),&
                                       Outd_convadd(ii,set),Level_kind_ip1 ,&
                                -1,G_nk,indo,nko, Outd_nbit(ii,set),.false. )
+               ! Special treatment for QT1 which is now scoping 1:G_nk+1
+               if ( (trim(keylist(i)) == 'QT1') .and. (G_nk == nko) ) then
+                  indo(1) = G_nk+1
+                  call out_fstecr3 (tr3, tmp_meta%l(1)%low,tmp_meta%l(1)%high,&
+                                         tmp_meta%l(2)%low,tmp_meta%l(2)%high,&
+                                  level_type,keylist(i),Outd_convmult(ii,set),&
+                                         Outd_convadd(ii,set),Level_kind_ip1 ,&
+                                  -1,G_nk+1,indo,1, Outd_nbit(ii,set),.false. )
+               endif
             endif
 
             goto 800

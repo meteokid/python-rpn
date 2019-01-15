@@ -14,19 +14,22 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/p lipschitz - compute lipschitz stability criterion
-!
 
-!
       subroutine lipschitz(F_u, F_v, F_w, Minx,Maxx,Miny,Maxy, Nk, &
                                       F_i0,F_in,F_j0,F_jn)
-!
+
+      use geomh
+      use glb_ld
+      use cstv
+      use ver
+      use type_mod
       implicit none
 #include <arch_specific.hf>
-!
+
       integer Minx,Maxx,Miny,Maxy, Nk
       integer F_i0,F_in,F_j0,F_jn
-      real F_w(Minx:Maxx,Miny:Maxy,Nk), F_u(Minx:Maxx,Miny:Maxy,Nk), F_v(Minx:Maxx,Miny:Maxy,Nk)
-!
+      real F_w(Minx:Maxx,Miny:Maxy,Nk), F_u(Minx:Maxx,Miny:Maxy,Nk), &
+           F_v(Minx:Maxx,Miny:Maxy,Nk)
 !author
 !     Claude Girard & Andre Plante - oct 2006
 !
@@ -49,24 +52,17 @@
 ! F_in         I    - ending point of calculation on W-E axis
 ! F_j0         I    - starting point of calculation on N-S axis
 ! F_jn         I    - ending point of calculation on N-S axis
-!
 
-#include "glb_ld.cdk"
-#include "geomg.cdk"
-#include "type.cdk"
-#include "ver.cdk"
-#include "cstv.cdk"
-!
-!*
+
       integer i,j,k,i0,j0,km, iu,iv,iw, ju,jv,jw, ku,kv,kw
-      real pr1, pr2, dudx, dvdy, dwdy,dwdz, LipNOu, LipNOv, LipNOw
+      real dudx, dvdy, dwdz, LipNOu, LipNOv, LipNOw
 !     __________________________________________________________________
 !
       i0=F_i0
       j0=F_j0
-      if ((G_lam).and.(l_west)) i0 = max(2,F_i0)
-      if (l_south) j0 =  max(2,F_j0)
-!
+      if (l_west ) i0 = max(2,F_i0)
+      if (l_south) j0 = max(2,F_j0)
+
       iu=-99
       ju=-99
       ku=-99
@@ -79,28 +75,28 @@
       LipNOu=0.0
       LipNOv=0.0
       LipNOw=0.0
-!
+
 !$omp do
       do k=1,l_nk
          km=max(k-1,1)
          do j= j0, F_jn
          do i= i0, F_in
-            dudx=abs(F_u(i,j,k)-F_u(i-1,j,k))*geomg_invcy_8(j)*geomg_invDX_8(j)
-            if(dudx.gt.LipNOu) then
+            dudx=abs(F_u(i,j,k)-F_u(i-1,j,k))*geomh_invcy_8(j)*geomh_invDX_8(j)
+            if(dudx > LipNOu) then
                iu=i
                ju=j
                ku=k
                LipNOu=dudx
             endif
-            dvdy=abs(F_v(i,j,k)-F_v(i,j-1,k))*geomg_invcy_8(j)*geomg_invDY_8
-            if(dvdy.gt.LipNOv) then
+            dvdy=abs(F_v(i,j,k)-F_v(i,j-1,k))*geomh_invcy_8(j)*geomh_invDY_8
+            if(dvdy > LipNOv) then
                iv=i
                jv=j
                kv=k
                LipNOv=dvdy
             endif
             dwdz=abs(F_w(i,j,k)-F_w(i,j,km))*ver_idz_8%m(km)
-            if(dwdz.gt.LipNOw) then
+            if(dwdz > LipNOw) then
                iw=i
                jw=j
                kw=k
@@ -110,11 +106,11 @@
          end do
       end do
 !$omp enddo
-!
+
       LipNOu=Cstv_dt_8*LipNOu
       LipNOv=Cstv_dt_8*LipNOv
       LipNOw=Cstv_dt_8*LipNOw
-!
+
       write(6,101) LipNOu,iu,ju,ku
       write(6,102) LipNOv,iv,jv,kv
       write(6,103) LipNOw,iw,jw,kw

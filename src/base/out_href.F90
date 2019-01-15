@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -17,35 +17,40 @@
 
       subroutine out_href3 (F_arakawa_S ,F_x0, F_x1, F_stridex,&
                                          F_y0, F_y1, F_stridey )
+      use grid_options
+      use gem_options
+      use geomh
+      use glb_ld
+      use lun
+      use out_mod
+      use out3
+      use hgc
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 
-      character* (*), intent(in ) :: F_arakawa_S
+      character(len=*), intent(in ) :: F_arakawa_S
       integer,        intent(in ) :: F_x0,F_x1,F_stridex,&
                                      F_y0,F_y1,F_stridey
-#include "glb_ld.cdk"
-#include "geomn.cdk"
-#include "grd.cdk"
-#include "hgc.cdk"
-#include "out.cdk"
-#include "out3.cdk"
-#include "lun.cdk"
-#include "ptopo.cdk"
 #include <rmnlib_basics.hf>
 
 !!$      integer, external :: out_samegrd
       character*1 familly_uencode_S
-      logical old_grid_L
-      integer i,err,ni,nis,njs,niyy,indx,ix1,ix2,ix3,ix4, &
+      integer err,ni,nis,njs,niyy,ix1,ix2,ix3,ix4, &
               sindx,i0,in,j0,jn,vesion_uencode
       real wk
       real, dimension(:), pointer     :: posx,posy
       real, dimension(:), allocatable :: yy
+
+      character(len=1) nomvar
+      integer nbit,knd,lstep
+      integer ind_o(1)
+      real fa(1,1,1), rf(1)
+
 !
 !----------------------------------------------------------------------
 !
-      call out_fstecr3 ( wk,wk,wk,wk,wk,wk,wk,wk,wk,wk,wk,wk,&
-                         wk,wk,wk, .true. )
+      call out_fstecr3 ( fa,1,1,1,1,rf,nomvar,wk,wk,knd,lstep,1,ind_o,1,nbit,.true. )
 
 ! to be completed if at all usefull
 !      old_grid_L= out_samegrd ( F_arakawa_S ,F_x0, F_x1, F_stridex,&
@@ -57,27 +62,27 @@
       jn = min( G_nj, F_y1)
 
       if (F_arakawa_S =='Mass_point') then
-         posx => Geomn_longs
-         posy => Geomn_latgs
+         posx => geomh_longs
+         posy => geomh_latgs
          Out_ig3  = 1
       endif
       if (F_arakawa_S =='U_point') then
-         posx => Geomn_longu
-         posy => Geomn_latgs
+         posx => geomh_longu
+         posy => geomh_latgs
          Out_ig3  = 2
-         if (G_lam) in = min( G_ni-1, F_x1)
+         in = min( G_ni-1, F_x1)
       endif
       if (F_arakawa_S =='V_point') then
-         posx => Geomn_longs
-         posy => Geomn_latgv
+         posx => geomh_longs
+         posy => geomh_latgv
          Out_ig3  = 3
          jn = min( G_nj-1, F_y1)
       endif
       if (F_arakawa_S =='F_point') then
-         posx => Geomn_longu
-         posy => Geomn_latgv
+         posx => geomh_longu
+         posy => geomh_latgv
          Out_ig3  = 4
-         if (G_lam) in = min( G_ni-1, F_x1)
+         in = min( G_ni-1, F_x1)
          jn = min( G_nj-1, F_y1)
       endif
 
@@ -96,15 +101,15 @@
 !      if (old_grid_L) return
 
       nis = in - i0 + 1  ;  njs = jn - j0 + 1
-      if ( (nis .le. 0) .or. (njs .le. 0) ) then
-         if (Lun_out.gt.0) write(Lun_out,9000)
+      if ( (nis <= 0) .or. (njs <= 0) ) then
+         if (Lun_out > 0) write(Lun_out,9000)
          return
       endif
 
       nis = (in - i0) / Out_stride + 1
       njs = (jn - j0) / Out_stride + 1
 
-      if ((Out3_iome .ge. 0) .and. (Ptopo_couleur.eq.0)) then
+      if ((Out3_iome >= 0) .and. (Ptopo_couleur == 0)) then
 
          if ( (Grd_yinyang_L) .and. (.not.Out_reduc_l) ) then
 
@@ -162,9 +167,9 @@
 
          else
 
-            if ( Out_stride .le. 1 ) then
+            if ( Out_stride <= 1 ) then
                ni = nis
-               if ( (Grd_typ_S(1:2) == 'GU') .and. (nis.eq.G_ni) ) &
+               if ( (Grd_typ_S(1:2) == 'GU') .and. (nis == G_ni) ) &
                ni = G_ni+1
                ix1= Ptopo_couleur*4+1
                ix2= Ptopo_couleur*4+2
@@ -189,50 +194,3 @@
 !
       return
       end
-
-!!$      logical function out_samegrd ( F_arakawa_S ,F_x0, F_x1, F_stridex,&
-!!$                                     F_y0, F_y1, F_stridey, F_init_L )
-!!$      implicit none
-!!$#include <arch_specific.hf>
-!!$
-!!$      character* (*), intent(in ) :: F_arakawa_S
-!!$      logical,        intent(in ) :: F_init_L
-!!$      integer,        intent(in ) :: F_x0,F_x1,F_stridex,&
-!!$                                     F_y0,F_y1,F_stridey
-!!$
-!!$      integer, external  :: f_crc32
-!!$      integer, parameter :: max_grid= 50
-!!$      character*20, save :: id_ara_S(max_grid)
-!!$      integer crc
-!!$      integer     , save :: id_crc(max_grid), cnt
-!!$      real, dimension(6) :: identity_vec
-!!$!
-!!$!----------------------------------------------------------------------
-!!$!
-!!$      if ( F_init_L ) then
-!!$         id_ara_S= '' ; id_crc= 0 ; cnt= 0 ; out_samegrd= .false.
-!!$      else
-!!$         identity_vec(1)= F_x0
-!!$         identity_vec(2)= F_x1
-!!$         identity_vec(3)= F_stridex
-!!$         identity_vec(4)= F_y0
-!!$         identity_vec(5)= F_y1
-!!$         identity_vec(6)= F_stridey
-!!$
-!!$         crc= f_crc32 (0., identity_vec(1:6), 24)
-!!$         
-!!$         if ( any (id_ara_S == trim(F_arakawa_S)) .and. &
-!!$              any (id_crc == crc) ) then
-!!$            out_samegrd= .true.
-!!$         else
-!!$            cnt=cnt+1
-!!$            id_ara_S(cnt) = F_arakawa_S
-!!$            id_crc  (cnt) = crc
-!!$            out_samegrd   = .false.
-!!$         endif
-!!$      endif
-!!$!
-!!$!----------------------------------------------------------------------
-!!$!
-!!$      return
-!!$      end

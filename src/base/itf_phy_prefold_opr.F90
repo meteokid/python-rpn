@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -16,6 +16,8 @@
 !/@*
 function itf_phy_prefold_opr (F_data, F_name_S, F_horiz_interp_S, &
              F_minx,F_maxx,F_miny,F_maxy,F_k0,F_kn) result(F_istat)
+      use grid_options
+      use glb_ld
    implicit none
 
    !@objective - Pre-folding operations for data on the physics grid
@@ -32,8 +34,6 @@ function itf_phy_prefold_opr (F_data, F_name_S, F_horiz_interp_S, &
 #include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 #include <msg.h>
-#include "grd.cdk"
-#include "glb_ld.cdk"
 
    real, dimension(l_ni,l_nj,F_k0:F_kn) :: data_dyngrid
 

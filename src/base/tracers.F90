@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -17,6 +17,11 @@
 
       subroutine tracers ()
       use phy_itf, only: PHY_MAXNAMELENGTH,phymeta,phy_getmeta
+      use gem_options
+      use glb_ld
+      use lun
+      use tr3d
+      use clib_itf_mod
       implicit none
 #include <arch_specific.hf>
 
@@ -38,24 +43,20 @@
 !        Tracers requested under auto cascade requires only the first
 !        2 letters
 
-#include <clib_interface_mu.hf>
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "schm.cdk"
-#include "tr3d.cdk"
 
-      character*512 varname,attributes
+      character(len=512) :: varname,attributes
       character(len=PHY_MAXNAMELENGTH) :: varname_S,prefix_S, &
                                           basename_S,time_S,ext_S
-      integer i,j,ind,wload,hzd,monot,massc,dejala,istat,nmeta,err
+      integer i,j,ind,wload,hzd,monot,massc,dejala,istat,nmeta
       real vmin
       type(phymeta), dimension(:), pointer :: pmeta
 !
 !     __________________________________________________________________
 !
       nmeta= 0 ; nullify(pmeta)
-      if ( Schm_phyms_L ) &
-      nmeta = phy_getmeta(pmeta,' ',F_npath='V',F_bpath='D',F_quiet=.true.)
+      if ( Schm_phyms_L ) then
+         nmeta = phy_getmeta(pmeta,' ',F_npath='V',F_bpath='D',F_quiet=.true.)
+      end if
 
       do i=1,nmeta
          varname_S = pmeta(i)%vname
@@ -80,7 +81,7 @@
       do i=1,MAXTR3D
          if (Tr3d_list_s(i)=='') exit
          ind= index(Tr3d_list_s(i),",")
-         if (ind .eq. 0) then
+         if (ind == 0) then
             call low2up(Tr3d_list_s(i), varname)
             attributes = ''
          else
@@ -116,17 +117,17 @@
          Tr3d_wload(dejala)= .false.
       endif
 
-      if (Lun_out.gt.0) then
+      if (Lun_out > 0) then
          write (Lun_out,1001)
          do i=1,Tr3d_ntr
             write(Lun_out,1002) Tr3d_name_S(i),Tr3d_wload(i),Tr3d_hzd(i),Tr3d_mono(i),Tr3d_mass(i),Tr3d_vmin(i)
          end do
       endif
 
-      call ac_posi (G_xg_8(1),G_yg_8(1),G_ni,G_nj,Lun_out.gt.0)
+      call ac_posi (G_xg_8(1),G_yg_8(1),G_ni,G_nj,Lun_out > 0)
 
  1001 format (/' Final list of tracers:'/3x,' Name   Wload  Hzd   Mono  Mass    Min')
- 1002 format (4x,a4,2l6,2i6,3x,e9.3)
+ 1002 format (4x,a4,2l6,2i6,3x,e10.3)
 !
 !     __________________________________________________________________
 !

@@ -106,7 +106,7 @@
 !==============================================================================
 !      xlim_1=min(2.0*pi, max(ZERO,xlim_1))   ! left side of OUTPUT grid, lon', 0-2*pi
 !      xlim_n=min(2.0*pi, max(ZERO,xlim_n))   ! right side of OUTPUT grid, lon', 0-2*pi
-!      ylim_1=min(.5*pi, max(-.5*pi,ylim_1))  ! bottom of OUTPUT grid, lat',-pi/2 to +pi/2 
+!      ylim_1=min(.5*pi, max(-.5*pi,ylim_1))  ! bottom of OUTPUT grid, lat',-pi/2 to +pi/2
 !      ylim_n=min(.5*pi, max(-.5*pi,ylim_n))  ! top of OUTPUT grid, lat', -pi/2 to +pi/2
       delta_x = (xlim_n-xlim_1)/(g_ni-1)     ! x (lon') spacing of OUTPUT grid (radians)
       delta_y = (ylim_n-ylim_1)/(g_nj-1)     ! y (lat') spacing of OUTPUT grid (radians)

@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -18,8 +18,6 @@ module out_collector
   implicit none
 #include <arch_specific.hf>
 
-#include "ptopo.cdk"
-#include "glb_ld.cdk"
 
       integer Bloc_npx   , Bloc_npy  , &
               Bloc_nblocs, Bloc_npes , &
@@ -35,16 +33,15 @@ module out_collector
 contains
 
       subroutine block_collect_set (F_npex, F_npey)
+      use ptopo
       implicit none
 
       integer F_npex, F_npey
 
       include "rpn_comm.inc"
 
-      character*50 dumc1_S
-      integer, dimension(:  ) , allocatable :: peid
-      integer, dimension(:,:) , allocatable :: glbij,block
-      integer i,j,err,cnt,n1,n2,n3,n4,n5,n6,n7,n8,n9
+      integer, dimension(:,:) , allocatable :: block
+      integer i,j,err,cnt,n1
       integer my_row, my_col, this_block
       integer mpx,irest,l_npex,i0,in,l_npey,j0,jn
       integer block_info(0:Ptopo_numproc-1,2),info(0:Ptopo_numproc-1,2)
@@ -64,7 +61,7 @@ contains
          l_npex   = Ptopo_npex / Bloc_npx
          irest    = Ptopo_npex - l_npex * Bloc_npx
          i0       = mpx * l_npex + 1
-         if ( mpx .lt. irest ) then
+         if ( mpx < irest ) then
             l_npex = l_npex + 1
             i0     = i0 + mpx
          else
@@ -77,7 +74,7 @@ contains
             l_npey   = Ptopo_npey / Bloc_npy
             irest    = Ptopo_npey - l_npey * Bloc_npy
             j0       = mpx * l_npey + 1
-            if ( mpx .lt. irest ) then
+            if ( mpx < irest ) then
                l_npey = l_npey + 1
                j0     = j0 + mpx
             else
@@ -162,6 +159,8 @@ contains
       end subroutine block_collect_fullp
 
       subroutine block_collect (f2rc,f2cc,lminx,lmaxx,lminy,lmaxy,Nk)
+      use glb_ld
+      use ptopo
       implicit none
 
       integer lminx,lmaxx,lminy,lmaxy,Nk
@@ -215,7 +214,7 @@ contains
             enddo
             enddo
             deallocate (buf)
-         enddo 
+         enddo
 
       else
 
@@ -236,6 +235,8 @@ contains
       end subroutine block_collect
 
       subroutine block_fplanes ( glb, zlist, nz, f2rc, Nk)
+      use glb_ld
+      use ptopo
       implicit none
 
       integer nz,Nk
@@ -245,7 +246,7 @@ contains
       integer mpx,kstart,local_nk,irest,len
       real, dimension(:,:), allocatable :: buf
 
-      integer i,j,k,b,ni,nj,nkk,err,status
+      integer i,j,k,b,ni,nj,nkk,err
       integer ireq, tag, tag_comm, request(Bloc_nblocs*2)
       integer blk_dist(2,0:Bloc_nblocs-1)
 !
@@ -261,7 +262,7 @@ contains
             local_nk = Nk / Bloc_nblocs
             irest  = Nk  - local_nk * Bloc_nblocs
             kstart = mpx * local_nk + 1
-            if ( mpx .lt. irest ) then
+            if ( mpx < irest ) then
                local_nk   = local_nk + 1
                kstart = kstart + mpx
             else

@@ -16,6 +16,7 @@
 !**s/r itf_fft_sin - multiple fast real sine transform
 !
       subroutine itf_fft_sin ( F_a, F_inc, F_jump, F_lot )
+      use fft
       implicit none
 #include <arch_specific.hf>
 
@@ -56,7 +57,6 @@
 !     The subroutine itf_fft_set must have been called to set-up
 !     the commons in fft.cdk
 
-#include "fft.cdk"
 
       integer i, j, k, is, j0, jlot
       real*8  ai, as, ya, ys, xnor, w(511*Fft_nstore)
@@ -94,7 +94,7 @@
             enddo
          enddo
 
-         if ( Fft_n .eq. 2 * Fft_m ) then
+         if ( Fft_n == 2 * Fft_m ) then
             do j=1,jlot
                w( ijw(Fft_m,j) ) = four * F_a( ija(Fft_m,j) ) * xnor
             enddo
@@ -113,7 +113,7 @@
             enddo
          enddo
 
-         if ( Fft_n .ne. 2 * Fft_m ) then
+         if ( Fft_n /= 2 * Fft_m ) then
             do j=1,jlot
                F_a( ija(Fft_n-1,j) ) = w( ijw(Fft_n,j) )
             enddo

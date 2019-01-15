@@ -1,3 +1,0 @@
-       logical clipping_L
-
-       common /clip_L/clipping_L

@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -15,6 +15,13 @@
 !**s/r out_steps -
 
       subroutine out_steps
+      use step_options
+      use gem_options
+      use cstv
+      use out_mod
+      use out3
+      use outp
+      use out_listes
       implicit none
 #include <arch_specific.hf>
 
@@ -24,16 +31,8 @@
 !revision
 ! v4_50 - Desgagne M.       - Initial version
 
-#include "cstv.cdk"
-#include "init.cdk"
-#include "lctl.cdk"
-#include "step.cdk"
-#include "out.cdk"
-#include "out3.cdk"
-#include "outp.cdk"
-#include "out_listes.cdk"
 
-      character*16 datev
+      character(len=16) :: datev
       integer istep,step0,stepf
       integer, save :: marker
       logical, save :: done = .false., dgflt_L = .true.
@@ -51,12 +50,12 @@
       if ( (.not.Init_mode_L) .and. dgflt_L) marker= Lctl_step - 1
       dgflt_L = Init_mode_L
 
-      if (marker .lt. Lctl_step) then
+      if (marker < Lctl_step) then
 
          step0 = Lctl_step
          stepf = Lctl_step + 50
          marker= stepf
-         
+
          if (associated(outd_sorties)) deallocate (outd_sorties)
          if (associated(outp_sorties)) deallocate (outp_sorties)
          if (associated(outc_sorties)) deallocate (outc_sorties)
@@ -72,10 +71,10 @@
 
          do istep = step0, stepf
             if (.not.( Init_mode_L .and.            &
-            (istep-Step_initial).ge.Init_halfspan)) &
+            (istep-Step_initial) >= Init_halfspan)) &
             call out_thistep (outd_sorties(0,istep),istep,MAXSET,'DYN')
             if (       Init_mode_L .and.            &
-            (istep-Step_initial).ge.Init_halfspan+1) cycle
+            (istep-Step_initial) >= Init_halfspan+1) cycle
             call out_thistep (outp_sorties(0,istep),istep,MAXSET,'PHY')
             call out_thistep (outc_sorties(0,istep),istep,MAXSET,'CHM')
          end do
@@ -83,7 +82,7 @@
       endif
 
       Out_dateo = Out3_date
-      if ( lctl_step .lt. 0 ) then  ! adjust Out_dateo because ip2=npas=0
+      if ( lctl_step < 0 ) then  ! adjust Out_dateo because ip2=npas=0
          dayfrac = dble(lctl_step-Step_delay) * Cstv_dt_8 * OV_day
          call incdatsd (datev,Step_runstrt_S,dayfrac)
          call datp2f   (Out_dateo,datev)
@@ -94,11 +93,11 @@
       Out_npas = max (0, Lctl_step)
 
       Out_ip3  = 0
-      if (Out3_ip3.eq.-1) Out_ip3 = max (0, Lctl_step)
-      if (Out3_ip3.gt.0 ) Out_ip3 = Out3_ip3
+      if (Out3_ip3 == -1) Out_ip3 = max (0, Lctl_step)
+      if (Out3_ip3 > 0 ) Out_ip3 = Out3_ip3
 
       Out_typvar_S = 'P'
-      if (Lctl_step.lt.0) Out_typvar_S = 'I'
+      if (Lctl_step < 0) Out_typvar_S = 'I'
 
       done = .true.
 !

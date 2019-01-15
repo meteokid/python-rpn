@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -19,13 +19,17 @@
 !
       integer function set_xnbit (F_argc,F_argv_S,F_cmdtyp_S,F_v1,F_v2)
 !
+      use gem_options
+      use glb_ld
+      use lun
+      use out3
       implicit none
 #include <arch_specific.hf>
 !
       integer F_argc,F_v1,F_v2
-      character *(*) F_argv_S(0:F_argc),F_cmdtyp_S
+      character(len=*) F_argv_S(0:F_argc),F_cmdtyp_S
 !
-!author Vivian Lee - rpn - JULY 2004 
+!author Vivian Lee - rpn - JULY 2004
 !
 !revision
 ! v3_20 - Lee V.            - initial MPI version
@@ -46,7 +50,7 @@
 !       statement and return 5 arguments to this function. For more
 !       information to how this is processed, see "SREQUET".
 !
-!	
+!
 !arguments
 !  Name        I/O                 Description
 !----------------------------------------------------------------
@@ -60,63 +64,62 @@
 !----------------------------------------------------------------
 !
 !
-
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "out3.cdk"
-!
-!*
-!
-      character*5 stuff_S
-      character*16 varname_S
+      character(len=5) :: stuff_S
       integer bits,varmax
-      integer i, j, k, m, pndx, ii, jj, kk
+      integer i, j, ii, jj
 !
 !----------------------------------------------------------------
 !
-      if (Lun_out.gt.0) write(Lun_out,*)
-      if (Lun_out.gt.0) write(Lun_out,*) F_argv_S
+      if (Lun_out > 0) write(Lun_out,*)
+      if (Lun_out > 0) write(Lun_out,*) F_argv_S
       set_xnbit=0
       Out3_xnbits_max = Out3_xnbits_max + 1
-      if (Out3_xnbits_max.gt.MAXELEM) then
-          if (Lun_out.gt.0) write(Lun_out,*)'set_xnbit WARNING: Too many definitions XNBITS'
-          Out3_xnbits_max = Out3_xnbits_max - 1
-          set_xnbit = 1
-          return
+      if (Out3_xnbits_max > MAXELEM) then
+         if (Lun_out > 0) then
+            write(Lun_out,*)'set_xnbit WARNING: Too many definitions XNBITS'
+         end if
+         Out3_xnbits_max = Out3_xnbits_max - 1
+         set_xnbit = 1
+         return
       endif
 
-      if (index(F_argv_S(1),'[').gt.0) then
-          stuff_S=F_argv_S(1)
-          read(stuff_S(2:4),*) varmax
+      if (index(F_argv_S(1),'[') > 0) then
+         stuff_S=F_argv_S(1)
+         read(stuff_S(2:4),*) varmax
       else
-          if (Lun_out.gt.0) write(Lun_out,*) &
-                          'set_xnbit WARNING: syntax incorrect'
-        set_xnbit=1
-          Out3_xnbits_max = Out3_xnbits_max - 1
-        return
+         if (Lun_out > 0) then
+            write(Lun_out,*) 'set_xnbit WARNING: syntax incorrect'
+         end if
+         set_xnbit=1
+         Out3_xnbits_max = Out3_xnbits_max - 1
+         return
       endif
 !
 !     Obtain compaction bits request
 !
       bits=0
       do i=varmax+2, F_argc
-         if (F_argv_S(i).eq.'bits') read(F_argv_S(i+1),*) bits
+         if (F_argv_S(i) == 'bits') read(F_argv_S(i+1),*) bits
       enddo
 
-      if (bits.le.0) then
-          if (Lun_out.gt.0) write(Lun_out,*) 'set_xnbit WARNING: Number of bits not chosen'
+      if (bits <= 0) then
+         if (Lun_out > 0) then
+            write(Lun_out,*) 'set_xnbit WARNING: Number of bits not chosen'
+         end if
          set_xnbit=1
-          Out3_xnbits_max = Out3_xnbits_max - 1
+         Out3_xnbits_max = Out3_xnbits_max - 1
          return
       endif
 !
 !     Store variables in variable sets
 !
       j = Out3_xnbits_max + varmax
-      if (j.gt.MAXELEM) then
-          if (Lun_out.gt.0) write(Lun_out,*) 'set_xnbit WARNING: too many variables for xnbits'
-          set_xnbit=1
-          return
+      if (j > MAXELEM) then
+         if (Lun_out > 0) then
+             write(Lun_out,*) 'set_xnbit WARNING: too many variables for xnbits'
+         end if
+         set_xnbit=1
+         return
       endif
 !
       jj=Out3_xnbits_max

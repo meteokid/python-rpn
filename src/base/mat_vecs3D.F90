@@ -2,42 +2,43 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r mat_vecs3D - 3D_elliptic matrix_vector's computation 
-!                 
+!**s/r mat_vecs3D - 3D_elliptic matrix_vector's computation
+!
 
-      subroutine  mat_vecs3D ( Sol, Rhs, Minx, Maxx, Miny, Maxy,nil, &
-                     njl,minx1, maxx1, minx2, maxx2,Nk,minx3,maxx3 )   
+      subroutine  mat_vecs3D ( F_Sol, F_Rhs, Minx, Maxx, Miny, Maxy,nil, &
+                     njl,minx1, maxx1, minx2, maxx2,Nk,minx3,maxx3 )
+      use gem_options
+      use geomh
+      use tdpack
+      use glb_ld
+      use cstv
+      use ver
+      use sol
+      use opr
       implicit none
 #include <arch_specific.hf>
 !
-      integer Minx, Maxx, Miny, Maxy,nil, njl, &
-             minx1, maxx1, minx2, maxx2,Nk,minx3,maxx3
-      real*8 Rhs(Minx:Maxx,Miny:Maxy,Nk), &
-             Sol(Minx:Maxx,Miny:Maxy,Nk)
+      integer, intent(in) :: Minx, Maxx, Miny, Maxy,nil, njl, &
+                             minx1, maxx1, minx2, maxx2,Nk,minx3,maxx3
+      real*8, intent(out) :: F_Rhs(Minx:Maxx,Miny:Maxy,Nk)
+      real*8, intent(in) :: F_Sol(Minx:Maxx,Miny:Maxy,Nk)
 !author
 !       Abdessamad Qaddouri -  2013
 !
 !revision
 ! v4_70 - Qaddouri A.       - initial version
 
-#include "glb_ld.cdk"
-#include "opr.cdk"
-#include "cstv.cdk"
-#include "geomg.cdk"
-#include "sol.cdk"
-#include "ver.cdk"
-#include "dcst.cdk"
 
       integer j,i,k,ii,jj,halox,haloy
       real*8  stencil1,stencil2,stencil3,stencil4,stencil5,cst,di_8
@@ -50,7 +51,7 @@
       xxx = - Cstv_hco2_8
       yyy = - Cstv_hco1_8
 
-      fdg1= 0.0d0 ; rhs= 0.0d0
+      fdg1= 0.0d0 ; F_Rhs= 0.0d0
 
       halox=1
       haloy=halox
@@ -63,7 +64,7 @@
          fdg1(:,:,k) = .0d0
          do j=1+sol_pil_s, njl-sol_pil_n
          do i=1+sol_pil_w, nil-sol_pil_e
-            fdg1(i,j,k)=sol(i,j,k)
+            fdg1(i,j,k)=F_Sol(i,j,k)
          enddo
          enddo
       enddo
@@ -79,7 +80,7 @@
          cst= (Cstv_hco1_8+Cstv_hco0_8*Opr_zeval_8(k))
          do j=1+sol_pil_s, njl-sol_pil_n
             jj=j+l_j0-1
-            di_8= Opr_opsyp0_8(G_nj+jj) * Geomg_invcy2_8(j)
+            di_8= Opr_opsyp0_8(G_nj+jj) * geomh_invcy2_8(j)
             do i=1+sol_pil_w, nil-sol_pil_e
                ii=i+l_i0-1
 
@@ -97,15 +98,15 @@
                          /(Opr_opsxp0_8(G_ni+ii)*Opr_opsyp0_8(G_nj+jj))
                stencil6=Cstv_hco0_8*(Opr_opszp2_8(k)+Opr_opszpl_8(k)+xxx*Opr_opszpm_8(k))
                stencil7=Cstv_hco0_8*(Opr_opszp2_8(2*G_nk+k)+Opr_opszpl_8(2*G_nk+k)+xxx*Opr_opszpm_8(2*G_nk+k))
-  
+
 ! Matrix*vector
-               Rhs(i,j,k)=stencil1*fdg1(i  ,j  ,k  ) +&
-                          stencil2*fdg1(i-1,j  ,k  ) +&
-                          stencil3*fdg1(i+1,j  ,k  ) +&
-                          stencil5*fdg1(i  ,j+1,k  ) +&
-                          stencil4*fdg1(i  ,j-1,k  ) +&
-                          stencil6*fdg1(i  ,j  ,k-1) +&
-                          stencil7*fdg1(i  ,j  ,k+1)
+               F_Rhs(i,j,k)=stencil1*fdg1(i  ,j  ,k  ) +&
+                            stencil2*fdg1(i-1,j  ,k  ) +&
+                            stencil3*fdg1(i+1,j  ,k  ) +&
+                            stencil5*fdg1(i  ,j+1,k  ) +&
+                            stencil4*fdg1(i  ,j-1,k  ) +&
+                            stencil6*fdg1(i  ,j  ,k-1) +&
+                            stencil7*fdg1(i  ,j  ,k+1)
             enddo
          enddo
       enddo

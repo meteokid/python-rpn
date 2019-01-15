@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -17,6 +17,10 @@
 
       subroutine adv_get_ij0n_ext (i0_e,in_e,j0_e,jn_e)
 
+      use grid_options
+      use glb_ld
+      use adv_grid
+      use outgrid
       implicit none
 
 #include <arch_specific.hf>
@@ -27,11 +31,8 @@
 
       !@revisions
       ! v4_80 - Tanguay M.        - GEM4 Mass-Conservation
-      ! v4_87 - Tanguay M.        - Adjust extension
+      ! v5_00 - Tanguay M.        - Adjust extension
 
-#include "glb_ld.cdk"
-#include "adv_grid.cdk"
-#include "grd.cdk"
 
       !---------------------------------------------------------------------
       integer :: jext

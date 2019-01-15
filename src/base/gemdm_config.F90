@@ -20,33 +20,27 @@
       integer function gemdm_config ( )
       use timestr_mod, only: timestr_parse,timestr2step,timestr2sec
       use mu_jdate_mod, only: mu_set_leap_year, MU_JDATE_LEAP_IGNORED
+      use step_options
+      use grid_options
+      use gem_options
+      use grdc_options
+      use tdpack
+      use glb_ld
+      use cstv
+      use lun
+      use out_mod
+      use out3
+      use levels
+      use rstr
+      use wb_itf_mod
+      use ptopo
       implicit none
+
 #include <arch_specific.hf>
-
-!author
-!     M. Desgagne    - Summer 2006
-!
-!revision
-! v3_30 - Desgagne M.       - initial version
-! v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
-! v4_03 - Lee/Desgagne      - ISST, add Grdc_maxcfl, Step_maxcfl, elim Grdc_pil
-! v4_04 - Plante A.         - Remove offline mode
-! v4_05 - Desgagne M.       - Throw warning and return for digital filter in LAM
-! v4_05 - McTaggart-Cowan R.- Set Lun_sortie_s and Schm_opentop_L
-! v4_10 - Tanguay M.        - Adjust digital filter when LAM
-
 #include <rmnlib_basics.hf>
-#include <WhiteBoard.hf>
-#include "dcst.cdk"
-#include "nml.cdk"
-#include "step.cdk"
-#include "out.cdk"
-#include "tracers.cdk"
 
-      character*16  dumc_S, datev
-      character*256 fln_S
-      logical wronghyb
-      integer i, k, nrec, ipcode, ipkind, istat, err
+      character(len=16)  dumc_S, datev
+      integer i, k, ipcode, ipkind, err
       real    pcode,deg_2_rad,sec
       real*8  dayfrac, sec_in_day
       parameter (sec_in_day=86400.0d0)
@@ -63,6 +57,13 @@
          return
       endif
 
+      if ( (Step_nesdt <= 0) .and. (Grd_typ_S(1:1) == 'L') &
+                             .and. (.not. Lam_ctebcs_L ) ) then
+         if (Lun_out > 0) then
+            write(Lun_out,*)  ' Fcst_nesdt_S must be specified in namelist &step'
+         end if
+         return
+      endif
       if (.not.Step_leapyears_L) then
          call Ignore_LeapYear ()
          call mu_set_leap_year (MU_JDATE_LEAP_IGNORED)
@@ -75,35 +76,31 @@
       if (lun_out>0) write (Lun_out,6007) Step_runstrt_S, datev
       call datp2f ( Step_CMCdate0, Step_runstrt_S)
 
-      Lun_debug_L = (Lctl_debug_L.and.Ptopo_myproc.eq.0)
+      Lun_debug_L = (Lctl_debug_L.and.Ptopo_myproc == 0)
 
 !     Use newcode style:
       call convip ( ipcode, pcode, ipkind, 0, ' ', .false. )
 
       Level_kind_ip1 = 5
-      Level_version  = 5
 
-      if(Schm_Tlift.eq.1)then
-         call gem_error ( -1, 'gemdm_config', &
-                          'review for toplev removed and Tlift' )
-         Level_version  = 3
+      if(Schm_sleve_L)then
+         Level_version  = 100
+      else
+         Level_version  = 5
       endif
 
-      if (G_lam) then
-         Glb_pil_n = Grd_extension
-         Glb_pil_s=Glb_pil_n ; Glb_pil_w=Glb_pil_n ; Glb_pil_e=Glb_pil_n
-         if (Grd_yinyang_L) then
-            Lam_blend_H  = 0
-            Lam_ctebcs_L = .true.
-            Lam_blendoro_L = .false.
-         else
-            Lam_blend_H = max(0,Lam_blend_H)
-         endif
-         Lam_blend_Hx = Lam_blend_H ; Lam_blend_Hy = Lam_blend_H
-         if (Schm_theoc_L) Lam_blend_Hy = 0
-         Lam_tdeb = 999999.0
+      if (Grd_yinyang_L) then
+         Lam_blend_H  = 0
+         Lam_ctebcs_L = .true.
+         Lam_blendoro_L = .false.
+      else
+         Lam_blend_H = max(0,Lam_blend_H)
       endif
-      if ((G_lam).and.(.not.Grd_yinyang_L)) then
+      Lam_blend_Hx = Lam_blend_H ; Lam_blend_Hy = Lam_blend_H
+      if (Schm_theoc_L) Lam_blend_Hy = 0
+      Lam_tdeb = 999999.0
+
+      if (.not.Grd_yinyang_L) then
          Lam_gbpil_T = max(0,Lam_gbpil_T)
          Lam_blend_T = max(0,Lam_blend_T)
       else
@@ -111,25 +108,7 @@
          Lam_blend_T = 0
       endif
 
-      !  Forcing some options under Schm_adxlegacy_L=.t.
-      if (Schm_adxlegacy_L) then
-         Schm_cub_traj_L = .false.
-         Schm_trapeze_L  = .false.
-         Schm_lift_ltl_L = .false.
-      else
-         ! Schm_adxlegacy_L=.t. is mandatory for GU grids
-         if (.not. G_lam) then
-            if (lun_out>0) write (Lun_out, 9203)
-            return
-         endif
-         Schm_lift_ltl_L = .false.
-         if ( (Schm_trapeze_L .or. Schm_step_settls_L) .and. .not.Schm_autobar_L ) Schm_lift_ltl_L = .true.
-      endif
-
-      Schm_nologinC_L= Schm_nolog_L
-      Schm_nologT_L  = Schm_nolog_L
-
-      deg_2_rad = Dcst_pi_8/180.
+      deg_2_rad = pi_8/180.
 
       P_lmvd_high_lat = min(90.,abs(P_lmvd_high_lat))
       P_lmvd_low_lat  = min(P_lmvd_high_lat,abs(P_lmvd_low_lat))
@@ -148,13 +127,13 @@
       endif
       Out3_postproc_fact = max(0,Out3_postproc_fact)
 
-      if(Out3_nbitg .lt. 0) then
+      if(Out3_nbitg < 0) then
          if (lun_out>0) write (Lun_out, 9154)
          Out3_nbitg=16
       endif
       Out3_lieb_nk = 0
       do i = 1, MAXELEM
-         if(Out3_lieb_levels(i) .le. 0. ) goto 81
+         if(Out3_lieb_levels(i) <= 0. ) goto 81
          Out3_lieb_nk = Out3_lieb_nk + 1
       enddo
  81   continue
@@ -164,11 +143,12 @@
 !     Counting # of vertical levels specified by user
       G_nk = 0
       do k = 1, maxhlev
-         if (hyb(k) .lt. 0.) exit
+         if (hyb(k) < 0.) exit
          G_nk = k
       enddo
-      if (lun_out>0) &
-      write(lun_out,'(2x,"hyb="/5(f12.9,","))') hyb(1:g_nk)
+      if (lun_out>0) then
+         write(lun_out,'(2x,"hyb="/5(f12.9,","))') hyb(1:g_nk)
+      end if
 
       if (Schm_autobar_L) Schm_phyms_L= .false.
 
@@ -180,18 +160,15 @@
       err= min( timestr2step (Grdc_ndt,   Grdc_nfe    , Step_dt), err)
       err= min( timestr2step (Grdc_start, Grdc_start_S, Step_dt), err)
       err= min( timestr2step (Grdc_end,   Grdc_end_S  , Step_dt), err)
-      if (err.lt.0) return
+      if (err < 0) return
 
       if (Grdc_ndt   > -1) Grdc_ndt  = max( 1, Grdc_ndt)
       if (Grdc_start <  0) Grdc_start= Lctl_step
       if (Grdc_end   <  0) Grdc_end  = Step_total
 
       Grdc_maxcfl = max(1,Grdc_maxcfl)
-      Grdc_pil    = Grdc_maxcfl + Grd_bsc_base + Grd_bsc_ext1
-      Grdc_ni     = Grdc_ni   + 2*Grdc_pil
-      Grdc_nj     = Grdc_nj   + 2*Grdc_pil
-      Grdc_iref   = Grdc_iref +   Grdc_pil
-      Grdc_jref   = Grdc_jref +   Grdc_pil
+
+      !Calculations and verifications for Grdc dimensions are in ac_posi
 
       call low2up  (Lam_hint_S ,dumc_S)
       Lam_hint_S= dumc_S
@@ -233,19 +210,10 @@
          endif
       end if
 
-      if ((Hzd_smago_param > 0.) .and. (.not. G_lam)) then
-         if (lun_out>0) then
-            write (Lun_out, *) 'ABORT: Smagorinksy-type horizontal diffusion only available for LAM/YY'
-         end if
-         return
-      end if
-
-      if ((Hzd_smago_prandtl > 0.) .and. (Hzd_smago_param <= 0.)) then
-         if (lun_out>0) then
-            write (Lun_out, *) 'ABORT: Hzd_smago_param must be set to a positive value', Hzd_smago_param
-         end if
-         return
-      end if
+      if (Hzd_smago_param > 0. .or. Hzd_smago_lnr(2) > 0.) then
+         if (Hzd_smago_lnr(1) > Hzd_smago_lnr(2) .or. Hzd_smago_lnr(1)<0.) Hzd_smago_lnr(1)=Hzd_smago_lnr(2)
+         if (Hzd_smago_lnr(3) < Hzd_smago_lnr(2) .or. Hzd_smago_lnr(3)<0.) Hzd_smago_lnr(3)=Hzd_smago_lnr(2)
+      endif
 
       G_ni  = Grd_ni
       G_nj  = Grd_nj
@@ -253,23 +221,18 @@
       G_niu = G_ni
       G_njv = G_nj - 1
 
-      if (Schm_psadj<0.and.Schm_psadj>3) then
+      G_niu= G_ni - 1
+
+      if ( Schm_psadj<0 .or. Schm_psadj>2 ) then
          if (lun_out>0) write (Lun_out, 9700)
          return
       endif
-      if (Schm_psadj==2.and..not.Schm_source_ps_L) then
-         if (lun_out>0) write (Lun_out, 9701)
-         return
-      endif
 
-      if (G_lam) then
-         G_niu= G_ni - 1
-! Additional temporary check for Schm_psadj>0 in LAM config. 
-         if ( .not.(Grd_yinyang_L) .and. Schm_psadj>0 .and. &
-              .not.(Schm_psadj_lam_L) )then
-            if (lun_out>0) write (Lun_out, 6700) 
-            return
-         endif
+! Additional temporary check for Schm_psadj>0 in ordinary LAM config.
+      if ( .not.(Grd_yinyang_L) .and. Schm_psadj>0 .and. &
+           .not.(Schm_psadj_lam_L) ) then
+         if (lun_out>0) write (Lun_out, 6700)
+         return
       endif
 
 !     Check for open top (piloting and blending)
@@ -287,7 +250,7 @@
 
 !     Check for modified epsilon/ super epsilon
       if ( Cstv_rE_8 /= 1.0d0 ) then
-         if (Cstv_Tstr_8 .lt. 0. ) then
+         if (Cstv_Tstr_8 < 0. ) then
              if (lun_out>0) write (Lun_out, 9680) 'Cstv_rE_8'
             return
          endif
@@ -298,10 +261,8 @@
          endif
       endif
 
-      if ( Cstv_bA_nh_8 .lt. Cstv_bA_8) then
-         Cstv_bA_nh_8=Cstv_bA_8
-      endif
-
+      if ( Cstv_bA_8 < Cstv_bA_m_8)  Cstv_bA_m_8=Cstv_bA_8
+      if ( Cstv_bA_nh_8 < Cstv_bA_8) Cstv_bA_nh_8=Cstv_bA_8
 
 !     Check for incompatible use of IAU and DF
       if (Iau_period > 0. .and. Init_balgm_L) then
@@ -312,38 +273,21 @@
          return
       endif
 
-      !#TODO: check for Iau_ninblocx, Iau_ninblocy compat with topology
+      Schm_testcases_L = Schm_canonical_dcmip_L .or. &
+                         Schm_canonical_williamson_L
 
 !     Some common setups for AUTOBAROTROPIC runs
       if (Schm_autobar_L) then
-         if (lun_out>0) write (Lun_out, 6100)
-         Schm_hydro_L   = .true.
-         if(Williamson_case/=7) Schm_topo_L = .false.
-         if (Williamson_case.eq.3.or.Williamson_case.eq.4) then
-             if (lun_out>0) write (Lun_out, 6300)
-             return
-         endif
-         if (Williamson_case>2.and.Williamson_alpha/=0.) then
-            if (lun_out>0) write (Lun_out, 6400)
-            return
-         endif
-         if (Williamson_case.eq.2.and. Grd_yinyang_L .and. &
-             Williamson_alpha/=0.0 .and. Williamson_alpha/=90.0 ) then
-            if (lun_out>0) write (Lun_out, 6500)
-            return
-         endif
-         Williamson_alpha=Williamson_alpha*(Dcst_pi_8/180.0)
-      endif
-      Tr_2D_3D_L = .FALSE.
-      if (Schm_autobar_L.and.Williamson_case==1) then
-          Tr_2D_3D_L = .TRUE.
-          if (lun_out>0) write (Lun_out, 7021)
+         Schm_hydro_L = .true.
+         call wil_set (Schm_topo_L,Schm_testcases_adv_L,Lun_out,err)
+         if (err < 0) return
+         if (Lun_out>0) write (Lun_out, 6100) Schm_topo_L
       endif
 
       err= 0
       err= min( timestr2step (Init_dfnp, Init_dflength_S, Step_dt), err)
       err= min( timestr2sec  (sec,       Init_dfpl_S,     Step_dt), err)
-      if (err.lt.0) return
+      if (err < 0) return
 
       Init_halfspan = -9999
 
@@ -368,25 +312,36 @@
       endif
 
       if (Lctl_debug_L) then
-         call msg_set_minMessageLevel(MSG_INFOPLUS)
+         call msg_set_minMessageLevel(MSG_INFOPLUS) !#TODO: should it be MSG_DEBUG?
+         call msg_set_can_write(.true.)
 !        istat = gmm_verbosity(GMM_MSG_DEBUG)
 !        istat = wb_verbosity(WB_MSG_DEBUG)
 !        call msg_set_minMessageLevel(MSG_DEBUG)
          call handle_error_setdebug(Lctl_debug_L)
       endif
 
-      if (Hzd_lnr_theta .lt. 0.) then
+      if (Hzd_lnr_theta < 0.) then
          Hzd_lnr_theta = Hzd_lnr
          if (lun_out>0) write (Lun_out, 6200)
       endif
-      if (Hzd_pwr_theta .lt. 0 ) then
-         if ((lun_out>0).and.(Hzd_lnr_theta .gt. 0.)) write (Lun_out, 6201)
+      if (Hzd_pwr_theta < 0 ) then
+         if ((lun_out>0).and.(Hzd_lnr_theta > 0.)) write (Lun_out, 6201)
          Hzd_pwr_theta = Hzd_pwr
       endif
 
       gemdm_config = 1
 
-      Vtopo_L = (Vtopo_ndt .gt. 0)
+      if ( Vtopo_start_S  == '' ) then
+         Vtopo_start = Step_initial
+      else
+         err= min( timestr2step (Vtopo_start,Vtopo_start_S,Step_dt),err)
+      endif
+      if ( Vtopo_length_S  == '' ) then
+         Vtopo_ndt = 0
+      else
+         err= min( timestr2step (Vtopo_ndt,Vtopo_length_S,Step_dt),err)
+      endif
+      Vtopo_L = (Vtopo_ndt > 0)
 
  6005 format (/' Starting time Step_runstrt_S not specified'/)
  6007 format (/X,48('#'),/,2X,'STARTING DATE OF THIS RUN IS : ',a16,/ &
@@ -395,33 +350,24 @@
  6010 format (//'  =============================='/&
                 '  = Leap Years will be ignored ='/&
                 '  =============================='//)
- 6100 format (//'  =============================='/&
-               '  AUTO-BAROTROPIC RUN:          '/&
-                '  Schm_topo_L set to .false. '/&
-                '  =============================='//)
+ 6100 format (//'  =================================='/&
+                '  AUTO-BAROTROPIC RUN: Schm_topo = ',L1,/&
+                '  =================================='//)
  6200 format ( ' Applying DEFAULT FOR THETA HOR. DIFFUSION Hzd_lnr_theta= Hzd_lnr')
  6201 format ( ' Applying DEFAULT FOR THETA HOR. DIFFUSION Hzd_pwr_theta= Hzd_pwr')
- 6300 format (/' Williamson case 3 and 4 are not available'/)
- 6400 format (/' Williamson Alpha(in deg) must be 0.0 for cases greater than 2 '/)
- 6500 format (/' Williamson case 2: Alpha(in deg) must be 0.0 or 90.0 for Grd_yinyang '/)
  6602 format (/' WARNING: Init_dfnp is <= 0; Settings Init_balgm_L=.F.'/)
  6700  format (/'Schm_psadj>0 option in LAM config NOT fully tested yet.'&
                /'To continue using this option confirm your intent with Schm_psadj_lam_L=.true'/)
- 7021 format (//'  ==========================='/&
-                '  ACADEMIC 2D or 3D Advection'/&
-                '  ==========================='//)
  7040 format (/' OPTION Init_balgm_L=.true. NOT AVAILABLE if applying IAU (Iau_period>0)'/)
  8000 format (/,'========= ABORT IN S/R GEMDM_CONFIG ============='/)
  9154 format (/,' Out3_nbitg IS NEGATIVE, VALUE will be set to 16'/)
  9200 format (/'ABORT: WRONG CHOICE OF SOLVER for Helmholtz problem: Sol_type_S =',a/)
  9201 format (/'ABORT: WRONG CHOICE OF PRE-CONDITIONNER FOR 2D ITERATIVE SOLVER: Sol2D_precond_S =',a/)
- 9203 format (/,'ABORT: WRONG CHOICE OF ADVECTION FOR GU: set Schm_adxlegacy_L = .true.'/)
  9570 format (/,'WARNING: Vspng_nk set to zero since top piloting is used'/)
  9580 format (/,'ABORT: Non zero Lam_blend_T cannot be used without top piloting'/)
  9680 format (/,'ABORT: ',a,' cannot be less than 1.0 for T*<0'/)
  9681 format (/,'ABORT: ',a,' cannot be less than 1.0 for OPEN_TOP scheme'/)
  9700 format (/,'ABORT: Schm_psadj not valid'/)
- 9701 format (/,'ABORT: Schm_psadj=2 should be combined with Schm_source_ps_L=T'/)
 !
 !-------------------------------------------------------------------
 !

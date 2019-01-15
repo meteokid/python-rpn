@@ -2,21 +2,28 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/p adv_check_tracers: Check if extended advection operations required 
+!**s/p adv_check_tracers: Check if extended advection operations required
 
       subroutine adv_check_tracers ()
 
+      use adv_options
+      use grid_options
+      use gem_options
+      use glb_ld
+      use lun
+      use tr3d
+      use tracers
       implicit none
 
 #include <arch_specific.hf>
@@ -25,15 +32,8 @@
 
       !@revisions
       ! v4_80 - Tanguay M.        - GEM4 Mass-Conservation
-      ! v4_87 - Tanguay M.        - Add Tr_scaling and Schm_dry_mixing_ratio
+      ! v5_00 - Tanguay M.        - Add Tr_scaling and Schm_dry_mixing_ratio
 
-#include "tr3d.cdk"
-#include "tracers.cdk"
-#include "adv_nml.cdk"
-#include "glb_ld.cdk"
-#include "grd.cdk"
-#include "schm.cdk"
-#include "lun.cdk"
 
       !---------------------------------------------------------------------
       integer n
@@ -51,7 +51,7 @@
       Tr_flux_L  = .false.
       Tr_slice_L = .false.
 
-      if (Schm_psadj>0.and.G_lam.and..not.Grd_yinyang_L) Tr_flux_L = .true. !PSADJ (FLUX) 
+      if (Schm_psadj>0.and..not.Grd_yinyang_L) Tr_flux_L = .true. !PSADJ (FLUX)
 
       Tr_scaling = Adv_scaling
 
@@ -59,10 +59,10 @@
 
       do n=1,Tr3d_ntr
 
-         if (G_lam.and..not.Grd_yinyang_L) then !LAM
+         if (.not.Grd_yinyang_L) then !LAM
 
-            if (Tr3d_mass(n)==1) Tr_flux_L  = .true. !BC (FLUX)   
-            if (Tr3d_mass(n)==2) Tr_slice_L = .true. !SLICE 
+            if (Tr3d_mass(n)==1) Tr_flux_L  = .true. !BC (FLUX)
+            if (Tr3d_mass(n)==2) Tr_slice_L = .true. !SLICE
 
          endif
 
@@ -77,7 +77,7 @@
          write(Lun_out,*) 'ADV_CHECK_EXT: EXTENDED ADVECTION OPERATIONS REQUIRED'
          write(Lun_out,*) ''
       endif
- 
+
       !If not initialized by namelist adv_cfgs
       !---------------------------------------
       if (adv_pil_sub_s == -1) then
