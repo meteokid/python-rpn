@@ -108,7 +108,7 @@
 
  rad_esfc=T,
 
- input_type_ = 'DIST'
+ input_type = 'DIST'
 /
 
 &convection_cfgs
