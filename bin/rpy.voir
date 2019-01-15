@@ -1,0 +1,65 @@
+#!/usr/bin/env python
+#!/usr/bin/env python2
+# -*- coding: utf-8 -*-
+import optparse,sys,re
+import rpnpy.librmn.all as rmn
+# Author: Stephane Chamberland <stephane.chamberland@canada.ca>
+# Copyright: LGPL 2.1
+
+if __name__ == "__main__":
+    
+    # Command line arguments
+    desc="Print list of record header in an RMN Std file"
+    usage = """
+    %prog -i filename
+    %prog -i filename -n
+    %prog -i filename --newstyle
+    %prog -i filename -s "NINJNK+DATEV+LEVEL+IP1+GRIDINFO"
+    %prog -i filename --style="NINJNK+DATEV+LEVEL+IP1+GRIDINFO"
+
+    Accepted values for style ('+' separated):
+        NONOMV, NOTYPV, NOETIQ,
+        NINJNK, DATEO, DATESTAMPO,
+        DATEV, LEVEL, IPALL, IP1,
+        NOIP23, NODEET, NONPAS, NODTY,
+        GRIDINFO
+
+    Default Style  = 'NINJNK+DATEO+IP1+IG1234'
+    New Style (-n) = 'NINJNK+DATEV+LEVEL+IP1+GRIDINFO'
+
+    """
+    parser = optparse.OptionParser(usage=usage,description=desc)
+    parser.add_option("-n","--newstyle",dest="newstyle",action="store_true",
+                      help="Print in newstyle (--style='NINJNK+DATEV+LEVEL+IP1+GRIDINFO')")
+    parser.add_option("-s","--style",dest="style",default=None,
+                      help="Print style, e.g: --style='NINJNK+DATEV+LEVEL+IP1+GRIDINFO'")
+    parser.add_option("-i","--filename",dest="filename",default=None,
+                      help="RPN Std File name")
+    (options,args) = parser.parse_args()
+    if (not options.filename):
+        parser.print_help()
+        sys.exit(1)   
+
+    printoptions = 'NINJNK+DATEO+IP1+IG1234'
+    if options.newstyle:
+        printoptions = 'NINJNK+DATEV+LEVEL+IP1+GRIDINFO'
+    if not options.style is None:
+        printoptions = options.style
+
+    try:
+        iunit = rmn.fstopenall(options.filename)
+    except:
+        sys.stderr.write('ERROR: Problem opening the file: %s\n' % (options.filename))
+        sys.exit(1)
+    if not iunit:
+        sys.stderr.write('ERROR: File not found or not readable: %s\n' % (options.filename))
+        sys.exit(1)
+    try:
+        rmn.fstvoi(iunit,printoptions)
+    except:
+        sys.stderr.write('ERROR: Unknown problem while running fstvoi on file: %s\n' % (options.filename))
+    rmn.fstcloseall(iunit)
+
+# -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
+# vim: set expandtab ts=4 sw=4:
+# kate: space-indent on; indent-mode cstyle; indent-width 4; mixedindent off;

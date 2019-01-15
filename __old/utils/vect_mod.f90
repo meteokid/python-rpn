@@ -1,0 +1,658 @@
+!--------------------------------------------------------------------------
+! This is free software, you can use/redistribute/modify it under the terms of
+! the EC-RPN License v2 or any later version found (if not provided) at:
+! - http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
+! - EC-RPN License, 2121 TransCanada, suite 500, Dorval (Qc), CANADA, H9P 1J3
+! - service.rpn@ec.gc.ca
+! It is distributed WITHOUT ANY WARRANTY of FITNESS FOR ANY PARTICULAR PURPOSE.
+!-------------------------------------------------------------------------- 
+!/**
+module vect_mod
+   implicit none
+   private
+   
+   
+   public :: dble, sngl, vect_norm, vect_normalize,vect_area,vect_normal2edge,vect_car2sph,vect_car2sphd,vect_stats
+   public :: assignment(=),operator(+),operator(-),operator(*),operator(/),operator(.DOT.),operator(.X.)
+   
+   
+   
+   
+!**/
+!/**
+!@objective Provide basic set of constants and interfaces to librmn fn
+!**/
+!- STATUS
+!- BIT(FLAGS) OPERATIONS [flag = 2^n !single bit ; flags = sum(flag1,flag2...)]
+include "rmnlib_basics.inc"
+   integer,public, parameter :: V_X = 1
+   integer,public, parameter :: V_Y = 2
+   integer,public, parameter :: V_Z = 3
+   integer,public, parameter :: V_LMB = 1
+   integer,public, parameter :: V_PHI = 2
+   integer,public, parameter :: V_RAY = 3
+   
+   type,public :: vect_3d
+      sequence
+      real :: v(3)
+   end type vect_3d
+   type,public :: vect_2d
+      sequence
+      real :: v(2)
+   end type vect_2d
+   type,public :: vect_3d_8
+      sequence
+      real(RDOUBLE) :: v(3)
+   end type vect_3d_8
+   type,public :: vect_2d_8
+      sequence
+      real(RDOUBLE) :: v(2)
+   end type vect_2d_8
+   
+   
+   interface dble
+      module procedure dble_2d
+      module procedure dble_3d
+   end interface
+   interface sngl
+      module procedure sngl_2d
+      module procedure sngl_3d
+   end interface
+   interface assignment(=)
+      module procedure scalar_2_vect_2d
+      module procedure scalar_2_vect_3d
+      module procedure scalar_2_vect_2d_8
+      module procedure scalar_2_vect_3d_8
+!!$      module procedure array_2_vect_2d
+!!$      module procedure vect_2_array_2d
+!!$      module procedure array_2_vect_2d_8
+!!$      module procedure vect_2_array_2d_8
+!!$      module procedure array_2_vect_3d
+!!$      module procedure vect_2_array_3d
+!!$      module procedure array_2_vect_3d_8
+!!$      module procedure vect_2_array_3d_8
+      module procedure to_3d
+      module procedure to_3d_8
+   end interface
+   interface operator(+)
+      module procedure vect_add_2d
+      module procedure vect_add_3d
+      module procedure vect_add_2d_8
+      module procedure vect_add_3d_8
+   end interface
+   interface operator(-)
+      module procedure vect_sub_2d
+      module procedure vect_sub_3d
+      module procedure vect_sub_2d_8
+      module procedure vect_sub_3d_8
+   end interface
+   interface operator(/)
+      module procedure vect_div_scalar_2d
+      module procedure vect_div_scalar_3d
+      module procedure vect_div_scalar_2d_8
+      module procedure vect_div_scalar_3d_8
+   end interface
+   interface operator(*)
+      module procedure vect_mul_scalar_2d
+      module procedure vect_mul_scalar_3d
+      module procedure vect_mul_scalar_2d_8
+      module procedure vect_mul_scalar_3d_8
+      module procedure vect_mul_scalar2_2d
+      module procedure vect_mul_scalar2_3d
+      module procedure vect_mul_scalar2_2d_8
+      module procedure vect_mul_scalar2_3d_8
+   end interface
+   interface operator(.DOT.)
+      module procedure vect_dot_2d
+      module procedure vect_dot_3d
+      module procedure vect_dot_2d_8
+      module procedure vect_dot_3d_8
+   end interface
+   interface operator(.X.)
+      module procedure vect_cross_2d
+      module procedure vect_cross_3d
+      module procedure vect_cross_2d_8
+      module procedure vect_cross_3d_8
+   end interface
+   interface vect_norm
+      module procedure vect_norm_2d
+      module procedure vect_norm_3d
+      module procedure vect_norm_2d_8
+      module procedure vect_norm_3d_8
+   end interface
+   interface vect_normalize
+      module procedure vect_normalize_2d
+      module procedure vect_normalize_3d
+      module procedure vect_normalize_2d_8
+      module procedure vect_normalize_3d_8
+   end interface
+   interface vect_area
+      module procedure vect_area_2d
+      module procedure vect_area_2d_8
+      module procedure vect_area_3d
+      module procedure vect_area_3d_8
+   end interface
+   interface vect_normal2edge
+      module procedure vect_normal2edge_3d
+      module procedure vect_normal2edge_3d_8
+      module procedure vect_normal2edge_sph
+      module procedure vect_normal2edge_sph_8
+   end interface
+   interface vect_car2sph
+      module procedure vect_car2sph_3d
+      module procedure vect_car2sph_3d_8
+   end interface
+   interface vect_car2sphd
+      module procedure vect_car2sphd_3d
+      module procedure vect_car2sphd_3d_8
+   end interface
+   interface vect_stats
+      module procedure vect_3d_stats_3d
+   end interface
+contains
+   
+   subroutine scalar_2_vect_2d(r,s)
+      type(vect_2d), intent(out) :: r
+      real, intent(in) :: s
+      r%v = s
+   end subroutine scalar_2_vect_2d
+   subroutine scalar_2_vect_3d(r,s)
+      type(vect_3d), intent(out) :: r
+      real, intent(in) :: s
+      r%v = s
+   end subroutine scalar_2_vect_3d
+   subroutine scalar_2_vect_2d_8(r,s)
+      type(vect_2d_8), intent(out) :: r
+      real(RDOUBLE), intent(in) :: s
+      r%v = s
+   end subroutine scalar_2_vect_2d_8
+   subroutine scalar_2_vect_3d_8(r,s)
+      type(vect_3d_8), intent(out) :: r
+      real(RDOUBLE), intent(in) :: s
+      r%v = s
+   end subroutine scalar_2_vect_3d_8
+   function dble_3d(a) result(r_8)
+      type(vect_3d_8) :: r_8
+      type(vect_3d), intent(in)  :: a
+      r_8%v(1) = dble(a%v(1))
+      r_8%v(2) = dble(a%v(2))
+      r_8%v(3) = dble(a%v(3))
+   end function dble_3d
+   function dble_2d(a) result(r_8)
+      type(vect_2d_8) :: r_8
+      type(vect_2d), intent(in)  :: a
+      r_8%v(1) = dble(a%v(1))
+      r_8%v(2) = dble(a%v(2))
+   end function dble_2d
+   function sngl_3d(a_8) result(r)
+      type(vect_3d) :: r
+      type(vect_3d_8), intent(in)  :: a_8
+      r%v(1) = real(a_8%v(1))
+      r%v(2) = real(a_8%v(2))
+      r%v(3) = real(a_8%v(3))
+   end function sngl_3d
+   function sngl_2d(a_8) result(r)
+      type(vect_2d) :: r
+      type(vect_2d_8), intent(in)  :: a_8
+      r%v(1) = real(a_8%v(1))
+      r%v(2) = real(a_8%v(2))
+   end function sngl_2d
+   subroutine to_3d(r,a)
+      type(vect_3d), intent(out) :: r
+      type(vect_2d), intent(in)  :: a
+      r%v(1) = a%v(1)
+      r%v(2) = a%v(2)
+      r%v(3) = 0.
+   end subroutine to_3d
+   subroutine to_3d_8(r_8,a_8)
+      type(vect_3d_8), intent(out) :: r_8
+      type(vect_2d_8), intent(in)  :: a_8
+      r_8%v(1) = a_8%v(1)
+      r_8%v(2) = a_8%v(2)
+      r_8%v(3) = 0.D0
+   end subroutine to_3d_8
+   
+   
+   
+   
+   function vect_add_2d(a,b) result(r)
+      type(vect_2d) :: r
+      type(vect_2d), intent(in)  :: a,b
+      r%v(1) = a%v(1) + b%v(1)
+      r%v(2) = a%v(2) + b%v(2)
+   end function vect_add_2d
+   function vect_add_3d(a,b) result(r)
+      type(vect_3d) :: r
+      type(vect_3d), intent(in)  :: a,b
+      r%v(1) = a%v(1) + b%v(1)
+      r%v(2) = a%v(2) + b%v(2)
+      r%v(3) = a%v(3) + b%v(3)
+   end function vect_add_3d
+   function vect_add_2d_8(a_8,b_8) result(r_8)
+      type(vect_2d_8) :: r_8
+      type(vect_2d_8), intent(in)  :: a_8,b_8
+      r_8%v(1) = a_8%v(1) + b_8%v(1)
+      r_8%v(2) = a_8%v(2) + b_8%v(2)
+   end function vect_add_2d_8
+   function vect_add_3d_8(a_8,b_8) result(r_8)
+      type(vect_3d_8) :: r_8
+      type(vect_3d_8), intent(in)  :: a_8,b_8
+      r_8%v(1) = a_8%v(1) + b_8%v(1)
+      r_8%v(2) = a_8%v(2) + b_8%v(2)
+      r_8%v(3) = a_8%v(3) + b_8%v(3)
+   end function vect_add_3d_8
+   function vect_sub_2d(a,b) result(r)
+      type(vect_2d) :: r
+      type(vect_2d), intent(in)  :: a,b
+      r%v(1) = a%v(1) - b%v(1)
+      r%v(2) = a%v(2) - b%v(2)
+   end function vect_sub_2d
+   function vect_sub_3d(a,b) result(r)
+      type(vect_3d) :: r
+      type(vect_3d), intent(in)  :: a,b
+      r%v(1) = a%v(1) - b%v(1)
+      r%v(2) = a%v(2) - b%v(2)
+      r%v(3) = a%v(3) - b%v(3)
+   end function vect_sub_3d
+   function vect_sub_2d_8(a_8,b_8) result(r_8)
+      type(vect_2d_8) :: r_8
+      type(vect_2d_8), intent(in)  :: a_8,b_8
+      r_8%v(1) = a_8%v(1) - b_8%v(1)
+      r_8%v(2) = a_8%v(2) - b_8%v(2)
+   end function vect_sub_2d_8
+   function vect_sub_3d_8(a_8,b_8) result(r_8)
+      type(vect_3d_8) :: r_8
+      type(vect_3d_8), intent(in)  :: a_8,b_8
+      r_8%v(1) = a_8%v(1) - b_8%v(1)
+      r_8%v(2) = a_8%v(2) - b_8%v(2)
+      r_8%v(3) = a_8%v(3) - b_8%v(3)
+   end function vect_sub_3d_8
+   function vect_div_scalar_2d(a,s) result(r)
+      type(vect_2d) :: r
+      type(vect_2d), intent(in)  :: a
+      real, intent(in) :: s
+      r%v(1) = a%v(1) / s
+      r%v(2) = a%v(2) / s
+   end function vect_div_scalar_2d
+   function vect_div_scalar_3d(a,s) result(r)
+      type(vect_3d) :: r
+      type(vect_3d), intent(in)  :: a
+      real, intent(in) :: s
+      r%v(1) = a%v(1) / s
+      r%v(2) = a%v(2) / s
+      r%v(3) = a%v(3) / s
+   end function vect_div_scalar_3d
+   function vect_div_scalar_2d_8(a_8,s_8) result(r_8)
+      type(vect_2d_8) :: r_8
+      type(vect_2d_8), intent(in)  :: a_8
+      real(RDOUBLE), intent(in) :: s_8
+      r_8%v(1) = a_8%v(1) / s_8
+      r_8%v(2) = a_8%v(2) / s_8
+   end function vect_div_scalar_2d_8
+   function vect_div_scalar_3d_8(a_8,s_8) result(r_8)
+      type(vect_3d_8) :: r_8
+      type(vect_3d_8), intent(in)  :: a_8
+      real(RDOUBLE), intent(in) :: s_8
+      r_8%v(1) = a_8%v(1) / s_8
+      r_8%v(2) = a_8%v(2) / s_8
+      r_8%v(3) = a_8%v(3) / s_8
+   end function vect_div_scalar_3d_8
+   function vect_mul_scalar_2d(a,s) result(r)
+      type(vect_2d) :: r
+      type(vect_2d), intent(in)  :: a
+      real, intent(in) :: s
+      r%v(1) = a%v(1) * s
+      r%v(2) = a%v(2) * s
+   end function vect_mul_scalar_2d
+   function vect_mul_scalar_3d(a,s) result(r)
+      type(vect_3d) :: r
+      type(vect_3d), intent(in)  :: a
+      real, intent(in) :: s
+      r%v(1) = a%v(1) * s
+      r%v(2) = a%v(2) * s
+      r%v(3) = a%v(3) * s
+   end function vect_mul_scalar_3d
+   function vect_mul_scalar_2d_8(a_8,s_8) result(r_8)
+      type(vect_2d_8) :: r_8
+      type(vect_2d_8), intent(in)  :: a_8
+      real(RDOUBLE), intent(in) :: s_8
+      r_8%v(1) = a_8%v(1) * s_8
+      r_8%v(2) = a_8%v(2) * s_8
+   end function vect_mul_scalar_2d_8
+   function vect_mul_scalar_3d_8(a_8,s_8) result(r_8)
+      type(vect_3d_8) :: r_8
+      type(vect_3d_8), intent(in)  :: a_8
+      real(RDOUBLE), intent(in) :: s_8
+      r_8%v(1) = a_8%v(1) * s_8
+      r_8%v(2) = a_8%v(2) * s_8
+      r_8%v(3) = a_8%v(3) * s_8
+   end function vect_mul_scalar_3d_8
+   function vect_mul_scalar2_2d(s,a) result(r)
+      type(vect_2d) :: r
+      type(vect_2d), intent(in)  :: a
+      real, intent(in) :: s
+      r%v(1) = a%v(1) * s
+      r%v(2) = a%v(2) * s
+   end function vect_mul_scalar2_2d
+   function vect_mul_scalar2_3d(s,a) result(r)
+      type(vect_3d) :: r
+      type(vect_3d), intent(in)  :: a
+      real, intent(in) :: s
+      r%v(1) = a%v(1) * s
+      r%v(2) = a%v(2) * s
+      r%v(3) = a%v(3) * s
+   end function vect_mul_scalar2_3d
+   function vect_mul_scalar2_2d_8(s_8,a_8) result(r_8)
+      type(vect_2d_8) :: r_8
+      type(vect_2d_8), intent(in)  :: a_8
+      real(RDOUBLE), intent(in) :: s_8
+      r_8%v(1) = a_8%v(1) * s_8
+      r_8%v(2) = a_8%v(2) * s_8
+   end function vect_mul_scalar2_2d_8
+   function vect_mul_scalar2_3d_8(s_8,a_8) result(r_8)
+      type(vect_3d_8) :: r_8
+      type(vect_3d_8), intent(in)  :: a_8
+      real(RDOUBLE), intent(in) :: s_8
+      r_8%v(1) = a_8%v(1) * s_8
+      r_8%v(2) = a_8%v(2) * s_8
+      r_8%v(3) = a_8%v(3) * s_8
+   end function vect_mul_scalar2_3d_8
+   function vect_dot_2d(a,b) result(r)
+      real :: r
+      type(vect_2d), intent(in)  :: a,b
+      r = a%v(1)*b%v(1) + a%v(2)*b%v(2)
+   end function vect_dot_2d
+   function vect_dot_3d(a,b) result(r)
+      real :: r
+      type(vect_3d), intent(in)  :: a,b
+      r = a%v(1)*b%v(1) + a%v(2)*b%v(2) + a%v(3)*b%v(3)
+   end function vect_dot_3d
+   function vect_dot_2d_8(a_8,b_8) result(r_8)
+      real(RDOUBLE) :: r_8
+      type(vect_2d_8), intent(in)  :: a_8,b_8
+      r_8 = a_8%v(1)*b_8%v(1) + a_8%v(2)*b_8%v(2)
+   end function vect_dot_2d_8
+   function vect_dot_3d_8(a_8,b_8) result(r_8)
+      real(RDOUBLE) :: r_8
+      type(vect_3d_8), intent(in)  :: a_8,b_8
+      r_8 = a_8%v(1)*b_8%v(1) + a_8%v(2)*b_8%v(2) + a_8%v(3)*b_8%v(3)
+   end function vect_dot_3d_8
+   function vect_cross_2d(a,b) result(r)
+      type(vect_3d) :: r
+      type(vect_2d), intent(in)  :: a,b
+      r%v(V_X) = 0.
+      r%v(V_Y) = 0.
+      r%v(V_Z) = a%v(V_X)*b%v(V_Y) -  a%v(V_Y)*b%v(V_X)
+   end function vect_cross_2d
+   function vect_cross_3d(a,b) result(r)
+      type(vect_3d) :: r
+      type(vect_3d), intent(in)  :: a,b
+      r%v(V_X) = a%v(V_Y)*b%v(V_Z) -  a%v(V_Z)*b%v(V_Y)
+      r%v(V_Y) = a%v(V_Z)*b%v(V_X) -  a%v(V_X)*b%v(V_Z)
+      r%v(V_Z) = a%v(V_X)*b%v(V_Y) -  a%v(V_Y)*b%v(V_X)
+   end function vect_cross_3d
+   function vect_cross_2d_8(a_8,b_8) result(r_8)
+      type(vect_3d_8) :: r_8
+      type(vect_2d_8), intent(in)  :: a_8,b_8
+      r_8%v(V_X) = 0.D0
+      r_8%v(V_Y) = 0.D0
+      r_8%v(V_Z) = a_8%v(V_X)*b_8%v(V_Y) -  a_8%v(V_Y)*b_8%v(V_X)
+   end function vect_cross_2d_8
+   function vect_cross_3d_8(a_8,b_8) result(r_8)
+      type(vect_3d_8) :: r_8
+      type(vect_3d_8), intent(in)  :: a_8,b_8
+      r_8%v(V_X) = a_8%v(V_Y)*b_8%v(V_Z) -  a_8%v(V_Z)*b_8%v(V_Y)
+      r_8%v(V_Y) = a_8%v(V_Z)*b_8%v(V_X) -  a_8%v(V_X)*b_8%v(V_Z)
+      r_8%v(V_Z) = a_8%v(V_X)*b_8%v(V_Y) -  a_8%v(V_Y)*b_8%v(V_X)
+   end function vect_cross_3d_8
+   function vect_norm_2d(a) result(r)
+      real :: r
+      type(vect_2d), intent(in)  :: a
+      r = sqrt(a%v(V_X)*a%v(V_X) + a%v(V_Y)*a%v(V_Y))
+   end function vect_norm_2d
+   function vect_norm_3d(a) result(r)
+      real :: r
+      type(vect_3d), intent(in)  :: a
+      r = sqrt(a%v(V_X)*a%v(V_X) + a%v(V_Y)*a%v(V_Y) + a%v(V_Z)*a%v(V_Z))
+   end function vect_norm_3d
+   function vect_norm_2d_8(a_8) result(r_8)
+      real(RDOUBLE) :: r_8
+      type(vect_2d_8), intent(in)  :: a_8
+      r_8 = dsqrt(a_8%v(V_X)*a_8%v(V_X) + a_8%v(V_Y)*a_8%v(V_Y))
+   end function vect_norm_2d_8
+   function vect_norm_3d_8(a_8) result(r_8)
+      real(RDOUBLE) :: r_8
+      type(vect_3d_8), intent(in)  :: a_8
+      r_8 = dsqrt(a_8%v(V_X)*a_8%v(V_X) + a_8%v(V_Y)*a_8%v(V_Y) + a_8%v(V_Z)*a_8%v(V_Z))
+   end function vect_norm_3d_8
+   function vect_normalize_2d(a) result(r)
+      type(vect_2d) :: r
+      type(vect_2d), intent(in)  :: a
+      real :: norm
+      norm = vect_norm(a)
+      if (norm > 0.) then
+         r = a / norm
+      else
+         r = a
+      endif
+   end function vect_normalize_2d
+   function vect_normalize_3d(a) result(r)
+      type(vect_3d) :: r
+      type(vect_3d), intent(in)  :: a
+      real :: norm
+      norm = vect_norm(a)
+      if (norm > 0.) then
+         r = a / norm
+      else
+         r = a
+      endif
+   end function vect_normalize_3d
+   function vect_normalize_2d_8(a_8) result(r_8)
+      type(vect_2d_8) :: r_8
+      type(vect_2d_8), intent(in)  :: a_8
+      real(RDOUBLE) :: norm_8
+      norm_8 = vect_norm(a_8)
+      if (norm_8 > 0.D0) then
+         r_8 = a_8/ norm_8
+      else
+         r_8 = a_8
+      endif
+   end function vect_normalize_2d_8
+   function vect_normalize_3d_8(a_8) result(r_8)
+      type(vect_3d_8) :: r_8
+      type(vect_3d_8), intent(in)  :: a_8
+      real(RDOUBLE) :: norm_8
+      norm_8 = vect_norm(a_8)
+      if (norm_8 > 0.D0) then
+         r_8 = a_8 / norm_8
+      else
+         r_8 = a_8
+      endif
+   end function vect_normalize_3d_8
+   
+   
+   
+   
+   
+   
+   
+   
+   
+!!$   function edge_center_3d(a,b) result(r)
+!!$      type(vect_3d), intent(in)  :: a,b
+!!$      type(vect_3d) :: r
+!!$      r = 0.5 * (a + b)
+!!$   end function edge_center_3d
+!!$
+!!$   function edge_center_3d_8(a,b) result(r)
+!!$      type(vect_3d_8), intent(in)  :: a,b
+!!$      type(vect_3d_8) :: r
+!!$      r = 0.5D0 * (a + b)
+!!$   end function edge_center_3d_8
+!!$
+!!$
+!!$
+!!$   function tri_center_3d(a,b,c) result(r)
+!!$      type(vect_3d), intent(in)  :: a,b,c
+!!$      type(vect_3d) :: r
+!!$      r = (a + b + c)/3.
+!!$   end function tri_center_3d
+!!$
+!!$   function tri_center_3d_8(a,b,c) result(r)
+!!$      type(vect_3d_8), intent(in)  :: a,b,c
+!!$      type(vect_3d_8) :: r
+!!$      r = (a + b + c)/3.D0
+!!$   end function tri_center_3d_8
+   function vect_area_2d(a,b,c) result(r)
+      type(vect_2d), intent(in)  :: a,b,c
+      real :: r
+      r = 0.5 * vect_norm((b-a).X.(c-a))
+   end function vect_area_2d
+   function vect_area_2d_8(a,b,c) result(r)
+      type(vect_2d_8), intent(in)  :: a,b,c
+      real(RDOUBLE) :: r
+      r = 0.5D0 * vect_norm((b-a).X.(c-a))
+   end function vect_area_2d_8
+   function vect_area_3d(a,b,c) result(r)
+      type(vect_3d), intent(in)  :: a,b,c
+      real :: r
+      r = 0.5 * vect_norm((b-a).X.(c-a))
+   end function vect_area_3d
+   function vect_area_3d_8(a,b,c) result(r)
+      type(vect_3d_8), intent(in)  :: a,b,c
+      real(RDOUBLE) :: r
+      r = 0.5D0 * vect_norm((b-a).X.(c-a))
+   end function vect_area_3d_8
+   function vect_normal2edge_3d(a,b,c) result(r)
+      type(vect_3d), intent(in)  :: a,b,c
+      type(vect_3d) :: r
+      r = 0.5*(b+c) - a
+   end function vect_normal2edge_3d
+   function vect_normal2edge_3d_8(a,b,c) result(r)
+      type(vect_3d_8), intent(in)  :: a,b,c
+      type(vect_3d_8) :: r
+      r = 0.5D0*(b+c) - a
+   end function vect_normal2edge_3d_8
+   function vect_normal2edge_sph(a,b,c,norm) result(r)
+      real, intent(in):: norm
+      type(vect_3d), intent(in)  :: a,b,c
+      type(vect_3d) :: r
+      r = norm*vect_normalize(0.5*(b+c)) - a
+   end function vect_normal2edge_sph
+   function vect_normal2edge_sph_8(a,b,c,norm) result(r)
+      real(RDOUBLE), intent(in):: norm
+      type(vect_3d_8), intent(in)  :: a,b,c
+      type(vect_3d_8) :: r
+      r = norm*vect_normalize(0.5D0*(b+c)) - a
+   end function vect_normal2edge_sph_8
+   function vect_car2sph_3d(ac) result(as)
+      
+      
+      
+      type(vect_3d), intent(in)  :: ac
+      type(vect_3d) :: as
+      real(RDOUBLE) :: r_8
+      r_8 = dsqrt( &
+           dble(ac%v(V_X))*dble(ac%v(V_X)) + &
+           dble(ac%v(V_Y))*dble(ac%v(V_Y)) + &
+           dble(ac%v(V_Z))*dble(ac%v(V_Z)) )
+      as%v(V_LMB) = real(atan2(dble(ac%v(V_Y)),dble(ac%v(V_X))))
+      as%v(V_PHI) = real(asin(dble(ac%v(V_Z))/r_8))
+      as%v(V_RAY) = real(r_8)
+   end function vect_car2sph_3d
+   function vect_car2sph_3d_8(ac) result(as)
+      
+      
+      
+      type(vect_3d_8), intent(in)  :: ac
+      type(vect_3d_8) :: as
+      real(RDOUBLE) :: r_8
+      r_8 = dsqrt( &
+           ac%v(V_X)*ac%v(V_X) + &
+           ac%v(V_Y)*ac%v(V_Y) + &
+           ac%v(V_Z)*ac%v(V_Z) )
+      as%v(V_LMB) = atan2(ac%v(V_Y),ac%v(V_X))
+      as%v(V_PHI) = asin(ac%v(V_Z)/r_8)
+      as%v(V_RAY) = r_8
+   end function vect_car2sph_3d_8
+   function vect_car2sphd_3d(ac) result(as)
+      
+      
+      
+      
+      type(vect_3d), intent(in)  :: ac
+      type(vect_3d) :: as
+      real(RDOUBLE) :: r_8,pi_8,rad2deg_8
+      pi_8 = dacos(-1.D0)
+      rad2deg_8 = 180.D0 / pi_8
+      r_8 = dsqrt( &
+           dble(ac%v(V_X))*dble(ac%v(V_X)) + &
+           dble(ac%v(V_Y))*dble(ac%v(V_Y)) + &
+           dble(ac%v(V_Z))*dble(ac%v(V_Z)) )
+      as%v(V_LMB) = real(rad2deg_8 * atan2(dble(ac%v(V_Y)),dble(ac%v(V_X))))
+      as%v(V_PHI) = real(rad2deg_8 * asin(dble(ac%v(V_Z))/r_8))
+      as%v(V_RAY) = real(r_8)
+   end function vect_car2sphd_3d
+   function vect_car2sphd_3d_8(ac) result(as)
+      
+      
+      
+      
+      type(vect_3d_8), intent(in)  :: ac
+      type(vect_3d_8) :: as
+      real(RDOUBLE) :: r_8,pi_8,rad2deg_8
+      pi_8 = dacos(-1.D0)
+      rad2deg_8 = 180.D0 / pi_8
+      r_8 = dsqrt( &
+           ac%v(V_X)*ac%v(V_X) + &
+           ac%v(V_Y)*ac%v(V_Y) + &
+           ac%v(V_Z)*ac%v(V_Z) )
+      as%v(V_LMB) = rad2deg_8 * atan2(ac%v(V_Y),ac%v(V_X))
+      as%v(V_PHI) = rad2deg_8 * asin(ac%v(V_Z)/r_8)
+      as%v(V_RAY) = r_8
+   end function vect_car2sphd_3d_8
+!!$   function vect_sph2car_3d(as) result(ac)
+!!$      !http://en.wikipedia.org/wiki/Geographic_coordinate_system
+!!$      !lmb: Longitude- angle in the x-y plane between x-axis and vector
+!!$      !phi: Latitude - angle between x-y plane and vector
+!!$      type(vect_3d), intent(in)  :: as
+!!$      type(vect_3d) :: ac
+!!$      real(RDOUBLE) :: theta_8
+!!$      theta_8 = dacos(-1.D0)/2.D0 - dble(as%v(V_PHI))
+!!$      ac%v(V_X) = real(dble(as%v(V_RAY))*sin(theta_8)*cos(dble(as%v(V_LMB))))
+!!$      ac%v(V_Y) = real(dble(as%v(V_RAY))*sin(theta_8)*sin(dble(as%v(V_LMB))))
+!!$      ac%v(V_Z) = real(dble(as%v(V_RAY))*cos(theta_8))
+!!$   end function vect_sph2car_3d
+!!$
+!!$
+!!$   function vect_sph2car_3d_8(as) result(ac)
+!!$      !http://en.wikipedia.org/wiki/Geographic_coordinate_system
+!!$      !lmb: Longitude- angle in the x-y plane between x-axis and vector
+!!$      !phi: Latitude - angle between x-y plane and vector
+!!$      type(vect_3d_8), intent(in)  :: as
+!!$      type(vect_3d_8) :: ac
+!!$      real(RDOUBLE)   :: theta_8
+!!$      theta_8 = dacos(-1.D0)/2.D0 - as%v(V_PHI)
+!!$      ac%v(V_X) = real(as%v(V_RAY)*sin(theta_8)*cos(as%v(V_LMB)))
+!!$      ac%v(V_Y) = real(as%v(V_RAY)*sin(theta_8)*sin(as%v(V_LMB)))
+!!$      ac%v(V_Z) = real(as%v(V_RAY)*cos(theta_8))
+!!$   end function vect_sph2car_3d_8
+   subroutine vect_3d_stats_3d(minv,maxv,v,mini,maxi,minj,maxj,nk)
+      integer, intent(in) :: mini,maxi,minj,maxj,nk
+      type(vect_3d),pointer :: v(:,:,:)
+      real,intent(out) :: minv, maxv
+      real :: v2
+      integer :: i,j,k
+      minv = vect_norm(v(mini,minj,1))
+      maxv = minv
+      do k=1,nk
+         do j=minj,maxj
+            do i=mini,maxi
+               v2 = vect_norm(v(i,j,k))
+               minv = min(minv,v2)
+               maxv = max(maxv,v2)
+            enddo
+         enddo
+      enddo
+   end subroutine vect_3d_stats_3d
+end module vect_mod
