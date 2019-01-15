@@ -49,6 +49,7 @@ module sfc_options
    real              :: delt       = 0.
    logical           :: do_surface = .false.
    character(len=16) :: fluvert    = 'NIL'
+   integer           :: kntveg     = -1
    character(len=16) :: radia      = 'NIL'
    logical           :: radslope   = .false.
 
@@ -196,6 +197,10 @@ module sfc_options
    !# Height (m) of wind input for sfc fluxes calc.
    real              :: zua         = -1.
    namelist /surface_cfgs/ zua
+
+   !# Time between re-reading vegetation fields according to Julien day (units D,H,M,S,P)
+   character(len=16) :: kntveg_S     = ''
+   namelist /surface_cfgs/ kntveg_S
 
 
 contains

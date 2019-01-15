@@ -26,7 +26,7 @@
       INTEGER NSURF,NPROF
       CHARACTER *(*) SURFACE(*),PROFILS(*)
       CHARACTER NOMVAR*4,ETIKET*12
-      INTEGER   NK,NKM1,NT,NUM,IUN,IECR
+      INTEGER   nk,NT,NUM,IUN,IECR
       REAL      STORE(*),DLAT,DLON,H0
       REAL      DIAGNOS(NK,NT),VS(NT,*),VV(NK,NT,*)
       INTEGER   DATE,DEET,FSTECR
@@ -53,6 +53,7 @@
 ! 009      B. Bilodeau (Mar 2007) - Compression
 ! 010      R. McTaggart-Cowan (
 ! 011      L. Spacek   (Oct 2010) - Profils limited to nk-1 levels
+! 012      V. Lee (Jan 2018) - ser_write defines NK so no need to limit here.
 !
 !Object
 !          to write the time-series for one point in a standard file
@@ -114,14 +115,10 @@ include "thermoconsts.inc"
 include "dintern.inc"
 include "fintern.inc"
 !
-! N.B. Profils are strictly limited to nk-1 levels independently
-! of what has been declared in the model run
-      If(.true.) Then
-        nkm1=nk-1
-      Else
-        nkm1=nk
-      Endif
-      allocate(fldm1(nkm1,nt),stat=err)
+! N.B. Profils are what is defined in phydim_nk in ser_write
+! Thus, NK=phydim_nk 
+
+      allocate(fldm1(nk,nt),stat=err)
       if (err /= 0) then
          write(STDERR,*) 'Error allocating fldm1... aborting'
          stop
@@ -165,8 +162,8 @@ include "fintern.inc"
       DO 20 KPROF=1,NPROF
       NOMVAR=PROFILS(KPROF)
       IF(NOMVAR.NE.'  ') THEN
-      fldm1 = vv(1:nkm1,:,KPROF)
-      IECR = FSTECR(fldm1,STORE,NPAK,IUN,DATE,DEET,NPAS,NKM1,NT,1, &
+      fldm1 = vv(1:nk,:,KPROF)
+      IECR = FSTECR(fldm1,STORE,NPAK,IUN,DATE,DEET,NPAS,nk,NT,1, &
             IP1,IP2,IP3,VT,NOMVAR,ETIKET,'+',IG1,IG2,IG3,IG4,DATYP,.FALSE.)
       ENDIF
 20    CONTINUE
