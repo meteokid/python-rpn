@@ -1,0 +1,18 @@
+<?xml version='1.0'?>
+<MODULE name="BuildAll">
+   <SUBMITS sub_name="hadar"/>
+   <FAMILY name="hadar">
+      <SUBMITS sub_name="BuildArch"/>
+      <MODULE name="BuildArch"/>
+   </FAMILY>
+   <SUBMITS sub_name="pollux"/>
+   <FAMILY name="pollux">
+      <SUBMITS sub_name="BuildArch"/>
+      <MODULE name="BuildArch"/>
+   </FAMILY>
+   <SUBMITS sub_name="gaia"/>
+   <FAMILY name="gaia">
+      <SUBMITS sub_name="BuildArch"/>
+      <MODULE name="BuildArch"/>
+   </FAMILY>
+</MODULE>

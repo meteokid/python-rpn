@@ -1,0 +1,20 @@
+#!/bin/bash
+# Prepare build dir
+
+printf "\n=====>  Prep.tsk starts: `date` ###########\n\n"
+
+echo PWD=$(pwd)
+echo SEQ_EXP_HOME=${SEQ_EXP_HOME}
+echo uploadoutputdir=${uploadoutputdir}
+env | grep TASK
+env | grep SEQ_
+
+ln -sf ${TASK_INPUT}/build_exp ${TASK_WORK}/build_exp
+
+${TASK_BIN}/gem_build_git -v -d ${TASK_WORK}/build_exp \
+   --cfg ${TASK_INPUT}/gem_build.cfg \
+   --action prep
+
+ln -sf ${TASK_WORK}/build_exp ${TASK_OUTPUT}/build_exp
+
+printf "\n=====>  Prep.tsk ends: `date` ###########\n\n"

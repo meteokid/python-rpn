@@ -1,0 +1,23 @@
+<?xml version='1.0'?>
+<MODULE name="BuildArch">
+
+   <SUBMITS sub_name="Upload"/>
+
+   <TASK name="Upload">
+      <SUBMITS sub_name="Prep"/>
+   </TASK>
+
+   <TASK name="Prep">
+      <SUBMITS sub_name="Base"/>
+      <SUBMITS sub_name="Debug"/>
+   </TASK>
+
+   <FAMILY name="Base">
+      <SUBMITS sub_name="Build"/>
+      <MODULE name="Build"/>
+   </FAMILY>
+   <FAMILY name="Debug">
+      <SUBMITS sub_name="Build"/>
+      <MODULE name="Build"/>
+   </FAMILY>
+</MODULE>

@@ -1,0 +1,177 @@
+#!/bin/ksh
+
+myself=$0
+DESC='Open a new GEM rde-experiment with pre-set SRCPATH'
+USAGE="USAGE: ${myself##*/} [-h] [-v] [--nodeps]"
+
+#---- Functions ------------------------------------------------------
+#====
+usage_long() {
+         toto=$(echo -e $USAGE)
+         more <<EOF
+$DESC
+
+$toto
+
+Options:
+    -h, --help     : print this help
+    -v, --verbose  :  
+    -f, --force    : replace existing source path file if any
+        --nodeps   : do not add known dependencies to the src path
+Will produce SRCPATH for all known ARCH \$(rdevar rde_known_base_arch_list)
+
+EOF
+}
+
+myverbose=
+myforce=0
+dodeps=1
+#EC_ARCH_LIST="$(rdevar rde_known_base_arch_list)"
+EC_ARCH_LIST="${EC_ARCH_LIST:-$(rdevar rde_known_base_arch_list)}"
+#TODO: 
+while [[ $# -gt 0 ]] ; do
+   case $1 in
+      (-h|--help) usage_long; exit 0;;
+      (-v|--verbose) myverbose=-v ;;
+      (-f|--force) myforce=1 ;;
+      (--nodeps) dodeps=0 ;;
+      (-*|*) echo "ERROR: Unrecognized option $1"
+         echo -e $USAGE
+         echo "---- ABORT ----"
+         exit 1;;
+   esac
+   shift
+done
+
+if [[ x$myforce == x1 ]] ; then
+   srcpathfile="$(rdevar srcpathfile 2>/dev/null || true)"
+   rm -f ${srcpathfile:-.rde.srcpath.dot}
+fi
+
+if [[ x$vgrid != x  ]] ; then
+   [[ -d ${vgrid}/include ]] && vgrid_include=${vgrid}/include
+   [[ -d ${vgrid}/src ]] && vgrid_src=${vgrid}/src
+fi
+
+if [[ x$rpncomm != x  ]] ; then
+   [[ -d ${rpncomm}/include ]] && rpncomm_include=${rpncomm}/include
+   [[ -d ${rpncomm}/src ]] && rpncomm_src=${rpncomm}/src
+fi
+
+# if [[ x$vgrid == x  ]] ; then
+# 	 cat <<EOF
+# ERROR: \$vgrid not defined or does not exists
+#        vgrid=$vgrid
+#        Cannot setup the experiment diretory
+
+#        Please make sure you loaded the full GEM development environment
+# ---- ABORT ----
+# EOF
+# 	 exit 1
+# fi
+
+# if [[ x$rpncomm == x  ]] ; then
+# 	 cat <<EOF
+# ERROR: \$rpncomm not defined or does not exists
+#        rpncomm=$rpncomm
+#        Cannot setup the experiment diretory
+
+#        Please make sure you loaded the full GEM development environment
+# ---- ABORT ----
+# EOF
+# 	 exit 1
+# fi
+
+if [[ x$modelutils == x  ]] ; then
+	 cat <<EOF
+ERROR: \$modelutils not defined or does not exists
+       modelutils=$modelutils
+       Cannot setup the experiment diretory
+
+       Please make sure you loaded the full GEM development environment
+---- ABORT ----
+EOF
+	 exit 1
+fi
+if [[ x$rpnphy == x  ]] ; then
+	 cat <<EOF
+ERROR: \$rpnphy not defined or does not exists
+       rpnphy=$rpnphy
+       Cannot setup the experiment diretory
+
+       Please make sure you loaded the full GEM development environment
+---- ABORT ----
+EOF
+	 exit 1
+fi
+if [[ x$gemdyn == x ]] ; then
+	 cat <<EOF
+ERROR: \$gemdyn not defined or does not exists
+       gemdyn=$gemdyn
+       Cannot setup the experiment diretory
+
+       Please make sure you loaded the full GEM development environment
+---- ABORT ----
+EOF
+	 exit 1
+fi
+if [[ x$gem == x || ! -d $gem/include ]] ; then
+	 cat <<EOF
+ERROR: \$gemdyn not defined or include subdir does not exists
+       gem=$gem
+       Cannot setup the experiment diretory
+
+       Please make sure you loaded the full GEM development environment
+---- ABORT ----
+EOF
+	 exit 1
+fi
+
+
+SRCLIST="${vgrid_include} ${rpncomm_include} ${modelutils}/include ${rpnphy}/include ${gemdyn}/include ${gem}/include"
+TOPDIRS="${gemdyn}"
+if [[ $dodeps == 1 ]] ; then
+   SRCLIST="${vgrid_include} ${vgrid_src} ${rpncomm_include} ${rpncomm_src} ${modelutils}/include ${modelutils}/src ${rpnphy}/include ${rpnphy}/src ${gemdyn}/include ${gemdyn}/src ${gem}/include"
+   TOPDIRS="${vgrid} ${rpncomm} ${modelutils} ${rpnphy} ${gemdyn} ${gem}"
+fi
+
+rm -f $(rdevar srcpathfile)
+for myarch in $EC_ARCH_LIST ; do
+   myarchold=$(rdevar --arch ${myarch} base_arch)
+   if [[ "x${myverbose}" == "x-v" ]] ; then
+      echo "+ rdeaddsrc ${myverbose} -R --arch ${myarchold} --reset --topdirs '${TOPDIRS}' ${SRCLIST}"
+   fi
+   rdeaddsrc ${myverbose} -R --arch ${myarchold} --reset --topdirs "${TOPDIRS}" ${SRCLIST}
+done
+
+
+if [[ x${SEQ_EXP_HOME} == x ]] ; then
+   SEQ_EXP_HOME=$(rdemodel_path storage)
+   printf "\n SEQ_EXP_HOME not defined, using ${SEQ_EXP_HOME} \n\n"
+fi
+
+setenvfile=$(rdevar rde_setenv_dot)
+cat > ${setenvfile} <<EOF
+if [[ -z "\${ATM_MODEL_BNDL}" ]] ; then
+   . s.ssmuse.dot ${ATM_MODEL_BNDL:-NO_ATM_BNDL}
+elif [[ \${ATM_MODEL_BNDL} != ${ATM_MODEL_BNDL:-NO_ATM_BNDL} ]] ; then
+   cat 1>&2 <<EOF1
+
+   ** WARNING **
+   Mismatch of current \${ATM_MODEL_BNDL} in your environment and the experiment ${ATM_MODEL_BNDL:-NO_ATM_BNDL} in ${refload}
+   You should probably load this experiment in a new shell.
+
+EOF1
+fi
+export GEM_DEV_UPDATES="${GEM_DEV_UPDATES}"
+if [[ -n "\${GEM_DEV_UPDATES}" ]] ; then . s.ssmuse.dot \${GEM_DEV_UPDATES} ; fi 
+export GEM_DEV_SUITE=${GEM_DEV_SUITE}
+export SEQ_EXP_HOME=${SEQ_EXP_HOME}
+EOF
+
+if [[ x$myforce == x1 ]] ; then
+   rm -f .ssmuse_gem
+fi
+if [[ ! -f .ssmuse_gem ]] ; then
+   ln -s ${setenvfile} .ssmuse_gem 
+fi

@@ -1,0 +1,154 @@
+#!/bin/bash -e
+# @Object: Build in batch gem from git repositories
+# @Author: S.Chamberland
+# @Date:   Feb 2016
+MYSELF=${0##*/}
+
+DESC='Build in batch gem from git repositories'
+USAGE="USAGE: ${MYSELF} [-h] [-v] [--clean] [--debug] --cfg=CONFIG_FILE -d BUILD_DIR"
+
+usage_long() {
+	 toto=$(echo $USAGE)
+	 cat <<EOF
+$DESC
+
+$toto
+
+Options:
+    -h, --help         : print this help
+    -v, --verbose      : verbose mode
+    -c, --cfg          : config file
+        --clean        : clean hub dir befor starting
+        --dry_run      : 
+
+The config file should at least contain
+    BUILDHOST_LIST="mach1:ncpu mach2:ncpu"
+
+EOF
+}
+    # -m, --mach         : 
+    # -n, --ncpu         : 
+    # -t, --time         : 
+
+mydate="2000121314" ##"$(date '+%Y%m%d%H')"
+export SEQ_EXP_HOME=$(pwd)
+set_cpu_mult="cpu_multiplier=1"
+
+set_memory="memory=1G"
+
+verbose=''
+debug=''
+mydry=''
+myclean=0
+# mymach="machine=${TRUE_HOST:-$(hostname)}"
+# myncpu="cpu=1x1"
+mytime="wallclock=30" #30 minutes
+while [[ $# -gt 0 ]] ; do
+   case $1 in
+      (-h|--help) usage_long; exit 0;;
+      (-v|--verbose) verbose=-v; debug='-debug';;
+      (--dry*) mydry='--dry-run';;
+      (--clean) myclean=1;;
+      # (-m|--mach) ;;
+      # (-n|--ncpu) ;;
+      (-t|--time) ;;
+      (-c|--cfg) ;;
+      # (--mach=*) mymach="machine=${1#*=}";;
+      # (--ncpu=*) myncpu="cpu=${1#*=}x1";;
+      (--time=*) mytime="wallclock=${1#*=}";;
+      (--cfg=*)  mycfg="${1#*=}";;
+      (--) shift ; break;;
+      (-*) echo "Error: Option Not recognized: $1" 1>&2 ; exit 1;;
+      *)
+         case $previous in
+            # (-m|--mach) mymach="machine=${1}";;
+            # (-n|--ncpu) myncpu="cpu=${1}x1";;
+            (-t|--time) mytime="wallclock=${1}";;
+            (-c|--cfg)  mycfg="${1}";;
+            (*) echo "Error: Option doesn't take extra args: $previous $1" 1>&2 ; exit 1;;
+         esac ;;
+   esac
+   previous=$1
+   shift
+done
+
+if [[ ! -n "$mycfg" ]] ; then
+   echo "ERROR: need to specify a Config file"
+   usage_long
+   exit 1
+fi
+. $mycfg
+if [[ ! -n "$BUILDHOST_LIST" ]] ; then
+   echo "ERROR: need to specify BUILDHOST_LIST in the Config file"
+   usage_long
+   exit 1
+fi
+
+setuphost() {
+   mymach="$1"
+   myncpu="$2"
+
+   if [[ $myclean == 1 ]] ; then
+      if [[ x${verbose} != x ]] ; then 
+         echo "Cleaning $SEQ_EXP_HOME/hub/${mymach#*=}"
+      fi
+      ssh ${mymach#*=} rm -rf $SEQ_EXP_HOME/hub/${mymach#*=}/*
+   fi
+
+    ## Build BuildAll/xflow
+   cat <<EOF >> modules/BuildAll/flow.xml
+   <SUBMITS sub_name="${mymach#*=}"/>
+   <FAMILY name="${mymach#*=}">
+      <SUBMITS sub_name="BuildArch"/>
+      <MODULE name="BuildArch"/>
+   </FAMILY>
+EOF
+
+   ## Build resources/BuildAll/*
+   rm -rf resources/BuildAll/${mymach#*=}
+   mkdir resources/BuildAll/${mymach#*=}
+   cp -R resources/BuildArch resources/BuildAll/${mymach#*=}/
+
+   if [[ ${mymach#*=} == "hadar"  || ${mymach#*=} == "spica" || \
+         ${mymach#*=} == "pollux" || ${mymach#*=} == "castor" ]] ; then
+      setimmediate=""
+   else
+      setimmediate="immediate=1 soumet_args=-immediate"
+   fi
+
+   ## Set requested resource options
+   if [[ x${verbose} != x ]] ; then 
+      set -x
+   fi
+   nodesetres -n /BuildAll/${mymach#*=}/BuildArch/Upload \
+      ${verbose} ${mydry} ${mymach}
+   nodesetres -n /BuildAll/${mymach#*=}/BuildArch/Prep \
+      ${verbose} ${mydry} ${mymach}
+   nodesetres -n /BuildAll/${mymach#*=}/BuildArch/Base/Build/MakeAll \
+      ${verbose} ${mydry} ${mymach} ${mytime} ${set_cpu_mult} ${myncpu} \
+      ${setimmediate}
+   nodesetres -n /BuildAll/${mymach#*=}/BuildArch/Base/Build/Transfer \
+      ${verbose} ${mydry} ${mymach}
+
+}
+
+cat <<EOF > modules/BuildAll/flow.xml
+<?xml version='1.0'?>
+<MODULE name="BuildAll">
+EOF
+
+for myhost in $BUILDHOST_LIST ; do
+   setuphost machine=${myhost%:*} cpu=${myhost#*:}
+done
+
+cat <<EOF >> modules/BuildAll/flow.xml
+</MODULE>
+EOF
+
+# Start the experiment
+#launch="expbegin -d ${mydate}0000 ${debug}"
+launch="expbegin -d ${mydate} ${verbose}"
+echo "Launching experiment with:  ${launch}"
+if [[ x${mydry} == x ]] ; then 
+   ${launch} 
+fi

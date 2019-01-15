@@ -1,0 +1,297 @@
+#!/bin/bash -e
+# @Object: Build gem in batch from git repositories
+# @Author: S.Chamberland
+# @Date:   Feb 2016
+MYSELF=${0##*/}
+
+DESC='Build gem in batch from git repositories'
+USAGE="USAGE: ${MYSELF} [-h] [-v] [--clean] [--debug] --cfg=CONFIG_FILE -d BUILD_DIR"
+
+usage_long() {
+	 toto=$(echo $USAGE)
+	 cat <<EOF
+$DESC
+
+$toto
+
+Options:
+    -h, --help         : print this help
+    -v, --verbose      : verbose mode
+    -d, --dest         : destination dir where to build
+        --clean        : clean dest dir before anything [default: false]
+                         Else use what is found in dest dir
+    -n, --name         : build name
+    -c, --cfg          : config file
+        --storage      : storage_model to use, default: 
+                         [Default: DESTDIR]
+                         [Options: DESTDIR, TMPDIR, BIG_TMPDIR or any directory]
+        --debug        : build with debug options
+                         [OPTIONS: libs, all]
+        --ssm          : Build ssm packages and put them in specified dir
+                         [Default dir: ~/SsmDepot]
+        --ncpu         : Override nb of CPU for parralle compilation
+                         [Default: \${SEQ_NPEX:-\${BATCH_MPI_CPUS:-1}}]
+
+        --action       :
+                         [Default: all]
+                         [Options: all, upload, prep, make, transfer]
+
+Config File has the following format:
+#The config file will be sourced, pay attention to its content
+#If --ssm, the all package will be build only on the MAIN_PLAT
+
+COMPONENTS="modelutils rpnphy gemdyn gem"
+COMPONENTS_GIT="URL:TAG URL:TAG URL:TAG URL:TAG"
+MAIN_PLAT=ubuntu-12.04-amd64-64 #$ORDENV_PLAT
+
+#It is best to use a more recent version of git:
+. s.ssmuse.dot /ssm/net/rpn/utils/15.2
+. r.module.dot
+module load git
+
+EOF
+}
+
+verbose=
+VERBOSE=0
+#dryrun=echo
+debug=''
+ssmdir=''
+workdir=''
+cfgfile=''
+clean=0
+name=""
+action='all'
+ncpu="${SEQ_NPEX:-${BATCH_MPI_CPUS:-1}}"
+storage_model="DESTDIR" #${storage_model:-$HOME/.suites/.default_links/${TRUE_HOST:-$(hostname)}}
+while [[ $# -gt 0 ]] ; do
+   case $1 in
+      (-h|--help) usage_long; exit 0;;
+      (-v|--verbose) verbose=-v; VERBOSE=1;;
+      (--dest=*) workdir="${1#*=}";;
+      (--clean) clean=1;;
+      (-d|--dest) ;;
+      (--name=*) name="${1#*=}";;
+      (-n|--name) ;;
+      (--cfg=*) cfgfile="${1#*=}";;
+      (-c|--cfg) ;;
+      (--debug=*) debug="${1#*=}";;
+      (--debug) debug='libs';;
+      (--ssm=*) ssmdir="${1#*=}";;
+      (--ssm) ssmdir="${HOME}/SsmDepot";;
+      (--storage=*) storage_model="${1#*=}";;
+      (--storage) ;;
+      (--ncpu=*) ncpu="${1#*=}";;
+      (--ncpu) ;;
+      (--action=*) action="${1#*=}";;
+      (--action) ;;
+      (--) shift ; break;;
+      (-*) echo "Error: Option Not recognized: $1" 1>&2 ; exit 1;;
+      *)
+         case $previous in
+            (-d|--dest) workdir="${1}";;
+            (-n|--name) name="${1}";;
+            (-c|--cfg) cfgfile="${1}";;
+            (--debug) debug="${1}";;
+            (--ssm) ssmdir="${1}";;
+            (--storage) storage_model="${1}";;
+            (--ncpu) ncpu="${1}";;
+            (--action) action="${1}";;
+            (*) echo "Error: Option doesn't take extra args: $previous $1" 1>&2 ; exit 1;;
+        esac ;;
+    esac
+    previous=$1
+    shift
+done
+
+if [[ x"$workdir" == x"" ]] ; then
+   cat 1>&2 <<EOF
+ERROR: Need to provide a destination dir where to build
+EOF
+   exit 1
+fi
+if [[ x"$cfgfile" == x"" || ! -f $cfgfile ]] ; then
+   cat 1>&2 <<EOF
+ERROR: Need to provide a config file
+EOF
+   exit 1
+fi
+
+if [[ x"$storage_model" == x"DESTDIR" ]] ; then
+   storage_model=$workdir
+fi
+if [[ x"$storage_model" == x"TMPDIR" ]] ; then
+   storage_model=$TMPDIR
+fi
+if [[ x"$storage_model" == x"BIG_TMPDIR" ]] ; then
+   storage_model=${BIG_TMPDIR:-$TMPDIR}
+fi
+if [[ x"$storage_model" == x"" || ! -d $storage_model || ! -w $storage_model ]] ; then
+   cat 1>&2 <<EOF
+ERROR: Need to provide an existing + writable storage_model: $storage_model
+
+$(ls -ald $storage_model)
+$(ls -al $storage_model/)
+EOF
+   exit 1
+fi
+export storage_model
+
+if [[ ! -z "${ATM_MODEL_BNDL}" ]] ; then
+   cat 1>&2 <<EOF
+ERROR: Another model is already loaded in the env: $ATM_MODEL_BNDL
+       You need to start from a fresh environment
+EOF
+   exit 1
+fi
+
+if [[ ! -z "${COMP_ARCH}" ]] ; then
+   cat 1>&2 <<EOF
+ERROR: A compiler is already loaded in the env: $COMP_ARCH
+       You need to start from a fresh environment
+EOF
+   exit 1
+fi
+
+## -------------------------------------------------------------------------
+set -x
+
+. $cfgfile || true
+
+## ---- Upload -------------------------------------------------------------
+if [[ x$action == xall || x$action == xupload ]] ; then
+
+   mkdir -p $workdir 2>/dev/null || true
+   cd $workdir || (echo "ERROR: cannot cd to workdir: $workdir" 1>&2 && exit 1)
+   if [[ $clean == 1 ]] ; then
+      rm -rf * .[a-zA-Z0-9_]* || true
+   fi
+
+   for mymodule in ${COMPONENTS_GIT} ; do
+      myurl=${mymodule%:*}
+      myname=${myurl##*/}
+      if [[ x${myname#*.} == xgit ]] ; then
+         myname=${myname%.*}
+      fi
+      mytag=${mymodule##*:}
+      if [[ ! -d ${myname} ]] ; then
+         if [[ x"$(git version | cut -d" " -f3 | cut -d. -f1)" == x"2" ]] ; then
+            git clone --depth 1 --branch ${mytag} ${myurl} ${myname}
+         else
+            git clone ${myurl} ${myname}
+            cd ${myname}
+            git checkout -b tmp ${mytag} || (echo "ERROR: cannot get tag: $mytag" 1>&2 && exit 1)
+            cd ..
+        fi
+      fi
+   done
+
+fi
+
+
+## ---- Prep ---------------------------------------------------------------
+if [[ x$action == xall || x$action == xprep ]] ; then
+
+   cd $workdir || (echo "ERROR: cannot cd to workdir: $workdir" 1>&2 && exit 1)
+
+   if [[ ! -f ./gem/.setenv-withdeps.dot ]] ; then
+      cat 1>&2 <<EOF
+ERROR: File not found: $(pwd)/gem/.setenv-withdeps.dot
+EOF
+      exit 1
+   fi
+   . ./gem/.setenv-withdeps.dot
+   if [[ x"$gem" == x"" ]] ; then
+      cat 1>&2 <<EOF
+ERROR: GEM environement not properly set, \$gem not defined.
+EOF
+      exit 1
+   fi
+
+   cp $gem/Makefile.user.* .
+
+   srcpathfile=$(rdevar srcpathfile)
+   if [[ ! -f $srcpathfile ]] ; then
+      $gem/bin/ouv_exp_gem ${verbose}
+   fi
+
+fi
+
+## ---- Make ---------------------------------------------------------------
+if [[ x$action == xall || x$action == xmake ]] ; then
+
+   cd $workdir || (echo "ERROR: cannot cd to workdir: $workdir" 1>&2 && exit 1)
+
+   if [[ ! -f ./gem/.setenv-withdeps.dot ]] ; then
+      cat 1>&2 <<EOF
+ERROR: File not found: $(pwd)/gem/.setenv-withdeps.dot
+EOF
+      exit 1
+   fi
+   . ./gem/.setenv-withdeps.dot
+   if [[ x"$gem" == x"" ]] ; then
+      cat 1>&2 <<EOF
+ERROR: GEM environement not properly set, \$gem not defined.
+EOF
+      exit 1
+   fi
+
+   echo "make = $(which make)"
+   if [[ x"$debug" == x"" ]] ; then
+      rdemklink -f ${verbose}
+      if [[ x$BUILDCLEAN == x1 ]] ; then
+         rm -rf $(rdevar build)/* 2>/dev/null || true
+      fi
+      ${dryrun} make components_objects -j $ncpu \
+         VERBOSE=${VERBOSE} COMPONENTS="${COMPONENTS}"
+      ${dryrun} make components_libs \
+         VERBOSE=${VERBOSE} COMPONENTS="${COMPONENTS}"
+      ${dryrun} make components_abs \
+         VERBOSE=${VERBOSE} BUILDNAME="$name" COMPONENTS="${COMPONENTS}"
+   else
+      export RDE_BUILDDIR_SFX=-d
+      rdemklink -f ${verbose}
+      if [[ x$BUILDCLEAN == x1 ]] ; then
+         rm -rf $(rdevar build)/* 2>/dev/null || true
+      fi
+      ${dryrun} make components_objects -j $ncpu \
+         VERBOSE=${VERBOSE} COMPONENTS="${COMPONENTS}"
+      ${dryrun} make components_libs \
+         VERBOSE=${VERBOSE} COMPONENTS="${COMPONENTS}"
+      if [[ x"$debug" == x"all" ]] ; then
+         ${dryrun} make components_abs \
+            VERBOSE=${VERBOSE} BUILDNAME="$name" COMPONENTS="${COMPONENTS}"
+      fi
+   fi
+
+   if [[ x"$ssmdir" != x"" ]] ; then
+      if [[ ! -d $ssmdir || ! -w $ssmdir ]] ; then
+         cat 1>&2 <<EOF
+ERROR: Specified SSM Depot dir does not exists or not writable: $ssmdir
+       SSM files not produced
+EOF
+         exit 1
+      fi
+      
+      if [[ x"$debug" == x"libs" ]] ; then
+         ${dryrun} make components_ssm_arch VERBOSE=${VERBOSE} \
+            COMPONENTS="${COMPONENTS}" SSM_DEPOT_DIR="${ssmdir}" \
+            MAKE_SSM_NOMOD=1 MAKE_SSM_NOABS=1 MAKE_SSM_NOINC=1
+      else
+         if [[ x$MAIN_PLAT == x$ORDENV_PLAT || x$MAIN_PLAT == xall ]] ; then
+            ${dryrun} make components_ssm VERBOSE=${VERBOSE} \
+               COMPONENTS="${COMPONENTS}" SSM_DEPOT_DIR="${ssmdir}"
+         else
+            ${dryrun} make components_ssm_arch VERBOSE=${VERBOSE} \
+               COMPONENTS="${COMPONENTS}" SSM_DEPOT_DIR="${ssmdir}"
+         fi
+      fi
+   fi
+
+fi
+
+## ---- Transfer -----------------------------------------------------------
+cat <<EOF
+COMPILE_DIR=$workdir
+    SSM_DIR=${ssmdir}
+EOF

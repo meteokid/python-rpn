@@ -1,0 +1,9 @@
+<?xml version='1.0'?>
+<MODULE name="Build">
+   <SUBMITS sub_name="MakeAll"/>
+   <TASK name="MakeAll">
+      <SUBMITS sub_name="Transfer"/>
+   </TASK>
+   <TASK name="Transfer"/>
+</MODULE>
+

@@ -1,0 +1,11 @@
+
+ grid=1,core;
+ levels=1,eta, -1;
+levels=4,eta,<1,35,1>;
+
+ steps=1,hour,0.;
+ steps=2,hour,<0.,480.,1.>;
+ steps=3,hour,<0.,240.,3.>;
+ steps=4,hour,[24.,72.,120.];
+ steps=5,hour,<0.,144.,3.>,<150.,240.,6.>;
+ sortie_p([HFS], grid, 1, levels, 4, steps, 2)
