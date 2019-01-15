@@ -1,13 +1,14 @@
-#!/bin/ksh
+#!/bin/bash
 . .rdebase.inc.dot
 
 DESC='Diff locally modified src compared to library version'
 USAGE="USAGE: ${MYSELF} [-h] [-v] [-l|--list|--status] [-d|--dirmode] [--diff=DIFF_TOOL] [DIFFARGS] [FILES]"
-BUILDDIFF=${ROOT}/$(rdevar build)/tmp-diff-$$
+BUILDDIFF=${ROOT}/${CONST_BUILD}/tmp-diff-$$
+RDESUFFIXES="${CONST_RDESUFFIX}"
 
 usage_long() {
-	 toto=$(echo -e $USAGE)
-	 more <<EOF
+    toto=$(echo -e $USAGE)
+    more <<EOF
 $DESC
 
 $toto
@@ -19,8 +20,11 @@ Options:
     -d, --dirmode        : Do a directory diff if possible
                            DEFAULT: file by file diff
     -R  --recurse        : recursively look into SRCPATH dirs
-    --diff=DIFF_TOOL     : diff tool to use 
+    --diff=DIFF_TOOL     : diff tool to use
                            DEFAULT: \${ECDIFF:-diff} (${ECDIFF:-diff})
+    --hash               : print a md5sum hash of the diff
+    --haststat           : print a md5sum hash of the diff + diff stats
+    --fullpath           : print full path of files (only in list/status mode)
     DIFFARGS             : arguments to pass to the diff tool
                            DEFAULT: \$ECDIFFARGS ($ECDIFFARGS)
     FILES                : space separated list of src files or dir
@@ -32,6 +36,8 @@ mystatus=0
 listmode=0
 dirmode=0
 myrecurse=0
+myhash=0
+myfullpath=0
 ECDIFF=${ECDIFF:-diff}
 ECDIFFARGS=${ECDIFFARGS}
 PATHLIST=""
@@ -46,6 +52,9 @@ while [[ $# -gt 0 ]] ; do
       (-l|--list|--status) listmode=1;;
       (-d|--dirmode) dirmode=1;;
       (-R|--recurse) myrecurse=1;;
+      (--hash) myhash=1;;
+      (--hashstat) myhash=2;;
+      (--fullpath) myfullpath=1;;
       (--diff=*) ECDIFF=${1#*=};;
       (-*) ECDIFFARGS="${ECDIFFARGS} $1";;
         *) PATHLIST="$PATHLIST $1";;
@@ -54,8 +63,10 @@ while [[ $# -gt 0 ]] ; do
     shift
 done
 
+PATHLIST2=$PATHLIST{}
 if [[ x"$PATHLIST" == x"" ]] ; then
-   PATHLIST=.
+   PATHLIST=". ${CONST_EXTRADIRS}"
+   PATHLIST2="."
 fi
 
 rde_exit_if_not_rdetopdir
@@ -64,26 +75,17 @@ rde_exit_if_not_rdetopdir
 followlinks=''
 SRC_USR=$(pwd)/.
 
-# # find_src_file MYDIR MYFILE
-# find_src_file() {
-#    _myfile=$2
-#    _here=$(pwd)
-#    cd ${1}
-#    if [[ -f ${_myfile} ]] ; then
-#       echo ${_myfile}
-#    elif [[ $myrecurse == 1 ]] ; then
-#       _mypath="$(find ${followlinks} . -name ${_myfile} -type f 2>/dev/null)"
-#       echo ${_mypath#./}
-#    fi
-#    cd ${_here}
-# }
-
 # find_src_file_list MYDIR MYFILE
 find_src_file_list() {
    _myfile=$2
    _myrecurse=${3:-1}
+   _mysrconly=${4:-1}
    _here=$(pwd)
    cd ${1}
+   [[ x"${_myfile}" != x"." && \
+      x"$(echo ${CONST_EXTRADIRS} | grep ${_myfile%%/*})" != x"" ]] && \
+      _mysrconly=0 || true
+   [[ x"${_myfile%%/*}" == x"share" || x"${_myfile%%/*}" == x"lib" ]] && _myrecurse=1 || true
    if [[ -f ${_myfile} ]] ; then
       echo ${_myfile}
    elif [[ -d ${_myfile} ]] ; then
@@ -92,12 +94,16 @@ find_src_file_list() {
       else
          _mypath="$(rdefind ${followlinks} ${_myfile} --type f --maxdepth 0 2>/dev/null)"
       fi
-      for _myfile2 in $_mypath ; do
-         mytype="$(echo ${_myfile2##*.} | cut -c1 | tr 'cfhiCFHIt' 'fffffffff')"
-         if [[ x$mytype == xf ]] ; then
-            echo ${_myfile2#./}
-         fi
-      done
+      if [[ ${_mysrconly} == 1 ]] ; then
+         for _myfile2 in $_mypath ; do
+            mytype="$(echo $RDESUFFIXES | tr ' ' '\n' | grep $(echo ${_myfile2##*.}))"
+            if [[ "x$mytype" != "x" ]] ; then
+               echo ${_myfile2#./}
+            fi
+         done
+      else
+         echo ${_mypath} | tr ' ' '\n' | grep -v '.restricted'
+      fi
    elif [[ $_myrecurse == 1 ]] ; then
       _mypath="$(find ${followlinks} . -name ${_myfile} -type f 2>/dev/null)"
       echo ${_mypath#./}
@@ -150,6 +156,7 @@ echo_file_status() {
    # _isrestricted="$(isrestricted ${1} ${_itemname2})"
    # file_usr="$(rdelocate -l ${1} 2>/dev/null)"
    file_usr=${1}
+   # file_ref="$(rdelocate -r ${1##*/} 2>/dev/null)"
    file_ref="$(rdelocate -r ${1} 2>/dev/null)"
    # if [[ x${_itemname2} != x ]] ; then
    #    echo DEL ${_itemname2} ${_isrestricted}
@@ -157,7 +164,7 @@ echo_file_status() {
    if [[ x${file_usr} != x ]] ; then
       if [[ x${file_ref} != x ]] ; then
          _isdiff=1
-         diff ${file_ref} ${file_usr} >/dev/null 2>&1 && _isdiff=0
+         diff ${file_ref} ${file_usr} >/dev/null 2>&1 && _isdiff=0  || true
          if [[ ${_isdiff} == 1 ]] ; then
             echo MOD ${1} ${_isrestricted}
          else
@@ -191,43 +198,29 @@ do_file_diff() {
 
 build_diff_tree() {
    mystderr 0 "+ build_diff_tree"
-   #set -x
-   #cd ${SRC_USR}
-   #_myfilelist="$(find . -type f)"
-   #_mydirlist="$(find . -type d)"
    cd ${ROOT}
    rm -rf ${BUILDDIFF}
-   # for _item in ${SRC_REF} ${SRC_USR} ; do
-   #    for _mysubdir in ${_mydirlist} ; do
-   #       mkdir -p ${BUILDDIFF}/${_item}/${_mysubdir} 2>/dev/null || true
-   #    done
-   # done
    for _item in SRC_REF SRC_USR ; do
-      mkdir -p ${BUILDDIFF}/${_item} 2>/dev/null || true
+      for _item2 in ${CONST_EXTRADIRS} ; do
+         mkdir -p ${BUILDDIFF}/${_item}/${_item2} 2>/dev/null || true
+      done
    done
    for mypath in $PATHLIST ; do
-      _myfilelist="$(find_src_file_list ${SRC_USR} $mypath $myrecurse)"   
+      _myfilelist="$(find_src_file_list ${SRC_USR} $mypath $myrecurse)"
       mycache="$(rdelocate -r ${_myfilelist} 2>/dev/null)"
       for _myfile in ${_myfilelist} ; do
          # file_usr="$(rdelocate -l ${_myfile} 2>/dev/null)"
-         # file_ref="$(rdelocate -r ${_myfile} 2>/dev/null)"
          file_usr=${_myfile}
-         file_ref="$(echo $mycache | tr ' ' '\n' | grep /${myfile} 2>/dev/null)"
-         cp $file_usr ${BUILDDIFF}/SRC_USR/
+         subdir=${file_usr%/*}
+         [[ x"${subdir}" == x"${file_usr}" ]] && subdir=. || true
+         [[ x"${subdir}" != x"." ]] && mkdir -p ${BUILDDIFF}/SRC_USR/${subdir} || true
+         cp ${file_usr} ${BUILDDIFF}/SRC_USR/${file_usr}
+         # file_ref="$(rdelocate -r ${_myfile} 2>/dev/null)"
+         file_ref="$(echo ${mycache} | tr ' ' '\n' | grep /${_myfile} 2>/dev/null | tr '\n' ' ' | cut -d' ' -f1)"
          if [[ x${file_ref} != x ]] ; then
-            cp $file_ref ${BUILDDIFF}/SRC_REF/
+            [[ x"${subdir}" != x"." ]] && mkdir -p ${BUILDDIFF}/SRC_REF/${subdir} || true
+            cp ${file_ref} ${BUILDDIFF}/SRC_REF/${subdir}/
          fi
-      # _status0="$(echo_file_status ${_myfile})"
-      # _status=${_status0% *}
-      # _myfile2=${_status0#* }
-      # for _item in ${SRC_REF} ${SRC_USR} ; do
-      #    if [[ -f ${_item}/${_myfile2} ]] ; then
-      #       cp ${_item}/${_myfile2} ${BUILDDIFF}/${_item}/${_myfile2}
-      #    fi
-      # done
-      # if [[ x${_status} == xDEL ]] ; then
-      #    rm -f ${BUILDDIFF}/SRC_USR/${_myfile2}
-      # fi
       done
    done
 }
@@ -240,21 +233,56 @@ do_dir_diff() {
    cd ${ROOT}
 }
 
+do_dir_diff_hash() {
+   _mydir="${1}"
+   cd ${BUILDDIFF}
+   mystderr 0 "+ diff -r ${ECDIFFARGS} SRC_REF/${_mydir} SRC_USR/${_mydir} | md5sum"
+   if [[ $myhash == 1 ]] ; then
+      diff -r ${ECDIFFARGS} SRC_REF/${_mydir} SRC_USR/${_mydir} | md5sum | cut -d" " -f1
+   else
+      echo "nf=$(find SRC_USR/${_mydir} | wc -l | cut -d' ' -f1):nl=$(diff -r ${ECDIFFARGS} SRC_REF/${_mydir} SRC_USR/${_mydir} | wc -l | cut -d' ' -f1):h=$(diff -r ${ECDIFFARGS} SRC_REF/${_mydir} SRC_USR/${_mydir} | md5sum | cut -d" " -f1)"
+   fi
+   cd ${ROOT}
+}
+
 do_list_diff() {
+   TOPDIRS="$(rdevar srcpath_topdirs)"
+   mystderr 0 "+ build_file_list"
    for mypath in $PATHLIST ; do
-      mystderr 0 "+ build_file_list"
       myfilelist="$(find_src_file_list ${SRC_USR} $mypath $myrecurse)"
-      mycache="$(rdelocate -r $myfilelist 2>/dev/null)"
+      mycache="$(rdelocate -r ${myfilelist} 2>/dev/null)"
       for myfile in $myfilelist ; do
-         file_ref="$(echo $mycache | tr ' ' '\n' | grep /${myfile} 2>/dev/null)"
+         # file_ref="$(echo $mycache | tr ' ' '\n' | grep /${myfile}  2>/dev/null)"
+         file_ref="$(echo ${mycache} | tr ' ' '\n' | grep /${myfile} 2>/dev/null | tr '\n' ' ' | cut -d' ' -f1)"
          # if [[ x${myfile} != x ]] ; then
             if [[ x${file_ref} != x ]] ; then
                _isdiff=1
-               diff ${file_ref} ${myfile} >/dev/null 2>&1 && _isdiff=0
+               diff ${file_ref} ${myfile} >/dev/null 2>&1 && _isdiff=0 || true
+               myfile2=""
+               if [[ $myfullpath == 1 ]] ; then
+                  for topdir in $TOPDIRS ; do
+                     file_ref0=$file_ref
+                     file_ref="$(echo $file_ref | sed s:$topdir/::)"
+                     if [[ $file_ref != $file_ref0 ]] ; then
+                        topdirname="$(echo ${topdir##*/})"
+                        topdirname2=${topdirname%%_*}
+                        if [[ "x${topdirname}" != "x" && "x${!topdirname2}" != "x" ]] ; then
+                           file_ref="\${${topdirname2}}/$file_ref"
+                        else
+                           file_ref=$file_ref0
+                        fi
+                        break
+                     fi
+                  done
+                  # myfile2="(${file_ref})"
+                  myfile2="${file_ref}"
+               fi
                if [[ ${_isdiff} == 1 ]] ; then
-                  echo MOD ${myfile}
+                  # echo MOD ${myfile}   ${myfile2}
+                  printf "%3s %-32s %s\n" MOD ${myfile} ${myfile2}
                else
-                  echo REF ${myfile}
+                  # echo REF ${myfile}   ${myfile2}
+                  printf "%3s %-32s %s\n" REF ${myfile} ${myfile2}
                fi
             else
                echo NEW ${myfile}
@@ -266,13 +294,23 @@ do_list_diff() {
    done
 }
 
+
 if [[ $listmode == 1 ]] ; then
    do_list_diff
-   exit 0
+   exit $mystatus
 fi
 
-if [[ $dirmode == 1 ]] ; then
+if [[ $dirmode == 1 || $myhash != 0 ]] ; then
    build_diff_tree
+   for mypath in $PATHLIST2 ; do
+      if [[ $myhash != 0 ]] ; then
+         do_dir_diff_hash $mypath
+      else
+         do_dir_diff $mypath
+      fi
+   done
+   rm -rf ${BUILDDIFF}
+   exit $mystatus
 fi
 
 for mypath in $PATHLIST ; do
@@ -280,19 +318,10 @@ for mypath in $PATHLIST ; do
    if [[ x"$myfilelist" == x ]] ; then
       myecho 1 "No file for: $mypath"
    else
-      if [[ $dirmode == 0 ]] ; then
-         for myfile in $myfilelist ; do
-            do_file_diff $myfile
-         done
-      else
-         do_dir_diff $mypath
-      fi
+      for myfile in $myfilelist ; do
+         do_file_diff $myfile
+      done
    fi
- done
-
-if [[ $dirmode == 1 ]] ; then
-   rm -rf ${BUILDDIFF}
-fi
-
+done
 
 exit $mystatus

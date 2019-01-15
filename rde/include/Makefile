@@ -84,7 +84,7 @@ INCSUFFIXES := $(CONST_RDESUFFIXINC)
 SRCSUFFIXES := $(CONST_RDESUFFIXSRC)
 RDE_BASE_ARCH := $(CONST_RDE_BASE_ARCH)
 RDE_BASE_ARCH_EQUIV := $(CONST_RDE_BASE_ARCH_EQUIV)
-RDE_ARCH_LIST := $(CONST_RDE_LINKED_ARCH_LIST)
+RDE_ARCH_LIST := $(shell echo $(CONST_RDE_LINKED_ARCH_LIST) | tr ' ' '\n' | sort -u)
 ifeq (,$(RDE_ARCH_LIST))
 RDE_ARCH_LIST := $(CONST_RDE_KNOWN_BASE_ARCH_LIST)
 endif
@@ -101,7 +101,7 @@ ifeq ($(ROOT),$(BUILD))
 endif
 
 ifneq (,$(findstring s,$(MAKEFLAGS)))
-   VERBOSE = 
+   VERBOSE =
 endif
 ifneq (,$(VERBOSE))
 ifeq (0,$(VERBOSE))
@@ -127,6 +127,8 @@ RDE_TARGET_OBJ = obj
 RDE_TARGET_OBJ_FORCES = obj_forced
 RDE_TARGET_OBJ_TOUCH = obj_touch
 RDE_TARGET_CLEAN = clean
+RDE_TARGET_BINCLEAN = binclean
+RDE_TARGET_LIBCLEAN = libclean
 RDE_TARGET_BUILDCLEAN = buildclean
 RDE_TARGET_BUILDCLEAN_PLUS = buildclean+
 RDE_TARGET_DISTCLEAN = distclean
@@ -140,6 +142,11 @@ ifneq (,$(MAKEFILEUSERLIST))
    include $(MAKEFILEUSERLIST)
 endif
 
+export RDE_LIBS_SFX = $(RDE_BUILDDIR_SFX)
+ifeq (1,$(RDE_LOCAL_LIBS_ONLY))
+   export RDE_LIBS_SFX = $(RDE_BUILDDIR_SFX)-$(USER)
+endif
+
 ## ==== Targets
 
 RDE_TARGET_ALL = all
@@ -147,7 +154,7 @@ $(RDE_TARGET_ALL): obj
 
 .SUFFIXES:
 
-.DEFAULT: 
+.DEFAULT:
 	$(MAKE) $(NOPRINTDIR) sanity
 	$(MAKE_LINKS) ;\
 	cd $(BUILDOBJ) ;\
@@ -178,15 +185,11 @@ deplocal: #$(MAKEFILE_CONST)
 	$(MYTIME) rdemkdep -v --supp $(RDE_DEP_SUPP_FILE) --arch $(RDE_BASE_ARCH_EQUIV)
 .PHONY: dep
 
-ifneq (,$(filter aix-%,$(RDE_BASE_ARCH))$(filter AIX-%,$(RDE_BASE_ARCH)))
-dep: deplocal
-else
 dep: #$(MAKEFILE_CONST)
 	rm -f Makefile.dep.*.mk 2>/dev/null || true
 	$(MYTIME) rdemkdep -v --supp $(RDE_DEP_SUPP_FILE) --arch "$(RDE_ARCH_LIST)"
-endif
 
-#$(MAKEFILE_CONST) 
+#$(MAKEFILE_CONST)
 .PHONY: sanity
 sanity: $(MAKEFILEDEP) Makefile.build.mk Makefile.rules.mk $(BUILD) $(BUILDOBJ) chkclock
 chkclock:
@@ -196,7 +199,7 @@ links: sanity
 	$(MAKE_LINKS)
 
 .PHONY: Makefile.const
-Makefile.const: 
+Makefile.const:
 	$(info Building Makefile Constants: $(MAKEFILE_CONST))
 	$(MYTIME) rdevar --mkfile
 $(MAKEFILE_CONST): $(CONST_SRCPATHFILE) $(CONST_RDE_CONFIG_FILE)
@@ -222,12 +225,12 @@ $(RDE_TARGET_OBJ):  sanity
 	cd $(BUILDOBJ) ;\
    if [[ $$? != 0 ]] ; then echo "ERROR: cannot move into build dir: $(BUILDOBJ)" ; exit 1 ; fi ;\
 	localfiles="" ;\
-	for myfile in $(foreach exte,$(SRCSUFFIXES),$(wildcard *$(exte))) ; do \
+	for myfile in `for exte in $(SRCSUFFIXES); do ls *$$exte 2>/dev/null; done` ; do \
 		if [[ -L $${myfile} ]] ; then \
 			localfiles="$${localfiles} $${myfile%.*}.o _invdep_.$${myfile}" ;\
 		fi ;\
 	done ;\
-	for myfile in $(foreach exte,$(INCSUFFIXES),$(wildcard *$(exte))) ; do \
+	for myfile in `for exte in $(INCSUFFIXES); do ls *$$exte 2>/dev/null; done` ; do \
 		if [[ -L $${myfile} ]] ; then \
 			localfiles="$${localfiles} _invdep_.$${myfile}" ;\
 		fi ;\
@@ -235,35 +238,57 @@ $(RDE_TARGET_OBJ):  sanity
 	$(MYTIME) $(MAKE) $(NOPRINTDIR) $${localfiles} $(MYMAKE_VARS)
 
 .PHONY: $(RDE_TARGET_OBJ_FORCES)
-$(RDE_TARGET_OBJ_FORCES): $(RDE_TARGET_OBJ_TOUCH) 
+$(RDE_TARGET_OBJ_FORCES): $(RDE_TARGET_OBJ_TOUCH)
 	$(MYTIME) $(MAKE) $(NOPRINTDIR) $(RDE_TARGET_OBJ) $(MYMAKE_VARS)
 .PHONY: $(RDE_TARGET_OBJ_TOUCH)
 $(RDE_TARGET_OBJ_TOUCH):
 	touch `ls *.f* *.c* *.h* *.F* *.t* 2>/dev/null` 2>/dev/null || true
 
+.PHONY: hash
+hash:
+	echo "export RDE_BUILDNAME=`rdediff --hashstat`" >> .rde.buildname
+
 .PHONY: rmpo
 rmpo: $(RDE_TARGET_CLEAN)
 .PHONY: $(RDE_TARGET_CLEAN)
-$(RDE_TARGET_CLEAN): 
+$(RDE_TARGET_CLEAN):
 	chmod -R u+w $(BUILDOBJ)/*.o $(BUILDMOD)/*.[Mm][Oo][Dd] 2>/dev/null || true
 	rm -rf       $(BUILDOBJ)/*.o $(BUILDMOD)/*.[Mm][Oo][Dd] 2>/dev/null || true
+	filelist="`for exte in $(SRCSUFFIXES) $(INCSUFFIXES); do ls *$$exte include/*$$exte 2>/dev/null; done`" ;\
 	cd $(BUILDPRE) ;\
    if [[ $$? != 0 ]] ; then echo "ERROR: cannot move into build dir: $(BUILDOBJ)" ; exit 1 ; fi ;\
-	for myfile in $(foreach exte,$(SRCSUFFIXES) $(INCSUFFIXES),$(wildcard *$(exte))) ; do \
-		if [[ ! -L $${myfile} ]] ; then \
-			chmod u+w $${myfile} ; rm -f  $${myfile};\
+	for myfile in $$filelist ; do \
+		myfile2=$${myfile##*/} ;\
+		if [[ ! -L $${myfile2} ]] ; then \
+			chmod u+w $${myfile2} ; rm -f  $${myfile2} ;\
 		fi ;\
 	done
 	rm -f $(MAKEFILE_CONST)
 
 .PHONY: $(RDE_TARGET_BUILDCLEAN_PLUS)
-$(RDE_TARGET_BUILDCLEAN_PLUS): 
+$(RDE_TARGET_BUILDCLEAN_PLUS):
 	chmod u+w -R $(BUILD)/
 	rm -f $$(find $(BUILD)/ -type f) 2>/dev//null || true
 	rm -f $(MAKEFILE_CONST)
 
+.PHONY: $(RDE_TARGET_BINCLEAN)
+$(RDE_TARGET_BINCLEAN):
+	for mydir in $(BUILDBIN) ;do\
+	  chmod u+w $${mydir}/* $${mydir}/.[a-zA-Z0-9_-]* 2>/dev/null || true ;\
+	  rm -f     $${mydir}/* $${mydir}/.[a-zA-Z0-9_-]* 2>/dev/null || true ;\
+	done
+	rm -f $(MAKEFILE_CONST)
+
+.PHONY: $(RDE_TARGET_LIBCLEAN)
+$(RDE_TARGET_LIBCLEAN):
+	for mydir in $(BUILDLIB) ;do\
+	  chmod u+w $${mydir}/* $${mydir}/.[a-zA-Z0-9_-]* 2>/dev/null || true ;\
+	  rm -f     $${mydir}/* $${mydir}/.[a-zA-Z0-9_-]* 2>/dev/null || true ;\
+	done
+	rm -f $(MAKEFILE_CONST)
+
 .PHONY: $(RDE_TARGET_BUILDCLEAN)
-$(RDE_TARGET_BUILDCLEAN): 
+$(RDE_TARGET_BUILDCLEAN):
 	for mydir in $(RDE_BUILDCLEAN_LIST) ;do\
 	   chmod u+w $${mydir}/* $${mydir}/.[a-zA-Z0-9_-]* 2>/dev/null || true ;\
 		rm -f     $${mydir}/* $${mydir}/.[a-zA-Z0-9_-]* 2>/dev/null || true ;\

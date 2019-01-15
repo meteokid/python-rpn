@@ -74,7 +74,7 @@ if [[ $long == 0 ]] ; then
    for item in $(rdevar utils); do 
       item2="rde $(echo ${item##*/} | cut -c4-)"
          #echo "   ${item2}\n       $(head -1 $item | grep ksh > /dev/null && grep DESC= $item | cut -d= -f2 | grep -v \$item)"
-      echo "   ${item2}\n       $(grep DESC= ${rde}/bin/$item | cut -d= -f2- | grep -v \$item)"
+      printf "   ${item2}\n       $(grep DESC= ${rde}/bin/$item | cut -d= -f2- | grep -v \$item)\n"
    done
    echo ========================================
    exit 0

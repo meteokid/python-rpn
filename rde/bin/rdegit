@@ -1,0 +1,708 @@
+#!/bin/bash
+. .rdebase.inc.dot
+
+DESC='Use Git as CVS backend'
+USAGE="USAGE: ${MYSELF} [-h] [-v] [-f] [-u] [GIT_CMD [GIT_CMD_OPTIONS]]"
+RDEGITTAG0="original"
+
+rdegiterror() {
+   if [[ $quiet == 0 ]] ; then
+      toto=$(echo -e $USAGE)
+      more <<EOF
+
+ERROR: $1
+
+$DESC
+
+$toto
+
+EOF
+   fi
+   exit 1
+}
+
+usage_long() {
+   toto=$(echo -e $USAGE)
+   more <<EOF
+$DESC
+
+$toto
+
+Options:
+    -h, --help        : print this help
+    -v, --verbose     : verbose mode
+    -f, --force       : force operation
+    -u, --update      : update git tree with working dir files
+        --patch=NAME  : Produce a set of patches from your current branch
+        --patchsplit=NAME  : Produce a set of patches from your current branch
+                             split into components
+
+Commands:
+    init            : init the repository
+    status          : print repository status
+    log             : Show commit logs
+    diff            : native/default "git diff"
+                      e.g.: ${MYSELF} diff --name-status
+                      e.g.: ${MYSELF} diff --name-status HEAD
+                      e.g.: ${MYSELF} diff --name-status ${RDEGITTAG0}
+    diff=DIFFCMD    : use DIFFCMD as diff tool instead of "git diff"
+                      e.g.: ${MYSELF} diff=r.gitdiff -d
+                      e.g.: ${MYSELF} diff=r.gitdiff -d ${RDEGITTAG0}
+    commit [-m LOG] : commit change to repository
+                      Commits are always with "-a" since rdegit assumes no staging
+                      e.g.: ${MYSELF} commit -m 'my commit log'
+    tag [[-d] NAME] : list tags or add/remove tags
+                      e.g.: ${MYSELF} tag
+                      e.g.: ${MYSELF} tag TAGNAME
+                      e.g.: ${MYSELF} tag -d TAGNAME
+    branch          : List, create, or delete branches
+                      e.g.: ${MYSELF} branch [-v] [-r|-a]
+                      e.g.: ${MYSELF} branch BRANCHNAME
+                      e.g.: ${MYSELF} branch -d BRANCHNAME
+    gitk [--all]    : start gitk
+
+WARNING: Commands/options below change the working dir content, use with caution
+    --update-reverse : update working dir files with git tree files
+                       You may use this after an operation you made
+                       directly in the git repository (not through rdegit)
+                       to refresh the working dir
+    --apply=PATCH    : Apply patch produced by --patch ti current branch
+                       Note, to avoid merge conflict, please make sure you
+                       commited or reset your working dir modifis beforehand
+    reset            : Reset current HEAD to the specified state
+                       Any changes not commited will be lost
+                       Reset are always "--hard" since rdegit assumes no staging
+                       e.g.: ${MYSELF} reset
+    checkout         : Checkout a branch or paths to the working tree
+                       Any changes not commited may be lost
+                       e.g.: ${MYSELF} checkout -b newbranch ${RDEGITTAG0}
+                             This reverts to original and start on newbranch
+                       e.g.: ${MYSELF} checkout master
+                             This reverts back to the main dev branch
+                       e.g.: ${MYSELF} checkout BRANCHNAME
+                       e.g.: ${MYSELF} checkout -b tmp_branch TAGNAME
+                       e.g.: ${MYSELF} checkout HEAD -- rpnphy/src/base/skocon.F90
+                             You may prefer: rdeco -f skocon.F90
+    mv               : Move or rename a file, a directory, or a symlink
+
+Notes:
+* Source files are auto added and removed from the git repository, thus
+** no need to do git add/rm, just add/remove them from your working dir
+** files are never in staging mode
+** diff is always done with '--cached'
+** reset is always done with '--hard'
+* For gitk to represent properly your workdir,
+  you may need to run '${MYSELF} update' or '${MYSELF} status'
+
+HowTo:
+* Save a copy of your code:
+  rdegit commit
+* Reset to last commmit:
+  rdegit reset
+* Reset only one file to last commit:
+  rdegit checkout HEAD -- PATH/TO/FILE
+* Start to code on a new branch, 2 cases:
+** case 1, from the present code (HEAD is a special keyword):
+   rdegit checkout -b BRANCHNAME HEAD
+   where HEAD is a special keyword. type as is in capital letters
+   where BRANCHNAME is the actual name of your branch
+** case 2, from a previous commit:
+   rdegit checkout -b BRANCHNAME REFNAME
+   where REFNAME can be a commit hash (see rdegit log) or a tag (see rdegit tag)
+* Resume coding on another existing branch, 2 steps:
+** step 1: save or reset the modified code, see commit and reset above
+** step 2: checkout the code:
+   rdegit checkout BRANCHNAME
+* Pull from someone else's repos:
+   cd $(rdevar build/repos)
+
+   # Initial import/merge v1
+   git remote add OTHER URL
+   git fetch OTHER
+   git checkout -b OTHER OTHER/master
+   # git rebase original
+   git rebase master
+   git checkout master
+   git merge OTHER
+
+   # Initial import/merge v2
+   git remote add OTHER URL
+   git fetch OTHER
+   git rebase master OTHER/master
+   git tag TMP
+   git checkout master
+   git merge OTHER
+   git tag -d TMP
+
+   # Initial import/merge v3
+   git remote add OTHER URL
+   git pull -X subtree OTHER master
+
+   # Next pull
+   git pull OTHER master
+
+   cd ../..
+   rdegit --update-reverse
+
+For Operations not yet supported (merging, patching, ...), you can:
+* cd $(rdevar build)/repos
+* # do your git operations
+* cd ../..
+* rdegit --update-reverse  # update your working dir from the git repository
+
+Notes:
+* For operation like 'rdegit diff=r.gitdiff -d' you may need to use a
+  newer version of git:
+  . r.module.dot ; module load git/2.6.3
+EOF
+
+}
+
+mystatus=0
+myforce=0
+myupdate=0
+mypatch=""
+myapply=""
+mycmd=""
+mycmd2=""
+mycmdopt=""
+previous=""
+while [[ $# -gt 0 ]] ; do
+   if [[ x$mycmd == x ]] ; then
+      case $1 in
+         (-h|--help) usage_long; exit 0;;
+         (-v|--verbose) ((verbose=verbose+1));;
+         (-f|--force) myforce=1;;
+         (-u|--update) myupdate=1;;
+         (--update-reverse) mycmd="updatereverse";;
+         (--patch=*) mycmd="patch"; mypatch="${1#*=}";;
+         (--patchsplit=*) mycmd="patchsplit"; mypatch="${1#*=}";;
+         (--apply=*) mycmd="apply"; myapply="${1#*=}";;
+         (diff) mycmd=${1%%=*}; mycmd2="git diff --cached";;
+         (diff=*) mycmd=${1%%=*}; mycmd2="${1#*=} --cached";;
+         (gitk) mycmd=${1}; mycmd2="${1}";;
+         (init|status|log|commit|tag|branch|mv) mycmd=$1;;
+         (reset|checkout) mycmd=$1;;
+         *) rdegiterror "Unknown command or option: $1";;
+      esac
+      previous=$1
+   else
+      # mycmdopt="$*"
+      mycmdopt="$@"
+      mycmdopt=''
+      for i in "$@"; do
+         if [[ x"${i}" == x"${i##* }" ]] ; then
+            mycmdopt="${mycmdopt} ${i}"
+         else
+            i="${i//\\/\\\\}"
+            mycmdopt="${mycmdopt} \"${i//\"/\\\"}\""
+         fi
+      done
+      break
+   fi
+   shift
+done
+
+rde_exit_if_not_rdetopdir
+
+BUILDGIT=${ROOT}/${CONST_BUILDREPOS}
+# BUILDGIT=${ROOT}/${CONST_BUILD}/repos
+RDETOPDIRS="$(rdevar srcpath_topdirs)"
+RDEGITDIROTHER="_other"
+VALIDEXTWILD="$(echo ${VALIDEXT} | sed 's/\./*./g')"
+EXTRAFILES="${SRC_PATH_FILE##*/} Makefile.build.mk Makefile.rules.mk Makefile.user.mk  Makefile.user.root.mk ${MAKEFILEDEP##*/}"
+#EXTRAFILES2="$(echo ${CONST_EXTRADIRS} | tr '\n' ' ' | sed 's| |/* |g')"
+EXTRAFILES2="$(find ${CONST_EXTRADIRS} -type f | tr '\n' ' ')"
+GITLS=${BUILDGIT}/.rdesrcusrls
+GITLL=${BUILDGIT}/.rdesrcusrll
+GITMV=${BUILDGIT}/.rdesrcusrmv
+RDEPATHCACHEFILE=${BUILDGIT}/.filelist0
+
+
+rdegitbuildgitignore() {
+   if [[ -f ${BUILDGIT}/.gitignore ]] ; then
+      return
+   fi
+   myecho 1 "+ Build .gitignore"
+   here=$(pwd)
+   cd ${ROOT}
+   mylinks=""
+   for item in $(find bin lib -type l -print) ; do
+      mylinks="${mylinks} ${RDEGITDIROTHER}/${item##*/}"
+   done
+   if [[ ! -d ${BUILDGIT} ]] ; then
+      mkdir ${BUILDGIT}
+   fi
+   cat > ${BUILDGIT}/.gitignore <<EOF
+${RDEPATHCACHEFILE##*/}
+${GITLS##*/}
+${GITLL##*/}
+.gitignore
+_other/*/.restricted
+.patch
+.patch.tgz
+.ssm.d/*
+etc/*
+*/.ssm.d/*
+*/etc/*
+$(echo ${mylinks} | tr ' ' '\n')
+EOF
+   cd ${here}
+}
+
+
+rdegitbuildfilecache() {
+   myecho 1 "+ Build inital files list cache"
+   here=$(pwd)
+   cd ${BUILDGIT}
+   #git stash
+   branch0="$(git rev-parse --abbrev-ref HEAD)"
+   git checkout -b tmp$$ ${RDEGITTAG0}
+   find * -type f > ${RDEPATHCACHEFILE}
+   git checkout ${branch0}
+   git branch -d tmp$$
+   #git stash pop
+   cd ${here}
+}
+
+
+rdegitfilecachearray=''
+rdegitloadfilecache() {
+   myecho 2 "++ Load inital files list cache"
+   if [[ ! -f ${RDEPATHCACHEFILE} ]] ; then
+      rdegitbuildfilecache
+   fi
+   rdegitfilecachearray="$(cat ${RDEPATHCACHEFILE} 2>/dev/null)"
+}
+
+
+rdeorginalname() {
+   myname="$1"
+   mymv="$(cat ${GITMV} | grep -e ":${myname}$" 2>/dev/null | tr '\n' ';')"
+   if [[ ! -z ${mymv} ]] ; then
+      mysrc=${mymv%;}
+      mysrc=${mysrc##*;}
+      mysrc=${mysrc%%:*}
+      echo $(rdeorginalname ${mysrc})
+   else
+      echo ${myname}
+   fi
+}
+
+rdeorginalnameapprox() {
+   myname="$1"
+   mymv="$(cat ${GITMV} | grep -e ":/.*${myname#/}$" 2>/dev/null | tr '\n' ';')"
+   if [[ ! -z ${mymv} ]] ; then
+      mysrc=${mymv%;}
+      mysrc=${mysrc##*;}
+      mysrc=${mysrc%%:*}
+      echo $(rdeorginalname ${mysrc})
+   else
+      echo ${myname}
+   fi
+}
+
+rdenewname() {
+   myname="$1"
+   mymv="$(cat ${GITMV} | grep -e "^${myname}:" 2>/dev/null | tr '\n' ';')"
+   if [[ ! -z ${mymv} ]] ; then
+      mydst=${mymv%;}
+      mydst=${mydst##*;}
+      mydst=${mydst##*:}
+      echo $(rdenewname ${mydst})
+   else
+      echo ${myname}
+   fi
+}
+
+
+rdename_exp2git0() {
+   #Provide RDEGIT path for exp file name
+   myname="$1"
+   mypath2="$(echo ${rdegitfilecachearray} | tr ' ' '\n' | grep -e "\b${myname}\b$" 2>/dev/null | cut -d' ' -f1)"
+   mypath20="${mypath2}"
+   if [[ x"${mypath2}" == x"" ]] ; then
+      mypath2=${RDEGITDIROTHER}/${myname}
+   fi
+   if [[ x"${mypath2}" != x"$(echo ${mypath2} | cut -d' ' -f1)" ]] ; then # multiple files... put it in other
+      mypath2=${RDEGITDIROTHER}/${myname}
+   fi
+   if [[ x"${mypath2%%/*}" == x"${RDEGITDIROTHER}" ]] ; then
+      mypath2a="$(rdeorginalnameapprox ${mypath2##*/})"
+      [[ ${mypath2a} != ${mypath2##*/} ]] && mypath2=${mypath2a}|| true
+      echo ${mypath2}
+   else
+      echo $(rdeorginalname ${mypath2})
+   fi
+}
+
+
+rdegitinit() {
+   RDESUFFIXES="${CONST_RDESUFFIX}"
+   RDESRCPATH="$(rdevar srcpath)"
+   RDESRCPATH_R="$(rdevar srcpath_r)"
+   RDESRCPATH_TOPDIR="$(rdevar srcpath_topdirs)"
+
+   if [[ ${myforce} == 1 ]] ; then
+      chmod -R u+w ${BUILDGIT}
+      rm -rf ${BUILDGIT}
+   fi
+   if [[ -d ${BUILDGIT}/.git ]] ; then
+      rdegiterror "Git init already done; Use --force to replace exisiting repos"
+      return
+   fi
+
+   mkdir -p ${BUILDGIT} 2> /dev/null
+   cd ${BUILDGIT}
+
+   for item in ${CONST_EXTRADIRS} ; do
+      mkdir -p ${RDEGITDIROTHER}/${item}
+   done
+   ## Add other workdir files
+   for item in $(cd ${ROOT} ; ls ${EXTRAFILES} 2>/dev/null) ; do
+      cp ${ROOT}/$item ${RDEGITDIROTHER}/${item}
+   done
+
+   rdegitbuildgitignore
+
+   myecho 1 "+ Git init and inital commits/imports with tag: ${RDEGITTAG0}"
+   git init
+   touch ${GITMV}
+   git add .
+   git commit -a -m "Initial commit of code from ROOT dir"
+   set -x
+   for item in ${RDESRCPATH_TOPDIR} ; do
+      item2=$(echo ${item##*/} | cut -d_ -f1-2)
+      if [[ -d ${item}/.git ]] ; then
+         myecho 1 "++ Add subtree dir for ${item2} [${item}]"
+         git remote add ${item2} ${item}
+         #echo $item2 : branch=$(git rev-parse --abbrev-ref HEAD)
+         git subtree add -P ${item2%%_*} ${item2} master #TODO: what if not master
+      else
+         item2=${item2%%_*}
+         myecho 1 "++ Add dir ${item2} [${item}]"
+         #cp -RL ${item} ./${item2}
+         cp -R ${item}/. ./${item2}
+         git add ${item2}/.
+         git commit -a -m "Initial commit of code from: ${item2}"
+      fi
+   done
+   git tag ${RDEGITTAG0}
+
+   rdegitbuildfilecache
+
+   cd ${ROOT}
+}
+
+
+rdegitupdate() {
+   doadd="${1}"
+   wasupdated=1
+   TMPLS=${TMPDIR}/.rdesrcusrls-$$
+   TMPLL=${TMPDIR}/.rdesrcusrll-$$
+
+   ls -l ${EXTRAFILES} ${VALIDEXTWILD} ${EXTRAFILES2} 2>/dev/null | sort > ${TMPLL}
+
+   ## Checking changes status
+   diff ${TMPLL} ${GITLL} > /dev/null 2>&1
+   if [[ x$? == x0 && ${myforce} == 0 ]] ; then
+      myecho 2 "+ Update Shadow Tree: Nothing changed since last rdegit update"
+      rm -f ${TMPLL}
+      return
+   fi
+   myecho 1 "+ Updating Shadow Tree"
+
+   mylist="$(ls ${EXTRAFILES} ${VALIDEXTWILD} ${EXTRAFILES2} 2>/dev/null | sort)"
+   cd ${BUILDGIT}
+
+   rdegitloadfilecache
+
+   ## Remove files that were present in last update
+   myecho 2 "++ Remove/revert files that were present in last update and no longer are"
+   for item in $(cat ${GITLS} 2>/dev/null) ; do
+      if [[ ! -f ${ROOT}/${item} ]] ; then
+         item2=$(rdename_exp2git0 ${item})
+         item2n=$(rdenewname ${item2})
+         if [[ x${item2%%/*} != x${RDEGITDIROTHER} ]] ; then
+            myecho 3 "+++ revert to original ${item2} : ${item2n}"
+            git checkout ${RDEGITTAG0} -- ${item2} #TODO: 2>/dev/null to avoid .gitignore complain
+            # if [[ $? != 0 ]] ; then
+            #    mystatus=1
+            # fi
+            if [[ $? == 0 && ${item2} != ${item2n} ]] ; then
+               echo "${item2n}:${item2}" >> ${GITMV}  #TODO: double check this
+            fi
+         else
+            myecho 3 "+++ rm ${item2n}"
+            rm -f ${item2n}
+            if [[ x${doadd} == xadd ]] ; then
+               git rm -f ${item2n} 2>/dev/null
+            fi
+         fi
+      fi
+   done
+
+   ## Re-add all workdir files
+   myecho 2 "++ Re-add all workdir files"
+   for item in ${mylist} ; do
+      item2=$(rdename_exp2git0 ${item})
+      item2n=$(rdenewname ${item2})
+      myecho 3 "+++ Update ${item} [${item2n}]"
+      [[ ${item2n%/*} != ${item2n} ]] && mkdir -p ${item2n%/*}
+      cp ${ROOT}/${item} ${item2n} #2>/dev/null
+      if [[ x${doadd} == xadd ]] ; then
+         git add ${item2n} 2>/dev/null
+      fi
+   done
+
+   echo ${mylist} > ${TMPLS}
+   mv ${TMPLS} ${GITLS} 2>/dev/null
+   mv ${TMPLL} ${GITLL} 2>/dev/null
+   cd ${ROOT}
+}
+
+
+checkifgit() {
+   if [[ ! -d ${BUILDGIT}/.git ]] ; then
+      rdegiterror "You need to run 'rdegit init' before anything."
+      return
+   fi
+}
+
+
+git2workdir() {
+   myecho 1 "+ Updating workdir files from git";
+   cd ${ROOT}
+   # rm -f ${EXTRAFILES}
+   myecho 2 "++ Removing current workdir files";
+   rm -f ${EXTRAFILES2}
+   rm -f ${VALIDEXTWILD}
+   cd ${BUILDGIT}
+   rm -f ${GITLS} ${GITLL}
+   filelist="$(git diff ${RDEGITTAG0} --name-only)"
+   for item in ${filelist}; do
+      item2=${item#*/}
+      myecho 2 "++ Adding: ${item2}";
+      if [[ x"$(echo ${CONST_EXTRADIRS} | tr ' ' '\n' | grep ${item2%%/*})" != x"" ]] ; then
+         mkdir -p ${ROOT}/${item2%/*}
+         cp ${item} ${ROOT}/${item2}
+      else
+         cp ${item} ${ROOT}
+     fi
+   done
+   #TODO: Should we re-build the rename list?
+   myecho 0 "IMPORTANT: With code changed, it would be best to do: make buildclean deplocal";
+}
+
+
+rdemksplitpatches() {
+   expname=${1:-""}
+   #See: https://stackoverflow.com/questions/359424/detach-move-subdirectory-into-separate-git-repository/17864475#17864475
+   #See: https://stackoverflow.com/questions/1006775/how-to-reference-the-initial-commit
+   #See: https://www.devroom.io/2009/10/26/how-to-create-and-apply-a-patch-with-git/
+   cd ${BUILDGIT}
+   # mybranch0="$(git symbolic-ref HEAD | sed -e 's/^refs\/heads\///')" #git version < 1.8
+   # mybranch0="$(git rev-parse --abbrev-ref HEAD)"
+   mybranch0="$(git symbolic-ref --short HEAD)"
+   for item in [a-z]* ; do
+      mybranch1=${mybranch0}-${item}-branch
+      if [[ -d ${item} ]] ; then
+         #TODO: deal with _other/ as well... before splitting?
+         git subtree split -P ${item} -b ${mybranch1}
+         git checkout ${mybranch1}
+         origin="$(git rev-list --max-parents=0 HEAD | tail -n 1)"
+         # git format-patch ${origin}
+         itemname="$(cd ${ROOT} && rdevar srcpath_topdirs | tr ' ' '\n' | grep ${item})"
+         itemname="$(echo ${itemname##*/} | cut -d_ -f1-2)"
+         git2patch "${expname}" ${itemname:-${item}} ${origin}
+         git checkout ${mybranch0}
+      fi
+   done
+}
+
+
+git2patch() {
+   #See: https://www.devroom.io/2009/10/26/how-to-create-and-apply-a-patch-with-git/
+   expname=${1:-""}
+   RDESRCPATH_TOPDIR="${2:-$(rdevar srcpath_topdirs)}"
+   RDEGITTAG0B=${3:-${RDEGITTAG0}}
+   cd ${BUILDGIT}
+   # git format-patch ${RDEGITTAG0B}
+   git format-patch HEAD...${RDEGITTAG0B} #TODO: check this
+   patchname=""
+   for item in ${RDESRCPATH_TOPDIR} ; do
+      item2=$(echo ${item##*/} | cut -d_ -f1-2)
+      patchname="${patchname}+${item2}"
+   done
+   #TODO: add branch name to patch?
+   patchname="${patchname#+}+${USER}_${expname}.patch.tgz"
+   patchlist="$(ls *.patch)"
+   if [[ x"${patchlist}" != x"" ]] ; then
+      rm -f ${patchname}
+      tar czf ${patchname} ${patchlist}
+      rm -f ${patchlist}
+      myecho 0 "Patch: ${BUILDGIT}/${patchname}"
+   else
+      myecho 0 "Patch: Nothing to be done"
+   fi
+}
+
+
+patch2git() {
+   patchfile=${1:-"__NO_SUCH_FILE__"}
+   if [[ ! -f ${patchfile} ]] ; then
+      myerror "File not found: ${patchfile}"
+   fi
+   #TODO: tar xzvf ${patchfile}
+   #TODO: git apply --check patchname.patch
+   #TODO: git am --signoff < patchname.patch
+   myerror "Apply is Not yet implemented"
+}
+
+
+rdegitmv() {
+   _mvopt="${1}"
+   _mvsrc0="${2%/}"
+   _mvsrc1="${3%/}"
+   _mvdst0="${4}"
+   _mvdst="${mvdst%/}"
+   _mvsrc=${_mvsrc0}/${_mvsrc1}
+   if [[ ${_mvsrc1} != ${_mvsrc1##*/} ]] ; then
+      if [[ ${_mvdst##*/} == ${_mvsrc1%%/*} ]] ; then
+         _mvdst=${_mvdst%/*}/${_mvsrc1}
+      else
+         _mvdst=${_mvdst}/${_mvsrc1}
+      fi
+   elif [[ -d ${_mvdst} ]] ; then
+      _mvdst=${_mvdst}/${_mvsrc1}
+   elif [[ ${_mvdst0} != ${_mvdst} ]] ; then
+      _mvdst=${_mvdst}/${_mvsrc1}
+   fi
+   myecho 2 "++ git mv ${_mvopt} ${_mvsrc} ${_mvdst}"
+   if [[ ! -f ${_mvsrc} ]] ; then
+      rdegiterror "rdegit mv source file not found: ${_mvsrc}"
+   fi
+
+   if [[ ${_mvsrc##*/} != ${_mvdst##*/} ]] ; then
+      _mvsrc0="$(rdeorginalname ${_mvsrc})"
+      if [[ ${_mvsrc0%%/*} != ${RDEGITDIROTHER} ]] ; then
+         #TODO: this resctriction should only apply to original source code
+         rdegiterror "rdegit mv do not support original file renaming (stub creation problem): ${_mvsrc} ${_mvdst}"
+      fi
+   fi
+   eval "cd ${BUILDGIT} && git mv ${_mvopt} ${_mvsrc} ${_mvdst}" || mystatus=1;
+   if [[ x${mystatus} == x0 ]] ; then
+      echo "${_mvsrc}:${_mvdst}" >> ${GITMV};:
+   fi
+}
+
+
+rdegitmvmulti() {
+   mvopt="${1}"
+   mvsrc="${2}"
+   mvdst="${3}"
+   myecho 1 "+ git mv ${mvopt} ${mvsrc} ${mvdst}"
+   cd ${BUILDGIT}
+   _multi=0
+   if [[ $(echo ${mvsrc} | wc -w) -gt 1 ]] ; then
+      if [[ -e ${mvdst} ]] ; then
+         if [[ ! -d ${mvdst} ]] ; then
+            rdegiterror "rdegit mv dest should be a dir for multiple source: ${mvdst}"
+         fi
+         _multi=1
+      else
+         _multi=2
+      fi
+   fi
+   for mvsrc1 in ${mvsrc} ; do
+      if [[ ! -e ${mvsrc1} ]] ; then
+         rdegiterror "rdegit mv source not found: ${mvsrc1}"
+      fi
+      if [[ -d ${mvsrc1} ]] ; then
+         mvsrc1=${mvsrc1%/}
+         for mvsrc2 in $(cd ${mvsrc1} && find . -type f) ; do
+            rdegitmv "${mvopt}" "${mvsrc1%/*}" "${mvsrc1##*/}/${mvsrc2}" "${mvdst}"
+         done
+      else
+         rdegitmv "${mvopt}" "${mvsrc1%/*}" "${mvsrc1##*/}" "${mvdst}"
+      fi
+   done
+   cd ${ROOT}
+}
+
+
+rdegitbuildgitignore
+if [[ x"${mycmd}" == x"init" ]] ; then
+   rdegitinit
+elif [[ x"${mypatch}" != x"" ]] ; then
+   checkifgit
+   if [[ ${myupdate} = 1 ]] ; then rdegitupdate add ; fi
+   if [[ ${mycmd} == 'patchsplit' ]] ; then
+      rdemksplitpatches ${mypatch}
+   else
+      git2patch ${mypatch}
+   fi
+elif [[ x"${apply}" != x"" ]] ; then
+   checkifgit
+   if [[ ${myupdate} = 1 ]] ; then rdegitupdate add ; fi
+   patch2git ${myapply}
+   #TODO: update-reverse
+elif [[ x"${mycmd2}" != x"" ]] ; then
+   checkifgit
+   rdegitupdate add
+   myecho 1 "+ ${mycmd2} ${mycmdopt}"
+   eval "cd ${BUILDGIT} && ${mycmd2} ${mycmdopt}" || mystatus=1
+else
+   checkifgit
+   wasupdated=0
+   case ${mycmd} in
+      (tag|log)
+         myecho 1 "+ git ${mycmd} ${mycmdopt}";
+         eval "cd ${BUILDGIT} && git ${mycmd} ${mycmdopt}" || mystatus=1;;
+      (status|branch)
+         rdegitupdate add;
+         myecho 1 "+ git ${mycmd} ${mycmdopt}";
+         eval "cd ${BUILDGIT} && git ${mycmd} ${mycmdopt}" || mystatus=1;;
+      (commit)
+         rdegitupdate add;
+         myecho 1 "+ git ${mycmd} -a ${mycmdopt}";
+         eval "cd ${BUILDGIT} && git ${mycmd} -a ${mycmdopt}" || mystatus=1;;
+      (updatereverse)
+         git2workdir;;
+      (reset)
+         myecho 1 "+ git ${mycmd} ${mycmdopt}";
+         eval "cd ${BUILDGIT} && git ${mycmd} --hard ${mycmdopt}" || mystatus=1;
+         git2workdir;
+         rdegitupdate add;;
+      (checkout)
+         rdegitupdate add;
+         myecho 1 "+ git ${mycmd} ${mycmdopt}";
+         eval "cd ${BUILDGIT} && git ${mycmd} ${mycmdopt}" || mystatus=1;
+         git2workdir;
+         rdegitupdate add;;
+      # (mv)
+      #    mycmdopt="$(echo ${mycmdopt} | tr '\t' ' ')";
+      #    # mvsrcdst="$(echo ${mycmdopt} | sed 's/-[^ ]*[ ]//g')";
+      #    # mvsrcdst="$(echo ${mycmdopt} | sed 's/-[^[:space:]]*[[:space:]]//g')";
+      #    mvsrcdst="$(echo ${mycmdopt} | tr ' ' '\n' | egrep -v '^-' | tr '\n' ' ')";
+      #    mvsrcdst="${mvsrcdst% }";
+      #    mvsrc="${mvsrcdst% *}";
+      #    mvdst="${mvsrcdst##* }";
+      #    mvopt="$(echo ${mycmdopt} | tr ' ' '\n' | egrep '^-' | tr '\n' ' ')";
+      #    rdegitupdate add;
+      #    rdegitmvmulti "${mvopt}" "${mvsrc}" "${mvdst}";
+      #    if [[ x$mystatus == x0 ]] ; then
+      #       git2workdir;
+      #       rdegitupdate add;
+      #    fi;;
+     *)
+         if [[ x"${mycmd}" != x"" ]] ; then
+            rdegiterror "Unknown or not Implemented Command: ${mycmd}";
+         fi;
+   esac
+   if [[ ${myupdate} = 1 && ${wasupdated} == 0 ]] ; then
+      rdegitupdate add
+   fi
+fi
+
+exit $mystatus

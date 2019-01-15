@@ -40,7 +40,7 @@ while [[ $# -gt 0 ]] ; do
       (-*) myerror "Option Not recognized: $1";;
         *) files="$files $1"
     esac
-	 previous=$1
+    previous=$1
     shift
 done
 files="$files $@"
@@ -54,7 +54,7 @@ rde_exit_if_not_rdetopdir
 #followlinks='-L'
 followlinks=''
 
-srclist_cache_file="$(rdevar srcpathfilelistcache)"
+srclist_cache_file="${CONST_SRCPATHFILELISTCACHE}"
 
 get_srclist_files() {
    #TODO: check if up to date
@@ -62,51 +62,65 @@ get_srclist_files() {
    #   rdefind $(rdevar srcpath) --type=f --maxdepth=0 > $srclist_cache_file
    #fi
    #cat $srclist_cache_file
-   rdefind $(rdevar srcpath) --type=f --maxdepth=0
+   rdefind $(rdevar srcpath) --type=f --maxdepth=0  #TODO: use CONST_SRCPATH?
 }
 
 find_file() {
    #_myfile=$1
    #_mydir=$2
+   _myrecurse=${3:-${myrecurse}}
    if [[ -f ${2}/${1} ]] ; then
       echo ${2}/${1}
-   elif [[ $myrecurse == 1 ]] ; then
-      _mypath="$(find ${followlinks} ${2} -name ${1})"
+   elif [[ ${_myrecurse} == 1 ]] ; then
+      _mypath="$(find ${followlinks} ${2} -name ${1} 2>/dev/null)"
       echo ${_mypath}
    fi
 }
 
-
+search_nor=0
 if [[ $localonly == 1 ]] ; then
 
    for myfile in $files ; do
       if [[ -f $myfile ]] ; then
          myecho 0 ./$myfile
       else
-         mystderr 0 "Missing file: $myfile"
+         _found=0
+         for mydir in ${CONST_EXTRADIRS}; do
+            if [[ -f ${mydir}/$myfile ]] ; then
+               _found=1
+               myecho 0 ${mydir}/$myfile
+            fi
+         done
+         if [[ ${_found} == 0 ]] ; then
+            mystderr 0 "Missing file: $myfile"
+         fi
       fi
    done
    exit 0
-   
+
 elif [[ $refonly == 1 ]] ; then
+   _extra="{$(echo ${CONST_EXTRADIRS} | tr ' ' ',')}"
+   _extra="$(echo ${CONST_SRCPATH_TOPDIRS} | tr '\n' ' ' | sed "s| |/${_extra} |g")"
+   mydirlist="${CONST_SRCPATH} ${_extra}"
+   mydirlist="$(echo ${mydirlist} | tr ' ' '\n' | sort -u)"
+   search_nor=1
+elif [[ $buildonly == 1 ]] ; then
+   mydirlist="${CONST_BUILDSRC}"
+else
+   _extra="{$(echo ${CONST_EXTRADIRS} | tr ' ' ',')}"
+   _extra="$(echo ${CONST_SRCPATH_TOPDIRS} | tr '\n' ' ' | sed "s| |/${_extra} |g")"
+   mydirlist=". ${CONST_EXTRADIRS} ${CONST_BUILDSRC} ${CONST_SRCPATH} ${_extra}"
+   mydirlist="$(echo ${mydirlist} | tr ' ' '\n' | sort -u)"
+   search_nor=1
+fi
 
-   mycache="$(get_srclist_files)"
-   for myfile in $files ; do
-      mypathlist="$(echo $mycache | tr ' ' '\n' | grep /${myfile} 2>/dev/null)"
-      if [[ x"$mypathlist" != x"" ]] ; then
-         myecho 0 $mypathlist | tr ' ' '\n'
-      else
-         mystderr 0 "Missing file: $myfile"
+if [[ ${search_nor} == 1 ]] ; then
+   mydirlist_nor=""
+   for item in ${CONST_SRCPATH_TOPDIRS} ; do
+      if [[ x"$(echo ${mydirlist} | tr ' ' '\n' | grep -e "^${item}\$")" == x"" ]] ; then
+         mydirlist_nor="${mydirlist_nor} ${item}"
       fi
    done
-   exit 0
-
-elif [[ $buildonly == 1 ]] ; then
-   #mydirlist="$(rdevar build/src) $(rdevar build/pre)" 
-   mydirlist="$(rdevar build/src)"
-else
-   #mydirlist=". $(rdevar build/src) $(rdevar build/pre) $(rdevar srcpath)"
-   mydirlist=". $(rdevar build/src) $(rdevar srcpath)"
 fi
 
 for myfile in $files ; do
@@ -119,8 +133,15 @@ for myfile in $files ; do
          found=1
       fi
    done
+   for mydir in ${mydirlist_nor} ; do
+      mypathlist="$(find_file $myfile $mydir)"
+      if [[ x"${mypathlist}" != x"" ]] ; then
+         mypathlist2="${mypathlist2} ${mypathlist}"
+         found=1
+      fi
+   done
    if [[ x$found == x1 ]] ; then
-      myecho 0 ${mypathlist2} | tr ' ' '\n'
+      myecho 0 ${mypathlist2} | tr ' ' '\n' | sort -u
    else
       mystderr 0 "Missing file: $myfile"
    fi

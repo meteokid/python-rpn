@@ -14,33 +14,48 @@
                   you'll need to 'touch' FILENAME.ext
 
  objects        : build all files in the source path
-
+ libs           : build all known libraries with their dependencies (OBJECTS)
+ bins           : build all known binaries
+ 
  clean          : rm *.o *.mod from build tree (keep lib and bin)
                   rm derived & extraced src files (keeps locally modified ones)
+ binclean       : rm all from build/bin tree
+ libclean       : rm all from build/lib tree
  buildlean      : rm all files from build tree
- distclean      : rm all files from build tree and all RDE locally created files 
+ distclean      : rm all files from build tree and all RDE locally created files
  
  tags           : Build the tag file for ${EDITOR:-vi} code navigation
                   You may set the EDITOR env. var. to make the tag file for that editor
+ 
  --------------------------------------------------------------
  User overrides file: Makefile.user.mk
  
  Example of content:
  
  VERBOSE  = -v
- OPTIL    = 2
- OMP      = -openmp
- MPI      = -mpi
- #LFLAGS  = 
- #ifeq (intel13sp1u2,$(CONST_RDE_COMP_ARCH))
- #FFLAGS  = -g -traceback -C -ftrapuv #-warn all
- #else
- #FFLAGS  = -g -traceback -C -qinitauto=FF -qflttrap=ov:zerodivide:enable:invalid
- #endif
- #CFLAGS  =
- #LIBAPPL = 
- #LIBPATH_USER = 
- #COMP_RULES_FILE = $(ROOT)/Compiler_rules_$(CONST_RDE_COMP_ARCH)
+ # OPTIL    = 2
+ # OMP      = -openmp
+ # MPI      = -mpi
+ ifneq (,$(filter intel%,$(COMP_ARCH))$(filter PrgEnv-intel%,$(COMP_ARCH)))
+    FFLAGS  = -C -g -traceback -ftrapuv -warn all -warn nointerfaces
+    CFLAGS  = -C -g -traceback -ftrapuv -fp-model precise #-Wall
+ else
+    FFLAGS  = -C -g -traceback
+    CFLAGS  = -C -g -traceback
+ endif
+ # LFLAGS  = 
+ # LIBAPPL = 
+ # LIBPATH_USER = 
+ # COMP_RULES_FILE = $(ROOT)/Compiler_rules_$(CONST_RDE_COMP_ARCH)
+ # PROFIL  = -prof   # set to -prof to enable the profiler (default = "")
+
+ --------------------------------------------------------------
+ User overrides file: Makefile.user.root.mk
+ 
+ Example of content:
+ 
+ # export RDE_LOCAL_LIBS_ONLY=1
+ 
  --------------------------------------------------------------
  For a list and details of tools use:
    rdehelp [--long]

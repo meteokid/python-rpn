@@ -16,6 +16,7 @@ Options:
     -l, --local   : grep into locally modified code only
     -r, --ref     : grep into src ref dirs only
     -b, --build   : grep into build dir only
+    -x, --extra   : Look only into "${CONST_EXTRADIRS}" subdirs
     -e, --egrep   : use egrep
     -R            : search recursively down the dir tree
 EOF
@@ -26,6 +27,7 @@ refonly=0
 buildonly=0
 recurse=''
 mygrep=grep
+extraonly=0
 GREP_OPTIONS=""
 while [[ $# -gt 0 ]] ; do
    case $1 in
@@ -34,6 +36,7 @@ while [[ $# -gt 0 ]] ; do
       (-l|--local) localonly=1;;
       (-r|--ref)   refonly=1;;
       (-b|--build) buildonly=1;;
+      (-x|--extra) extraonly=1;;
       (-e|--egrep) mygrep=egrep;;
       (-R) recurse=recursively;;
       -*) GREP_OPTIONS="$GREP_OPTIONS $1";;
@@ -55,13 +58,23 @@ fi
 
 rde_exit_if_not_rdetopdir
 
+suffixes="*$(echo ${CONST_RDESUFFIX} | sed 's/ [.]/,*./g'),*.mk"
+
+
+[[ $extraonly == 1 ]] && recurse=recursively
+
 if [[ $localonly == 1 ]] ; then
    SEARCH_PATH_BASE="."
 elif [[ $refonly == 1 ]] ; then
-   SEARCH_PATH_BASE="$(rdevar srcpath)"
+   if [[ x$recurse == x ]] ; then
+      SEARCH_PATH_BASE="$(rdevar srcpath)"
+   else
+      SEARCH_PATH_BASE="$(rdevar srcpath_topdirs)"
+      RESTRICT_LIST="${BASE_ARCH} ${BASE_ARCH}/${COMP_ARCH} ${ORDENV_PLAT} ${ORDENV_PLAT}/${COMP_ARCH}"
+   fi
 elif [[ $buildonly == 1 ]] ; then
-   tmp="$(rdevar build/pre)"
-   SEARCH_PATH_BASE="$(rdevar build/src)"
+   tmp="${CONST_BUILDPRE}"
+   SEARCH_PATH_BASE="${CONST_BUILDSRC}"
    if [[ x"$SEARCH_PATH_BASE" != x"$tmp" ]] ; then
       SEARCH_PATH_BASE="$SEARCH_PATH_BASE $tmp"
    fi
@@ -78,9 +91,38 @@ if [[ ! -n ${SEARCH_PATH} ]] ; then
    SEARCH_PATH='.'
 fi
 
-suffixes="*$(rdevar rdesuffix | sed 's/ [.]/,*./g'),*.mk"
+if [[ $extraonly == 1 ]] ; then
+   # [[ x"$recurse" == x"recursively" ]] && recurse=-R
+   recurse=-R
+   SEARCH_PATH2=""
+   for item in $SEARCH_PATH_BASE ; do
+      if [[ x"${SEARCH_PATH}" == x"." ]] ; then
+         if [[ -d ${item} ]] ; then
+            for item2 in ${CONST_EXTRADIRS} ; do
+               if [[ -d ${item}/${item2} ]] ; then
+                  SEARCH_PATH2="${SEARCH_PATH2} ${item}/${item2}"
+               fi
+            done
+         else
+            SEARCH_PATH2="${SEARCH_PATH2} ${item}"
+         fi
+      else
+         for item2 in $SEARCH_PATH ; do
+            if [[ -e ${item}/${item2} ]] ; then
+               SEARCH_PATH2="${SEARCH_PATH2} ${item}/${item2}"
+            fi
+         done
+      fi
+   done
+   $mygrep ${recurse} -H ${GREP_OPTIONS} "${SEARCH_STRING}" ${SEARCH_PATH2}
+   exit 0
+fi
 
 for PATH_BASE in $SEARCH_PATH_BASE ; do
+   cd ${ROOT}
+   if [[ ! -d ${PATH_BASE} ]] ; then
+      continue
+   fi
    cd ${PATH_BASE}
    for MYPATH in ${SEARCH_PATH} ; do
       #TODO: if $recurse -r condition is too restrictive
