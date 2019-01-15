@@ -19,7 +19,6 @@ rep_ou=$2
 lnk_dest=$3
 bname=$(basename ${file})
 if [ "${lnk_dest}" != "${bname}" ] ; then lnk_dest=${lnk_dest}/${bname} ; fi
-typeset -Z4 cnt
 list_A=$(r.fstliste.new -izfst $file -typvar "A" |cut -d ":" -f 11 | sort -u )
 list_P=$(r.fstliste.new -izfst $file -typvar "P" |cut -d ":" -f 11 | sort -u )
 list_I=$(r.fstliste.new -izfst $file -typvar "I" |cut -d ":" -f 11 | sort -u )
@@ -27,9 +26,7 @@ for i in $(echo "${list_A} ${list_P} ${list_I}" | tr ' ' '\n' | sort -u | tr '\n
   valid=$(echo $i | cut -c1-8).$(echo $i | cut -c9-14)
   dir=${rep_ou}/VALID_${valid}
   mkdir -p ${dir}
-  cnt=$(ls -1 ${dir}/GEM_input_file* 2> /dev/null | wc -l)
-  cnt=$((cnt+1))
-  ln -sf ../../${lnk_dest} ${dir}/GEM_input_file_$cnt
+  ln -sf ../../${lnk_dest} ${dir}/GEM_input_file-${bname}
 done
 }
 
