@@ -17,6 +17,7 @@
 module fstmpio_rdhint_mod
    use iso_c_binding
    use vGrid_Descriptors
+   use vgrid_ov, only: vgrid_nullify
    use cmcdate_mod
    use ezgrid_mod
    use fst_mod
@@ -244,6 +245,7 @@ contains
            communicator_S)
 
       F_nkeys = RMN_ERR
+      if (present(F_vgrid)) call vgrid_nullify(F_vgrid) 
 
       if (associated(F_keys1)) F_keys1 = RMN_OK
       mydata  = RMN_OK
@@ -391,6 +393,7 @@ contains
            communicator_S)
 
       F_nkeys = RMN_ERR
+      if (present(F_vgrid)) call vgrid_nullify(F_vgrid) 
 
       if (associated(F_keys1)) F_keys1 = RMN_OK
       if (associated(F_keys2)) F_keys2 = RMN_OK
@@ -1031,6 +1034,7 @@ contains
       itype = 0
       F_lvltyp_S = ' '
       lvltyp_S = ' '
+      call vgrid_nullify(F_vgrid) 
       if (isiomaster_L) then
          F_istat = fst_get_vgrid(F_fileid, F_key, F_vgrid, F_ip1s, lvltyp_S)
       endif

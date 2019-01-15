@@ -66,6 +66,9 @@ module timestr_mod
       module procedure timestr_isstep_int_jdate
    end interface timestr_isstep
 
+   real(RDOUBLE),parameter :: EPSILON_8 = tiny(1.D0)
+   real,parameter :: EPSILON_4 = tiny(1.)
+
    character(len=64) :: m_timestr_default_S = 'steps,-1'
 
 contains
@@ -430,6 +433,11 @@ contains
       endif
       if (.not.RMN_IS_OK(F_status)) return
 
+      if (abs(F_dt) < EPSILON_8) then
+         call msg(MSG_ERROR,"(timestr2step) Cannot use provided timestep == 0.")
+         F_status = RMN_ERR
+         return
+      endif
       F_nstep = sec_8 / F_dt
 
       return
@@ -458,6 +466,11 @@ contains
       endif
       if (.not.RMN_IS_OK(F_status)) return
 
+      if (abs(F_dt) < EPSILON_8) then
+         call msg(MSG_ERROR,"(timestr2step) Cannot use provided timestep == 0.")
+         F_status = RMN_ERR
+         return
+      endif
       F_nstep = sec_8 / F_dt
 
       return
@@ -486,6 +499,11 @@ contains
       endif
       if (.not.RMN_IS_OK(F_status)) return
 
+      if (abs(F_dt) < EPSILON_8) then
+         call msg(MSG_ERROR,"(timestr2step) Cannot use provided timestep == 0.")
+         F_status = RMN_ERR
+         return
+      endif
       F_nstep = sec_8 / F_dt
 
       return
@@ -514,6 +532,11 @@ contains
       endif
       if (.not.RMN_IS_OK(F_status)) return
 
+      if (abs(F_dt) < EPSILON_8) then
+         call msg(MSG_ERROR,"(timestr2step) Cannot use provided timestep == 0.")
+         F_status = RMN_ERR
+         return
+      endif
       F_nstep = sec_8 / F_dt
 
       return
@@ -561,7 +584,7 @@ contains
       !@return
       integer :: F_status
       !*@/
-      real(RDOUBLE), parameter :: EPSILON_8 = 1.0D-12
+      real(RDOUBLE), parameter :: EPSILON_8b = 1.0D-12
       integer :: interval, mystep,m0,m1,y0,y1,nmonths
       integer(IDOUBLE) :: jdatev2, istep, dt
       real(RDOUBLE) :: fact_8
@@ -579,6 +602,10 @@ contains
       endif
 
       interval = nint(F_interval*fact_8)
+      if (interval == 0) then
+         call msg(MSG_ERROR,"(timestr_prognum) Cannot use interval == 0")
+         return
+      endif
 
       if (F_units_S(1:3) == 'MON') then
 
@@ -598,7 +625,7 @@ contains
          if (F_step>0) mystep= mystep + min(1,mod(F_step,interval))
          mystep = mystep * interval
          if (present(F_maxstep)) mystep = min(mystep,F_maxstep)
-         F_prognum = ceiling(dble(mystep)/fact_8 - EPSILON_8)
+         F_prognum = ceiling(dble(mystep)/fact_8 - EPSILON_8b)
 
       endif
 
@@ -732,6 +759,11 @@ contains
 
       else !# IF_MON
 
+         if (abs(F_dt) < EPSILON_4) then
+            call msg(MSG_ERROR,"(timestr_isstep) Cannot use provided timestep == 0.")
+            return
+         endif
+
          gap = 1800/F_dt
          gap = gap + 1
 
@@ -834,6 +866,10 @@ contains
       F_fact_8 = -1.D0
       dt_8   = 1.D0
       if (present(F_dt_8)) dt_8 = F_dt_8
+      if (abs(dt_8) < EPSILON_8) then
+         call msg(MSG_ERROR,"(timestr_unitfact) Cannot use provided timestep == 0.")
+         return
+      endif
 
       select case(F_units_S(1:3))
       case('STE')

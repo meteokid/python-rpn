@@ -187,7 +187,7 @@
 #define FOHR(qqq,ttt,prs)      (_DMIN1(_DBLE(prs),FOEFQ(qqq,prs))/FOEW(ttt))
 #define FOHRX(qqq,prs,ddd)     (_DMIN1(_DBLE(prs),FOEFQ(qqq,prs))/ddd)
 
-#define FOLV(ttt)              (_CHLC-_CTE3*_DIFTRPL(ttt))
+#define FOLV(ttt)              (_CHLC-(_CTE3*_DIFTRPL(ttt)))
 
 #define FOLS(ttt)              (_CHLC+_CHLF+(_CPV-(_CTE4*_DBLE(ttt)+_CTE5))*_DIFTRPL(ttt))
 

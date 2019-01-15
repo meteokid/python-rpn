@@ -17,6 +17,7 @@
 module vgrid_from_file_mod
    use iso_c_binding
    use VGrid_Descriptors
+   use vgrid_ov, only: vgrid_nullify
    use vgrid_wb
    use sort_mod
    use mu_jdate_mod
@@ -89,6 +90,7 @@ contains
       !*@/
       integer :: datev, sfcRefKey2
       !------------------------------------------------------------------
+      call vgrid_nullify(F_vgrid) 
       datev = RMN_ANY_DATE
       if (F_jdatev /= MU_JDATE_ANY) datev = jdate_to_cmc(F_jdatev)
       sfcRefKey2 = RMN_ERR
@@ -150,6 +152,7 @@ contains
       !------------------------------------------------------------------
       F_istat = RMN_ERR
       F_levtype_S = ' '
+      call vgrid_nullify(F_vgrid) 
       if (present(F_fstkeys)) then
          !TODO: reuse provided space if any and big enough
          if (associated(F_fstkeys)) deallocate(F_fstkeys,stat=ier)
@@ -299,6 +302,7 @@ contains
       endif
       ipe_master = RPN_COMM_MASTER
       if (present(F_ipe_master)) ipe_master = F_ipe_master
+      call vgrid_nullify(F_vgrid) 
 
       datev = RMN_ANY_DATE
       if (F_jdatev /= MU_JDATE_ANY) datev = jdate_to_cmc(F_jdatev)
@@ -363,6 +367,7 @@ contains
       endif
       if (present(F_sfcRefKey))  F_sfcrefkey  = RMN_ERR
       if (present(F_sfcRefKey2)) F_sfcrefkey2 = RMN_ERR
+      call vgrid_nullify(F_vgrid) 
 
       comm_S = RPN_COMM_BLOC_COMM
       if (present(F_comm_S)) comm_S = F_comm_S

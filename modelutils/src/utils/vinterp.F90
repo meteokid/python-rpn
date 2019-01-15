@@ -16,6 +16,7 @@
 !/@*
 module vinterp_mod
    use vGrid_Descriptors
+   use vgrid_ov, only: vgrid_nullify
    use vgrid_wb
    use samevgrid_mod
    implicit none
@@ -55,10 +56,10 @@ contains
       implicit none
       !@objective
       !@arguments
-      real,pointer, contiguous :: F_dataout(:,:,:),F_datain(:,:,:)
+      real,pointer :: F_dataout(:,:,:),F_datain(:,:,:)
       type(vgrid_descriptor),intent(in) :: F_vgridout,F_vgridin
       integer,intent(in) :: F_ip1listout(:),F_ip1listin(:)
-      real,pointer, contiguous :: F_sfcfldout(:,:),F_sfcfldin(:,:)
+      real,pointer :: F_sfcfldout(:,:),F_sfcfldin(:,:)
       integer,intent(in),optional :: F_nlinbot
       character(len=*),intent(in),optional :: F_msg_S
       !@return
@@ -66,7 +67,7 @@ contains
       !*@/
       character(len=256) :: msg_S, tmp_S
       integer :: nlinbot
-      real,pointer, contiguous :: sfcfldout2(:,:), sfcfldin2(:,:)
+      real,pointer :: sfcfldout2(:,:), sfcfldin2(:,:)
       !------------------------------------------------------------------
       call msg(MSG_DEBUG,'(vinterp) vinterp0 [BEGIN]')
       F_istat = RMN_ERR
@@ -520,6 +521,7 @@ contains
       character(len=32) :: sfcfld_S, sfcfld2_S
       !------------------------------------------------------------------
       sfcfld2_S = ' '
+      call vgrid_nullify(F_vgrid)
       F_istat = vgrid_wb_get(F_vgrid_S, F_vgrid, F_ip1list, vtype, &
            sfcfld_S, sfcfld2_S)
       if (RMN_IS_OK(F_istat)) then

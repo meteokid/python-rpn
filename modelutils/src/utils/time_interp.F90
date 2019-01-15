@@ -175,7 +175,7 @@ contains
       character(len=GMM_MAXNAMELENGTH) :: varname_S
       integer :: istat1,istat2
       type(gmm_metadata) :: mymeta
-      real,pointer, contiguous :: dummy3d(:,:,:)
+      real,pointer :: dummy3d(:,:,:)
       !----------------------------------------------------------------------
       F_istat   = TIME_INTERP_NOT_FOUND
       F_datev1  = RMN_ERR
@@ -500,7 +500,7 @@ contains
    !/@*
    function time_interp_set0_4(F_data,F_varname_S,F_datev,F_in_restart_L,F_flag) result(F_istat)
       implicit none
-      real,pointer, contiguous :: F_data(:,:,:)
+      real,pointer :: F_data(:,:,:)
       character(len=*),intent(in) :: F_varname_S
       integer,intent(in) :: F_datev
       logical,intent(in),optional :: F_in_restart_L
@@ -526,7 +526,7 @@ contains
    !/@*
    function time_interp_set0_8(F_data,F_varname_S,F_datev,F_in_restart_L,F_flag) result(F_istat)
       implicit none
-      real,pointer, contiguous :: F_data(:,:,:)
+      real,pointer :: F_data(:,:,:)
       character(len=*),intent(in) :: F_varname_S
       integer(IDOUBLE),intent(in) :: F_datev
       logical,intent(in),optional :: F_in_restart_L
@@ -550,7 +550,7 @@ contains
    !/@*
    function time_interp_set1_4(F_data,F_varname_S,F_datev,F_vgrid_S,F_sfcfld_S,F_in_restart_L,F_flag) result(F_istat)
       implicit none
-      real,pointer, contiguous :: F_data(:,:,:)
+      real,pointer :: F_data(:,:,:)
       character(len=*),intent(in) :: F_varname_S,F_vgrid_S,F_sfcfld_S
       integer,intent(in) :: F_datev
       logical,intent(in),optional :: F_in_restart_L
@@ -577,7 +577,7 @@ contains
    function time_interp_set1_8(F_data,F_varname_S,F_datev,F_vgrid_S, &
         F_sfcfld_S,F_in_restart_L,F_flag,F_sfcfld2_S) result(F_istat)
       implicit none
-      real,pointer, contiguous :: F_data(:,:,:)
+      real,pointer :: F_data(:,:,:)
       character(len=*),intent(in) :: F_varname_S,F_vgrid_S,F_sfcfld_S
       integer(IDOUBLE),intent(in) :: F_datev
       logical,intent(in),optional :: F_in_restart_L
