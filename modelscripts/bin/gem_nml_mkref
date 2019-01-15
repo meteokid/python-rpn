@@ -33,8 +33,8 @@ EOF
    exit 1
 fi
 
-a=$(which gemprnml_Linux_x86-64.Abs)
-b=$(which prphynml_Linux_x86-64.Abs)
+a=$(which gemprnml_${BASE_ARCH}.Abs)
+b=$(which prphynml_${BASE_ARCH}.Abs)
 if [[ x"${a}" == x"" || x"${b}" == x"" ]] ; then
    cat 1>&2 <<EOF
 ERROR: GEM environement not properly set, cannot find all print nml progs
