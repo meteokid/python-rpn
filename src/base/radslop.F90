@@ -52,7 +52,7 @@ contains
       !*@/
 #include "phymkptr.hf"
 
-      real, pointer, dimension(:), contiguous :: zc1slop, zc2slop, zc3slop, zc4slop, zc5slop, zdlat, zdlon, zfluslop, zfsd0, zfsf0, zvv1, zap
+      real, pointer, dimension(:) :: zc1slop, zc2slop, zc3slop, zc4slop, zc5slop, zdlat, zdlon, zfluslop, zfsd0, zfsf0, zvv1, zap
       real, dimension(ni) :: bcos, bsin, stan, ssin, scos
       real :: dire, difu, albe
       integer :: i

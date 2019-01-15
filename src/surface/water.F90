@@ -110,6 +110,7 @@ subroutine water1(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, &
    real, dimension(n) :: my_ta,my_qa
    real, dimension(n) :: zu10,zusr          ! wind at 10m and sensor level
    real, dimension(n) :: zref_sw_surf, zemit_lw_surf, zzenith
+   real, dimension(n) :: zusurfzt, zvsurfzt
 
    integer I
    real qsat_o_salty, delh, delq
@@ -514,31 +515,35 @@ subroutine water1(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, &
    !#TODO: at least 4 times identical code in surface... separeted s/r to call
    IF_THERMAL_STRESS: if (thermal_stress) then
 
-      do I=1,N
+      ! Compute wind at z=zt
+      i = sl_sfclayer(th,hu,vmod,vdir,zzusl,zztsl,sst,qs,z0m,z0h,zdlat,zfcor, &
+           hghtm_diag=zt,hghtt_diag=zt,u_diag=zusurfzt,v_diag=zvsurfzt, &
+           tdiaglim=WATER_TDIAGLIM)
+      if (i /= SL_OK) then
+         call physeterror('water', 'error 3 returned by surface layer calculations')
+         return
+      endif
 
+      do I=1,N
          if (abs(zzusl(i)-zu) <= 2.0) then
             zu10(i) = sqrt(uu(i)**2+vv(i)**2)
          else
             zu10(i) = sqrt(zudiag(i)**2+zvdiag(i)**2)
          endif
 
-         ! wind  at SensoR level
-         zusr(i) = zu10(i)
+         ! wind  at SensoR level zubos at z=zt
+         zusr(i) = sqrt(zusurfzt(i)**2 + zvsurfzt(i)**2)
+         ! zusr(i) = zu10(i)
 
          zref_sw_surf(i) = alvis_wat(i) * zflusolis(i)
-         !    zref_sw_surf(i) = 0.075 * zflusolis(i)
-         ! alvis_wat currently problems over the lakes !!!! for now albedo~=0.075 (DAVIES, mc Master university, when??
-         zemit_lw_surf(i)  = (1. - zemisr(i)) * zfdsi(i) + zemisr(i)*STEFAN   &
-              !        zemit_lw_surf(i)  = (1. -0.976) * zfdsi(i) + 0.976*STEFAN   &
+         zemit_lw_surf(i) = (1. - zemisr(i)) * zfdsi(i) + zemisr(i)*STEFAN   &
               *ztsurf(i)**4
-         ! emissivity for lake ontario 0.976 but should depend on Sun elev Fresnel 's formula ??
-         ZZENITH(I) = acos(ZCOSZENI(I))      ! direct use of bus zenith
-         if (ZFLUSOLIS(I) > 0.0) then
-            ZZENITH(I) = min(ZZENITH(I), PI/2.)
+         zzenith(I) = acos(zcoszeni(I))      ! direct use of bus zenith
+         if (zflusolis(i) > 0.0) then
+            zzenith(i) = min(zzenith(i), pi/2.)
          else
-            ZZENITH(I) = max(ZZENITH(I), PI/2.)
+            zzenith(i) = max(zzenith(i), pi/2.)
          endif
-
       end do
 
       call SURF_THERMAL_STRESS(ZTDIAG, ZQDIAG,         &

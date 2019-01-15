@@ -10,7 +10,7 @@ endif
 #    $(error Not found: $(rpnphy)/VERSION)
 # endif
 # RPNPHY_VERSION0  = $(shell cat $(rpnphy)/VERSION | sed 's|x/||')
-RPNPHY_VERSION0  = x/6.0.rc1
+RPNPHY_VERSION0  = x/6.0.rc2
 RPNPHY_VERSION   = $(notdir $(RPNPHY_VERSION0))
 RPNPHY_VERSION_X = $(dir $(RPNPHY_VERSION0))
 

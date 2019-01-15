@@ -97,7 +97,7 @@ contains
       integer :: i, k
       real :: cfblxp(ni,nk)
       real, target :: zero(ni,nk)
-      real, pointer, dimension(:,:), contiguous :: zfbl, zfdc, zfsc, zftot, zfxp, ziwc, zlwc, &
+      real, pointer, dimension(:,:) :: zfbl, zfdc, zfsc, zftot, zfxp, ziwc, zlwc, &
            zqcplus, zqiplus, zqldi, zqlsc, zqlmi, zqsmi, zfmc, &
            zqsdi, zqssc, zqtbl, zsnow, zqi_cat1, zqi_cat2, zqi_cat3, zqi_cat4
       !----------------------------------------------------------------
@@ -250,7 +250,7 @@ contains
 
       integer :: i, k
       real, target :: zero(ni,nk)
-      real, pointer, dimension(:,:), contiguous :: zfbl, zfdc, zfsc, zftot, zfxp, zfmp,  &
+      real, pointer, dimension(:,:) :: zfbl, zfdc, zfsc, zftot, zfxp, zfmp,  &
            ziwcimp, zlwcimp, zqldi, zqlsc, zqsdi, zqssc, zqtbl, zfmc, &
            zqlmi, zqsmi
       !----------------------------------------------------------------

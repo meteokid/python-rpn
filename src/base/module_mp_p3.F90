@@ -22,8 +22,8 @@
 !    Jason Milbrandt (jason.milbrandt@canada.ca)                                           !
 !__________________________________________________________________________________________!
 !                                                                                          !
-! Version:       3.1.4                                                                     !
-! Last updated:  2018-09-27                                                                !
+! Version:       3.1.5                                                                     !
+! Last updated:  2018-10-19                                                                !
 !__________________________________________________________________________________________!
 
  MODULE MODULE_MP_P3
@@ -94,6 +94,9 @@
 ! scheme, including reading in two lookup table files and creating a third.                !
 ! 'P3_INIT' be called at the first model time step, prior to first call to 'P3_MAIN'.      !
 !------------------------------------------------------------------------------------------!
+#ifdef ECCCGEM
+ use iso_c_binding
+#endif
 
   implicit none
 
@@ -105,7 +108,7 @@
 
 ! Local variables and parameters:
  logical, save                :: is_init = .false.
- character(len=16), parameter :: version_p3               = '3.1.4 '!version number of P3
+ character(len=16), parameter :: version_p3               = '3.1.5 '!version number of P3
  character(len=16), parameter :: version_intended_table_1 = '4'     !lookupTable_1 version intended for this P3 version
  character(len=16), parameter :: version_intended_table_2 = '4'     !lookupTable_2 version intended for this P3 version
  character(len=1024)          :: version_header_table_1             !version number read from header, table 1
@@ -113,11 +116,14 @@
  character(len=1024)          :: lookup_file_1                      !lookup table, main
  character(len=1024)          :: lookup_file_2                      !lookup table for ice-ice interactions
  character(len=1024)          :: dumstr
- integer                      :: i,j,k,ii,jj,kk,jjj,jjj2,jjjj,jjjj2,end_status
+ integer                      :: i,j,k,ii,jj,kk,jjj,jjj2,jjjj,jjjj2,end_status,procnum,istat
  real                         :: lamr,mu_r,lamold,dum,initlamr,dm,dum1,dum2,dum3,dum4,dum5,  &
                                  dum6,dd,amg,vt,dia,vn,vm
  logical                      :: err_abort
 
+#ifdef ECCCGEM
+ include "rpn_comm.inc"
+#endif
 
  !------------------------------------------------------------------------------------------!
 
@@ -276,6 +282,17 @@
 !------------------------------------------------------------------------------------------!
 ! read in ice microphysics table
 
+ procnum = 0
+#ifdef ECCCGEM
+ call rpn_comm_rank(RPN_COMM_GRID,procnum,istat)
+ itab = 0.
+ itabcoll = 0.D0
+ itabcolli1 = 0.D0
+ itabcolli2 = 0.D0
+#endif
+
+ IF_PROC0: if (procnum == 0) then
+
  print*
  print*, ' P3 microphysics: v',version_p3
  print*, '   P3_INIT (reading/creating look-up tables [v',trim(version_intended_table_1), &
@@ -297,15 +314,10 @@
     print*, '************************************************'
     print*
     global_status = STATUS_ERROR
-    if (err_abort) then
-       print*,'Stopping in P3 init'
-       call flush(6)
-       stop
-    endif
-    return
  endif
- read(10,*)
 
+ IF_OK: if (global_status /= STATUS_ERROR) then
+ read(10,*)
 
  do jj = 1,densize
     do ii = 1,rimsize
@@ -327,8 +339,29 @@
        enddo
     enddo
  enddo
+ endif IF_OK
 
  close(10)
+
+ endif IF_PROC0
+
+#ifdef ECCCGEM
+ call rpn_comm_bcast(global_status,1,RPN_COMM_INTEGER,0,RPN_COMM_GRID,istat)
+#endif
+
+ if (global_status == STATUS_ERROR) then
+    if (err_abort) then
+       print*,'Stopping in P3 init'
+       call flush(6)
+       stop
+    endif
+    return
+ endif
+
+#ifdef ECCCGEM
+ call rpn_comm_bcast(itab,size(itab),RPN_COMM_REAL,0,RPN_COMM_GRID,istat)
+ call rpn_comm_bcast(itabcoll,size(itabcoll),RPN_COMM_DOUBLE_PRECISION,0,RPN_COMM_GRID,istat)
+#endif
 
 ! read in ice-ice collision lookup table
 
@@ -336,7 +369,9 @@
 
 !                   *** used for multicategory only ***
 
- if (nCat>1) then
+ IF_NCAT: if (nCat>1) then
+
+   IF_PROC0B: if (procnum == 0) then
 
     open(unit=10,file=lookup_file_2,status='old')
 
@@ -355,13 +390,8 @@
        print*, '************************************************'
        print*
        global_status = STATUS_ERROR
-       if (err_abort) then
-          print*,'Stopping in P3 init'
-          call flush(6)
-          stop
-       endif
-       return
     endif
+    IF_OKB: if (global_status /= STATUS_ERROR) then
     read(10,*)
 
     do i = 1,iisize
@@ -379,15 +409,36 @@
           enddo
        enddo
     enddo
+    endif IF_OKB
 
     close(unit=10)
 
- else ! for single cat
+   endif IF_PROC0B
+
+#ifdef ECCCGEM
+   call rpn_comm_bcast(global_status,1,RPN_COMM_INTEGER,0,RPN_COMM_GRID,istat)
+#endif
+ 
+   if (global_status == STATUS_ERROR) then
+      if (err_abort) then
+         print*,'Stopping in P3 init'
+         call flush(6)
+         stop
+      endif
+      return
+   endif
+
+#ifdef ECCCGEM
+   call rpn_comm_bcast(itabcolli1,size(itabcolli1),RPN_COMM_DOUBLE_PRECISION,0,RPN_COMM_GRID,istat)
+   call rpn_comm_bcast(itabcolli2,size(itabcolli2),RPN_COMM_DOUBLE_PRECISION,0,RPN_COMM_GRID,istat)
+#endif
+
+ else ! IF_NCAT for single cat
 
     itabcolli1 = 0.
     itabcolli2 = 0.
 
- endif
+ endif IF_NCAT
 
 !------------------------------------------------------------------------------------------!
 
@@ -507,8 +558,10 @@
 
 !.......................................................................
 
- print*, '   P3_INIT DONE.'
- print*
+ if (procnum == 0) then
+    print*, '   P3_INIT DONE.'
+    print*
+ endif
 
  end_status = STATUS_OK
  if (present(stat)) stat = end_status
@@ -3237,10 +3290,6 @@ END subroutine p3_init
 !==========================================================================================!
 ! Sedimentation:
 
- !-- GEM only (for timing tests)
- ! call timing_start2(71,'P3_SEDI',40)
- !==
-
 !------------------------------------------------------------------------------------------!
 ! Cloud sedimentation:  (adaptivive substepping)
 
@@ -3654,10 +3703,6 @@ END subroutine p3_init
     enddo iice_loop_sedi_ice  !iice-loop
 
 !------------------------------------------------------------------------------------------!
-
- !-- GEM only (for timing tests)
- ! call timing_stop(71)
- !==
 
 !     if (debug_on) call check_values(qv(i,:),T(i,:),qc(i,:),nc(i,:),qr(i,:),nr(i,:),      &
 !                          qitot(i,:,:),qirim(i,:,:),nitot(i,:,:),birim(i,:,:),i,it,       &

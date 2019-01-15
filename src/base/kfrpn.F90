@@ -61,7 +61,7 @@ contains
    real mg(ix),mlac(ix),wstar(ix),tstar(ix),tke(ix,kx),kt(ix,kx)
    real coadvu(ix),coadvv(ix),coage(ix),cowlcl(ix),cozlcl(ix)
    real critmask, delt
-   real, dimension(:,:), pointer, contiguous :: wklclp
+   real, dimension(:,:), pointer :: wklclp
 
 !@Author Jack Kain and JM Fritsch (Oct 14,1990)
 

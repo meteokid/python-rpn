@@ -35,7 +35,7 @@ module phy_options
    integer           :: cw_rad       = 0
    integer(IDOUBLE)  :: jdateo       = 0
    real              :: delt         = 0.
-   character(len=4),  pointer, contiguous :: dyninread_list_s(:) => NULL()
+   character(len=4),  pointer :: dyninread_list_s(:) => NULL()
    logical           :: dynout       = .false.
    logical           :: impflx       = .false.
    logical           :: inincr       = .false.
@@ -48,7 +48,7 @@ module phy_options
    logical           :: tdiaglim     = .false.
    integer           :: tlift        = 0
    integer           :: nphyoutlist  = 0
-   character(len=32), pointer, contiguous :: phyoutlist_S(:) => NULL()
+   character(len=32), pointer :: phyoutlist_S(:) => NULL()
 
    !# Time length (hours) for special time accumulated physics variables
    integer           :: acchr        = 0

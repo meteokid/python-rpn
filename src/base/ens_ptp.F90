@@ -76,8 +76,8 @@ contains
 #include "tdpack_const.hf"
 #include "ens.cdk"
 
-      real, pointer, dimension(:), contiguous   :: zabekfc, zmrk2, ztlc
-      real, pointer, dimension(:,:), contiguous :: zsigm, zsigt, &
+      real, pointer, dimension(:)   :: zabekfc, zmrk2, ztlc
+      real, pointer, dimension(:,:) :: zsigm, zsigt, &
            ztplus, zuplus, zvplus, zwplus, &
            ztphytd, zuphytd, zvphytd
       !----------------------------------------------------------------

@@ -23,7 +23,7 @@ module sfcbus_mod
 
    type :: sfcptr
       sequence
-      real, pointer, contiguous :: ptr(:,:)
+      real, pointer :: ptr(:,:)
    end type sfcptr
 
    type :: SFCVAR_T

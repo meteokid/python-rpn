@@ -44,13 +44,13 @@ function phyfillbus(F_kount) result(F_istat)
         /)
 
    integer, save :: nvars = 0
-   type(phymeta), pointer, contiguous, save :: metalist(:) => null()
+   type(phymeta), pointer, save :: metalist(:) => null()
 
    type(gmm_metadata) :: meta
    character(len=GMM_MAXNAMELENGTH) :: varname_S
    character(len=32) :: prefix_S, basename_S, time_S, ext_S
    integer :: i, k0, istat, err, ijkmin(3), ijkmax(3)
-   real, pointer, contiguous :: src2d(:,:), src3d(:,:,:)
+   real, pointer :: src2d(:,:), src3d(:,:,:)
    real, pointer :: src2d1(:,:), src3d1(:,:,:)
    !     ---------------------------------------------------------------
    F_istat = RMN_ERR

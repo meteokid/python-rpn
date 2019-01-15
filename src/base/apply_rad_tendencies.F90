@@ -52,9 +52,9 @@ contains
       ! Local variables
       integer ::  istat, istat2
       real, dimension(ni,nkm1) :: qrad
-      real, dimension(:), pointer, contiguous :: zconerad,zconqrad, zps, zfusi, zfdsi, zfdss, ziv, &
+      real, dimension(:), pointer :: zconerad,zconqrad, zps, zfusi, zfdsi, zfdss, ziv, &
            zev, zei, ztdmask, znetrad
-      real, dimension(:,:), pointer, contiguous :: ztplus, zqplus, zqcplus, zgztherm, zsigt, ztrad
+      real, dimension(:,:), pointer :: ztplus, zqplus, zqcplus, zgztherm, zsigt, ztrad
       real(RDOUBLE), dimension(ni) :: l_en0, l_pw0, l_en, l_pw, l_enr, l_pwr
       !----------------------------------------------------------------
       call msg_toall(MSG_DEBUG, 'apply_rad_tendencies [BEGIN]')

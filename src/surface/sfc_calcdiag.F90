@@ -50,7 +50,7 @@ contains
 #include <msg.h>
       include "sfcinput.cdk"
 
-      real, pointer, dimension(:), contiguous :: zdrain, zdrainaf, zisoil, zleg, zlegaf, &
+      real, pointer, dimension(:) :: zdrain, zdrainaf, zisoil, zleg, zlegaf, &
            zler, zleraf, zles, zlesaf, zletr, zletraf, zlev, zlevaf, zoverfl, &
            zoverflaf, zrootdp, zwflux, zwfluxaf, zwsoil, zinsmavg
 

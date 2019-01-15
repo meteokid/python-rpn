@@ -179,14 +179,14 @@ subroutine BKF_SHALLOW5(KLON, KLEV, PDTCONV, &
    integer, parameter       :: KTPERTSX=10 ! max. allowed number of temp. perturbs.
    integer, parameter       :: KRADSX=10   ! max. allowed number of radii
 
-   real, dimension(:,:,:), pointer, contiguous :: &
+   real, dimension(:,:,:), pointer :: &
         & ZCLOUDE, ZTTENSE, ZRVTENSE, ZRCTENSE, ZRITENSE, &
         & ZUMFSE, ZURVSE, ZURCE, ZURIE, &
         & ZUTENSE, ZVTENSE
-   real, dimension(:,:), pointer, contiguous     :: ZKSHALE
-   integer, dimension(:,:), pointer, contiguous  :: ICLBASSE, ICLTOPSE
-   real, dimension(:,:,:,:), pointer, contiguous :: ZCH1TENSE
-   real, dimension(:,:,:), pointer, contiguous   :: ZUDRSE
+   real, dimension(:,:), pointer     :: ZKSHALE
+   integer, dimension(:,:), pointer  :: ICLBASSE, ICLTOPSE
+   real, dimension(:,:,:,:), pointer :: ZCH1TENSE
+   real, dimension(:,:,:), pointer   :: ZUDRSE
 
    !* Setup fundamental thermodunamical/physical constants using ECMWF/ARPEGE routine
 

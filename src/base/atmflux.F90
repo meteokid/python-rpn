@@ -71,7 +71,7 @@
 
       real, dimension(n,nk), target :: qmom,tmom,kmom
       real, dimension(n,nk+1) :: sigstag
-      real, dimension(:,:), pointer, contiguous :: tstag,qstag,kcoef
+      real, dimension(:,:), pointer :: tstag,qstag,kcoef
       INTEGER J,K, nksfc
       REAL A
       logical :: momentum_levels

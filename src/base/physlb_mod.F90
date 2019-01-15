@@ -27,7 +27,7 @@ contains
        esiz,dsiz,fsiz,vsiz,kount,ni,nj,nk,pslic )
     implicit none
     integer :: esiz,dsiz,fsiz,vsiz,kount,ni,nj,nk,pslic
-    real, dimension(:,:), pointer, contiguous :: busent3D, busdyn3D, busper3D, busvol3D
+    real, dimension(:,:), pointer :: busent3D, busdyn3D, busper3D, busvol3D
 
     !@Author L. Spacek (May 2010)
     !@Object The main physics subroutine

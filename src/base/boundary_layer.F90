@@ -71,13 +71,13 @@ contains
       real, dimension(ni,nk), target :: zero
       real(RDOUBLE), dimension(ni) :: l_en0, l_en, l_pw0, l_pw, l_enr, l_pwr
       ! Pointers to busdyn
-      real, pointer, dimension(:,:), contiguous :: zqplus, ztplus, zuplus, zvplus, zumoins, zvmoins, zsigt, zqcplus, zwplus
+      real, pointer, dimension(:,:) :: zqplus, ztplus, zuplus, zvplus, zumoins, zvmoins, zsigt, zqcplus, zwplus
       ! Pointers to busper
-      real, pointer, dimension(:), contiguous   :: zqdiag, ztdiag, zudiag, zvdiag, zz0, zps, ztdmask
-      real, pointer, dimension(:,:), contiguous :: zqtbl
+      real, pointer, dimension(:)   :: zqdiag, ztdiag, zudiag, zvdiag, zz0, zps, ztdmask
+      real, pointer, dimension(:,:) :: zqtbl
       ! Pointers to busvol
-      real, pointer, dimension(:), contiguous   :: zconepbl, zconqpbl, zfc, zfv
-      real, pointer, dimension(:,:), contiguous :: zqdifv, ztdifv, zudifv, zvdifv, zkm, zkt, zgzmom, zgztherm, zldifv, &
+      real, pointer, dimension(:)   :: zconepbl, zconqpbl, zfc, zfv
+      real, pointer, dimension(:,:) :: zqdifv, ztdifv, zudifv, zvdifv, zkm, zkt, zgzmom, zgztherm, zldifv, &
            zwdifv, zqcdifv
 
       ! External symbols

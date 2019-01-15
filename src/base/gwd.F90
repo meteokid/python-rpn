@@ -98,11 +98,11 @@ contains
       integer :: j, k
       logical :: split_tend_L
 
-      real, pointer, dimension(:), contiguous   :: p, zdhdxdy, zdhdx, zdhdy, zfcor, &
+      real, pointer, dimension(:)   :: p, zdhdxdy, zdhdx, zdhdy, zfcor, &
            zlhtg, zmg, zmtdir, zslope, zxcent, ztdmask
-      real, pointer, dimension(:,:), contiguous :: u, v, ztplus, s, rug, rvg, rtg, run, rvn, &
+      real, pointer, dimension(:,:) :: u, v, ztplus, s, rug, rvg, rtg, run, rvn, &
            rtn, zhuplus, zugwdtd1, zvgwdtd1
-      real, pointer, dimension(:,:,:), contiguous :: zvcoef
+      real, pointer, dimension(:,:,:) :: zvcoef
       !--------------------------------------------------------------------
 
       if (gwdrag == 'NIL' .and. .not.non_oro) return

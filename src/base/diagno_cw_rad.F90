@@ -65,8 +65,8 @@ contains
 
       integer :: i, k
 
-      real, pointer, dimension(:), contiguous   :: ztlwp, ztiwp, ztlwpin, ztiwpin
-      real, pointer, dimension(:,:), contiguous :: zlwcrad, ziwcrad, zcldrad
+      real, pointer, dimension(:)   :: ztlwp, ztiwp, ztlwpin, ztiwpin
+      real, pointer, dimension(:,:) :: zlwcrad, ziwcrad, zcldrad
       !----------------------------------------------------------------
 
       MKPTR1D(ztlwp, tlwp, f)

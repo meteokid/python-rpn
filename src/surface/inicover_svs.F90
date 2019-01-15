@@ -255,8 +255,8 @@ subroutine inicover_svs(kount, ni, trnch)
    real, dimension(nclass) :: laidatdn, laidatds, logz0mloc
    real, dimension(nclass) :: vegdatdn, vegdatds
    
-   real, pointer, dimension (:), contiguous :: zdlat,zlaideci, zz0mvh,zz0mvl
-   real, pointer, dimension (:,:), contiguous :: zlaivf26, zvegf
+   real, pointer, dimension (:) :: zdlat,zlaideci, zz0mvh,zz0mvl
+   real, pointer, dimension (:,:) :: zlaivf26, zvegf
    !--- numeric min for z0m
    real numin_z0m
    data numin_z0m /1.E-4/

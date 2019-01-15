@@ -33,7 +33,7 @@ module phygetmetaplus_mod
 
    type phymetaplus
       type(phymeta) :: meta
-      real, pointer, contiguous :: vptr(:,:)
+      real, pointer :: vptr(:,:)
       integer :: index
    end type phymetaplus
 
@@ -100,7 +100,7 @@ contains
       character(len=PHY_MAXNAMELENGTH) :: vlist(MAXBUS)
       logical :: full, to_alloc
       type(phymetaplus) :: meta_tmp(MAXBUS)
-      real, pointer, contiguous :: busptr(:,:)
+      real, pointer :: busptr(:,:)
       ! ---------------------------------------------------------------------
       F_istat = RMN_ERR
 

@@ -235,7 +235,7 @@
       real rido3mx,ridwatmx
       real ln10inv, pogravinv
 
-      real, pointer, dimension(:), contiguous :: auzt
+      real, pointer, dimension(:) :: auzt
 
 !***********************************************************************
 !     AUTOMATIC ARRAYS

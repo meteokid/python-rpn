@@ -37,7 +37,7 @@ function phyent2per(F_readlist_S, F_nread, F_step) result(F_istat)
    integer :: istat, mysize, ivar, nvar, k
    character(len=32) :: varname_S, var_duets_S(2,NVARS_MAX)
    type(phymeta) :: meta_e, meta_p
-   real, pointer, contiguous :: ptr_e(:,:,:), ptr_p(:,:,:)
+   real, pointer :: ptr_e(:,:,:), ptr_p(:,:,:)
    ! ---------------------------------------------------------------------
    F_istat = RMN_OK
    if (F_nread == 0 .or. (F_step == 0 .and. &

@@ -79,8 +79,8 @@ contains
       real    :: dp, lwcm1, iwcm1, zz, rec_grav, press
       logical :: nostrlwc, readfield_L
 
-      real, pointer, contiguous :: znt(:)
-      real, pointer, dimension(:,:), contiguous :: zfdc, zftot, ziwc, zlwc, zqcplus, &
+      real, pointer :: znt(:)
+      real, pointer, dimension(:,:) :: zfdc, zftot, ziwc, zlwc, zqcplus, &
            zqiplus, zsnow, zqi_cat1, zqi_cat2, zqi_cat3, zqi_cat4, zfmc
       !----------------------------------------------------------------
 

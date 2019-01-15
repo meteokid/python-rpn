@@ -42,9 +42,9 @@ subroutine inichamp4(kount, trnch, ni, nk)
 
    integer :: i
    real, dimension(ni) :: land
-   real, pointer, dimension(:), contiguous   :: zglacier, zglsea, zh, &
+   real, pointer, dimension(:)   :: zglacier, zglsea, zh, &
         zmg, zsnoden, ztglacier, ztmice, ztsrad, ztwater
-   real, pointer, dimension(:,:), contiguous :: zhst, ztmoins
+   real, pointer, dimension(:,:) :: zhst, ztmoins
    !***********************************************************************
    call msg_toall(MSG_DEBUG, 'inichamp [BEGIN]')
    if (timings_L) call timing_start_omp(401, 'inichamp', 46)

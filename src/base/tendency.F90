@@ -63,7 +63,7 @@ contains
 #include "ens.cdk"
 
       integer :: i, k
-      real, pointer, dimension(:,:), contiguous :: zhuphytd, zhuplus, zqcphytd, zqcplus, zqdifv, ztdifv, ztphytd, ztplus, zuphytd, zudifv, zuplus, zvphytd, zvdifv, zvplus, zwphytd, zwplus
+      real, pointer, dimension(:,:) :: zhuphytd, zhuplus, zqcphytd, zqcplus, zqdifv, ztdifv, ztphytd, ztplus, zuphytd, zudifv, zuplus, zvphytd, zvdifv, zvplus, zwphytd, zwplus
       !-------------------------------------------------------------
       call msg_toall(MSG_DEBUG, 'tendency [BEGIN]')
       if (timings_L) call timing_start_omp(450, 'tendency', 46)
@@ -158,8 +158,8 @@ contains
 
       integer :: k
 
-      real, pointer, dimension(:), contiguous   :: ztdmask
-      real, pointer, dimension(:,:), contiguous :: ziten, zivar
+      real, pointer, dimension(:)   :: ztdmask
+      real, pointer, dimension(:,:) :: ziten, zivar
       !----------------------------------------------------------------
 
       MKPTR1D(ztdmask, tdmask, f)
@@ -210,8 +210,8 @@ contains
 
       integer :: k, nkscope1
 
-      real, pointer, dimension(:), contiguous   :: ztdmask
-      real, pointer, dimension(:,:), contiguous :: ziten, zivar
+      real, pointer, dimension(:)   :: ztdmask
+      real, pointer, dimension(:,:) :: ziten, zivar
       !----------------------------------------------------------------
 
       MKPTR1D(ztdmask, tdmask, f)
