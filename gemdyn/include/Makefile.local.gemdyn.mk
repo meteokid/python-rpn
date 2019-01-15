@@ -10,7 +10,7 @@ endif
 #    $(error Not found: $(gemdyn)/VERSION)
 # endif
 # GEMDYN_VERSION0  = $(shell cat $(gemdyn)/VERSION | sed 's|x/||')
-GEMDYN_VERSION0  = x/5.0.rc1
+GEMDYN_VERSION0  = x/5.0.rc2
 GEMDYN_VERSION   = $(notdir $(GEMDYN_VERSION0))
 GEMDYN_VERSION_X = $(dir $(GEMDYN_VERSION0))
 
@@ -161,7 +161,14 @@ gem_monitor_end.c:
 $(BINDIR)/gem_monitor_end: gem_monitor_end.c
 	mybidon=gem_monitor_end_123456789 ;\
 	if [[ ! -f gem_monitor_end.c ]] ; then rdeco gem_monitor_end.c ; fi ;\
-	cat gem_monitor_end.c | sed 's/main_gem_monitor_end/main/' > $${mybidon}.c ;\
+	if [[ -f gem_monitor_end.c ]] ; then \
+		cat gem_monitor_end.c | sed 's/main_gem_monitor_end/main/' > $${mybidon}.c ;\
+	elif [[ -f $(gemdyn)/src/main/gem_monitor_end.c ]] ; then \
+		cat $(gemdyn)/src/main/gem_monitor_end.c | sed 's/main_gem_monitor_end/main/' > $${mybidon}.c ;\
+	fi ;\
+	if [[ ! -f $${mybidon}.c ]] ; then \
+		echo "ERROR: missing $${mybidon}.c" ; exit 1; \
+	fi ;\
 	$(RDECC) -o $@ -src $${mybidon}.c && rm -f $${mybidon}.[co]
 
 gem_monitor_output: $(BINDIR)/gem_monitor_output
@@ -173,7 +180,14 @@ gem_monitor_output.c:
 $(BINDIR)/gem_monitor_output: gem_monitor_output.c
 	mybidon=gem_monitor_output_123456789 ;\
 	if [[ ! -f gem_monitor_output.c ]] ; then rdeco gem_monitor_output.c ; fi ;\
-	cat gem_monitor_output.c | sed 's/main_gem_monitor_output/main/' > $${mybidon}.c ;\
+	if [[ -f gem_monitor_output.c ]] ; then \
+		cat gem_monitor_output.c | sed 's/main_gem_monitor_output/main/' > $${mybidon}.c ;\
+	elif [[ -f $(gemdyn)/src/main/gem_monitor_output.c ]] ; then \
+		cat $(gemdyn)/src/main/gem_monitor_output.c | sed 's/main_gem_monitor_output/main/' > $${mybidon}.c ;\
+	fi ;\
+	if [[ ! -f $${mybidon}.c ]] ; then \
+		echo "ERROR: missing $${mybidon}.c" ; exit 1; \
+	fi ;\
 	$(RDECC) -o $@ -src $${mybidon}.c && rm -f $${mybidon}.[co]
 
 monitor: | $(BINDIR)/gem_monitor_end $(BINDIR)/gem_monitor_output

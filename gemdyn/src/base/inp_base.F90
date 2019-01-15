@@ -107,7 +107,7 @@ contains
       character(len=*),            optional,intent(IN)  :: F_hint_S
       integer                           ,intent(OUT) :: F_nka
       integer, dimension(:    ), pointer,intent(OUT) :: F_ip1
-      real   , dimension(:,:,:), pointer,intent(OUT) :: F_dest
+      real   , dimension(:,:,:), pointer,intent(INOUT) :: F_dest
 
 
 !     local variables
@@ -587,7 +587,7 @@ contains
       integer                , intent(IN) :: k0,kn
       integer, dimension(:)    , pointer, intent(IN ) :: F_ip1
       real   , dimension(:,:  ), pointer, intent(IN ) :: F_sfc,F_sfcL
-      real   , dimension(:,:,:), pointer, intent(OUT) :: F_dest
+      real   , dimension(:,:,:), pointer, intent(INOUT) :: F_dest
 
 !     local variables
       integer istat
