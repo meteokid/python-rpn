@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -16,23 +16,21 @@
 !**s/r nest_bcs
 
       subroutine nest_bcs
+      use gmm_nest
+      use gmm_rhsc
+      use gem_options
+      use glb_ld
+      use cstv
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 
-!author 
+!author
 !     Michel Desgagne   - Summer 2010
 !
 !revision
 ! v4_14 - Desgagne M.          - initial version
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "lam.cdk"
-#include "schm.cdk"
-#include "theo.cdk"
-#include "nest.cdk"
-#include "rhsc.cdk"
-#include "cstv.cdk"
 
       integer i,j,k,gmmstat
 !
@@ -43,7 +41,7 @@
       call nest_bcs_t0 ()
 
 !**************************************
-! Apply HORIZONTAL BOUNDARY CONDITIONS 
+! Apply HORIZONTAL BOUNDARY CONDITIONS
 !**************************************
 
       gmmstat = gmm_get (gmmk_rhsu_s  , rhsu  )
@@ -55,7 +53,7 @@
 !$omp do
          do k=1,l_nk
          do j= 1+pil_s, l_nj-pil_n
-               rhsu (pil_w,j,k) = Cstv_invT_8 * nest_u(pil_w,j,k)
+               rhsu (pil_w,j,k) = Cstv_invT_m_8 * nest_u(pil_w,j,k)
          enddo
          enddo
 !$omp enddo
@@ -65,7 +63,7 @@
 !$omp do
          do k=1,l_nk
          do j= 1+pil_s, l_nj-pil_n
-            rhsu (l_ni-pil_e,j,k) = Cstv_invT_8 * nest_u(l_ni-pil_e,j,k)
+            rhsu (l_ni-pil_e,j,k) = Cstv_invT_m_8 * nest_u(l_ni-pil_e,j,k)
          enddo
          enddo
 !$omp enddo
@@ -75,7 +73,7 @@
 !$omp do
          do k=1,l_nk
          do i= 1+pil_w, l_ni-pil_e
-            rhsv (i,pil_s,k) = Cstv_invT_8 * nest_v(i,pil_s,k)
+            rhsv (i,pil_s,k) = Cstv_invT_m_8 * nest_v(i,pil_s,k)
          enddo
          enddo
 !$omp enddo
@@ -85,7 +83,7 @@
 !$omp do
          do k=1,l_nk
          do i= 1+pil_w, l_ni-pil_e
-            rhsv (i,l_nj-pil_n,k) = Cstv_invT_8 * nest_v(i,l_nj-pil_n,k)
+            rhsv (i,l_nj-pil_n,k) = Cstv_invT_m_8 * nest_v(i,l_nj-pil_n,k)
          enddo
          enddo
 !$omp enddo

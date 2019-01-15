@@ -1,2 +1,0 @@
-      integer perturb_nbits, perturb_npts
-      common / perturb_i / perturb_nbits, perturb_npts

@@ -3,11 +3,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -16,14 +16,13 @@
 
 !**s/r heap_paint - Paint a heap region with Nan (AIX only for now)
 
-      subroutine heap_paint
+      subroutine heap_paint()
+      use gem_options
+      use glb_ld
       implicit none
 #include <arch_specific.hf>
 
-#include "glb_ld.cdk"
-#include "heap_debug.cdk"
-
-      integer i,j,k
+      integer :: i,j,k
       real*4, dimension (:,:,:), pointer :: wrk01
 !
 !     ---------------------------------------------------------------
@@ -34,9 +33,9 @@
          allocate (wrk01(G_ni,G_nj,Heap_nk))
          do k=1,Heap_nk
             do i=1,G_ni
-            do j=1,G_nj
-               wrk01(i,j,k) = transfer(-1,wrk01(i,j,k))
-            enddo
+               do j=1,G_nj
+                  wrk01(i,j,k) = transfer(-1,wrk01(i,j,k))
+               enddo
             enddo
          enddo
          deallocate (wrk01)

@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -15,6 +15,11 @@
 
 subroutine adv_cfl_lam3 ( F_x_in, F_y_in, F_z_in, i0, in, j0, jn, &
                           F_ni, F_nj, k0, F_nk, F_lev_S )
+   use adv_cfl
+   use glb_ld
+      use adv_grid
+      use adv_interp
+      use outgrid
    implicit none
 #include <arch_specific.hf>
    !@objective Compute the courrant numbers for this time step
@@ -23,15 +28,11 @@ subroutine adv_cfl_lam3 ( F_x_in, F_y_in, F_z_in, i0, in, j0, jn, &
    integer          :: F_ni,F_nj,F_nk  !I, dims for F_x/y/z
    integer          :: i0, in, j0, jn, k0  !I, Scope of operator
    real, dimension(F_ni,F_nj,F_nk) :: &
-        F_x_in, F_y_in, F_z_in         !I, upstream positions 
-   !@author Vivian Lee         October 2002 
+        F_x_in, F_y_in, F_z_in         !I, upstream positions
+   !@author Vivian Lee         October 2002
    !@revisions
 !*@/
 
-#include "adv_grid.cdk"
-#include "adv_interp.cdk"
-#include "adv_cfl.cdk"
-#include "glb_ld.cdk"
    integer, save :: numproc=0, myproc=0
    integer, allocatable,save :: iwk(:,:,:)
    real(8), allocatable,save :: wk_8(:,:)
@@ -63,8 +64,8 @@ subroutine adv_cfl_lam3 ( F_x_in, F_y_in, F_z_in, i0, in, j0, jn, &
       p_bsz_8 => adv_bsz_8%t
       p_dlz_8 => adv_dlz_8%t
    endif
-   
 
+   p_dlz_8 = abs(p_dlz_8)
    adv_cfl_8(:  ) = 0.D0
    adv_cfl_i(:,:) = 0
 
@@ -78,7 +79,7 @@ subroutine adv_cfl_lam3 ( F_x_in, F_y_in, F_z_in, i0, in, j0, jn, &
       do j=j0,jn
          do i=i0,in
             x_cfl = (abs(F_x_in(i,j,k)-adv_xx_8(i)))/adv_dlx_8(1)
-            y_cfl = (abs(F_y_in(i,j,k)-adv_yy_8(j)))/adv_dly_8(1)       
+            y_cfl = (abs(F_y_in(i,j,k)-adv_yy_8(j)))/adv_dly_8(1)
             xy_cfl= sqrt(x_cfl*x_cfl + y_cfl*y_cfl)
             if (xy_cfl > max_cfl_8) then
                imax = i
@@ -153,7 +154,7 @@ subroutine adv_cfl_lam3 ( F_x_in, F_y_in, F_z_in, i0, in, j0, jn, &
    call RPN_COMM_gather(cfl_i,9,"MPI_INTEGER",iwk,9, &
         "MPI_INTEGER",0,"GRID", err)
 
-   IF_PE0: if (myproc == 0) then
+   if (myproc == 0) then
       imax = iwk(1,1,1)
       jmax = iwk(2,1,1)
       kmax = iwk(3,1,1)
@@ -204,7 +205,7 @@ subroutine adv_cfl_lam3 ( F_x_in, F_y_in, F_z_in, i0, in, j0, jn, &
       adv_cfl_i(1,3) = imax
       adv_cfl_i(2,3) = jmax
       adv_cfl_i(3,3) = kmax
-   endif IF_PE0
+   endif
    !---------------------------------------------------------------------
    return
 end subroutine adv_cfl_lam3

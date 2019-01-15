@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -16,12 +16,21 @@
 !**s/r initial - Performs initialisation
 
       subroutine initial (F_rstrt_L)
+      use step_options
+      use gmm_geof
+      use gem_options
+      use tdpack
+      use glb_ld
+      use cstv
+      use lun
+      use gmm_itf_mod
+      use rstr
       implicit none
 #include <arch_specific.hf>
 
       logical F_rstrt_L
 
-!author 
+!author
 !     Michel Roch - rpn - june 1993
 !
 !revision
@@ -35,34 +44,21 @@
 ! F_rstrt_L     O         TRUE if a restart is required
 !----------------------------------------------------------------
 
-#include "gmm.hf"
-#include <WhiteBoard.hf>
-#include "glb_ld.cdk"
-#include "cstv.cdk"
-#include "dcst.cdk"
-#include "init.cdk"
-#include "lctl.cdk"
-#include "lun.cdk"
-#include "p_geof.cdk" 
-#include "vtopo.cdk"
-#include "step.cdk"
-#include "rstr.cdk"
-#include "schm.cdk"
 
       type(gmm_metadata) :: meta2d
-      integer n, pndfnph, err, pnlkey1(2), pnfirst, pnlast, gmmstat
+      integer n, gmmstat
       real    prn, promegc, prsum, prwin1, prwin2
 !
 !     ---------------------------------------------------------------
 !
-      if (Lun_out.gt.0) write(Lun_out,2020) Init_dfnp
+      if (Lun_out > 0) write(Lun_out,2020) Init_dfnp
 
       allocate (Init_dfco(0:Init_halfspan))
 
-      promegc = (2.0 * Dcst_pi_8) / Init_dfpl_8
-      prwin1  = Dcst_pi_8 / real(Init_halfspan + 1)
+      promegc = (2.0 * pi_8) / Init_dfpl_8
+      prwin1  = pi_8 / real(Init_halfspan + 1)
 
-      Init_dfco(0) = promegc * Cstv_dt_8 / Dcst_pi_8
+      Init_dfco(0) = promegc * Cstv_dt_8 / pi_8
       prsum        = Init_dfco(0)
 
       do n=1,Init_halfspan
@@ -75,12 +71,12 @@
          endif
 
          Init_dfco(n) = prwin2 *dsin(prn * promegc * Cstv_dt_8) /  &
-                        (prn * Dcst_pi_8)
+                        (prn * pi_8)
          prsum     = prsum + 2.0 * Init_dfco(n)
       end do
 
-      if (Lun_out.gt.0) write(Lun_out,2030)
-      if (Lun_out.gt.0)  &
+      if (Lun_out > 0) write(Lun_out,2030)
+      if (Lun_out > 0)  &
           write(Lun_out,*) (Init_dfco(n),n=0,Init_halfspan), prsum
 
       do n=0,Init_halfspan
@@ -92,18 +88,18 @@
          prsum = prsum + 2.0 * Init_dfco(n)
       end do
 
-      if (Lun_out.gt.0) write(Lun_out,2040)
-      if (Lun_out.gt.0) &
+      if (Lun_out > 0) write(Lun_out,2040)
+      if (Lun_out > 0) &
           write(Lun_out,*) (Init_dfco(n),n=0,Init_halfspan), prsum
 
       if ( .not. Rstri_rstn_L ) call digflt()
 
-      if (Lun_out.gt.0) write(Lun_out,1000) &
+      if (Lun_out > 0) write(Lun_out,1000) &
            Lctl_step,Lctl_step+Init_dfnp-1-Step_kount
 
       call gem_run (F_rstrt_L)
 
-      if ((Step_kount.eq.Init_dfnp-1).and.(.not.F_rstrt_L)) then
+      if ((Step_kount == Init_dfnp-1).and.(.not.F_rstrt_L)) then
          Init_mode_L = .false.
          call ta2t1tx()
          call pw_update_GPW
@@ -118,7 +114,7 @@
             call rpn_comm_xch_halo (fis0,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,1,&
                     G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
          endif
-         if (Lun_out.gt.0) write(Lun_out,1050) Lctl_step
+         if (Lun_out > 0) write(Lun_out,1050) Lctl_step
       endif
 
  1000 format(/,' =====> DIGITAL FILTER INITIALIZATION SCHEME: ', &

@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -15,7 +15,13 @@
 !/@*
 subroutine itf_phy_diag ()
    use phy_itf, only: phy_get
-!!$   use sfclayer_mod, only: sl_prelim,sl_sfclayer,SL_OK
+   use gmm_pw
+   use grid_options
+   use gem_options
+   use gmm_itf_mod
+   use glb_ld
+   use outp
+      use wb_itf_mod
    implicit none
 #include <arch_specific.hf>
 
@@ -27,25 +33,14 @@ subroutine itf_phy_diag ()
 
 #include <rmnlib_basics.hf>
 #include <msg.h>
-#include <gmm.hf>
-#include <WhiteBoard.hf>
-#include "grd.cdk"
-#include "glb_ld.cdk"
-#include "schm.cdk"
-#include "dimout.cdk"
-#include "outp.cdk"
-#include "dcst.cdk"
-#include "pw.cdk"
 
    logical, save :: init_L = .false., dodiag_L = .true.
 
    ! Local variable declarations
-   integer :: istat,j,jphy
+   integer :: istat
    real :: zu,zt
-   real, dimension(Grd_lphy_ni) :: vmod,vdir,rho,tv
-   real, dimension(Grd_lphy_ni,Grd_lphy_nj) :: hghtm,hghtt,z0m,z0t,my_tdiag,my_qdiag,my_udiag,my_vdiag
-   real, dimension(:,:), pointer :: tdiag,qdiag,udiag,vdiag,p0,me,ptr2d
-   real, dimension(:,:,:), pointer :: tt,uu,vv,hu,gz,tsurf,qsurf,z0m3d,z0t3d,fcor,dlat
+   real, dimension(:,:), pointer :: tdiag,qdiag,udiag,vdiag,ptr2d
+   real, dimension(:,:,:), pointer :: tt,uu,vv,hu
 !
 !----------------------------------------------------------------------
 !
@@ -106,7 +101,7 @@ subroutine itf_phy_diag ()
 !!$   istat = gmm_get(gmmk_pw_me_moins_s,me)
 !!$
 !!$   hghtm = ( gz(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,G_nk) - &
-!!$        me(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn) ) / Dcst_grav_8
+!!$        me(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn) ) / grav_8
 !!$   hghtt = hghtm * .5
 !!$
 !!$

@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -16,12 +16,15 @@
 !**s/r eqspng_drv - apply vertical diffusion at and near the model top on u and v
 
 subroutine eqspng_drv (F_u,F_v,Minx,Maxx,Miny,Maxy,Nk)
+      use gem_options
+      use glb_ld
+      use lun
    implicit none
 #include <arch_specific.hf>
-   
+
    integer Minx,Maxx,Miny,Maxy, Nk
    real F_u(Minx:Maxx,Miny:Maxy,Nk), F_v(Minx:Maxx,Miny:Maxy,Nk)
-   
+
    !author
    !     Claude Girard - Andre Plante
    !
@@ -58,7 +61,7 @@ subroutine eqspng_drv (F_u,F_v,Minx,Maxx,Miny,Maxy,Nk)
    !        ...
    !
    !    ---- u(nlev-1)
-   ! 
+   !
    !    ==== coef(nlev)=last coef passed by user
    !
    !    ---- u(nlev) last level diffused           \
@@ -70,14 +73,11 @@ subroutine eqspng_drv (F_u,F_v,Minx,Maxx,Miny,Maxy,Nk)
    !_____________________________________________________________________
    !
 
-#include "lun.cdk"
-#include "glb_ld.cdk"
-#include "eq.cdk"
 
    ! Local variables
 
    real, dimension(:,:,:), pointer :: uu,vv
-   integer :: i,j,k,km,kp,istat
+   integer :: i,j,k,km,kp
 
    if (Lun_debug_L) write (Lun_out,1000)
 
@@ -87,7 +87,7 @@ subroutine eqspng_drv (F_u,F_v,Minx,Maxx,Miny,Maxy,Nk)
 
 !$omp parallel private(kp,km,i,k)
 !$omp do
-   do j=1,l_nj  
+   do j=1,l_nj
       do k=1,eq_nlev
          kp=min(eq_nlev,k+1)
          km=max(1,k-1)

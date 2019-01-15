@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -15,7 +15,11 @@
 
 !**s/r theo_hdif_main - applies horizontal diffusion on a given set of fields
 !
-      subroutine theo_hdif_main 
+      subroutine theo_hdif_main
+      use gmm_vt1
+      use grid_options
+      use glb_ld
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 
@@ -23,12 +27,7 @@
 !
 !revision
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "schm.cdk"
-#include "vt1.cdk"
-
-      integer i,istat
+      integer istat
 !     _________________________________________________________________
 !
       istat = gmm_get(gmmk_ut1_s,ut1)
@@ -43,7 +42,7 @@
          call theo_hdif_ctl ( ut1, l_minx,l_maxx,l_miny,l_maxy, G_nk)
          call theo_hdif_ctl (zdt1, l_minx,l_maxx,l_miny,l_maxy, G_nk)
          call theo_hdif_ctl ( wt1, l_minx,l_maxx,l_miny,l_maxy, G_nk)
-!     
+!
 !     _________________________________________________________________
 !
       return
@@ -52,6 +51,10 @@
 !**s/r theo_hdif_ctl - applies horizontal explicit diffusion
 !
       subroutine theo_hdif_ctl(F_f2dif, Minx,Maxx,Miny,Maxy, NK)
+      use gem_options
+      use glb_ld
+      use gmm_itf_mod
+      use theo_dif
       implicit none
 #include <arch_specific.hf>
 
@@ -60,8 +63,6 @@
 !
 !AUTHOR    C. Girard
 !
-#include "glb_ld.cdk"
-#include "theo_dif.cdk"
 
       integer nn, mm
       real wk1(l_minx:l_maxx,l_miny:l_maxy,Nk)
@@ -75,7 +76,7 @@
 
       nu_dif = pt25*lnr**(2.d0/pwr)
       nu_dif  = min ( nu_dif, pt25-epsilon )
-      if (nu_dif.lt.1.0e-10) return
+      if (nu_dif < 1.0e-10) return
 
       nn = pwr/2
 
@@ -86,9 +87,11 @@
 
          call theo_hdif(F_f2dif, wk1, l_minx,l_maxx,l_miny,l_maxy,&
                                                    Nk, nu_dif, mm,nn )
-         if (mm.ne.nn) &
+         if (mm /= nn) then
               call rpn_comm_xch_halo( wk1, l_minx,l_maxx,l_miny,l_maxy,&
-              l_ni,l_nj, Nk, G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+                                      l_ni,l_nj, Nk, G_halox,G_haloy,  &
+                                      G_periodx,G_periody,l_ni,0)
+         end if
 
       end do
 !     __________________________________________________________________
@@ -99,6 +102,9 @@
 !**s/r theo_hdif
 
       subroutine theo_hdif(rfd,sfd,Minx,Maxx,Miny,Maxy,lnk,nu_dif,m,n)
+      use gem_options
+      use glb_ld
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 !
@@ -111,13 +117,10 @@
 !
 !revision
 
-#include "glb_ld.cdk"
-#include "grd.cdk"
 
       integer i,j,k,id,jd,iff,jf,i0,in,j0,jn
       real wk(l_minx:l_maxx,l_miny:l_maxy)
-      real*8 two
-      parameter(two=2.d0)
+      real*8, parameter :: two = 2.d0
 !
 !----------------------------------------------------------------------
 !
@@ -126,32 +129,32 @@
          iff= l_ni - pil_e
          jf = l_nj - pil_n
 
-!$omp parallel private (wk)
+!$omp parallel private (i,j,k,wk,i0,j0,in,jn)
 !$omp do
       do k=1,lnk
          i0= id-1 ; in= iff+1
          j0= jd-1 ; jn= jf +1
-         if (m.eq.1) then
+         if (m == 1) then
             sfd(i0:in,j0:jn,k) = rfd(i0:in,j0:jn,k)
-         else if (m.eq.2) then
+         else if (m == 2) then
             sfd(i0:in,j0:jn,k) = rfd(i0:in,j0:jn,k) - sfd(i0:in,j0:jn,k)
          else
-            i0= i0+west  ; in= in-east
-            j0= j0+south ; jn= jn-north
+            i0 = i0+west  ; in= in-east
+            j0 = j0+south ; jn= jn-north
             sfd(i0:in,j0:jn,k) = rfd(i0:in,j0:jn,k) - sfd(i0:in,j0:jn,k)
          endif
-         if (m.eq.n) then
+         if (m == n) then
             do j=jd,jf
-            do i=id,iff
-               rfd(i,j,k)= rfd(i,j,k) +  &
-                       nu_dif*(sfd(i+1,j,k)+sfd(i-1,j,k)-two*sfd(i,j,k))
-            end do
+               do i=id,iff
+                  rfd(i,j,k)= rfd(i,j,k) +  &
+                              nu_dif*(sfd(i+1,j,k)+sfd(i-1,j,k)-two*sfd(i,j,k))
+               end do
             end do
          else
             do j=jd,jf
-            do i=id,iff
-               wk(i,j)  = nu_dif*(sfd(i+1,j,k)+sfd(i-1,j,k)-2.d0*sfd(i,j,k))
-            end do
+               do i=id,iff
+                  wk(i,j) = nu_dif*(sfd(i+1,j,k)+sfd(i-1,j,k)-2.d0*sfd(i,j,k))
+               end do
             end do
             sfd(id:iff,jd:jf,k) = rfd(id:iff,jd:jf,k) + wk(id:iff,jd:jf)
          endif

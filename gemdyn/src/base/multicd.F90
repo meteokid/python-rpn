@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -53,17 +53,17 @@
 ! iwk     = integer whose size equal the maximum number of different
 !           colors assigned to adjacent processors/
 !
-! NOTE: processor ID's are supposed to be .ge. 1 in list proc.
+! NOTE: processor ID's are supposed to be >= 1 in list proc.
 !-----------------------------------------------------------------------
 !****Feb 1996
 !     modified the  code to allow nproc = 0
-      integer kol,ii,k,j,low,len,ncol,imsg,status,ierr
+      integer kol,ii,k,j,low,len,ncol,status,ierr
 !
 !
 !     if one processor is used or no adajacent processors at all
 !     return as mycol = 1
-         
-      if(nproc.eq.0)  then
+
+      if(nproc == 0)  then
          mycol = 1
          return
       endif
@@ -73,9 +73,9 @@
 !     determine the processors with lower id's than mine
 !
       low = 1
- 1    if (proc(low) .lt. myproc) then
+ 1    if (proc(low) < myproc) then
          low = low+1
-         if (low .le. nproc) goto 1
+         if (low <= nproc) goto 1
       endif
       low = low - 1
       ncol = 0
@@ -89,19 +89,19 @@
 
        call RPN_COMM_recv ( kol, 1, 'MPI_INTEGER', &
         proc(ii)-1,type,'grid',status,ierr)
-            
+
 !
 !     sorted insertion -- first find where to insert
 !
          j = 1
- 2       if (j .le. ncol .and. iwk(j) .lt. kol) then
+ 2       if (j <= ncol .and. iwk(j) < kol) then
             j = j+1
             goto 2
-         else  if (iwk(j) .eq. kol) then
+         else  if (iwk(j) == kol) then
             goto 10
          endif
          j = j-1
-!        
+!
          do k= j+1,ncol,-1
             iwk(k+1) = iwk(k)
          enddo
@@ -113,16 +113,16 @@
 !
          mycol = 1
          k = 1
- 3       if (iwk(k) .eq. mycol) then
+ 3       if (iwk(k) == mycol) then
             k = k+1
             mycol = mycol+1
-            if (k .le. ncol) goto 3
+            if (k <= ncol) goto 3
          endif
       do 20 ii = low+1, nproc
 !         call MSG_send(proc(ii),type,mycol,len,imsg)
       call RPN_COMM_send ( mycol, 1, 'MPI_INTEGER', proc(ii)-1, &
                            type, 'grid', ierr)
-           
+
  20   continue
       return
 !-----------------------------------------------------------------------

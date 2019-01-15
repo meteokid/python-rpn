@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -20,7 +20,7 @@
 !
       integer minx,maxx,miny,maxy,mink,maxk,stepno,dt,date0,i0,in,j0,jn,k0,kn,ig1,ig2
       real rs(minx:maxx,miny:maxy,mink:maxk)
-      character* (*) varname,out_file
+      character(len=*) varname,out_file
 !
       integer fnom,fclos
       integer id_unit,err,ip1,ip2,i,j,nx,ny,cnt
@@ -41,7 +41,7 @@
             wk(cnt) = rs(i,j,ip1)
          end do
          end do
-         if ((ig1.gt.-1) .and. (ig2.gt.-1) ) then
+         if ((ig1 > -1) .and. (ig2 > -1) ) then
             call fstecr (wk,wk,-32,id_unit, date0, int(dt), stepno, nx,ny,1, &
                     ip1,ip2,stepno,'P',varname,'rslt2','Z',ig1,ig2,0,0,1,.false.)
          else
@@ -62,7 +62,7 @@
 !
       integer ni,nj,ip1,ip2,ig1,ig2,ig3,ig4
       real xp(ni),yp(nj)
-      character* (*) out_file
+      character(len=*) out_file
 !
       integer fnom,fclos
       integer id_unit,err

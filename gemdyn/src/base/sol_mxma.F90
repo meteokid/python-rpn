@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -17,10 +17,13 @@
 
       subroutine  sol_mxma ( Sol, Rhs, Xevec                   , &
                              F_t0nis, F_t0njs, F_t0nj, F_nini  , &
-                             F_t1nks, F_t1nk, F_t2nis, F_t2ni  , & 
+                             F_t1nks, F_t1nk, F_t2nis, F_t2ni  , &
                              F_gni, F_gnj, F_gnk, F_nk         , &
-                             F_npex1, F_npey1                  , & 
+                             F_npex1, F_npey1                  , &
                              F_ai,F_bi,F_ci, F_dg1,F_dg2,F_dwfft )
+      use glb_ld
+      use glb_pil
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 
@@ -73,13 +76,10 @@
 ! F_dg2        I    - work field
 ! F_dwfft      I    - work field
 
-#include "ptopo.cdk"
-#include "glb_ld.cdk"
-#include "glb_pil.cdk"
 
-      integer i,j,k, jr,l_pil_w,l_pil_e
+      integer i,j,k,jr,l_pil_w,l_pil_e
       integer piece, p0, pn, ptotal, plon
-      real*8, parameter :: zero= 0.0, one= 1.0
+      real*8, parameter :: zero= 0.d0, one= 1.d0
 !     __________________________________________________________________
 !
       l_pil_w=0
@@ -90,7 +90,8 @@
       call rpn_comm_transpose( Rhs, 1, F_t0nis, F_gni, (F_t0njs-1+1),&
                                        1, F_t1nks, F_gnk, F_dg1, 1,2 )
 
-!$omp parallel private(p0,pn,piece,jr) shared(ptotal,plon)
+!$omp parallel private(i,j,k,p0,pn,piece,jr) &
+!$omp          shared(ptotal,plon,l_pil_w,l_pil_e)
 
 !$omp do
       do i= 1,F_gni

@@ -13,7 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r adv_Fast_Loc_1D - Fast localization of grid p_8 with respect to grid x_8.  
+!**s/r adv_Fast_Loc_1D - Fast localization of grid p_8 with respect to grid x_8.
 !                        Based on CODE Zerroukat et al(2002)/Mahidjiba et al(2008)
 !
       subroutine adv_Fast_Loc_1D (p_8,x_8,np,nx,im,shift)
@@ -21,14 +21,14 @@
          implicit none
 
          integer np,nx,shift
- 
+
          real*8 p_8(0:np),x_8(0:nx)
          integer im(0:np)
 
          !author Tanguay/Qaddouri
          !
          !revision
-         ! v4_80 - Tanguay/Qaddouri - SLICE 
+         ! v4_80 - Tanguay/Qaddouri - SLICE
 
          !Local variables
          !---------------
@@ -36,10 +36,10 @@
          integer nps,npf,nxs,nxf
 
          nps = 0
-         npf = np 
+         npf = np
 
          nxs = 0
-         nxf = nx 
+         nxf = nx
 
          do ip = nps,npf
 
@@ -64,9 +64,9 @@
                STOP
             endif
 
-            im(ip) = im(ip) + shift 
+            im(ip) = im(ip) + shift
 
          enddo
 
-      return 
-      end 
+      return
+      end

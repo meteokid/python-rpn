@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -17,27 +17,28 @@
 
       subroutine pe_all_topo
 use iso_c_binding
+      use step_options
+      use gem_options
+      use lun
+      use rstr
+      use path
+      use clib_itf_mod
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 
 !author
 !     Michel Desgagne - Summer 2006
 
-#include "ptopo.cdk"
-#include "path.cdk"
-#include "lun.cdk"
-#include "rstr.cdk"
-#include "schm.cdk"
-#include "step.cdk"
-#include <clib_interface_mu.hf>
       include "rpn_comm.inc"
 
       integer,parameter :: BUFSIZE=10000
       integer, external :: fnom,wkoffit,OMP_get_max_threads
 
-      character*3 mycol_S,myrow_S
-      character*500 fn, pwd_S
+      character(len=3) :: mycol_S,myrow_S
+      character(len=500) :: fn, pwd_S
       integer err,unf
+      integer, dimension(4) :: bcast_ptopo
       integer bufnml(BUFSIZE),bufoutcfg  (BUFSIZE), &
               bufcte(BUFSIZE),bufinphycfg(BUFSIZE)
 !
@@ -45,25 +46,36 @@ use iso_c_binding
 !
       lun_out    = -1
       Lun_debug_L=.false.
-      if (Ptopo_myproc.eq.0) lun_out= 6
+      if (Ptopo_myproc == 0) lun_out= 6
 
       call gemtim4 ( Lun_out, 'STARTING GEMDM', .false. )
       call timing_start2 ( 2, 'INIT_GEM', 1)
 !
 ! Broadcasts processor topology
 !
-      call RPN_COMM_bcast (Ptopo_npex  , 4, "MPI_INTEGER",0,"grid",err)
+      bcast_ptopo(1) = Ptopo_npex
+      bcast_ptopo(2) = Ptopo_npey
+      bcast_ptopo(3) = Ptopo_nthreads_dyn
+      bcast_ptopo(4) = Ptopo_nthreads_phy
+
+      call RPN_COMM_bcast (bcast_ptopo, 4, "MPI_INTEGER",0,"grid",err)
+
+      Ptopo_npex         = bcast_ptopo(1)
+      Ptopo_npey         = bcast_ptopo(2)
+      Ptopo_nthreads_dyn = bcast_ptopo(3)
+      Ptopo_nthreads_phy = bcast_ptopo(4)
+
       call RPN_COMM_bcast (Ptopo_bind_L, 1, "MPI_LOGICAL",0,"grid",err)
 
       Ptopo_npeOpenMP = OMP_get_max_threads()
 
-      if (Ptopo_nthreads_dyn.lt.1) Ptopo_nthreads_dyn=Ptopo_npeOpenMP
-      if (Ptopo_nthreads_phy.lt.1) Ptopo_nthreads_phy=Ptopo_npeOpenMP
+      if (Ptopo_nthreads_dyn < 1) Ptopo_nthreads_dyn=Ptopo_npeOpenMP
+      if (Ptopo_nthreads_phy < 1) Ptopo_nthreads_phy=Ptopo_npeOpenMP
 
-      if (Ptopo_myproc.eq.0) then
-         write (6, 8255) Ptopo_npex, Ptopo_npey, &
+      if (Lun_out > 0) then
+         write (Lun_out, 8255) Ptopo_npex, Ptopo_npey, &
              Ptopo_npeOpenMP,Ptopo_nthreads_dyn, Ptopo_nthreads_phy
-         write (6, 8256) trim(Path_work_S)
+         write (Lun_out, 8256) trim(Path_work_S)
       endif
 !
 ! Initializes Path_nml_S and Path_outcfg_S
@@ -76,24 +88,24 @@ use iso_c_binding
 !
 ! Initializes OpenMP
 !
-      call pe_rebind (Ptopo_nthreads_dyn,Ptopo_myproc.eq.0)
+      call set_num_threads ( Ptopo_nthreads_dyn, 0 )
 !
 ! Reading namelist file Path_nml_S (blind read)
 !
-      if (Ptopo_myproc.eq.0) then
+      if (Ptopo_myproc == 0) then
          call array_from_file(bufnml,size(bufnml),Path_nml_S)
          call array_from_file(bufoutcfg,size(bufoutcfg),Path_outcfg_S)
          call array_from_file(bufcte,size(bufcte),trim(Path_input_S)//'/constantes')
          call array_from_file(bufinphycfg,size(bufinphycfg),Path_phyincfg_S)
       endif
 
-! Changing directory to local Ptopo_mycol_Ptopo_myrow 
+! Changing directory to local Ptopo_mycol_Ptopo_myrow
 
       write(mycol_S,10) Ptopo_mycol
       write(myrow_S,10) Ptopo_myrow
 10    format(i3.3)
 
-      if (Ptopo_myproc.eq.0) call mkdir_gem ('./',Ptopo_npex,Ptopo_npey)
+      if (Ptopo_myproc == 0) call mkdir_gem ('./',Ptopo_npex,Ptopo_npey)
       call rpn_comm_barrier("grid", err)
 
       err= clib_chdir(mycol_S//'-'//myrow_S)
@@ -119,13 +131,13 @@ use iso_c_binding
       call array_to_file (bufcte,size(bufcte),'constantes'    )
       call array_to_file (bufinphycfg,size(bufinphycfg),trim(Path_phyincfg_S))
 
-      Lun_rstrt= 0 ; Rstri_rstn_L= .false. ; Step_kount= 0
-      err= wkoffit('gem_restart')
-      if (err.ge.-1) then
+      Lun_rstrt = 0 ; Rstri_rstn_L= .false. ; Step_kount= 0
+      err = wkoffit('gem_restart')
+      if (err >= -1) then
          err= fnom( Lun_rstrt,'gem_restart','SEQ+UNF+OLD',0 )
-     	   if (err.ge.0) then
+         if (err >= 0) then
            Rstri_rstn_L = .true.
-           if (lun_out.gt.0) write (lun_out,1001)
+           if (lun_out > 0) write (lun_out,1001)
            call rdrstrt
          endif
       endif
@@ -135,8 +147,8 @@ use iso_c_binding
       unf=0
       Schm_theoc_L = .false.
       fn=trim(Path_work_S)//'/theoc'
-      if (wkoffit(fn).gt.-3) then
-         if (Ptopo_myproc.eq.0) write (Lun_out,*) &
+      if (wkoffit(fn) > -3) then
+         if (Ptopo_myproc == 0) write (Lun_out,*) &
                                 'Assume Theoretical case'
          Schm_theoc_L = .true.
       else
@@ -150,18 +162,20 @@ use iso_c_binding
  8256 format (/," WORKING DIRECTORY:"/a/)
 !
 !-------------------------------------------------------------------
-!      
+!
       return
       end
 
       subroutine mkdir_gem (F_path_S,F_npex,F_npey)
+      use lun
+      use path
+      use clib_itf_mod
       implicit none
 
-      character*(*), intent(IN) :: F_path_S
+      character(len=*), intent(IN) :: F_path_S
       integer      , intent(IN) :: F_npex,F_npey
 
-#include <clib_interface_mu.hf>
-      character*2048 ici
+      character(len=2048) ici
       integer :: i,j,status,err
       integer :: mk_gem_dir
 
@@ -181,6 +195,8 @@ end
 
 integer function mk_gem_dir(x,y)
 use ISO_C_BINDING
+      use lun
+      use path
 implicit none
 integer, intent(IN) :: x, y
 character (len=7) :: name

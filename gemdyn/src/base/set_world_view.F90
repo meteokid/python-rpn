@@ -2,11 +2,11 @@
 
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -17,33 +17,38 @@
 
       subroutine set_world_view
       use iso_c_binding
+
+      use coriolis
+      use dynkernel_options
+      use gem_options
+      use grid_options
+      use geomh
+      use inp_mod
       use out_collector, only: block_collect_set, Bloc_me
+      use step_options
+      use theo_options
+
+      use glb_ld
+      use lun
+      use tr3d
+      use out3
+      use out_meta
+      use path
+      use outgrid
+      use wb_itf_mod
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 
-#include <WhiteBoard.hf>
-#include "lun.cdk"
-#include "ptopo.cdk"
-#include "inp.cdk"
-#include "grd.cdk"
-#include "grid.cdk"
-#include "schm.cdk"
-#include "glb_ld.cdk"
-#include "step.cdk"
-#include "path.cdk"
-#include "out3.cdk"
-#include "tr3d.cdk"
-#include "wil_williamson.cdk"
-#include "wil_nml.cdk"
-      include 'out_meta.cdk'
       include "rpn_comm.inc"
 
-      integer, external :: gem_nml,gemdm_config,grid_nml2       ,&
-                           adv_nml,adv_config,adx_nml,adx_config,&
-                           step_nml, set_io_pes, domain_decomp3
-      character*50 LADATE,dumc1_S
+      integer, external :: gem_nml,exp_nml,gemdm_config,grid_nml3      ,&
+                           adv_nml,adv_config,dynKernel_nml    ,&
+                           step_nml, set_io_pes, domain_decomp3,&
+                           sol_transpose2, set_fft
+      character(len=50) :: LADATE
       integer :: istat,options,wload,hzd,monot,massc
-      integer err(8),f1,f2,f3,f4
+      integer err(9),f1,f2,f3,f4
       real vmin
 !
 !-------------------------------------------------------------------
@@ -51,7 +56,7 @@
       err(:) = 0
       err(1) = wb_put( 'model/Hgrid/is_yinyang',Grd_yinyang_L,&
                        WB_REWRITE_NONE+WB_IS_LOCAL )
-      if (Grd_yinyang_L) then         
+      if (Grd_yinyang_L) then
          Path_ind_S=trim(Path_input_S)//'/MODEL_INPUT/'&
                                       //trim(Grd_yinyang_S)
          err(2) = wb_put( 'model/Hgrid/yysubgrid',Grd_yinyang_S,&
@@ -61,49 +66,50 @@
       endif
       Path_phy_S=trim(Path_input_S)//'/'
 
-      if ( Schm_theoc_L ) then
-         call theo_cfg
-      else
+      err(3) = theocases_nml (Path_nml_S, Schm_theoc_L)
 
 ! Read namelists from file Path_nml_S
 
-         err(3) = grid_nml2   (Path_nml_S,G_lam)
-         err(4) = step_nml    (Path_nml_S)
-         err(5) = gem_nml     (Path_nml_S)
-         if (G_lam .and. .not. Schm_adxlegacy_L ) then
-            err(6) = adv_nml  (Path_nml_S)
-         else
-            err(6) = adx_nml  (Path_nml_S)
-         endif
-
+      err(4) = grid_nml3     (Path_nml_S)
+      err(5) = step_nml      (Path_nml_S)
+      err(6) = dynKernel_nml (Path_nml_S)
+      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P' .or. trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
+         err(7) = gem_nml (Path_nml_S)
+         err(8) = adv_nml (Path_nml_S)
+      else
+         if (lun_out > 0) then
+            write (lun_out,1010) trim(Dynamics_Kernel_S)
+         end if
+         call gem_error ( -1,'set_world_view','' )
       endif
 
       call gem_error ( minval(err(:)),'set_world_view',&
                        'Error reading nml or with wb_put' )
+      call theo_cfg()
 
 ! Read physics namelist
 
-      call itf_phy_nml
+      call itf_phy_nml()
+
+!     Setup for parameters DCMIP
+!     --------------------------
+      call dcmip_set (Schm_testcases_adv_L, Lun_out)
 
 ! Establish final configuration
 
-      err(1) = gemdm_config ()
-      if (.not.G_lam) err(2) = adx_config ()
+      err(1) = gemdm_config()
+      call set_ver_geom()
 
-      call gem_error(min(err(1),err(2)),'set_world_view','config')
+      call gem_error(err(1),'set_world_view','gemdm_config')
 
-      err(1) = grid_nml2 ('print',G_lam)
-      err(1) = step_nml  ('print')
-      err(1) = gem_nml   ('print')
+      err(1) = grid_nml3     ('print')
+      err(1) = step_nml      ('print')
+      err(1) = dynKernel_nml ('print')
+      err(1) = gem_nml       ('print')
 
-      if (G_lam .and. .not. Schm_adxlegacy_L ) then
-         call adv_nml_print ()
-      else
-         call adx_nml_print ()
-      endif
-
-      if (Williamson_case.ne.0.and.Lun_out.gt.0) &
-                   write (Lun_out, nml=williamson) 
+      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P' .or. trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
+         call adv_nml_print()
+      end if
 
 ! Establish domain decomposition (mapping subdomains and processors)
 
@@ -111,7 +117,7 @@
       call gem_error ( err(1),'DOMAIN_DECOMP', &
                       'ILLEGAL DOMAIN PARTITIONING' )
 
-      if (lun_out.gt.0) then 
+      if (lun_out > 0) then
          f1 = G_ni/Ptopo_npex + min(1,mod(G_ni,Ptopo_npex))
          f2 = G_ni-f1*(Ptopo_npex-1)
          f3 = G_nj/Ptopo_npey + min(1,mod(G_nj,Ptopo_npey))
@@ -120,8 +126,9 @@
          LADATE='RUNSTART='//Step_runstrt_S(1:8)//Step_runstrt_S(10:11)
          call write_status_file3 (trim(LADATE))
          call write_status_file3 ( 'communications_established=YES' )
-         if (Grd_yinyang_L)    &
-         call write_status_file3 ('GEM_YINYANG=1')
+         if (Grd_yinyang_L) then
+            call write_status_file3 ('GEM_YINYANG=1')
+         end if
       endif
 
 ! Master output PE for all none distributed components
@@ -142,10 +149,10 @@
       Inp_npes = max(1,min(Inp_npes ,min(Ptopo_npex,Ptopo_npey)**2))
 
       err= 0
-      if (lun_out.gt.0) write (lun_out,1002) 'Output',Out3_npes
+      if (lun_out > 0) write (lun_out,1002) 'Output',Out3_npes
       err(1)= set_io_pes (Out3_comm_id,Out3_comm_setno,Out3_iome,&
                           Out3_comm_io,Out3_iobcast,Out3_npes)
-      if (lun_out.gt.0) write (lun_out,1002) 'Input',Inp_npes
+      if (lun_out > 0) write (lun_out,1002) 'Input',Inp_npes
       err(2)= set_io_pes (Inp_comm_id ,Inp_comm_setno ,Inp_iome ,&
                           Inp_comm_io ,Inp_iobcast ,Inp_npes )
       call gem_error ( min(err(1),err(2)),'set_world_view', &
@@ -166,7 +173,7 @@
       call tracers_attributes2 ( 'DEFAULT,'//trim(Tr3d_default_s), &
                                  wload, hzd, monot, massc, vmin )
 
-      if (Lun_out.gt.0) then
+      if (Lun_out > 0) then
          if (trim(Tr3d_default_s)=='') then
             write (Lun_out,'(/a)') &
             ' SYSTEM DEFAULTS FOR TRACERS ATTRIBUTES:'
@@ -180,14 +187,36 @@
 
 ! Initializes GMM
 
-      call heap_paint
+      call heap_paint()
 
-      call set_gmm
-			
+      call set_gmm()
+
+! Initialize geometry of the model
+
+      call set_geomh
+
+      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P' .or. trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
+         err(1)= sol_transpose2 ( Ptopo_npex, Ptopo_npey, .false. )
+         call gem_error ( err(1),'SOL_TRANSPOSE', &
+                          'ILLEGAL DOMAIN PARTITIONING -- ABORTING')
+
+         err= set_fft()
+      end if
+
+      call set_coriolis ( geomh_x_8, geomh_y_8, geomh_xu_8, geomh_yv_8, Grd_rot_8, &
+                          l_minx,l_maxx,l_miny,l_maxy)
+
+      call set_opr2(' ')
+
+      call set_params()
+
+      call set_sor()
+
  1001 format (' GRID CONFIG: GRTYP=',a,5x,'GLB=(',i5,',',i5,',',i5,')    maxLCL(',i4,',',i4,')    minLCL(',i4,',',i4,')')
  1002 format (/ ' Creating IO pe set for ',a,' with ',i4,' Pes')
+ 1010 format (/' Invalid choice of dynamic kernel: ',a,/)
  2001 format ( ' DEFAULT tracers attributes:'/3x,'Wload  Hzd   Mono  Mass    Min')
- 2002 format (4i6,3x,e9.3)
+ 2002 format (4i6,3x,e10.3)
 !
 !-------------------------------------------------------------------
 !

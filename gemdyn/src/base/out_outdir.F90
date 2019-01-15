@@ -2,20 +2,30 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-      subroutine out_outdir
+      subroutine out_outdir()
       use iso_c_binding
       use timestr_mod, only: timestr_prognum,timestr_unitfact
+      use step_options
+      use grid_options
+      use gem_options
+      use cstv
+      use lun
+      use out_mod
+      use out3
+      use path
+      use clib_itf_mod
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 
@@ -25,28 +35,15 @@
 ! v4_80 - Desgagne M.      - Initial version
 
 #include <rmnlib_basics.hf>
-#include "cstv.cdk"
-#include "grd.cdk"
-#include "lctl.cdk"
-#include "out.cdk"
-#include "out3.cdk"
-#include "ptopo.cdk"
-#include "lun.cdk"
-#include "path.cdk"
-#include "step.cdk"
-#include "init.cdk"
-#include <clib_interface_mu.hf>
       include "rpn_comm.inc"
-      
-      character(len=1024),save :: dirstep_S=' ', diryy_S=' ', dirbloc_S=' ', &
-                                  FMT=' ', last_S=' '
-      character*10 postjob_S
-      character*7  blocxy_S
-      character*2  digits_S
-      integer err,last_step_post,flag_step_post,stepno,timing,ndigits, &
-              remainder,prognum,prognum1,upperlimit
+
+      character(len=1024),save :: dirstep_S=' ', dirbloc_S=' '
+      character(len=10) :: postjob_S
+      character(len=7)  :: blocxy_S
+      integer :: err,last_step_post,flag_step_post,stepno, &
+                 prognum,prognum1,upperlimit
       real :: interval
-      real*8 fatc_8
+      real*8 :: fatc_8
 !
 !----------------------------------------------------------------------
 !
@@ -54,7 +51,7 @@
 
       call out_steps
 
-      if ( Init_mode_L .and. (Step_kount.ge.Init_halfspan) ) return
+      if ( Init_mode_L .and. (Step_kount >= Init_halfspan) ) return
 
       write (blocxy_S,'(I3.3,"-",I3.3)') Ptopo_mycol, Ptopo_myrow
 
@@ -93,7 +90,7 @@
 !      FMT="(i"//trim(digits_S)//"."//trim(digits_S)//")"
 !      write (last_S,trim(FMT)) last_step_post
 
-      if (last_step_post.ge.0) then
+      if (last_step_post >= 0) then
          write (postjob_S,'(i10.10)') last_step_post
       else
          write (postjob_S,'(i10.9) ') last_step_post
@@ -103,28 +100,28 @@
       Out_dirname_S  = trim(Path_output_S)//'/'//Out_laststep_S
       ! PE0 is responsible for creating shared subdir structure
       if (dirstep_S /= Out_dirname_S) then
-         dirstep_S = Out_dirname_S        
+         dirstep_S = Out_dirname_S
          if (Ptopo_myproc == 0 .and. Ptopo_couleur == 0) then
             err = clib_mkdir(trim(Out_dirname_S))
             if (Lun_out>0) write(Lun_out,1001) trim(Out_laststep_S),Step_kount
          endif
       endif
-      
+
       ! Wait for Grid PE0 to be finished subdir creation
       call rpn_comm_barrier (RPN_COMM_ALLGRIDS, err)
 
       ! Each io pe now creates an independent subdir for outputs
       Out_dirname_S = trim(Out_dirname_S)//'/'//blocxy_S
       err = CLIB_OK
-      if (Out3_iome .ge. 0 .and. dirbloc_S /= Out_dirname_S &
-                           .and. Ptopo_couleur == 0) then
+      if (Out3_iome >= 0 .and. dirbloc_S /= Out_dirname_S &
+                         .and. Ptopo_couleur == 0) then
          dirbloc_S = Out_dirname_S
          err = clib_mkdir ( trim(Out_dirname_S) )
          err = clib_isdir ( trim(Out_dirname_S) )
       endif
 
       call gem_error (err,'out_outdir','unable to create output directory structure')
-      
+
  1001 format (' OUT_OUTDIR: DIRECTORY output/',a,' was created at timestep: ',i9)
 !
 !----------------------------------------------------------------------

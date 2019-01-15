@@ -15,23 +15,24 @@
 
 !**s/r int_cub_lag - YY cubic interpolation for fields (local PE)
        subroutine int_cub_lag8 ( FF, F, Imx,Imy, geomgx,geomgy,   &
-                                 Minx,Maxx,Miny,Maxy,Nk,Xi,Yi,NLEN) 
+                                 Minx,Maxx,Miny,Maxy,Nk,Xi,Yi,NLEN)
+      use glb_ld
        implicit none
 #include <arch_specific.hf>
-       
+
        integer Nk,NLEN,Minx,Maxx,Miny,Maxy
        integer Imx(NLEN),Imy(NLEN)
        real*8  FF(NLEN*Nk)
        real*8  F(Minx:Maxx,Miny:Maxy,Nk), &
                geomgx(Minx:Maxx),geomgy(Miny:Maxy), Xi(NLEN), Yi(NLEN)
 !
-!author   
+!author
 !           Abdessamad Qaddouri - October 2009
 !revision
 ! v4_60 - Qaddouri A.   - initial version
 !
        integer k,i,j,Im, Jm
-       real*8  W1,W2,W3,W4,X1,XX,X2,X3,X4 
+       real*8  W1,W2,W3,W4,X1,XX,X2,X3,X4
        real*8  WW1,WW2,WW3,WW4,YY,y1,y2,y3,y4
        real*8  fx1,fx2,fx3,fx4
 !
@@ -88,14 +89,15 @@
 !$omp enddo
 !$omp end parallel
        return
-       end 
+       end
 !**s/r int_cub_lag - YY cubic interpolation for fields (local PE)
 
        subroutine int_cub_lag4 ( FF, F, Imx,Imy, geomgx,geomgy,   &
-                                 Minx,Maxx,Miny,Maxy,Nk,Xi,Yi,NLEN,mono_l ) 
+                                 Minx,Maxx,Miny,Maxy,Nk,Xi,Yi,NLEN,mono_l )
+      use glb_ld
        implicit none
 #include <arch_specific.hf>
-       
+
        logical mono_l
        integer Nk,NLEN,Minx,Maxx,Miny,Maxy
        integer Imx(NLEN),Imy(NLEN)
@@ -103,14 +105,14 @@
        real*8  F(Minx:Maxx,Miny:Maxy,Nk), &
                geomgx(Minx:Maxx),geomgy(Miny:Maxy), Xi(NLEN), Yi(NLEN)
 !
-!author   
+!author
 !           Abdessamad Qaddouri - October 2009
 !revision
 ! v4_60 - Qaddouri A.   - initial version
 ! v4_70 - Desgagne M.   - introduce mono_L
 !
        integer k,i,j,Im, Jm
-       real*8  FF_8,W1,W2,W3,W4,X1,XX,X2,X3,X4 
+       real*8  FF_8,W1,W2,W3,W4,X1,XX,X2,X3,X4
        real*8  WW1,WW2,WW3,WW4,YY,y1,y2,y3,y4
        real*8  fx1,fx2,fx3,fx4,prmax,prmin
 !
@@ -183,10 +185,11 @@
 !----------------------------------------------------------------------
 !
        return
-       end 
+       end
 
        subroutine int_cub_lag3 ( FF, F, Imx,Imy, geomgx,geomgy,   &
                                  Minx,Maxx,Miny,Maxy,Xi,Yi,mono_l )
+      use glb_ld
        implicit none
 #include <arch_specific.hf>
 
@@ -268,20 +271,20 @@
 !**s/r int_cub_lag2 - to do YY cubic interpolation for fields (local PE)
 
 
-       Subroutine int_cub_lag2(FF,F,Imx,Imy,geomgx,geomgy,Minx,Maxx,Miny,Maxy,Xi,Yi) 
+       Subroutine int_cub_lag2(FF,F,Imx,Imy,geomgx,geomgy,Minx,Maxx,Miny,Maxy,Xi,Yi)
 
+      use glb_ld
        implicit none
 #include <arch_specific.hf>
 !
-!author   
+!author
 !           Abdessamad Qaddouri - October 2009
 !revision   V.Lee - Aug 2011 (to replace int_cub_lag,int_cub_lagu,int_cub_lagv)
 !
-#include "glb_ld.cdk"
 
        integer Imx,Imy,Nx,Ny,Minx,Maxx,Miny,Maxy
        integer k,i,j,Mx,My
-       real*8  W1,W2,W3,W4,X1,XX,X2,X3,X4 
+       real*8  W1,W2,W3,W4,X1,XX,X2,X3,X4
        integer Im, Jm
        real*8 YY,y1,y2,y3,y4,FF,Fi
        real*8 F(Minx:Maxx,Miny:Maxy),fx1,fx2,fx3,fx4
@@ -300,7 +303,7 @@
 	   W2  =  XX    *(XX-X3)*(XX-X4)/(X2*(X2-X3)*(X2-X4))
 	   W3  =  XX    *(XX-X2)*(XX-X4)/(X3*(X3-X2)*(X3-X4))
 	   W4  =  XX    *(XX-X2)*(XX-X3)/(X4*(X4-X2)*(X4-X3))
-!           
+!
           Fx1 = W1*F(Im ,Jm)+W2*F(Im + 1,Jm )+ W3* F( Im + 2, Jm )+ &
             W4 * F( Im + 3, jm )
 	  Fx2 =W1*F(Im ,Jm +1)+W2*F(Im +1,jm +1)+W3*F(Im +2,Jm +1 )+&
@@ -309,7 +312,7 @@
             W4 * F( Im + 3, Jm + 2 )
 	  Fx4 =W1*F(Im,jm+3)+W2*F(Im+1,jm+3)+W3*F(Im +2,Jm+3)+      &
             W4 * F( Im + 3, Jm + 3 )
-!           
+!
 	   Y1  = Geomgy(Jm)
 	   Y2  = Geomgy(Jm+1) - Y1
 	   Y3  = Geomgy(Jm+2) - Y1
@@ -324,4 +327,4 @@
            FF= W1*fx1+W2*fx2+W3*fx3+W4*fx4
 
         return
-        end 
+        end

@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -15,6 +15,8 @@
 
 module hzd_ctrl
   use hzd_exp
+  use gem_options
+  use glb_ld
   implicit none
 #include <arch_specific.hf>
   private
@@ -25,40 +27,29 @@ module hzd_ctrl
      module procedure hzd_ctrl_vector
   end interface
 
-#include "glb_ld.cdk"
-#include "hzd.cdk"
-
 contains
 
       subroutine hzd_ctrl_scalar ( F_f2hzd, F_type_S, &
                                    Minx,Maxx,Miny,Maxy,Nk )
+      use glb_ld
       implicit none
 
-      character*(*), intent(IN) :: F_type_S
-      integer      , intent(IN) :: Minx,Maxx,Miny,Maxy,Nk
-      real, dimension(Minx:Maxx,Miny:Maxy,Nk),&
-                     intent (INOUT) :: F_f2hzd
+      character(len=*), intent(in) :: F_type_S
+      integer      , intent(in) :: Minx,Maxx,Miny,Maxy,Nk
+      real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent (inout) :: F_f2hzd
 !
 !-------------------------------------------------------------------
 !
-      if (Hzd_type_S.eq.'HO_IMP') &
-         call hzd_imp_ctrl  (F_f2hzd, F_type_S, Nk)
-
-      if (Hzd_type_S.eq.'HO_EXP5P') &
-         call hzd_exp_deln ( F_f2hzd, 'M', l_minx,l_maxx,l_miny,l_maxy,&
-                             Nk, F_type_S=F_type_S )
-
-      if (Hzd_type_S.eq.'HO_EXP9P') &
-         call hzd_exp_visco2( F_f2hzd, F_type_S, &
-	             l_minx,l_maxx,l_miny,l_maxy, Nk )
+         call hzd_exp_visco2 (F_f2hzd, F_type_S, &
+              l_minx,l_maxx,l_miny,l_maxy, Nk)
 !
 !-------------------------------------------------------------------
 !
       return
       end subroutine hzd_ctrl_scalar
 
-      subroutine hzd_ctrl_vector ( F_u, F_v, &
-                                   Minx,Maxx,Miny,Maxy,Nk )
+      subroutine hzd_ctrl_vector ( F_u, F_v, Minx,Maxx,Miny,Maxy,Nk )
+      use glb_ld
       implicit none
 
       integer Minx,Maxx,Miny,Maxy,Nk
@@ -67,21 +58,10 @@ contains
 !
 !-------------------------------------------------------------------
 !
-      if (Hzd_type_S.eq.'HO_IMP') then
-         call hzd_imp_ctrl  (F_u, 'U', Nk)
-         call hzd_imp_ctrl  (F_v, 'V', Nk)
-      endif
-
-      if (Hzd_type_S.eq.'HO_EXP5P') &
-         call hzd_exp_deln ( F_u, 'U', l_minx,l_maxx,l_miny,l_maxy, &
-                             Nk, F_VV=F_v )
-
-      if (Hzd_type_S.eq.'HO_EXP9P') then
          call hzd_exp_visco2( F_u, 'U', &
-	             l_minx,l_maxx,l_miny,l_maxy, Nk )
+                     l_minx,l_maxx,l_miny,l_maxy, Nk )
          call hzd_exp_visco2( F_v, 'V', &
-	             l_minx,l_maxx,l_miny,l_maxy, Nk )
-      endif
+                     l_minx,l_maxx,l_miny,l_maxy, Nk )
 !
 !-------------------------------------------------------------------
 !

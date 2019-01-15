@@ -17,11 +17,11 @@
 
       subroutine yyg_interp1( FF, F, Imx,Imy, geomgx,geomgy,   &
                               Minx,Maxx,Miny,Maxy,Nk,Xi,Yi,NLEN,mono_l,&
-                              F_interp_S ) 
+                              F_interp_S )
       implicit none
 #include <arch_specific.hf>
-       
-      character* (*) F_interp_S
+
+      character(len=*) F_interp_S
       logical mono_l
       integer NLEN,Nk,Minx,Maxx,Miny,Maxy
       integer Imx(NLEN),Imy(NLEN)
@@ -30,7 +30,7 @@
               geomgx(Minx:Maxx),geomgy(Miny:Maxy), &
               Xi(NLEN), Yi(NLEN)
 !
-!author   
+!author
 !       Michel Desgagne - Spring 2014
 !revision
 ! v4_70 - Desgagne M.   - initial version
@@ -51,4 +51,4 @@
 !----------------------------------------------------------------------
 !
        return
-       end 
+       end

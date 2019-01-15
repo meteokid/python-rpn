@@ -12,15 +12,23 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-!  
+!
       subroutine adv_cubic (F_name, fld_out,  fld_in, F_capx, F_capy, F_capz, &
-                            F_usmx , F_usmy , F_usmz, F_svmx, F_svmy, F_svmz, &                             
+                            F_usmx , F_usmy , F_usmz, F_svmx, F_svmy, F_svmz, &
                             F_ni, F_nj, F_nk, F_minx, F_maxx, F_miny, F_maxy, &
                             F_nind, F_ii, F_i0, F_in, F_j0, F_jn, F_k0,       &
                             F_lev_S, F_mono_kind, F_mass_kind)
+      use gmm_tracers
+      use adv_options
+      use grid_options
+      use glb_ld
+      use gmm_itf_mod
+      use adv_grid
+      use tracers
+      use outgrid
       implicit none
 #include <arch_specific.hf>
-       character(len=1) :: F_lev_S
+      character(len=1) :: F_lev_S
       character(len=*), intent(in) :: F_name
       integer, intent(in) :: F_ni,F_nj,F_nk ! dims of position fields
       integer, intent(in) :: F_minx,F_maxx,F_miny, F_maxy ! wind fields array bounds
@@ -33,22 +41,14 @@
       real, intent(in)::  F_svmx(*), F_svmy(*), F_svmz(*) !I, upstream positions at t1 SVM
       integer, intent(in) :: F_mono_kind !I, Kind of Shape preservation
       integer, intent(in) :: F_mass_kind !I, Kind of  Mass conservation
-!     @objective  prepare for  cubic interpolation of RHS and Tracers 
+!     @objective  prepare for  cubic interpolation of RHS and Tracers
 !     @author RPN-A Model Infrastructure Group (based on adx_interp_gmm , adx_int_rhs , adx_interp ) June 2015
 !     @arguments
 
-#include "gmm.hf"
-#include "adv_nml.cdk"
-#include "tracers.cdk"
-#include "schm.cdk"
-#include "vt_tracers.cdk"
-#include "adv_grid.cdk"
-#include "glb_ld.cdk"
-#include "grd.cdk"
-#include "adv_mask_flux.cdk"
 
-      logical :: mono_L, conserv_L    
-      integer :: n,flux_n     
+      real,save,pointer,dimension(:,:,:) :: adw_mask_o =>null(), adw_mask_i =>null()
+      logical :: mono_L, conserv_L
+      integer :: flux_n
       logical, parameter :: EXTEND_L = .true.
       integer ::  i, j, k, nbpts, i0_e, in_e, j0_e, jn_e
       real    :: fld_adw(adv_lminx:adv_lmaxx,adv_lminy:adv_lmaxy,F_nk)
@@ -61,19 +61,19 @@
       real, dimension(1,1,1), target :: no_conserv, no_slice, no_flux
       integer :: err, conserv_local
       logical,save :: done_mask_L=.FALSE.
-!     
+!
 !---------------------------------------------------------------------
-! 
+!
       mono_L = .false.
 
       if (F_name(1:3) == 'TR/') then
          mono_L = (F_mono_kind==1)
       endif
-   
+
       if ( adv_rhst_mono_L .and. (F_name=='RHST_S')) mono_L=.true.
 
       flux_n = 0
-      if (F_mass_kind == 1.and.G_lam.and..not.Grd_yinyang_L) flux_n = 1
+      if (F_mass_kind == 1 .and. .not.Grd_yinyang_L) flux_n = 1
 
       if (flux_n>0.and..NOT.done_mask_L) then
 
@@ -89,7 +89,7 @@
          call adv_get_ij0n_ext (i0_e,in_e,j0_e,jn_e)
 
          allocate (cub_o(l_minx:l_maxx,l_miny:l_maxy,F_nk), &
-                   cub_i(l_minx:l_maxx,l_miny:l_maxy,F_nk)) 
+                   cub_i(l_minx:l_maxx,l_miny:l_maxy,F_nk))
 
          allocate (adw_o(adv_lminx:adv_lmaxx,adv_lminy:adv_lmaxy,F_nk), &
                    adw_i(adv_lminx:adv_lmaxx,adv_lminy:adv_lmaxy,F_nk))
@@ -117,14 +117,14 @@
          allocate (adw_rho(adv_lminx:adv_lmaxx,adv_lminy:adv_lmaxy,F_nk))
       else
          adw_rho => no_slice
-      endif 
+      endif
 
       nbpts = F_ni*F_nj*F_nk
 
       if (flux_n>0) then
-!$omp parallel do
+!$omp parallel do private(k)
       do k = 1,F_nk
-         fld_adw(:,:,k)= 0.0 
+         fld_adw(:,:,k)= 0.0
       enddo
 !$omp end parallel do
       endif
@@ -132,7 +132,7 @@
       call rpn_comm_xch_halox( fld_in, F_minx, F_maxx,F_miny, F_maxy , &
        F_ni, F_nj, F_nk, adv_halox, adv_haloy, G_periodx, G_periody  , &
        fld_adw, adv_lminx,adv_lmaxx,adv_lminy,adv_lmaxy, F_ni, 0)
-      
+
       if (conserv_L) then
          nullify(fld_cub,fld_mono,fld_lin,fld_min,fld_max)
          err = gmm_get(gmmk_cub_s ,fld_cub ,mymeta)
@@ -141,28 +141,28 @@
          err = gmm_get(gmmk_min_s ,fld_min ,mymeta)
          err = gmm_get(gmmk_max_s ,fld_max ,mymeta)
 
-!$omp parallel do
+!$omp parallel do private(k)
          do k = 1,F_nk
-            fld_cub (:,:,k)= fld_out(:,:,k) 
-            fld_mono(:,:,k)= fld_out(:,:,k) 
+            fld_cub (:,:,k)= fld_out(:,:,k)
+            fld_mono(:,:,k)= fld_out(:,:,k)
          enddo
 !$omp end parallel do
 
          if (flux_n>0) then
 
-!$omp parallel do
+!$omp parallel do private(k)
             do k = 1,F_nk
-               cub_o(:,:,k)= 0.0 
-               cub_i(:,:,k)= 0.0 
+               cub_o(:,:,k)= 0.0
+               cub_i(:,:,k)= 0.0
             enddo
 !$omp end parallel do
 
             if (.NOT.done_mask_L) then
 
-!$omp parallel
+!$omp parallel private(i,j,k)
 !$omp do
                do k = 1,F_nk
-                  fld_ONE(:,:,k)= 0.0 
+                  fld_ONE(:,:,k)= 0.0
                enddo
 !$omp enddo
 !$omp do
@@ -176,15 +176,15 @@
 !$omp enddo
 !$omp end parallel
 
-               call adv_set_flux_in (in_o,in_i,fld_ONE,l_minx,l_maxx,l_miny,l_maxy,F_nk,F_k0)
+               call adv_set_flux_in (in_o,in_i,fld_ONE,l_minx,l_maxx,l_miny,l_maxy,F_nk)
 
-               adw_mask_o = 0. 
+               adw_mask_o = 0.
 
                call rpn_comm_xch_halox( in_o, F_minx, F_maxx,F_miny, F_maxy , &
                 F_ni, F_nj, F_nk, adv_halox, adv_haloy, G_periodx, G_periody  , &
                 adw_mask_o, adv_lminx,adv_lmaxx,adv_lminy,adv_lmaxy, F_ni, 0)
 
-               adw_mask_i = 0. 
+               adw_mask_i = 0.
 
                call rpn_comm_xch_halox( in_i, F_minx, F_maxx,F_miny, F_maxy , &
                 F_ni, F_nj, F_nk, adv_halox, adv_haloy, G_periodx, G_periody  , &
@@ -194,15 +194,15 @@
 
             done_mask_L = .TRUE.
 
-!$omp parallel do
+!$omp parallel do private (i,j,k)
             do k=1,F_nk
             do j=adv_lminy,adv_lmaxy
             do i=adv_lminx,adv_lmaxx
                adw_o(i,j,k) = adw_mask_o(i,j,k) * fld_adw(i,j,k)
                adw_i(i,j,k) = adw_mask_i(i,j,k) * fld_adw(i,j,k)
-            enddo 
-            enddo 
-            enddo 
+            enddo
+            enddo
+            enddo
 !$omp end parallel do
 
          endif
@@ -223,21 +223,16 @@
          fld_max  => no_conserv
       endif
 
-      if (adv_catmullrom_L) then
-         call adv_tricub_catmullrom (wrkc, fld_adw, F_capx, F_capy, F_capz, nbpts, &
-                                     mono_L, F_i0,F_in,F_j0,F_jn,F_k0, F_nk, F_lev_S)
-      else
          call adv_tricub_lag3d (wrkc, w_mono_c, w_lin_c, w_min_c, w_max_c, &
-                                   fld_adw, adw_rho, conserv_local,        & 
-                                   w_cub_o_c,adw_o,w_cub_i_c,adw_i,flux_n, & 
+                                   fld_adw, adw_rho, conserv_local,        &
+                                   w_cub_o_c,adw_o,w_cub_i_c,adw_i,flux_n, &
                                    F_capx, F_capy, F_capz,                 &
                                    F_usmx, F_usmy, F_usmz,                 &
                                    F_svmx, F_svmy, F_svmz,                 &
                                    nbpts, F_nind, F_ii, F_k0, F_nk,        &
                                    mono_L, conserv_L, F_lev_S)
-      end if
 
-!$omp parallel
+!$omp parallel private(k)
       if (.NOT. conserv_L) then
 !$omp do
          do k = F_k0, F_nk
@@ -265,14 +260,14 @@
       endif
 !$omp end parallel
 
-      if (conserv_local>0) call adv_mixing_2_density (fld_cub,fld_cub,l_minx,l_maxx,l_miny,l_maxy,F_nk,2,0) 
+      if (conserv_local>0) call adv_mixing_2_density (fld_cub,fld_cub,l_minx,l_maxx,l_miny,l_maxy,F_nk,2,0)
 
       if (conserv_L) call adv_tracers_mono_mass (F_name, fld_out, fld_cub, fld_mono, fld_lin, &
                                            fld_min, fld_max, fld_in, cub_o, cub_i           , &
-                                           F_minx, F_maxx , F_miny, F_maxy ,F_nk            , & 
+                                           F_minx, F_maxx , F_miny, F_maxy ,F_nk            , &
                                            F_i0, f_in ,F_j0 ,F_jn ,F_k0 , F_mono_kind, F_mass_kind )
 
-      if (conserv_local>0) deallocate (adw_rho) 
+      if (conserv_local>0) deallocate (adw_rho)
 
       if (flux_n>0) deallocate (cub_o,cub_i,adw_o,adw_i,w_cub_o_c,w_cub_i_c)
 !

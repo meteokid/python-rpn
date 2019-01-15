@@ -1,4 +1,0 @@
-
-      integer, parameter :: maxhlev=1024
-      real, dimension(maxhlev) :: hyb
-      common /hyb_r/ hyb

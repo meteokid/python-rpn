@@ -14,8 +14,17 @@
 !---------------------------------- LICENCE END --------------------------------
 !
 !*s/r spn_main - spectral nudging driver
- 
+
       subroutine spn_main
+      use step_options
+      use gem_options
+      use glb_ld
+      use cstv
+      use lun
+      use ldnh
+      use sol
+      use trp
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 
@@ -26,17 +35,6 @@
 ! v4_80 - Qian, Dugas, Hussain            - initial version
 ! v4_80 - Baek - correction in calls to spn_fld for FFT transpose
 
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "lctl.cdk"
-#include "lam.cdk"
-#include "ldnh.cdk"
-#include "trp.cdk"
-#include "ptopo.cdk"
-#include "cstv.cdk"
-#include "step.cdk"
-#include "spn.cdk"
-#include "sol.cdk"
 
       integer offseti, no_steps, tmdt, Nkl
 !
@@ -51,7 +49,7 @@
 
       if ( Lctl_step > 2 ) then
 
-         if ( mod(Lctl_step,no_steps) .eq. 0 ) then
+         if ( mod(Lctl_step,no_steps) == 0 ) then
 
             if (Lun_out > 0) write(Lun_out,1001) Lctl_step
 
@@ -87,7 +85,7 @@
  1000 format( &
            /,'CONTROL OF SPECTRAL NUDGING: (S/R SPN_MAIN)', &
            /,'==========================================='/)
- 1001 format(/' In SPN_MAIN, Applying spectral nudging at STEP NO ',I/)
+ 1001 format(/' In SPN_MAIN, Applying spectral nudging at STEP NO ',I10/)
 !
 !----------------------------------------------------------------------
 !

@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -14,18 +14,18 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/p set_filt - initialize list of variables for filtering before output
-!
-
-!
       integer function set_filt (F_argc,F_argv_S,F_cmdtyp_S,F_v1,F_v2)
-!
+      use gem_options
+      use glb_ld
+      use lun
+      use out3
       implicit none
 #include <arch_specific.hf>
 !
       integer F_argc,F_v1,F_v2
-      character *(*) F_argv_S(0:F_argc),F_cmdtyp_S
+      character(len=*) F_argv_S(0:F_argc),F_cmdtyp_S
 !
-!author Vivian Lee - rpn - July 2004 
+!author Vivian Lee - rpn - July 2004
 !
 !revision
 ! v3_20 - Lee V.            - initial MPI version
@@ -46,7 +46,7 @@
 !       statement and return 5 arguments to this function. For more
 !       information to how this is processed, see "SREQUET".
 !
-!	
+!
 !arguments
 !  Name        I/O                 Description
 !----------------------------------------------------------------
@@ -58,66 +58,59 @@
 ! F_v1         I    - integer parameter 1 - not used
 ! F_v2         I    - integer parameter 2 - not used
 !----------------------------------------------------------------
-!
-!
 
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "out3.cdk"
-!
-!*
-!
-      character*5 stuff_S
-      character*16 varname_S
+
+      character(len=5) :: stuff_S
       integer pass, varmax
-      real coef
-      integer i, j, k, m, pndx, ii, jj, kk
+      real coefficient
+      integer i, j, ii, jj
 !
 !----------------------------------------------------------------
 !
-      if (Lun_out.gt.0) write(Lun_out,*)
-      if (Lun_out.gt.0) write(Lun_out,*) F_argv_S
+      if (Lun_out > 0) write(Lun_out,*)
+      if (Lun_out > 0) write(Lun_out,*) F_argv_S
       set_filt=0
       Out3_filtpass_max = Out3_filtpass_max + 1
-      if (Out3_filtpass_max.gt.MAXELEM) then
-          if (Lun_out.gt.0) write(Lun_out,*)'SET_FILT WARNING: Too many definitions filter'
+      if (Out3_filtpass_max > MAXELEM) then
+          if (Lun_out > 0) write(Lun_out,*)'SET_FILT WARNING: Too many definitions filter'
           Out3_filtpass_max = Out3_filtpass_max - 1
           set_filt = 1
           return
       endif
 
-      if (index(F_argv_S(1),'[').gt.0) then
+      if (index(F_argv_S(1),'[') > 0) then
           stuff_S=F_argv_S(1)
           read(stuff_S(2:4),*) varmax
       else
-          if (Lun_out.gt.0) write(Lun_out,*) &
-                          'set_filt WARNING: syntax incorrect'
-        set_filt=1
-          Out3_filtpass_max = Out3_filtpass_max - 1
+         if (Lun_out > 0) then
+            write(Lun_out,*) 'set_filt WARNING: syntax incorrect'
+         end if
+         set_filt=1
+         Out3_filtpass_max = Out3_filtpass_max - 1
         return
       endif
 !
-!     Obtain coef,npass values for filter
+!     Obtain coefficient,npass values for filter
 !
       pass=0
-      coef=0.0
+      coefficient=0.0
       do i=varmax+2, F_argc
-         if (F_argv_S(i).eq.'coef') then
-            read(F_argv_S(i+1),*) coef
-         else if (F_argv_S(i).eq.'pass') then
+         if (F_argv_S(i) == 'coef') then
+            read(F_argv_S(i+1),*) coefficient
+         else if (F_argv_S(i) == 'pass') then
             read(F_argv_S(i+1),*) pass
          endif
       enddo
 
-      if (pass.le.0) then
-          if (Lun_out.gt.0) write(Lun_out,*) 'set_filt WARNING: Number of passes not chosen'
+      if (pass <= 0) then
+          if (Lun_out > 0) write(Lun_out,*) 'set_filt WARNING: Number of passes not chosen'
          set_filt=1
           Out3_filtpass_max = Out3_filtpass_max - 1
          return
       endif
 
-      if (coef.eq.0.0) then
-          if (Lun_out.gt.0) write(Lun_out,*) 'set_filt WARNING: Filtering coefficient=0.0'
+      if (coefficient == 0.0) then
+          if (Lun_out > 0) write(Lun_out,*) 'set_filt WARNING: Filtering coefficient=0.0'
          set_filt=1
           Out3_filtpass_max = Out3_filtpass_max - 1
          return
@@ -127,8 +120,8 @@
 !
       j = Out3_filtpass_max + varmax
 
-      if (j.gt.MAXELEM) then
-          if (Lun_out.gt.0) write(Lun_out,*) 'set_filt WARNING: too many variables to filt'
+      if (j > MAXELEM) then
+          if (Lun_out > 0) write(Lun_out,*) 'set_filt WARNING: too many variables to filt'
           set_filt=1
           return
       endif
@@ -138,7 +131,7 @@
          jj = jj+1
          Out3_filt_S(jj)    = F_argv_S(ii+1)
          Out3_filtpass(jj)  = pass
-         Out3_filtcoef(jj)  = coef
+         Out3_filtcoef(jj)  = coefficient
       enddo
       Out3_filtpass_max = jj
 !

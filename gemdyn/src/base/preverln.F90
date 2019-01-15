@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -15,13 +15,18 @@
 
 !*s/r prever - prepares projection matrix for the vertical
 !       exclusively for staggered model symmetric and  nonsymmetric_ln(Z) version.
-!       no special treatement for singularity. Matrices are non-singulars by construction.   
+!       no special treatement for singularity. Matrices are non-singulars by construction.
 !
-      subroutine preverln (F_eval_8, F_levec_8, F_evec_8, F_nk, KDIM)
+      subroutine preverln2 ( F_eval_8, F_levec_8, F_evec_8, &
+                             F_nk, KDIM, F_errcode )
+      use cstv
+      use glb_ld
+      use lun
+      use opr
       implicit none
 #include <arch_specific.hf>
-!
-      integer F_nk, KDIM
+
+      integer F_nk, KDIM, F_errcode
       real*8 F_eval_8(KDIM), F_levec_8(KDIM,KDIM), F_evec_8(KDIM,KDIM)
 !
 !author  Abdessamad Qaddouri - 2007
@@ -40,12 +45,7 @@
 ! F_nk         I    - number of vertical levels
 !
 
-#include "glb_ld.cdk"
-#include "cstv.cdk"
-#include "opr.cdk"
-#include "ptopo.cdk"
-#include "lun.cdk"
-!
+
       integer i, j, err
       real*8 zero, one, xxx, yyy
       parameter(zero=.0d0, one=1.d0)
@@ -54,21 +54,21 @@
 ! --------------------------------------------------------------------
 !
       F_evec_8= 0. ; F_levec_8= 0. ; wk1= 0. ; B1= 0. ; err= 0
-    
+
       xxx = - Cstv_hco2_8
       yyy = - Cstv_hco1_8
-!
+
       do j=1,F_nk
-!
+
          i = j - 1
-         if ( i.gt.0 ) then
+         if ( i > 0 ) then
 !           A wing
             F_evec_8(i,j) =     Opr_opszp2_8(2*G_nk+i) &
                           +     Opr_opszpl_8(2*G_nk+i) &
                           + xxx*Opr_opszpm_8(2*G_nk+i)
-            if (F_evec_8(i,j)< 0.0) err= err-1 
+            if (F_evec_8(i,j)< 0.0) err= err-1
          endif
-!     
+
          i = j
 !        B: positive definit
          wk1(i,j) = Opr_opszp0_8(G_nk+i)
@@ -78,7 +78,7 @@
                        + xxx*Opr_opszpm_8(G_nk+i) &
                        + yyy*Opr_opszp0_8(G_nk+i)
          i=j+1
-         if(i.lt.(F_nk+1)) then
+         if(i < (F_nk+1)) then
             F_evec_8(i,j) =     Opr_opszp2_8(i) &
                           +     Opr_opszpl_8(i) &
                           + xxx*Opr_opszpm_8(i)
@@ -87,18 +87,21 @@
 
       enddo
 
-! note:  B1 is modified by nsyeigl    
+! note:  B1 is modified by nsyeigl
       do j=1,F_nk
       do i=1,F_nk
          F_levec_8(i,j)= F_evec_8(i,j)
-         B1(i,j)= wk1(i,j) 
+         B1(i,j)= wk1(i,j)
       enddo
       enddo
-!
-      if ((err.lt.0).and.(Ptopo_myproc.eq.0)) write(lun_out,9000)
-      call handle_error(err,'preverln','VERTICAL LAYERING and TIMESTEP INCOMPATIBILITY')
-!
-      call nsyeigl (F_eval_8,F_levec_8,F_evec_8,B1,F_nk,KDIM,8*F_nk)
+
+      F_errcode= 0
+      if ((err < 0).and.(lun_out > 0)) then
+         write(lun_out,9000)
+         F_errcode = -1
+      else
+         call nsyeigl (F_eval_8,F_levec_8,F_evec_8,B1,F_nk,KDIM,8*F_nk)
+      endif
 
  9000 format (/x,42('*')/2x,'VERTICAL LAYERING (vertical resolution)',&
               /2x,'IS INCOMPATIBLE WITH THE TIMESTEP.',&

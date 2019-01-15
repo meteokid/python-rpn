@@ -1,9 +1,0 @@
-
-      character*12 Fft_type_S
-      logical Fft_fast_L
-      integer Fft_n, Fft_m, Fft_nstore
-      real*8, dimension(:), pointer ::  Fft_ssin, Fft_ccos, Fft_qsin
-!
-      common / fft_s / Fft_type_S
-      common / fft_i / Fft_fast_L, Fft_n, Fft_m, Fft_nstore
-      common / fft_8 / Fft_ssin, Fft_ccos, Fft_qsin

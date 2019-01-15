@@ -2,27 +2,27 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!*module out_vref_mod - output vertical coordinate tags
+!*module out_vref - output vertical coordinate tags
 !
-module out_vref_mod
+module out_vref
   implicit none
   private
 
-  public :: out_vref
+  public :: out_vref_itf
 
-  interface out_vref
-     module procedure out_vref_model
+  interface out_vref_itf
+     module procedure out_vrefel
      module procedure out_vref_pres
   end interface
 
@@ -31,11 +31,14 @@ module out_vref_mod
 contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine out_vref_model(ig1,ig2,etiket)
-    use vGrid_Descriptors, only: vgrid_descriptor,vgd_put,vgd_write,vgd_print,VGD_OK,vgd_get
+  subroutine out_vrefel(ig1,ig2,etiket)
+    use vGrid_Descriptors, only: vgrid_descriptor,vgd_put,vgd_write,vgd_print,VGD_OK,vgd_get,vgd_free
     use vgrid_wb, only: vgrid_wb_get
     ! Write the vertical coordinate descriptor (model levels)
 
+    use lun
+    use out_mod
+    use outgrid
     implicit none
 
     integer, intent(in), optional :: ig1,ig2            !override 'out.cdk' values of ig1,ig2
@@ -46,18 +49,9 @@ contains
     !
     !revision
     ! v4_03 - Lee V.            - initial MPI version (from wrvref MC2)
-    ! 
+    !
     !implicits
 
-#include "glb_ld.cdk"
-#include "type.cdk"
-#include "ver.cdk"
-#include "cstv.cdk"
-#include "dimout.cdk"
-#include "grd.cdk"
-#include "level.cdk"
-#include "lun.cdk"
-#include "out.cdk"
 
     ! Internal variables
     integer :: err,my_ig1,my_ig2
@@ -75,8 +69,8 @@ contains
        nullify(ip1m)
        err = vgrid_wb_get('ref-m',vgd,ip1m)
        deallocate(ip1m); nullify(ip1m)
-       err = vgd_put(vgd,'IP_1 - record ip1',my_ig1) 
-       err = vgd_put(vgd,'IP_2 - record ip2',my_ig2) 
+       err = vgd_put(vgd,'IP_1 - record ip1',my_ig1)
+       err = vgd_put(vgd,'IP_2 - record ip2',my_ig2)
 
        if(present(etiket))then
           err = vgd_put(vgd,key='ETIK - record stamp',value=etiket)
@@ -85,18 +79,21 @@ contains
 
        if (report(Out_ig1,Out_ig2)) err = vgd_print(vgd,Lun_out)
        err = vgd_write(vgd,unit=Out_unf,format='fst')
+       err = vgd_free(vgd)
 
     endif
 
     return
 
-  end subroutine out_vref_model
+  end subroutine out_vrefel
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   subroutine out_vref_pres(F_rf,ig1,ig2,etiket)
-    use vGrid_Descriptors, only: vgrid_descriptor,vgd_new,vgd_put,vgd_write,vgd_print,VGD_OK
+    use vGrid_Descriptors, only: vgrid_descriptor,vgd_new,vgd_put,vgd_write,vgd_print,VGD_OK,vgd_free
     ! Write the vertical coordinate descriptor (pressure levels)
 
+    use lun
+    use out_mod
     implicit none
 
     real, dimension(:), intent(in) :: F_rf              !List of pressure levels to output
@@ -111,18 +108,12 @@ contains
     !     Write vertical coordinate descriptor for pressure-coordinate data
     !
     !implicits
-#include "out.cdk"
-#include "dimout.cdk"
-#include "grd.cdk"
-#include "level.cdk"
-#include "lun.cdk"
 
     ! Local variables
     integer :: k,err,my_ig1,my_ig2
     integer, dimension(size(F_rf)) :: ip1s
     real*8, dimension(size(F_rf)) :: zero
     type(vgrid_descriptor) :: vgd
-    logical, save :: reported=.false.
 
     ! Set default values
     my_ig1 = Out_ig1
@@ -158,16 +149,17 @@ contains
        if (report(Out_ig1,Out_ig2)) err = vgd_print(vgd,Lun_out)
        err = vgd_write(vgd,unit=Out_unf,format='fst')
        ! there should be en error trapping
+       err = vgd_free(vgd)
 
     endif
-    
+
   end subroutine out_vref_pres
 
   logical function writeDescriptor()
     ! Decide whether or not to write descriptor based on local tile
+    use out3
+    use ptopo
     implicit none
-#include "out3.cdk"
-#include "ptopo.cdk"
 
     writeDescriptor = (Out3_iome >= 0) .and. (Ptopo_couleur == 0)
 
@@ -176,16 +168,14 @@ contains
 
   logical function report(ig1,ig2)
     ! Decide whether or not to report output from the descriptor
+    use lun
+    use outgrid
     implicit none
-#include "lun.cdk"
-#include "dimout.cdk"
-#include "grid.cdk"
-#include "level.cdk"
     integer , parameter :: LEVEL_NTYP=2
     integer :: ig1,ig2
     integer :: i
     integer, save :: report_count=0
-    integer, dimension(MAXGRID1*LEVEL_NTYP,2), save :: reported
+    integer, dimension(OUTGRID_MAXGRID1*LEVEL_NTYP,2), save :: reported
     logical :: found
     report = .false.
     if (.not.Lun_debug_L) return
@@ -202,4 +192,4 @@ contains
     return
   end function report
 
-end module out_vref_mod
+end module out_vref

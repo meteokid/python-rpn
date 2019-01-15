@@ -16,29 +16,30 @@
 !               F_nk 2D horizontal elliptic problems to solve.
 !
       subroutine sol_2d ( F_rhs_sol, F_lhs_sol, F_ni, F_nj, F_nk, &
-                          F_iln, F_print_L, F_offi, F_offj )
+                          F_print_L, F_offi, F_offj )
+      use grid_options
+      use gem_options
+      use glb_ld
+      use lun
+      use ldnh
+      use sol
+      use opr
+      use trp
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 
-      logical F_print_L
-      integer F_ni,F_nj,F_nk,F_iln,F_offi, F_offj
-      real*8  F_rhs_sol (F_ni,F_nj,F_nk), F_lhs_sol (F_ni,F_nj,F_nk)
+      logical, intent(in) :: F_print_L
+      integer, intent(in) :: F_ni,F_nj,F_nk,F_offi, F_offj
+      real*8, dimension(F_ni,F_nj,F_nk), intent(in) :: F_rhs_sol
+      real*8, dimension(F_ni,F_nj,F_nk), intent(inout) :: F_lhs_sol
 !
-!author 
+!author
 !     Michel Desgagne / Abdessamad Qaddouri -- January 2014
 !
 !revision
 ! v4_70 - Desgagne/Qaddouri  - initial version
 
-#include "glb_ld.cdk"
-#include "grd.cdk"
-#include "ldnh.cdk"
-#include "lun.cdk"
-#include "trp.cdk"
-#include "ptopo.cdk"
-#include "schm.cdk"
-#include "sol.cdk"
-#include "opr.cdk"
 
       integer i,j,k,ni,nij,iter
       real linfini
@@ -53,7 +54,7 @@
       nij  = (ldnh_maxy-ldnh_miny+1)*(ldnh_maxx-ldnh_minx+1)
       wk1=0.0 ; wk2=0.0
 
-!$omp parallel private (i,j,k) shared (F_offi,F_offj,ni,nij)
+!$omp parallel private (i,j,k) shared (F_offi,F_offj,ni,nij,wk1)
 !$omp do
       do j=1+pil_s,ldnh_nj-pil_n
          call dgemm ('N','N', ni, G_nk, G_nk, 1.0D0, F_rhs_sol(1+pil_w,j,1), &
@@ -61,42 +62,34 @@
          do k=1,Schm_nith
             do i = 1+pil_w, ldnh_ni-pil_e
                wk1(i,j,k)= Opr_opsxp0_8(G_ni+F_offi+i) * &
-                           Opr_opsyp0_8(G_nj+F_offj+j) * wk1(i,j,k) 
+                           Opr_opsyp0_8(G_nj+F_offj+j) * wk1(i,j,k)
             enddo
          end do
       end do
 !$omp enddo
-!$omp end parallel 
+!$omp end parallel
 
-      if (G_lam) then
-
-         if (Grd_yinyang_L) then
-            wk3 = wk1
-            do iter=1, Sol_yyg_maxits
-               call sol_lam ( wk2, wk1, fdg1, fdg2, fdwfft, F_iln,&
-                                    Lun_debug_L, F_ni, F_nj, F_nk )
-               wk1 = wk3
-               call yyg_rhs_scalbc(wk1, wk2, ldnh_minx, ldnh_maxx,&
-                         ldnh_miny, ldnh_maxy, l_nk, iter, linfini)
-               if (Lun_debug_L.and.F_print_L) write(Lun_out,1001) linfini,iter
-               if ((iter.gt.1).and.(linfini.lt.Sol_yyg_eps)) goto 999
-            end do
-999         if (F_print_L) then
-               write(Lun_out,1002) linfini,iter
-               if (linfini.gt.Sol_yyg_eps) write(Lun_out,9001) Sol_yyg_eps
-            endif
-         else
-            call sol_lam ( wk2, wk1, fdg1, fdg2, fdwfft, F_iln,&
-                                   F_print_L, F_ni, F_nj, F_nk )
+      if (Grd_yinyang_L) then
+         wk3 = wk1
+         do iter=1, Sol_yyg_maxits
+            call sol_lam ( wk2, wk1, fdg1, fdg2, fdwfft, &
+                           Lun_debug_L, F_ni, F_nj, F_nk )
+            wk1 = wk3
+            call yyg_rhs_scalbc(wk1, wk2, ldnh_minx, ldnh_maxx,&
+                                ldnh_miny, ldnh_maxy, l_nk, iter, linfini)
+            if (Lun_debug_L.and.F_print_L) write(Lun_out,1001) linfini,iter
+            if ((iter > 1).and.(linfini < Sol_yyg_eps)) goto 999
+         end do
+ 999     if (F_print_L) then
+            write(Lun_out,1002) linfini,iter
+            if (linfini > Sol_yyg_eps) write(Lun_out,9001) Sol_yyg_eps
          endif
-
       else
-
-         call sol_global (wk2, wk1, fdg1, fdg2, fdwfft, F_ni, F_nj, F_nk)
-
+         call sol_lam ( wk2, wk1, fdg1, fdg2, fdwfft, &
+                        F_print_L, F_ni, F_nj, F_nk )
       endif
 
-!$omp parallel private (j) shared ( g_nk )
+!$omp parallel private (j) shared (g_nk, wk2)
 !$omp do
       do j=1+pil_s,ldnh_nj-pil_n
          call dgemm ('N','T', ni, G_nk, G_nk, 1.0D0, wk2(1+pil_w,j,1), &

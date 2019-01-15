@@ -17,7 +17,10 @@
                               F_u_model,F_v_model, F_w_model, &
                              F_aminx,F_amaxx,F_aminy,F_amaxy, &
                            F_minx,F_maxx,F_miny,F_maxy,F_nk)
-                           implicit none 
+      use glb_ld
+      use adv_grid
+      use outgrid
+                           implicit none
 #include <arch_specific.hf>
 
       integer :: F_aminx,F_amaxx,F_aminy,F_amaxy !I, adw local array bounds
@@ -28,32 +31,30 @@
 
    !@objective Extend the grid from model to adw with filled halos
 
-#include "adv_grid.cdk"
-#include "glb_ld.cdk"
-    
-      integer, parameter :: nrow=0   
-!     
+
+      integer, parameter :: nrow=0
+!
 !---------------------------------------------------------------------
-!     
+!
       call rpn_comm_xch_halox( &
           F_u_model, F_minx,F_maxx,F_miny,F_maxy, &
           l_ni, l_nj, F_nk, adv_halox, adv_haloy, &
           G_periodx, G_periody, &
           F_u_adw, F_aminx,F_amaxx,F_aminy,F_amaxy, l_ni, nrow)
-      
+
       call rpn_comm_xch_halox( &
           F_v_model, F_minx,F_maxx,F_miny,F_maxy, &
           l_ni, l_nj, F_nk, adv_halox, adv_haloy, &
           G_periodx, G_periody, &
           F_v_adw, F_aminx,F_amaxx,F_aminy,F_amaxy, l_ni, nrow)
- 
+
       call rpn_comm_xch_halox( &
           F_w_model, F_minx,F_maxx,F_miny,F_maxy, &
           l_ni, l_nj, F_nk, adv_halox, adv_haloy, &
           G_periodx, G_periody, &
           F_w_adw, F_aminx,F_amaxx,F_aminy,F_amaxy, l_ni, nrow)
-!     
+!
 !---------------------------------------------------------------------
-!     
+!
        return
        end subroutine adv_extend_grid

@@ -12,7 +12,7 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-!**s/r sol_fft_lam - parallel direct solution of an elliptic problem 
+!**s/r sol_fft_lam - parallel direct solution of an elliptic problem
 !                    for LAM grids using FFT
 
       subroutine sol_fft_lam ( sol, Rhs                        , &
@@ -21,6 +21,11 @@
                                F_gni, F_gnj, F_gnk, F_nk       , &
                                F_npex1, F_npey1                , &
                                F_ai, F_bi, F_ci  , F_dg2,F_dwfft )
+      use grid_options
+      use gem_options
+      use glb_ld
+      use glb_pil
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 !
@@ -70,17 +75,12 @@
 ! F_dg2        I    - work field
 ! F_dwfft      I    - work field
 
-#include "ptopo.cdk"
-#include "glb_ld.cdk"
-#include "glb_pil.cdk"
-#include "grd.cdk"
-#include "lam.cdk"
 
-      character*4 type_fft
+      character(len=4) :: type_fft
       integer i, j, k, jr, l_pil_w, l_pil_e
       integer piece, p0, pn, plon, ptotal
       real*8  pri
-      real*8, parameter :: zero=0.0
+      real*8, parameter :: zero = 0.d0
 !     __________________________________________________________________
 !
                          type_fft = 'QCOS'
@@ -100,7 +100,8 @@
                                 1, F_t1nks, F_gnk, F_dwfft, 1, 2 )
 
 !     projection ( wfft = x transposed * g )
-!$omp parallel private(jr,p0,pn,piece) shared(plon,ptotal)
+!$omp parallel private(i,j,k,jr,p0,pn,piece) &
+!$omp          shared(plon,ptotal,l_pil_w,l_pil_e,pri)
 !$omp do
       do i= 1,F_gni
          F_dwfft(F_t0nj+1-pil_n:F_t0njs,        1:F_t1nk ,i)= zero

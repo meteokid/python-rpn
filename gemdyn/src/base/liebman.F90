@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -37,7 +37,7 @@
 !arguments
 !  Name        I/O                 Description
 !----------------------------------------------------------------
-!  F_field     I/O        
+!  F_field     I/O
 !----------------------------------------------------------------
 ! _____________________________________________________________________
 !         |                                             |           |  |
@@ -68,31 +68,31 @@
 !*
 !*********************************************************************
 !
-! WE INITIALISE A FEW THINGS 
+! WE INITIALISE A FEW THINGS
 ! --------------------------
 !
-! prfact = overrelaxation coefficient / 4.                           
-!          overrelaxation coefficient must be between 1. and 2.        
-!                                                                  
-! pnitmax = maximum number of iterations                          
-!                                                                
+! prfact = overrelaxation coefficient / 4.
+!          overrelaxation coefficient must be between 1. and 2.
+!
+! pnitmax = maximum number of iterations
+!
 !*********************************************************************
       prfact  = 1.75 * 0.25
       pnitmax = 100
 !*********************************************************************
-!                                                             
-!      -->  Put the average of the last position   
-!           in the north pole position ........... (F_nj+2)            
-!                                                          
-!      -->  Rearrange rows of data     (F_nj)   -> (F_nj+1) 
-!                                      (F_nj-1) -> (F_nj)  
-!                                       .           .    
-!                                       .           .   
-!                                      (1)      -> (2) 
-!                                                    
-!           Put the average of the first position         
-!           in the south pole position ........... (1)                
-!                                                                 
+!
+!      -->  Put the average of the last position
+!           in the north pole position ........... (F_nj+2)
+!
+!      -->  Rearrange rows of data     (F_nj)   -> (F_nj+1)
+!                                      (F_nj-1) -> (F_nj)
+!                                       .           .
+!                                       .           .
+!                                      (1)      -> (2)
+!
+!           Put the average of the first position
+!           in the south pole position ........... (1)
+!
 !*********************************************************************
       pnj = F_nj+2
 !
@@ -133,8 +133,8 @@
 !     ****************************************************************
 !     * South pole                                                   *
 !     ****************************************************************
-         if ( F_maske(1,1) .gt. 0.5 ) then
-!     
+         if ( F_maske(1,1) > 0.5 ) then
+!
             prmod = 0.0
 !
             do i=1,F_ni
@@ -143,9 +143,9 @@
 !
             prmod =  prfact * ( prmod - F_ni * F_fielde(1,1) )
             prmod =  prmod * 4.0 / F_ni
-!     
+!
             prmax = amax1 ( prmax, abs(prmod) )
-!     
+!
             do i=1,F_ni
                F_fielde(i,1) = F_fielde(i,1) + prmod
             enddo
@@ -159,16 +159,16 @@
             pnl = i-1
             pnr = i+1
 !
-            if ( i .eq. 1    ) pnl = F_ni
-            if ( i .eq. F_ni ) pnr = 1
+            if ( i == 1    ) pnl = F_ni
+            if ( i == F_ni ) pnr = 1
 !
-            if ( F_maske(i,j) .gt. 0.5 ) then
+            if ( F_maske(i,j) > 0.5 ) then
                prmod = prfact * (F_fielde(pnl,j) + F_fielde(pnr,j) + &
                                  F_fielde(i,j-1) + F_fielde(i,j+1) - &
                               4.*F_fielde(i,j))
 !
                prmax = amax1 ( prmax, abs(prmod) )
-!     
+!
                F_fielde(i,j) = F_fielde(i,j) + prmod
             endif
          enddo
@@ -176,7 +176,7 @@
 !     ****************************************************************
 !     * North pole                                                   *
 !     ****************************************************************
-         if ( F_maske(1,pnj) .gt. 0.5 ) then
+         if ( F_maske(1,pnj) > 0.5 ) then
 !
             prmod = 0.0
 !
@@ -192,10 +192,10 @@
             do i=1,F_ni
                F_fielde(i,pnj) = F_fielde(i,pnj) + prmod
             enddo
-!     
+!
          endif
 !*********************************************************************
-         if ( prmax .lt. F_max ) go to 200
+         if ( prmax < F_max ) go to 200
 !
  100  continue
  200  continue

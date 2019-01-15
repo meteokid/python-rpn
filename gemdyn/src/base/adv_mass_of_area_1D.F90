@@ -13,11 +13,11 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r adv_mass_of_area_1D - Calculates the mass (integral) of an area limited between X_Start et X_Finish located 
+!**s/r adv_mass_of_area_1D - Calculates the mass (integral) of an area limited between X_Start et X_Finish located
 !                            inside the control volumes Cv_Start and Cv_Finish respectively.
 !                            Based on CODE Zerroukat et al(2002)/Mahidjiba et al(2008)
 
-      subroutine adv_mass_of_area_1D ( Ni, N_Mass, Mass_8, Dx_8, Slope_8, Nxu, Cv_Start, X_Start_8, X_Left_8, Rho_Left_8, Mass_Cv_8 ) 
+      subroutine adv_mass_of_area_1D ( Ni, N_Mass, Mass_8, Dx_8, Slope_8, Nxu, Cv_Start, X_Start_8, X_Left_8, Rho_Left_8, Mass_Cv_8 )
 
       implicit none
 
@@ -68,7 +68,7 @@
 
       !Local variables
       !---------------
-      integer  :: Cv, i 
+      integer  :: Cv, i
       real*8,  Dimension(Ni)     :: XX_8
       real*8             	 :: a1_8, a2_8, a3_8, ddx_8, Diff_8, s1_8, s2_8
       real*8                     :: RRho_Left_8, m3_8
@@ -115,7 +115,7 @@
             a1_8        = + 3.D0 * a2_8 - a3_8
             a2_8        = - 2.D0 * a2_8 + 2.D0 * a3_8 - Diff_8
             a3_8        = - a3_8 + Diff_8
-            m3_8        = s2_8 * s2_8 + s1_8 * s1_8 
+            m3_8        = s2_8 * s2_8 + s1_8 * s1_8
 
             Mass_Cv_8(i) = Mass_Cv_8(i) + ( RRho_Left_8  + a2_8 * ( m3_8 + s2_8 * s1_8 ) + &
                            ( s2_8 + s1_8 ) * ( a1_8 + a3_8 * m3_8 ) ) * &

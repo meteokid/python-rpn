@@ -14,6 +14,10 @@
 !---------------------------------- LICENCE END ---------------------------------
 
       function adv_nml (F_nmlFileName_S) result (F_stat)
+      use adv_grid
+      use adv_options
+      use grid_options
+      use outgrid
       implicit none
 #include <arch_specific.hf>
 
@@ -24,34 +28,15 @@
       integer :: F_stat
 !@author Stephane Chamberland, Nov 2009
 !@revisions
-! v4_80 - Tanguay M.        - GEM4 Mass-Conservation 
+! v4_80 - Tanguay M.        - GEM4 Mass-Conservation
 
 #include "msg.h"
-#include "adv_nml.cdk"
-#include "grd.cdk"
-#include "adv_grid.cdk"
 
       integer :: fileUnit
       integer, external :: file_open_existing
 !
 !---------------------------------------------------------------------
 !
-      
-      adv_rhst_mono_L  = .false.
-      adv_catmullrom_L = .false.
-      adv_BC_min_max_L = .true.
-      adv_halox  = -1
-      adv_haloy  = -1
-      adv_ILMC_sweep_max = 2
-      adv_ILMC_min_max_L = .true.
-      adv_verbose = 0
-      adv_scaling = 1 
-      adv_SLICE_rebuild = 2 
-      adv_pil_sub_s = -1
-      adv_pil_sub_n = -1
-      adv_pil_sub_w = -1
-      adv_pil_sub_e = -1
-
       F_stat = -1
       fileUnit = file_open_existing(F_nmlFileName_S,'SEQ')
       if (fileUnit >= 0) then
@@ -73,15 +58,14 @@
       end function adv_nml
 
       subroutine adv_nml_print()
+      use adv_options
       implicit none
 #include <arch_specific.hf>
 
 #include "msg.h"
-#include "adv_nml.cdk"
 
       integer :: msgUnit
       integer, external :: msg_getUnit
-      namelist /adv_cfgs/ adv_ILMC_min_max_L
 
 !---------------------------------------------------------------------
       msgUnit = msg_getUnit(MSG_INFO)

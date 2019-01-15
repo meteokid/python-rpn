@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -16,50 +16,61 @@
 !**s/r itf_phy_init - Initializes physics parameterization package
 !
       subroutine itf_phy_init
-      use vGrid_Descriptors, only: vgrid_descriptor,vgd_get,vgd_put,VGD_OK,VGD_ERROR
+      use vGrid_Descriptors, only: vgrid_descriptor,vgd_get,vgd_put,vgd_free,VGD_OK,VGD_ERROR
       use vgrid_wb, only: vgrid_wb_get, vgrid_wb_put
       use phy_itf, only: phy_init, phymeta,phy_getmeta
+      use itf_phy_filter, only: ipf_init
+      use step_options
+      use gem_options
+      use adv_options, only: adv_slt_winds
+      use glb_ld
+      use cstv
+      use lun
+      use out3
+      use levels
+      use outp
+      use ver
+      use gmm_itf_mod
+      use rstr
+      use var_gmm
+      use gmm_pw, only: gmmk_pw_uslt_s, gmmk_pw_vslt_s
+      use path
+      use clib_itf_mod
+      use wb_itf_mod
+      use ptopo_utils, only: ptopo_io_set !#TODO: should the phyics define its own?
+      use dcmip_options, only: dcmip_case
       implicit none
 #include <arch_specific.hf>
 
-!authors 
+!authors
 !     Desgagne, McTaggart-Cowan, Chamberland -- Spring 2014
 !
 !revision
 ! v4_70 - authors          - initial version
 
-#include <WhiteBoard.hf>
-#include <clib_interface_mu.hf>
 #include <msg.h>
-#include <gmm.hf>
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "var_gmm.cdk"
-#include "schm.cdk"
-#include "out3.cdk"
-#include "outp.cdk"
-#include "cstv.cdk"
-#include "step.cdk"
-#include "ver.cdk"
-#include "path.cdk"
-#include "level.cdk"
-#include "rstr.cdk"
+
+      character(len=32), parameter  :: VGRID_M_S = 'ref-m'
+      character(len=32), parameter  :: VGRID_T_S = 'ref-t'
 
       type(vgrid_descriptor) :: vcoord, vcoordt
-      integer err,zuip,ztip
+      integer err,zuip,ztip,vtype
       integer, dimension(:), pointer :: ip1m, ip1t
-      real :: zu,zt
+      real :: zu,zt,cond_sig,gwd_sig
       real, dimension(:,:), pointer :: ptr2d
 
-      integer,parameter :: NBUS = 3
+      integer,parameter :: tlift= 0
+      integer,parameter :: NBUS = 4
       character(len=9) :: BUS_LIST_S(NBUS) = &
-                  (/'Entry    ', 'Permanent', 'Volatile '/)
+                  (/'Entry    ', 'Permanent', 'Volatile ', 'Dynamics'/)
       character(len=GMM_MAXNAMELENGTH) :: diag_prefix
+      logical :: have_slt_winds
 
 !For sorting the output
-      integer istat, iverb, cnt
-      character(len=32) :: varname_S,outname_S,bus0_S
-      integer pnerror,i,k,j,ibus,multxmosaic
+      integer istat, iverb
+      character(len=32) :: varname_S,outname_S,bus0_S,refp0_S,refp0ls_S
+      character(len=32) :: varlist_S(MAXELEM*MAXSET)
+      integer k,j,n,ibus,multxmosaic
       type(phymeta) :: pmeta
 !
 !     ---------------------------------------------------------------
@@ -89,19 +100,47 @@
 
       if (Lun_out.gt.0) write(Lun_out,1000)
 
+! Collect the list of potentialy requested output physics vars
+      n = 0
+      varlist_S(:) = ' '
+      do k = 1, Outp_sets
+         do j = 1, Outp_var_max(k)
+            varname_S = Outp_varnm_S(j,k)
+            istat = clib_tolower(varname_S)
+            if (.not.any(varname_S == varlist_S(1:n))) then
+               n = n + 1
+               varlist_S(n) = varname_S
+            endif
+         enddo
+      enddo
+      !#TODO: trim the output list to the ones actually requested within the run
+      if (n > 0) then
+         err = wb_put('itf_phy/PHYOUT', varlist_S(1:n), WB_REWRITE_AT_RESTART)
+      endif
+
 ! We put mandatory variables in the WhiteBoard
 
       err= 0
       err= min(wb_put('itf_phy/VSTAG'       , .true.       , WB_REWRITE_AT_RESTART), err)
-      err= min(wb_put('itf_phy/TLIFT'       , Schm_Tlift   , WB_REWRITE_AT_RESTART), err)
+      err= min(wb_put('itf_phy/TLIFT'       , tlift        , WB_REWRITE_AT_RESTART), err)
       err= min(wb_put('itf_phy/DYNOUT'      , Out3_accavg_L, WB_REWRITE_AT_RESTART), err)
-      
+      err= min(wb_put('itf_phy/dcmip_case'  , dcmip_case   , WB_REWRITE_AT_RESTART), err)
+
 ! Complete physics initialization (see phy_init for interface content)
 
+      istat = ptopo_io_set(Inp_npes) !#TODO mv this in phy... pass npes as arg
       err= phy_init ( Path_phy_S, Step_CMCdate0, real(Cstv_dt_8), &
-                      'model/Hgrid/lclphy','model/Hgrid/lclcore', &
-                      'model/Hgrid/global','model/Hgrid/local'  , &
-                                       G_nk+1, Ver_std_p_prof%m )
+                      'model/Hgrid/lclphy', 'model/Hgrid/lclcore', &
+                      'model/Hgrid/global', 'model/Hgrid/local'  , &
+                      'model/Hgrid/glbphy', 'model/Hgrid/glbphycore', &
+                      G_nk+1, Ver_std_p_prof%m)
+
+! Initialize filter weights for smoothing
+      if (.not.WB_IS_OK(wb_get('phy/cond_infilter',cond_sig))) cond_sig=-1.
+      if (.not.WB_IS_OK(wb_get('phy/sgo_tdfilter',gwd_sig))) gwd_sig=-1.
+      err = min(ipf_init(F_sig=cond_sig, F_sig2=gwd_sig), err)
+      err = min(wb_put('dyn/cond_infilter',cond_sig,WB_REWRITE_AT_RESTART), err)
+      err = min(wb_put('dyn/sgo_tdfilter',gwd_sig,WB_REWRITE_AT_RESTART), err)
 
 ! Retrieve the heights of the diagnostic levels (thermodynamic
 ! and momentum) from the physics ( zero means NO diagnostic level)
@@ -117,9 +156,9 @@
       if ((zu.gt.0.) .and. (zt.gt.0.) ) then
          nullify(ip1m, ip1t)
          Level_kind_diag=4
-         err = min ( vgrid_wb_get('ref-m',vcoord, ip1m), err)
-         err = min ( vgrid_wb_get('ref-t',vcoordt,ip1t), err)
-         deallocate(ip1m, ip1t) ; nullify(ip1m, ip1t)
+         err = min ( vgrid_wb_get(VGRID_M_S,vcoord, ip1m,vtype,refp0_S,refp0ls_S), err)
+         err = min ( vgrid_wb_get(VGRID_T_S,vcoordt,ip1t), err)
+         deallocate(ip1m, ip1t,stat=err) ; nullify(ip1m, ip1t)
          call convip(zuip,zu,Level_kind_diag,+2,'',.true.)
          call convip(ztip,zt,Level_kind_diag,+2,'',.true.)
          err = min(vgd_put(vcoord, 'DIPM - IP1 of diagnostic level (m)',zuip), err)
@@ -129,10 +168,21 @@
          if (vgd_get(vcoord ,'VIPM - level ip1 list (m)',ip1m) /= VGD_OK) err = -1
          if (vgd_get(vcoordt,'VIPT - level ip1 list (t)',ip1t) /= VGD_OK) err = -1
          out3_sfcdiag_L= .true.
-         err = min(vgrid_wb_put('ref-m',vcoord, ip1m,'PW_P0:P',F_overwrite_L=.true.), err)
-         err = min(vgrid_wb_put('ref-t',vcoordt,ip1t,'PW_P0:P',F_overwrite_L=.true.), err)
+         err = min(vgrid_wb_put(VGRID_M_S,vcoord, ip1m,refp0_S,refp0ls_S,F_overwrite_L=.true.), err)
+         err = min(vgrid_wb_put(VGRID_T_S,vcoordt,ip1t,refp0_S,refp0ls_S,F_overwrite_L=.true.), err)
+         err = vgd_free(vcoord)
+         err = vgd_free(vcoordt)
+         if (associated(ip1m)) deallocate(ip1m,stat=err)
+         if (associated(ip1t)) deallocate(ip1t,stat=err)
+         nullify(ip1m, ip1t)
       endif
       call gem_error ( err,'itf_phy_init','setting diagnostic level in vertical descriptor' )
+
+! Determine whether winds on the lowest thermodynamic level are available for advection
+      have_slt_winds = (phy_getmeta(pmeta,gmmk_pw_uslt_s,F_npath='V',F_bpath='V') > 0 .and. &
+           phy_getmeta(pmeta,gmmk_pw_vslt_s,F_npath='V',F_bpath='V') > 0)
+      if (adv_slt_winds .and. .not.have_slt_winds) &
+           call gem_error ( err,'itf_phy_init','use of surface layer winds requeseted without physics support' )
 
 ! Print table of variables requested for output
 
@@ -147,7 +197,6 @@
             write(Lun_out,1006)
             write(Lun_out,1003)
          endif
-         cnt=0
          do k=1, Outp_sets
             do j=1,Outp_var_max(k)
                istat = phy_getmeta(pmeta,Outp_varnm_S(j,k), &
@@ -165,10 +214,8 @@
                     outname_S(1:4),varname_S(1:16),Outp_nbit(j,k), &
                     Outp_filtpass(j,k),Outp_filtcoef(j,k), &
                     Level_typ_S(Outp_lev(k))
-               cnt=cnt+1
             enddo
          enddo
-         if (Lun_out.gt.0) write(Lun_out,1004) cnt 
       enddo DO_BUS
 !     maximum size of slices with one given field that is multiple+mosaic
       Outp_multxmosaic = multxmosaic+10
@@ -182,7 +229,6 @@
  1001 format(/'+',35('-'),'+',17('-'),'+',5('-'),'+'/'| PHYSICS VARIABLES REQUESTED FOR OUTPUT              |',5x,'|')
  1002 format('|',5X,a9,' Bus ',40x, '|')
  1003 format('|',1x,'OUTPUT',1x,'|',2x,'PHYSIC NAME ',2x,'|',2x,' BITS  |','FILTPASS|FILTCOEF| LEV |')
- 1004 format('|',5X,'Number of elements: ',i4,40x, '|')
  1006 format('+',8('-'),'+',16('-'),'+',9('-'),'+',8('-'),'+',8('-'),'+',5('-'))
  1007 format('|',2x,a4,2x,'|',a16,'|',i5,'    |',i8,'|',f8.3,'|',a4,' |')
 !     ---------------------------------------------------------------

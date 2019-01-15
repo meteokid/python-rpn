@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -15,11 +15,13 @@
 
 !**s/r ens_nml - read parametres for ensemble forecast
 !
-      integer function ens_nml (F_namelist_S, F_Grdtyp_S, F_unout) 
+      integer function ens_nml (F_namelist_S, F_Grdtyp_S, F_unout)
+      use ens_options
+      use ens_param
       implicit none
 #include <arch_specific.hf>
 !
-      character* (*) F_namelist_S, F_Grdtyp_S
+      character(len=*) F_namelist_S, F_Grdtyp_S
       integer F_unout
 
 !author Lubos Spacek - May 2005
@@ -27,7 +29,7 @@
 !revision
 ! v4_12 - Spacek L.          - called from itf_ens_init
 ! v_4.1.3 - N. Gagnon      - add vertical envelope parameters for PTP and change name of most parameters in the NAMELIST
-! v_4.2.0 - N. Gagnon      - add the parameter Ens_ptp_env_hor_f for latitudinal enveloppe that control PTP, 
+! v_4.2.0 - N. Gagnon      - add the parameter Ens_ptp_env_hor_f for latitudinal enveloppe that control PTP,
 !           L. Spacek      - remove limitation of use when in mode LAM (only SKEB is now unavailable)
 ! v_4.4.0 - N. Gagnon      - remove Ens_ptp_env_hor_f not use anymore
 !                          - add ens_ptp_cape and ens_ptp_tlc keys
@@ -46,86 +48,33 @@
 !-----------------------------------------------------------------------
 !
 #include <WhiteBoard.hf>
-#include "ens_param.cdk"
 
       integer, external :: fnom,wkoffit
       logical found_namelist_ok, stochphy_L
-      integer i, ier,err,err_open,unf,nrec,ios,ncha
+      integer i, ier,err,err_open,unf,nrec,ios
 
-      namelist /ensembles/                                           &
-          Ens_conf,      Ens_skeb_conf,                              &
-          Ens_stat,      Ens_skeb_div,  Ens_skeb_dif,  Ens_skeb_gwd, &
-          Ens_mc_seed,   Ens_skeb_nlon, Ens_skeb_nlat,               &
-          Ens_skeb_trnl, Ens_skeb_trnh,                              &
-          Ens_skeb_max,  Ens_skeb_min,  Ens_skeb_std,                &
-          Ens_skeb_tau,  Ens_skeb_str,  Ens_skeb_alph, Ens_skeb_alpt,&
-          Ens_skeb_bfc,  Ens_skeb_lam,                               &
-          Ens_ptp_nlon, Ens_ptp_nlat, Ens_ptp_ncha, Ens_ptp_trnl,    &
-          Ens_ptp_trnh, Ens_ptp_l,    Ens_ptp_m,                     & 
-          Ens_ptp_lmax ,Ens_ptp_mmax, Ens_ptp_min,  Ens_ptp_max,     &
-          Ens_ptp_std,  Ens_ptp_tau,  Ens_ptp_str,                   &
-          Ens_ptp_conf,  Ens_ptp_env_u, Ens_ptp_env_b, Ens_ptp_cape, &
-          Ens_ptp_tlc,   Ens_ptp_crit_w,Ens_ptp_fac_reduc
 !
 !--------------------------------------------------------------------
 !
       ens_nml= -1
       stochphy_L  = .false.
 
-      if ((F_namelist_S.eq.'print').or.(F_namelist_S.eq.'PRINT')) then
+      if ((F_namelist_S == 'print').or.(F_namelist_S == 'PRINT')) then
          ens_nml = 0
-         if (F_unout.ge.0) write (F_unout,nml=ensembles)
+         if (F_unout >= 0) write (F_unout,nml=ensembles)
          return
       endif
 
-      Ens_conf        = .false.
-      Ens_mc_seed     = -1
-      Ens_skeb_conf   = .false.
-      Ens_skeb_dif    = .false.
-      Ens_skeb_gwd    = .false.
-      Ens_stat        = .false.
-      Ens_skeb_div    = .false.
-      Ens_skeb_nlon   = 16 
-      Ens_skeb_nlat   =  8
-      Ens_skeb_trnl   =  2
-      Ens_skeb_trnh   =  8
-      Ens_skeb_min    = 0.0
-      Ens_skeb_max    = 0.0
-      Ens_skeb_std    = 0.0
-      Ens_skeb_tau    = 0.0
-      Ens_skeb_str    = 0.0
-      Ens_skeb_bfc    = 1.0e-01
-      Ens_skeb_lam    = 2.0e+05
-      Ens_skeb_alph   = 0.0
-      Ens_skeb_alpt   = 0.0
-
-      Ens_ptp_conf    = .false.
-      Ens_ptp_nlon   = 16
-      Ens_ptp_nlat   =  8
-      Ens_ptp_ncha   =  1
-      Ens_ptp_trnl   =  1
-      Ens_ptp_trnh   =  8
-      Ens_ptp_min    = 0.0
-      Ens_ptp_max    = 0.0
-      Ens_ptp_std    = 0.0
-      Ens_ptp_tau    = 0.0
-      Ens_ptp_str    = 0.0
-      Ens_ptp_env_u   = 1.0
-      Ens_ptp_env_b   = 1.0
-      Ens_ptp_cape    = 0.0
-      Ens_ptp_tlc     = 0.0
-      Ens_ptp_crit_w  = 100.0
-      Ens_ptp_fac_reduc = 0.0
 
       unf = 0
       found_namelist_ok = .false.
       err = wkoffit (F_namelist_S)
-      if (err.ge.-1) then
+      if (err >= -1) then
          err_open  = fnom (unf,F_namelist_S, 'SEQ+OLD', nrec)
-         if (err_open.eq.0) then
+         if (err_open == 0) then
             read (unf, nml=ensembles, end = 1000, err=999, iostat=ios)
             found_namelist_ok = .true.
-            if (F_unout.ge.0) write (F_unout,nml=ensembles)
+            if (F_unout >= 0) write (F_unout,nml=ensembles)
          endif
  1000    call fclos (unf)
       endif
@@ -134,37 +83,37 @@
 
          ens_nml = 1
 
-         if ((F_Grdtyp_S.ne.'GU'.and.F_Grdtyp_S.ne.'GY').and.Ens_skeb_conf) then
-            if(F_unout.ge.0) write(F_unout,"(a,a)" ) 'Ens_nml: ','Ens_skeb only available with grid GU/GY'
+         if ((F_Grdtyp_S /= 'GU'.and.F_Grdtyp_S /= 'GY').and.Ens_skeb_conf) then
+            if(F_unout >= 0) write(F_unout,"(a,a)" ) 'Ens_nml: ','Ens_skeb only available with grid GU/GY'
             ens_nml = -1
          endif
 
-         if ((Ens_mc_seed.lt.0))then
-            if(F_unout.ge.0)write(F_unout,*)'You have to provide a positive integer as seed see Ens_mc_seed in NAMELIST'
+         if ((Ens_mc_seed < 0))then
+            if(F_unout >= 0)write(F_unout,*)'You have to provide a positive integer as seed see Ens_mc_seed in NAMELIST'
             ens_nml = -1
           endif
-         
-            if (Ens_skeb_nlon.ne.2*Ens_skeb_nlat)then
-              if(F_unout.ge.0)write(F_unout,*)' Nlon must equal 2*nlat'
+
+            if (Ens_skeb_nlon /= 2*Ens_skeb_nlat)then
+              if(F_unout >= 0)write(F_unout,*)' Nlon must equal 2*nlat'
               ens_nml = -1
             endif
-  
-         if (Ens_ptp_ncha.gt.MAX2DC) then
-            if(F_unout.ge.0)write(F_unout,*)'Ens_ptp_ncha must be <=9'
+
+         if (Ens_ptp_ncha > MAX2DC) then
+            if(F_unout >= 0)write(F_unout,*)'Ens_ptp_ncha must be <=9'
             ens_nml = -1
          endif
 
          do i=1,Ens_ptp_ncha
-            if (Ens_ptp_nlon(i).ne.2*Ens_ptp_nlat(i))then
-                if(F_unout.ge.0)write(F_unout,*)'Nlon2 must equal 2*nlat2'
+            if (Ens_ptp_nlon(i) /= 2*Ens_ptp_nlat(i))then
+                if(F_unout >= 0)write(F_unout,*)'Nlon2 must equal 2*nlat2'
                 ens_nml = -1
             endif
          enddo
 
-         if (ens_nml.lt.0) return
+         if (ens_nml < 0) return
 
          Ens_skeb_conf   =  Ens_skeb_conf.and.Ens_conf
-	 Ens_skeb_l      =  Ens_skeb_trnh-Ens_skeb_trnl+1
+         Ens_skeb_l      =  Ens_skeb_trnh-Ens_skeb_trnl+1
          Ens_skeb_m      =  Ens_skeb_trnh+1
          Ens_skeb_div    =  Ens_skeb_div .and.Ens_conf
          Ens_stat        =  Ens_stat.and.Ens_conf
@@ -172,10 +121,10 @@
          Ens_ptp_lmax   =  maxval(Ens_ptp_l)
          Ens_ptp_m      =  Ens_ptp_trnh+1
          Ens_ptp_mmax   =  maxval(Ens_ptp_m)
-         
+
          stochphy_L  = Ens_ptp_conf.and.Ens_conf
 
-         if(F_unout.ge.0)then
+         if(F_unout >= 0)then
             write(F_unout,"(a,i8)" )'Ens_mc_seed   = ',Ens_mc_seed
             write(F_unout,'(a,l5)' )'Ens_skeb_conf  = ',Ens_skeb_conf
             write(F_unout,'(a,l5)' )'Ens_stat  = ',Ens_stat
@@ -184,7 +133,7 @@
             write(F_unout,'(a,i5)' )'Ens_ptp_lmax = ',Ens_ptp_lmax
             write(F_unout,'(a,10i5)')'Ens_ptp_m     = ',Ens_ptp_m
             write(F_unout,'(a,i5)' )'Ens_ptp_mmax = ',Ens_ptp_mmax
-	    write(F_unout,'(a,10i5)')'Ens_skeb_l     = ',Ens_skeb_l
+            write(F_unout,'(a,10i5)')'Ens_skeb_l     = ',Ens_skeb_l
             write(F_unout,'(a,10i5)')'Ens_skeb_m     = ',Ens_skeb_m
             write(F_unout,'(a,l5)' )'Ens_stochphy_L = ',stochphy_L
             write(F_unout,'(a,i5)' )'Ens_imrkv2     = ',Ens_ptp_ncha

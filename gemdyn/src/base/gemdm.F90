@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -24,21 +24,14 @@
 !
 !     ---------------------------------------------------------------
 !
-! Initialize: Domain, MPI, processor topology and the model component
+! Initialize: Domain, MPI, processor topology and ptopo.cdk
 
       call init_component
 
-! Establish model configuration, domain decomposition and main memory
+! Establish: model configuration, domain decomposition
+!            and model geometry
 
       call set_world_view
-
-! Initialize geometry of the model
-
-      call set_geom
-
-! Initialize commons for output control
-
-      call set_sor
 
 ! Initialize the ensemble prevision system
 
@@ -52,9 +45,11 @@
 
       call tracers
 
-! Setup commons
+! Setup main memory
 
-      call set_cn1
+      call main_gmm_storage
+
+      call set_dyn_opr
 
 ! Run GEM
 

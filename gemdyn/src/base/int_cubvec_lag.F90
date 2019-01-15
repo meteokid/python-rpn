@@ -18,10 +18,10 @@
        subroutine int_cubvec_lag ( FF, Fu_8, Fv_8,Imx1,Imy1, Imx2, Imy2, &
                                  geomgxu_8,geomgy_8, geomgx_8,geomgyv_8, &
                                  Minx,Maxx,Miny,Maxy,Nk,Xi_8,Yi_8,NLEN,  &
-                                 s1_8,s2_8) 
+                                 s1_8,s2_8)
        implicit none
 #include <arch_specific.hf>
-       
+
        integer Nk,NLEN,Minx,Maxx,Miny,Maxy
        integer Imx1(NLEN),Imy1(NLEN),Imx2(NLEN),Imy2(NLEN)
        real    FF(NLEN*Nk)
@@ -30,7 +30,7 @@
                geomgx_8(Minx:Maxx),geomgyv_8(Miny:Maxy), &
                Xi_8(NLEN),Yi_8(NLEN), s1_8(NLEN),s2_8(NLEN)
 !
-!author   
+!author
 !           Abdessamad Qaddouri - October 2009
 !revision
 ! v4_60 - Qaddouri A.   - initial version
@@ -39,7 +39,7 @@
        integer k,i,Imx,Jmx,Imy,Jmy
        real*8  WX1,WX2,WX3,WX4
        real*8  WY1,WY2,WY3,WY4
-       real*8  X1,XX,X2,X3,X4 
+       real*8  X1,XX,X2,X3,X4
        real*8  WWX1,WWX2,WWX3,WWX4
        real*8  WWY1,WWY2,WWY3,WWY4
        real*8  YY,y1,y2,y3,y4,Fi
@@ -155,4 +155,4 @@
 !----------------------------------------------------------------------
 !
        return
-       end 
+       end

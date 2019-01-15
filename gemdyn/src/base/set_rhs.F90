@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -20,6 +20,12 @@
 
 !
       subroutine set_rhs
+      use gmm_rhsc
+      use gmm_orh
+      use glb_ld
+      use lun
+      use gmm_itf_mod
+      use var_gmm
       implicit none
 #include <arch_specific.hf>
 !
@@ -33,25 +39,19 @@
 !
 !object
 !     See above id.
-!	
+!
 !arguments
 !	none
 !
 
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "gmm.hf"
-#include "var_gmm.cdk"
-#include "rhsc.cdk"
-#include "orh.cdk"
 !
       integer :: istat
 !     ---------------------------------------------------------------
 !
-      if (Lun_out.gt.0) write(Lun_out,1000)
+      if (Lun_out > 0) write(Lun_out,1000)
 !
 ! Assign the names of the variables
-! 
+!
       gmmk_rhsu_s = 'RHSU'
       gmmk_rhsv_s = 'RHSV'
       gmmk_rhst_s = 'RHST'
@@ -60,8 +60,6 @@
       gmmk_rhsf_s = 'RHSF'
       gmmk_rhsp_s = 'RHSP'
       gmmk_rhsb_s = 'RHSB'
-      gmmk_rhsx_s = 'RHSX'
-      gmmk_rhsq_s = 'RHSQ'
 !
       gmmk_ruw1_s = 'RUW1'
       gmmk_ruw2_s = 'RUW2'
@@ -74,12 +72,10 @@
       gmmk_orhsc_s = 'ORHC'
       gmmk_orhsw_s = 'ORHW'
       gmmk_orhsf_s = 'ORHF'
-      gmmk_orhsx_s = 'ORHX'
-      gmmk_orhsq_s = 'ORHQ'
 !
-      nullify (rhsu,rhsv,rhst,rhsc,rhsw,rhsf,rhsp,rhsb,rhsx,rhsq)
+      nullify (rhsu,rhsv,rhst,rhsc,rhsw,rhsf,rhsp,rhsb)
       nullify (ruw1,rvw1,ruw2,rvw2)
-      nullify (orhsu,orhsv,orhst,orhsc,orhsw,orhsf,orhsx,orhsq)
+      nullify (orhsu,orhsv,orhst,orhsc,orhsw,orhsf)
 !
       istat = gmm_create(gmmk_rhsu_s,rhsu,meta3d_nk, GMM_FLAG_IZER)
       if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(rhsu)'
@@ -97,10 +93,6 @@
       if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(rhsp)'
       istat = gmm_create(gmmk_rhsb_s,rhsb,meta2d   , GMM_FLAG_IZER)
       if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(rhsb)'
-      istat = gmm_create(gmmk_rhsx_s,rhsx,meta3d_nk, GMM_FLAG_IZER)
-      if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(rhsx)'
-      istat = gmm_create(gmmk_rhsq_s,rhsq,meta3d_nk, GMM_FLAG_IZER)
-      if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(rhsq)'
 !
       istat = gmm_create(gmmk_ruw1_s,ruw1,meta3d_nk, GMM_FLAG_IZER)
       if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(ruw1)'
@@ -123,10 +115,6 @@
       if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(orhsw)'
       istat = gmm_create(gmmk_orhsf_s,orhsf,meta3d_nk,GMM_FLAG_IZER)
       if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(orhsf)'
-      istat = gmm_create(gmmk_orhsx_s,orhsx,meta3d_nk,GMM_FLAG_IZER)
-      if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(orhsx)'
-      istat = gmm_create(gmmk_orhsq_s,orhsq,meta3d_nk,GMM_FLAG_IZER)
-      if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(orhsq)'
 !
       istat = gmm_get (gmmk_rhsw_s, rhsw)
       rhsw  = 0.

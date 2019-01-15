@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -21,12 +21,14 @@
                          F_vtund, F_fiund, F_und, &
                          Minx,Maxx,Miny,Maxy, Nk)
 !
+      use tdpack
+      use glb_ld
       implicit none
 #include <arch_specific.hf>
 !
       integer Minx,Maxx,Miny,Maxy, Nk
 !
-      real F_pnm(Minx:Maxx,Miny:Maxy), F_vts(Minx:Maxx,Miny:Maxy,Nk) 
+      real F_pnm(Minx:Maxx,Miny:Maxy), F_vts(Minx:Maxx,Miny:Maxy,Nk)
       real F_fis(Minx:Maxx,Miny:Maxy,Nk)
       real F_lnps(Minx:Maxx,Miny:Maxy,Nk), F_la (Minx:Maxx,Miny:Maxy)
 !
@@ -124,7 +126,7 @@
 !                     given for underground extrapolation
 ! F_und        I    - number of virtual temperature levels for underground
 !                     extrapolation
-!                   = 0 if no underground temperature is used and the 
+!                   = 0 if no underground temperature is used and the
 !                       the traditional scheme will be used
 !
 !notes
@@ -138,8 +140,6 @@
 !   ......................................and so on
 !
 
-#include "glb_ld.cdk"
-#include "dcst.cdk"
 !
 
 !     none
@@ -159,23 +159,23 @@
 !        calculation of critical temperature
 !                       --------------------
 !
-         prvtc = 301.75 - abs( (F_la(i,j) * 180.) / ( 4. * Dcst_pi_8) )
+         prvtc = 301.75 - abs( (F_la(i,j) * 180.) / ( 4. * pi_8) )
 !
 !
          do pnund=1,F_und+1
-            if ( pnund .gt. F_und ) go to 30
-            if ( F_fis(i,j,nk) .gt. F_fiund(i,j,pnund) ) go to 30
+            if ( pnund > F_und ) go to 30
+            if ( F_fis(i,j,nk) > F_fiund(i,j,pnund) ) go to 30
          enddo
 !
  30      continue
 !
          prlptop = F_lnps(i,j,nk)
-         prvttop = F_vts(i,j,nk) 
+         prvttop = F_vts(i,j,nk)
          prfitop = F_fis(i,j,nk)
 !
          do 40 pn1=pnund,F_und
 !
-            if ( prvttop .le. prvtc ) then
+            if ( prvttop <= prvtc ) then
                  prvtbot = min( F_vtund(i,j,pn1),  prvtc )
             else
                  prvtbot = prvtc - 0.005 * ( prvttop - prvtc ) **2
@@ -183,11 +183,11 @@
 !
             prfibot  = F_fiund (i,j,pn1)
 !
-            if ( abs(prvtbot-prvttop) .le. prsmall ) then
-               prlpbot = prlptop + (prfitop-prfibot)/(Dcst_rgasd_8*prvttop)
+            if ( abs(prvtbot-prvttop) <= prsmall ) then
+               prlpbot = prlptop + (prfitop-prfibot)/(rgasd_8*prvttop)
             else
                prl     = - ( prvttop - prvtbot ) / ( prfitop - prfibot )
-               prlpbot = prlptop + (log(prvtbot/prvttop)) / (Dcst_rgasd_8*prl)
+               prlpbot = prlptop + (log(prvtbot/prvttop)) / (rgasd_8*prl)
             endif
 !
             prlptop = prlpbot
@@ -196,8 +196,8 @@
 !
  40      continue
 !
-         if ( prvttop .le. prvtc ) then
-              prvtbot = min( 1.0d0*prvttop + Dcst_stlo_8 * 1.0d0*prfitop,  1.0d0*prvtc)
+         if ( prvttop <= prvtc ) then
+              prvtbot = min( 1.0d0*prvttop + stlo_8 * 1.0d0*prfitop,  1.0d0*prvtc)
          else
               prvtbot = prvtc - 0.005 * ( prvttop - prvtc ) **2
          endif
@@ -205,11 +205,11 @@
 !        calculation of MSL pressure
 !                       ------------
 !
-         if ((abs(prvtbot-prvttop).le.prsmall) .or. (prfitop.le.0.0)) then
-              F_pnm(i,j) = exp (prlptop+prfitop/(Dcst_rgasd_8*prvttop))
+         if ((abs(prvtbot-prvttop) <= prsmall) .or. (prfitop <= 0.0)) then
+              F_pnm(i,j) = exp (prlptop+prfitop/(rgasd_8*prvttop))
          else
               prl = - ( prvttop - prvtbot ) / ( prfitop )
-              F_pnm(i,j)=exp (prlptop+(log(prvtbot/prvttop))/(Dcst_rgasd_8*prl))
+              F_pnm(i,j)=exp (prlptop+(log(prvtbot/prvttop))/(rgasd_8*prl))
          endif
 !
  100  continue

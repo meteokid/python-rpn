@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -16,6 +16,7 @@
 !**s/r itf_fft_qcos - multiple fast real shifted cosine transform
 !
       subroutine itf_fft_qcos ( F_a, F_inc, F_jump, F_lot, F_isign )
+      use fft
       implicit none
 #include <arch_specific.hf>
 !
@@ -62,7 +63,6 @@
 !     the commons in fft.cdk
 !
 
-#include "fft.cdk"
 
       integer i, j, k, is, k1, kk, j0, jlot
       real*8  ai, as, ya, ys, c, s, rr, w(511*Fft_nstore)
@@ -76,11 +76,11 @@
 !-----------------------------------------------------------------------
 !
       w(:)=0.0
-!      
+!
       do 100 j0=0,F_lot-1,511
          jlot  = min( 511, F_lot - j0 )
 
-         if ( F_isign .eq. -1 ) then
+         if ( F_isign == -1 ) then
 !
 !     transform from gridpoint to Fourier
 !
@@ -96,7 +96,7 @@
                enddo
             enddo
 
-            if ( Fft_n .ne. 2 * Fft_m )  then
+            if ( Fft_n /= 2 * Fft_m )  then
                do j=1,jlot
                   w( ijw(Fft_m,j) ) = two * F_a( ija(Fft_m,j) )
                enddo
@@ -111,7 +111,7 @@
             do k = 1 , Fft_m
                kk = 2*k
                k1 = kk + 1
-               if ( k .lt. Fft_m .or. Fft_n .ne. 2 * Fft_m ) then
+               if ( k < Fft_m .or. Fft_n /= 2 * Fft_m ) then
                   c = Fft_ccos( k )
                   s = Fft_ssin( k )
                   do j=1,jlot
@@ -125,7 +125,7 @@
                endif
 
             enddo
-            if ( Fft_n .eq. 2 * Fft_m )  then
+            if ( Fft_n == 2 * Fft_m )  then
                do j=1,jlot
                   F_a( ija(Fft_n-1,j) ) = F_a( ija(Fft_n-1,j) ) * half
                enddo
@@ -137,7 +137,7 @@
             enddo
             enddo
 !
-         elseif ( F_isign .eq. +1 ) then
+         elseif ( F_isign == +1 ) then
 !
 !     transform from Fourier to gridpoint
 !
@@ -158,7 +158,7 @@
               w(ijw(k,j)) = ( F_a( ija(k-2,j) ) - F_a( ija(k,j) ) ) * half
             enddo
             enddo
-            if ( Fft_n .eq. 2 * Fft_m )  then
+            if ( Fft_n == 2 * Fft_m )  then
                c = one
             else
                c = half
@@ -169,7 +169,7 @@
 
             do k = 1 , Fft_m
 
-               if ( k .lt. Fft_m .or. Fft_n .ne. 2 * Fft_m ) then
+               if ( k < Fft_m .or. Fft_n /= 2 * Fft_m ) then
                   c = Fft_ccos( k )
                   s = Fft_ssin( k )
                else
@@ -204,7 +204,7 @@
                enddo
 
             enddo
-            if ( Fft_n .ne. 2 * Fft_m )  then
+            if ( Fft_n /= 2 * Fft_m )  then
                do j=1,jlot
                   F_a( ija(Fft_m,j) ) = w( ijw(Fft_m,j) )
                enddo

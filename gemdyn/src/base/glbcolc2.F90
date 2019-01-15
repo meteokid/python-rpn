@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -15,6 +15,8 @@
 
       subroutine glbcolc2(f2rc,g_id,g_if,g_jd,g_jf, &
                           f2cc,lminx,lmaxx,lminy,lmaxy,lnk,z_out,nk_out)
+      use glb_ld
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 
@@ -23,8 +25,6 @@
       real f2rc(g_id:g_if,g_jd:g_jf,nk_out),  &
            f2cc(lminx:lmaxx,lminy:lmaxy,lnk)
 
-#include "glb_ld.cdk"
-#include "ptopo.cdk"
 
       integer i, j, k, iproc, tag, err, status
       integer si,sj,loindx,hiindx,loindy,hiindy
@@ -50,12 +50,12 @@
       l_jd = max(loindy,(g_jd-sj))
       l_jf = min(hiindy,(g_jf-sj))
       len = max(0,(l_if-l_id+1))*max(0,(l_jf-l_jd+1))*lnk
-          
-      if (Ptopo_myproc.eq.0) then
+
+      if (Ptopo_myproc == 0) then
 
 !       Copy local data (LD) segment to global field on processor 1
 
-         if (len.gt.0) then
+         if (len > 0) then
             len = 0
             do k = 1, nk_out
                do j = l_jd, l_jf
@@ -83,7 +83,7 @@
          do iproc = 1, Ptopo_numproc-1
             call RPN_COMM_recv ( len, 5, 'MPI_INTEGER', iproc, &
                                  tag,'GRID', status, err )
-            if (len.gt.0) then
+            if (len > 0) then
                call RPN_COMM_recv ( buf, len, 'MPI_REAL', iproc, &
                                  tag,'GRID', status, err )
                len = 0
@@ -94,9 +94,9 @@
                   f2rc(i,j,k) = buf(len)
                enddo
                enddo
-               enddo 
+               enddo
             endif
-         enddo 
+         enddo
 
       else
 
@@ -113,7 +113,7 @@
          enddo
 
          call RPN_COMM_send ( len, 5, 'MPI_INTEGER', 0, tag,'GRID',err )
-         if (len.gt.0) &
+         if (len > 0) &
          call RPN_COMM_send ( buf, len, 'MPI_REAL', 0, tag, 'GRID',err )
 
       endif

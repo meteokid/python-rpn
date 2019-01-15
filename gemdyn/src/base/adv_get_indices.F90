@@ -14,11 +14,16 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !@objective:  pre-compute indices to be used in tricub interp  adx_tricub_lag3d_loop.cdk
-	
+
 	subroutine adv_get_indices (ii,  F_x, F_y, F_z, F_num, &
                                  nind, F_i0, F_in, F_j0, F_jn, F_k0, F_nk, F_lev_S)
-
-implicit none
+   use gem_options
+      use glb_ld
+      use ver
+      use adv_grid
+      use adv_interp
+      use outgrid
+   implicit none
 
 #include <arch_specific.hf>
 
@@ -28,92 +33,89 @@ implicit none
    integer, intent(in) :: F_i0, F_in, F_j0, F_jn, F_k0              ! scope of operator
    integer, intent(in) :: F_num
    real,dimension(F_num), intent(in) :: F_x, F_y, F_z ! interpolation target x,y,z coordinates
- 
-   !
-!@ author  RPN-A Model Infrastructure Group  August 2015
-   ! 
 
-#include "adv_grid.cdk"
-#include "adv_interp.cdk"
-#include "glb_ld.cdk"
-#include "ver.cdk"
+   !
+!@ author  Rabah Aider    August 2015
+   !
+
    integer :: kkmax , idxk, idxjk, ii1, jj1,kk1
-   integer :: id,i,j,k,n,n0,n1,n2,n3,m,nind 
+   integer :: i,j,k,n,n0,n1,n2,n3,m,nind,sig
    integer :: midxk,midxjk,mni,mnj,mnk,nn
-   real*8  :: p_z00_8  
+   real*8  :: p_z00_8
    real*8  :: rri,rrj,rrk
    integer, dimension(4*nind), intent(out) :: ii    ! index, to be used in tricubic lagrangian interpolations
-   integer ,dimension(:),pointer :: p_lcz
-   real*8, dimension(:),pointer :: p_bsz_8    
-   
+   integer, dimension(:),pointer :: p_lcz
+   real*8,  dimension(:),pointer :: p_bsz_8
+
 !---------------------------------------------------------------------
- 
+
+! Vertical variable type:  Height--> sig <0 , Pressure --> sig >0
+    sig=int((Ver_z_8%m(l_nk)-Ver_z_8%m(1))/(abs(  Ver_z_8%m(l_nk)-Ver_z_8%m(1) )))
+
     p_z00_8 = Ver_z_8%m(0)
     kkmax   = F_nk-1
     if (F_lev_S == 'm') then
       p_lcz     => adv_lcz%m
       p_bsz_8   => adv_bsz_8%m
-    elseif  (F_lev_S == 't') then      
+    elseif  (F_lev_S == 't') then
       p_lcz     => adv_lcz%t
       p_bsz_8   => adv_bsz_8%t
-    elseif  (F_lev_S == 'x') then      
+    elseif  (F_lev_S == 'x') then
       p_lcz     => adv_lcz%x
       p_bsz_8   => adv_bsz_8%x
     endif
 
 ! pre-compute indices ii
 
-   mni=F_in-F_i0+1
-   mnj=F_jn-F_j0+1
-   mnk=F_nk-F_k0+1
+    mni=F_in-F_i0+1
+    mnj=F_jn-F_j0+1
+    mnk=F_nk-F_k0+1
 
-!$omp parallel private(idxk, idxjk, ii1, jj1,kk1,&
-!$omp                  id,i,j,k,n,n0,n1,n2,n3,m,nind,&
-!$omp                  midxk,midxjk,nn,&
+!$omp parallel private(i,j,k, ii1, jj1, kk1,&
+!$omp                  n,n0,n1,n2,n3,nn,m,&
+!$omp                  idxk,idxjk,midxk,midxjk,&
 !$omp                  rri,rrj,rrk) &
-!$omp          shared(ii,p_lcz,p_bsz_8,kkmax,mni,mnj,mnk)
+!$omp          shared(ii,kkmax,sig,p_lcz,p_z00_8,p_bsz_8,&
+!$omp                 mni,mnj,mnk)
 
-!m=0 -> not for OMP
 !$omp do
 
-do k=F_k0,F_nk
-      idxk  = (k-1)*l_ni*l_nj
-      midxk = (k-F_k0)*mni*mnj
-      do j=F_j0,F_jn
-         idxjk = idxk + ((j-1)*l_ni)
-         midxjk=midxk + ((j-F_j0)*mni)
-         do i=F_i0,F_in
-            n = idxjk + i  
-            !m=m+4 -> not for OMP
-            nn= midxjk+ (i-F_i0+1)
-            m=nn*4
-   
-            n0=m-3
-            n1=m-2
-            n2=m-1
-            n3=m
+   do k=F_k0,F_nk
+         idxk  = (k-1)*l_ni*l_nj
+         midxk = (k-F_k0)*mni*mnj
+         do j=F_j0,F_jn
+            idxjk = idxk + ((j-1)*l_ni)
+            midxjk=midxk + ((j-F_j0)*mni)
+            do i=F_i0,F_in
+               n = idxjk + i
+               nn= midxjk+ (i-F_i0+1)
+               m=nn*4
 
-            ii(n0)=n
+               n0=m-3
+               n1=m-2
+               n2=m-1
+               n3=m
 
-            rri = F_x(n)
-            ii1 = 1 + (rri - adv_x00_8) * adv_ovdx_8
-            ii(n1) = max(2,min(ii1,adv_iimax))
+               ii(n0)=n
 
-            rrj = F_y(n)
-            jj1 = 1 + (rrj - adv_y00_8) * adv_ovdy_8
-            ii(n2) = max(G_haloy,min(jj1,adv_jjmax))
+               rri = F_x(n)
+               ii1 = 1 + (rri - adv_x00_8) * adv_ovdx_8
+               ii(n1) = max(2,min(ii1,adv_iimax))
 
-            rrk = F_z(n)
-            kk1 = (rrk - p_z00_8) * adv_ovdz_8 
-            kk1 = p_lcz (kk1+1)
-            if (rrk < p_bsz_8(kk1)) kk1 = kk1 - 1
-            ii(n3) = min(kkmax-1,max(0,kk1))
+               rrj = F_y(n)
+               jj1 = 1 + (rrj - adv_y00_8) * adv_ovdy_8
+               ii(n2) = max(G_haloy,min(jj1,adv_jjmax))
 
+               rrk = F_z(n)
+               kk1 = (rrk - p_z00_8) * adv_ovdz_8*sig
+               kk1 = p_lcz (kk1+1)
+               if ( real(sig) * (rrk - p_bsz_8(kk1)) < 0. ) kk1 = kk1 - 1
+               ii(n3) = min(kkmax-1,max(0,kk1))
+            enddo
          enddo
-      enddo
-enddo
+   enddo
 
 !$omp enddo
-!$omp end parallel   
-   
+!$omp end parallel
+
 end subroutine adv_get_indices

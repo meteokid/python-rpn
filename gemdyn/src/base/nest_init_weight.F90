@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -22,20 +22,20 @@
 !                        there is a blending between piloting field and original field
 !
 subroutine nest_init_weight (F_grid)
+      use gmm_nest
+      use gem_options
+      use grdc_options
+      use glb_ld
+      use gmm_itf_mod
+      use glb_pil
+      use var_gmm
+      use ptopo
   implicit none
 #include <arch_specific.hf>
 
   ! Arguments
   character(len=*), intent(in) :: F_grid        !staggered grid ('U':u-grid,'V':v-grid,'M':mass-grid)
 
-#include "gmm.hf"
-#include "var_gmm.cdk"
-#include "grdc.cdk"
-#include "glb_pil.cdk"
-#include "glb_ld.cdk"
-#include "lam.cdk"
-#include "nest.cdk"
-#include "ptopo.cdk"
 
   ! Local variables
   type(gmm_metadata) :: mymeta
@@ -51,7 +51,7 @@ subroutine nest_init_weight (F_grid)
   character(len=GMM_MAXNAMELENGTH), dimension(4) :: supported_grids=(/'U','V','M','Q'/)
   real wk1(G_ni,G_nj)
 
-  !      
+  !
   !----------------------------------------------------------------------
   !
   call handle_error_l (any(supported_grids == trim(F_grid)),'nest_init_weight',&
@@ -122,8 +122,8 @@ subroutine nest_init_weight (F_grid)
   l_tdeb = 1
   l_tfin = min(G_nk+1,t2)
 
-  if (l_wfin.gt.l_edeb) stop 'ABORT nest_init_weight l_wfin > l_edeb'
-  if (l_sfin.gt.l_ndeb) stop 'ABORT nest_init_weight l_sfin > l_ndeb'
+  if (l_wfin > l_edeb) stop 'ABORT nest_init_weight l_wfin > l_edeb'
+  if (l_sfin > l_ndeb) stop 'ABORT nest_init_weight l_sfin > l_ndeb'
 
   do i = l_wdeb, l_wfin
      ig = i + Ptopo_gindx(1,Ptopo_myproc+1) - 1
@@ -207,7 +207,7 @@ subroutine nest_init_weight (F_grid)
 
 !!!!TODO: remove this section when BCs treatment re-formulated
   call glbcolc (wk1,G_ni,G_nj,weight,l_minx,l_maxx,l_miny,l_maxy,1)
-  if (Ptopo_myproc.eq.0) then
+  if (Ptopo_myproc == 0) then
      do i = w2, e2
         wk1(i,s2) = 0.
         wk1(i,n2) = 0.
@@ -224,11 +224,11 @@ subroutine nest_init_weight (F_grid)
   do j= 1, l_nj
   do i= 1, l_ni
      weight(i,j,k) = max (weight(i,j,1) ,real(weight_z(k)))
-     if (weight(i,j,k).gt.0.) Lam_wgt0 = .true.
+     if (weight(i,j,k) > 0.) Lam_wgt0 = .true.
   end do
   end do
   end do
-  !      
+  !
   !----------------------------------------------------------------------
   !
 

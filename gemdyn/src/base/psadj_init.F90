@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -16,34 +16,33 @@
 !**s/r psadj_init - Estimate area and air mass at initial time
 
       subroutine psadj_init (F_kount)
+      use cstv
+      use gem_options
+      use gmm_vt1
+      use gmm_geof
+      use gmm_itf_mod
+      use geomh
+      use glb_ld
+      use grid_options
+      use psadjust
+      use rstr
       implicit none
 #include <arch_specific.hf>
 
       integer, intent(in) :: F_kount
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "geomg.cdk"
-#include "schm.cdk"
-#include "vt1.cdk"
-#include "grd.cdk"
-#include "dcst.cdk"
-#include "psadj.cdk"
-#include "cstv.cdk"
-#include "iau.cdk"
-#include "rstr.cdk"
 
       integer err,i,j,istat
       logical, save :: done = .false.
-      real*8,dimension(l_minx:l_maxx,l_miny:l_maxy,1:l_nk):: pr_m_8,pr_t_8 
-      real*8,dimension(l_minx:l_maxx,l_miny:l_maxy)       :: pr_p0_1_8,pr_p0_w_1_8 
-      real*8 l_avg_8
-      real*8,parameter :: QUATRO_8 = 4.0d0
+      real*8,dimension(l_minx:l_maxx,l_miny:l_maxy,1:l_nk):: pr_m_8,pr_t_8
+      real*8,dimension(l_minx:l_maxx,l_miny:l_maxy)       :: pr_p0_1_8,pr_p0_w_1_8
+      real*8 l_avg_8,x_avg_8
       character(len= 9) communicate_S
+      logical almost_zero
 !
 !     ---------------------------------------------------------------
 !
-      if ( Schm_psadj == 0 ) then 
+      if ( Schm_psadj == 0 .or. .not.Grd_yinyang_L ) then
          if ( Schm_psadj_print_L ) goto 999
          return
       endif
@@ -58,10 +57,14 @@
 
       !Estimate area
       !-------------
+      istat = gmm_get(gmmk_fis0_s,fis0)
       l_avg_8 = 0.0d0
+      x_avg_8 = 0.0d0
       do j=1+pil_s,l_nj-pil_n
       do i=1+pil_w,l_ni-pil_e
-         l_avg_8 = l_avg_8 + Geomg_area_8(i,j) * Geomg_mask_8(i,j)
+         l_avg_8 = l_avg_8 + geomh_area_8(i,j) * geomh_mask_8(i,j)
+         if(fis0(i,j) > 1.) &
+            x_avg_8 = x_avg_8 + geomh_area_8(i,j) * geomh_mask_8(i,j)
       enddo
       enddo
 
@@ -71,11 +74,12 @@
       call RPN_COMM_allreduce (l_avg_8, PSADJ_scale_8, 1, &
         "MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
 
-      if (G_lam) then
-         PSADJ_scale_8 = 1.0d0/PSADJ_scale_8
-      else
-         PSADJ_scale_8 = 1.0d0/(QUATRO_8 * Dcst_pi_8)
-      endif
+      call RPN_COMM_allreduce (x_avg_8, PSADJ_fact_8, 1, &
+        "MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
+
+      PSADJ_fact_8  = PSADJ_fact_8/PSADJ_scale_8
+      PSADJ_scale_8 = 1.0d0/PSADJ_scale_8
+      if (.not.almost_zero(PSADJ_fact_8)) PSADJ_fact_8  =(1.0d0-(1.0d0-PSADJ_fact_8)*Cstv_psadj_8)/PSADJ_fact_8
 
       istat = gmm_get(gmmk_st1_s,st1)
 
@@ -95,7 +99,7 @@
       !------------------------------------------------------------
       elseif (Schm_psadj==1) then
 
-         pr_p0_w_1_8(1:l_ni,1:l_nj)= pr_p0_1_8(1:l_ni,1:l_nj)-Cstv_pref_8
+         pr_p0_w_1_8(1:l_ni,1:l_nj) = pr_p0_1_8(1:l_ni,1:l_nj) - Cstv_pref_8
 
       endif
 
@@ -104,8 +108,8 @@
       l_avg_8 = 0.0d0
       do j=1+pil_s,l_nj-pil_n
       do i=1+pil_w,l_ni-pil_e
-         l_avg_8 = l_avg_8 + pr_p0_w_1_8(i,j) * Geomg_area_8(i,j) &
-                                              * Geomg_mask_8(i,j) 
+         l_avg_8 = l_avg_8 + pr_p0_w_1_8(i,j) * geomh_area_8(i,j) &
+                                                 * geomh_mask_8(i,j)
       enddo
       enddo
 
@@ -115,10 +119,10 @@
       PSADJ_g_avg_ps_initial_8 = PSADJ_g_avg_ps_initial_8 &
                                * PSADJ_scale_8
 
-  999 continue    
+  999 continue
 
-      if ( Schm_psadj_print_L ) call stat_psadj (1,"BEFORE DYNSTEP")
-
+      if (Schm_psadj_print_L) call stat_psadj (1,"BEFORE DYNSTEP")
+!
 !     ---------------------------------------------------------------
 !
 

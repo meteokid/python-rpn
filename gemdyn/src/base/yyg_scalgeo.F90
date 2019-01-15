@@ -12,31 +12,31 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-!**s/r yyg_scalgeo - Interpolate and exchange non-halo geophysical data 
+!**s/r yyg_scalgeo - Interpolate and exchange non-halo geophysical data
 !                    using local PEs
 
       subroutine yyg_scalgeo2 ( F_src, F_minx,F_maxx,F_miny,F_maxy, &
                                 NK, Interp_S, nomvar_S )
+      use glb_ld
       implicit none
 #include <arch_specific.hf>
 
-      character* (*) interp_S,nomvar_S
+      character(len=*) interp_S,nomvar_S
       integer F_minx,F_maxx,F_miny,F_maxy,NK
       real F_src(F_minx:F_maxx,F_miny:F_maxy,NK)
 
 !author
 !           Abdessamad Qaddouri/V.Lee - October 2009
 
-#include "glb_ld.cdk"
 
       real  tab_dstf(l_minx:l_maxx,l_miny:l_maxy,NK)
-      character*32 UPinterp_S
+      character(len=32) :: UPinterp_S
 !
 !----------------------------------------------------------------------
-!      
+!
       call low2up  (interp_S,UPinterp_S)
 
-!     Copy original fields to a source and destination tables with 
+!     Copy original fields to a source and destination tables with
 !     zeroed halo
 
       tab_dstf = 0.
@@ -48,7 +48,7 @@
       F_src(1:l_ni,1:l_nj,1:Nk)= tab_dstf(1:l_ni,1:l_nj,1:Nk)
 !
 !----------------------------------------------------------------------
-!      
+!
       return
       end
 

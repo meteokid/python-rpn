@@ -13,7 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 !
-module krylov_mod
+module krylov
    ! Common Krylov methods.
    !
    ! References
@@ -26,24 +26,22 @@ module krylov_mod
    ! Author
    !     Stéphane Gaudreault -- June 2014
    !
-   ! Revision
-   !     v4-70 - Gaudreault S.      - initial version
-   !
+   use prec
    implicit none
 
    private
 
-#include "prec.cdk"
-#include "lun.cdk"
-#include "glb_ld.cdk"
 
    public :: krylov_fbicgstab, krylov_fgmres
 
 contains
 
-      integer function krylov_fbicgstab(x, matvec, b, x0, ni, nj, nk, &
-                                        minx, maxx, miny, maxy, i0, il, j0, jl, &
-                                        tolerance, maxiter, precond_S, conv) result(retval)
+   integer function krylov_fbicgstab(x, matvec, b, x0, ni, nj, nk, &
+                                     minx, maxx, miny, maxy, i0, il, j0, jl, &
+                                     tolerance, maxiter, precond_S, conv) result(retval)
+      use glb_ld
+      use lun
+      implicit none
       ! Solves a linear system using a Bi-Conjugate Gradient STABilised
       !
       integer, intent(in) :: ni, nj, nk, minx, maxx, miny, maxy, i0, il, j0, jl
@@ -60,8 +58,9 @@ contains
       ! A matrix-vector product routine (A.*v).
       interface
          subroutine matvec(v, prod)
-#include "ldnh.cdk"
-#include "glb_ld.cdk"
+            use glb_ld, only: l_nk
+            use ldnh, only: ldnh_minx, ldnh_maxx, ldnh_miny, ldnh_maxy
+            implicit none
             real*8, dimension (ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk), intent(in) :: v
             real*8, dimension (ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk), intent(out) :: prod
          end subroutine
@@ -138,8 +137,11 @@ contains
             beta = (rho / rho_old) * (alpha / omega)
          end if
 
-!$omp parallel
-!$omp do private (i,j,k)
+!$omp parallel private (i,j,k) &
+!$omp          shared(pp, residual, alpha, beta, omega, &
+!$omp                  vv, ss, tt, x, pp_prec, ss_prec)
+
+!$omp do
          do k=1,nk
             do j=j0,jl
                do i=i0,il
@@ -148,8 +150,8 @@ contains
             end do
          end do
 !$omp enddo
-!$omp single
 
+!$omp single
          select case(precond_S)
             case ('JACOBI')
                call pre_jacobi3D (pp_prec(i0:il,j0:jl,:), pp(i0:il,j0:jl,:), Prec_xevec_8, &
@@ -171,9 +173,9 @@ contains
          else
             alpha = rho / tau
          end if
-
 !$omp end single
-!$omp do private (i,j,k)
+
+!$omp do
          do k=1,nk
             do j=j0,jl
                do i=i0,il
@@ -182,8 +184,8 @@ contains
             end do
          end do
 !$omp enddo
-!$omp single
 
+!$omp single
          select case(precond_S)
             case ('JACOBI')
                   call pre_jacobi3D (ss_prec(i0:il,j0:jl,:), ss(i0:il,j0:jl,:), Prec_xevec_8, &
@@ -207,9 +209,9 @@ contains
 
          rho_old = rho
          rho = -omega * (dist_dotproduct(hatr0, tt, minx, maxx, miny, maxy, i0, il, j0, jl, nk))
-
 !$omp end single
-!$omp do private (i,j,k)
+
+!$omp do
          do k=1,nk
             do j=j0,jl
                do i=i0,il
@@ -258,6 +260,8 @@ contains
    integer function krylov_fgmres(x, matvec, b, x0, ni, nj, nk, &
                                   minx, maxx, miny, maxy, i0, il, j0, jl, &
                                   tolerance, maxinner, maxouter, precond_S, conv) result(retval)
+      use glb_ld
+      implicit none
       ! Flexible generalized minimum residual method (with restarts)
       ! solve A x = b.
       !
@@ -275,8 +279,9 @@ contains
       ! A matrix-vector product routine (A.*vv).
       interface
          subroutine matvec(v, prod)
-#include "ldnh.cdk"
-#include "glb_ld.cdk"
+            use glb_ld, only: l_nk
+            use ldnh, only: ldnh_minx, ldnh_maxx, ldnh_miny, ldnh_maxy
+            implicit none
             real*8, dimension (ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk), intent(in) :: v
             real*8, dimension (ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk), intent(out) :: prod
          end subroutine
@@ -298,7 +303,7 @@ contains
       ! Preconditioner
       character(len=*), intent(in) :: precond_S
 
-      integer :: initer, outiter, nextit, stat, i, j, k, it, ierr
+      integer :: initer, outiter, nextit, i, j, k, it, ierr
       real*8 :: relative_tolerance, norm_residual, nu, dotprod, r0
 
       real*8, dimension(maxinner+1, maxinner) :: hessenberg
@@ -386,8 +391,11 @@ contains
 
             ! Modified Gram-Schmidt orthogonalisation
 
-!$omp parallel
-!$omp do private (it,i,j,k,dotprod)
+!$omp parallel private(it,i,j,k,dotprod) &
+!$omp          shared(vv, nextit, initer, &
+!$omp                 dotprod_local, hessenberg)
+
+!$omp do
             do it=1,initer
                 dotprod = 0.0d0
                 do k=1,nk
@@ -405,7 +413,7 @@ contains
             call RPN_COMM_allreduce(dotprod_local(:), hessenberg(:,initer), initer, "MPI_double_precision", "MPI_sum", "grid", ierr)
 !$omp end single
 
-!$omp do private (i,j,k,it)
+!$omp do
             do it=1,initer
                do k=1,nk
                   do j=j0,jl
@@ -423,7 +431,7 @@ contains
             ! Watch out for happy breakdown
             if (.not. almost_zero( hessenberg(nextit,initer) )) then
                nu = 1.d0 / hessenberg(nextit,initer)
-!$omp parallel private (i,j,k)
+!$omp parallel private (i,j,k) shared(vv, nextit, nu)
 !$omp do
                do k=1,nk
                   do j=j0,jl
@@ -467,7 +475,6 @@ contains
          enddo
 
          ! updating solution
-
          do it = initer,1,-1
             nu = xh(it)
             do k=1,nk
@@ -504,4 +511,4 @@ contains
       end do
    end subroutine givens_rotations
 
-end module krylov_mod
+end module krylov

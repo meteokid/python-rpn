@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -17,10 +17,16 @@
 !               cases
 !
       subroutine slabsym ()
+      use gmm_vt1
+      use gem_options
+      use glb_ld
+      use lun
+      use tr3d
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 
-!author 
+!author
 !     Gravel              - spring 2003 (after MC2 v_4.9.3)
 !
 !revision
@@ -28,12 +34,6 @@
 ! v3_30 - Lee V              - changed t0=> t1,nest is after t02t1
 ! v4_05 - Lepine M.          - VMM replacement with GMM
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "vt1.cdk"
-#include "tr3d.cdk"
-#include "schm.cdk"
-#include "lun.cdk"
 
       type(gmm_metadata) :: mymeta
       integer err,i,j,k,n
@@ -74,7 +74,7 @@
                tt1 (i,jj,k) = tt1 (i,jin,k)
                wt1 (i,jj,k) = wt1 (i,jin,k)
                zdt1(i,jj,k) = zdt1(i,jin,k)
-               qt1 (i,jj,k+1)=qt1 (i,jin,k+1)
+               qt1 (i,jj,k) = qt1 (i,jin,k)
             end do
             do i=1,l_niu
                ut1 (i,jj,k) = ut1 (i,jin,k)
@@ -85,7 +85,8 @@
          do j=1,pil_n
          jj  = l_nj-pil_n+j
          do i=1,l_ni
-            st1 (i,jj)        = st1 (i,jin)
+            st1(i,jj)        = st1(i,jin)
+            qt1(i,jj,G_nk+1) = qt1(i,jin,G_nk+1)
          end do
          end do
       endif
@@ -100,7 +101,7 @@
                wt1 (i,jj,k) = wt1 (i,jin,k)
                tt1 (i,jj,k) = tt1 (i,jin,k)
                zdt1(i,jj,k) = zdt1(i,jin,k)
-               qt1 (i,jj,k+1)=qt1 (i,jin,k+1)
+               qt1 (i,jj,k) = qt1 (i,jin,k)
             end do
             do i=1,l_niu
                ut1 (i,jj,k) = ut1 (i,jin,k)
@@ -111,7 +112,8 @@
          do j=1,pil_s
          jj  = pil_s-j+1
          do i=1,l_ni
-            st1 (i,jj)        = st1 (i,jin)
+            st1(i,jj)        = st1(i,jin)
+            qt1(i,jj,G_nk+1) = qt1(i,jin,G_nk+1)
          end do
          end do
       endif
@@ -119,7 +121,7 @@
       do n=1,Tr3d_ntr
          nullify(tr)
          err = gmm_get('TR/'//trim(Tr3d_name_S(n))//':P',tr,mymeta)
-         if (err.eq.0) then
+         if (err == 0) then
          if (l_north)      then
             do k=1,G_nk
                jin = l_nj-pil_n

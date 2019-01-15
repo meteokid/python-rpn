@@ -17,6 +17,16 @@
 !
       subroutine ens_filter (F_ugwdt1,F_vgwdt1,F_difut1,F_difvt1, &
                              F_ut1,F_vt1,F_tt1, Minx,Maxx,Miny,Maxy, Nk)
+      use dcst
+      use ens_gmm_var
+      use ens_options
+      use gem_options
+      use grid_options
+      use geomh
+      use tdpack
+      use glb_ld
+      use gmm_itf_mod
+      use var_gmm
       implicit none
 #include <arch_specific.hf>
 !
@@ -32,22 +42,11 @@
 ! v4_12 - Spacek L.         - staggered + gmm version
 ! v4.1.3 -N. Gagnon         - Change name of some parameters from NAMELIST
 
-#include "gmm.hf"
-#include "var_gmm.cdk"
 
-#include "glb_ld.cdk"
-#include "geomg.cdk"
-#include "dcst.cdk"
-#include "grd.cdk"
-
-#include "ens_gmm_var.cdk"
-#include "ens_param.cdk"
-
-      integer ix,iy,iz,iz_local,kx,ky,kz, E_nk
-      integer np, rank, ierr, keys(8), npartiel
-      integer i, j, k, i0, j0, in, jn, nij, inn, trx
-      real    pi, err, deltax, cpdi, dummy
-      real*8  dpi, aaa
+      integer  E_nk
+      integer i, j, k, i0, j0, in, jn
+      real    deltax, cpdi, dummy
+      real  , dimension(Minx:Maxx,Miny:Maxy,Nk) :: dummy_tab
       real  , dimension(:,:,:), allocatable  :: dsp_local
       real  , dimension(:,:,:), allocatable  :: dsp_dif, dsp_gwd
       real  , dimension(l_ni,l_nj)  :: fgem
@@ -56,13 +55,16 @@
 !
 !     ---------------------------------------------------------------
 !
+
+
       E_nk = Nk
-!
-      dpi=4.d0*atan(1.0d0)
-      cpdi=1./real(Dcst_cpd_8)
-      aaa= Dcst_rayt_8**2
-      deltax=sqrt(((2.0*dpi/real(G_ni))*Dcst_rayt_8)* &
-                     ((dpi/real(G_nj))*Dcst_rayt_8))
+
+!cpdi --  specific heat
+      cpdi=1./real(cpd_8)
+
+! Deltax -- typical model gridlength
+      deltax= 0.5d0 * (geomh_hx_8 + geomh_hy_8)*Dcst_rayt_8
+
 !
 !     Get needed fields in memory
 !
@@ -72,20 +74,20 @@
 !     Markov chain step and if Ens_skeb_conf=.false. return
 !
 
-
     call ens_marfield_ptp
 
-   if (Ens_skeb_conf) then
-     call ens_marfield_skeb (fgem)
+     if (Ens_skeb_conf) then
 
-     do k=1,E_nk
-     mcsph1(:,:,k)=fgem(:,:)
-     enddo
+        call ens_marfield_skeb (fgem)
 
-   else 
-     return
-   endif
-  
+        do k=1,E_nk
+         mcsph1(:,:,k)=fgem(:,:)
+        enddo
+
+     else
+       return
+     endif
+
 
       allocate( dsp_local(l_minx:l_maxx,l_miny:l_maxy,E_nk))
       allocate( dsp_dif(l_minx:l_maxx,l_miny:l_maxy,E_nk))
@@ -99,23 +101,15 @@
                    G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
       call rpn_comm_xch_halo (F_difvt1,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_njv,E_nk, &
                    G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
-      call rpn_comm_xch_halo (F_ugwdt1,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,E_nk, &
+      call rpn_comm_xch_halo (F_ugwdt1,l_minx,l_maxx,l_miny,l_maxy,l_niu,l_nj,E_nk, &
                    G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
-      call rpn_comm_xch_halo (F_vgwdt1,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,E_nk, &
+      call rpn_comm_xch_halo (F_vgwdt1,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_njv,E_nk, &
                    G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 
 !
 !     Calculate kinetic energy of diffusion tendency
 !     ===============================================
 
-      i0 = 1
-      in = G_ni
-      j0 = 1
-      jn = G_nj
-      inn= 0
-      if (G_lam) then
-           inn=1
-      endif
 !
 !     Diffusion backscatter
 !
@@ -134,11 +128,21 @@
            l_minx,l_maxx,l_miny,l_maxy,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
       endif
 
+
       dsp_dif=0.0
       if(Ens_skeb_dif)then
         F_difut1=F_ut1*F_difut1 ; F_difvt1=F_vt1*F_difvt1
-        call ens_uvduv (dsp_dif, F_difut1, F_difvt1, l_minx,l_maxx,l_miny,l_maxy, E_nk )
+
+         do k= 1, E_nk
+         do j= 0, l_nj
+         do i= 0, l_ni
+            dsp_dif(i,j,k) = 0.5*sqrt(( F_difut1(i,j  ,k)+ F_difut1(i,j-1  ,k))**2 &
+                                   + (  F_difvt1(i,j-1,k)+ F_difvt1(i-1,j-1,k))**2 )
+         end do
+         end do
+         end do
       endif
+
 
       if(Ens_stat)then
          call glbstat2 (F_difut1,'DUT1','DIFF', &
@@ -149,12 +153,23 @@
 !
 !     Gravity wave drag backscatter
 !
+!
       dsp_gwd=0.0
       if(Ens_skeb_gwd)then
-        F_difut1=F_ut1*F_ugwdt1 ; F_difvt1=F_vt1*F_vgwdt1
-        call ens_uvgwd (dsp_gwd, F_difut1, F_difvt1, l_minx,l_maxx,l_miny,l_maxy, E_nk )
+
+         F_difut1=F_ut1*F_ugwdt1 ; F_difvt1=F_vt1*F_vgwdt1
+
+         do k= 1, E_nk
+         do j= 0, l_nj
+         do i= 0, l_ni
+           dsp_gwd(i,j,k) = 0.5*abs( (F_difut1(i,j  ,k)+F_difut1(i,j-1  ,k)) &
+                                 + (  F_difvt1(i,j-1,k)+F_difvt1(i-1,j-1,k)) )
+         end do
+         end do
+         end do
       endif
-!
+
+
       if(Ens_stat)then
          call glbstat2 (F_difut1,'DUT1','GWD', &
            l_minx,l_maxx,l_miny,l_maxy,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
@@ -164,23 +179,21 @@
 
       dsp_local=dsp_dif+dsp_gwd
 
-!
-!     Apply 2D Gaussian filter
-!     ===================================================================
       if(Ens_stat)then
-          call glbstat2 (dsp_dif,'DSP','DIF', &
-           l_minx,l_maxx,l_miny,l_maxy,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
+         call glbstat2 (dsp_dif,'DSP','DIF', &
+          l_minx,l_maxx,l_miny,l_maxy,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
           call glbstat2 (dsp_gwd,'DSP','GWD', &
            l_minx,l_maxx,l_miny,l_maxy,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
           call glbstat2 (dsp_local,'DSP','TOT', &
            l_minx,l_maxx,l_miny,l_maxy,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
       endif
 
-      if(Grd_yinyang_L) then
-         call ens_filter_ggauss(dble(Ens_skeb_bfc),dble(Ens_skeb_lam),dsp_local)
-      else
-         call ens_filter_gauss(dble(Ens_skeb_bfc),dble(Ens_skeb_lam),dsp_local)
-      endif
+!
+!     Apply 2D Gaussian filter
+!     ===================================================================
+
+      call ens_filter_ggauss(dble(Ens_skeb_bfc),dble(Ens_skeb_lam),dsp_local)
+
 
       if(Ens_stat)then
          call glbstat2 (dsp_local,'DSP','FLTTOT', &
@@ -206,7 +219,7 @@
 
 !      call rpn_comm_Barrier("grid", ierr)
 
-!     Compute gradient of filtered field
+!     Compute Curl of filtered field
 !     ==================================
 
       i0 = 1
@@ -216,11 +229,11 @@
 
       F_difut1(:,:,E_nk)=0.0;F_difvt1(:,:,E_nk)=0.0;
 
-      do k=1,G_nk
+      do k=1,E_nk
          do j= j0, jn
             do i= i0, l_ni
                F_difut1(i,j,k) = (dsp_local(i,j,k)-dsp_local(i-1,j,k))* &
-                                  Geomg_invDXv_8(j)
+                                  geomh_invDXv_8(j)
                F_difut1(i,j,k) = Ens_skeb_alph*deltax*F_difut1(i,j,k)
                F_vt1(i,j,k)    = F_vt1(i,j,k)+F_difut1(i,j,k)
             enddo
@@ -229,12 +242,14 @@
          do j= j0, l_nj !-pil_n
             do i= i0, in
                F_difvt1(i,j,k) = (dsp_local(i,j,k) - dsp_local(i,j-1,k)) * &
-                                  Geomg_invDY_8
+                                  geomh_invDY_8
                F_difvt1(i,j,k)= -Ens_skeb_alph*deltax*F_difvt1(i,j,k)
                F_ut1(i,j,k) = F_ut1(i,j,k)+F_difvt1(i,j,k)
             enddo
          enddo
       enddo
+
+
 
       if(Ens_stat)then
          call glbstat2 (F_ut1,'URT1','AT END', &
@@ -269,7 +284,7 @@
 
       call cal_div ( ensdiv, F_difut1, F_difvt1, 0, dummy,&
                      l_minx,l_maxx,l_miny,l_maxy, E_nk )
-      call cal_vor ( ensvor, dummy, F_difut1, F_difvt1, 0, dummy, .false., &
+      call cal_vor ( ensvor, dummy_tab, F_difut1, F_difvt1, 0, dummy, .false., &
                      l_minx,l_maxx,l_miny,l_maxy, E_nk )
 
      ! call gem_error(-1,'ens_filter','Must check calls to cal_div and cal_vor')

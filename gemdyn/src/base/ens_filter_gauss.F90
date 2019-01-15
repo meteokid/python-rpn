@@ -16,6 +16,18 @@
 !**s/r ens_filter_gauss - Gaussian filter
 !
       subroutine ens_filter_gauss(bfact,lambda,dsp_local)
+      use dcst
+      use gmm_vt1
+      use ens_options
+      use gem_options
+      use geomh
+      use tdpack
+      use glb_ld
+      use lun
+      use ldnh
+      use glb_pil
+      use trp
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 !
@@ -30,17 +42,6 @@
 !	none
 !
 
-#include "ptopo.cdk"
-#include "glb_ld.cdk"
-#include "trp.cdk"
-#include "ldnh.cdk"
-#include "vt1.cdk"
-#include "lctl.cdk"
-#include "lun.cdk"
-#include "glb_pil.cdk"
-#include "geomg.cdk"
-#include "dcst.cdk"
-#include "ens_param.cdk"
 
 !
 
@@ -58,11 +59,10 @@
 !     lambda  wavelength
 !     sigma
 
-      integer ix,iy,iz,iz_local,kx,ky,kz
-      integer ierr
-      integer i, j, k, i0, j0, in, jn, nij, inn
-      real    pi, err, deltax, min_local, min_global
-      real*8  dpi, aaa2, bfact, lambda, sigma, trx, try, pri8
+      integer kx,kz
+      integer i, j, k
+      real    err, min_local, min_global
+      real*8  dpi, bfact, lambda, sigma, trx, try, pri8
 !     Arrays
       integer,dimension(:),     allocatable  :: i1,j1
       real  , dimension(l_minx:l_maxx,l_miny:l_maxy,l_nk)  :: dsp_local
@@ -88,7 +88,7 @@
       sigma=lambda*sqrt(-2.d0*log(bfact))/(2*dpi);
 !
 !
-!     Transfer to a double precision array to apply 2D Fourier filter
+!     Transfer to a real*8 array to apply 2D Fourier filter
 !     ===================================================================
 !
       psi_local=dble(dsp_local(:,:,1:l_nk))
@@ -97,10 +97,6 @@
                                (l_maxy-l_miny+1), &
                       Trp_12dmin, Trp_12dmax, G_nk, work_local, 1, 2 )
 !
-       do i= 1,G_ni
-       work_local(l_nj+1:l_maxy,1:trp_12dn ,i)= 0.d0
-       work_local(1:l_maxy, trp_12dn+1:trp_12dmax,i)= 0.d0
-       enddo
 !     x-direction
 !     ============
       call itf_fft_set(G_ni,'PERIODIC',pri8)
@@ -112,7 +108,7 @@
 !     apply the Gaussian bell
 !
       do j=1,l_nj
-         trx=1.d0/(2*dpi*Dcst_rayt_8*geomg_cy_8(j))**2
+         trx=1.d0/(2*dpi*Dcst_rayt_8*geomh_cy_8(j))**2
          do i=0,G_ni+1,2
            freqx(j,i+1:i+2)=-2.0d0*trx*(dpi*sigma*dble(i/2))**2
          enddo
@@ -189,7 +185,7 @@
       endif
 !
       INITIALIZE: if (.not.init_done) then
-         if (Lun_out.gt.0) then
+         if (Lun_out > 0) then
             write(*,*)'min_global',min_global
             write( Lun_out,1000)
             write( Lun_out,1009)lambda,bfact,sigma
@@ -198,9 +194,9 @@
             j1(1)=3 ;j1(2)=G_nj/4 ;j1(3)=G_nj/2 ;j1(4)=3*G_nj/4 ;j1(5)=G_nj
             write(Lun_out,1010)(i1(j)/2,j=1,5)
             do i=1,l_nj
-              write(Lun_out,1011)180.d0*geomg_y_8(i)/dpi,(freqx(i,i1(j)),j=1,5)
+              write(Lun_out,1011)180.d0*geomh_y_8(i)/dpi,(freqx(i,i1(j)),j=1,5)
             enddo
-            write(Lun_out,1012)(j1(j)/2,j=1,5),geomg_x_8(1), &
+            write(Lun_out,1012)(j1(j)/2,j=1,5),geomh_x_8(1), &
                                               (freqy(j1(j)),j=1,5)
             deallocate(i1,j1)
          endif

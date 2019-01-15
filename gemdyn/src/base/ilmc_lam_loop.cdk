@@ -3,7 +3,8 @@
 !$omp parallel do                                                   &
 !$omp private(i,j,sweep,ii,o_shoot,u_shoot,s_dif_p,s_dif_m,         &
 !$omp         dif_p,dif_m,ok_p,ok_m,ratio_m,ratio_p,i_rd,j_rd,k_rd) &
-!$omp shared (sweep_rd,shift,il_c,ir_c,jl_c,jr_c,F_new,F_max,F_min,mass_m)
+!$omp shared (sweep_rd,shift,il_c,ir_c,jl_c,jr_c,F_new,             &
+!$omp         F_max,F_min,mass_m)
 
       do k=k0+shift-1,F_nk,SIDE_max_0
 

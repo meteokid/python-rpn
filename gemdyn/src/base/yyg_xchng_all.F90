@@ -15,20 +15,21 @@
 
 !**s/r yyg_xchng_all - Exchanges all Yin-Yang boundary conditions
 
-      subroutine yyg_xchng_all ()
+      subroutine yyg_xchng_all
+      use gmm_vt1
+      use gmm_pw
+      use gem_options
+      use glb_ld
+      use tr3d
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 
-!author 
+!author
 !     Michel Desgagne   - Spring 2014
 !revision
 ! v4_70 - Desgagne M.   - Initial version
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "vt1.cdk"
-#include "schm.cdk"
-#include "tr3d.cdk"
 
       character(len=GMM_MAXNAMELENGTH) :: tr_name
       integer istat,n
@@ -36,40 +37,6 @@
 !
 !----------------------------------------------------------------------
 !
-      istat = gmm_get(gmmk_ut1_s , ut1)
-      istat = gmm_get(gmmk_vt1_s , vt1)
-      istat = gmm_get(gmmk_wt1_s , wt1)
-      istat = gmm_get(gmmk_tt1_s , tt1)
-      istat = gmm_get(gmmk_zdt1_s,zdt1)
-      istat = gmm_get(gmmk_st1_s , st1)
-      if(Schm_nologT_L) &
-      istat = gmm_get(gmmk_xdt1_s,xdt1)
-
-      call yyg_nestuv(ut1,vt1, l_minx,l_maxx,l_miny,l_maxy, G_nk)
-      call yyg_xchng (wt1    , l_minx,l_maxx,l_miny,l_maxy, G_nk,&
-                      .false., 'CUBIC')
-      call yyg_xchng (zdt1   , l_minx,l_maxx,l_miny,l_maxy, G_nk,&
-                      .false., 'CUBIC')
-      call yyg_xchng (tt1    , l_minx,l_maxx,l_miny,l_maxy, G_nk,&
-                      .false., 'CUBIC')
-      call yyg_xchng (st1    , l_minx,l_maxx,l_miny,l_maxy, 1   ,&
-                      .false., 'CUBIC')
-
-      if(Schm_nologT_L) &
-      call yyg_xchng (xdt1   , l_minx,l_maxx,l_miny,l_maxy, G_nk,&
-                      .false., 'CUBIC')
-
-      if (.not.Schm_hydro_L) then
-         istat = gmm_get(gmmk_qt1_s,  qt1)
-         call yyg_xchng (qt1 , l_minx,l_maxx,l_miny,l_maxy, G_nk,&
-                         .false., 'CUBIC')
-         if(Schm_nologT_L) then
-         istat = gmm_get(gmmk_qdt1_s,qdt1)
-         call yyg_xchng (qdt1, l_minx,l_maxx,l_miny,l_maxy, G_nk,&
-                         .false., 'CUBIC')
-         endif
-      endif
-
       do n= 1, Tr3d_ntr
          tr_name = 'TR/'//trim(Tr3d_name_S(n))//':P'
          istat = gmm_get(tr_name, tr1)
@@ -77,9 +44,36 @@
                          .true., 'CUBIC')
       end do
 
-      call pw_update_UV
-      call pw_update_T
-      call pw_update_GPW
+      istat = gmm_get (gmmk_wt1_s , wt1)
+      istat = gmm_get (gmmk_zdt1_s,zdt1)
+      istat = gmm_get (gmmk_st1_s , st1)
+      istat = gmm_get (gmmk_pw_uu_plus_s,pw_uu_plus)
+      istat = gmm_get (gmmk_pw_vv_plus_s,pw_vv_plus)
+      istat = gmm_get (gmmk_pw_tt_plus_s,pw_tt_plus)
+
+      if (.not. Schm_testcases_L) then
+         call yyg_scaluv( pw_uu_plus,pw_vv_plus, &
+                          l_minx,l_maxx,l_miny,l_maxy, G_nk)
+      else
+         call canonical_cases ("XCHNG")
+      endif
+
+      call yyg_xchng ( pw_tt_plus, l_minx,l_maxx,l_miny,l_maxy, G_nk,&
+                       .false., 'CUBIC' )
+
+      call yyg_xchng (wt1    , l_minx,l_maxx,l_miny,l_maxy, G_nk,&
+                      .false., 'CUBIC')
+      call yyg_xchng (zdt1   , l_minx,l_maxx,l_miny,l_maxy, G_nk,&
+                      .false., 'CUBIC')
+      call yyg_xchng (st1    , l_minx,l_maxx,l_miny,l_maxy, 1   ,&
+                      .false., 'CUBIC')
+
+      if (.not.Schm_hydro_L) then
+         istat = gmm_get(gmmk_qt1_s,  qt1)
+         call yyg_xchng (qt1 , l_minx,l_maxx,l_miny,l_maxy, G_nk+1,&
+                         .false., 'CUBIC')
+      endif
+
 !
 !----------------------------------------------------------------------
 !

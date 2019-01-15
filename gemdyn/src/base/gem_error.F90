@@ -1,5 +1,6 @@
       subroutine gem_error (F_errorCode, F_FromSubName, F_Message)
 use iso_c_binding
+      use lun
       implicit none
 #include <arch_specific.hf>
       integer :: F_errorCode
@@ -8,16 +9,16 @@ use iso_c_binding
       !@author  Michel Desgagne
 
    include "rpn_comm.inc"
-#include "lun.cdk"
       integer :: errcode, err
 !
 !     ---------------------------------------------------------------
-!      
+!
       call rpn_comm_allreduce (F_errorCode, errcode,1,RPN_COMM_INTEGER,&
                                "MPI_MIN",RPN_COMM_MULTIGRID,err)
 
-      if (errcode.lt.0) then
-         if (Lun_out.gt.0) write(Lun_out,2000) F_FromSubName, F_Message
+      if (errcode < 0) then
+         call msg_buffer_flush()
+         if (Lun_out > 0) write(Lun_out,2000) F_FromSubName, F_Message
          call rpn_comm_FINALIZE(err)
          stop
       endif

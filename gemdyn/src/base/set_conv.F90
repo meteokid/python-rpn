@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -19,13 +19,17 @@
 !
       integer function set_conv (F_argc,F_argv_S,F_cmdtyp_S,F_v1,F_v2)
 !
+      use gem_options
+      use glb_ld
+      use lun
+      use out3
       implicit none
 #include <arch_specific.hf>
 !
       integer F_argc,F_v1,F_v2
-      character *(*) F_argv_S(0:F_argc),F_cmdtyp_S
+      character(len=*) F_argv_S(0:F_argc),F_cmdtyp_S
 !
-!author Vivian Lee - rpn - July 2015 
+!author Vivian Lee - rpn - July 2015
 !
 !revision
 ! v4_80 - Lee V.            - initial MPI version
@@ -46,7 +50,7 @@
 !       statement and return 5 arguments to this function. For more
 !       information to how this is processed, see "SREQUET".
 !
-!	
+!
 !arguments
 !  Name        I/O                 Description
 !----------------------------------------------------------------
@@ -61,40 +65,37 @@
 !
 !
 
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "out3.cdk"
 !
 !*
 !
-      character*5 stuff_S
-      character*16 varname_S
+      character(len=5) :: stuff_S
       integer varmax
       real mult,add
-      integer i, j, k, m, pndx, ii, jj, kk
+      integer i, j, ii, jj
 !
 !----------------------------------------------------------------
 !
-      if (Lun_out.gt.0) write(Lun_out,*)
-      if (Lun_out.gt.0) write(Lun_out,*) F_argv_S
+      if (Lun_out > 0) write(Lun_out,*)
+      if (Lun_out > 0) write(Lun_out,*) F_argv_S
       set_conv=0
       Out3_conv_max = Out3_conv_max + 1
-      if (Out3_conv_max.gt.MAXELEM) then
-          if (Lun_out.gt.0) write(Lun_out,*)'set_conv WARNING: Too many definitions to convert'
+      if (Out3_conv_max > MAXELEM) then
+          if (Lun_out > 0) write(Lun_out,*)'set_conv WARNING: Too many definitions to convert'
           Out3_conv_max = Out3_conv_max - 1
           set_conv = 1
           return
       endif
 
-      if (index(F_argv_S(1),'[').gt.0) then
+      if (index(F_argv_S(1),'[') > 0) then
           stuff_S=F_argv_S(1)
           read(stuff_S(2:4),*) varmax
       else
-          if (Lun_out.gt.0) write(Lun_out,*) &
-                          'set_conv WARNING: syntax incorrect'
-        set_conv=1
-          Out3_conv_max = Out3_conv_max - 1
-        return
+         if (Lun_out > 0) then
+            write(Lun_out,*) 'set_conv WARNING: syntax incorrect'
+         end if
+         set_conv=1
+         Out3_conv_max = Out3_conv_max - 1
+         return
       endif
 !
 !     Obtain mult and add values for unit conversion
@@ -102,15 +103,15 @@
       add=0.0
       mult=1.0
       do i=varmax+2, F_argc
-         if (F_argv_S(i).eq.'mult') then
+         if (F_argv_S(i) == 'mult') then
             read(F_argv_S(i+1),*) mult
-         else if (F_argv_S(i).eq.'add') then
+         else if (F_argv_S(i) == 'add') then
             read(F_argv_S(i+1),*) add
          endif
       enddo
 
-!     if (mult.eq.0.0.and.add.eq.0.0) then
-!         if (Lun_out.gt.0) write(Lun_out,*) 'set_conv WARNING: conversion gives zero values'
+!     if (mult == 0.0.and.add == 0.0) then
+!         if (Lun_out > 0) write(Lun_out,*) 'set_conv WARNING: conversion gives zero values'
 !        set_conv=1
 !         Out3_conv_max = Out3_conv_max - 1
 !        return
@@ -120,8 +121,8 @@
 !
       j = Out3_conv_max + varmax
 
-      if (j.gt.MAXELEM) then
-          if (Lun_out.gt.0) write(Lun_out,*) 'set_conv WARNING: too many variables to convert'
+      if (j > MAXELEM) then
+          if (Lun_out > 0) write(Lun_out,*) 'set_conv WARNING: too many variables to convert'
           set_conv=1
           return
       endif

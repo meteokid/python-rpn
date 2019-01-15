@@ -56,13 +56,13 @@ gemdyn_ssm_arch_rm:
 	rm -rf $(BUILDSSM)/$(GEMDYN_SSMARCH_NAME)
 $(BUILDSSM)/$(GEMDYN_SSMARCH_NAME):
 	mkdir -p $@/lib/$(EC_ARCH) ; \
-	ln -s $(EC_ARCH) $@/lib/$(COMP_ARCH)/. ; \
+	ln -s ./$(EC_ARCH)/. $@/lib/$(COMP_ARCH)/. ; \
 	touch $@/lib/libdummy_$(GEMDYN_SSMARCH_NAME).a ; \
 	cd $(LIBDIR) ; \
 	rsync -av `ls libgemdyn*.a libgemdyn*.a.fl libgemdyn*.so 2>/dev/null` $@/lib/$(EC_ARCH)/ ; \
 	if [[ x$(MAKE_SSM_NOMOD) != x1 ]] ; then \
 		mkdir -p $@/include/$(EC_ARCH) ; \
-		ln -s $(EC_ARCH) $@/include/$(COMP_ARCH)/. ; \
+		ln -s ./$(EC_ARCH)/. $@/include/$(COMP_ARCH)/. ; \
 		touch $@/include/dummy_$(GEMDYN_SSMARCH_NAME).inc ; \
 		cd $(MODDIR) ; \
 		cp $(GEMDYN_MOD_FILES) $@/include/$(EC_ARCH) ; \
@@ -96,6 +96,7 @@ gemdyn_install:
 	fi
 	cd $(SSM_DEPOT_DIR) ;\
 	rdessm-install -v \
+			--git \
 			--dest=$(GEMDYN_SSM_BASE_DOM)/gemdyn_$(GEMDYN_VERSION) \
 			--bndl=$(GEMDYN_SSM_BASE_BNDL)/$(GEMDYN_VERSION).bndl \
 			--pre=$(gemdyn)/ssmusedep.bndl \

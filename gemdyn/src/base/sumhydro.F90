@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -16,6 +16,10 @@
 !**s/r sumhydrom - Sum over Hydrometeors (GMM)
 !
       subroutine sumhydro (F_qh,minx,maxx,miny,maxy,nk,F_timelevel_S)
+      use gem_options
+      use glb_ld
+      use tr3d
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 
@@ -30,10 +34,6 @@
 ! v4_11 - Desgagne, M.     - First revision
 ! v4_60 - Lee, V.          - extracted this out of tt2virt
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "schm.cdk"
-#include "tr3d.cdk"
 
       integer i, j, k, n,istat
       real, pointer, dimension(:,:,:)     :: tr

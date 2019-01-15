@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -19,11 +19,17 @@
 !
       integer function set_level (F_argc,F_argv_S,F_cmdtyp_S,F_v1,F_v2)
 !
+      use gem_options
+      use glb_ld
+      use lun
+      use dimout
+      use out_mod
+      use levels
       implicit none
 #include <arch_specific.hf>
 !
         integer F_argc,F_v1,F_v2
-        character *(*) F_argv_S(0:F_argc),F_cmdtyp_S     
+        character(len=*) F_argv_S(0:F_argc),F_cmdtyp_S
 !
 !author Vivian Lee - RPN - April 1999
 !
@@ -33,7 +39,7 @@
 ! v2_10                    outputted when a "-1" is indicated
 ! v2_21 - Dugas B.       - use convip
 ! v2_30 - Lee V.         - reduced dimension of Level_typ to 1
-! v2_32 - Lee V.         - levset is now an ID defined by user, not the 
+! v2_32 - Lee V.         - levset is now an ID defined by user, not the
 ! v2_32                    actual "set" number forced to be in sequence
 ! v3_01 - Lee V.         - new ip1 encoding (kind=5 -- unnormalized)
 ! v3_02 - Lee V.         - eliminate levels repeated in one level set
@@ -56,7 +62,7 @@
 !       The "rpn_fortran_callback" routine will process the above
 !       statement and return 5 arguments to this function. For more
 !       information to how this is processed, see "SREQUET".
-!	
+!
 !arguments
 !  Name        I/O                 Description
 !----------------------------------------------------------------
@@ -84,21 +90,16 @@
 !      <a,b,c> means levels a to b, incrementing every c are requested
 !
 
-#include "glb_ld.cdk"
-#include "schm.cdk"
-#include "dimout.cdk"
-#include "level.cdk"
-#include "lun.cdk"
 !
 !*
-      logical press_L,eta_L,found_L
-      character*5 stuff_S,blank_S
-      integer i,j,k,ii,idx,levset,num,levdesc,ilevel,LEV
+      logical :: press_L,eta_L
+      character(len=5) :: stuff_S
+      integer :: i,j,k,ii,idx,levset,num,levdesc
       integer, dimension(size(Level_allpres)) :: ip1_stub
 !
 !     ---------------------------------------------------------------
 !
-      if (Lun_out.gt.0) then
+      if (Lun_out > 0) then
           write(Lun_out,*)
           write(Lun_out,*) F_argv_S(0),'=',F_argv_S(1),',',F_argv_S(2),',',(F_argv_S(i),i=3,F_argc)
       endif
@@ -108,10 +109,11 @@
       read( F_argv_S(1), * ) levset
       Level_sets = Level_sets + 1
 
-      if (Level_sets.gt.MAXSET) then
+      if (Level_sets > MAXSET) then
 
-          if (Lun_out.gt.0) &
-          write(Lun_out,*)'SET_LEVEL WARNING: Too many sets of LEVELS'
+          if (Lun_out > 0) then
+            write(Lun_out,*)'SET_LEVEL WARNING: Too many sets of LEVELS'
+          end if
           Level_sets = Level_sets -1
           set_level=1
           return
@@ -131,15 +133,16 @@
 
       each_lev: do ii=2,F_argc
 
-         if (index(F_argv_S(ii),'[').gt.0) then
+         if (index(F_argv_S(ii),'[') > 0) then
 
             stuff_S=F_argv_S(ii)
             read( stuff_S(2:4), * ) num
 
-         else if (F_argv_S(ii).eq.'eta') then
+         else if (F_argv_S(ii) == 'eta') then
             if (press_L) then
-                if (Lun_out.gt.0) write(Lun_out,*) &
-                    'SET_LEVEL WARNING:  Pressure levels are already defined'
+                if (Lun_out > 0) then
+                  write(Lun_out,*) 'SET_LEVEL WARNING:  Pressure levels are already defined'
+                end if
                 Level_sets = Level_sets -1
                 set_level=1
                 return
@@ -147,22 +150,24 @@
             levdesc = 1
             eta_L = .true.
 
-         else if (F_argv_S(ii).eq.'pres') then
+         else if (F_argv_S(ii) == 'pres') then
             if (eta_L) then
-                if (Lun_out.gt.0) write(Lun_out,*) &
-                    'SET_LEVEL WARNING: Model levels are already defined'
-                Level_sets = Level_sets -1
-                set_level=1
-                return
+               if (Lun_out > 0) then
+                  write(Lun_out,*) 'SET_LEVEL WARNING: Model levels are already defined'
+               end if
+               Level_sets = Level_sets -1
+               set_level=1
+               return
             endif
 
             levdesc = 2
             press_L = .true.
 
-         else if (F_argv_S(ii).eq.'bot') then
+         else if (F_argv_S(ii) == 'bot') then
             if (press_L) then
-                if (Lun_out.gt.0) write(Lun_out,*) &
-                    'SET_LEVEL WARNING: Pressure levels are already defined'
+                if (Lun_out > 0) then
+                  write(Lun_out,*) 'SET_LEVEL WARNING: Pressure levels are already defined'
+                end if
                 Level_sets = Level_sets -1
                 set_level=1
                 return
@@ -170,13 +175,13 @@
             levdesc = 3
             eta_L = .true.
 
-         else if (levdesc.eq.1) then
+         else if (levdesc == 1) then
 
             Level_typ_S(j)='M'
             i = i+1
             read( F_argv_S(ii), * ) Level(i,j)
 
-            if (Level(i,j).eq.-1) then
+            if (Level(i,j) == -1) then
 
 !              request for all model eta levels
 !              will put in the max levels which is the number of thermo
@@ -188,24 +193,26 @@
                   end do
             endif
 
-         else if (levdesc.eq.3) then
+         else if (levdesc == 3) then
                   Level_typ_S(j)='M'
                   i = i+1
                   read( F_argv_S(ii), * ) Level(i,j)
                   k=nint(Level(i,j))
-!              request for model levels close and include the surface 
-                  if (k .gt. 0.and. k .lt. Level_thermo) then
+!              request for model levels close and include the surface
+                  if (k > 0.and. k < Level_thermo) then
                      i=i-1
                      do idx=k,1,-1
                         i = i+1
                         Level(i,j) = -1.0*idx + 1.0
                      enddo
                   else
-                     if (Lun_out.gt.0) write(Lun_out,*) &
-                         'SET_LEVEL WARNING: Level index out of range'
-                         i = i - 1
+                     if (Lun_out > 0) then
+                        write(Lun_out,*) 'SET_LEVEL WARNING: Level index out of range'
+                     end if
+
+                     i = i - 1
                   endif
-         else if (levdesc.eq.2) then
+         else if (levdesc == 2) then
 
                   Level_typ_S(j)='P'
                   i = i+1
@@ -214,8 +221,9 @@
 
          else
 
-                  if (Lun_out.gt.0) write(Lun_out,*) &
-                    'SET_LEVEL WARNING: Level type not recognizable'
+                  if (Lun_out > 0) then
+                     write(Lun_out,*) 'SET_LEVEL WARNING: Level type not recognizable'
+                  end if
                   Level_sets = Level_sets -1
                   set_level=1
                   return
@@ -224,20 +232,22 @@
 
       enddo each_lev
 
-      if (i.gt.MAXLEV) then
+      if (i > MAXLEV) then
 
-         if (Lun_out.gt.0) &
-         write(Lun_out,*)'SET_LEVEL WARNING: Requested levels > MAXLEV'
+         if (Lun_out > 0) then
+            write(Lun_out,*)'SET_LEVEL WARNING: Requested levels > MAXLEV'
+         end if
          Level_sets = Level_sets -1
          set_level = 1
          return
 
       endif
 
-      if (i.eq.0) then
+      if (i == 0) then
 
-         if (Lun_out.gt.0) &
-         write(Lun_out,*)'SET_LEVEL WARNING: No levels requested'
+         if (Lun_out > 0) then
+            write(Lun_out,*)'SET_LEVEL WARNING: No levels requested'
+         end if
          Level_sets = Level_sets -1
          set_level = 1
          return
@@ -254,7 +264,7 @@
               Level_npres+i,Level_npres)
       endif
 
-      if (Lun_out.gt.0) then
+      if (Lun_out > 0) then
 
       write(Lun_out,*) ' Level_set(',j,') : Level_id=',Level_id(j)
       write(Lun_out,*) ' Level_type=',Level_typ_S(j)
@@ -262,7 +272,7 @@
 
       endif
 !
- 6002 format(' SET_LEVEL WARNING: pressure level out of range =',e10.5)
+ 6002 format(' SET_LEVEL WARNING: pressure level out of range =',e12.5)
 !
 !     ---------------------------------------------------------------
 !
