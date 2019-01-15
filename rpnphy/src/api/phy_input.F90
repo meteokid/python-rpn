@@ -263,22 +263,22 @@ contains
       !@objective check for daily update to climatological ozone
       integer,intent(in) :: my_step
       !*@/
+      integer, save :: curdd0 = -1
+      integer, save :: curmo0 = -1
       integer :: istat,aujour,curdate,curdd,curmo,part1,part2,ppjour
       real(8) :: hours
       ! ---------------------------------------------------------------------
-      if (intozot .and. my_step > 1) then
-         aujour = 1 
-         ppjour = nint(86400./delt)
-         if (ppjour > 0) aujour = mod(my_step, ppjour)
-
-         if(aujour == 1)then
-            hours = my_step/(3600./dble(delt))
-            call incdatr(curdate,date(14), hours)
-            istat = newdate(curdate,part1,part2,RMN_DATE_STAMP2PRINT)
-            if (istat == 0) then
-               curdd = mod(part1,100)
-               curmo = mod(part1/100,100)
+      if (intozot) then
+         hours = my_step/(3600./dble(delt))
+         call incdatr(curdate,date(14), hours)
+         istat = newdate(curdate,part1,part2,RMN_DATE_STAMP2PRINT)
+         if (istat == 0) then
+            curdd = mod(part1,100)
+            curmo = mod(part1/100,100)
+            if (curdd /= curdd0 .or. curmo /= curmo0) then
                call intozon(curdd, curmo, RMN_STDOUT)
+               curdd0 = curdd
+               curmo0 = curmo
             endif
          endif
       endif
