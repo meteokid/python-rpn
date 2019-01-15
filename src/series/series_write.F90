@@ -21,6 +21,7 @@ module series_write_mod
    use vGrid_Descriptors, only: vgrid_descriptor,vgd_get,vgd_free,VGD_OK,VGD_ERROR
    use vgrid_wb, only: vgrid_wb_get
    use ptopo_utils, only: ptopo_init_var, ptopo_grid_ipe, ptopo_isblocmaster_L
+   use mu_jdate_mod, only: jdate_to_print
    implicit none
    private
 
@@ -277,7 +278,9 @@ contains
       call ptopo_init_var()
 
       if (series_fileid == -1 .and. ptopo_isblocmaster_L) then
-         write(filename_S,'(a,i6.6)') '../'//trim(SER_FILENAME_S)//'_', ptopo_grid_ipe
+         
+         write(filename_S,'(a,i6.6)') '../time_series_'// &
+              trim(jdate_to_print(series_jdate))//'.bin_', ptopo_grid_ipe
          series_fileid = 0
          if (series_kount == 0) then
             call msg(MSG_INFO, PKGNAME_S//'Open: '//trim(filename_S))
