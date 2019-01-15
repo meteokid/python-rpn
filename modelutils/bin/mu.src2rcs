@@ -1,0 +1,11 @@
+#!/bin/ksh
+mydir=${1:-.}
+cd $mydir
+mkdir RCS
+#Suffixes: f f90 ftn ftn90 cdk cdk90 h hf fh inc tmpl
+for item2 in *.[chift]* ; do
+   ci $item2 << EOF
+.
+EOF
+   co $item2
+done
