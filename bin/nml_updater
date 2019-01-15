@@ -1,0 +1,809 @@
+#!/usr/bin/env python
+#!/usr/bin/env python2
+# -*- coding: utf-8 -*-
+# Author: Stephane Chamberland <stephane.chamberland@canada.ca>
+# Copyright: LGPL 2.1
+import sys
+import os
+import os.path
+import re
+import shutil
+import argparse
+import tempfile
+import subprocess as sproc
+from rpnpy.ftnnml import FtnNmlFile, FtnNmlSection, FtnNmlKeyVal, FtnNmlVal
+
+
+class ModelUpdater:
+    """
+    Model cfg/nml updater base class
+    """
+    def __init__(self, updaterDataFile, ok_version=None,
+                 verbose=False, debug=False):
+        self.verbose = verbose
+        self.debug   = debug
+        self.ok_version  = ok_version
+        self.updaterData = {}
+        self._readConfig(updaterDataFile)
+
+
+    def update(self, fromVersion, toVersion, doBackup=False,
+               settingsFile=None, outFile=None):
+        """
+        Update a model cfg file to newer versions
+        """
+        pass
+
+
+    def _readConfig(self, fileName):
+        """ """
+        if self.verbose or self.debug:
+            print('+ Read & Parse updater config: %s ' % fileName)
+        allLines = self._readConfigFile2LineList(fileName)
+        mylist = self._parseLine2List(allLines)
+        filename = None
+        classname = None
+        fileversion = None
+        for (cmd,opt) in mylist:
+            if cmd == 'file':
+                filename = (opt[0],opt[1])
+            elif cmd == 'class':
+                classname = (opt[0],opt[1])
+            elif cmd == 'fileversion':
+                fileversion = (opt[0],opt[1])
+                if filename and classname:
+                    self._add(filename,classname,fileversion)
+            elif cmd == 'msg':
+                if filename and classname and fileversion:
+                    self._add(filename,classname,fileversion,msg=opt)
+            elif cmd in ('rm', 'mv', 'set', 'call', 'exec'):
+                if filename and classname and fileversion:
+                    self._add(filename,classname,fileversion,cmd=cmd,args=opt)
+                else:
+                    sys.stderr.write('ERROR: Badly placed: %s %s\n' % (cmd,repr(opt)))
+            else:
+                if self.verbose or self.debug:
+                    sys.stderr.write('WARNING: Ignoring: %s %s\n' % (cmd,repr(opt)))
+        if self.debug:
+            for k,v in self.updaterData.items():
+                print(k,v['items'])
+
+
+    def _readConfigFile2LineList(self, fileName):
+        """ """
+        if self.debug:
+            print('++ Read updater config: %s' % fileName)
+        allLines = []
+        if not os.path.isfile(fileName):
+            raise IOError('Updater config file not found: '+fileName)
+        try:
+            fd = open(fileName,"rb")
+            try:
+                allLines = fd.readlines()
+            except:
+                pass
+            finally:
+                fd.close()
+        except:
+            pass
+        return allLines
+
+
+    def _parseLine2List(self, allLines):
+        """ """
+        if self.debug:
+            print('++ Parse updater config')
+        configVersion = None
+
+        re_spaces  = r'[\s\t]*'
+        re_spaces0 = r'^'+re_spaces
+        re_name    = r'[^=>/\s\t]+'
+        re_equal   = re_spaces+r'='+re_spaces
+        re_gt      = re_spaces+r'>'+re_spaces
+        re_slash   = re_spaces+r'/'+re_spaces
+        re_end     = re_spaces+r'\n?$'
+
+        ## # Commented line
+        re_commentline = re.compile(re_spaces0+r'(#.*)?'+re_end)
+
+        ## # Config File Version
+        re_cfgversion = re.compile(re_spaces0+r'version=(?P<version>'+re_name+')'+re_end)
+
+        ## cmd: content
+        re_cmd = re.compile(re_spaces0 +
+                            r'(?P<cmd>' + re_name + r'):' +
+                            re_spaces +
+                            r'(?P<content>.+)' +
+                            re_end,re.I)
+
+        ## version: old > new
+        re_oldnew = re.compile(re_spaces0 +
+                           r'(?P<old>' + re_name + r')(?:' +
+                           re_gt +
+                           r'(?P<new>' + re_name + r'))?' +
+                           re_end,re.I)
+
+        ## fileVersion: old > new
+        re_fileversion = re.compile(re_spaces0 +
+                           r'(?P<version0>' + re_name + r')' +
+                           re_gt +
+                           r'(?P<version1>' + re_name + r')' +
+                           re_end,re.I)
+
+        ## rm: nml / var
+        re_rm = re.compile(re_spaces0 +
+                           r'(?P<nml>' + re_name + r')' +
+                           re_slash +
+                           r'(?P<var>' + re_name + r')' +
+                           re_end,re.I)
+
+        ## mv: old_nml / old_var > new_nml / new_var
+        re_mv = re.compile(re_spaces0 +
+                           r'(?P<nml0>' + re_name + r')' +
+                           re_slash +
+                           r'(?P<var0>' + re_name + r')' +
+                           re_gt +
+                           r'(?P<nml1>' + re_name + r')' +
+                           re_slash +
+                           r'(?P<var1>' + re_name + r')' +
+                           re_end,re.I)
+
+        ## set: nml / var = old_val > new_val
+        re_set = re.compile(re_spaces0 +
+                           r'(?P<nml>' + re_name + r')' +
+                           re_slash +
+                           r'(?P<var>' + re_name + r')' +
+                           re_equal +
+                           r'(?P<val0>' + re_name + r')' +
+                           re_gt +
+                           r'(?P<val1>' + re_name + r')' +
+                           re_end,re.I)
+
+        ## call: module.func_name
+        ## exec: script_name
+        re_call = re.compile(re_spaces0 +
+                           r'(?P<script>' + re_name + r')' +
+                           re_end,re.I)
+
+        ## ## exec: script_name
+        ## re_exec = re.compile(re_spaces0 +
+        ##                    r'(?P<script>' + re_name + r')' +
+        ##                    re_end,re.I)
+
+        mylist = []
+        for line in allLines:
+            if re.match(re_commentline, line):
+                continue
+            if self.debug:
+                print('+++ Parse: %s ' % line.strip())
+            ver = re.match(re_cfgversion, line)
+            if ver:
+                configVersion = ver.group('version')
+                if configVersion != self.ok_version:
+                    sys.stderr.write('ERROR: Wrong updater config file version; expecting: %s, found: %s\n' % (str(self.ok_version), configVersion))
+                    sys.exit(2)
+                continue
+            if not configVersion:
+                sys.stderr.write('ERROR: Config version is not specified in updater config file before everything else.\n')
+                sys.exit(2)
+            cmd = re.match(re_cmd,line)
+            if not cmd:
+                sys.stderr.write('ERROR: ignoring not recognized cmd: '+line)
+                continue
+            mycmd = cmd.group('cmd').lower()
+            if mycmd == 'file' or mycmd == 'class':
+                opt = re.match(re_oldnew, cmd.group('content'))
+                if not opt:
+                    sys.stderr.write('ERROR: ignoring malformed cmd: '+line)
+                    continue
+                if 'new' in opt.groupdict().keys():
+                    mylist += ((mycmd,
+                                (opt.group('old'), opt.group('new'))
+                                ),)
+                else:
+                    mylist += ((mycmd,
+                                (opt.group('old'), opt.group('old'))
+                                ),)
+            if mycmd == 'fileversion':
+                opt = re.match(re_fileversion, cmd.group('content'))
+                if not opt:
+                    sys.stderr.write('ERROR: ignoring not malformed cmd: '+line)
+                    continue
+                mylist += ((mycmd,
+                            (opt.group('version0'), opt.group('version1'))
+                            ),)
+            elif mycmd == 'rm':
+                opt = re.match(re_rm, cmd.group('content'))
+                if not opt:
+                    sys.stderr.write('ERROR: ignoring malformed cmd: '+line)
+                    continue
+                mylist += ((mycmd,
+                            (opt.group('nml'), opt.group('var'), '', '')
+                            ),)
+            elif mycmd == 'mv':
+                opt = re.match(re_mv, cmd.group('content'))
+                if not opt:
+                    sys.stderr.write('ERROR: ignoring malformed cmd: '+line)
+                    continue
+                mylist += ((mycmd,
+                            (opt.group('nml0'), opt.group('var0'),
+                             opt.group('nml1'), opt.group('var1'))
+                            ),)
+            elif mycmd == 'set':
+                opt = re.match(re_set, cmd.group('content'))
+                if not opt:
+                    sys.stderr.write('ERROR: ignoring malformed cmd: '+line)
+                    continue
+                mylist += ((mycmd,
+                            (opt.group('nml'), opt.group('var'),
+                             opt.group('val0'), opt.group('val1'))
+                            ),)
+            elif mycmd in ('call' , 'exec'):
+                opt = re.match(re_call, cmd.group('content'))
+                if not opt:
+                    sys.stderr.write('ERROR: ignoring malformed cmd: '+line)
+                    continue
+                mylist += ((mycmd,
+                            (opt.group('script'),)
+                            ),)
+            else: #msg, version
+                mylist += ((mycmd,
+                            cmd.group('content')
+                            ),)
+        return mylist
+
+
+    def _add(self, filename, classname, fileversion, cmd=None, args=None, msg=None):
+        """ """
+        #print('=>'+repr(filename)+':'+repr(classname)+':'+repr(fileversion)+':'+repr(cvt))
+        key = repr(fileversion)
+        if not key in self.updaterData.keys():
+            self.updaterData[key] = {
+                'filename' : filename,
+                'classname' : classname,
+                'fileversion' : fileversion,
+                'msg' : [],
+                'items' : []
+                }
+        if cmd:
+            #TODO: make sure filename and classname did not change
+            self.updaterData[key]['items'] += [{'cmd':cmd,'args':args},]
+        if msg:
+            self.updaterData[key]['msg'] += [msg]
+
+
+    def _inoutFileBk(self, fromVersion, toVersion,
+                     doBackup=False, settingsFile=None,outFile=None):
+        """ """
+        version12 = self._findUpdateList(fromVersion,toVersion)
+##         print('v12='+repr(version12))
+##         sys.exit(2)
+        inSettingsFile = self.updaterData[version12[0]]['filename'][0]
+        outSettingsFile = self.updaterData[version12[-1]]['filename'][1]
+        if not outSettingsFile:
+            outSettingsFile = inSettingsFile
+        if settingsFile:
+            inSettingsFile = settingsFile
+            outSettingsFile = settingsFile
+        if outFile:
+            outSettingsFile = outFile
+        if not os.path.isfile(inSettingsFile):
+            raise IOError('Input file not found/readable: '+inSettingsFile)
+        if doBackup and inSettingsFile == outSettingsFile:
+            try:
+                if self.verbose or self.debug:
+                    print('Saving a backup of file: %s' % inSettingsFile)
+                shutil.copyfile(inSettingsFile,inSettingsFile+'.bk')
+            except:
+                raise IOError('Problem saving a backup of file: '+inSettingsFile)
+        return(version12,inSettingsFile,outSettingsFile)
+
+
+    def _findUpdateList(self, fromVersion, toVersion):
+        """ """
+        version12 = repr((fromVersion,toVersion))
+        if not version12 in self.updaterData.keys():
+            version12 = []
+            version12 = self._digg_recur(fromVersion,toVersion,version12)
+            if version12 is None or len(version12) == 0:
+                raise ValueError('No data avail. to update from version '+fromVersion+' to '+toVersion)
+        else:
+            version12 = [version12]
+        version12.reverse()
+        return version12
+
+
+    def _digg_recur(self, fromVersion, toVersion, version12):
+        """ """
+        #TODO: if many path, select the shortest one, instead of the 1st one
+        for k in self.updaterData.keys():
+            v = self.updaterData[k]
+            if v['fileversion'][0] == fromVersion:
+                if v['fileversion'][1] == toVersion:
+                    version12 += [k]
+                    return version12
+                else:
+                    version12 = self._digg_recur(v['fileversion'][1],toVersion,version12)
+                    if version12:
+                        version12 += [k]
+                        return version12
+        return None
+
+
+## class ConfigsUpdater(ModelUpdater):
+##     """
+##     Update a model cfg file to newer versions
+##     """
+##     def __init__(self, updaterDataFile, verbose=False, debug=False):
+##         ModelUpdater.__init__(self,updaterDataFile,'cfg.1',verbose,debug)
+
+
+##     def update(self, fromVersion, toVersion, doBackup=False,
+##                settingsFile=None, outFile=None):
+##         """
+##         Update a model cfg file to newer versions
+##         """
+##         hasChanged = False
+##         key = 0
+##         idxmsg = 1
+##         deletednml = '__deleted__'
+##         (version12,inSettingsFile,outSettingsFile) = \
+##             self._inoutFileBk(fromVersion, toVersion, doBackup,
+##                               settingsFile, outFile)
+##         try:
+##             cfg = Configs(inSettingsFile)
+##         except:
+##             sys.stderr.write('ERROR: Problem opening/Parsing file: '+inSettingsFile+'\n')
+##             raise
+##         #todo: check if values for fromVersion,toVersion
+
+##         for v12 in version12:
+##             if len(version12) > 1:
+##                 print('  incremental update: '+self.updaterData[v12]['fileversion'][0]+' > '+self.updaterData[v12]['fileversion'][1])
+##             for entry in self.updaterData[v12]['items']:
+##                 try:
+##                     fromValue = cfg.get(entry['from'][key])
+##                 except:
+##                     fromValue = None
+##                 if fromValue:
+##                     hasChanged = True
+##                     cfg.rm(entry['from'][key])
+##                     if entry['to'][key] and entry['to'][key] != '#':
+##                         cfg.set(entry['to'][key],fromValue)
+##                         if self.verbose or self.debug:
+##                             print('Replacing: '+entry['from'][key]+'  with: '+entry['to'][key])
+##                     else:
+##                         cfg.set(deletednml+entry['from'][key],fromValue)
+##                         if self.verbose or self.debug:
+##                             print('Deleting: '+entry['from'][key])
+##                         if entry['to'][key] == '#':
+##                             print('WARNING: '+entry['to'][idxmsg])
+##             for msg in self.updaterData[v12]['msg']:
+##                 print('WARNING: '+msg)
+
+##         if not hasChanged:
+##             if inSettingsFile == outSettingsFile:
+##                 print('Nothing needs to be updated. File unchanged.')
+##             else:
+##                 print('No config has changed; file renamed from: '+inSettingsFile+' to: '+outSettingsFile)
+##                 shutil.move(inSettingsFile,outSettingsFile)
+##             return
+##         try:
+##             if self.verbose or self.debug:
+##                 print('Writing updated namelist file: '+outSettingsFile)
+##             cfg.write(outSettingsFile)
+##         except:
+##             raise IOError('Problem writing namelist file: '+outSettingsFile)
+
+
+class SettingsUpdater(ModelUpdater):
+    """
+    Update a model nml file to newer versions
+    """
+    def __init__(self, updaterDataFile, baseName, verbose=False, debug=False):
+        ModelUpdater.__init__(self, updaterDataFile, 'nml.2', verbose, debug)
+        self.nmlName = "__{}_upcfg__".format(baseName.strip())
+
+
+    def read(self,inSettingsFile):
+        """
+        Read and parse a nml file
+        """
+        if self.verbose or self.debug:
+            print('+ Read & Parse config file: %s' % inSettingsFile)
+        try:
+            cfg = FtnNmlFile(inSettingsFile)
+        except:
+            sys.stderr.write('ERROR: Problem opening/Parsing file: '+inSettingsFile+'\n')
+            raise
+        return cfg
+
+
+    def write(self, cfg, inSettingsFile, outSettingsFile,
+              doBackup=False, fromVersion=None, toVersion=None):
+        """
+        Write the cfg to a file
+        """
+        if not self.hasChanged:
+            if inSettingsFile == outSettingsFile:
+                print('Nothing needs to be updated. File unchanged.')
+            else:
+                print('No setting has changed; file copied from: %s to: %s' % (inSettingsFile,outSettingsFile))
+                shutil.copyfile(inSettingsFile, outSettingsFile)
+            return
+
+        if doBackup and inSettingsFile == outSettingsFile:
+            try:
+                if self.verbose or self.debug:
+                    print('Saving a backup to file: %s.bk' % inSettingsFile)
+                shutil.copyfile(inSettingsFile,inSettingsFile+'.bk')
+            except:
+                raise IOError('Problem saving a backup of file: '+inSettingsFile)
+
+        cfg = self.setFromToVersion(cfg, fromVersion, toVersion)
+
+        try:
+            if self.verbose or self.debug:
+                print('Writing updated namelist file: %s' % outSettingsFile)
+            cfg.write(outSettingsFile)
+        except:
+            raise IOError('Problem writing namelist file: %s' % outSettingsFile)
+
+
+    def getFromToVersion(self, cfg):
+        (orig_version, from_version, version) = ('', '', '')
+        if self.nmlName in cfg.keys():
+            nml1 = cfg.get(self.nmlName)
+            try:
+                version = nml1.get('version').get('v')
+            except:
+                pass
+            try:
+                from_version = nml1.get('from_version').get('v')
+            except:
+                pass
+            try:
+                orig_version = nml1.get('orig_version').get('v')
+            except:
+                pass
+        else:
+            print cfg.keys()
+        return (str(orig_version), str(from_version), str(version))
+
+
+    def setFromToVersion(self, cfg, fromVersion, toVersion):
+        """
+        Keep fromVersion, toVersion info by saving its values in a nml of the cfg
+        """
+        if not self.nmlName in cfg.keys():
+            cfg.add(FtnNmlSection(self.nmlName))
+        nml1 = cfg.get(self.nmlName)
+        if fromVersion and not 'orig_version' in nml1.keys():
+            nml1.add(FtnNmlKeyVal('orig_version', FtnNmlVal(fromVersion)))
+        if 'from_version' in nml1.keys():
+            nml1.rm('from_version')
+        if 'version' in nml1.keys():
+            nml1.rm('version')
+        if fromVersion:
+            nml1.add(FtnNmlKeyVal('from_version', FtnNmlVal(fromVersion)))
+        if toVersion:
+            nml1.add(FtnNmlKeyVal('version', FtnNmlVal(toVersion)))
+        return cfg
+
+
+    def update_rm(self, cfg, args, fromVersion=None, toVersion=None, msg=None):
+        """
+        Remove nml1/var1=val (if present) (move to nml __deleted__)
+        """
+        (nml, var) = args[0:2]
+        deletednml = '__deleted__'
+        if not deletednml in cfg.keys():
+            cfg.add(FtnNmlSection(deletednml))
+        fromNml = None
+        try:
+            fromNml = cfg.get(nml)
+            fromVal = fromNml.get(var).get('v')
+        except:
+            fromVal = None
+        if fromVal:
+            self.hasChanged = True
+            cfg.get(deletednml).add(FtnNmlKeyVal(var, FtnNmlVal(fromVal)))
+            fromNml.rm(var)
+            if self.verbose or self.debug:
+                print('Deleting : %s/%s' % (nml, var))
+            if msg:
+                print('NOTE: %s' % msg)
+        return cfg
+
+
+    def update_mv(self, cfg, args, fromVersion=None, toVersion=None, msg=None):
+        """
+        Move nml1/var1=val (if present) to nml2/var2=val
+        """
+        (nml1, var1, nml2, var2) = args[0:4]
+        try:
+            fromNml = cfg.get(nml1)
+            fromVal = fromNml.get(var1).get('v')
+        except:
+            fromVal = None
+        if not fromVal:
+            return cfg
+        self.hasChanged = True
+        fromNml.rm(var1)
+        toNml = None
+        toVal = None
+        try:
+            toNml = cfg.get(nml2)
+            toVal = toNml.get(var2).get('v')
+        except:
+            pass
+        if toVal:
+            if toVal != fromVal:
+                toNml.rm(var2)
+                sys.stderr.write('WARNING: %s/%s was overritten by %s/%s' % (nml2, var2, nml1, var1))
+        if not toNml:
+            cfg.add(FtnNmlSection(nml2))
+        cfg.get(nml2).add(FtnNmlKeyVal(var2, FtnNmlVal(fromVal)))
+        if self.verbose or self.debug:
+            print('Moving : %s/%s to %s/%s' % (nml1, var1, nml2, var2))
+        if msg:
+            print('Note: %s' % msg)
+        return cfg
+
+
+    def update_set(self, cfg, args, fromVersion=None, toVersion=None, msg=None):
+        """
+        Add nml/var = val1 if nml/var not in cfg
+        This is to ensure a default value change keeps unspeficied values as is
+        """
+        (nml, var, val1, val2) = args[0:4]
+        fromNml = None
+        try:
+            fromNml = cfg.get(nml)
+            fromVal = fromNml.get(var).get('v')
+        except:
+            fromVal = None
+        if not fromVal:
+            self.hasChanged = True
+            if not fromNml:
+                cfg.add(FtnNmlSection(nml))
+            cfg.get(nml).add(FtnNmlKeyVal(var, FtnNmlVal(val1)))
+        if self.verbose or self.debug:
+            print('Setting previous default : %s/%s = %s' % (nml, var, repr(val1)))
+        return cfg
+
+
+    def update_call(self, cfg, args, fromVersion=None, toVersion=None, msg=None):
+        """
+        Call a python function to update the config
+        """
+        name = args[0]
+        self.hasChanged = True
+        if self.verbose or self.debug:
+            print('Calling function: %s' % name)
+        l = name.split(".")
+        mName = ".".join(l[0:-1])
+        fName = l[-1]
+        m = __import__(mName)
+        f = getattr(m, fName)
+        return f(cfg, fromVersion, toVersion, self.verbose, self.debug)
+
+
+    def update_exec(self, cfg, args, fromVersion=None, toVersion=None, msg=None):
+        """
+        Execute a script/program in a subprocess to update the config
+        """
+        script = args[0]
+        self.hasChanged = True
+        (funit, tmpFile) = tempfile.mkstemp()
+        os.close(funit)
+        cfg.write(tmpFile)
+        if self.verbose or self.debug:
+            print('Calling script %s on %s' % (script, tmpFile))
+        istat = sproc.call([script, tmpFile, fromVersion, toVersion, str(self.verbose), str(self.debug)], stdout=sys.stdout, stderr=sys.stderr)
+        if istat != 0:
+            sys.stderr.write('WARNING: Problem running the updater script: %s %s %s %s' % (script, tmpFile, fromVersion, toVersion))
+        cfg2 = self.read(tmpFile)
+        os.remove(tmpFile)
+        return cfg2
+
+
+    def update(self, fromVersion, toVersion, doBackup=False,
+               settingsFile=None, outFile=None):
+        """
+        Update a nml file to newer versions
+        """
+        self.hasChanged = False
+        nml = 0
+        key = 1
+        idxmsg = 1
+
+        #TODO: implement class updater
+
+        cfg = None
+        if not fromVersion:
+            cfg = self.read(settingsFile)
+            if not fromVersion:
+                (origVersion, fromVersion0, fromVersion) = self.getFromToVersion(cfg)
+                if self.verbose or self.debug:
+                    print('Got "fromVersion" from config file: %s' % fromVersion)
+        if not fromVersion:
+            sys.stderr.write('\nERROR: You need to specify "from" what version to start\n\n')
+            sys.exit(2)
+
+        deletednml = '__deleted__'
+        (version12,inSettingsFile,outSettingsFile) = \
+            self._inoutFileBk(fromVersion, toVersion, False,
+                              settingsFile, outFile)
+
+        if inSettingsFile != settingsFile or not cfg:
+            cfg = self.read(inSettingsFile)
+
+        print('Updating Namelist from version: %s to: %s' % (fromVersion,toVersion))
+
+        for v12 in version12:
+            (fromVersion1, toVersion1) = self.updaterData[v12]['fileversion'][0:2]
+            if len(version12) > 1:
+                print('+ Incremental update: %s > %s' %
+                      (self.updaterData[v12]['fileversion'][0],
+                       self.updaterData[v12]['fileversion'][1]))
+            for entry in self.updaterData[v12]['items']:
+                if self.debug:
+                    print('++ %s %s' % (entry['cmd'],repr(entry['args'])))
+                if entry['cmd'] == 'rm':
+                    cfg = self.update_rm(cfg, entry['args'], fromVersion1, toVersion1)
+                elif entry['cmd'] == 'mv':
+                    cfg = self.update_mv(cfg, entry['args'], fromVersion1, toVersion1)
+                elif entry['cmd'] == 'set':
+                    cfg = self.update_set(cfg, entry['args'], fromVersion1, toVersion1)
+                elif entry['cmd'] == 'call':
+                    cfg = self.update_call(cfg, entry['args'], fromVersion1, toVersion1)
+                elif entry['cmd'] == 'exec':
+                    cfg = self.update_exec(cfg, entry['args'], fromVersion1, toVersion1)
+                else:
+                    sys.stderr.write('WARNING: Ignoring: %s %s\n' % (entry['cmd'],repr(entry['args'])))
+            for msg in self.updaterData[v12]['msg']:
+                print('Note: %s' % msg)
+
+        self.write(cfg, inSettingsFile, outSettingsFile,
+                   doBackup, fromVersion, toVersion)
+
+
+if __name__ == '__main__':
+    toVersion = os.getenv('ATM_MODEL_VERSION', None)
+    ## ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES', None)
+    ## basepath  = os.path.dirname(os.path.abspath(sys.argv[0]))
+    ## basepath  = os.getenv('gemscripts',
+    ##                       os.path.join("..",
+    ##                           os.path.dirname(os.path.abspath(sys.argv[0]))
+    ##                           .strip())
+    ##                           )
+    ## basepath = os.path.join(ATM_MODEL_DFILES.strip(), 'nml', 'upd')
+    ## sys.path.append(basepath)
+
+    # Command line arguments
+    #desc  = "Update Fortran Namelists or gem's configexp.cfg file"
+    DESC="Update model's Fortran Namelists files from one version to another"
+    usage = """
+    %(prog)s --from VERSION1 [--to VERSION2] [-v] [-b] [-i INFILENAME] [-o OUTFILENAME] [--config=CONFIG_FILE]
+    """
+    epilog="""
+    """
+    parser = argparse.ArgumentParser(
+        description=DESC, usage=usage, epilog=epilog,
+        prefix_chars='-+', formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("-v", "--verbose", dest="verbose",
+                        action="store_true",
+                        help="Print not conforming entries compared to ref")
+
+    parser.add_argument("-i", "--file", dest="inFile",
+                        type=str,
+                        help="Input Namelist filename",
+                        metavar="FILE")
+    parser.add_argument("-o", "--outfile", dest="outFile",
+                        type=str, default=None,
+                        help="Output Namelist filename [default: same as input]",
+                        metavar="OUTPUT_FILE")
+
+    parser.add_argument("-b", "--backup", dest="doBackup",
+                        action="store_true",
+                        help="Create a backup (.bk) of the input FILE")
+
+    parser.add_argument("-f", "--from", dest="fromVersion",
+                        default="",
+                        help="Version of the orginal file",
+                        metavar="FROM_VERSION")
+    parser.add_argument("-d", "--to", dest="toVersion",
+                        default=toVersion,
+                        help="File will be updated to VERSION1 [default: ATM_MODEL_VERSION="+str(toVersion)+"]",
+                        metavar="TO_VERSION")
+
+    ## parser.add_argument("-t", "--type", dest="fileType",
+    ##                   default="nml",
+    ##                   help="specify which file type to update: all=all known file; nml=gem nml file (gem_settings.nml); cfg=gem cfg file (confexp.cfg) [default: nml]",
+    ##                   metavar="FILE_TYPE")
+
+    parser.add_argument("-c", "--config", dest="configFile",
+                        help="Updater config filename",
+                        metavar="CONFIG_FILE")
+
+    parser.add_argument("-p", "--spath", dest="basePath",
+                        help="Updater Scripts base path",
+                        metavar="SCRIPTS_PATH")
+
+    parser.add_argument("-n", "--name", dest="nmlName",
+                        help="Updater cfg nml name",
+                        metavar="UPD_NML_NAME")
+
+    parser.add_argument("--debug", dest="debug", action="store_true",
+                        help="Debug mode [default: False]")
+
+    args = parser.parse_args()
+
+    if not args.basePath:
+        sys.stderr.write('\nERROR: You need to provide "--spath SCRIPTS_PATH"\n\n')
+        parser.print_help(sys.stdout)
+        sys.exit(2)
+    if not os.path.isdir(args.basePath):
+        sys.stderr.write('\nERROR: You need to provide an existing "--spath SCRIPTS_PATH"\n\n')
+        parser.print_help(sys.stdout)
+        sys.exit(2)
+    sys.path.append(args.basePath)
+
+    if args.debug:
+        args.verbose = True
+    if not args.toVersion:
+        sys.stderr.write('\nERROR: You need to provide at least "from" and "to" version\n\n')
+        parser.print_help(sys.stdout)
+        sys.exit(2)
+    ## if args.fileType not in ('all','nml','cfg'):
+    ##     sys.stderr.write("\nERROR: File type unknown: "+args.fileType+"\n")
+    ##     parser.print_help(sys.stdout)
+    ##     sys.exit(2)
+
+    if not args.outFile:
+        args.outFile = args.inFile
+
+    exitValue = 0
+    try:
+        if True: #args.fileType in ('all','nml'):
+            #fileName=os.path.join(basepath,'gem_upcfg_nml.txt')
+            updater = SettingsUpdater(args.configFile, args.nmlName,
+                                      verbose=args.verbose,
+                                      debug=args.debug)
+            updater.update(args.fromVersion, args.toVersion,
+                           args.doBackup, args.inFile, args.outFile)
+    except:
+        if args.debug:
+            raise
+        else:
+            sys.stderr.write('ERROR: '+str(sys.exc_info()[1])+'\n')
+            exitValue = 2
+
+    ## if args.fileType == 'cfg':
+    ##     sys.stderr.write('ERROR: update of type=cfg not yet available.\n')
+    ##     sys.exit(2)
+
+    ## try:
+    ##     if args.fileType in ('all','cfg'):
+    ##         print('\nUpdating Configs from version: '+args.fromVersion+' to: '+args.toVersion)
+    ##         #fileName=os.path.join(basepath,'gem_upcfg_cfg.txt')
+    ##         updater = ConfigsUpdater(args.fileName,
+    ##                                  verbose=args.verbose,
+    ##                                  debug=args.debug)
+    ##         updater.update(args.fromVersion, args.toVersion,
+    ##                        args.doBackup, args.inFile, args.outFile)
+    ## except:
+    ##     if debug:
+    ##         raise
+    ##     else:
+    ##         sys.stderr.write('ERROR: '+str(sys.exc_info()[1])+'\n')
+    ##         exitValue = 2
+
+    sys.exit(exitValue)
+
+
+
+# -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
+# vim: set expandtab ts=4 sw=4:
+# kate: space-indent on; indent-mode cstyle; indent-width 4; mixedindent off;

@@ -1,0 +1,83 @@
+# Settings for a test run using GABLS-3 data
+
+ &step
+ step_runstrt_s = '20030501.000000',
+ step_dt_8 = 450,
+ fcst_end_s = '120h',
+ fcst_nesdt_s = '-1',
+ /
+
+ &scm_cfgs
+
+ prof_point = 35.,356.
+
+ debug_L = .false.,
+
+ Cstv_ptop_8 = 7.5, Grd_rcoef = 1,1
+
+ hyb= 0.5374358, 0.6598930, 0.7550948, 0.8261252, 0.8777371, 0.9145920, 0.9406051,
+      0.9588225, 0.9715127, 0.9803206, 0.9864188, 0.9906338, 0.9935437, 0.9955510,
+      0.9969349, 0.9978886, 0.9985458, 0.9989985, 0.9993103, 0.9995250, 0.9996729,
+      0.9997748, 0.9998449, 0.9998932, 0.9999265, 0.9999494, 0.9999651, 0.9999760,
+      0.9999835, 0.9999886
+
+ output_list = 'T8','2T','H8','UH','U8','UP','V8','VP','TJ','DQ','UD','VD',
+	'FC','FV','FI','FS','SI','FB','ECC','NT','TG','GZMO','I0','I1','UFD','VFD',
+	'TU','TV','UTFD','VTFD','F3','F2','FQ','KM','KT','UE','BM','H','GU','GV',
+	'M1','M2','TW'
+
+ /
+
+ &surface_cfgs
+
+ ICELAC           = .false.    ,
+ ICEMELT          = .true.     ,
+ IMPFLX           = .true.     ,
+ LIMSNODP         = .true.     ,
+ SCHMSOL          = 'isba'     ,
+ Z0TLAT           = 25.,30.    ,
+ ISBA_I1_MINVAL   = .false.    ,
+
+ /
+
+ &convection_cfgs
+
+ DEEP             = 'nil'      , 
+ SHAL             = 'nil'      ,
+
+ /
+
+ &physics_cfgs
+
+ RADIA            = 'nil' ,  
+ KNTRAD_S         = '30m'      ,
+ STRATOS          = .true.     ,
+
+ GWDRAG           = 'nil'    ,
+ NON_ORO          = .false.     ,
+ LMETOX           = .false.     , 
+
+ LONGMEL          = 'blac62'    ,
+ FLUVERT          = 'simple'    ,
+ TOFD             = 'beljaars04',
+
+ PBL_SHAL         = 'nil'   ,
+ STCOND           = 'nil'   ,
+ INILWC           = .true.     ,
+
+ KTICEFRAC        = .false.    ,
+
+ PCPTYPE          = 'nil'   ,
+
+ QCO2             = 380.0      ,
+
+/
+&__deleted__
+zta=-1.,
+zua=-1.,
+/
+&__rpnphy_upcfg__
+orig_version=6.0.b7,
+from_version=6.0.b7,
+version=6.0.rc3,
+/

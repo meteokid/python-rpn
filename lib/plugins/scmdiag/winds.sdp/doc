@@ -1,0 +1,2 @@
+WSPD Wind speed [requires U8,V8]
+WDIR Wind direction (meteorological) [requires U8,V8]

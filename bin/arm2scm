@@ -1,0 +1,107 @@
+#!/usr/bin/env python
+
+# Process ARM data to create scm-type output files compatible with the
+# onboard plotting tools of the SCM.
+
+# Acquire required modules
+import os,sys
+import shutil
+import argparse
+import netCDF4
+import datetime
+
+# Utility functions
+def float2str(s):
+    try:
+        return str(float(s))
+    except ValueError:
+        return 'NaN'
+
+# Handle command line arguments
+parser = argparse.ArgumentParser(description='Convert ARM data to SCM outputs for comparison')
+parser.add_argument('datasrc', metavar='ARM_FILE', type=str,nargs='+', help='ARM data files to process')
+parser.add_argument('outfile', metavar='OUT_FILE', type=str, help='file name for SCM-type results')
+parser.add_argument('-a', '--add', metavar='VALUE', dest='add', type=float, default=0.,
+                    help='add VALUE during conversion [0]')
+parser.add_argument('-f', '--force', dest='force', default=False, action='store_true',
+                    help='force overwrite of output file')
+parser.add_argument('-i', '--in-name', metavar='NAME', dest='in_fld', default='',
+                    help='input variable NAME [first field in file]')
+parser.add_argument('-m', '--mult', metavar='VALUE', dest='mult', type=float, default=1.,
+                    help='multiply by VALUE during conversion [1]')
+args = parser.parse_args()
+
+# Open output file for writing
+out_file = os.path.abspath(args.outfile)
+out_dir = os.path.dirname(out_file)
+if not os.path.isdir(out_dir):
+    try:
+        os.makedirs(out_dir)
+    except OSError:
+        sys.stderr.write('Error: cannot create '+out_dir+' for output\n')
+        sys.exit(1)
+if os.path.exists(out_file) and not args.force:
+    sys.stderr.write('Error: output target '+out_file+' already exists, use -f (--force) to replace it\n')
+    sys.exit(1)
+try:
+    fdout = open(out_file,'w')
+except:
+    sys.stderr.write('Error: unable to open '+out_file+' for writing\n')
+    sys.exit(1)
+
+# Read from all input files
+in_fld = args.in_fld
+nlevs = 0
+reserved_substr = ["time"]
+for fname in args.datasrc:
+
+    # Read ARM input file
+    try:
+        data = netCDF4.Dataset(fname, "r", format='NETCDF4')
+    except RuntimeError:
+        sys.stderr.write('Error: cannot open +'+fname+'\n')
+        sys.exit(1)
+
+    # Determine field name
+    all_flds = [d for d in data.variables.keys() if not any(r in d for r in reserved_substr)]
+    if not in_fld:
+        try:
+            in_fld = all_flds[0]
+        except:
+            sys.stderr.write('Error: unable to identify input field, provide -i argument.\n'+
+                             '  Available meteorological fields:'+'\n    '.join(all_flds))
+            sys.exit(1)
+
+    # Retrieve requested data
+    try:
+        fld = data.variables[in_fld][:]*args.mult + args.add
+    except KeyError:
+        sys.stderr.write('Error: unable to find '+in_fld+' in the ARM dataset.\n'+
+                         '  Available meteorological fields:\n    '+'\n    '.join(all_flds)+'\n')
+        sys.exit(1)
+
+    # Retrieve time information
+    base_time_var = 'base_time'
+    base = netCDF4.num2date(data.variables[base_time_var][:],units=data.variables[base_time_var].units)
+    time_var = 'time'
+    times = [base + datetime.timedelta(seconds=d) for d in data.variables[time_var][:]]
+    times_iso = [t.strftime("%Y%m%dT%H%M%SZ") for t in times]
+
+    # Generate output file header
+    if not nlevs:
+        try:
+            nlevs = fld.shape[1]
+        except IndexError:
+            nlevs = 1
+        header = 'date '+' '.join([str(i+1) for i in range(0,nlevs)])
+        fdout.write(header+'\n')
+
+    # Generate output file
+    for i in range(0,len(times)):
+        if nlevs == 1:
+            fdout.write(times_iso[i]+' '+(float2str(fld[i])+'\n'))
+        else:
+            fdout.write(times_iso[i]+' '+' '.join([float2str(fld[i,j]) for j in range(0,nlevs)])+'\n')
+
+# Close output file
+fdout.close()

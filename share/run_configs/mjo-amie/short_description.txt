@@ -1,0 +1,1 @@
+Extended tropical simulation of active and suppressed phases of the MJO (Long et al. 2010; DOE/ARM Tech Pub).

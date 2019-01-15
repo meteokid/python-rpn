@@ -1,0 +1,73 @@
+#!/bin/ksh
+
+set -e
+
+default_user_makefile=${scm}/share/Makefile.user.mk
+if [[ -r ${default_user_makefile} ]] ; then
+   if [[ "x$1" == "x-f" && -r Makefile.user.mk ]] ; then
+      echo "Saving a copy of previous Makefile.user.mk to Makefile.user.mk-$$"
+      mv Makefile.user.mk Makefile.user.mk-$$
+   fi
+   if [[ ! -r Makefile.user.mk ]] ; then
+      echo "Copying release Makefile.user.mk"
+      cp ${default_user_makefile} .
+   fi
+fi
+
+rdemklink $1
+
+storage=$(rdevar storage)
+logfile=$(pwd)/.linkit.log
+
+BUILDRUN=$(rdevar build/run)
+BUILDBIN=$(rdevar build/bin)
+
+echo ${TRUE_HOST:-$(hostname)}:$storage >> $logfile
+
+for item in mainscm ; do
+   absnamerel=${item}_REL_${BASE_ARCH}.Abs
+   absname=${item}_${BASE_ARCH}.Abs
+   /bin/rm -f ${absname}
+   if [[ x$1 == x-f ]] ; then
+      /bin/rm -f ${BUILDBIN}/${absname}
+   fi
+   ln -s ${BUILDBIN}/${absname} ${absname}
+   touch ${BUILDBIN}/${absname}
+   if [[ ! -s ${BUILDBIN}/${absname} ]] ; then
+      if [[ -n "${SCM_DEV_UPDATES}" ]] ; then
+         cat > ${BUILDBIN}/${absname} <<EOF
+#!/usr/bin/env ksh
+message="Rebuild SCM executable with 'make scm' to include updates ${SCM_DEV_UPDATES}"
+printf "\nERROR: \${message}\n\n" 1>&2
+exit 1
+EOF
+         echo "Creating update stub. Run 'make scm' to update build for execution."
+         chmod a+x ${BUILDBIN}/${absname}
+      else
+         # abspath=${scm}/bin/$(rdevar base_arch_old)/${absname}
+         abspath=$(which ${absnamerel})
+         echo "Copying release binary: ${abspath}"
+         cp ${abspath} ${BUILDBIN}/${absname}
+      fi
+   fi
+   chmod 755 ${BUILDBIN}/${absname}
+done
+
+for item in RUNSCM ; do
+   mkdir -p ${BUILDRUN}/$item
+   /bin/rm -f $item
+   ln -s ${BUILDRUN}/$item $item
+done
+
+if [[ -n "${scm_results}" ]] ; then
+  results_dir=${scm_results}
+  if [[ ! "$(scmcfg linkit flat)" == True ]] ; then
+    results_dir=${results_dir}/${storage##*/}/results
+    echo ${TRUE_HOST:-$(hostname)}:${results_dir%/*} >> $logfile
+  fi
+  if [[ -d ${results_dir} ]] ; then
+    printf "\nWARNING: possible collision of results directory with existing ${results_dir}\n\n"
+  fi
+  mkdir -p ${results_dir}
+  ln -sf ${results_dir} .
+fi

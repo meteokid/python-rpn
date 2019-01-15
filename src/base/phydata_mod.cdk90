@@ -1,0 +1,659 @@
+!---------------------------------- LICENCE BEGIN -------------------------------
+! SCM - Library of kernel routines for the RPN single column model
+! Copyright (C) 1990-2017 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it 
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+
+module phydata_mod
+
+  implicit none
+
+  private
+
+#include <arch_specific.hf>
+
+  ! Module parameters
+  integer, parameter, private :: STDOUT=6               !Unit for stdout
+  integer, parameter, private :: STDERR=0               !Unit for stderr
+  integer, parameter, private :: SHORT_CHAR=16          !Short character string
+  integer, parameter, private :: LONG_CHAR=1024         !Long character string
+
+  ! Module structures
+  type timeinfo
+     integer :: ntimes                                  !Number of times available in the file
+     integer :: valid=-1                                !Date (CMC) for which timeinfo is valid
+     integer :: ip,in                                   !Previous,Next indeces or keys
+     real :: pweight                                    !Weighting of previous value for interpolation
+  end type timeinfo
+
+  ! Module variables
+  integer, private :: funit=0                           !File unit to read from
+  integer, private :: current_step=0                    !Current timestep number
+  real(kind=8), private :: timestep                     !Model timestep (s)
+  character(len=LONG_CHAR), private :: file             !File name to read from
+  character(len=SHORT_CHAR), private :: type            !File type to read from
+  character(len=SHORT_CHAR) :: start_date               !Initial date of run ('YYYYMMDD.HHMMSS')
+  logical, private :: debug=.false.                     !Turn on debugging
+  logical, private :: initialized=.false.               !Package initialization status
+  type(timeinfo), private, save :: filetime             !Time information structure for file (one instance)
+
+  ! Export API (parameters)
+  integer, parameter, public :: PD_OK=0                 !Function completed without errors
+  integer, parameter, public :: PD_ERROR=-1             !Function encountered error(s)
+
+  ! Export API (subprograms)
+  public :: pd_init                                     !Initialize driving data reading
+  public :: pd_step                                     !Set current step number       
+  public :: pd_get                                      !Retrieve driving data within the physics
+  public :: pd_finalize                                 !Close file and release unit number
+
+    ! Module interfaces
+  interface pd_get
+     module procedure pd_get_r4
+  end interface
+
+contains
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  subroutine pd_init(F_init)
+    ! Perform necessary initializations for reading an input file in the physics.
+
+    implicit none
+
+    ! Input variables
+    logical, intent(in) :: F_init                       !Run initialization
+
+    ! Return if no initialization is requested
+    if (.not.F_init) return
+
+    ! Read phydata namelist
+    call handle_error_l(priv_nml()==PD_OK,'phydata::pd_init','Error reading phydata namelist')
+
+    ! End of subprogram
+    return
+  end subroutine pd_init
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  subroutine pd_step(F_step)
+    ! Set the current timestep number.
+
+    implicit none
+
+    ! Input variables
+    integer, intent(in) :: F_step                       !Timestep number to set package to
+
+    ! Set step number
+    current_step = F_step
+
+    ! End of subprogram
+    return
+  end subroutine pd_step
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  subroutine pd_finalize()
+    ! Close file and release unit number.
+
+    implicit none
+
+    ! Return if package was not initialized
+    if (.not.initialized) return
+
+    ! Close input file
+    if (priv_close(funit,type) /= PD_OK) then
+       write(STDERR,*) 'phydata::pd_finalize cannot close '//trim(file)
+       return
+    endif
+
+    ! End of subprogram
+    return
+  end subroutine pd_finalize
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  function pd_get_r4(F_name,stat) result(F_value)
+    ! Obtain data for the named field for the given timestep.
+
+    implicit none
+
+    ! Input variables
+    character(len=*), intent(in) :: F_name              !Field name in the input file
+    
+    ! Output variables
+    integer, target, intent(out), optional :: stat      !Completion status of the function (GD_OK or GD_ERROR)
+    real :: F_value                                     !Value of the field
+
+    ! Internal variables
+    integer :: vtime
+    integer, target :: istat
+    integer, pointer :: status
+
+    ! Set default values
+    status => istat
+    if (present(stat)) status => stat
+
+    ! Set return status
+    status = PD_ERROR
+
+    ! Return if package was not initialized
+    if (.not.initialized) then
+       write(STDERR,*) 'phydata::pd_get_r4 called before initialization - check SCM_phydata in configexp.cfg'
+       return
+    endif
+
+    ! Retrieve valid time information
+    if (priv_vtime(current_step,vtime) /= PD_OK) then
+       write(STDERR,*) 'phydata::pd_get_r4 cannot retrieve valid time for step ',current_step
+       return
+    endif
+
+    ! Read from input file
+    if (priv_get_r4(F_name,vtime,F_value) /= PD_OK) then
+       write(STDERR,*) 'phydata::pd_get_r4 cannot get data for time ',vtime
+       return
+    endif
+
+    ! Set success status and return
+    status = PD_OK
+    return
+  end function pd_get_r4
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  function priv_nml() result(F_status)
+    ! Read namelist and initialize package.
+    use step_mod, only:step_init,step_get,STEP_OK
+
+    implicit none
+
+#include <clib_interface.cdk>
+
+    ! Output variables
+    integer :: F_status                                 !Return status for function
+
+    ! Internal parameters
+    character(len=LONG_CHAR) :: INFILE='EXT_PHYDATA'
+
+    ! Internal variables
+    integer :: istat,iun
+    character(len=LONG_CHAR) :: task_input,sfile,ftype
+    logical :: infile_exists
+
+    ! External subprograms
+    integer, external :: fnom,fclos
+    
+    ! Namelist definition
+    namelist /phydata/ type,debug
+
+    ! Set return status
+    F_status = PD_ERROR
+
+    ! Initializations
+    file = ''
+    type = 'netcdf'
+    debug = .false.
+    if (clib_getenv('TASK_INPUT',task_input) /= 1) then
+       write(STDERR,*) 'phydata::priv_nml clib_gentenv cannot retrieve TASK_INPUT'
+       return
+    endif
+    file = trim(task_input)//'/'//trim(INFILE)
+
+    ! Check for existance of input file (return quietly if it does not exist)
+    inquire(file=file,exist=infile_exists)
+    if (.not.infile_exists) then
+       F_status = PD_OK
+       return
+    endif
+
+    ! Open and read from settings file
+    sfile = trim(task_input)//'/model_settings.nml'
+    iun = 0
+    if (fnom(iun,trim(sfile),'SEQ+OLD',0) /= 0) then
+       write(STDERR,*) 'phydata::priv_nml cannot associate unit with '//trim(sfile)
+       return
+    endif
+    rewind(iun)
+    read(iun,nml=phydata,end=99,err=100)
+99  if (fclos(iun) /= 0) then
+       write(STDERR,*) 'phydata::priv_nml cannot release unit for '//trim(sfile)
+       return
+    endif
+
+    ! Read from the step namelist to fill package requirements
+    if (step_init(sfile) /= STEP_OK) then
+       write(STDERR,*) 'phydata::priv_nml cannot read step namelist from '//trim(sfile)
+       return
+    endif
+    if (step_get('step_runstrt_s',start_date) /= STEP_OK .or. step_get('step_dt_8',timestep) /= STEP_OK) then
+       write(STDERR,*) 'phydata::priv_nml cannot retrieve required keys from step package'
+       return
+    endif
+
+    ! Check for a valid input type
+    ftype = type
+    type = adjustl(ftype)
+    if (clib_tolower(type) /= CLIB_OK) then
+       write(STDERR,*) 'phydata::priv_nml clib_tolower cannot process file type '//trim(ftype)
+       return
+    endif
+    if (.not.any((/'netcdf'/)==type)) then
+       write(STDERR,*) 'phydata::priv_nml cannot process unknonwn file type '//trim(type)
+       return
+    endif
+
+    ! Open input file for reading
+    if (priv_open(file,type,funit) /= PD_OK) then
+       write(STDERR,*) 'phydata::priv_nml cannot open '//trim(file)//' for reading'
+       return
+    endif
+
+    ! Set success status and return
+    initialized = .true.
+    F_status = PD_OK
+    return
+
+    ! Error encountered during namelist read
+100 istat = fclos(iun)
+    write(STDERR,*) 'phydata::priv_nml error reading from settings file '//trim(sfile)
+    return
+  end function priv_nml
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  function priv_open(F_name,F_type,F_unit) result(F_status)
+    ! Open the input data file and return the unit number.
+
+    implicit none
+
+    ! Input variables
+    character(len=*), intent(in) :: F_name              !Field name in the input file
+    character(len=*), intent(in) :: F_type              !Type of file ('netcdf')
+
+    ! Output variables
+    integer, intent(inout) :: F_unit                    !Input file unit number
+    integer :: F_status                                 !Return status for function
+
+    ! Internal variables
+    integer :: istat
+
+    ! External subprograms
+    integer, external :: fnom
+
+    ! Set return status
+    F_status = PD_ERROR
+
+    ! Dispatch to open input file
+    istat = PD_ERROR
+    select case (type)
+    case ('netcdf')
+       istat = priv_ncopen(F_name,F_unit)
+    case DEFAULT
+       if (fnom(F_unit,F_name,'OLD+R/O',0) /= 0) istat = PD_ERROR
+    end select
+    if (istat /= PD_OK) then
+       write(STDERR,*) 'phydata::priv_open dispatcher could not open '//trim(F_name)
+       return
+    endif
+
+    ! Emit diagnostic message
+    if (debug) write(STDOUT,*) 'phydata::priv_open opened file '//trim(F_name)//' as unit ',F_unit
+
+    ! Set success status and return
+    F_status = PD_OK
+    return
+  end function priv_open
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  function priv_close(F_unit,F_type) result(F_status)
+    ! Close the input data file and release the unit number.
+
+    implicit none
+
+    ! Input variables
+    integer, intent(out) :: F_unit                      !Input file unit number
+    character(len=*), intent(in) :: F_type              !Type of file ('netcdf')
+
+    ! Output variables
+    integer :: F_status                                 !Return status for function
+
+    ! Internal variables
+    integer :: istat
+
+    ! External subprograms
+    integer, external :: fclos
+
+    ! Set return status
+    F_status = PD_ERROR
+
+    ! Dispatch to open input file
+    istat = PD_ERROR
+    select case (type)
+    case ('netcdf')
+       istat = priv_ncclose(F_unit)
+    case DEFAULT
+       if (fclos(F_unit) /= 0) istat=PD_ERROR
+    end select
+    if (istat /= PD_OK) then
+       write(STDERR,*) 'phydata::priv_close dispatcher could not close unit ',F_unit
+       return
+    endif
+
+    ! Emit diagnostic message
+    if (debug) write(STDOUT,*) 'phydata::priv_close closed '//trim(type)//' file at unit ',F_unit
+
+    ! Set success status and return
+    F_status = PD_OK
+    return
+  end function priv_close
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  function priv_get_r4(F_name,F_vtime,F_value) result(F_status)
+    ! Dispatcher to obtain data for the named field for the given timestep.
+
+    implicit none
+
+    ! Input variables
+    character(len=*), intent(in) :: F_name              !Field name in the input file
+    integer, intent(in) :: F_vtime                      !Valid time for data (CMC datestamp)
+    
+    ! Output variables
+    real, intent(out) :: F_value                        !Value of the field
+    integer :: F_status                                 !Return status for function
+
+    ! Local variables
+    integer :: istat
+
+    ! Set return status
+    F_status = PD_ERROR
+
+    ! Dispatch to open input file
+    istat = PD_ERROR
+    select case (type)
+    case ('netcdf')
+       istat = priv_ncget_r4(F_name,F_vtime,F_value)
+    end select
+    if (istat /= PD_OK) then
+       write(STDERR,*) 'phydata::priv_get_r4 dispatcher could not read ',trim(F_name)
+       return
+    endif
+
+    ! Emit diagnostic message
+    if (debug) write(STDOUT,*) 'phydata::priv_get_r4 retrieved: '//trim(F_name)//' =',F_value
+
+    ! Set success status and return
+    F_status = PD_OK
+    return
+  end function priv_get_r4
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  function priv_vtime(F_stepno,F_vtime) result(F_status)
+
+    ! Input variables
+    integer, intent(in) :: F_stepno                     !Step number
+    
+    ! Output variables
+    integer, intent(out) :: F_vtime                     !Valid time for data (CMC datestamp)
+    integer :: F_status                                 !Return status for function
+
+    ! Internal parameters
+    real(kind=8), parameter :: SEC_IN_DAY=86400.d0      !Number of seconds in a day
+
+    ! Internal variables
+    character(len=SHORT_CHAR) :: valid_date
+
+    ! Set return status
+    F_status = PD_ERROR
+    call incdatsd(valid_date,start_date,(timestep*dble(F_stepno)/SEC_IN_DAY))
+
+    ! Set start date value
+    call datp2f(F_vtime,valid_date)
+
+    ! Produce diagnostic output on request
+    if (debug) write(STDOUT,*) 'phydata::priv_vtime valid date '//trim(valid_date)//' as ',F_vtime
+
+    ! Set success status and return
+    F_status = PD_OK
+    return
+
+  end function priv_vtime
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!                       NETCDF Utilities                                  !
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  function priv_ncopen(F_name,F_unit) result(F_status)
+    ! Open a netcdf file.
+    use netcdf, only:nf90_open,NF90_NOERR,NF90_NOWRITE
+
+    ! Input variables
+    character(len=*), intent(in) :: F_name              !Input file name
+
+    ! Output variables
+    integer, intent(out) :: F_unit                      !Input file unit number
+    integer :: F_status                                 !Return status for function
+
+    ! Set return status
+    F_status = PD_ERROR
+
+    ! Open input file
+    if (nf90_open(F_name,NF90_NOWRITE,F_unit) /= NF90_NOERR) then
+       write(STDERR,*) 'phydata::priv_ncopen cannot open netcdf file '//trim(F_name)
+       return
+    endif
+
+    ! Set success status and return
+    F_status = PD_OK
+    return
+  end function priv_ncopen
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  function priv_ncclose(F_unit) result(F_status)
+    ! Close a netcdf file.
+    use netcdf, only:nf90_close,NF90_NOERR
+
+    ! Input variables
+    integer, intent(in) :: F_unit                       !Input file unit number
+
+    ! Output variables
+    integer :: F_status                                 !Return status for function
+
+    ! Set return status
+    F_status = PD_ERROR
+
+    ! Open input file
+    if (nf90_close(F_unit) /= NF90_NOERR) then
+       write(STDERR,*) 'phydata::priv_ncclose cannot close netcdf file unit ',F_unit
+       return
+    endif
+
+    ! Set success status and return
+    F_status = PD_OK
+    return
+  end function priv_ncclose
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  function priv_nctime(F_vtime) result(F_status)
+    ! Set time information for a netcdf file.
+    use netcdf, only:nf90_inq_dimid,nf90_inquire_dimension,nf90_inq_varid, &
+         nf90_inquire_variable,nf90_get_var,NF90_MAX_VAR_DIMS,NF90_FLOAT, &
+         NF90_DOUBLE,NF90_NOERR
+
+    ! Input variables
+    integer, intent(in) :: F_vtime                      !Valid time for data (CMC datestamp)
+    
+    ! Output variables
+    integer :: F_status                                 !Return status for function
+
+    ! Internal parameters
+    character(len=SHORT_CHAR), parameter :: TIME_DIM='time'      !Name of the time dimension in file
+    character(len=SHORT_CHAR), parameter :: time_name='time'     !Name of the time variable in file
+    character(len=SHORT_CHAR), parameter :: time_type='relative' !Type of time variable in file
+    character(len=SHORT_CHAR), parameter :: time_units='s'       !Units of the time variable in file
+
+    ! Internal variables
+    integer :: dimid,varid,xtype,ndims,dateo,istat,t
+    integer, dimension(NF90_MAX_VAR_DIMS) :: dimids
+    real :: sec
+    real, dimension(:), allocatable :: rtimes
+    real(kind=8), dimension(:), pointer, save :: times=>null()
+    real(kind=8) :: hour
+
+    ! Set return status
+    F_status = PD_ERROR
+
+    ! Return if step matches current step
+    if (filetime%valid == F_vtime) then
+       F_status = PD_OK
+       return
+    endif
+
+    ! Get time dimension and variable information
+    if (.not.associated(times)) then
+       if (nf90_inq_dimid(funit,TIME_DIM,dimid) /= NF90_NOERR) then
+          write(STDERR,*) 'phydata::priv_nctime cannot find '//trim(TIME_DIM)//' dimension'
+          return
+       endif
+       if (nf90_inquire_dimension(funit,dimid,len=filetime%ntimes) /= NF90_NOERR) then
+          write(STDERR,*) 'phydata::priv_nctime cannot query '//trim(TIME_DIM)//' dimension'
+          return
+       endif
+       filetime%ip = 1; filetime%in = 2
+       if (nf90_inq_varid(funit,time_name,varid) /= NF90_NOERR) then
+          write(STDERR,*) 'phydata::priv_nctime cannot find '//trim(time_name)//' variable'
+          return
+       endif
+       if (nf90_inquire_variable(funit,varid,xtype=xtype,ndims=ndims,dimids=dimids) /= NF90_NOERR) then
+          write(STDERR,*) 'phydata::priv_nctime cannot query '//trim(time_name)//' variable'
+          return
+       endif
+       if (ndims > 1 .or. .not.all(dimids(1:ndims) == dimid)) then
+          write(STDERR,*) 'phydata::priv_nctime time variable/dimension mismatch'
+          return
+       endif
+       allocate(times(filetime%ntimes),stat=istat)
+       if (istat /= 0) then
+          write(STDERR,*) 'phydata::priv_nctime allocate space for time list ',filetime%ntimes
+          return
+       endif
+       select case(xtype)
+       case (NF90_FLOAT)
+          allocate(rtimes(filetime%ntimes),stat=istat)
+          if (nf90_get_var(funit,varid,values=rtimes) /= NF90_NOERR) then
+             write(STDERR,*) 'phydata::priv_nctime error reading float time record'
+             deallocate(rtimes)
+             deallocate(times)
+             return
+          endif
+          times = dble(rtimes)
+          deallocate(rtimes)
+       case (NF90_DOUBLE)
+          if (nf90_get_var(funit,varid,values=times) /= NF90_NOERR) then
+             write(STDERR,*) 'phydata::priv_nctime error reading dble time record'
+             deallocate(times)
+             return
+          endif
+       case DEFAULT
+          write(STDERR,*) 'phydata::priv_nctime cannot read unknown time record type ',xtype
+          deallocate(times)
+          return
+       end select
+    endif
+
+    ! Convert current time into decimal for comparison
+    select case (time_type)
+    case ('relative')
+       call datp2f(dateo,start_date)
+       call difdatr(F_vtime,dateo,hour)
+       sec = real(hour)*3600
+    case DEFAULT
+       write(STDERR,*) 'phydata::priv_nctime unsupported type type '//trim(time_type)
+       return
+    end select
+
+    ! Continue search through time dimension for current position
+    t = filetime%ip
+    do while (sec > times(t) .and. t <= filetime%ntimes)
+       t = t+1
+    enddo
+    if (t > filetime%ntimes) then
+       write(STDERR,*) 'phydata::priv_nctime exceeded input data time length'
+       return
+    endif
+    filetime%ip = max(t-1,1)
+    filetime%in = t
+    if (filetime%ip == filetime%in) then
+       filetime%pweight = 1.
+    else
+       filetime%pweight = 1. - (sec - times(filetime%ip))/(times(filetime%in)-times(filetime%ip))
+    endif
+
+    ! Set success status and return
+    F_status = PD_OK
+    return
+  end function priv_nctime
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  function priv_ncget_r4(F_name,F_vtime,F_value) result(F_status)
+    ! Read from a netcdf file.
+    use netcdf, only:nf90_inq_varid,nf90_inquire_variable,nf90_get_var, &
+         NF90_MAX_VAR_DIMS,NF90_FLOAT,NF90_NOERR
+
+    ! Input variables
+    character(len=*), intent(in) :: F_name              !Field name in the input file
+    integer, intent(in) :: F_vtime                      !Valid time for data (CMC datestamp)
+
+    ! Output variables
+    real, intent(out) :: F_value                        !Value of the field
+    integer :: F_status                                 !Return status for function
+
+    ! Internal variables
+    integer :: varid,xtype,ndims
+    integer, dimension(NF90_MAX_VAR_DIMS) :: dimids
+    real, dimension(2) :: fld
+
+    ! Set return status
+    F_status = PD_ERROR
+
+    ! Set time information for file
+    if (priv_nctime(F_vtime) /= PD_OK) then
+       write(STDERR,*) 'phydata::priv_ncget_r4 cannot get time information for ',F_vtime
+       return
+    end if
+
+    ! Retrieve field from file
+    if (nf90_inq_varid(funit,F_name,varid) /= NF90_NOERR) then
+       write(STDERR,*) 'phydata::priv_ncget_r4 cannot find '//trim(F_name)//' variable'
+       return
+    endif
+    if (nf90_inquire_variable(funit,varid,xtype=xtype,ndims=ndims,dimids=dimids) /= NF90_NOERR) then
+       write(STDERR,*) 'phydata::priv_ncget_r4 cannot query '//trim(F_name)//' variable'
+       return
+    endif
+    if (ndims > 1) then
+       write(STDERR,*) 'phydata::priv_ncget_r4 found multi-dimensional field in '//trim(F_name)
+       return
+    endif
+    if (xtype /= NF90_FLOAT) then
+       write(STDERR,*) 'phydata::priv_ncget_r4 supports only 4-byte floating point records'
+       return
+    endif
+    if (nf90_get_var(funit,varid,values=fld,start=(/filetime%ip/),count=(/size(fld)/)) /= NF90_NOERR) then
+       write(STDERR,*) 'phydata::priv_ncget_r4 error reading '//trim(F_name)//' record'
+       return
+    endif
+
+    ! Linear time interpolation
+    F_value = filetime%pweight*fld(1) + (1.-filetime%pweight)*fld(2)
+
+    ! Set success status and return
+    F_status = PD_OK
+    return
+  end function priv_ncget_r4
+
+end module phydata_mod
+

@@ -1,0 +1,98 @@
+#!/bin/ksh
+
+# Retrieve command line arguments
+arguments=$*
+script_name="scmdev.dot"
+usage="Usage: . ${script_name} EXP_NAME [options]"
+
+# Check that the user is sourcing this script
+if [[ "${0##*/}" == ${script_name} ]] ; then
+    echo "This script should be sourced with \`. ${0}\`"
+    exit 1
+fi
+
+# Process command line arguments
+eval $(cclargs scmdev.dot "[Create a SCM development experiment]" \
+    -dev	   ""      ""     "[SCM develompent directory base path]" \
+    -case   "gabls-3" ""   "[Default SCM case to extract]" \
+    -f      "0"     "1"    "[Force overwrite of existing directories]" \
+    -update ""      ""     "[List of additional packages to load]" \
+    -cd     "0"     "1"    "[Change to model development directory upon completion]" \
+    -v      "0"     "1"    "[Verbose output]" \
+    -vv     "0"     "1"    "[Very verbose output]" \
+    ++ $arguments | sed 's/exit/return/')
+exp=$*
+if [[ $# -ne 1 ]] ; then echo ${usage} 1>&2 ; return 1 ; fi
+initial_dir=$(pwd)
+if [[ ${vv} -gt 0 ]] ; then v=${vv} ; fi
+
+# Create development experiment home
+if [[ -n "${dev}" ]] ; then
+    case ${dev} in
+       /*) dev_home=${dev}/${exp} ;;
+        *) dev_home=${initial_dir}/${dev}/${exp} ;;
+    esac
+else
+    dev_home=${home_model:-${HOME}/home}/scm/${SCM_MODEL_BNDL##*/}/${exp}
+fi
+if [[ ${v} -gt 0 ]] ; then echo "Creating SCM development directory at ${dev_home}" ; fi
+if [[ -e ${dev_home} ]] ; then
+  if [[ ${f} -gt 0 ]] ; then
+      rm -fr ${dev_home}
+  else
+      echo "Development directory ${dev_home} already exists, use -f to overwrite" 1>&2
+      return 1
+  fi
+fi
+mkdir -p ${dev_home}
+
+# Update environment
+if [[ -n "${SCM_DEV_UPDATES}" && "${SCM_DEV_UPDATES}" != "${update}" ]] ; then
+   echo "Conflicting updates (${SCM_DEV_UPDATES}) and (${update})" 1>&2
+   printf "\nStart another shell for your new experiment\n\n" 1>&2
+   return 1
+fi
+if [[ -n "${update}" ]] ; then
+   r.check_shortcuts ${update}
+   if [[ $? -ne 0 ]] ; then
+      echo "One of more of the updates cannot be applied: ${update}" 1>&2
+      return 1
+   fi
+   if [[ ${vv} -gt 0 ]] ; then
+      . r.load.dot ${update} 
+   else
+      . r.load.dot ${update} >/dev/null 2>&1
+   fi
+fi
+export SCM_DEV_UPDATES=${update}
+
+# Finalise experiment directory setup
+cd ${dev_home}
+export SCM_DEV_EXP=${dev_home}
+forced=
+if [[ ${f} -gt 0 ]] ; then
+    forced=-f
+fi
+if [[ ${v} -gt 0 ]] ; then echo "Setting up SCM development experiment:" ; fi
+if [[ ${vv} -gt 0 ]] ; then
+    ouv_exp_scm -v
+    linkit -v ${forced}
+else
+    if [[ ${v} -gt 0 ]] ; then echo "  Opening experiment" ; fi
+    ouv_exp_scm >/dev/null 2>&1
+    if [[ ${v} -gt 0 ]] ; then echo "  Creating links" ; fi
+    linkit ${forced} >/dev/null
+fi
+if [[ ${v} -gt 0 ]] ; then echo "  Extracting ${case} case configuration" ; fi
+scmcase -get ${case} || printf "Run the following to get information about available case configurations:\n\n   scmcase -list\n\n"
+
+# Leave the user in the requested location
+if [[ ${cd} -gt 0 ]] ; then
+    cd ${dev_home}
+else
+    cd ${initial_dir}
+    printf "\nCreated SCM development directory ${dev_home}\n\n"
+fi
+
+# Garbage collection
+while [[ -n "${1}" ]] ; do shift ; done

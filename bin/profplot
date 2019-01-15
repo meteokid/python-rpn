@@ -1,0 +1,174 @@
+#!/usr/bin/env python
+
+import optparse
+import subprocess
+import glob,re
+import sys,os
+import ConfigParser
+
+def default_yaxis(config,coord):
+    """Set default values for the specified coordinate"""
+    if (coord == 'HGHT'):
+        ybot = 0.
+        ytop = 10000.
+    elif (coord in 'PRES'):
+        ybot = config.get('profplot','yaxis_bottom_pressure')
+        ytop = config.get('profplot','yaxis_top_pressure')
+    else:
+        ybot = 1.
+        ytop = 0.
+    return((str(ybot),str(ytop)))
+
+def check_coord(option,opt_str,value,parser):
+    """Check the coordinate option provided by the user and map to coordinate file name"""
+    import string
+    valid_coords = {'P':'PRES','Z':'HGHT','H':'HYB','S':'SIG'}
+    ustring = value.upper()
+    if not ustring in valid_coords.keys():
+        sys.stderr.write("\n"+option.help+"\n\n")
+        raise optparse.OptionValueError("{0} is not a valid COORDINATE (see list above)".format(value))
+    setattr(parser.values,option.dest,valid_coords[ustring])
+
+
+
+if __name__ == "__main__":
+
+    # Set local default values
+    xlow_default = '-Inf'
+    xhigh_default = 'Inf'
+
+    # Retrieve user configuration
+    config = ConfigParser.SafeConfigParser()
+    config.read([os.path.join(os.getenv('scm'),'share','default_config'),os.path.join(os.getenv('HOME'),'.scmrc')])
+    if not config.has_section('profplot'): config.add_section('profplot')
+    show_default = config.get('profplot','display_application')
+    collist_default = config.get('profplot','colour_list')
+
+
+    # Command line argument parsing
+    usage = "Usage: %prog [options] PATHS"
+    parser = optparse.OptionParser(usage=usage)
+    parser.add_option("-v","--var",dest="var",default=[],action="append",
+                      help="VARIABLE name to plot",metavar="VARIABLE")
+    parser.add_option("-t","--time",dest="time",default='0h',
+                      help="Forecast TIME to plot (*h*m*s)")
+    parser.add_option("-l","--levtype",dest="levtype",default='T',
+                      help="level TYPE (M-momentum; T-thermo)",metavar="TYPE")
+    parser.add_option("-r","--coord",dest="coord",action="callback",default='PRES',
+                      help="vertical COORDINATE (p-pressure; z-height; h-hybrid; s-sigma)",
+                      type="string",metavar="COORDINATE",callback=check_coord)
+    parser.add_option("-x","--xaxis",dest="xaxis",default=xlow_default+':'+xhigh_default,
+                      help="low:high x-axis values for plot")
+    parser.add_option("-y","--yaxis",dest="yaxis",default='',
+                      help="bottom:top pressures for plot (hPa)")
+    parser.add_option("-c","--colours",dest="collist",default=collist_default,
+                      help="comma-separated list of colours to use for plot lines")
+    parser.add_option("-p","--points",dest="points",default=0,
+                      help="plotting symbol to use for each level (see \"pch\" in 'echo \"?points\" | R --no-save'")
+    parser.add_option("-g","--legend",dest="legend",default="bottomright",
+                      help="legend position [bottomright]")
+    parser.add_option("-z","--zero",dest="zero",default=False,action="store_true",
+                      help="add zero-line to plot")
+    parser.add_option("-n","--no-diag",dest="nodiag",default=False,action="store_true",
+                      help="suppress plotting of diagnostic level values")
+    parser.add_option("-d","--device",dest="device",default='png',
+                      help="plotting DEVICE (jpeg,[png],ps)",metavar="DEVICE")
+    parser.add_option("-s","--show",dest="show",default=show_default,
+                      help="show plot with APP",metavar="APP")
+    parser.add_option("-b","--batch",dest="batch",default=False,action="store_true",
+                      help="batch mode without plot display (supercedes -s)")
+    (options,args) = parser.parse_args()
+
+    # Check for at least one path
+    if len(args) < 1:
+        parser.print_usage()
+        sys.exit(1)
+
+    # Check for a single matching output file
+    for path in args:
+        files = ''
+        for var in options.var:
+            flist = glob.glob(os.path.join(path,'series',var)+'_[0-9]*.txt')
+            if len(flist) > 1:
+                sys.stderr.write('Error: multiple matches for '+var+' SCM output in '+path+'\n')
+                sys.exit(1)
+            else:
+                try:
+                    files = files+os.path.basename(flist[0])+','
+                except IndexError:
+                    sys.stderr.write('Error: SCM output for '+var+' does not exist in '+path+'\n')
+                    sys.exit(1)
+        files = files.rstrip(',')
+ 
+    # Compute prog time to plot
+    times_default = '0h'
+    times_user = enumerate(re.split(':',options.time))
+    times = [next(times_user,(0,times_default))[1] for i in range(0,3)]
+    if times[2] == times_default: times[2] = times[1] #user did not provide an increment
+    fcst = []
+    for time in times:
+        prog = {}
+        for entry in ['h','m','s']:
+            try:
+                prog[entry] = int(re.search('(\d+)'+entry,time).group(1))
+            except AttributeError:
+                prog[entry] = 0
+        fcst.append(3600*prog['h'] + 60*prog['m'] + prog['s'])
+    try:
+        fcstlist = range(fcst[0],fcst[1],fcst[2])
+        fcstlist.append(fcst[1])
+    except ValueError:
+        fcstlist = [fcst[0]]
+
+    # Check for the existance of the coordinate file
+    coord_file = glob.glob(os.path.join(path,'coord',options.coord+options.levtype)+'_[0-9]*.txt')
+    if len(coord_file) > 1:
+        sys.stderr.write('Error: multiple matches for coordinate file '+coord_file+'\n')
+        sys.exit(1)
+    elif len(coord_file) == 0:
+        sys.stderr.write('Error: cannot locate coordinate file at '+coord_file+'\n')
+        sys.exit(1)
+
+    # Compute ranges for plot axes
+    xlim = re.split(':',options.xaxis)
+    xlow = xlim[0] or xlow_default
+    try:
+        xhigh = xlim[1] or xhigh_default
+    except IndexError:
+        xhigh = xhigh_default
+    (ybot_default,ytop_default) = default_yaxis(config,options.coord)
+    ylim = re.split(':',options.yaxis)
+    ybot = ylim[0] or ybot_default
+    try:
+        ytop = ylim[1] or ytop_default
+    except IndexError:
+        ytop = ytop_default
+
+    # Call R script for plotting
+    script_path = os.path.dirname(os.path.abspath(sys.argv[0]))
+    command = 'R'+' --no-save --no-restore --args '+files+' '+','.join(["%s" % e for e in fcstlist])+' '+ \
+              options.levtype+' '+options.coord+' '+ytop+' '+ybot+' '+xlow+' '+xhigh+' '+options.legend+' '+ \
+              options.device+' '+str(options.zero)+' '+str(options.nodiag)+' '+str(options.collist)+' '+ \
+              str(options.points)+' '+' '.join(args)+' <'+os.path.join(script_path,'profile.R')
+    p = subprocess.Popen(command,shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    error_message = p.stderr.read().rstrip('\n')
+    output_message = p.stdout.read().rstrip('\n')
+    ipcfile = '.prof_outname'
+    if error_message:
+        sys.stderr.write(error_message)
+    else:
+        try:
+            fd = open(ipcfile,'r')
+            ofile = fd.read()
+        except:
+            sys.stderr.write("Hmmmm ... looks like the plot wasn't generated correctly\n")
+            sys.stderr.write(error_message)
+            sys.exit(1)
+        fd.close()
+        sys.stdout.write('Generated '+ofile)
+        if (options.show and not options.batch):
+            try:
+                subprocess.call(options.show+' '+ofile,shell=True)
+            except KeyboardInterrupt:
+                pass
+        os.remove(ipcfile)

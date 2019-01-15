@@ -1,0 +1,202 @@
+#!/bin/ksh
+
+myself=$0
+DESC='Open a new RDE experiment with pre-set SRCPATH for SCM'
+USAGE="USAGE: ${myself##*/} [-h] [-v]"
+
+eval $(rdevar --shdump)
+
+#---- Functions ------------------------------------------------------
+#====
+usage_long() {
+         toto=$(echo -e $USAGE)
+         more <<EOF
+$DESC
+
+$toto
+
+Options:
+    -h, --help     : print this help
+    -v, --verbose  : increase verbosity
+    -q, --quiet    : quiet mode
+    -f, --force    : replace existing source path file if any
+        --nodeps   : only scm (no dependencies)
+Will produce SRCPATH for all known ARCH ${CONST_RDE_KNOWN_BASE_ARCH_LIST}
+
+EOF
+}
+
+_verbose=0
+_quiet=0
+myforce=0
+dodeps=1
+EC_ARCH_LIST="${EC_ARCH_LIST:-${CONST_RDE_KNOWN_BASE_ARCH_LIST}}"
+#TODO: 
+while [[ $# -gt 0 ]] ; do
+   case $1 in
+      (-h|--help) usage_long; exit 0;;
+      (-v|--verbose) ((_verbose=_verbose+1));;
+      (-q|--quiet) _verbose=0; _quiet=1;;
+      (-f|--force) myforce=1 ;;
+      (--nodeps) dodeps=0 ;;
+      (-*|*) echo "ERROR: Unrecognized option $1"
+         echo -e $USAGE
+         echo "---- ABORT ----"
+         exit 1;;
+   esac
+   shift
+done
+
+myverbose=
+[[ ${_verbose} -gt 1 ]] && myverbose=-v || true
+
+if [[ x${myforce} == x1 ]] ; then
+   srcpathfile=${CONST_SRCPATHFILE}
+   rm -f ${srcpathfile:-.rde.srcpath.dot}
+fi
+
+
+if [[ x${modelutils} == x || ! -d ${modelutils}/src ]] ; then
+	 cat <<EOF
+ERROR: \${modelutils} not defined or src dir does not exist
+       modelutils=${modelutils}
+       Cannot setup the experiment directory
+
+       Please make sure you loaded the full SCM development environment
+---- ABORT ----
+EOF
+	 exit 1
+fi
+if [[ x${rpnphy} == x || ! -d ${rpnphy}/src ]] ; then
+	 cat <<EOF
+ERROR: \${rpnphy} not defined or does not exists
+       rpnphy=${rpnphy}
+       Cannot setup the experiment directory
+
+       Please make sure you loaded the full SCM development environment
+---- ABORT ----
+EOF
+	 exit 1
+fi
+if [[ x${scm} == x || ! -d ${scm}/src ]] ; then
+	 cat <<EOF
+ERROR: \${scm} not defined or does not exists
+       scm=${scm}
+       Cannot setup the experiment directory
+
+       Please make sure you loaded the full SCM development environment
+---- ABORT ----
+EOF
+	 exit 1
+fi
+
+VALIDEXT="${CONST_RDESUFFIXINC} ${CONST_RDESUFFIXSRC}"
+VALIDEXTWILD="$(echo ${VALIDEXT} | sed 's|\.|*.|g') $(echo ${VALIDEXT} | sed 's|\.|*/*.|g') $(echo ${VALIDEXT} | sed 's|\.|*/*/*.|g')"
+
+rpnpy_src=/dev/null
+rpnpy_include=/dev/null
+
+export RDE_COMPONENTS="rde rpnpy modelutils rpnphy scm ${RDE_COMPONENTS}"
+SRCLIST="${scm}/src"
+INCLIST="${modelutils}/include ${rpnphy}/include ${scm}/include"
+TOPDIRS="${scm}"
+
+# if [[ ${dodeps} == 1 ]] ; then
+#    SRCLIST="${modelutils}/src ${rpnphy}/src ${scm}/src"
+#    INCLIST="${modelutils}/include ${rpnphy}/include ${scm}/include"
+#    TOPDIRS="${modelutils} ${rpnphy} ${scm}"
+# fi
+if [[ ${dodeps} == 1 ]] ; then
+   for item in ${RDE_COMPONENTS} ; do
+      maindir="$(eval echo \${${item}})"  #TODO: ${!item}
+      if [[ x${maindir} != x ]] ; then
+
+         incdir="$(eval echo \${${item}_include})"  #TODO: item2=${item}_include; ${!item2}
+         incdir="${incdir:-${maindir}/include}"
+         incdir0="${incdir}"
+         if [[ ! -d ${incdir} ]] ; then
+            incdir=""
+         fi
+
+         srcdir="$(eval echo \${${item}_src})"  #TODO: item2=${item}_src; ${!item2}
+         srcdir="${srcdir:-${maindir}/src}"
+         srcdir0="${srcdir}"
+         if [[ ! -d ${srcdir} ]] ; then
+            srcdir=""
+            if [[ -d ${maindir} && x"${incdir}" == x"" \
+                  && x"${incdir0}" != x"/dev/null" ]] ; then
+               [[ x"$(cd ${maindir} && ls ${VALIDEXTWILD} 2>/dev/null)" != x"" ]] && srcdir="${maindir}" || true
+            fi
+         fi
+
+         bindir="$(eval echo \${${item}_bin})"  #TODO: item2=${item}_bin; ${!item2}
+         bindir="${bindir:-${maindir}/bin}"
+         if [[ ! -d ${bindir} ]] ; then
+            bindir=""
+            if [[ -d ${maindir} && x"${incdir}${srcdir}" == x"" \
+                  && x"${incdir0}" != x"/dev/null" \
+                  && x"${srcdir0}" != x"/dev/null" ]] ; then
+               bindir="${maindir}"
+            fi
+         fi
+
+         if [[ ${_verbose} != 0 ]] ; then
+            if [[ ${_verbose} -gt 1 ]] ; then
+               echo "Adding ${item}: ${maindir} : inc=${incdir} : src=${srcdir} : bin=${bindir}"
+            else
+               echo "Adding ${item}: ${maindir}"
+            fi
+         fi
+         SRCLIST="${SRCLIST} ${srcdir}"
+         INCLIST="${INCLIST} ${incdir}"
+         BINLIST="${BINLIST} ${bindir}"
+         if [[ x"${incdir}${srcdir}${bindir}" != x"" ]] ; then
+            TOPDIRS="${TOPDIRS} ${maindir}"
+         fi
+      fi
+   done
+fi
+
+rm -f ${CONST_SRCPATHFILE}
+for myarch in $EC_ARCH_LIST ; do
+   myarchold=$(rdevar --arch ${myarch} base_arch)
+   if [[ "x${myverbose}" == "x-v" ]] ; then
+      echo "+ rdeaddsrc ${myverbose} -R --arch ${myarchold} --reset --topdirs '${TOPDIRS}' ${SRCLIST}"
+   fi
+   rdeaddsrc ${myverbose} -R --arch ${myarchold} --reset --topdirs "${TOPDIRS}" ${SRCLIST}
+
+   if [[ "x${myverbose}" == "x-v" ]] ; then
+      echo "+ rdeaddsrc ${myverbose} -R --arch ${myarchold} --reset --include ${INCLIST}"
+   fi
+   rdeaddsrc ${myverbose} -R --arch ${myarchold} --reset --include ${INCLIST}
+
+done
+
+_setenvfile=${CONST_RDE_SETENV_DOT}
+cat > ${_setenvfile} <<EOF
+if [[ -z "\${SCM_MODEL_BNDL}" ]] ; then
+   . r.load.dot ${SCM_MODEL_BNDL}
+elif [[ \${SCM_MODEL_BNDL} != ${SCM_MODEL_BNDL} ]] ; then
+   cat 1>&2 <<EOF1
+
+   ** WARNING **
+   Mismatch of current \${SCM_MODEL_BNDL} in your environment and the experiment ${SCM_MODEL_BNDL} in ${refload}
+   You should probably load this experiment in a new shell.
+
+EOF1
+fi
+if [[ -n "${SCM_DEV_UPDATES}" ]] ; then . r.load.dot ${SCM_DEV_UPDATES} ; fi
+export SCM_DEV_UPDATES="${SCM_DEV_UPDATES}"
+export SCM_DEV_EXP=${SCM_DEV_EXP}
+EOF
+if [[ x${myforce} == x1 ]] ; then
+   rm -f .ssmuse_scm
+fi
+if [[ ! -f .ssmuse_scm ]] ; then
+   ln -s ${_setenvfile} .ssmuse_scm 
+fi
+
+#Clean rdevar cache
+rdevar --cc
+
+exit 0

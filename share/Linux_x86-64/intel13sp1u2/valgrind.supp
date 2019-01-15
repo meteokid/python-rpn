@@ -1,0 +1,99 @@
+{
+ cond-open
+ Memcheck:Cond
+ ...
+ fun:for_open
+ fun:prof_mod*write*
+ ...
+}
+
+{
+ undef-open
+ Memcheck:Value8
+ ...
+ fun:for_open
+ fun:prof_mod*write*
+ ...
+}
+
+{
+ cond-close
+ Memcheck:Cond
+ ...
+ fun:for_close
+ fun:prof_mod*write*
+ ...
+}
+
+{
+ undef-close
+ Memcheck:Value8
+ ...
+ fun:for_close
+ fun:prof_mod*write*
+ ...
+}
+
+{
+ undef-print
+ Memcheck:Value8
+ ...
+ fun:for_write_seq_lis
+ ...
+}
+
+{
+ cond-print
+ Memcheck:Cond
+ ...
+ fun:for_write_seq_lis
+ ...
+}
+
+{
+ inv-mpi_init8
+ Memcheck:Addr8
+ ...
+ fun:*mpi_init
+ ...
+}
+
+{
+ inv-mpi_init4
+ Memcheck:Addr4
+ ...
+ fun:*mpi_init
+ ...
+}
+
+{
+ undef-mpi_init
+ Memcheck:Value8
+ ...
+ fun:*mpi_init
+ ...
+}
+
+{
+ cond-mpi_init
+ Memcheck:Cond
+ ...
+ fun:*mpi_init
+ ...
+}
+
+{
+ cond-start_thread
+ Memcheck:Cond
+ ...
+ fun:start_thread
+ ...
+}
+
+{
+ undef-start_thread
+ Memcheck:Cond
+ ...
+ fun:start_thread
+ ...
+}

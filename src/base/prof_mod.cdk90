@@ -1,0 +1,2759 @@
+!---------------------------------- LICENCE BEGIN -------------------------------
+! SCM - Library of kernel routines for the RPN single column model
+! Copyright (C) 1990-2017 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it 
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+
+!!$#include "model_macros_f.h"
+
+module prof_mod
+  use vGrid_Descriptors, only: vgrid_descriptor
+
+  implicit none
+
+  private
+
+#include <gmm.hf>
+#include <arch_specific.hf>
+
+  ! Module parameters
+  integer, parameter, private :: STDOUT=6,STDERR=0                              !output/error file descriptors
+  integer, parameter, private :: SHORT_CHAR=16                                  !a short character string
+  integer, parameter, private :: LONG_CHAR=1024                                 !a long character string
+  integer, parameter, private :: MAX_OUTPUTS=1000                               !maximum size of output request list
+  integer, parameter, private :: MAX_LEVELS=10000                               !maximum number of vertical levels
+  integer, parameter, private :: MAX_TRACERS=1000                               !maximum number of tracers
+  real(kind=8), parameter :: SEC_IN_DAY=86400.d0                                !number of seconds in a day
+  real(kind=8), parameter :: CSTV_PREF_8=100000.d0                              !reference pressure (Pa)
+  character(len=GMM_MAXNAMELENGTH), parameter, private :: &
+       gmmk_pw_uu_plus_s='PW_UU:P', &                                           !west wind component (m/s, time plus)
+       gmmk_pw_vv_plus_s='PW_VV:P', &                                           !south wind component (m/s, time plus)
+       gmmk_pw_ww_plus_s='PW_WW:P', &                                           !vertical motion (Pa/s, time plus)
+       gmmk_pw_wz_plus_s='PW_WZ:P', &                                           !vertical motion (m/s, time plus)
+       gmmk_pw_tt_plus_s='PW_TT:P', &                                           !temperature (K, time plus)
+       gmmk_pw_pm_plus_s='PW_PM:P', &                                           !momentum level pressure (Pa, time plus)
+       gmmk_pw_pt_plus_s='PW_PT:P', &                                           !thermo level pressure (Pa, time plus)
+       gmmk_pw_gz_plus_s='PW_GZ:P', &                                           !geopotential (m^2/s^2 ASL, time plus)
+       gmmk_pw_p0_plus_s='PW_P0:P', &                                           !surface pressure (Pa, time plus)
+       gmmk_pw_uu_moins_s='PW_UU:M', &                                          !west wind component (m/s, time minus) 
+       gmmk_pw_vv_moins_s='PW_VV:M', &                                          !south wind component (m/s, time minus)
+       gmmk_pw_tt_moins_s='PW_TT:M', &                                          !temperature (K, time minus)
+       gmmk_pw_pm_moins_s='PW_PM:M', &                                          !momentum level pressure (Pa, time minus)
+       gmmk_pw_pt_moins_s='PW_PT:M', &                                          !thermodynamic level pressure (Pa, time minus)
+       gmmk_pw_gz_moins_s='PW_GZ:M', &                                          !geopotential (m^2/s^2 ASL, time minus)
+       gmmk_pw_me_moins_s='PW_ME:M', &                                          !geopotential of the surface (m^2/s^2 ASL, time minus)
+       gmmk_adv_u_s='ADV_UU', &                                                 !west wind advection tendency (m/s^2)
+       gmmk_adv_v_s='ADV_VV', &                                                 !south wind advection tendency (m/s^2)
+       gmmk_adv_t_s='ADV_TT', &                                                 !temperature advection tendency (K/s)
+       gmmk_bkg_u_s='BKG_UU', &                                                 !west wind background (m/s)
+       gmmk_bkg_v_s='BKG_VV', &                                                 !south wind background (m/s)
+       gmmk_bkg_t_s='BKG_TT', &                                                 !temperature background (K)
+       gmmk_pre_ww_s='PRE_WW', &                                                !prescribed pressure-coord vertical wind (Pa/s)
+       gmmk_pre_wz_s='PRE_WT1', &                                               !prescribed height-coord vertical wind (m/s)
+       gmmk_geo_u_s='GEO_UU', &                                                 !geostrophic west wind (m/s)
+       gmmk_geo_v_s='GEO_VV', &                                                 !geostrophic south wind (m/s)
+       gmmk_dyn_t_s='DYN_TT', &                                                 !full dynamics temperature tendency (K/s)
+       gmmk_dyn_u_s='DYN_UU', &                                                 !full dynamics west wind tendency (m/s^2)
+       gmmk_dyn_v_s='DYN_VV', &                                                 !full dynamics south wind tendency (m/s^2)
+       gmmk_pre_p0_s='PRE_P0'                                                   !prescribed surface pressure (Pa)
+
+  ! Module structures
+  type tracer                                                                   !structure containing tracer information
+     character(len=GMM_MAXNAMELENGTH) :: gmm                                    !full gmm tracer name
+     character(len=SHORT_CHAR) :: name                                          !short (FST) name of tracer
+     logical :: wload                                                           !tracer will be loaded for Tv calculation
+  end type tracer
+  type output_var                                                               !structure continaing output field information
+     character(len=LONG_CHAR) :: oname                                          !string used to create output file name 
+     character(len=LONG_CHAR) :: name                                           !physics output field name 
+     character(len=LONG_CHAR) :: format                                         !write formatting statement
+     character(len=LONG_CHAR) :: prefix                                         !file prefix (writing subdirectory)
+     logical :: need_header                                                     !header requirements
+     logical :: is_found                                                        !flag indicating presence/absence of field
+     integer :: buffer_id                                                       !unique key identifying field entry
+  end type output_var
+
+  ! Module variables
+  integer, private :: p_nk                                                      !number of vertical levels for physics
+  integer, private :: output_start                                              !step to start output
+  integer, private :: output_end                                                !step to end output
+  integer, private :: output_inc                                                !step increment for outputs
+  integer, private :: output_buffer_length                                      !number of time levels in output buffer
+  integer, private :: schm_tlift                                                !run with lowest T-level at lowest M-level
+  integer, private :: pw_diag                                                   !physical world includes diagnostic level (boolean)
+  real, private :: grd_dx                                                       !zonal grid spacing (deg)
+  real, private :: grd_dy                                                       !meridional grid spacing (deg)
+  real, private :: relax                                                        !relaxation time constant (seconds)
+  real(kind=8), private :: cstv_dt_8                                            !timestep (seconds)
+  real(kind=8), private :: cstv_ptop_8                                          !pressure of the top model level (Pa)
+  real(kind=8), dimension(2), private :: prof_point                             !lat/lon of profile point (deg)
+  real, dimension(:,:,:), allocatable, private :: output_buffer                 !output buffer to write through
+  character(len=SHORT_CHAR), private :: start_date                              !model run start date
+  character(len=SHORT_CHAR), private :: emulate                                 !driver emulation
+  character(len=SHORT_CHAR), private :: stag                                    !vertical staggering
+  character(len=LONG_CHAR), private :: path_inputs_s                            !path to input dir
+  character(len=LONG_CHAR), private :: path_outputs_s                           !path to output dir
+  character(len=SHORT_CHAR), dimension(MAX_OUTPUTS), private :: output_list     !list of requested outputs
+  logical, private :: dyn_forcings                                              !apply dynamics forcings
+  logical, private :: vstag                                                     !run with vertical staggering (T/M levels)
+  logical, private :: debug_L                                                   !emit debugging messages
+  logical, private :: allow_move                                                !allow the profile point to be moved in space
+  type(gmm_metadata), target, private :: meta2d,meta3d,meta3d_inv,meta3d_zero   !GMM metadata structs
+  type(output_var), dimension(:), pointer, private :: out_gmm,out_phy           !output field information for GMM and physics
+  type(tracer), dimension(:), pointer, private :: tracers                       !tracer description
+  type(vgrid_descriptor), save, private :: vcoord                               !vertical coordinate description
+
+  ! Export API (subprograms)
+  public :: prof_driver_init                                                    !initialization of profile driver
+  public :: prof_input_data                                                     !get input data
+  public :: prof_dyn_main                                                       !dynamics timestep
+  public :: prof_dyn_fwd                                                        !dynamics updating
+  public :: prof_set_geom                                                       !grid definition (req'd by fst2ptxt())
+  public :: prof_phy_step                                                       !physics timestep
+  public :: prof_update_GPW                                                     !update SCM heights and pressures
+  public :: prof_output                                                         !generate profile-mode outputs
+  public :: prof_timeflip                                                       !shuffle time level for state variables
+  public :: prof_driver_finalize                                                !shut down profile driver
+
+contains
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  subroutine prof_driver_init(F_step_start,F_step_end,F_withphy)
+    ! Perform necessary initializations for the driver.
+
+    implicit none
+
+    ! Output variables
+    integer, intent(out) :: F_step_start                !start timestep number
+    integer, intent(out) :: F_step_end                  !end timestep number
+    logical, intent(out) :: F_withphy                   !run with physics
+
+    ! Initialize parallel libraries
+    call prof_parallel_init()
+
+    ! Establish knowledge of task directory structure
+    call prof_base_dir_env()
+
+    ! Read profile namelist
+    call prof_nml(F_step_start,F_step_end)
+
+    ! Set up memory management subsystem
+    call prof_set_gmm()
+
+    ! Set up column geometry
+    call prof_set_geom(prof_point)
+
+    ! Set up preliminary output requests
+    call prof_output_pre_init()
+
+    ! Physics initializations
+    call prof_phy_init(F_withphy)
+
+    ! Tracer initializations
+    call prof_tracers(F_withphy)
+
+    ! Memory management subsystem
+    call prof_set_vt()
+
+    ! Finalize output requests
+    call prof_output_post_init()
+
+  end subroutine prof_driver_init
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  subroutine prof_parallel_init()
+    ! Perform necessary steps from init_component().  Initialize parallel 
+    ! libraries.
+
+    implicit none
+
+    ! Local variables
+    integer :: pe_local,pe_total,pex,pey
+
+    ! External subprograms
+    external :: utils_topology
+
+    ! Initialize RPN COMM libraries
+    pex = 0; pey = 0
+    call RPN_COMM_init(utils_topology,pe_local,pe_total,pex,pey)
+
+  end subroutine prof_parallel_init
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  subroutine prof_driver_finalize()
+    ! Perform necessary shutdown of the driver.
+
+    implicit none
+
+    ! Local variables
+    integer :: status=0
+
+    ! Shut down parallel libraries
+    call prof_parallel_finalize(status)
+
+  end subroutine prof_driver_finalize
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  subroutine prof_parallel_finalize(F_status)
+    ! Perform necessary steps for shutdown of parallel libraries.
+
+    implicit none
+
+    ! Input arguments
+    integer, intent(in) :: F_status                   !status code for finalization
+
+    ! Shut down RPN COMM libraries
+    call RPN_COMM_finalize(F_status)
+
+  end subroutine prof_parallel_finalize
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  subroutine prof_base_dir_env()
+    ! Perform necessary steps from base_dir_env().  Import the task
+    ! directory structure from the environment.
+
+    implicit none
+
+#include <clib_interface.cdk>
+#include <WhiteBoard.hf>
+
+    ! Local variables
+    integer :: err,i
+    character(len=LONG_CHAR) :: envvar,o_subdir_data,o_subdir_coord
+
+    ! Identify task directories
+    envvar = 'TASK_INPUT'
+    err = clib_getenv(trim(envvar),path_inputs_s)
+    call handle_error(err,'prof_base_dir_env','Environment variable '//trim(envvar)//' not defined')
+    envvar = 'TASK_WORK'
+    err = clib_getenv(trim(envvar),path_outputs_s)
+    call handle_error(err,'prof_base_dir_env','Environment variable '//trim(envvar)//' not defined')
+    path_outputs_s = trim(path_outputs_s)//'/spool'
+    err = clib_mkdir(trim(path_outputs_s))
+    call handle_error(err,'prof_base_dir_env','Unable to create '//trim(path_outputs_s))
+    call prof_output_prefix(o_subdir_data,o_subdir_coord)
+    err = clib_mkdir(trim(o_subdir_data))
+    call handle_error(err,'prof_base_dir_env','Unable to create '//trim(o_subdir_data))
+    err = clib_mkdir(trim(o_subdir_coord))
+    call handle_error(err,'prof_base_dir_env','Unable to create '//trim(o_subdir_coord))
+
+    ! Establish writing master for stdout of components
+    call handle_error(wb_put('model/outout/pe_master',0),'prof_base_dir_env','Adding PE master information to the whiteboard')
+
+  end subroutine prof_base_dir_env
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  subroutine prof_nml(F_step_start,F_step_end)
+    ! Read profile namelist.
+    use vGrid_Descriptors, only: vgd_new,vgd_get,VGD_OK
+    use step_mod, only: step_init,step_get,STEP_OK
+    use vgrid_wb, only: vgrid_wb_put
+
+    implicit none
+
+    ! Output variables
+    integer, intent(out) :: F_step_start                !start timestep number
+    integer, intent(out) :: F_step_end                  !end timestep number
+
+    ! Local parameters
+    real, parameter :: MISSING_POINT=-9999.
+
+    ! Local variables
+    integer :: i,iun,ier,coord_ver,step_total,nesdt
+    integer, dimension(:), pointer :: ip1m,ip1t
+    real, dimension(2) :: grd_rcoef
+    real, dimension(MAX_LEVELS) :: hyb
+    real(kind=8) :: ptop_out
+    character(len=LONG_CHAR) :: sfile,refp0_s,refp0_ls_s
+
+    ! External subprograms
+    integer, external :: fnom,fclos
+
+    ! Namelist definition
+    namelist /scm_cfgs/ relax,grd_dx,grd_dy,output_start, &
+         output_end,output_inc,output_list,prof_point,debug_L, &
+         hyb,grd_rcoef,cstv_ptop_8,emulate,stag,dyn_forcings,  &
+         schm_tlift,allow_move,output_buffer_length
+
+    ! Initializations
+    relax = -1.
+    grd_dx = 1.
+    grd_dy = 1.
+    output_start = 0
+    output_end = -1
+    output_inc = 1
+    output_list = ''
+    output_buffer_length = -1
+    prof_point = (/MISSING_POINT,MISSING_POINT/)
+    debug_L = .false. 
+    cstv_ptop_8 = 100d0
+    grd_rcoef = (/1.,1./)
+    hyb = -1.
+    emulate = 'none'
+    stag = 'cp'
+    dyn_forcings = .true.
+    schm_tlift = 0
+    allow_move = .false.
+
+    ! Open and read from settings file
+    sfile = trim(path_inputs_s)//'/model_settings.nml'
+    iun = 0
+    ier = fnom(iun,trim(sfile),'SEQ+OLD',0)
+    call handle_error(ier,'prof_nml','Opening settings file '//trim(sfile))
+    rewind(iun)
+    read(iun,nml=scm_cfgs,err=100)
+    ier = fclos(iun)
+    call handle_error(ier,'prof_nml','Closing settings file '//trim(sfile))
+
+    ! Read from the step namelist to fill package requirements
+    call handle_error_l(step_init(sfile)==STEP_OK,'prof_nml','Reading step namelist from '//trim(sfile))
+    call handle_error_l(step_get('step_runstrt_s',start_date)==STEP_OK,'prof_nml','Retrieving step_runstr_s from step package')
+    call handle_error_l(step_get('step_total',step_total)==STEP_OK,'prof_nml','Retrieving step_total from step package')
+    call handle_error_l(step_get('step_dt_8',cstv_dt_8)==STEP_OK,'prof_nml','Retrieving step_dt_8 from step package')
+    call handle_error_l(step_get('step_nesdt',nesdt)==STEP_OK,'prof_nml','Retrieving step_nesdt from step package')
+
+    ! Check that a profile point is defined
+    call handle_error_l(any(abs(prof_point-MISSING_POINT)>epsilon(MISSING_POINT)),'prof_nml', &
+         'Profile point (prof_point) must be defined in '//trim(sfile))
+
+    ! Check that the vertical coordinate is defined
+    call handle_error_l(any(hyb>0.),'prof_nml','Coordinate (hyb) must be defined in '//trim(sfile))
+    p_nk = 1
+    do while (hyb(p_nk) > 0.)
+       p_nk = p_nk+1
+    enddo
+
+    ! Write settings to listing
+    write(STDOUT,nml=scm_cfgs)
+
+    ! Generate vertical grid structure
+    pw_diag = 1
+    select case (trim(stag))
+    case ('none')
+       hyb(p_nk) = 1.
+       vstag = .false.
+       ier = vgd_new(vcoord,kind=5,version=1,hyb=hyb(1:p_nk), &
+            rcoef1=grd_rcoef(1),ptop_8=cstv_ptop_8,pref_8=CSTV_PREF_8)
+    case ('cp')
+       vstag = .true.
+       pw_diag = 0
+       select case (schm_tlift)
+       case (0)
+          coord_ver = 5
+       case (1)
+          coord_ver = 3
+          call handle_error(-1,'prof_nml','Schm_Tlift is not supported in this version of the SCM')
+       case DEFAULT
+          call handle_error(-1,'prof_nml','Invalid entry for Schm_Tlift.  See documentation for valid T-level lifting options')
+       end select
+       ier = vgd_new(vcoord,kind=5,version=coord_ver,hyb=hyb(1:p_nk-1),rcoef1=grd_rcoef(1),rcoef2=grd_rcoef(2), &
+            pref_8=CSTV_PREF_8,ptop_out_8=cstv_ptop_8,dhm=0.,dht=0.)
+    case DEFAULT
+       call handle_error(-1,'prof_nml','Unknown staggering '//trim(stag)//' requested.  See documentation for valid staggering options')
+    end select
+    call handle_error_l(ier==VGD_OK,'prof_nml','Generating VGD structure')
+
+    ! Fill vertical coordinate information for physics reads
+    nullify(ip1m,ip1t)
+    refp0_s = 'PW_P0:P'
+    refp0_ls_s = ' ' !Sleeve coordinates not supported in SCM
+    call handle_error_l(vgd_get(vcoord,'VIPM - IP1 MOMENTUM',ip1m)==VGD_OK,'prof_nml','Retrieving IP1(M)')
+    call handle_error(vgrid_wb_put('ref-m',vcoord,ip1m,refp0_s,refp0_ls_s,F_overwrite_L=.true.),'prof_nml','Creating vgrid_wb entry for IP1(M)')
+    call handle_error_l(vgd_get(vcoord,'VIPT - IP1 THERMO',ip1t)==VGD_OK,'prof_nml','Retrieving IP1(T)')
+    call handle_error(vgrid_wb_put('ref-t',vcoord,ip1t,refp0_s,refp0_ls_s,F_overwrite_L=.true.),'prof_nml','Creating vgrid_wb entry for IP1(T)')
+    nullify(ip1m,ip1t)
+
+    ! Set size for output buffer
+    if (output_buffer_length < 0) output_buffer_length = step_total+1
+    output_buffer_length = min(output_buffer_length,step_total+1)
+
+    ! Set return variables
+    F_step_start = 0
+    F_step_end = step_total
+
+    ! Return on success
+    return
+
+    ! Error encountered during read
+100 ier = fclos(iun)
+    call handle_error(-1,'prof_nml','Reading from settings file '//trim(sfile))
+
+  end subroutine prof_nml
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  subroutine prof_set_gmm()
+    ! Perform necessary steps from set_gmm().  Create GMM metadata structures
+    ! applicable for surface (meta2d) and profile (meta3d_?) variables.
+
+    implicit none
+
+    ! Initialize gmm metadata
+    call gmm_build_meta2D(meta2d, &
+         1,1,0,0,1, &
+         1,1,0,0,1, &
+         0,GMM_NULL_FLAGS)
+    call gmm_build_meta3D(meta3d, &
+         1,1,0,0,1, &
+         1,1,0,0,1, &
+         1,p_nk+(pw_diag-1),0,0,p_nk+(pw_diag-1), &
+         0,GMM_NULL_FLAGS)
+    call gmm_build_meta3D(meta3d_inv, &
+         1,1,0,0,1, &
+         1,1,0,0,1, &
+         1,p_nk+(pw_diag-1),0,0,p_nk+(pw_diag-1), &
+         0,GMM_FLAG_INAN)
+    call gmm_build_meta3D(meta3d_zero, &
+         1,1,0,0,1, &
+         1,1,0,0,1, &
+         1,p_nk+(pw_diag-1),0,0,p_nk+(pw_diag-1), &
+         0,GMM_FLAG_IZER)
+
+  end subroutine prof_set_gmm
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  subroutine prof_tracers(F_withphy)
+    ! Perform necessary steps from tracers().  Find all tracers on the
+    ! dynamics bus and append HU (specific humidity) if necessary.
+    use phy_itf, only: phymeta,phy_getmeta
+
+    implicit none
+
+#include <clib_interface.cdk>
+#include <rmnlib_basics.hf>
+
+    ! Input arguments
+    logical, intent(in) :: F_withphy                   !run with physics
+
+    ! Local variables
+    integer :: i,k,indx1,ntr,err,needinit,nvars,istat
+    character(len=SHORT_CHAR) :: bus
+    character(len=GMM_MAXNAMELENGTH) :: tr_name,iname,vname,oname,prefix,basename,time,ext, &
+         hu_gmm_name,hu_short_name
+    character(len=GMM_MAXNAMELENGTH), dimension(MAX_TRACERS) :: varlist
+    logical :: hu_L,found
+    type(tracer), dimension(:), allocatable :: tr_tmp
+    type(phymeta), dimension(:), pointer :: pmeta
+
+    ! Initializations
+    hu_gmm_name = 'TR/HU:P'
+    hu_short_name = 'HU'
+
+    ! Handle only humidity if physics are not being run
+    if (.not.F_withphy) then
+       allocate(tracers(1),stat=err)
+       call handle_error(err,'prof_tracers','Allocating no-physics tracer list')
+       tracers(1) = tracer(hu_gmm_name,hu_short_name,.false.)
+       return
+    endif
+
+    ! Find list of tracers after pre-adding HU
+    nullify(pmeta)
+    call handle_error_l(RMN_IS_OK(phy_getmeta(pmeta,' ',F_npath='V',F_bpath='D',F_quiet=.true.)), &
+         'prof_tracers','Cannot retrieve physics metadata')
+    nvars = size(pmeta)
+    allocate(tr_tmp(nvars+1),stat=err)
+    call handle_error(err,'prof_tracers','Allocating temporary tracer list')
+    ntr = 1
+    tr_tmp(ntr) = tracer(hu_gmm_name,hu_short_name,.false.)
+    do i=1,nvars
+       vname = pmeta(i)%vname
+       istat = clib_toupper(vname)
+       if (vname(1:3) /= 'TR/') cycle
+       call gmmx_name_parts(vname,prefix,basename,time,ext)
+       if (any(tr_tmp(1:ntr)%name == basename)) cycle
+       ntr = ntr + 1
+       call handle_error_l(ntr<=size(tr_tmp),'prof_tracers','Tracer buffer overflow')
+       tr_tmp(ntr) = tracer(vname,basename,pmeta(i)%wload)
+    enddo
+    deallocate(pmeta); nullify(pmeta)
+    
+    ! Create and fill final storage structure for tracers
+    allocate(tracers(ntr),stat=err)
+    call handle_error(err,'prof_tracers','Allocating tracer list')
+    tracers = tr_tmp(1:ntr)
+    deallocate(tr_tmp,stat=err)
+    call handle_error(err,'prof_tracers','Freeing temporary tracer list')
+
+    ! Verbose output
+    if (STDOUT.gt.0) then
+       write (STDOUT,'(/a)') 'TRACERS (3D storage):'
+       do i=1,ntr
+          write (STDOUT,1002) trim(tracers(i)%name),i
+       end do
+    endif
+
+    ! Info messages
+1002 format (2x,a16,2x,i4)
+
+  end subroutine prof_tracers
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  subroutine prof_set_vt()
+    ! Perform necessary steps from set_vt().  Create GMM space for physical world
+    ! (PW) state variables and tracers.
+
+    implicit none
+
+    ! Local derived types
+    type pwvar
+       character(len=GMM_MAXNAMELENGTH) :: plus,moins,adv,bkg,pre,geo,dyn
+    end type pwvar
+
+    ! Local variables
+    integer :: istat,i,j
+    real, dimension(:,:), pointer :: fld2d
+    real, dimension(:,:,:), pointer :: fld,tr,adv,bkg
+    character(len=GMM_MAXNAMELENGTH) :: gmmname
+    character(len=SHORT_CHAR), dimension(3) :: suffix=(/':PREV',':NEXT','     '/)
+    type(pwvar), dimension(8) :: pw
+
+    ! Establish GMM key name lists for all physical world variables
+    pw(1) = pwvar(gmmk_pw_uu_plus_s,gmmk_pw_uu_moins_s,gmmk_adv_u_s,gmmk_bkg_u_s,'',gmmk_geo_u_s,gmmk_dyn_u_s) !west wind component
+    pw(2) = pwvar(gmmk_pw_vv_plus_s,gmmk_pw_vv_moins_s,gmmk_adv_v_s,gmmk_bkg_v_s,'',gmmk_geo_v_s,gmmk_dyn_v_s) !south wind component
+    pw(3) = pwvar(gmmk_pw_ww_plus_s,'','','',gmmk_pre_ww_s,'','')                                              !pressure vertical motion
+    pw(4) = pwvar(gmmk_pw_wz_plus_s,'','','',gmmk_pre_wz_s,'','')                                              !vertical motion
+    pw(5) = pwvar(gmmk_pw_tt_plus_s,gmmk_pw_tt_moins_s,gmmk_adv_t_s,gmmk_bkg_t_s,'','',gmmk_dyn_t_s)           !temperature
+    pw(6) = pwvar(gmmk_pw_pm_plus_s,gmmk_pw_pm_moins_s,'','','','','')                                         !momentum-level pressure
+    pw(7) = pwvar(gmmk_pw_pt_plus_s,gmmk_pw_pt_moins_s,'','','','','')                                         !thermo-level pressure
+    pw(8) = pwvar(gmmk_pw_gz_plus_s,gmmk_pw_gz_moins_s,'','','','','')                                         !geopotential
+
+    ! Create space for physical world storage
+    do i=1,size(pw)
+       if (len_trim(pw(i)%plus) > 0) then
+          nullify(fld); gmmname = pw(i)%plus
+          istat = gmm_create(gmmname,fld,meta3d)
+          call handle_error_l(GMM_IS_OK(istat),'prof_set_vt','Creating '//trim(gmmname))
+       endif
+       if (len_trim(pw(i)%moins) > 0) then
+          nullify(fld); gmmname = pw(i)%moins
+          istat = gmm_create(gmmname,fld,meta3d)
+          call handle_error_l(GMM_IS_OK(istat),'prof_set_vt','Creating '//trim(gmmname))
+       endif
+       if (len_trim(pw(i)%adv) > 0) then
+          do j=1,size(suffix)
+             nullify(fld); gmmname = trim(pw(i)%adv)//trim(suffix(j))
+             istat = gmm_create(gmmname,fld,meta3d_inv)
+             call handle_error_l(GMM_IS_OK(istat),'prof_set_vt','Creating '//trim(gmmname))
+          enddo
+       endif
+       if (len_trim(pw(i)%bkg) > 0) then
+          do j=1,size(suffix)
+             nullify(fld); gmmname = trim(pw(i)%bkg)//trim(suffix(j))
+             istat = gmm_create(gmmname,fld,meta3d_inv)
+             call handle_error_l(GMM_IS_OK(istat),'prof_set_vt','Creating '//trim(gmmname))
+          enddo
+       endif
+       if (len_trim(pw(i)%pre) > 0) then
+          do j=1,size(suffix)
+             nullify(fld); gmmname = trim(pw(i)%pre)//trim(suffix(j))
+             istat = gmm_create(gmmname,fld,meta3d_inv)
+             call handle_error_l(GMM_IS_OK(istat),'prof_set_vt','Creating '//trim(gmmname))
+          enddo
+       endif
+       if (len_trim(pw(i)%geo) > 0) then
+          do j=1,size(suffix)
+             nullify(fld); gmmname = trim(pw(i)%geo)//trim(suffix(j))
+             istat = gmm_create(gmmname,fld,meta3d_inv)
+             call handle_error_l(GMM_IS_OK(istat),'prof_set_vt','Creating '//trim(gmmname))
+          enddo
+       endif
+       if (len_trim(pw(i)%dyn) > 0) then
+          do j=1,size(suffix)
+             nullify(fld); gmmname = trim(pw(i)%dyn)//trim(suffix(j))
+             istat = gmm_create(gmmname,fld,meta3d_inv)
+             call handle_error_l(GMM_IS_OK(istat),'prof_set_vt','Creating '//trim(gmmname))
+          enddo
+       endif
+    enddo
+
+    ! Create space for prescribed surface pressure and orographic height
+    nullify(fld2d); gmmname = trim(gmmk_pw_me_moins_s)
+    istat = gmm_create(gmmname,fld2d,meta2d)
+    call handle_error_l(GMM_IS_OK(istat),'prof_set_vt','Creating '//trim(gmmname))
+    nullify(fld2d); gmmname = trim(gmmk_pw_p0_plus_s)
+    istat = gmm_create(gmmname,fld2d,meta2d)
+    call handle_error_l(GMM_IS_OK(istat),'prof_set_vt','Creating '//trim(gmmname))
+    do j=1,size(suffix)
+       nullify(fld2d); gmmname = trim(gmmk_pre_p0_s)//trim(suffix(j))
+       istat = gmm_create(gmmname,fld2d,meta2d,GMM_FLAG_INAN)
+       call handle_error_l(GMM_IS_OK(istat),'prof_set_vt','Creating '//trim(gmmname))
+    enddo
+
+    ! Create space for requested tracers
+    do i=1,size(tracers)
+       nullify(tr); gmmname = 'TR/'//trim(tracers(i)%name)//':M'
+       istat = gmm_create(gmmname,tr,meta3d_zero)
+       call handle_error_l(GMM_IS_OK(istat),'prof_set_vt','Creating '//trim(gmmname))
+       nullify(tr); gmmname = 'TR/'//trim(tracers(i)%name)//':P'
+       istat = gmm_create(gmmname,tr,meta3d_zero)
+       call handle_error_l(GMM_IS_OK(istat),'prof_set_vt','Creating '//trim(gmmname))
+       do j=1,size(suffix)
+          nullify(tr); gmmname = 'ADV_'//trim(tracers(i)%name)//trim(suffix(j))
+          istat = gmm_create(gmmname,tr,meta3d_inv)
+          call handle_error_l(GMM_IS_OK(istat),'prof_set_vt','Creating '//trim(gmmname))
+          nullify(tr); gmmname = 'BKG_'//trim(tracers(i)%name)//trim(suffix(j))
+          istat = gmm_create(gmmname,tr,meta3d_inv)
+          call handle_error_l(GMM_IS_OK(istat),'prof_set_vt','Creating '//trim(gmmname))
+          nullify(tr); gmmname = 'DYN_'//trim(tracers(i)%name)//trim(suffix(j))
+          istat = gmm_create(gmmname,tr,meta3d_inv)
+          call handle_error_l(GMM_IS_OK(istat),'prof_set_vt','Creating '//trim(gmmname))
+       end do
+    end do
+
+  end subroutine prof_set_vt
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  subroutine prof_dyn_main(F_stepno,F_laststep)
+    ! Perform a dynamics timestep.
+    use step_mod, only: step_get,STEP_OK
+
+    implicit none
+
+    ! Input arguments
+    integer, intent(in) :: F_stepno                     !time step number
+    integer, intent(in) :: F_laststep                   !step number of last step
+
+    ! Local variables
+    integer :: step_total
+
+    ! Generate step number information
+    if (STDOUT > 0) write(STDOUT,1001) F_stepno,F_laststep
+
+    ! Perform a forward-differencing timestep
+    call prof_dyn_fwd(F_diag=(.not.dyn_forcings))
+
+    ! Perform requested emulation steps
+    call prof_dyn_adj(F_stepno)
+
+    ! Verify forcing term validity for user
+    call handle_error_l(step_get('step_total',step_total)==STEP_OK,'prof_dyn_main','Retrieving step_total from step package')
+    if (debug_L .or. F_stepno == step_total) call prof_valid_summary()
+
+    ! Info messages
+1001 format(/,'PROF_DYN_MAIN: PERFORMING TIMESTEP #',i8,' OUT OF ',i8,/,60('='))
+
+  end subroutine prof_dyn_main
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  subroutine prof_dyn_fwd(F_diag)
+    ! Perform a forward-differencing timestep for the physical-world
+    ! variables defined in GMM.  In the prognostic equations, the advective,
+    ! background (relaxation) and geostrophic (if applicable) terms is 
+    ! de-activated if the data is not available: this is accomplished through
+    ! calls to prof_is_valid().
+    use tdpack, only: RGASD,CPD,OMEGA,PI
+    use vertical_interpolation, only: vertint2
+
+    implicit none
+
+    ! Input arguments
+    logical, intent(in), optional :: F_diag             !Run calculations as diagnostic-only [.false.]
+
+    ! Local variables
+    integer :: i,k,nk,istat,err
+    real :: irelax,my_dt,tmean,fcor
+    real, dimension(:,:,:), allocatable :: wwm
+    real, dimension(:,:,:), pointer :: moins,plus,adv,bkg,pre,dyn,tt,pt,pm,ww,wz, &
+         uu,vv,ug,vg
+    character(len=GMM_MAXNAMELENGTH) :: gmmname
+    type(gmm_metadata) :: meta
+
+    ! Set default values
+    my_dt = real(cstv_dt_8)
+    if (present(F_diag)) then
+       if (F_diag) my_dt = 0.
+    endif
+
+    ! Set relaxation constant if requested
+    if (relax > 0.) then
+       irelax = 1./relax
+    else
+       irelax = 0.
+    endif
+
+    ! Set derived constants
+    fcor = 2.*omega*sin(prof_point(1)*pi/180.)
+
+    ! Update pressure levels as prescribed fields (momentum and thermo)
+    call prof_update_pres()
+    nullify(pm,pt)
+    istat = gmm_get(gmmk_pw_pm_plus_s,pm,meta)
+    call handle_error_l(GMM_IS_OK(istat),'prof_dyn_fwd','GMM retrieving '//trim(gmmk_pw_pm_plus_s))
+    istat = gmm_get(gmmk_pw_pt_plus_s,pt,meta)
+    call handle_error_l(GMM_IS_OK(istat),'prof_dyn_fwd','GMM retrieving '//trim(gmmk_pw_pt_plus_s))
+
+    ! Update height-coordinate vertical motion as a prescribed field
+    nullify(wz)
+    istat = gmm_get(gmmk_pw_wz_plus_s,wz,meta)
+    call handle_error_l(GMM_IS_OK(istat),'prof_dyn_fwd','GMM retrieving '//trim(gmmk_pw_wz_plus_s))
+    call prof_w('height',wz)
+    
+    ! Compute pressure-coordinate vertical motion for prognostic equations
+    nullify(ww)
+    istat = gmm_get(gmmk_pw_ww_plus_s,ww,meta)
+    call handle_error_l(GMM_IS_OK(istat),'prof_dyn_fwd','GMM retrieving '//trim(gmmk_pw_ww_plus_s))
+    nk = size(ww,dim=3)
+    call prof_w('pressure',ww)
+    allocate(wwm(1,1,nk),stat=istat)
+    call handle_error(istat,'prof_dyn_fwd','Allocating vertical motion wwm')
+    call vertint2(wwm,pm(:,:,1:nk),nk,ww,pt(:,:,1:nk),nk,1,1,1,1,1,1,1,1,varname='WW',inttype='linear')
+
+    ! Update prognostic temperature
+    nullify(plus,moins,adv,bkg,dyn)
+    istat = gmm_get(gmmk_pw_tt_moins_s,moins,meta)
+    call handle_error_l(GMM_IS_OK(istat),'prof_dyn_fwd','GMM retrieving '//trim(gmmk_pw_tt_moins_s))
+    istat = gmm_get(gmmk_pw_tt_plus_s,plus,meta)
+    call handle_error_l(GMM_IS_OK(istat),'prof_dyn_fwd','GMM retrieving '//trim(gmmk_pw_tt_plus_s))
+    nk = size(moins,dim=3)
+    if (prof_is_valid(gmmk_dyn_t_s)) then
+       istat = gmm_get(gmmk_dyn_t_s,dyn,meta)
+       call handle_error_l(GMM_IS_OK(istat),'prof_dyn_fwd','GMM retrieving '//trim(gmmk_dyn_t_s))
+       plus = moins + my_dt * dyn
+    else
+       istat = gmm_get(gmmk_adv_t_s,adv,meta)
+       call handle_error_l(GMM_IS_OK(istat),'prof_dyn_fwd','GMM retrieving '//trim(gmmk_adv_t_s))
+       if (.not.prof_is_valid(gmmk_adv_t_s)) adv = 0.
+       istat = gmm_get(gmmk_bkg_t_s,bkg,meta)
+       call handle_error_l(GMM_IS_OK(istat),'prof_dyn_fwd','GMM retrieving '//trim(gmmk_bkg_t_s))
+       if (.not.prof_is_valid(gmmk_bkg_t_s)) bkg = moins
+       plus = moins + my_dt * ( adv - ww * (prof_ddp(moins,pt) - (rgasd/cpd)*(moins/pt(:,:,1:nk))) + irelax * (bkg - moins) )
+    endif
+
+    ! Update prognostic west wind
+    nullify(plus,moins,adv,bkg,dyn,vv,vg)
+    istat = gmm_get(gmmk_pw_uu_moins_s,moins,meta)
+    call handle_error_l(GMM_IS_OK(istat),'prof_dyn_fwd','GMM retrieving '//trim(gmmk_pw_uu_moins_s))
+    istat = gmm_get(gmmk_pw_uu_plus_s,plus,meta)
+    call handle_error_l(GMM_IS_OK(istat),'prof_dyn_fwd','GMM retrieving '//trim(gmmk_pw_uu_plus_s))
+    if (prof_is_valid(gmmk_dyn_u_s)) then
+       istat = gmm_get(gmmk_dyn_u_s,dyn,meta)
+       call handle_error_l(GMM_IS_OK(istat),'prof_dyn_fwd','GMM retrieving '//trim(gmmk_dyn_u_s))
+       plus = moins + my_dt * dyn
+    else
+       istat = gmm_get(gmmk_adv_u_s,adv,meta)
+       call handle_error_l(GMM_IS_OK(istat),'prof_dyn_fwd','GMM retrieving '//trim(gmmk_adv_u_s))
+       if (.not.prof_is_valid(gmmk_adv_u_s)) adv = 0.
+       istat = gmm_get(gmmk_bkg_u_s,bkg,meta)
+       call handle_error_l(GMM_IS_OK(istat),'prof_dyn_fwd','GMM retrieving '//trim(gmmk_bkg_u_s))
+       if (.not.prof_is_valid(gmmk_bkg_u_s)) bkg = moins
+       istat = gmm_get(gmmk_pw_vv_moins_s,vv,meta)
+       call handle_error_l(GMM_IS_OK(istat),'prof_dyn_fwd','GMM retrieving '//trim(gmmk_pw_vv_moins_s))
+       istat = gmm_get(gmmk_geo_v_s,vg,meta)
+       call handle_error_l(GMM_IS_OK(istat),'prof_dyn_fwd','GMM retrieving '//trim(gmmk_geo_v_s))
+       if (.not.prof_is_valid(gmmk_geo_v_s)) vg = vv
+       plus = moins + my_dt * ( adv - wwm * prof_ddp(moins,pm) + fcor * (vv - vg) + irelax * (bkg - moins) )
+    endif
+
+    ! Update prognostic south wind
+    nullify(plus,moins,adv,bkg,dyn,uu,ug)
+    istat = gmm_get(gmmk_pw_vv_moins_s,moins,meta)
+    call handle_error_l(GMM_IS_OK(istat),'prof_dyn_fwd','GMM retrieving '//trim(gmmk_pw_vv_moins_s))
+    istat = gmm_get(gmmk_pw_vv_plus_s,plus,meta)
+    call handle_error_l(GMM_IS_OK(istat),'prof_dyn_fwd','GMM retrieving '//trim(gmmk_pw_vv_plus_s))
+    if (prof_is_valid(gmmk_dyn_v_s)) then
+       istat = gmm_get(gmmk_dyn_v_s,dyn,meta)
+       call handle_error_l(GMM_IS_OK(istat),'prof_dyn_fwd','GMM retrieving '//trim(gmmk_dyn_v_s))
+       plus = moins + my_dt * dyn
+    else
+       istat = gmm_get(gmmk_adv_v_s,adv,meta)
+       call handle_error_l(GMM_IS_OK(istat),'prof_dyn_fwd','GMM retrieving '//trim(gmmk_adv_v_s))
+       if (.not.prof_is_valid(gmmk_adv_v_s)) adv = 0.
+       istat = gmm_get(gmmk_bkg_v_s,bkg,meta)
+       call handle_error_l(GMM_IS_OK(istat),'prof_dyn_fwd','GMM retrieving '//trim(gmmk_bkg_v_s))
+       if (.not.prof_is_valid(gmmk_bkg_v_s)) bkg = moins
+       istat = gmm_get(gmmk_pw_uu_moins_s,uu,meta)
+       call handle_error_l(GMM_IS_OK(istat),'prof_dyn_fwd','GMM retrieving '//trim(gmmk_pw_uu_moins_s))
+       istat = gmm_get(gmmk_geo_u_s,ug,meta)
+       call handle_error_l(GMM_IS_OK(istat),'prof_dyn_fwd','GMM retrieving '//trim(gmmk_geo_u_s))
+       if (.not.prof_is_valid(gmmk_geo_u_s)) ug = uu
+       plus = moins + my_dt * ( adv - wwm * prof_ddp(moins,pm) - fcor * (uu - ug) + irelax * (bkg - moins) )
+    endif
+
+    ! Update tracers
+    do i=1,size(tracers)
+       nullify(plus,moins,adv,bkg,dyn)
+       gmmname = 'TR/'//trim(tracers(i)%name)//':M'
+       istat = gmm_get(gmmname,moins,meta)
+       call handle_error_l(GMM_IS_OK(istat),'prof_dyn_fwd','GMM retrieving '//trim(gmmname))
+       gmmname = 'TR/'//trim(tracers(i)%name)//':P'
+       istat = gmm_get(gmmname,plus,meta)
+       call handle_error_l(GMM_IS_OK(istat),'prof_dyn_fwd','GMM retrieving '//trim(gmmname))
+       gmmname = 'DYN_'//trim(tracers(i)%name)
+       if (prof_is_valid(gmmname)) then
+          istat = gmm_get(gmmname,dyn,meta)
+          call handle_error_l(GMM_IS_OK(istat),'prof_dyn_fwd','GMM retrieving '//trim(gmmname))
+          plus = moins + my_dt * dyn
+       else
+          gmmname = 'ADV_'//trim(tracers(i)%name)
+          istat = gmm_get(gmmname,adv,meta)
+          call handle_error_l(GMM_IS_OK(istat),'prof_dyn_fwd','GMM retrieving '//trim(gmmname))
+          if (.not.prof_is_valid(gmmname)) adv = 0.
+          gmmname = 'BKG_'//trim(tracers(i)%name)
+          istat = gmm_get(gmmname,bkg,meta)
+          call handle_error_l(GMM_IS_OK(istat),'prof_dyn_fwd','GMM retrieving '//trim(gmmname))
+          if (.not.prof_is_valid(gmmname)) bkg = moins
+          plus = moins + my_dt * ( adv - ww * prof_ddp(moins,pt) + irelax * (bkg - moins) )
+       endif
+    enddo
+
+    ! Update heights and coordinate pressures
+    call prof_update_GPW()
+
+  end subroutine prof_dyn_fwd
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  subroutine prof_dyn_adj(F_stepno)
+    ! Perform any necessary post-dynamics emulation steps.  This hook
+    ! allows for specific adjustments to the physical world variables
+    ! that replicate actions performed in specific driving models.
+
+    implicit none
+
+    ! Input variables
+    integer, intent(in) :: F_stepno                     !time step number
+
+    ! Local variables
+    integer :: istat
+    real, dimension(:,:,:), pointer :: fld
+    type(gmm_metadata) :: meta
+
+    ! Emulate model-specific post-dynamics operations
+    select case (trim(emulate))
+    case ('gem')
+       if (trim(stag) == 'none') then
+          ! Unstaggered GEM requires no post-dynamics adjustments
+          if (debug_L .or. F_stepno == 1) write(STDOUT,1000) 'GEM V3 (UNSTAGGERED)'
+       elseif (trim(stag) == 'cp') then
+          ! Staggered GEM model requires no post-dynamics adjustments)
+          if (debug_L .or. F_stepno == 1) write(STDOUT,1000) 'GEM V4 (STAGGERED)'
+       endif
+    case DEFAULT
+       call handle_error_l(trim(emulate)=='none','prof_dyn_adj','Invalid emulation requested')
+    end select
+
+    ! Error messages
+1000 format(/,'PROF_DYN_ADJ: EMULATING BEHAVIOUR OF ',a,/,60('='))
+
+  end subroutine prof_dyn_adj
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  subroutine prof_phy_init(F_withphy)
+    ! Perform necessary steps from itf_phy_init().  Convey model information
+    ! to the physics, retrieve bus attributes and request bus creation through
+    ! the physics API.
+    use phy_itf, only: PHY_COMPATIBILITY_LVL,phy_nml,phy_init,PHY_OK
+    use vGrid_Descriptors, only: vgd_put,VGD_OK
+
+    implicit none
+
+#include <rmnlib_basics.hf>
+#include <WhiteBoard.hf>
+#include <msg.h>
+
+    ! Output arguments
+    logical, intent(out) :: F_withphy                   !run with physics
+
+    ! Local parameters
+    integer, parameter :: COMPATIBILITY_LVL=16
+
+    ! Local variables
+    integer :: dateo,bidon,err,i,lght,soit,level_kind_diag,zuip,ztip
+    integer, dimension(14) :: idate
+    real :: zu,zt,cond_sig,gwd_sig
+    real, dimension(p_nk) :: std_p_prof
+    real, dimension(:), pointer :: pres_prof=>null()
+    character(len=SHORT_CHAR) :: bus
+    logical :: prout,satuco
+
+    ! Check if STDOUT is requested
+    prout = .false.
+    if (STDOUT >= 0) then
+       prout = .true.
+       write(STDOUT,1000)
+    endif
+
+    ! Check for physics interface compatibility
+    if (PHY_COMPATIBILITY_LVL /= COMPATIBILITY_LVL) then
+       if (STDOUT > 0) write(STDOUT,9001) COMPATIBILITY_LVL,PHY_COMPATIBILITY_LVL
+       call handle_error(-1,'prof_phy_init','Incompatible physics API')
+    else
+       if (STDOUT > 0) write(STDOUT,1002) COMPATIBILITY_LVL
+    endif
+
+    ! Start physics initialization with mandatory parameters
+    err = WB_OK
+    err= min(wb_put('itf_phy/VSTAG',vstag),err)
+    err= min(wb_put('itf_phy/TLIFT',schm_tlift),err)
+    err= min(wb_put('itf_phy/COUPLING',.false.),err)
+    err= min(wb_put('model/Init/mode',.false.),err)
+    err= min(wb_put('model/Init/halfspan',-1),err)
+    err= min(wb_put('model/Vgrid/ptop',cstv_ptop_8),err)
+    call handle_error_l(WB_IS_OK(err),'prof_phy_init','Error filling mandatory whiteboard entries')
+
+    ! Initialize optional parameters
+    err = WB_OK
+    call handle_error_l(WB_IS_OK(err),'prof_phy_init','Error filling optional whiteboard entries')
+
+    ! Initialize physics configuration with default values and read
+    ! user configuration in namelist from file 'model_settings'
+    err = phy_nml(trim(path_inputs_s)//'/model_settings.nml')
+    call handle_error(err,'prof_phy_init','Error received from phy_nml')
+    F_withphy = (err == PHY_OK)
+    if (.not. F_withphy) return
+
+    ! Prepare a standard pressure profile for the physics
+    call prof_std_pres(vcoord,'m',pres_prof)
+    select case (p_nk-size(pres_prof))
+    case (-1)
+       std_p_prof = pres_prof(1:size(std_p_prof))
+    case (0)
+       std_p_prof = pres_prof
+    case (1)
+       std_p_prof(1) = cstv_ptop_8
+       std_p_prof(2:p_nk) = pres_prof
+    case DEFAULT
+       call handle_error(-1,'prof_phy_init','Invalid profile retrieved from prof_std_pres()')
+    end select
+
+    ! Complete physics initialization (bus descriptions become available)
+    call datp2f(dateo,start_date)
+    err = phy_init(trim(path_inputs_s)//'/',dateo,real(cstv_dt_8), &
+         'grid/scm','grid/scm','grid/scm','grid/scm',p_nk,std_p_prof)
+    call handle_error(err,'prof_phy_init','Error received from phy_init')
+
+    ! Complete physics filtering handshake (implemented as profile copies at each step)
+    err = WB_OK
+    if (.not.WB_IS_OK(wb_get('phy/cond_infilter',cond_sig))) cond_sig=-1.
+    if (cond_sig > 0.) call msg(MSG_WARNING,'(prof_phy_init) Option cond_infilter is ignored by the SCM')
+    if (.not.WB_IS_OK(wb_get('phy/sgo_tdfilter',gwd_sig))) gwd_sig=-1.
+    if (gwd_sig > 0.) call msg(MSG_WARNING,'(prof_phy_init) Option sgo_tdfilter is ignored by the SCM')
+    err = min(wb_put('dyn/cond_infilter',cond_sig), err)
+    err = min(wb_put('dyn/sgo_tdfilter',gwd_sig), err)
+    call handle_error_l(WB_IS_OK(err),'prof_phy_init','Error in physics filtering handshake')
+    
+    ! Retrieve the heights of the diagnostic levels (thermodynamic and momentum) from the physics
+    err = WB_OK
+    err= min(wb_get('phy/zu', zu), err)
+    err= min(wb_get('phy/zt', zt), err)
+    call handle_error_l(WB_IS_OK(err),'prof_phy_init','Error retrieving mandatory whiteboard entries')
+
+    ! Add the diagnostic heights to the vertical coordinate of the model
+    err = VGD_OK
+    level_kind_diag=4
+    call convip(zuip,zu,level_kind_diag,+2,'',.true.)
+    call convip(ztip,zt,level_kind_diag,+2,'',.true.)
+    err = min(vgd_put(vcoord,'DIPM - IP1 of diagnostic level (m)',zuip), err)
+    err = min(vgd_put(vcoord,'DIPT - IP1 of diagnostic level (t)',ztip), err)
+    call handle_error_l(err==VGD_OK,'prof_phy_init','Setting diagnostic levels (DIPM/T)')
+
+    ! Error messages
+1000 format(/,'INITIALIZATION OF PHYSICS PACKAGE (S/R prof_phy_init)', &
+         /,'=====================================================')
+1002 format(/,'PHYSICS COMPATIBILITY LEVEL IS OK: (level=',i2,')')
+9001 format(/'==> STOP IN PROF_PHY_INIT: INCOMPATIBLE PHYSICS INTERFACE'/ &
+         '    physics interface compatibility level= ',i2/ &
+         '    physics package compatibility level= ',i2/)
+
+  end subroutine prof_phy_init
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  subroutine prof_phy_step(F_stepno,F_lctl_step)
+    ! Perform necessary steps from itf_phy_step().  Prepare buses and call physics step.
+    use phy_itf, only: phy_input,phy_step
+
+    implicit none
+
+    ! Input arguments
+    integer, intent(in) :: F_stepno                     !physics step number (counts from 0)
+    integer, intent(in) :: F_lctl_step                  !model time step number (starts from first index)
+
+    ! Local variables
+    integer :: err
+    integer, save :: l_phy_gid=-1
+
+    ! Create grid-specific fields (must be after the input files are read, not in prof_phy_init)
+    if (F_stepno == 0) then
+       call prof_phy_geom(err)
+       call handle_error(err,'prof_phy_step','Error establishing grid-specific fields')
+    endif
+
+    ! Process physics inputs
+    err = phy_input(prof_phy_prefold_opr,F_stepno,trim(path_inputs_s)//'/physics_input_table', &
+         trim(path_inputs_s)//'/','GEOPHY/Scm_geophy.fst')
+    call handle_error(err,'prof_phy_step','Acquiring input data')
+
+    ! Create a copy of state variables as "smoothed" fields
+    err = min(prof_smooth_fld('PW_TT:M','TTMS'), &
+         prof_smooth_fld('TR/HU:M','HUMS'), &
+         prof_smooth_fld('PW_TT:P','TTPS'), &
+         prof_smooth_fld('TR/HU:P','HUPS') &
+         )
+    call handle_error(err,'prof_phy_step','Problem with prof_smooth_fld')
+
+    ! Take a physics step
+    if (STDOUT.gt.0) write(STDOUT,1002) F_stepno
+    err = phy_step(F_stepno,F_lctl_step)
+    call handle_error(err,'prof_phy_step','Taking a physics step')
+
+    ! Apply physics tendencies to the physical world
+    call prof_phy_update(F_stepno > 0)
+
+    ! Generate output
+    call prof_output(F_lctl_step,F_phy_L=.true.)
+
+    ! Info messages
+1002 format(/'PERFORM A PHYSICS STEP: stepno= ',i6, &
+         ' (S/R prof_phy_step)'/58('='))
+
+  end subroutine prof_phy_step
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  subroutine prof_phy_geom(F_istat)
+    ! Perform necessary steps from itf_phy_geom3().  Generate grid-specific fields
+    ! and place them in GMM for the physics.
+    use tdpack, only: RAYT,PI
+
+    implicit none
+
+#include <rmnlib_basics.hf>
+#include <msg.h>
+
+    ! Output arguments
+    integer, intent(out) :: F_istat                     !return status
+
+    ! Local variables
+    integer :: istat
+    real, dimension(:,:), pointer :: wrk1
+    real(kind=8) :: deg2rad
+
+    ! Initialize required values
+    F_istat = RMN_OK
+    deg2rad = PI/180d0
+
+    ! Create GMM entry for profile latitude
+    nullify (wrk1)
+    if (RMN_IS_OK(gmm_create('DLAT',wrk1,meta2d))) then
+       wrk1 = real(deg2rad*prof_point(1))
+    else
+       F_istat = RMN_ERR
+       call msg(MSG_ERROR,'(prof_phy_geom) Problem creating DLAT')
+    endif
+
+    ! Create GMM entry for profile longitude
+    nullify (wrk1)
+    if (RMN_IS_OK(gmm_create('DLON',wrk1,meta2d))) then
+       wrk1 = real(deg2rad*prof_point(2))
+    else
+       F_istat = RMN_ERR
+       call msg(MSG_ERROR,'(prof_phy_geom) Problem creating DLON')
+    endif
+
+    ! Create GMM entry for grid area
+    nullify (wrk1)
+    if (RMN_IS_OK(gmm_create('DXDY',wrk1,meta2d))) then
+       wrk1 = (grd_dy*deg2rad*rayt) * &
+            (grd_dx*deg2rad*rayt*cos(prof_point(1)*deg2rad))
+    else
+       F_istat = RMN_ERR
+       call msg(MSG_ERROR,'(prof_phy_geom) Problem creating DXDY')
+    endif
+
+    ! Create GMM entry for tendency mask
+    nullify (wrk1)
+    if (RMN_IS_OK(gmm_create('TDMASK',wrk1,meta2d))) then
+       wrk1 = 1.
+    else
+       F_istat = RMN_ERR
+       call msg(MSG_ERROR,'(prof_phy_geom) Problem creating TDMASK')
+    endif
+
+  end subroutine prof_phy_geom
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  function prof_phy_prefold_opr(F_data,F_name_S,F_horiz_interp_S, &
+       F_minx,F_maxx,F_miny,F_maxy,F_k0,F_kn) result(F_istat)
+    ! Perform necessary steps from itf_phy_prefold_opr().  For the SCM, this
+    ! simply means returning the data in-place.
+
+    implicit none
+
+#include <rmnlib_basics.hf>
+    
+    ! Input arguments
+    character(len=*),intent(in) :: F_name_S,F_horiz_interp_S
+    integer,intent(in) :: F_minx,F_maxx,F_miny,F_maxy,F_k0,F_kn
+
+    ! Input/output arguments
+    real,intent(inout) :: F_data(F_minx:F_maxx,F_miny:F_maxy,F_k0:F_kn)
+
+    ! Output arguments
+    integer :: F_istat
+
+    ! No folding required for SCM
+    F_istat = RMN_OK
+    
+  end function prof_phy_prefold_opr
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  subroutine prof_phy_update(F_apply_L)
+    ! Perform necessary steps from itf_phy_update3().  Call physics unfolding
+    ! or handle tracer fields during initialization.
+    use phy_itf, only: phy_get
+
+#include <WhiteBoard.hf>
+#include <rmnlib_basics.hf>
+
+    ! Input arguments
+    logical :: F_apply_L                                !apply physics tendencies   
+
+    ! Local variables
+    integer :: k,cnt,nread_tr
+    integer, dimension(3) :: array_end
+    character(len=GMM_MAXNAMELENGTH) :: trname
+    character(len=GMM_MAXNAMELENGTH), dimension(MAX_TRACERS) :: read_tr
+    real, dimension(:,:,:), pointer :: data3d,minus
+
+    ! Unfold state variables or handle tracer loading
+    nullify(data3d)
+    apply_tendencies: if (F_apply_L) then
+       do k=1,size(tracers)
+          trname = 'TR/'//trim(tracers(k)%name)//':P'
+          call handle_error_l(GMM_IS_OK(gmm_get(trname,data3d)),'prof_phy_update','GMM get for '//trim(trname))
+          array_end = (/1,1,size(data3d,dim=3)/)
+          call handle_error_l(RMN_IS_OK(phy_get(data3d,trname,F_npath='V',F_bpath='D',F_end=array_end)),&
+               'prof_phy_update','Unfolding for '//trim(trname))
+       enddo
+       call handle_error_l(GMM_IS_OK(gmm_get(gmmk_pw_uu_plus_s,data3d)),'prof_phy_update','GMM get for '//trim(gmmk_pw_uu_plus_s))
+       array_end = (/1,1,size(data3d,dim=3)/)
+       call handle_error_l(RMN_IS_OK(phy_get(data3d,gmmk_pw_uu_plus_s,F_npath='V',F_bpath='D',F_end=array_end)), &
+            'prof_phy_update','Unfolding for '//trim(gmmk_pw_uu_plus_s))
+       call handle_error_l(GMM_IS_OK(gmm_get(gmmk_pw_vv_plus_s,data3d)),'prof_phy_update','GMM get for '//trim(gmmk_pw_vv_plus_s))
+       array_end = (/1,1,size(data3d,dim=3)/)
+       call handle_error_l(RMN_IS_OK(phy_get(data3d,gmmk_pw_vv_plus_s,F_npath='V',F_bpath='D',F_end=array_end)), &
+            'prof_phy_update','Unfolding for '//trim(gmmk_pw_vv_plus_s))
+       call handle_error_l(GMM_IS_OK(gmm_get(gmmk_pw_tt_plus_s,data3d)),'prof_phy_update','GMM get for '//trim(gmmk_pw_tt_plus_s))
+       array_end = (/1,1,size(data3d,dim=3)/)
+       call handle_error_l(RMN_IS_OK(phy_get(data3d,gmmk_pw_tt_plus_s,F_npath='V',F_bpath='D',F_end=array_end)), &
+            'prof_phy_update','Unfolding for '//trim(gmmk_pw_tt_plus_s))
+    else
+       call handle_error_l(WB_IS_OK(wb_get('itf_phy/READ_TRACERS',read_tr,nread_tr)),'prof_phy_update','Retrieving read tracer list')
+       cnt = 0
+       do k=1,size(tracers)
+          if (tracers(k)%name == 'HU' .or. any(read_tr(1:nread_tr) == tracers(k)%name)) cycle
+          trname = 'TR/'//trim(tracers(k)%name)//':P'
+          call handle_error_l(GMM_IS_OK(gmm_get(trim(trname),data3d)),'prof_phy_update','Initial GMM get for '//trim(trname))
+          array_end = (/1,1,size(data3d,dim=3)/)
+          call handle_error_l(RMN_IS_OK(phy_get(data3d,trname,F_npath='V',F_bpath='D',F_end=array_end)),&
+               'prof_phy_update','Unfolding for '//trim(trname))
+          trname = 'TR/'//trim(tracers(k)%name)//':M'
+          call handle_error_l(GMM_IS_OK(gmm_get(trname,minus)),'prof_phy_update','Initial GMM get for '//trim(trname))
+          minus = data3d
+          cnt = cnt+1
+       enddo
+       if (cnt > 0) then
+          call prof_update_GPW()
+       endif
+    endif apply_tendencies
+
+  end subroutine prof_phy_update
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  subroutine prof_timeflip()
+    ! Perform necessary steps from t02t1(), but for the physical world
+    ! variables.  Shuffle time plus to time minus for the next step.
+
+    implicit none
+
+    ! Local variables
+    integer :: i,istat
+    character(len=GMM_MAXNAMELENGTH), dimension(2), parameter :: &
+         pw_u_list=(/gmmk_pw_uu_moins_s,gmmk_pw_uu_plus_s/), &
+         pw_v_list=(/gmmk_pw_vv_moins_s,gmmk_pw_vv_plus_s/), &
+         pw_t_list=(/gmmk_pw_tt_moins_s,gmmk_pw_tt_plus_s/), &
+         pw_pm_list=(/gmmk_pw_pm_moins_s,gmmk_pw_pm_plus_s/), &
+         pw_pt_list=(/gmmk_pw_pt_moins_s,gmmk_pw_pt_plus_s/)
+    character(len=GMM_MAXNAMELENGTH), dimension(2) :: tr_list
+
+    ! Shuffle variables
+    istat = gmm_shuffle(pw_u_list)
+    call handle_error_l(GMM_IS_OK(istat),'prof_timeflip','Shuffling U-list')
+    istat = gmm_shuffle(pw_v_list)
+    call handle_error_l(GMM_IS_OK(istat),'prof_timeflip','Shuffling V-list')
+    istat = gmm_shuffle(pw_t_list)
+    call handle_error_l(GMM_IS_OK(istat),'prof_timeflip','Shuffling T-list')
+    istat = gmm_shuffle(pw_pm_list)
+    call handle_error_l(GMM_IS_OK(istat),'prof_timeflip','Shuffling PM-list')
+    istat = gmm_shuffle(pw_pt_list)
+    call handle_error_l(GMM_IS_OK(istat),'prof_timeflip','Shuffling PT-list')
+
+    ! Shuffle tracers
+    do i=1,size(tracers)
+       tr_list = (/'TR/'//trim(tracers(i)%name)//':M','TR/'//trim(tracers(i)%name)//':P'/)
+       istat = gmm_shuffle(tr_list)
+       call handle_error_l(GMM_IS_OK(istat),'prof_timeflip','Shuffling tracer list')
+    end do
+
+  end subroutine prof_timeflip
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  subroutine prof_input_data(F_stepno)
+    ! Get input data for profile model.
+    use step_mod, only: step_get,STEP_OK
+
+    implicit none
+
+    ! Input Arguments
+    integer, intent(in) :: F_stepno                     !time step number
+
+    ! Local variables
+    integer :: i,cnt,istat,err,tstep,w_index,step_total,nesdt
+    real :: alpha
+    real, dimension(:,:), pointer :: fld2d,fld2d_next,fld2d_prev
+    real, dimension(:,:,:), pointer :: fld3d,fld3d_next,fld3d_prev
+    real, dimension(1,1,MAX_LEVELS), target :: zero
+    character(len=SHORT_CHAR) :: next_date,prev_date
+    character(len=LONG_CHAR), save :: forcing_update='step'
+    character(len=GMM_MAXNAMELENGTH), dimension(11) :: basic_keys3d=(/gmmk_adv_t_s,gmmk_adv_u_s, &
+         gmmk_adv_v_s,gmmk_bkg_t_s,gmmk_bkg_u_s,gmmk_bkg_v_s,gmmk_geo_u_s, &
+         gmmk_geo_v_s,gmmk_dyn_u_s,gmmk_dyn_v_s,gmmk_dyn_t_s/)
+    character(len=GMM_MAXNAMELENGTH), dimension(3) :: tr_force=(/'ADV','BKG','DYN'/)
+    character(len=GMM_MAXNAMELENGTH), dimension(1) :: keys2d=(/gmmk_pre_p0_s/)
+    character(len=GMM_MAXNAMELENGTH), dimension(:), allocatable :: keys3d
+    type(gmm_metadata) :: meta
+
+    ! Read initial conditions only at step 0
+    if (F_stepno == 0) then
+       write(STDOUT,1000) trim(start_date)
+       call prof_read_data(start_date,'',F_init=.true.)
+       call handle_error_l(prof_is_valid(gmmk_pre_ww_s).or.prof_is_valid(gmmk_pre_wz_s),'prof_input_data', &
+            'Vertical motion must be prescribed in init file')
+       call prof_dyn_fwd(F_diag=.true.)
+    endif
+
+    ! If no time evolution is requested, read initial state only
+    call handle_error_l(step_get('step_nesdt',nesdt)==STEP_OK,'prof_input_data','Retrieving step_nesdt from step package')
+    if ((F_stepno > 1 .and. nesdt <= 0) .or. .not.dyn_forcings) return
+
+    ! All forcings are evaluated at the end of the timestep
+    tstep = F_stepno
+
+    ! Read inputs at specified intervals only
+    read_inputs: if (nint(mod(real(cstv_dt_8)*tstep,real(nesdt))) == 0 .and. nesdt > 0) then
+
+       ! Forcing is evaluated at the beginning of the timestep
+       call incdatsd(prev_date,start_date,cstv_dt_8*dble(tstep)/SEC_IN_DAY)
+       call prof_read_data(prev_date,':PREV',F_mode=forcing_update)
+
+       ! Retrieve total step number to check for run completion
+       call handle_error_l(step_get('step_total',step_total)==STEP_OK,'prof_input_data','Retrieving step_total from step package')
+
+       ! Set the next date to read (do not read on last time step)
+       if (F_stepno < step_total .and. nesdt > 0) then
+          call incdatsd(next_date,start_date,(cstv_dt_8*dble(tstep)+nesdt)/SEC_IN_DAY)
+          write(STDOUT,1001) trim(next_date)
+          call prof_read_data(next_date,':NEXT')
+       endif
+    endif read_inputs
+
+    ! Update forcing fields for current timestep
+    if (nesdt <= 0) then
+       alpha = 0.
+    else
+       select case (trim(forcing_update))
+       case ('step')
+          alpha = 0.
+       case ('linear')
+          alpha = mod(real(cstv_dt_8)*tstep,real(nesdt))/real(nesdt)
+       case DEFAULT
+          call handle_error(-1,'prof_input_data','Invalid forcing update mode '//trim(forcing_update))
+       end select
+    endif
+    zero = 0.
+
+    ! Compile a full list of 3D key names
+    w_index = size(basic_keys3d)+1
+    allocate(keys3d(w_index+size(tr_force)*size(tracers)),stat=err)
+    call handle_error(err,'prof_input_data','Allocating keys3d')
+    keys3d(1:size(basic_keys3d)) = basic_keys3d
+    if (prof_is_valid(gmmk_pre_ww_s)) then
+       keys3d(w_index) = gmmk_pre_ww_s
+    elseif (prof_is_valid(gmmk_pre_wz_s)) then
+       keys3d(w_index) = gmmk_pre_wz_s
+    else
+       call handle_error(-1,'prof_input_data','Vertical motion must be prescribed')
+    endif
+    do i=1,size(tracers)
+       do cnt=1,size(tr_force)
+          keys3d(w_index+size(tr_force)*(i-1)+cnt) = trim(tr_force(cnt))//'_'//trim(tracers(i)%name)
+       enddo
+    enddo
+
+    ! Update fields
+    do i=1,size(keys3d)
+       if (prof_is_valid(trim(keys3d(i))//':PREV')) then
+          istat = gmm_get(keys3d(i),fld3d,meta)
+          call handle_error_l(GMM_IS_OK(istat),'prof_input_data','GMM retrieving '//trim(keys3d(i)))
+          call prof_make_valid(keys3d(i))
+          istat = gmm_get(trim(keys3d(i))//':PREV',fld3d_prev,meta)
+          call handle_error_l(GMM_IS_OK(istat),'prof_input_data','GMM retrieving '//trim(keys3d(i))//':PREV')
+          if (prof_is_valid(trim(keys3d(i))//':NEXT')) then
+             istat = gmm_get(trim(keys3d(i))//':NEXT',fld3d_next,meta)
+             call handle_error_l(GMM_IS_OK(istat),'prof_input_data','GMM retrieving '//trim(keys3d(i))//':NEXT')
+          else
+             fld3d_next => zero(:,:,1:size(fld3d,dim=3))
+          endif
+          fld3d = (1.-alpha)*fld3d_prev + alpha*fld3d_next
+       endif
+    enddo
+    do i=1,size(keys2d)
+       if (prof_is_valid(trim(keys2d(i))//':PREV')) then
+          istat = gmm_get(keys2d(i),fld2d,meta)
+          call handle_error_l(GMM_IS_OK(istat),'prof_input_data','GMM retrieving '//trim(keys2d(i)))
+          call prof_make_valid(keys2d(i))
+          istat = gmm_get(trim(keys2d(i))//':PREV',fld2d_prev,meta)
+          call handle_error_l(GMM_IS_OK(istat),'prof_input_data','GMM retrieving '//trim(keys2d(i))//':PREV')
+          if (prof_is_valid(trim(keys2d(i))//':NEXT')) then
+             istat = gmm_get(trim(keys2d(i))//':NEXT',fld2d_next,meta)
+             call handle_error_l(GMM_IS_OK(istat),'prof_input_data','GMM retrieving '//trim(keys2d(i))//':NEXT')
+          else
+             fld2d_next => zero(:,:,1)
+          endif
+          fld2d = (1.-alpha)*fld2d_prev + alpha*fld2d_next
+       endif
+    enddo
+
+    ! Garbage collection
+    deallocate(keys3d,stat=err)
+    call handle_error(err,'prof_input_data','Freeing keys3d')
+
+    ! Info messages
+1000 format(/,'TREATING INITIAL CONDITIONS AT ',a,' (S/R PROF_INPUT_DATA)',/,68('='))
+1001 format(/,' TREATING INPUT DATA VALID AT: ',a, &
+         /,' =============================================')
+
+  end subroutine prof_input_data
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  subroutine prof_read_data(F_date,F_suffix,F_init,F_mode)
+    ! Read an input file.
+    use tdpack, only: RGASD,GRAV
+    use vertical_interpolation, only: vertint2
+
+    implicit none
+
+#include <rmnlib_basics.hf>
+#include <WhiteBoard.hf>
+
+    ! Input arguments
+    character(len=*), intent(in) :: F_date              !date of file to read
+    character(len=*), intent(in) :: F_suffix            !suffix to append to GMM key
+    logical, intent(in), optional :: F_init             !read initializing data [.false.]
+
+    ! Output arguments
+    character(len=*), intent(out), optional :: F_mode   !driving date update mode ('step','linear')
+
+    ! Local parameters
+    integer, parameter :: MAXVARS=1000
+    real, parameter :: PT_TOLERANCE=0.001
+
+    ! Local derived types
+    type field
+       integer :: n=0
+       real, dimension(MAX_LEVELS) :: lev,val,pres=-1.
+    end type field
+
+    ! Local variables
+    integer :: ier,iun,version,hlen,i,j,k,nvar2d,pos,istat,nvar3d,nlevs,kind,gid, &
+         ig1,ig2,ig3,ig4,nread_tr,nk_ptr
+    real :: lat,lon,tmean,tlev,alpha,elev
+    real, save :: file_lat,file_lon
+    real, dimension(1,1,MAX_LEVELS) :: data,plevs
+    real, dimension(MAX_LEVELS) :: levs,qh,tv
+    real, dimension(:), pointer :: gx=>null(),gy=>null()
+    real, dimension(:,:), pointer :: ptr2d,p0
+    real, dimension(:,:,:), pointer :: ptr3d,presm,prest,pres
+    character(len=SHORT_CHAR) :: date_check,staglev,interp,gtype,topo_interp
+    character(len=SHORT_CHAR), dimension(MAX_TRACERS) :: read_tr
+    character(len=LONG_CHAR) :: fname,ftype,var_check,mode,fprefix
+    character(len=GMM_MAXNAMELENGTH) :: gmmname,prefix,basename,time,ext
+    character(len=GMM_MAXNAMELENGTH), dimension(MAXVARS) :: vars2d,vars3d
+    logical :: init,match,heights,found
+    type(gmm_metadata) :: meta
+    type(field) :: tt,hu,pprof
+
+    ! Set default values
+    init = .false.
+    if (present(F_init)) init = F_init
+    fprefix = 'forcings_'
+    if (init) fprefix = 'init_'
+
+    ! Read general header to get information
+    iun = 0; fname = trim(Path_inputs_S)//'/INREP/'//trim(fprefix)//trim(F_date)//'.ptxt'
+    ier = fnom(iun,fname,'OLD+R/O',0)
+    call handle_error(ier,'prof_read_data','Opening '//trim(fname))
+    read(iun,*) ftype,version,hlen
+    if (trim(ftype) /= 'PTXT') &
+         call handle_error(-1,'prof_read_data','Bad file type '//trim(ftype))
+
+    ! Read data using the appropriate format
+    select case (version)
+    case (1)
+       ! type, version, header_length
+       ! mode, kind, lat, lon, elevation, hinterp, date
+       ! n_sfc, surface_vars
+       ! n_momentum_vars, momentum_vars
+       ! n_thermo_vars, thermo_vars
+       !  .... variable,nlev,stag,interp,levels,values (sfc,atm)
+
+       ! Read version-specific header information
+       read(iun,*) mode,kind,lat,lon,elev,topo_interp,date_check
+       call handle_error_l(trim(F_date)==trim(date_check),'prof_read_data','Date mismatch for '//trim(F_date))
+       read(iun,*) nvar2d,(vars2d(k),k=1,nvar2d)
+       call handle_error_l(nvar2d<=MAXVARS,'prof_read_data','More 2D variables found than permitted')
+       read(iun,*) nvar3d,(vars3d(k),k=1,nvar3d)
+       call handle_error_l(nvar3d<=MAXVARS,'prof_read_data','More 3D variables found than permitted')
+
+       ! Check lat/lon of input file and warn if necessary
+       if (init) then
+          file_lat = lat; file_lon = lon
+       else
+          if (abs(lat-file_lat) > PT_TOLERANCE .or. abs(lon-file_lon) > PT_TOLERANCE) &
+               call handle_error(-1,'prof_read_data','Illegal profile position change at '//trim(F_date))
+       endif
+       if (maxval(prof_point) < -100D0) then
+          prof_point = (/dble(lat),dble(lon)/)
+          write(STDOUT,1001) 'PROFILE POSITION RETRIEVED FROM INPUT FILE COORDINATES (S/R PROF_READ_DATA)',lat,lon
+       else
+          if (init) write(STDOUT,1001) 'PROFILE POSITION PRESCRIBED IN PROFILE NAMELIST (S/R PROF_READ_DATA)', &
+               real(prof_point(1)),real(prof_point(2))
+          if (abs(real(prof_point(1))-lat) > PT_TOLERANCE .or. abs(real(prof_point(2))-lon) > PT_TOLERANCE) then
+             if (init) then
+                if (allow_move) then
+                   write(STDERR,1002) 'WARNING: PRESCRIBED LAT/LON POSITION DOES NOT MATCH INPUT FILE (S/R PROF_READ_DATA)',&
+                        prof_point(1),prof_point(2),lat,lon,'PROFILE WILL RUN AT THE PRESCRIBED POSITION'
+                else
+                   write(STDERR,1002) 'ERROR: PRESCRIBED LAT/LON POSITION DOES NOT MATCH INPUT FILE (S/R PROF_READ_DATA)',&
+                        prof_point(1),prof_point(2),lat,lon,'USE ALLOW_MOVE=.TRUE. TO RUN AT THE PRESCRIBED POSITION'
+                   call handle_error(-1,'prof_read_data','Invalid profile position')
+                endif
+             endif
+          endif
+       endif
+
+       ! Read 2D fields
+       do i=1,nvar2d
+          read(iun,*) var_check,nlevs,staglev,interp,levs(1),data(1,1,1)
+          call handle_error_l(trim(var_check)==trim(vars2d(i)),'prof_read_data','Corrupted input file (2D)')
+          pos = index(var_check,'^')
+          do while (pos > 0)
+             var_check(pos:pos) = '/'
+             pos = index(var_check,'^')
+          enddo
+          nullify(ptr2d)
+          gmmname = trim(var_check)//trim(F_suffix)
+          istat = gmm_get(gmmname,ptr2d,meta)
+          call handle_error_l(GMM_IS_OK(istat),'prof_read_data','Invalid GMM entry (2D) for '//trim(gmmname))
+          call prof_make_valid(gmmname)
+          ptr2d(1,1) = data(1,1,1)
+       enddo
+       nullify(p0)
+       istat = gmm_get(gmmk_pre_p0_s,p0,meta)
+       call handle_error_l(GMM_IS_OK(istat),'prof_read_data','Surface pressure (P0) not found for '//trim(F_date))
+
+       ! Compute model levels (pressure) for the specified date
+       call prof_update_pres()
+       nullify(presm,prest,ptr3d)
+       istat = gmm_get(gmmk_pw_pm_plus_s,presm,meta)
+       call handle_error_l(GMM_IS_OK(istat),'prof_read_data','Invalid GMM entry for '//trim(gmmk_pw_pm_plus_s))
+       istat = gmm_get(gmmk_pw_pt_plus_s,prest,meta)
+       call handle_error_l(GMM_IS_OK(istat),'prof_read_data','Invalid GMM entry for '//trim(gmmk_pw_pt_plus_s))
+       if (init) then
+          istat = gmm_get(gmmk_pw_pm_moins_s,ptr3d,meta)
+          call handle_error_l(GMM_IS_OK(istat),'prof_read_data','Invalid GMM entry for '//trim(gmmk_pw_pm_moins_s))
+          ptr3d = presm
+          istat = gmm_get(gmmk_pw_pt_moins_s,ptr3d,meta)
+          call handle_error_l(GMM_IS_OK(istat),'prof_read_data','Invalid GMM entry for '//trim(gmmk_pw_pt_moins_s))
+          ptr3d = prest
+       endif
+
+       ! Check for fields given in height AGL and identify temperature grid
+       heights = .false.
+       heightAGL: if (kind == 4) then
+          heights=.true.
+          initial_time: if (init) then
+             ! At the initial time, compute pressures of height levels hydrostatically
+             ! Find and read temperature and humidity variables
+             do i=1,nvar3d
+                read(iun,*) var_check,nlevs,staglev,interp,(levs(k),k=1,nlevs),(data(1,1,k),k=1,nlevs)
+                if (trim(var_check) == trim(gmmk_pw_tt_moins_s)) then
+                   tt%n = nlevs
+                   tt%val(1:tt%n) = data(1,1,1:tt%n)
+                   tt%lev(1:tt%n) = levs(1:tt%n)
+                endif
+                if (trim(var_check) == 'TR^HU:M') then
+                   hu%n = nlevs
+                   hu%val(1:hu%n) = data(1,1,1:hu%n)
+                   hu%lev(1:hu%n) = levs(1:hu%n)
+                endif
+             enddo
+             ! Compute virtual temperature if humidity is available, otherwise use dry-bulb
+             match = .false.
+             if (tt%n > 0 .and. tt%n == hu%n) then
+                if (all(tt%lev(1:tt%n) == hu%lev(1:hu%n))) match = .true.
+             endif
+             if (match) then
+                qh = 0.
+                call mfottvh2(tt%val(1:tt%n),tv(1:tt%n),hu%val(1:tt%n),qh(1:tt%n),1,1,1,1, &
+                     tt%n,1,1,1,1,.true.)
+             else
+                tv(1:tt%n) = tt%val(1:tt%n)
+             endif
+             ! Compute pressure profile for temperature levels
+             pprof%n = tt%n
+             pprof%lev(1:tt%n) = tt%lev(1:tt%n)
+             pprof%val(tt%n) = p0(1,1)
+             do k=pprof%n-1,1,-1
+                tmean = (tv(k)+tv(k+1))/2.
+                pprof%val(k) = pprof%val(k+1)*exp(-(grav/(rgasd*tmean))*(tt%lev(k)-tt%lev(k+1)))
+             enddo
+             ! Reposition in input file
+             rewind(iun)
+             do i=1,hlen+nvar2d
+                read(iun,*)
+             enddo
+          else
+             ! At later times, use the diagnosed height field for level positioning
+             pprof%n = p_nk
+             pprof%val(1:p_nk-1) = prest(1,1,:)
+             pprof%val(p_nk) = p0(1,1)
+             nullify(ptr2d,ptr3d)
+             istat = gmm_get(gmmk_pw_gz_plus_s,ptr3d,meta)
+             call handle_error_l(GMM_IS_OK(istat),'prof_read_data','Invalid GMM entry for '//trim(gmmk_pw_gz_plus_s))
+             istat = gmm_get(gmmk_pw_me_moins_s,ptr2d,meta)
+             call handle_error_l(GMM_IS_OK(istat),'prof_read_data','Invalid GMM entry for '//trim(gmmk_pw_me_moins_s))
+             pprof%lev(p_nk-1) = (ptr3d(1,1,p_nk-1)+ptr2d(1,1))/2.
+             do k=p_nk-2,1,-1
+                pprof%lev(k) = (ptr3d(1,1,k)+ptr3d(1,1,k+1))/2.
+             enddo
+             pprof%lev(1:p_nk-1) = (pprof%lev(1:p_nk-1)-ptr2d(1,1))/grav 
+             pprof%lev(p_nk) = 0.
+             tt%n = p_nk
+             tt%lev = pprof%val
+             nullify(ptr3d)
+             istat = gmm_get(gmmk_pw_tt_plus_s,ptr3d,meta)
+             call handle_error_l(GMM_IS_OK(istat),'prof_read_data','Invalid GMM entry for '//trim(gmmk_pw_tt_plus_s))
+             nk_ptr = size(ptr3d,dim=3)
+             tt%val(1:nk_ptr) = ptr3d(1,1,:)
+             tt%val(nk_ptr:) = ptr3d(1,1,nk_ptr)
+             nullify(ptr3d)
+             istat = gmm_get('TR/HU:M',ptr3d,meta)
+             call handle_error_l(GMM_IS_OK(istat),'prof_read_data','Invalid GMM entry for TR/HU:M')
+             nk_ptr = size(ptr3d,dim=3)
+             hu%val(1:nk_ptr) = ptr3d(1,1,:)
+             hu%val(nk_ptr:) = ptr3d(1,1,nk_ptr)
+             if (GMM_IS_OK(istat)) then
+                qh = 0.
+                call mfottvh2(tt%val(1:p_nk),tv(1:p_nk),hu%val(1:p_nk),qh(1:p_nk),1,1,1,1,p_nk,1,1,1,1,.true.)
+             else
+                tv(1:p_nk) = tt%val(1:p_nk)
+             endif
+          endif initial_time
+       endif heightAGL
+
+       ! Read and interpolate 3D fields
+       nread_tr = 0
+       allocate(pres(1,1,p_nk))
+       do i=1,nvar3d
+          read(iun,*) var_check,nlevs,staglev,interp,(levs(k),k=1,nlevs),(data(1,1,k),k=1,nlevs)
+          call handle_error_l(trim(var_check)==trim(vars3d(i)),'prof_read_data','Corrupted input file (3D)')
+          select case (trim(staglev))
+          case ('M')
+             pres(1,1,1:p_nk-1) = presm(1,1,:)
+          case ('T')
+             pres(1,1,1:p_nk-1) = prest(1,1,:)
+          case DEFAULT
+             call handle_error(-1,'prof_read_data','Invalid staggered level name '//trim(staglev))
+          end select
+          pres(1,1,p_nk) = p0(1,1)
+          pos = index(var_check,'^')
+          do while (pos > 0)
+             var_check(pos:pos) = '/'
+             pos = index(var_check,'^')
+          enddo
+          ! Compute pressure values for input levels
+          input_plevs: if (heights) then             
+             do k=nlevs,1,-1
+                j = pprof%n-1
+                do while (levs(k) > pprof%lev(j) .and. j > 1)
+                   j = j-1
+                enddo
+                layer_mean_temperature: if (levs(k) > pprof%lev(j)) then
+                   tmean = tv(1)
+                   j = 0
+                elseif (levs(k) < pprof%lev(pprof%n)) then
+                   tmean = tv(pprof%n)
+                else
+                   alpha = (levs(k)-pprof%lev(j+1)) / (pprof%lev(j)-pprof%lev(j+1))
+                   tlev = alpha*tv(j) + (1.-alpha)*tv(j+1)
+                   tmean = (tlev + tv(j+1))/2.
+                endif layer_mean_temperature
+                plevs(1,1,k) = pprof%val(j+1)*exp(-(grav/(rgasd*tmean))*(levs(k)-pprof%lev(j+1)))   
+             enddo
+          else
+             plevs(1,1,1:nlevs) = levs(1:nlevs)
+          endif input_plevs
+          nullify(ptr3d)
+          gmmname = trim(var_check)//trim(F_suffix)
+          ! Handle either 'WW' (pressure coordinate) or 'WT1' (height coordinate) vertical motion prescription
+          call handle_error_l(.not.((gmmname == gmmk_pre_ww_s .and. prof_is_valid(gmmk_pre_wz_s)) .or. &
+               (gmmname == gmmk_pre_wz_s .and. prof_is_valid(gmmk_pre_ww_s))), &
+               'prof_read_data','Only one of PRE_WW and PRE_WT1 can be defined')
+          ! Add record to GMM
+          istat = gmm_get(gmmname,ptr3d)
+          call handle_error_l(GMM_IS_OK(istat),'prof_read_data','Invalid GMM entry (3D) for '//trim(gmmname))
+          call prof_make_valid(gmmname)
+          call vertint2(ptr3d,pres(:,:,1:size(ptr3d,dim=3)),size(ptr3d,dim=3), &
+               data(:,:,1:nlevs),plevs(:,:,1:nlevs),nlevs,1,1,1,1,1,1,1,1,varname=var_check,inttype=interp)
+          ! Add non-humidity tracers to list of user-specified input tracers
+          if (init) then
+             call gmmx_name_parts(var_check,prefix,basename,time,ext)
+             if (prefix == 'TR/') then
+                nread_tr = nread_tr + 1
+                read_tr(nread_tr) = basename
+             endif
+          endif
+       enddo
+       deallocate(pres)
+    end select
+
+    ! Close input file
+    ier = fclos(iun)
+
+    ! Set elevation values for initialization
+    if (init) then  
+       nullify(ptr2d)
+       istat = gmm_get(gmmk_pw_me_moins_s,ptr2d,meta)
+       call handle_error_l(GMM_IS_OK(istat),'prof_read_data','Invalid GMM entry for '//trim(gmmk_pw_me_moins_s))
+       ptr2d = grav*elev
+    endif
+
+    ! Add list of tracers read by the input.  In GEM, this is done in itf_phy_init(), which knows about
+    ! all the tracer reads because of the entry's IPC.  In the SCM, prof_phy_init() is called before the
+    ! input files are read, so this is our first opportunity to set the read tracer value.
+    if (init) then
+       call handle_error_l(WB_IS_OK(wb_put('itf_phy/READ_TRACERS',read_tr(1:nread_tr)),err), &
+            'prof_read_data','Adding whiteboard entry for itf_phy/READ_TRACERS')
+    endif
+
+    ! Set return values
+    if (present(F_mode)) F_mode = mode
+
+    ! Info messages
+1001 format(/,75('='),/,a,/,5x,'lat = ',f8.3,/,5x,'lon = ',f8.3,/,75('='),/)
+1002 format(60('='),/,a,/,3x,'* prescribed lat = ',f8.3,/,3x,'* prescribed lon = ',f8.3, &
+         /,5x,'input file lat = ',f8.3,/,5x,'input file lon = ',f8.3,/,a,/,60('='),/)
+1003 format(60('='),/,a,2(f8.2,a),/,a,/60('='),/)
+
+  end subroutine prof_read_data
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  subroutine prof_get_field(F_fld,F_name,F_file,F_gid,F_interp)
+    ! Perform necessary steps from get_field().  Retrieve a record from the
+    ! RPN Standard File specified.
+
+    implicit none
+
+#include <rmnlib_basics.hf>
+
+    ! Input variables
+    character(len=*), intent(in) :: F_name              !Name of the FST record
+    character(len=*), intent(in) :: F_file              !Path to the input file
+    integer, intent(in) :: F_gid                        !Target grid ID
+    character(len=*), intent(in) :: F_interp            !Type of interpolation to use
+
+    ! Output variables
+    real, dimension(:,:), intent(out) :: F_fld          !Field interpolated to target grid
+
+    ! Local variables
+    integer :: iun,ier,key,nis,njs,nks,dateo,deet,npas,nii,njj,nkk,nbits,datyp, &
+         ip1,ip2,ip3,ig1,ig2,ig3,ig4,swa,lng,dltf,ubc,ex1,ex2,ex3,sgid,nid,njd, &
+         ig1d,ig2d,ig3d,ig4d
+    real, dimension(:), allocatable :: ax,ay,axd,ayd
+    real, dimension(:,:), allocatable :: src
+    character(len=1) :: typvar,grtyp_pos,grtyp_fld,grtyp_dest
+    character(len=4) :: nomvar
+    character(len=12) :: etiket
+    character(len=LONG_CHAR) :: interp
+
+    ! External subprograms
+    integer, external :: gdgxpndaxes
+
+    ! Set interpolation order (will revert to 'NEAREST' if grids are identical)
+    interp = F_interp
+
+    ! Open input file for reading
+    iun = 0
+    ier = fnom(iun,trim(F_file),'RND+OLD+R/O',0)
+    call handle_error(ier,'prof_get_field','Acquiring lock for '//trim(F_file))
+    ier = fstouv(iun,'RND')
+    call handle_error(ier,'prof_get_field','Opening '//trim(F_file))
+    write(STDOUT,1000) trim(F_file),iun
+
+    ! Find key for first matching record in the file
+    key = fstinf(iun,nis,njs,nks,-1,'',-1,-1,-1,'',trim(F_name))
+    call handle_error_l(key>=0,'prof_get_field','Finding a matching record for '//trim(F_name))
+    call handle_error_l(nks==1,'prof_get_field','Record for '//trim(F_name)//' contains multiple levels')
+
+    ! Read input field
+    allocate(src(nis,njs),stat=ier)
+    call handle_error(ier,'prof_get_field','Allocating src')
+    ier = fstluk(src,key,nii,njj,nkk)
+    call handle_error(ier,'prof_get_field','Reading record '//trim(F_name)//' from '//trim(F_file))
+
+    ! Retrieve required destination grid (point) information
+    ier = ezgprm(F_gid,grtyp_dest,nid,njd,ig1d,ig2d,ig3d,ig4d)
+    call handle_error(ier,'prof_get_field','Retrieving information for source grid')
+    allocate(axd(nid),ayd(njd),stat=ier)
+    call handle_error(ier,'prof_get_field','Allocating axd/ayd')
+    ier = gdgxpndaxes(F_gid,axd,ayd)
+    call handle_error(ier,'prof_get_field','Retrieving axis information for source grid')
+
+    ! Define source grid and compare to model grid
+    ier = fstprm(key,dateo,deet,npas,nii,njj,nkk,nbits,datyp,ip1,ip2,ip3,typvar,nomvar, &
+         etiket,grtyp_fld,ig1,ig2,ig3,ig4,swa,lng,dltf,ubc,ex1,ex2,ex3)
+    call handle_error(ier,'prof_get_field','Accesing record details in '//trim(F_file))
+    if (grtyp_fld == 'Z' .or. grtyp_fld == 'Y') then
+       allocate(ax(nis),ay(njs),stat=ier)
+       call handle_error(ier,'prof_get_field','Allocating ax/ay')
+       key = fstinf(iun,nii,njj,nkk,-1,'',ig1,ig2,-1,'','>>')
+       call handle_error_l(key>=0,'prof_get_field','Finding >> record in '//trim(F_file))
+       ier = fstluk(ax,key,nii,njj,nkk)
+       call handle_error_l(key>=0,'prof_get_field','Reading >> record from '//trim(F_file))
+       key = fstinf(iun,nii,njj,nkk,-1,'',ig1,ig2,-1,'','^^')
+       call handle_error_l(key>=0,'prof_get_field','Finding ^^ record in '//trim(F_file))
+       ier = fstluk(ay,key,nii,njj,nkk)
+       call handle_error_l(key>=0,'prof_get_field','Reading ^^ record from '//trim(F_file))
+       ier = fstprm(key,dateo,deet,npas,nii,njj,nkk,nbits,datyp,ip1,ip2,ip3,typvar,nomvar, &
+            etiket,grtyp_pos,ig1,ig2,ig3,ig4,swa,lng,dltf,ubc,ex1,ex2,ex3)
+       call handle_error(ier,'prof_get_field','Accessing record details in '//trim(F_file))
+       sgid = ezgdef_fmem(nis,njs,grtyp_fld,grtyp_pos,ig1,ig2,ig3,ig4,ax,ay)
+       call handle_error_l(sgid>=0,'prof_get_field','Setting source grid definition in ezscint')
+       call samegrid2(nis,njs,ig1,ig2,ig3,ig4,ax,ay,nid,njd,ig1d,ig2d,ig3d,ig4d,axd,ayd,interp)
+    else
+       sgid = ezqkdef(nis,njs,grtyp_fld,ig1,ig2,ig3,ig4,iun)
+       call handle_error_l(sgid>=0,'prof_get_field','Setting '//trim(grtyp_fld)//'-type source grid in ezscint')
+    endif
+
+    ! Interpolate to model grid
+    write(STDOUT,1001) trim(F_name),trim(interp)
+    ier = ezdefset(F_gid,sgid)
+    call handle_error(ier,'prof_get_field','Creating grid interpolation set (ezscint)')
+    ier = ezsetopt('INTERP_DEGREE',trim(interp))
+    call handle_error(ier,'prof_get_field','Setting interpolation order to '//trim(interp))
+    ier = ezsint(F_fld,src)
+    call handle_error(ier,'prof_get_field','Interpolating field '//trim(F_name))
+
+    ! Close input file
+    ier = fstfrm(iun)
+    call handle_error(ier,'prof_get_field','Closing '//trim(F_file))
+    ier = fclos(iun)
+    call handle_error(ier,'prof_get_field','Releasing lock for '//trim(F_file))
+
+    ! Garbage collection
+    deallocate(src,axd,ayd,stat=ier)
+    call handle_error(ier,'prof_get_field','Freeing src/axd/ayd')
+    if (allocated(ax)) then
+       deallocate(ax,ay,stat=ier)
+       call handle_error(ier,'prof_get_field','Freeing ax/ay')
+    endif
+
+    ! Info messages
+1000 format (/' PROF_GET_FIELD:  file ',a,' open on unit: ',i4)
+1001 format ( ' PROF_GET_FIELD: Interpolating ',a,' with scheme: ',a/)
+
+  end subroutine prof_get_field
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  subroutine prof_output_pre_init(F_initialized)
+    ! Preliminary initialization of the SCM output system, to be used before
+    ! physics or dynamics initializations.
+
+    implicit none
+
+#include <rmnlib_basics.hf>
+#include <clib_interface.cdk>
+#include <WhiteBoard.hf>
+
+    ! Output arguments
+    logical, intent(out), optional :: F_initialized             !Initialization status of output system
+
+    ! Local variables
+    integer :: nout,istat
+    character(len=LONG_CHAR), dimension(MAX_OUTPUTS) :: out_varlist
+    logical, save :: initialized=.false.
+
+    ! Return initialization status on request
+    if (present(F_initialized)) then
+       F_initialized = initialized
+       return
+    endif
+
+    ! Prevent multiple initializations
+    if (initialized) call handle_error(-1,'prof_output_pre_init','Attempted double call to output pre-initialization')
+    initialized = .true.
+
+    ! Provide list of requested fields to the physics
+    nout = 1
+    do while (len_trim(output_list(nout)) > 0)
+       out_varlist(nout) = output_list(nout)
+       istat = clib_tolower(out_varlist(nout))
+       nout = nout+1
+    enddo
+    nout = nout-1
+    istat = min(wb_put('itf_phy/PHYOUT',out_varlist(1:nout)(1:32)),istat)
+    call handle_error(istat,'prof_output_pre_init','Creating list of physics output requests')
+
+  end subroutine prof_output_pre_init
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  subroutine prof_output_post_init(F_initialized)
+    ! Finalize initialization of the SCM output system, to be used after
+    ! physics and dynamics initializations.
+    use phy_itf, only: phymeta,phy_get,phy_getmeta
+    use vGrid_Descriptors, only: vgd_get,vgd_levels,vgd_write,VGD_OK
+    use step_mod, only: step_get,STEP_OK
+
+    implicit none
+
+#include <rmnlib_basics.hf>
+#include <clib_interface.cdk>
+#include <WhiteBoard.hf>
+#include <msg.h>
+
+    ! Output arguments
+    logical, intent(out), optional :: F_initialized             !Initialization status of output system
+
+    ! Local derived types
+    type outlist                                                !Structure contianing output list information
+       character(len=LONG_CHAR) :: name                         !Name of field to output
+       character(len=LONG_CHAR) :: format                       !Format of field to output
+    end type outlist
+
+    ! Local variables
+    integer :: i,j,output_list_len,ngmm,nphy,nbase,istat,buffer_id
+    character(len=LONG_CHAR) :: oname,prefix,prefix_coord,varname,varname_mangled
+    character(len=LONG_CHAR), dimension(MAX_OUTPUTS) :: phy_varlist
+    logical :: found,pre_init
+    logical, save :: initialized=.false.
+    type(gmm_metadata) :: meta
+    type(phymeta) :: pmeta
+    type(outlist), dimension(MAX_OUTPUTS) :: olist
+    type(output_var), dimension(MAX_OUTPUTS) :: out_gmm_all,out_phy_all
+
+    ! Return initialization status on request
+    if (present(F_initialized)) then
+       F_initialized = initialized
+       return
+    endif
+
+    ! Prevent multiple initializations
+    if (initialized) call handle_error(-1,'prof_output_post_init','Attempted double call to output post-initialization')
+    initialized = .true.
+
+    ! Check for output pre-initialization
+    call prof_output_pre_init(F_initialized=pre_init)
+    call handle_error_l(pre_init==.true.,'prof_output_post_init','Missing pre-initialization of the output system')
+
+    ! Get length of output list request
+    output_list_len=0; i=0
+    do while (i < size(output_list))
+       i = i+1
+       if (len_trim(output_list(i)) == 0) exit
+       oname = output_list(i)
+       found = .false.; j=1
+       do while (j <= output_list_len .and. .not.found)
+          if (trim(olist(j)%name) == trim(oname)) found = .true.
+          j = j+1
+       enddo
+       if (found) cycle
+       output_list_len = output_list_len + 1
+       if (index(output_list(output_list_len),'(') > 0) &
+            oname = output_list(output_list_len)(1:index(output_list(output_list_len),'(')-1)
+       olist(output_list_len) = outlist(trim(oname), &
+            output_list(output_list_len)(index(output_list(output_list_len),'(')+1:index(output_list(output_list_len),')')-1))
+    enddo
+
+    ! Set file prefixes
+    call prof_output_prefix(prefix,prefix_coord)
+
+    ! Always produce information about the level positions
+    i=1; out_gmm_all(i) = output_var('PRESM',trim(gmmk_pw_pm_plus_s),'',prefix_coord,.true.,.true.,i) !momentum-level pressures
+    i=2; out_gmm_all(i) = output_var('PREST',trim(gmmk_pw_pt_plus_s),'',prefix_coord,.true.,.true.,i) !thermo-level pressures
+    ngmm = i
+    i=1; out_phy_all(i) = output_var('HGHTM','GZMO','',prefix_coord,.true.,.true.,ngmm+i) !momentum-level geopotential height (m AGL) from physics
+    i=2; out_phy_all(i) = output_var('HGHTE','2J','',prefix_coord,.true.,.true.,ngmm+i)   !energy-level geopotential height (m AGL) from physics
+    i=3; out_phy_all(i) = output_var('SIGM','SL','',prefix_coord,.true.,.true.,ngmm+i)    !momentum-level sigma values (P/Ps) from physics
+    i=4; out_phy_all(i) = output_var('SIGT','SIGT','',prefix_coord,.true.,.true.,ngmm+i)  !thermo-level sigma values (P/Ps) from physics
+    i=5; out_phy_all(i) = output_var('HGHTT','2J','',prefix_coord,.true.,.true.,ngmm+i)   !thermo-level geopotential height (m AGL) from physics
+    nphy = i
+    nbase = ngmm + nphy
+
+    ! Check for a matching physics or GMM names
+    buffer_id = nbase
+    do j=1,output_list_len
+       varname = olist(j)%name
+       if (phy_getmeta(pmeta,trim(varname),F_quiet=.true.) > 0) then
+          nphy = nphy + 1
+          buffer_id = buffer_id + 1
+          out_phy_all(nphy) = output_var(trim(varname),trim(varname),olist(j)%format,prefix,.true.,.true.,buffer_id)
+       elseif (GMM_IS_OK(gmm_getmeta(trim(varname),meta))) then
+          ngmm = ngmm + 1
+          buffer_id = buffer_id + 1
+          ! Replace all colons (:) with dashes (-) for output naming
+          varname_mangled = varname
+          i = index(varname_mangled,':')
+          do while (i > 0)
+             varname_mangled(i:i) = '-'
+             i = index(varname_mangled,':')
+          enddo
+          ! Replace all slashes (/) with dashes (-) for output naming
+          i = index(varname_mangled,'/')
+          do while (i > 0)
+             varname_mangled(i:i) = '-'
+             i = index(varname_mangled,'/')
+          enddo
+          out_gmm_all(ngmm) = output_var(trim(varname_mangled),trim(varname),olist(j)%format,prefix,.true.,.true.,buffer_id)
+       else
+          call msg(MSG_WARNING,'(prof_output_post_init) No '//trim(varname)//' found for output')
+       endif
+    enddo
+
+    ! Set output field request information
+    allocate(out_gmm(ngmm))
+    out_gmm = out_gmm_all(1:size(out_gmm))
+    allocate(out_phy(nphy))
+    out_phy = out_phy_all(1:size(out_phy))
+
+    ! Establish output buffer
+    allocate(output_buffer(p_nk,size(out_gmm)+size(out_phy),output_buffer_length),stat=istat)
+    call handle_error(istat,'prof_output_post_init', &
+         'Allocating space for output_buffer (reduce output_buffer_length in scm_cfgs namelist)')
+    output_buffer = 0.
+
+  end subroutine prof_output_post_init
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  subroutine prof_output(F_stepno,F_dyn_L,F_phy_L)
+    ! Generate output from the profile model.
+    use phy_itf, only: phymeta,phy_get
+    use vGrid_Descriptors, only: vgd_get,vgd_levels,vgd_write,VGD_OK
+    use step_mod, only: step_get,STEP_OK
+
+    implicit none
+
+#include <rmnlib_basics.hf>
+#include <clib_interface.cdk>
+#include <WhiteBoard.hf>
+
+    ! Input arguments
+    integer, intent(in) :: F_stepno                     !time step number
+    logical, intent(in), optional :: F_dyn_L            !output dynamics variables [.false.]
+    logical, intent(in), optional :: F_phy_L            !output physics variables [.false.]
+
+    ! Local variables
+    integer :: i,j,istat,indx,len,init,err,oun,nbase
+    integer, save :: step_total
+    integer, dimension(1), save :: dipm,dipt
+    real, dimension(p_nk) :: hybm,hybt
+    real, dimension(:), pointer :: hybm_free=>null(),hybt_free=>null()
+    real, dimension(:,:), pointer :: ptr2d
+    real, dimension(:,:,:), pointer :: ptr3d
+    character(len=SHORT_CHAR) :: current_date
+    character(len=LONG_CHAR) :: oname,fname
+    character(len=LONG_CHAR), save :: prefix,prefix_coord,ext
+    logical :: my_dyn_L,my_phy_L,found,hdr,base_init
+    logical, save :: initialized=.false.,hdr_diagm=.true.,hdr_diagt=.true.
+    type(gmm_metadata) :: meta
+    type(phymeta) :: pmeta
+
+    ! Set default values
+    my_dyn_L = .false.
+    if (present(F_dyn_L)) my_dyn_L = F_dyn_L
+    my_phy_L = .false.
+    if (present(F_phy_L)) my_phy_L = F_phy_L
+
+    ! Check if output is required for this step
+    if (mod(F_stepno,output_inc) > 0 .or. F_stepno < output_start .or. &
+         (output_end > 0 .and. F_stepno > output_end)) return
+
+    ! Set current date for outputs
+    call incdatsd(current_date,start_date,cstv_dt_8*F_stepno/SEC_IN_DAY)
+
+    ! Base initializations
+    initialize: if (.not. initialized) then
+
+       ! Check for output system base initialization
+       call prof_output_post_init(F_initialized=base_init)
+       call handle_error_l(base_init==.true.,'prof_output','Base initialization is required before call to prof_output()')
+
+       ! Set file prefix and extension
+       call prof_output_prefix(prefix,prefix_coord)
+       ext = '_'//trim(start_date)//'.txt'
+
+       ! Generate output files containing the hybrid coordinate values
+       nullify(hybm_free,hybt_free)
+       err = vgd_get(vcoord,'VCDM - VERTICAL COORDINATE MOMENTUM',hybm_free)
+       call handle_error_l(err==VGD_OK,'prof_output','Retrieving VCDM')
+       call handle_error_l(size(hybm_free)==p_nk+1,'prof_output','Invalid number of staggered momentum levels')
+       hybm = hybm_free(1:p_nk)
+       err = vgd_get(vcoord,'VCDT - VERTICAL COORDINATE THERMO',hybt_free)
+       staggered: if (associated(hybt_free)) then
+          call handle_error_l(err==VGD_OK,'prof_output','Retrieving VCDT')
+          call handle_error_l(size(hybt_free)==p_nk+1,'prof_output','Invalid number of staggered thermo levels')
+          hybt = hybt_free(1:p_nk)
+       else
+          hybt = hybm
+       endif staggered
+       hdr = .true.
+       call prof_write(trim(prefix_coord)//'HYBM'//trim(ext),hdr,-1,'',current_date,hybm,.false.)
+       hdr = .true.
+       call prof_write(trim(prefix_coord)//'HYBT'//trim(ext),hdr,-1,'',current_date,hybt,.false.)
+
+       ! Generate an RPN Standard output file containing the vertical grid descriptor (!!)
+       oun = 0; fname = trim(prefix_coord)//'vcoord.fst'
+       err = fnom(oun,trim(fname),'RND+STD',0)
+       call handle_error(err,'prof_output','Acquiring lock for '//trim(fname))
+       err = fstouv(oun,'RND')
+       call handle_error(err,'prof_output','Opening '//trim(fname))
+       err = vgd_write(vcoord,oun,'fst')
+       call handle_error_l(err==VGD_OK,'prof_output','Writing !! record to '//trim(fname))
+       err = fstfrm(oun)
+       call handle_error(err,'prof_output','Closing '//trim(fname))
+       err = fclos(oun)
+       call handle_error(err,'prof_output','Releasing lock for '//trim(fname))
+
+       ! Obtain information about the diagnostic level
+       call handle_error_l(vgd_get(vcoord,'DIPM - IP1 of diagnostic level (m)',dipm(1))==VGD_OK,'prof_output','Obtaining diagnostic level (m)')
+       call handle_error_l(vgd_get(vcoord,'DIPT - IP1 of diagnostic level (t)',dipt(1))==VGD_OK,'prof_output','Obtaining diagnostic level (t)')
+
+       ! Get last step number
+       call handle_error_l(step_get('step_total',step_total)==STEP_OK,'prof_output','Retrieving step_total from step package')
+
+       ! Initializations complete
+       initialized = .true.
+
+    endif initialize
+
+    ! Outputs directly from GMM (dynamics - only output the bottom p_nk levels)
+    if (my_dyn_L) then
+       do i=1,size(out_gmm)
+          if (.not.out_gmm(i)%is_found) cycle
+          if (.not.prof_is_valid(out_gmm(i)%name,F_quiet=.true.)) then
+             out_gmm(i)%is_found = .false.
+             cycle
+          endif
+          call handle_error_l(GMM_IS_OK(gmm_getmeta(out_gmm(i)%name,meta)),'prof_output','GMM getmeta for '//trim(out_gmm(i)%name))
+          field_3d: if (meta%l(3)%n > 0) then
+             call handle_error_l(GMM_IS_OK(gmm_get(out_gmm(i)%name,ptr3d)),'prof_output','GMM get for '//trim(out_gmm(i)%name))
+             call prof_write(trim(out_gmm(i)%prefix)//trim(out_gmm(i)%oname)//trim(ext),out_gmm(i)%need_header, &
+                  out_gmm(i)%buffer_id,trim(out_gmm(i)%format),current_date,ptr3d(1,1,:),F_stepno==step_total)
+          else
+             call handle_error_l(GMM_IS_OK(gmm_get(out_gmm(i)%name,ptr2d)),'prof_output','GMM get for '//trim(out_gmm(i)%name))
+             allocate(ptr3d(1,1,1),stat=err)
+             call handle_error(err,'prof_output','Allocating space for ptr3d')
+             ptr3d(:,:,1) = ptr2d
+             call prof_write(trim(out_gmm(i)%prefix)//trim(out_gmm(i)%oname)//trim(ext),out_gmm(i)%need_header, &
+                  out_gmm(i)%buffer_id,trim(out_gmm(i)%format),current_date,ptr3d(1,1,:),F_stepno==step_total)
+             deallocate(ptr3d)
+          endif field_3d
+       enddo
+    endif
+
+    ! Outputs from the physics buses and for diagnostic level positions
+    if (my_phy_L) then
+       nullify(ptr3d)
+       do i=1,size(out_phy)
+          if (.not.out_phy(i)%is_found) cycle
+          if (RMN_IS_OK(phy_get(ptr3d,out_phy(i)%name,F_npath='OV',F_meta=pmeta,F_realloc=.true.))) then
+             oname = pmeta%oname
+             if (out_phy(i)%prefix == prefix_coord) oname = out_phy(i)%oname
+             err = clib_toupper(oname)
+             call prof_output_special(oname,ptr3d(:,:,1:pmeta%n(3)))
+             call prof_write(trim(out_phy(i)%prefix)//trim(oname)//trim(ext),out_phy(i)%need_header, &
+                  out_phy(i)%buffer_id,trim(out_phy(i)%format),current_date,ptr3d(1,1,1:pmeta%n(3)),F_stepno==step_total)
+          else
+             out_phy(i)%is_found = .false.
+          endif
+       enddo
+       call handle_error_l(GMM_IS_OK(gmm_get(gmmk_pw_p0_plus_s,ptr2d)),'prof_output','GMM retrieving '//trim(gmmk_pw_p0_plus_s))
+       if (associated(ptr3d)) deallocate(ptr3d); nullify(ptr3d)
+       call handle_error_l(vgd_levels(vcoord,dipm,ptr3d,ptr2d)==VGD_OK,'prof_output','Computing diagnostic level (m)')
+       call prof_write(trim(prefix_coord)//'DIAGM'//trim(ext),hdr_diagm,-1,'',current_date,ptr3d(1,1,:)/100.,.false.)
+       if (associated(ptr3d)) deallocate(ptr3d); nullify(ptr3d)
+       call handle_error_l(vgd_levels(vcoord,dipt,ptr3d,ptr2d)==VGD_OK,'prof_output','Computing diagnostic level (t)')
+       call prof_write(trim(prefix_coord)//'DIAGT'//trim(ext),hdr_diagt,-1,'',current_date,ptr3d(1,1,:)/100.,.false.)
+       if (associated(ptr3d)) deallocate(ptr3d); nullify(ptr3d)
+    endif
+
+  end subroutine prof_output
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  subroutine prof_output_special(F_name_S,F_data)
+    ! Perform special operations based on output name
+    use phy_itf, only: phy_get
+
+    implicit none
+
+#include <rmnlib_basics.hf>
+#include <WhiteBoard.hf>
+
+    ! Input arguments
+    character(len=*), intent(in) :: F_name_S                    !output field name
+
+    ! Input/output arguments
+    real, dimension(:,:,:), intent(inout) :: F_data             !data values to process
+
+    ! Local variables
+    integer :: nk
+    real :: diag_height
+    real, dimension(:,:,:), pointer :: ptr3d
+
+    ! Basic setup
+    nullify(ptr3d)
+    nk = size(F_data,dim=3)
+
+    ! Prepare special outputs based on name
+    SPECIAL_FIELDS: select case (trim(F_name_S))
+    case ('HGHTT')
+       if (RMN_IS_OK(phy_get(ptr3d,'ZH',F_npath='O',F_bpath='V'))) then
+          F_data(:,:,nk-1) = ptr3d(:,:,1)
+       endif
+       if (RMN_IS_OK(wb_get('sfc/zt',diag_height))) then
+          F_data(:,:,nk) = diag_height
+       endif
+    case ('HGHTM')
+       if (RMN_IS_OK(wb_get('sfc/zu',diag_height))) then
+          F_data(:,:,nk) = diag_height
+       endif
+    end select SPECIAL_FIELDS
+    
+  end subroutine prof_output_special
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  subroutine prof_write(F_fname_S,F_header_L,F_buffer_id,F_format_S,F_date_S,F_data,F_flush)
+    ! Write data to an output file
+
+    implicit none
+
+    ! Input arguments
+    character(len=*), intent(in) :: F_fname_S                   !oputput file name
+    integer, intent(in) :: F_buffer_id                          !output buffer id
+    character(len=*), intent(in) :: F_format_S                  !format specification (standard Fortran)
+    character(len=*), intent(in) :: F_date_S                    !current date string
+    real, dimension(:), intent(in) :: F_data                    !data values to write
+    logical, intent(in) :: F_flush                              !force a flush of the data to disk
+
+    ! Input/output arguments
+    logical, intent(inout) :: F_header_L                        !request for header output
+
+    ! Local parameters
+    character(len=LONG_CHAR), parameter :: DIGITS='16',POWER='10'
+
+    ! Local variables
+    integer :: oun,err,i
+    integer, save :: output_buffer_count=0
+    real :: fldmax
+    character(len=LONG_CHAR) :: fmode,clen,fmt,index_format,ISOdate,cpre,cpre6
+    character(len=LONG_CHAR), save :: active_date=''
+    character(len=LONG_CHAR), dimension(:), allocatable, save :: date_buffer
+    logical, save :: flush_buffer=.false.
+
+    ! Determine appropriate formatting if none is provided
+    index_format = '(i'//trim(DIGITS)//',2x)'
+    fmt = F_format_S
+    if (len_trim(fmt) == 0) fmt = 'e'//trim(DIGITS)//'.'//trim(POWER)
+
+    ! Change internal date to ISO 8601 Basic format
+    ISOdate = F_date_S
+    ISOdate(index(ISOdate,'.'):index(ISOdate,'.')) = 'T'
+    ISOdate = trim(ISOdate)//'Z'
+
+    ! Write to output file ('APPEND' mode of fnom appears not to work)
+    write(clen,trim(index_format)) size(F_data)
+    oun = 60
+    if (F_header_L) then
+       open(unit=oun,file=trim(F_fname_S),status='REPLACE',action='WRITE',iostat=err)
+       call handle_error_l(err==0,'prof_write','Opening '//trim(F_fname_S)//' for header')
+       write(oun,'(a,'//trim(clen)//'('//trim(index_format)//'))') 'date',(i,i=1,size(F_data))
+       close(oun)
+       F_header_L = .false.
+    endif
+    BUFFERED_WRITE: if (F_buffer_id > 0) then
+       if (F_date_S /= active_date) then
+          if (output_buffer_count == output_buffer_length-1) then
+             flush_buffer = .true.
+          else if (output_buffer_length == 1) then
+             flush_buffer = .true.
+             output_buffer_count = 0
+          else
+             if (flush_buffer) output_buffer_count = 0
+             flush_buffer = .false.
+          endif
+          output_buffer_count = output_buffer_count + 1
+          active_date = F_date_S
+          if (.not. allocated(date_buffer)) then
+             allocate(date_buffer(size(output_buffer,dim=3)),stat=err)
+             call handle_error(err,'prof_write','Allocating date_buffer')
+          endif
+          date_buffer(output_buffer_count) = ISOdate
+       endif
+       output_buffer(1:size(F_data),F_buffer_id,output_buffer_count) = F_data
+       if (flush_buffer .or. F_flush) then          
+          open(unit=oun,file=trim(F_fname_S),status='OLD',action='WRITE',position='APPEND',iostat=err)
+          call handle_error_l(err==0,'prof_write','Acquiring buffering lock for '//trim(F_fname_S))
+          do i=1,output_buffer_count
+             write(oun,'(a,x,'//trim(clen)//'('//trim(fmt)//',x))') trim(date_buffer(i)), &
+                  output_buffer(1:size(F_data),F_buffer_id,i)
+          enddo
+          close(oun)
+          output_buffer(:,F_buffer_id,:) = 0.
+       endif
+    else
+       open(unit=oun,file=trim(F_fname_S),status='OLD',action='WRITE',position='APPEND',iostat=err)
+       call handle_error_l(err==0,'prof_write','Acquiring unbuffered lock for '//trim(F_fname_S))
+       write(oun,'(a,x,'//trim(clen)//'('//trim(fmt)//',x))') trim(ISOdate),F_data
+       close(oun)
+    end if BUFFERED_WRITE
+    
+  end subroutine prof_write
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  function prof_ddp(fld,pres) result(der)
+    ! Compute vertical derivative wrt pressure.
+
+    implicit none
+
+    ! Input arguments
+    real, dimension(:,:,:), intent(in) :: fld         !field to differentiate
+    real, dimension(:,:,:), intent(in) :: pres        !pressure
+
+    ! Output arguments
+    real, dimension(1,1,size(fld,dim=3)) :: der       !vertical derivative
+
+    ! Local variables
+    integer :: k,nk
+
+    ! Compute one-sided differences at the ends of the column, and centered differences in the middle
+    nk = size(fld,dim=3)
+    if (nk < 2) call handle_error(-1,'prof_dyn_fwd::ddp','Insufficient number of levels for ddp')
+    der(1,1,1) = (fld(1,1,2)-fld(1,1,1)) / (pres(1,1,2)-pres(1,1,1))
+    do k=2,nk-1
+       der(1,1,k) = (fld(1,1,k+1)-fld(1,1,k-1)) / (pres(1,1,k+1)-pres(1,1,k-1))
+    enddo
+    der(1,1,nk) = (fld(1,1,nk)-fld(1,1,nk-1)) / (pres(1,1,nk)-pres(1,1,nk-1))
+  end function prof_ddp
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  subroutine prof_update_GPW()
+    ! Perform necessary steps from pw_update_GPW.  This consists of updating
+    ! heights and coordinate pressures in the SCM.
+    use tdpack, only: GRAV
+    
+    implicit none
+
+    ! Local variables
+    integer :: i,err
+    real, dimension(:,:), pointer :: me,p0
+    real, dimension(:,:,:), allocatable :: tv,qh
+    real, dimension(:,:,:), pointer :: moins,plus,tt,hu,pt,pm,tr
+    character(len=GMM_MAXNAMELENGTH) :: trname,prefix,basename,time,ext
+
+    ! Update coordinate
+    call prof_update_pres()
+
+    ! Update geopotential (AGL, units m2/s2) on thermo levels as a purely diagnostic value.  
+    ! GEM computes this in pw_update_GPW() using the prognostic geopotential perturbation 
+    ! (fiptx), but it must be done diagnostically in the SCM.
+    call handle_error_l(GMM_IS_OK(gmm_get(gmmk_pw_gz_plus_s,plus)),'prof_update_GPW','GMM retrieving '//trim(gmmk_pw_gz_plus_s))
+    call handle_error_l(GMM_IS_OK(gmm_get(gmmk_pw_gz_moins_s,moins)),'prof_update_GPW','GMM retrieving '//trim(gmmk_pw_gz_moins_s))
+    call handle_error_l(GMM_IS_OK(gmm_get(gmmk_pw_me_moins_s,me)),'prof_update_GPW','GMM retrieving '//trim(gmmk_pw_me_moins_s))
+    call handle_error_l(GMM_IS_OK(gmm_get(gmmk_pw_p0_plus_s,p0)),'prof_update_GPW','GMM retrieving '//trim(gmmk_pw_p0_plus_s))
+    call handle_error_l(GMM_IS_OK(gmm_get(gmmk_pw_tt_plus_s,tt)),'prof_update_GPW','GMM retrieving '//trim(gmmk_pw_tt_plus_s))
+    call handle_error_l(GMM_IS_OK(gmm_get(gmmk_pw_pt_plus_s,pt)),'prof_update_GPW','GMM retrieving '//trim(gmmk_pw_pt_plus_s))
+    call handle_error_l(GMM_IS_OK(gmm_get(gmmk_pw_pm_plus_s,pm)),'prof_update_GPW','GMM retrieving '//trim(gmmk_pw_pm_plus_s))
+    call handle_error_l(GMM_IS_OK(gmm_get('TR/HU:P',hu)),'prof_update_GPW','GMM retrieving TR/HU:P')
+    allocate(tv(1,1,size(tt,dim=3)),qh(1,1,size(tt,dim=3)),stat=err)
+    call handle_error(err,'prof_update_GPW','Allocating TV/QH')
+    qh = 0.
+    do i=1,size(tracers)
+       if (tracers(i)%wload) then
+          call gmmx_name_parts(tracers(i)%gmm,prefix,basename,time,ext)
+          if (time == ':P') then
+             call handle_error_l(GMM_IS_OK(gmm_get(tracers(i)%gmm,tr)),'prof_update_GPW','GMM retrieving '//trim(tracers(i)%gmm))
+             qh = qh + tr
+          endif
+       endif
+    enddo
+    moins = plus
+    call mfottvh2(tt,tv,hu,qh,1,1,1,1,size(tt,dim=3),1,1,1,1,.true.)
+    call prof_hydro_height(tv,pt(:,:,1:size(tt,dim=3)),pm,me/grav,p0,plus)
+    plus = grav * plus
+    deallocate(tv,qh,stat=err)
+    call handle_error(err,'prof_update_GPW','Freeing TV/QH')
+
+  end subroutine prof_update_GPW
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  subroutine prof_update_pres()
+    ! Update momentum and thermo-level pressures.
+    use vGrid_Descriptors, only: vgd_get,vgd_levels,VGD_OK,VGD_MISSING
+
+    implicit none
+
+    ! Local variables
+    integer :: istat,err
+    integer, dimension(:), pointer :: ip1m,ip1t
+    real, dimension(:), pointer :: presm,prest
+    real, dimension(:,:), pointer :: pre,p0
+    real, dimension(:,:,:), pointer :: pm,pt
+    type(gmm_metadata) :: meta
+
+    ! Retrieve GMM pressures and prescribed P0
+    nullify(pm,pre,pt)
+    istat = gmm_get(gmmk_pw_pm_plus_s,pm,meta)
+    call handle_error_l(GMM_IS_OK(istat),'prof_update_pres','GMM retrieving '//trim(gmmk_pw_pm_plus_s))
+    istat = gmm_get(gmmk_pw_pt_plus_s,pt,meta)
+    call handle_error_l(GMM_IS_OK(istat),'prof_update_pres','GMM retrieving '//trim(gmmk_pw_pt_plus_s))
+    istat = gmm_get(gmmk_pre_p0_s,pre,meta)
+    call handle_error_l(GMM_IS_OK(istat),'prof_update_pres','GMM retrieving '//trim(gmmk_pre_p0_s))
+    istat = gmm_get(gmmk_pw_p0_plus_s,p0,meta)
+    call handle_error_l(GMM_IS_OK(istat),'prof_update_pres','GMM retrieving '//trim(gmmk_pw_p0_plus_s))
+
+    ! Compute momentum and thermodynamic level pressure columns (note that
+    ! only momentum levels are available if the vertical coordinate is not
+    ! staggered)
+    nullify(ip1m,ip1t,presm,prest)
+    err = vgd_get(vcoord,'VIPM - IP1 MOMENTUM',ip1m)
+    call handle_error_l(err==VGD_OK,'prof_update_pres','Retrieving VIPM')
+    err = vgd_levels(vcoord,ip1m,presm,sfc_field=pre(1,1))
+    call handle_error_l(err==VGD_OK,'prof_update_pres','Computing momentum-level pressures')
+    pm(1,1,:) = presm(1:size(pm,dim=3))
+    err = vgd_get(vcoord,'VIPT - IP1 THERMO',ip1t)
+    staggered: if (associated(ip1t)) then
+       call handle_error_l(err==VGD_OK,'prof_update_pres','Retrieving VIPT')
+       err = vgd_levels(vcoord,ip1t,prest,sfc_field=pre(1,1))
+       call handle_error_l(err==VGD_OK,'prof_update_pres','Computing thermo-level pressures')
+       pt(1,1,:) = prest(1:size(pt,dim=3))
+    else
+       pt = pm
+    endif staggered
+    p0 = pre
+
+  end subroutine prof_update_pres
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  subroutine prof_w(F_coord,F_w)
+    ! Return the coordinate-appropriate vertical motion field on thermodynamic
+    ! levels.  The conversion of the prescribed field to the other coordinate
+    ! involves the use of the time-minus temperature and the time-plus pressure.
+    ! This is because we need w to compute the temperature tendency at the current
+    ! time, but the pressure state has already been updated.
+    use tdpack, only: RGASD,GRAV
+
+    implicit none
+
+    ! Input arguments
+    character(len=*), intent(in) :: F_coord             !Coordinate description ('height' or 'pressure')
+
+    ! Output arguments
+    real, dimension(:,:,:), pointer  :: F_w             !Coordinate-specific vertical motion
+
+    ! Local variables
+    integer :: istat
+    real, dimension(:,:,:), pointer :: pre,tt,pt
+    logical :: pre_ww,pre_wz
+
+    ! Acquire prescribed field values
+    nullify(pre)
+    W_PRESCRIBED: if (prof_is_valid(gmmk_pre_ww_s)) then
+       istat = gmm_get(gmmk_pre_ww_s,pre)
+       call handle_error_l(GMM_IS_OK(istat),'prof_w','GMM retrieving '//trim(gmmk_pre_ww_s))
+       pre_ww = .true.; pre_wz = .false.
+    elseif (prof_is_valid(gmmk_pre_wz_s)) then
+       istat = gmm_get(gmmk_pre_wz_s,pre)
+       call handle_error_l(GMM_IS_OK(istat),'prof_w','GMM retrieving '//trim(gmmk_pre_wz_s))
+       pre_ww = .false.; pre_wz = .true.
+    endif W_PRESCRIBED
+    call handle_error_l(associated(pre),'prof_w','Vertical motion must be prescribed')
+
+    ! Determine output coordinate for calculations
+    W_COORD: select case (F_coord)
+       
+    case ('pressure')
+       ! Pressure-coordinate output (omega; Pa/s)
+       if (pre_ww) then
+          F_w = pre
+       else
+          nullify(tt,pt)
+          istat = gmm_get(gmmk_pw_tt_moins_s,tt)
+          call handle_error_l(GMM_IS_OK(istat),'prof_w','GMM retrieving '//trim(gmmk_pw_tt_moins_s))
+          istat = gmm_get(gmmk_pw_pt_plus_s,pt)
+          call handle_error_l(GMM_IS_OK(istat),'prof_w','GMM retrieving '//trim(gmmk_pw_pt_plus_s))
+          F_w = -(grav*pt(:,:,1:size(F_w,dim=3)))/(rgasd*tt) * pre
+       endif
+
+    case ('height')
+       ! Height-coordiante output (vertical wind; m/s)
+       if (pre_wz) then
+          F_w = pre
+       else
+          nullify(tt,pt)
+          istat = gmm_get(gmmk_pw_tt_moins_s,tt)
+          call handle_error_l(GMM_IS_OK(istat),'prof_w','GMM retrieving '//trim(gmmk_pw_tt_moins_s))
+          istat = gmm_get(gmmk_pw_pt_plus_s,pt)
+          call handle_error_l(GMM_IS_OK(istat),'prof_w','GMM retrieving '//trim(gmmk_pw_pt_plus_s))
+          F_w = -(rgasd*tt)/(grav*pt(:,:,1:size(F_w,dim=3))) * pre
+       endif
+
+    case DEFAULT
+       ! Invalid vertical coordinate
+       call handle_error(1,'prof_w','Invalid vertical coordinate '//trim(F_coord))
+
+    end select W_COORD
+
+    ! End of subprogram
+    return
+  end subroutine prof_w
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  subroutine prof_std_pres(vcoord,lev,pres)
+    ! Compute a standard momentum-level pressure profile for the physics.
+    use vGrid_Descriptors, only: vgd_get,vgd_levels,VGD_LEN_NAME,VGD_OK,VGD_MISSING
+
+    implicit none
+
+    ! Input arguments
+    type(vgrid_descriptor), intent(in) :: vcoord                !vertical coordinate descriptor
+    character(len=*), intent(in) :: lev                         !type of level to compute for ('m' or 't')
+
+    ! Output arguments
+    real, pointer, dimension(:) :: pres                         !standard pressure profile
+
+    ! Internal parameters
+    real, parameter :: REF_SFC_PRESSURE=1.e5                    !reference surface pressure in Pa
+
+    ! Internal variables
+    integer :: err
+    integer, dimension(:), pointer :: ip1list
+    character(len=VGD_LEN_NAME) :: ip1name
+
+    ! Retrieve ip1 information needed to construct pressure profile
+    select case (trim(lev))
+    case ('m')
+       ip1name = 'VIPM'
+    case ('t')
+       ip1name = 'VIPT'
+    case DEFAULT
+       call handle_error(-1,'prof_std_pres','Invalid level type '//trim(lev)//' provided')
+    end select
+    nullify(ip1list)
+    err = vgd_get(vcoord,trim(ip1name),ip1list)
+    call handle_error_l(err==VGD_OK,'prof_std_pres','Retrieving '//trim(ip1name))
+    if (associated(pres)) nullify(pres)
+    ! Compute pressure profile based on reference surface pressure
+    err = vgd_levels(vcoord,ip1list,pres,REF_SFC_PRESSURE)
+    call handle_error_l(err==VGD_OK,'prof_std_pres','Computing pressure profile')
+
+  end subroutine prof_std_pres
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  subroutine prof_hydro_height(F_tv,F_pres_tv,F_pres_gz,F_me,F_p0,F_gz)
+    ! Compute geopotential heights ASL from the virtual temperature profile
+    ! using the hypsometric equation appropriate for the requested
+    ! staggering.
+    use tdpack, only: RGASD,GRAV
+    use vertical_interpolation, only: vertint2
+
+    implicit none
+
+    ! Input arguments
+    real, dimension(:,:,:), intent(in) :: F_tv          !Virtual temperature (K)
+    real, dimension(:,:,:), intent(in) :: F_pres_tv     !Pressure levels of temperature field (Pa)
+    real, dimension(:,:,:), intent(in) :: F_pres_gz     !Pressure level of computed heights (Pa)
+    real, dimension(:,:), intent(in) :: F_me            !Surface orographic height (m ASL)
+    real, dimension(:,:), intent(in) :: F_p0            !Surface pressure (Pa)
+
+    ! Output arguments
+    real, dimension(:,:,:), intent(out) :: F_gz         !Hydrostatic height above surface (m)
+
+    ! Internal variables
+    integer :: k,nk,istat
+    real, dimension(:,:,:), allocatable :: pres_mid,tv_mid,gz_col,pres_col
+
+    ! Initializations
+    nk = size(F_pres_gz,dim=3)
+    allocate(pres_mid(1,1,nk),tv_mid(1,1,nk),gz_col(1,1,nk+1),pres_col(1,1,nk+1),stat=istat)
+    call handle_error(istat,'prof_hydro_height','Allocating pres_mid and tv_mid')
+
+    ! Initialize surface height and pressure column
+    gz_col(:,:,nk+1) = F_me
+    pres_col(:,:,1:nk) = F_pres_gz
+    pres_col(:,:,nk+1) = F_p0
+
+    ! Interpolate temperatures to height-centered grid
+    do k=1,size(pres_mid,dim=3)
+       pres_mid(:,:,k) = exp(0.5*(log(pres_col(:,:,k))+log(pres_col(:,:,k+1))))
+    enddo
+    call vertint2(tv_mid,pres_mid,size(pres_mid,dim=3),F_tv,F_pres_tv,nk,1,1,1,1,1,1,1,1, &
+         varname='VT',inttype='linear')
+
+    ! Integrate hypsometric equation
+    do k=nk,1,-1
+       F_gz(:,:,k) = gz_col(:,:,k+1) + rgasd*tv_mid(:,:,k)/grav * log(pres_col(:,:,k+1)/pres_col(:,:,k))
+       gz_col(:,:,k) = F_gz(:,:,k)
+    enddo
+
+    ! Heap cleanup
+    deallocate(pres_mid,tv_mid,gz_col,pres_col,stat=istat)
+    call handle_error(istat,'prof_hydro_height','Freeing pres_mid and tv_mid')
+
+  end subroutine prof_hydro_height
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  subroutine prof_getijlalo(F_ig,F_jg,F_lat,F_lon,F_il,F_jl,F_MISSING,F_offset)
+    ! Perform necessary steps from getijlalo(), a dynamics callback used by the physics
+    ! time series component.  Return all stations as missing so that no time series
+    ! files are handled.
+
+    implicit none
+
+    ! Input arguments
+    integer, intent(in) :: F_MISSING                    !Caller-defined missing value
+    integer, intent(in) :: F_offset                     !Offset from edge of grid
+
+    ! Input/output arguments
+    integer, intent(inout) :: F_ig,F_jg                 !Global i/j grid indices for point
+    real, intent(inout) :: F_lat,F_lon                  !Lat/lon values of identified point
+
+    ! Output arguments
+    integer, intent(out) :: F_il,F_jl                   !Local i/j grid indices for point
+
+    ! Set missing stations
+    F_il = F_MISSING
+    F_jl = F_MISSING
+
+    ! End of subprogram
+    return
+  end subroutine prof_getijlalo
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  subroutine prof_set_geom(ppoint)
+    ! Perform necessary steps from set_geom().  Use the profile
+    ! point information to create a "grid" that ezscint can use to 
+    ! interpolate to the profile location.
+    use hgrid_wb, only: hgrid_wb_put
+
+    implicit none
+
+    ! Input arguments
+    real(kind=8), dimension(2) :: ppoint                !Profile point ((/lat,lon/) deg)
+
+    ! Local Variables
+    integer :: iig1,iig2,iig3,iig4,gid,istat
+    real, dimension(1) :: gxfi,gyfi
+    character(len=1) :: igtype
+
+    ! External subprograms
+    integer, external :: ezgdef_fmem
+
+    ! Basic grid setup
+    igtype='L'
+    call cxgaig(igtype,iig1,iig2,iig3,iig4,real(ppoint(1)),real(ppoint(2)),1.,1.)
+
+    ! Establish lat/lon of point grid
+    gxfi = ppoint(2)
+    gyfi = ppoint(1)
+    gid = ezgdef_fmem(size(gxfi),size(gyfi),'Y',igtype,iig1,iig2,iig3,iig4,gxfi,gyfi)
+
+    ! Create a whiteboard entry for the profile grid
+    istat = hgrid_wb_put('grid/scm',gid,F_i0=1,F_j0=1,F_lni=1,F_lnj=1)
+
+  end subroutine prof_set_geom
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  function prof_smooth_fld(F_iname,F_oname) result(F_status)
+     ! Perform necessary steps from itf_phy_filter().  Copy the input field
+     ! into the output because no horizontal operations are possible.
+     use phy_itf, only: phy_get,phy_put
+
+     implicit none
+
+#include <rmnlib_basics.hf>
+
+     ! Input arguments
+     character(len=*), intent(in) ::  F_iname                  !Name of the field to smooth
+     character(len=*), intent(in) :: F_oname                   !Name of the field in which to store smoothed result
+
+     ! Output arguments
+     integer :: F_status                                       !Return status of function
+
+     ! Local variables
+     integer :: istat
+     real, dimension(:,:,:), pointer :: fld
+
+     ! Copy field on the bus if output space is available
+     F_status = phy_get(fld,F_iname,F_npath='V',F_bpath='PVD')
+     if (F_status == RMN_OK) istat = phy_put(fld,F_oname,F_npath='V',F_bpath='PDV',F_quiet=.true.)
+
+  end function prof_smooth_fld
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  subroutine prof_output_prefix(F_prefix,F_prefix_coord)
+     ! Set path names for output files
+     
+     implicit none
+
+     ! Output arguments
+     character(len=*), intent(out) :: F_prefix          !File prefix (directory) for time series data files
+     character(len=*), intent(out) :: F_prefix_coord    !File prefix (directory) for vertical coordinate files
+
+     F_prefix = trim(path_outputs_s)//'/series/'
+     F_prefix_coord = trim(path_outputs_s)//'/coord/'
+
+  end subroutine prof_output_prefix
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  function prof_is_valid(F_gmmname,F_quiet) result(valid)
+    ! Determine whether a field is valid.
+
+    implicit none
+
+    ! Input arguments
+    character(len=*), intent(in) :: F_gmmname           !GMM field name
+    logical, intent(in), optional :: F_quiet            !Suppress errors for invalid entries (return invalid)
+
+    ! Output arguments
+    logical :: valid                                    !validity of field
+
+    ! Local variables
+    logical :: myQuiet
+    type(gmm_metadata) :: meta
+
+    ! Set default values
+    myQuiet = .false.
+    if (present(F_quiet)) myQuiet = F_quiet
+
+    ! Retrieve metadata and check for NaN flag
+    valid = .false.
+    if (GMM_IS_OK(gmm_getmeta(F_gmmname,meta))) then
+       if (iand(meta%a%flags,GMM_FLAG_INAN) == 0) valid = .true.
+    else
+       call handle_error_l(myQuiet,'prof_is_valid','Unable to recover metadata for '//trim(F_gmmname))
+    endif
+
+  end function prof_is_valid
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  subroutine prof_make_valid(F_gmmname)
+    ! Set the given field name to a 'valid' state.
+
+    implicit none
+
+    ! Input arguments
+    character(len=*), intent(in) :: F_gmmname           !GMM field name
+
+    ! Local variables
+    integer :: istat
+    type(gmm_metadata) :: meta
+
+    ! Check for current validity status
+    if (prof_is_valid(F_gmmname)) return
+
+    ! Retrieve metadata and check for NaN flag
+    istat = gmm_getmeta(F_gmmname,meta)
+    call handle_error_l(GMM_IS_OK(istat),'prof_make_valid','Unable to recover metadata for '//trim(F_gmmname))
+    meta%a%flags = meta%a%flags-GMM_FLAG_INAN
+    istat = gmm_updatemeta(F_gmmname,meta)
+    call handle_error_l(GMM_IS_OK(istat),'prof_make_valid','Unable to update metadata for '//trim(F_gmmname))
+
+  end subroutine prof_make_valid
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  subroutine prof_valid_summary()
+    ! Write a list of missing forcing terms for the user.
+
+    implicit none
+
+    ! Local derived types
+    type gmmterm
+       character(len=GMM_MAXNAMELENGTH) :: name,dyn
+       character(len=LONG_CHAR) :: term,eq
+    end type gmmterm
+
+    ! Local variables
+    integer :: i
+    character(len=GMM_MAXNAMELENGTH) :: gmmname
+    character(len=LONG_CHAR) :: reason
+    type(gmmterm), dimension(8), parameter :: forcing_list = (/ &
+         gmmterm(gmmk_adv_t_s,gmmk_dyn_t_s,'Advection','thermodynamic'), &
+         gmmterm(gmmk_bkg_t_s,gmmk_dyn_t_s,'Relaxation','thermodynamic'), &
+         gmmterm(gmmk_adv_u_s,gmmk_dyn_u_s,'Advection','u-wind'), &
+         gmmterm(gmmk_bkg_u_s,gmmk_dyn_u_s,'Relaxation','u-wind'), &
+         gmmterm(gmmk_geo_u_s,gmmk_dyn_u_s,'Ageostrophic acceleration','u-wind'), &
+         gmmterm(gmmk_adv_v_s,gmmk_dyn_v_s,'Advection','v-wind'), &
+         gmmterm(gmmk_bkg_v_s,gmmk_dyn_v_s,'Relaxation','v-wind'), &
+         gmmterm(gmmk_geo_v_s,gmmk_dyn_v_s,'Ageostrophic acceleration','v-wind')/)
+    logical :: dyn_only
+
+    ! Generate informational output
+    write(STDOUT,100)
+    use_forcings: if (dyn_forcings) then
+       do i=1,size(forcing_list)
+          if (prof_is_valid(forcing_list(i)%dyn)) then
+             write(STDOUT,101)  trim(forcing_list(i)%term),trim(forcing_list(i)%eq), &
+                  '(direct dynamics tendency applied)'
+             cycle
+          endif
+          if (.not.prof_is_valid(forcing_list(i)%name)) then
+             write(STDOUT,101) trim(forcing_list(i)%term),trim(forcing_list(i)%eq), &
+                  '(no data available)'
+          endif
+       enddo
+       do i=1,size(tracers)
+          dyn_only = .false.; reason = ''
+          if (prof_is_valid('DYN_'//trim(tracers(i)%name))) then
+             dyn_only = .true.
+             reason = '(direct advective tendency applied)'
+          endif
+          if (dyn_only .or. .not.prof_is_valid('ADV_'//trim(tracers(i)%name))) then
+             if (.not.dyn_only) reason = '(no data available)'
+             write(STDOUT,101) 'Advection',trim(tracers(i)%name)//' tracer',trim(reason)
+          endif
+          if (dyn_only .or. .not.prof_is_valid('BKG_'//trim(tracers(i)%name))) then
+             if (.not.dyn_only) reason = '(no data available)'
+             write(STDOUT,101) 'Relaxation',trim(tracers(i)%name)//' tracer',trim(reason)
+          endif
+       enddo
+    else
+       write(STDOUT,102) 'No dynamics or tracer tendencies applied (dyn_forcings=.false.)'
+    endif use_forcings
+    write(STDOUT,103)
+
+    ! Info messages
+100 format(/,'Summary of Unused Terms in Prognostic Equations',/,60('='))
+101 format(2x,a,' term of the ',a,' equation ',a)
+102 format(2x,a)
+103 format(60('='))
+
+  end subroutine prof_valid_summary
+
+end module prof_mod

@@ -1,0 +1,81 @@
+!---------------------------------- LICENCE BEGIN -------------------------------
+! SCM - Library of kernel routines for the RPN single column model
+! Copyright (C) 1990-2017 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it 
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+
+subroutine scm()
+
+  use prof_mod, only:prof_driver_init,prof_phy_step,prof_output, &
+       prof_input_data,prof_dyn_main,prof_timeflip,prof_dyn_fwd, &
+       prof_update_GPW,prof_driver_finalize
+  use phydata_mod, only:pd_init,pd_step,pd_finalize
+
+  implicit none
+
+  ! Local variables
+  integer :: step,step_start,step_end,step_kount
+  logical :: run_physics
+
+  ! General model initializations 
+  call prof_driver_init(step_start,step_end,run_physics)
+
+  ! Physics reading initializations
+  call pd_init(run_physics)
+
+  ! Read initial data
+  call prof_input_data(0)
+
+  ! Shuffle and update time-slices
+  call prof_timeflip()
+  call prof_update_GPW()
+
+  ! Take preliminary physics step
+  if (run_physics) call prof_phy_step(0,step_start)
+
+  ! Generate initial state outputs
+  call prof_output(0,F_dyn_L=.true.)
+
+  ! Time looping
+  step_kount = 0
+  steps: do step=step_start+1,step_end
+
+     ! Increment stepwise counter
+     step_kount = step_kount + 1
+
+     ! Read input data
+     call prof_input_data(step)
+
+     ! Dynamics step
+     call prof_dyn_main(step,step_end)
+
+     ! Physics step
+     if (run_physics) then
+        call pd_step(step)
+        call prof_phy_step(step_kount,step)
+     endif
+
+     ! Generate output for the timestep
+     call prof_output(step,F_dyn_L=.true.)
+
+     ! Update timestep variables
+     call prof_timeflip()
+
+  enddo steps
+
+  ! Physics reading shutdown
+  call pd_finalize()
+
+  ! Profile shutdown
+  call prof_driver_finalize()
+
+end subroutine scm

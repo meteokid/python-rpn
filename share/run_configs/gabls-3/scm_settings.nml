@@ -1,0 +1,90 @@
+# Settings for a test run using GABLS-3 data
+
+ &step
+ step_runstrt_s = '20060701.120000',
+ step_dt_8 = 450.,
+ fcst_end_s = '24h',
+ fcst_nesdt_s = '1h',
+ /
+
+ &scm_cfgs
+
+ prof_point = 51.971,4.9267
+
+ debug_L = .false.,
+
+ Cstv_ptop_8 = 7.5, Grd_rcoef = 4.5,4.5
+  hyb = 0.0001, 0.000176875, 0.000305961, 0.00050908, 0.000810608, 0.00122946, 0.00180251, 0.00255483 ,
+    0.00349556, 0.00466656, 0.00607754, 0.0077548, 0.00968393, 0.0119081, 0.0144711, 0.0172098, 0.020292 ,
+    0.0236372, 0.0272474, 0.0310405, 0.0350176, 0.0392652, 0.0436999, 0.0481515, 0.0527916, 0.0574486 ,
+    0.062122, 0.0667243, 0.0712543, 0.0756232, 0.079917, 0.0839587, 0.0876579, 0.0920727, 0.0964992 ,
+    0.101826, 0.108061, 0.115214, 0.122394, 0.131406, 0.141367, 0.152288, 0.165099, 0.180754, 0.196514 ,
+    0.213311, 0.23116, 0.249128, 0.269122, 0.289253, 0.311454, 0.333811, 0.35632, 0.380954, 0.405758 ,
+    0.432734, 0.458890, 0.487252, 0.515808, 0.545586, 0.575565, 0.606786, 0.639265, 0.67196, 0.704869 ,
+    0.735844, 0.765922, 0.792918, 0.818956, 0.844021, 0.865905, 0.886769, 0.906602, 0.924285, 0.94091 ,
+    0.956465, 0.970944, 0.983221, 0.994402 ,
+
+ output_list = 'T8','2T','H8','UH','U8','UP','V8','VP','TJ','DQ','UD','VD',
+	'FC','FV','FI','FS','SI','FB','ECC','NT','TG'
+
+ /
+
+ &surface_cfgs
+
+ ICELAC           = .false.    ,
+ ICEMELT          = .true.     ,
+ IMPFLX           = .true.     ,
+ LIMSNODP         = .true.     ,
+ SCHMSOL          = 'isba'     ,
+ Z0TLAT           = 25.,30.    ,
+ /
+
+ &convection_cfgs
+
+ DEEP             = 'kfc'      , 
+ KFCDEPTH         = 4000.      ,
+ KFCRAD           = 1500.      ,
+ DEEP_TIMECONV    = '1h'       ,
+ KFCTRIG4         = 0.,0.,0.05,0.05,
+ KFCTRIGL         = 0.01       ,
+ KFCTRIGLAT       = .true.     ,
+ TRIGLAT          = 25.,30.    ,
+ SHAL             = 'ktrsnt_mg',
+
+ /
+
+ &physics_cfgs
+
+ RADIA            = 'cccmarad' ,  
+ KNTRAD_S         = '30m'      ,
+ RADFLTR          = .false.    ,
+ TS_FLXIR         = .true.     ,
+ STRATOS          = .true.     ,
+
+ GWDRAG           = 'gwd86'    ,
+ NON_ORO          = .true.     ,
+ LMETOX           = .true.     , 
+
+ LONGMEL          = 'boujo'    ,
+ FLUVERT          = 'clef'     ,
+
+ PBL_SHAL         = 'conres'   ,
+ STCOND           = 'consun'   ,
+ INILWC           = .true.     ,
+
+ KTICEFRAC        = .false.    ,
+
+ PCPTYPE          = 'bourge'   ,
+
+ QCO2             = 380.0      ,
+
+/
+&__deleted__
+zta=-1.,
+zua=-1.,
+/
+&__rpnphy_upcfg__
+orig_version=6.0.b7,
+from_version=6.0.b7,
+version=6.0.rc3,
+/

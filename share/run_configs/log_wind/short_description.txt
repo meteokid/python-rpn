@@ -1,0 +1,1 @@
+Statically neutral dry log wind profile with high vertical resolution and a 5-km top (Beljaars et al. 2004; QJRMS).

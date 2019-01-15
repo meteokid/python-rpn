@@ -1,0 +1,134 @@
+#!/usr/bin/env python
+
+import optparse
+import subprocess
+import glob
+import sys,os
+import re
+import shutil
+import ConfigParser
+import urlparse
+
+if __name__ == "__main__":
+
+    # Retrieve user configuration
+    config = ConfigParser.SafeConfigParser()
+    config.read([os.path.join(os.getenv('scm'),'share','default_config'),os.path.join(os.getenv('HOME'),'.scmrc')])
+    show_default = config.get('tsplot','display_application')
+    collist_default = config.get('tsplot','colour_list')
+
+    # Set local default values
+    ylow_default = '-Inf'
+    yhigh_default = 'Inf'
+
+    # Command line argument parsing
+    usage = "Usage: %prog [options] PATHS"
+    epilog = "Note that PATHS can be given as URLs to provide fine-grained control.  For example, appending "+ \
+    "\"results/my_run?level=79\" overrides the --level (-l) selection for the prescribed input file "+ \
+    "to force the use of the 79th level."
+    parser = optparse.OptionParser(usage=usage,epilog=epilog)
+    parser.add_option("-v","--var",dest="var",default=[],action="append",
+                      help="VARIABLE name to plot",metavar="VARIABLE")
+    parser.add_option("-l","--level",dest="level",default=1,
+                      help="level INDEX to plot",metavar="INDEX")
+    parser.add_option("-x","--xaxis",dest="xaxis",default='-Inf:Inf',
+                      help="Low:high x-axis forecast TIME values for plot (*h*m*s)",metavar="TIME:TIME")
+    parser.add_option("-y","--yaxis",dest="yaxis",default=ylow_default+':'+yhigh_default,
+                      help="Low:high y-axis values for plot")
+    parser.add_option("-c","--colours",dest="collist",default=collist_default,
+                      help="comma-separated list of colours to use for plot lines")
+    parser.add_option("-p","--points",dest="points",default=0,
+                      help="plotting symbol to use for each step (see \"pch\" in 'echo \"?points\" | R --no-save'")
+    parser.add_option("-g","--legend",dest="legend",default="bottomright",
+                      help="legend position [bottomright]")
+    parser.add_option("-d","--device",dest="device",default='png',
+                      help="plotting DEVICE (jpeg,[png],ps)",metavar="DEVICE")
+    parser.add_option("-s","--show",dest="show",default=show_default,
+                      help="show plot with APP",metavar="APP")
+    parser.add_option("-b","--batch",dest="batch",default=False,action="store_true",
+                      help="batch mode without plot display (supercedes -s)")
+    (options,args) = parser.parse_args()
+
+    # Check for at least one path
+    if len(args) < 1:
+        parser.print_usage()
+        sys.exit(1)
+
+    # Check for a single matching output file
+    pathlist = []
+    levlist = []
+    for url in args:
+        files = ''
+        lev = options.level
+        par = urlparse.urlparse(url)
+        pathlist.append(par.path)
+        args = urlparse.parse_qs(par.query)
+        levlist.append(args.get('level') and ','.join(args.get('level')) or str(options.level))
+        for var in options.var:            
+            flist = glob.glob(os.path.join(par.path,'series',var)+'_[0-9]*.txt')
+            if len(flist) > 1:
+                sys.stderr.write('Error: multiple matches for '+var+' SCM output in '+par.path+'\n')
+                sys.exit(1)
+            else:
+                try:
+                    files = files+os.path.basename(flist[0])+','
+                except IndexError:
+                    sys.stderr.write('Error: SCM output for '+var+' does not exist in '+par.path+'\n')
+                    sys.exit(1)
+        files = files.rstrip(',')
+
+    # Compute range for plot x-axis
+    times = re.split(':',options.xaxis)
+    if len(times) < 2:
+        sys.stderr.write('Error: Malformed time request '+str(times)+' should be low:high, e.g. 0h:12h\n')
+        sys.exit(1)
+    fcst = []
+    for time in times:
+        prog = {}
+        for entry in ['h','m','s']:
+            try:
+                prog[entry] = int(re.search('(\d+)'+entry,time).group(1))
+            except AttributeError:
+                prog[entry] = 0
+        if 'Inf' in time:
+            fcst.append(time)
+        else:
+            fcst.append(3600*prog['h'] + 60*prog['m'] + prog['s'])
+
+    # Compute range for plot y-axis
+    ylim = re.split(':',options.yaxis)
+    ylow = ylim[0] or ylow_default
+    try:
+        yhigh = ylim[1] or yhigh_default
+    except IndexError:
+        yhigh = yhigh_default
+
+    # Call R script for plotting
+    script_path = os.path.dirname(os.path.abspath(sys.argv[0]))    
+    command = 'R'+' --no-save --no-restore --args '+files+' '+','.join(levlist)+ \
+              ' '+options.legend+' '+options.device+' '+str(options.collist)+' '+str(options.points)+ \
+              ' '+' '.join([str(f) for f in fcst])+' '+ylow+' '+yhigh+' '+ \
+              ' '.join(pathlist)+' <'+os.path.join(script_path,'ts.R')    
+    p = subprocess.Popen(command,shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    error_message = p.stderr.read().rstrip('\n')
+    output_message = p.stdout.read().rstrip('\n')
+    ipcfile = '.series_outname'    
+    if error_message:
+        sys.stderr.write(error_message)
+    else:
+        try:
+            fd = open(ipcfile,'r')
+            ofile = fd.read()
+        except:
+            sys.stderr.write("Hmmmm ... looks like the plot wasn't generated correctly\n")
+            sys.stderr.write(error_message)
+            sys.exit(1)
+        fd.close()
+        sys.stdout.write('Generated '+ofile)
+        if (options.show and not options.batch):
+            try:
+                subprocess.call(options.show+' '+ofile,shell=True)
+            except KeyboardInterrupt:
+                pass   
+        os.remove(ipcfile)
+

@@ -1,0 +1,71 @@
+#!/usr/bin/env ksh
+arguments=$*
+set -e 
+
+# Check for required environment
+if [[ -z "${SCM_MODEL_DFILES}" ]] ; then
+  echo "No SCM found in your environment: load an SCM version before continuing" >&2
+  exit 1
+fi
+
+# Get command line arguments
+deflist=0
+if [[ -z "${1}" ]] ; then deflist=1 ; fi
+eval `cclargs $0 \
+ -list       "${deflist}" "1"     "[List available cases                       ]" \
+ -get			 ""			  ""		 "[Extract case configuration						  ]" \
+ -f		    "0"			  "1"		 "[Force overwrite of local configuration		  ]" \
+ ++ $arguments`
+
+# List available cases
+case_configs=${scm}/share/run_configs
+if [[ ${list} -gt 0 ]] ; then
+   echo ""
+	for config in $(ls -d ${case_configs}/*); do
+      if [[ ! -d ${config} ]] ; then continue ; fi
+      descrip_file=${config}/short_description.txt
+      descrip=''
+      if [[ -f ${descrip_file} ]] ; then
+         descrip="$(head -n 1 ${descrip_file})"
+      fi
+      printf "%-20s %s\n" "$(basename ${config})" "${descrip}"
+   done
+   printf "\n(Extract a case configuration with 'scmcase -get CASE_NAME')\n"
+   
+fi
+
+# Retrieve case on request
+if [[ -n "${get}" ]] ; then
+   suppress_files=":short_description.txt:README:"
+   config_dir=${case_configs}/${get}
+   if [[ -d ${config_dir} ]] ; then
+      for file in ${config_dir}/* ; do
+         local_file=$(basename ${file})
+         if [[ $(echo ${suppress_files} | grep ":${local_file}:" | wc -w) -gt 0 ]] ; then continue ; fi
+         import_file=1
+         if [[ ${f} -lt 1 && -f ${local_file} ]] ; then
+            while true ; do
+               echo -n "Overwrite local case configuration file ${local_file}? [y/n] "
+               read yn
+               case ${yn} in 
+                  [Yy]* )
+                     break;;
+                  [Nn]* )
+                     import_file=0
+                     break;;
+                  * )
+                     echo "Please answer yes or no"
+               esac
+            done
+         fi
+         if [[ ${import_file} -gt 0 ]] ; then
+            cp -f ${file} ${local_file}
+         else
+            echo "Skipping import for ${local_file} (use -f to override)"
+         fi
+      done
+   else
+      echo "Could not find the requested case (${get})" >&2
+      exit 1
+   fi
+fi

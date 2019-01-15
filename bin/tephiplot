@@ -1,0 +1,118 @@
+#!/usr/bin/env python
+
+import optparse
+import subprocess
+import glob,re
+import sys,os
+import ConfigParser
+
+if __name__ == "__main__":
+
+    # Retrieve user configuration
+    config = ConfigParser.SafeConfigParser()
+    config.read([os.path.join(os.getenv('scm'),'share','default_config'),os.path.join(os.getenv('HOME'),'.scmrc')])
+    if not config.has_section('tephiplot'): config.add_section('tephiplot')
+    show_default = config.get('tephiplot','display_application')
+    collist_default = config.get('tephiplot','colour_list')
+    default_temp = '2T'
+    default_hum = 'UH'
+    default_uwind = 'UP'
+    default_vwind = 'VP'
+
+    # Command line argument parsing
+    usage = "Usage: %prog [options] PATHS"
+    parser = optparse.OptionParser(usage=usage)
+    parser.add_option("-t","--time",dest="time",default='0h',
+                      help="Forecast TIME to plot (*h*m*s)")
+    parser.add_option("-c","--colours",dest="collist",default=collist_default,
+                      help="comma-separated list of colours to use for plot lines")
+    parser.add_option("-p","--points",dest="points",default=0,
+                      help="plotting symbol to use for each level (see \"pch\" in 'echo \"?points\" | R --no-save'")
+    parser.add_option("","--temperature",dest="var_temp",default=default_temp,
+                      help="Temperature field name ["+default_temp+"]")
+    parser.add_option("","--humidity ",dest="var_hum",default=default_hum,
+                      help="Specific humidity field name ["+default_hum+"]")
+    parser.add_option("","--uwind ",dest="var_uwind",default=default_uwind,
+                      help="U-component (westerly) wind field name ["+default_uwind+"]")
+    parser.add_option("","--vwind ",dest="var_vwind",default=default_vwind,
+                      help="V-component (southerly) wind field name ["+default_vwind+"]")
+    parser.add_option("-d","--device",dest="device",default='png',
+                      help="plotting DEVICE (jpeg,[png],ps)",metavar="DEVICE")
+    parser.add_option("-s","--show",dest="show",default=show_default,
+                      help="show plot with APP",metavar="APP")
+    parser.add_option("-b","--batch",dest="batch",default=False,action="store_true",
+                      help="batch mode without plot display (supercedes -s)")
+    (options,args) = parser.parse_args()
+
+    # Check for at least one path
+    if len(args) < 1:
+        parser.print_usage()
+        sys.exit(1)
+
+    # Check for a single matching output file
+    for path in args:
+        files = ''
+        for var in [options.var_temp,options.var_hum,options.var_uwind,options.var_vwind]:
+            flist = glob.glob(os.path.join(path,'series',var)+'_[0-9]*.txt')
+            if len(flist) > 1:
+                sys.stderr.write('Error: multiple matches for '+var+' SCM output in '+path+'\n')
+                sys.exit(1)
+            else:
+                try:
+                    files = files+os.path.basename(flist[0])+','
+                except IndexError:
+                    sys.stderr.write('Error: SCM output for '+var+' does not exist in '+path+'\n')
+                    sys.exit(1)
+        files = files.rstrip(',')
+ 
+    # Compute prog time to plot
+    times_default = '0h'
+    times_user = enumerate(re.split(':',options.time))
+    times = [next(times_user,(0,times_default))[1] for i in range(0,3)]
+    if times[2] == times_default: times[2] = times[1] #user did not provide an increment
+    fcst = []
+    for time in times:
+        prog = {}
+        for entry in ['h','m','s']:
+            try:
+                prog[entry] = int(re.search('(\d+)'+entry,time).group(1))
+            except AttributeError:
+                prog[entry] = 0
+        fcst.append(3600*prog['h'] + 60*prog['m'] + prog['s'])
+    try:
+        fcstlist = range(fcst[0],fcst[1],fcst[2])
+        fcstlist.append(fcst[1])
+    except ValueError:
+        fcstlist = [fcst[0]]
+
+    # Call R script for plotting
+    script_path = os.path.dirname(os.path.abspath(sys.argv[0]))
+    command = 'R'+' --no-save --no-restore --args '+files+' '+','.join(["%s" % e for e in fcstlist])+' '+ \
+              options.device+' '+str(options.collist)+' '+str(options.points)+' '+ \
+              ' '.join(args)+' <'+os.path.join(script_path,'tephi.R')
+    p = subprocess.Popen(command,shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    error_message = p.stderr.read().rstrip('\n')
+    output_message = p.stdout.read().rstrip('\n')
+
+    print(output_message)
+    print(error_message)
+
+    ipcfile = '.tephi_outname'
+    if error_message:
+        sys.stderr.write(error_message)
+    else:
+        try:
+            fd = open(ipcfile,'r')
+            ofile = fd.read()
+        except:
+            sys.stderr.write("Hmmmm ... looks like the plot wasn't generated correctly\n")
+            sys.stderr.write(error_message)
+            sys.exit(1)
+        fd.close()
+        sys.stdout.write('Generated '+ofile)
+        if (options.show and not options.batch):
+            try:
+                subprocess.call(options.show+' '+ofile,shell=True)
+            except KeyboardInterrupt:
+                pass
+        os.remove(ipcfile)
