@@ -81,19 +81,19 @@ contains
       real, dimension(ni,nk) :: qe
 
       type(phymetaplus) :: meta_m, meta_p
-      type(phymeta), pointer, contiguous :: metalist(:)
+      type(phymeta), pointer :: metalist(:)
 
-      real, pointer, dimension(:), contiguous   :: zdlat, zfcor, zpmoins, ztdiag, zthetaa, &
+      real, pointer, dimension(:)   :: zdlat, zfcor, zpmoins, ztdiag, zthetaa, &
            zqdiag, zza, zztsl, zzusl, zme, zp0, &
            zudiag, zvdiag, zmg, zz0, zz1, zz2, zz3, &
            zz4, ztls, ztss, zrainrate, zsnowrate, zthetaap, zpplus, &
            zrsc, zrlc
-      real, pointer, dimension(:,:), contiguous :: zgzmom, zgz_moins, zhumoins, zhuplus, &
+      real, pointer, dimension(:,:) :: zgzmom, zgz_moins, zhumoins, zhuplus, &
            zqadv, zqcmoins, zqcplus, zsigm, zsigt, ztadv, ztmoins, ztplus, &
            zuadv, zumoins, zuplus, zvadv, zvmoins, zvplus, zwplus, zze, &
            zgztherm, ztve, zfneige, zfip
-      real, pointer, dimension(:,:), contiguous :: tmp1,tmp2
-      real, pointer, dimension(:,:,:), contiguous :: zvcoef
+      real, pointer, dimension(:,:) :: tmp1,tmp2
+      real, pointer, dimension(:,:,:) :: zvcoef
       !----------------------------------------------------------------
       call msg_toall(MSG_DEBUG, 'phystepinit [BEGIN]')
       if (timings_L) call timing_start_omp(405, 'phystepinit', 46)
@@ -381,6 +381,12 @@ contains
          zthetaap(i) = sc*ztplus(i,nk-1)
          zfcor  (i)= 2.*OMEGA*sin(zdlat(i))
       end do
+      if (zua > 0. .and. zta > 0.) then
+         do i=1,ni
+            zztsl(i) = zta
+            zzusl(i) = zua
+         enddo
+      endif
 
       if (any(pcptype == (/ &
            'NIL   ', &

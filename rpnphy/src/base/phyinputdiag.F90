@@ -45,7 +45,7 @@ contains
       character(len=256) :: incfg_S
       character(len=32) :: inname_S,prefix_S,basename_S,time_S,ext_S
       integer :: istat,ivar,nvars
-      type(phymeta), pointer, contiguous :: metalist(:)
+      type(phymeta), pointer :: metalist(:)
       ! ---------------------------------------------------------------------
       istat = RMN_OK
 
@@ -123,7 +123,7 @@ contains
       character(len=256) :: incfg_S
       character(len=32) :: inname_S, prefix_S, basename_S, time_S, ext_S
       integer :: istat, ivar, nvars
-      type(phymeta), pointer, contiguous :: metalist(:)
+      type(phymeta), pointer :: metalist(:)
       ! ---------------------------------------------------------------------
       istat = RMN_OK
 

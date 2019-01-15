@@ -100,7 +100,7 @@ contains
 
       real(RDOUBLE), dimension(ni) :: l_en0,l_en,l_pw0,l_pw,l_enr,l_pwr
 
-      real, dimension(:,:), pointer, contiguous :: zttm,zhum
+      real, dimension(:,:), pointer :: zttm,zhum
 
 #define PHYPTRDCL
 #include "condensation_ptr.hf"

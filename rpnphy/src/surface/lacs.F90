@@ -37,7 +37,7 @@ subroutine lacs4(F_climat_L, ni, trnch)
    integer i
    real twater_ini
 
-   real, pointer, dimension(:), contiguous :: zglsea, zicedp, ziceline, zml, ztwater, &
+   real, pointer, dimension(:) :: zglsea, zicedp, ziceline, zml, ztwater, &
         zvegf
 
 #define MKPTR1D(NAME1,NAME2) nullify(NAME1); if (vd%NAME2%i > 0 .and. associated(busptr(vd%NAME2%i)%ptr)) NAME1(1:ni) => busptr(vd%NAME2%i)%ptr(:,trnch)

@@ -22,8 +22,8 @@
       real    n0rib
       real    vamin
       real    veg_rs_mult
-      real    zt
-      real    zu
+      real    zt, zta
+      real    zu, zua
 
       character(len=16) sl_func_stab
       character(len=16) sl_func_unstab
@@ -52,8 +52,8 @@
       common / surfacer / n0rib
       common / surfacer / vamin
       common / surfacer / veg_rs_mult
-      common / surfacer / zt
-      common / surfacer / zu
+      common / surfacer / zt, zta
+      common / surfacer / zu, zua
 
       common / surfacec / sl_func_stab
       common / surfacec / sl_func_unstab

@@ -126,13 +126,13 @@ contains
 
       ! Pointer to buses
 
-      real, pointer, dimension(:), contiguous :: psm, psp, ztdmask, zfcpflg, zkkfc, zrckfc, &
+      real, pointer, dimension(:) :: psm, psp, ztdmask, zfcpflg, zkkfc, zrckfc, &
            ztlc, ztsc, zkshal, zwstar, zconedc, zconesc, zconqdc, zconqsc, ztlcs, ztscs, &
            ztstar, zcapekfc, ztauckfc, zcinkfc, zmg, zml, zdlat, zdxdy, zkmid, &
            zabekfc, zpeffkfc, zrice_int, zrliq_int, zwumaxkfc, zzbasekfc, zztopkfc, &
            zcoadvu,zcoadvv,zcoage,zcowlcl,zwklcl,zcozlcl,ztlcm, zconemc, zconqmc, &
            zmcd,zmpeff,zmainc
-      real, pointer, dimension(:,:), contiguous :: ncp, nip, qcm, qcp, qip, qrp, qqm, qqp, &
+      real, pointer, dimension(:,:) :: ncp, nip, qcm, qcp, qip, qrp, qqm, qqp, &
            sigma, ttm, ttp, uu, vv, wz, zfdc, zgztherm, zhufcp, zhushal, &
            zprcten, zpriten, zqckfc, ztfcp, ztshal, ztusc, ztvsc, zufcp, zvfcp, &
            zprctns,zpritns,qti1p, nti1p, zfsc, zqlsc, zqssc, zfbl, &

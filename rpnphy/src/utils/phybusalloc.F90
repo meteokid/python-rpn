@@ -31,7 +31,7 @@ contains
 #include <arch_specific.hf>
 
       integer, intent(in) :: p_nj
-      real, pointer, dimension(:,:), contiguous :: entbus, dynbus, perbus, volbus
+      real, pointer, dimension(:,:) :: entbus, dynbus, perbus, volbus
       integer :: F_istat
 
 #include <gmm.hf>
@@ -46,7 +46,7 @@ contains
       integer :: gmmstat, initval, initval2, ivar, nvars, istat
       type(gmm_metadata) :: meta_busent, meta_busper, meta_busdyn, meta_busvol
       type(phymetaplus) :: meta_m
-      type(phymeta), pointer, contiguous :: metalist(:)
+      type(phymeta), pointer :: metalist(:)
       !---------------------------------------------------------------
       F_istat = RMN_ERR
 

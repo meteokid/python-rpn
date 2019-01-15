@@ -70,8 +70,8 @@ contains
       real, dimension(ni) :: beta
       real, dimension(ni,nk-1) :: t0,q0,qc0,press
 
-      real, dimension(:), pointer, contiguous :: zrckfc,ztlc,ztlcs,ztls,ztsc,ztscs,ztss,zpmoins,ztlcm
-      real, dimension(:,:), pointer, contiguous :: ztcond,zhucond,ztshal,zhushal,zqcphytd,zqrphytd, &
+      real, dimension(:), pointer :: zrckfc,ztlc,ztlcs,ztls,ztsc,ztscs,ztss,zpmoins,ztlcm
+      real, dimension(:,:), pointer :: ztcond,zhucond,ztshal,zhushal,zqcphytd,zqrphytd, &
            zcte,zcqe,zste,zsqe,zcqce,zsqce,zprcten,zsqre,zhumoins,zsigt,zmte,zmqe, &
            zmqce,zprctnm
       logical :: lkfbe

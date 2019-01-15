@@ -77,6 +77,7 @@ subroutine glaciers1(BUS, BUSSIZ, PTSURF, PTSURFSIZ, TRNCH, KOUNT, N, M, NK)
    real, dimension(n) :: zu10, zusr    ! wind at 10m and at the sensor level 
    real, dimension(n) :: zref_sw_surf, zemit_lw_surf, zzenith
    real, dimension(n) :: my_ta, my_qa
+   real, dimension(n) :: zusurfzt, zvsurfzt
 
    real,pointer,dimension(:) :: al, albsfc, cmu, ctu, fc_glac
    real,pointer,dimension(:) :: fsol, fv_glac, zemisr
@@ -536,8 +537,15 @@ subroutine glaciers1(BUS, BUSSIZ, PTSURF, PTSURFSIZ, TRNCH, KOUNT, N, M, NK)
       !#TODO: at least 4 times identical code in surface... separeted s/r to call
       IF_THERMAL_STRESS: if (thermal_stress) then
 
-         do I=1,N
+         i = sl_sfclayer(th,hu,vmod,vdir,zzusl,zztsl,ts,qsice,z0m,z0h,zdlat,zfcor, &
+              hghtm_diag=zt,hghtt_diag=zt,u_diag=zusurfzt, &
+              v_diag=zvsurfzt,tdiaglim=GLACIER_TDIAGLIM)
+         if (i /= SL_OK) then
+            call physeterror('glaciers', 'error 3 returned by sl_sfclayer()')
+            return
+         endif
 
+         do I=1,N
             if (abs(zzusl(i)-zu) <= 2.0) then
                zu10(i) = sqrt(uu(i)**2+vv(i)**2)
             else
@@ -545,18 +553,18 @@ subroutine glaciers1(BUS, BUSSIZ, PTSURF, PTSURFSIZ, TRNCH, KOUNT, N, M, NK)
             endif
 
             ! wind  at SensoR level
-            zusr(i) = zu10(i)
+            zusr(i) = sqrt(zusurfzt(i)**2 + zvsurfzt(i)**2)
+            ! zusr(i) = zu10(i)
 
-            zref_sw_surf(i) = ALBSFC(I) * fsol(i)
-            zemit_lw_surf(i) = (1. -ZEMISR(I)) * zfdsi(i) + ZEMISR(I)*STEFAN *ztsurf(i)**4
+            zref_sw_surf(i) = albsfc(I) * fsol(i)
+            zemit_lw_surf(i) = (1. -zemisr(i)) * zfdsi(i) + zemisr(i)*stefan*ztsurf(i)**4
 
-            ZZENITH(I) = acos(ZCOSZENI(I))      ! direct use of bus zenith
+            zzenith(i) = acos(zcoszeni(i))
             if (fsol(I) > 0.0) then
-               ZZENITH(I) = min(ZZENITH(I), PI/2.)
+               zzenith(i) = min(zzenith(i), pi/2.)
             else
-               ZZENITH(I) = max(ZZENITH(I), PI/2.)
+               zzenith(i) = max(zzenith(i), pi/2.)
             endif
-
          end do
 
          call SURF_THERMAL_STRESS(ZTDIAG, ZQDIAG,         &

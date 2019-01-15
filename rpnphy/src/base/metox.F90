@@ -52,8 +52,8 @@ contains
       real, parameter :: QQ = 4.25e-6 
       real, parameter :: ALPHA1 = 0.5431969
 
-      real, pointer, dimension(:), contiguous :: psp, ztdmask
-      real, pointer, dimension(:,:), contiguous :: sigma, oxme, qqp, zhuplus
+      real, pointer, dimension(:) :: psp, ztdmask
+      real, pointer, dimension(:,:) :: sigma, oxme, qqp, zhuplus
       real, dimension(ni,nk) :: press, kmetox
       !----------------------------------------------------------------
 

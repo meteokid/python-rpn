@@ -34,8 +34,8 @@ contains
 
       integer, intent(in) ::  kount, trnch, ni, nk, nkm1
       real, intent(in) :: cdt1
-      real, dimension(:), pointer, contiguous :: zpmoins, ztlcs, ztscs, zkshal
-      real, dimension(:,:), pointer, contiguous :: &
+      real, dimension(:), pointer :: zpmoins, ztlcs, ztscs, zkshal
+      real, dimension(:,:), pointer :: &
            ztmoins, ztplus, zhumoins, zhuplus, zsigw, &
            zgztherm, ztshal, zhushal, zqlsc, zqssc, zfsc, zqcz, zqdifv
 

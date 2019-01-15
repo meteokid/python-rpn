@@ -361,6 +361,9 @@ contains
          ier = RMN_ERR
       endif
 
+      if (.not.WB_IS_OK(wb_get('itf_phy/zta', zta))) zta = -1.
+      if (.not.WB_IS_OK(wb_get('itf_phy/zua', zua))) zua = -1.
+
       ier = WB_OK
       ier = min(wb_put('phy/zu',zu,options),ier)
       ier = min(wb_put('phy/zt',zt,options),ier)

@@ -66,8 +66,8 @@ contains
       real :: hz0, hz, julien
 
       real, dimension(ni,nk) :: cldfrac, liqwcin, icewcin, liqwp, icewp, trav2d
-      real, pointer, dimension(:), contiguous :: zpmoins
-      real, pointer, dimension(:,:), contiguous :: ztmoins, zhumoins, zsigw
+      real, pointer, dimension(:) :: zpmoins
+      real, pointer, dimension(:,:) :: ztmoins, zhumoins, zsigw
       !----------------------------------------------------------------
       call msg_toall(MSG_DEBUG, 'radiation [BEGIN]')
       if (timings_L) call timing_start_omp(410, 'radiation', 46)

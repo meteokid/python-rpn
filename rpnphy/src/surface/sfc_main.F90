@@ -109,11 +109,11 @@ function sfc_main2(seloc, trnch, kount, dt, ni, nk) result(F_istat)
    real,   dimension(surfesptot*ni) :: bus_soil, bus_water, bus_ice, &
         bus_glacier, bus_urb
    !
-   real, pointer, dimension(:), contiguous      :: zdtdiag, zmg, zfvapliq, zfvapliqaf, &
+   real, pointer, dimension(:)      :: zdtdiag, zmg, zfvapliq, zfvapliqaf, &
         zglacier, zglsea, zpmoins, zpplus, ztdiag, ztnolim, zurban, zztsl, &
         zqdiag, zudiag, zvdiag,zicedp,ztwater, zqdiagstn, ztdiagstn, &
         zudiagstn, zvdiagstn, zqdiagstnv, ztdiagstnv, zudiagstnv, zvdiagstnv
-   real, pointer, dimension(:,:), contiguous    :: poids_out, zfvap, zilmo, zrunofftot, &
+   real, pointer, dimension(:,:)    :: poids_out, zfvap, zilmo, zrunofftot, &
         zrunofftotaf, ztmoins, ztplus, &
         zhuplus,zuplus,zvplus,zsnodp, &
         zqdiagtyp, ztdiagtyp, zudiagtyp, zvdiagtyp, zqdiagtypv, ztdiagtypv, &

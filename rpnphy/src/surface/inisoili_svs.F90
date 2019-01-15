@@ -37,10 +37,10 @@ subroutine inisoili_svs(ni, trnch)
    ! "geo" variables are on the levels of the geophysical soil texture datbase
    REAL, dimension(ni,nl_stp) :: wsat_geo, wwilt_geo, wfc_geo, b_geo, psisat_geo, &
            ksat_geo, wfcint_geo, fb_geo
-   real, pointer, dimension(:), contiguous :: zcgsat, zgrkef, zdraindens, zslop
+   real, pointer, dimension(:) :: zcgsat, zgrkef, zdraindens, zslop
 
    ! variables on the levels of SVS
-   real, pointer, dimension(:,:), contiguous :: zbcoef, zclay, zfbcof, zksat, zpsisat, zsand, zwfc, zwfcint, zwsat, zwwilt 
+   real, pointer, dimension(:,:) :: zbcoef, zclay, zfbcof, zksat, zpsisat, zsand, zwfc, zwfcint, zwsat, zwwilt 
 
   
 #define MKPTR1D(NAME1,NAME2) nullify(NAME1); if (vd%NAME2%i > 0 .and. associated(busptr(vd%NAME2%i)%ptr)) NAME1(1:ni) => busptr(vd%NAME2%i)%ptr(:,trnch)

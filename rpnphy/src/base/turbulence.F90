@@ -74,9 +74,9 @@ contains
       real dsig
       real, dimension(ni) :: rhos
       real, dimension(ni,nk) :: dkem, dket
-      real, dimension(:), pointer, contiguous :: ztsrad, zpmoins, zutautofd, zvtautofd, zsigs, zgzmom1, zgzmom2, ztdmask
-      real, dimension(:,:), pointer, contiguous :: zutofd, zvtofd, zgzmom, zumoins, zvmoins, zz0, zuplus, zvplus, zsigt, ztplus, zttofd
-      real, pointer, dimension(:,:,:), contiguous :: zvcoef
+      real, dimension(:), pointer :: ztsrad, zpmoins, zutautofd, zvtautofd, zsigs, zgzmom1, zgzmom2, ztdmask
+      real, dimension(:,:), pointer :: zutofd, zvtofd, zgzmom, zumoins, zvmoins, zz0, zuplus, zvplus, zsigt, ztplus, zttofd
+      real, pointer, dimension(:,:,:) :: zvcoef
       !----------------------------------------------------------------
       call msg_toall(MSG_DEBUG, 'turbulence [BEGIN]')
       if (timings_L) call timing_start_omp(430, 'turbulence', 46)

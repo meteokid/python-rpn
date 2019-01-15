@@ -55,13 +55,13 @@ subroutine inisurf4(kount, ni, nk, trnch)
    real    :: tempsum, tempclay, tempsand
    integer :: i, k, nk1
 
-   real, pointer, dimension(:), contiguous :: &
+   real, pointer, dimension(:) :: &
         zdrainaf, zemisr, zemistg, zemistgen, zfvapliqaf, zglacier, zglsea, &
         zglsea0, zicedp, ziceline, zlhtg, zmg, zml, zresa, zresagr, zresavg, &
         zresasa, zresasv, zslop, zsnoal, zsnoalen, zsnoagen, zsnodpl, zsnoden, &
         zsnoma, zsnoro, zsnvden, zsnvdp, zsnvma, ztsrad, ztwater, zwveg, &
         zwsnow, zz0en, zz0veg, zz0tveg
-   real, pointer, dimension(:,:), contiguous :: &
+   real, pointer, dimension(:,:) :: &
         zalvis, zclay, zclayen, zisoil, zrunofftotaf, zsand, zsanden, zsnodp, &
         ztglacier, ztmice, ztmoins, ztsoil, zvegf, zwsoil, zz0, zz0t
 

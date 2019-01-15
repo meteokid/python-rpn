@@ -62,7 +62,7 @@ module sfc_options
    integer           :: kntveg     = -1
    logical           :: timings_L  = .false.
    integer           :: nphyoutlist = -1
-   character(len=32), pointer, contiguous :: phyoutlist_S(:) => NULL()
+   character(len=32), pointer :: phyoutlist_S(:) => NULL()
 
    !# Surface layer coefficients for exchange with PBL
    real :: bh91_a, bh91_b, bh91_c, bh91_d, d97_as, dg92_ci, l07_ah, l07_am
@@ -248,8 +248,8 @@ module sfc_options
    character(len=16) :: soiltext    = 'GSDE'
    namelist /surface_cfgs/ soiltext
    character(len=*), parameter :: SOILTEXT_OPT(3) = (/ &
-        'GSDE   ',  &
-        'SLC    ',  &
+        'GSDE     ',  &
+        'SLC      ',  &
         'SOILGRIDS' &
         /)
 

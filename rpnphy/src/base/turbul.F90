@@ -73,12 +73,12 @@ contains
            fhz, fim, fit, hst_local, &
            work2(ni), b(ni,nkm1*4), xb(ni), xh(ni)
 
-      real, pointer, dimension(:), contiguous   :: zalfat, zbt_ag, zfrv_ag, zftemp_ag, &
+      real, pointer, dimension(:)   :: zalfat, zbt_ag, zfrv_ag, zftemp_ag, &
            zfvap_ag, zh, zlh, zhst_ag, zilmo_ag, zz0_ag, zztsl, &
            zwstar, zudiag, zvdiag, zhpar, zpmoins, ztsurf, zsdtswd, &
            zsdtsws, zwge, zwgmax, zwgmin, zdxdy, ztstar
 
-      real, pointer, dimension(:,:), contiguous :: tke, zenmoins, zkm, zkt, ztmoins, &
+      real, pointer, dimension(:,:) :: tke, zenmoins, zkm, zkt, ztmoins, &
            ztve, zze, zzn, zwtng, zwqng, zuwng, zvwng, zqcmoins, zhumoins, &
            zsigm, zsigt, zsigw, zumoins, zvmoins, zfbl, zfblgauss, zfblnonloc, zfnn, &
            zftot, zlwc, zqtbl, zturbreg, zzd, zgq, zgql, zgte, zgzmom, zrif, &

@@ -60,9 +60,9 @@ contains
       real, dimension(ni)     :: work1d
       real, dimension(ni, nk) :: p, work2d1, work2d2
 
-      real, pointer, dimension(:), contiguous    :: zpmoins, busptr2d, ztdew, zflusolaf, &
+      real, pointer, dimension(:)    :: zpmoins, busptr2d, ztdew, zflusolaf, &
            zuvsmax, zuvsavg, zhrsmax, zhrsmin, zhusavg, zttmins1, zttmaxs1
-      real, pointer, dimension(:, :), contiguous :: zhuplus, zsigw, ztplus, &
+      real, pointer, dimension(:, :) :: zhuplus, zsigw, ztplus, &
            zuplus, zvplus, zwplus, ztcond, zze, busptr3d, &
            zqcplus, zftot, zfbl, zqtbl, zfdc
       !----------------------------------------------------------------

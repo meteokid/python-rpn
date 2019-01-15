@@ -30,8 +30,8 @@ contains
       integer, intent(in) :: ni                                            !Row length
       integer, intent(in) :: nk                                            !Total number of vertical levels
       integer, intent(in) :: nkm1                                          !Number of prognostic vertical levels
-      real, dimension(:,:), pointer, contiguous :: liq_tend                !Tendency for liquid condensate mixing ratio (kg/kg/s)
-      real, dimension(:,:), pointer, contiguous :: ice_tend                !Tendency for solid condensate mixing ratio (kg/kg/s)
+      real, dimension(:,:), pointer :: liq_tend                !Tendency for liquid condensate mixing ratio (kg/kg/s)
+      real, dimension(:,:), pointer :: ice_tend                !Tendency for solid condensate mixing ratio (kg/kg/s)
       real, dimension(:,:), intent(in) :: ttp                              !Time-plus dry air temperature (K)
       real, dimension(:,:), intent(inout) :: qcp                           !Liquid condensate mixing ratio (kg/kg)
       real, dimension(:,:), intent(inout) :: ncp                           !Liquid droplet number concentration (#/m3)

@@ -97,21 +97,21 @@ contains
       real, dimension(ni,nkm1), target :: thl, qw, tthl, tqw, dkem, dket
 
       !     Pointeurs pour champs deja definis dans les bus
-      real, pointer, dimension(:), contiguous   :: ps
-      real, pointer, dimension(:), contiguous   :: zalfat, zalfaq, zbm, zbm0, zbt_ag, &
+      real, pointer, dimension(:)   :: ps
+      real, pointer, dimension(:)   :: zalfat, zalfaq, zbm, zbm0, zbt_ag, &
            zfc_ag, zfdsi, zfdss, &
            zfl, zfnsi, zfq, zfv_ag, &
            zmg, zqsurf_ag, ztsrad, &
            zustress, zvstress, zue, zh
-      real, pointer, dimension(:,:), contiguous :: tu, tv, tw, tt, tq, tl, uu, vv, w, &
+      real, pointer, dimension(:,:) :: tu, tv, tw, tt, tq, tl, uu, vv, w, &
            t, q, sg, zsigw, zsigt, zsigm, tm, &
            sigef, sigex, conserv_t,conserv_q,tconserv_t,tconserv_q, zgztherm, &
            zpblsigs,zpblq1, zqcplus, tqc
-      real, pointer, dimension(:,:), contiguous :: zgq, zgql, zgte, zkm, zkt, zqtbl, ztve, &
+      real, pointer, dimension(:,:) :: zgq, zgql, zgte, zkm, zkt, zqtbl, ztve, &
            zwtng, zwqng, zuwng, zvwng, zfbl, zfblgauss, zfblnonloc, zfnn, &
            zzd, zzn, zfc, zfv, zc1pbl, zturbqf, zturbtf, zturbuf, zturbvf, &
            zturbuvf
-      real, pointer, dimension(:,:,:), contiguous :: zvcoef
+      real, pointer, dimension(:,:,:) :: zvcoef
 
       !---------------------------------------------------------------------
 
