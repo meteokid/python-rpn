@@ -1,0 +1,136 @@
+#!/bin/bash
+
+myself=$0
+DESC='Open a new MIG rde-experiment with pre-set SRCPATH'
+USAGE="USAGE: ${myself##*/} [-h] [-v|-q] [-f]"
+
+eval $(rdevar --shdump)
+
+#---- Functions ------------------------------------------------------
+#====
+usage_long() {
+         toto=$(echo -e $USAGE)
+         more <<EOF
+$DESC
+
+$toto
+
+Options:
+    -h, --help     : print this help
+    -v, --verbose  : increase verbosity
+    -q, --quiet    : quiet mode
+    -f, --force    : replace existing source path file if any
+Will produce SRCPATH for all known ARCH ${CONST_RDE_KNOWN_BASE_ARCH_LIST}
+
+EOF
+}
+
+_verbose=0
+_quiet=0
+myforce=0
+EC_ARCH_LIST="${EC_ARCH_LIST:-${CONST_RDE_KNOWN_BASE_ARCH_LIST}}"
+while [[ $# -gt 0 ]] ; do
+   case $1 in
+      (-h|--help) usage_long; exit 0;;
+      (-v|--verbose) ((_verbose=_verbose+1));;
+      (-q|--quiet) _verbose=0; _quiet=1;;
+      (-f|--force) myforce=1 ;;
+      (-*|*) echo "ERROR: Unrecognized option $1"
+         echo -e $USAGE
+         echo "---- ABORT ----"
+         exit 1;;
+   esac
+   shift
+done
+
+myverbose=
+[[ ${_verbose} -gt 1 ]] && myverbose=-v || true
+
+srcpathfile=${CONST_SRCPATHFILE}
+if [[ x$myforce == x1 ]] ; then
+   rm -f ${srcpathfile:-.rde.srcpath.dot}
+fi
+if [[ -f ${srcpathfile:-.rde.srcpath.dot} ]] ; then
+   cat 1>&2 <<EOF
+WARNING: setup already done, will not redo; to force re-do the setup use:
+         ${myself} -v -f
+EOF
+   exit 1
+fi
+
+VALIDEXT="${CONST_RDESUFFIXINC} ${CONST_RDESUFFIXSRC}"
+VALIDEXTWILD="$(echo ${VALIDEXT} | sed 's|\.|*.|g') $(echo ${VALIDEXT} | sed 's|\.|*/*.|g') $(echo ${VALIDEXT} | sed 's|\.|*/*/*.|g')"
+
+SRCLIST=""
+TOPDIRS=""
+BINLIST=""
+
+# rpnpy_src=/dev/null
+# rpnpy_include=/dev/null
+
+for item in ${RDECOMPONENTS} ; do
+   maindir=${!item}
+   if [[ x${maindir} != x ]] ; then
+
+      incdir="$(item2=${item}_include; echo ${!item2})"
+      incdir="${incdir:-${maindir}/include}"
+      incdir0="${incdir}"
+      if [[ ! -d ${incdir} ]] ; then
+         incdir=""
+      fi
+
+      srcdir="$(item2=${item}_src; echo ${!item2})"
+      srcdir="${srcdir:-${maindir}/src}"
+      srcdir0="${srcdir}"
+      if [[ ! -d ${srcdir} ]] ; then
+         srcdir=""
+         if [[ -d ${maindir} && x"${incdir}" == x"" \
+            && x"${incdir0}" != x"/dev/null" ]] ; then
+            [[ x"$(cd ${maindir} && ls ${VALIDEXTWILD} 2>/dev/null)" != x"" ]] && srcdir="${maindir}" || true
+         fi
+      fi
+
+      bindir="$(item2=${item}_bin; echo ${!item2})"
+      bindir="${bindir:-${maindir}/bin}"
+      if [[ ! -d ${bindir} ]] ; then
+         bindir=""
+         if [[ -d ${maindir} && x"${incdir}${srcdir}" == x"" \
+            && x"${incdir0}" != x"/dev/null" \
+            && x"${srcdir0}" != x"/dev/null" ]] ; then
+            bindir="${maindir}"
+         fi
+      fi
+
+      if [[ ${_verbose} != 0 ]] ; then
+         if [[ ${_verbose} -gt 1 ]] ; then
+            echo "Adding ${item}: ${maindir} : inc=${incdir} : src=${srcdir} : bin=${bindir}"
+         else
+            echo "Adding ${item}: ${maindir}"
+         fi
+      fi
+      SRCLIST="${SRCLIST} ${srcdir}"
+      INCLIST="${INCLIST} ${incdir}"
+      BINLIST="${BINLIST} ${bindir}"
+      if [[ x"${incdir}${srcdir}${bindir}" != x"" ]] ; then
+         TOPDIRS="${TOPDIRS} ${maindir}"
+      fi
+   fi
+done
+
+rm -f ${CONST_SRCPATHFILE}
+for myarch in $EC_ARCH_LIST ; do
+   myarchold=$(rdevar --arch ${myarch} base_arch)
+   if [[ "x${myverbose}" == "x-v" ]] ; then
+      echo "+ rdeaddsrc ${myverbose} -R --arch ${myarchold} --reset --topdirs '${TOPDIRS}' ${SRCLIST}"
+   fi
+   rdeaddsrc ${myverbose} -R --arch ${myarchold} --reset --topdirs "${TOPDIRS}" ${SRCLIST}
+   if [[ "x${myverbose}" == "x-v" ]] ; then
+      echo "+ rdeaddsrc ${myverbose} -R --arch ${myarchold} --reset --include ${INCLIST}"
+   fi
+   rdeaddsrc ${myverbose} -R --arch ${myarchold} --reset --include ${INCLIST}
+done
+
+#Clean rdevar cache
+rdevar --cc
+
+exit 0

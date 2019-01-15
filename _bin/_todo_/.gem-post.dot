@@ -1,0 +1,116 @@
+#!/bin/ksh
+
+__logfile="/home/ordenv/ssm-domains9/log/gem-usage-$(date '+%Y-%m').log"
+__ovbin="/home/ordenv/ssm-domains9/bundles/ovbin/gem/${ATM_MODEL_VERSION}"
+if [[ ! -f ${__logfile} ]] ; then
+   __logfile="/home/sgem000/log/gem-usage-$(date '+%Y-%m').log"
+fi
+if [[ ! -d ${__ovbin} ]] ; then
+   __ovbin="/home/sgem000/SsmBundles/GEM/others/ovbin/gem/${ATM_MODEL_VERSION}"
+fi
+
+#TODO: if science network...
+
+__bundlename=${ATM_MODEL_BNDL:-GEM/x}
+__home_model_path=$HOME/modeles/GEMDM/v_${ATM_MODEL_VERSION}/bin
+__home_model_pathlib=$HOME/modeles/GEMDM/v_${ATM_MODEL_VERSION}/lib
+
+__gem_log_usage() {
+   __mylogmsg="$(date '+%F'):${__bundlename}:$(whoami)@${TRUE_HOST:-$(hostname)}:${BASE_ARCH}"
+   touch ${__logfile} && chmod ugo+w ${__logfile} 2>/dev/null || true 
+   [[ x"$(cat ${__logfile} 2>/dev/null | grep $__mylogmsg)" == x ]] && 
+	echo "$__mylogmsg" >> ${__logfile} 2>/dev/null || true
+   unset __mylogmsg
+}
+
+__gem_homeydot_path() {
+   if [[ -d $__ovbin ]] ; then
+      cat <<EOF
+Adding ovbin for GEM/${ATM_MODEL_VERSION} to the PATH
+         $__ovbin
+EOF
+      export PATH="${__ovbin}/${BASE_ARCH}:${__ovbin}:$PATH"
+      export PYTHONPATH="${__ovbin}/${BASE_ARCH}:${__ovbin}:$PYTHONPATH"
+   fi
+
+   if [[ -d $__home_model_path ]] ; then
+      cat <<EOF
+=========================================================================
+WARNING: The following was added to your PATH
+         $__home_model_path
+	 Modified scripts in this path will be used instead of original GEM scripts
+=========================================================================
+EOF
+      export PATH="${__home_model_path}/${BASE_ARCH}:${__home_model_path}:$PATH"
+   else
+      cat <<EOF
+=========================================================================
+NOTE: No user script override directory found at
+      $__home_model_path
+      If you want overrides, create this directory and run (in a new SHELL)
+      . s.ssmuse.dot ${ATM_MODEL_BNDL:-GEM/}
+=========================================================================
+EOF
+   fi
+
+   if [[ -d $__home_model_pathlib ]] ; then
+      cat <<EOF
+=========================================================================
+WARNING: The following was added to your LIBRARY_PATH and PYTHONPATH
+         $__home_model_pathlib
+	 Modified libs and python modules in this path will be used in priority
+=========================================================================
+EOF
+		export PYTHONPATH="${__home_model_pathlib}/${BASE_ARCH}:${__home_model_pathlib}:$PYTHONPATH"
+		export SSM_INCLUDE_PATH="${__home_model_pathlib}/${EC_ARCH}:${__home_model_pathlib}/${BASE_ARCH}:${__home_model_pathlib}:$SSM_INCLUDE_PATH"
+		export EC_LD_LIBRARY_PATH="${__home_model_pathlib}/${EC_ARCH}:${__home_model_pathlib}/${BASE_ARCH}:${__home_model_pathlib}:$EC_LD_LIBRARY_PATH"
+
+   else
+      cat <<EOF
+=========================================================================
+NOTE: No user lib/python override directory found at
+      $__home_model_pathlib
+      If you want overrides, create this directory and run (in a new SHELL)
+      . s.ssmuse.dot ${ATM_MODEL_BNDL:-GEM/}
+=========================================================================
+EOF
+   fi
+
+
+   if [[ x"$(echo $PATH | sed 's/:/\n:/g' | grep ':\.' | sed 's/://')" != x ]] ; then
+      echo 'Moving "." to head of PATH'
+      export PATH=.:./:$(echo $PATH |sed 's|:\.:|:|'|sed 's|:\.\/:|:|')
+   else
+      cat <<EOF 
+=========================================================================
+WARNING: '.' is not part of your PATH, local modifications will be ignored
+         You may add it with:
+         . s.ssmuse.dot dot
+=========================================================================
+EOF
+   fi
+}
+
+__gem_home_env() {
+	 if [[ -e ${__home_model_path}/.env_var.dot ]] ; then
+        cat <<EOF
+=========================================================================
+Sourcing: ${__home_model_path}/.env_var.dot
+=========================================================================
+EOF
+		  . ${__home_model_path}/.env_var.dot
+	 fi
+}
+
+__gem_home_env 2>&1 || true
+__gem_log_usage 2>&1 || true
+__gem_homeydot_path 2>&1 || true
+
+unset __gem_home_env 2>&1 || true
+unset __gem_log_usage 2>&1 || true
+unset __gem_homeydot_path 2>&1 || true
+
+unset __logfile 2>&1 || true
+unset __bundlename 2>&1 || true
+unset __home_model_path 2>&1 || true
+unset __home_model_pathlib 2>&1 || true

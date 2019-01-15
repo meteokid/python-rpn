@@ -1,0 +1,18 @@
+## Format: branch=BRANCH_NAME; tag=TAG_NAME ; components="REPOS1/TAG1 REPOS2/TAG2 ..."
+
+# branch=scm_1.5-branch; tag=scm_1.5.3 ; components="scmdyn/scmdyn_1.16.2 scmscripts/scmscripts_2.0.0"
+
+# branch=scm_2.0-branch; tag=scm_2.0.a13 ; components="scmdyn/scmdyn_1.22.0 scmscripts/scmscripts_2.2.1 scmdata/scmdata_0.13.0"
+# branch=scm_2.0-branch; tag=scm_2.0.a17 ; components="scmdyn/scmdyn_1.22.0 scmscripts/scmscripts_2.2.1 scmdata/scmdata_0.13.0"
+# branch=scm_2.0-branch; tag=scm_2.0.a19 ; components="scmdyn/scmdyn_1.23.0 scmscripts/scmscripts_2.2.2 scmdata/scmdata_0.13.0"
+# branch=scm_2.0-branch; tag=scm_2.0.a20 ; components="scmdyn/scmdyn_1.24.0 scmscripts/scmscripts_2.2.2 scmdata/scmdata_0.13.0"
+# branch=scm_2.0-branch; tag=scm_2.0.b2 ; components="scmdyn/scmdyn_1.25.0 scmscripts/scmscripts_2.2.2 scmdata/scmdata_0.13.0"
+# # branch=scm_2.0-branch; tag=scm_2.0.b3 ; components="scmdyn/scmdyn_1.26.0 scmscripts/scmscripts_2.3.1 scmdata/scmdata_0.14.0"
+# branch=scm_2.0-branch; tag=scm_2.0.b4 ; components="scmdyn/scmdyn_1.27.0 scmscripts/scmscripts_2.3.2 scmdata/scmdata_0.14.0"
+# branch=scm_2.0-branch; tag=scm_2.0.b5 ; components="scmdyn/scmdyn_1.28.0 scmscripts/scmscripts_2.4.0 scmdata/scmdata_0.15.0"
+# branch=scm_2.0-branch; tag=scm_2.0.b6 ; components="scmdyn/scmdyn_1.29.0 scmscripts/scmscripts_2.4.0 scmdata/scmdata_0.15.0"
+# branch=scm_2.0-branch; tag=scm_2.0.b7 ; components="scmdyn/scmdyn_1.30.0 scmscripts/scmscripts_2.4.1 scmdata/scmdata_0.15.0"
+
+branch=scm_2.0-branch; tag=scm_2.0.b7 ; components="scmdyn/scmdyn_1.30.0 scmscripts/scmscripts_2.4.1"
+
+# branch=scm_2.0-branch; tag=scm_ ; components="scmdyn/scmdyn_ scmscripts/scmscripts_ scmdata/scmdata_"

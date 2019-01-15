@@ -1,0 +1,101 @@
+#!/bin/ksh
+
+## rm -rf mydir ; mkdir mydir && cd mydir && git init && ../_bin/gemimportall.ksh
+
+squash=--squash
+reposbase=/users/dor/armn/sch/Data/ords/big_tmp/_GitDepots_bare
+reposbase2=git@gitlab.science.gc.ca:MIG
+
+TMPDIR2=${TMPDIR}/$$
+mkdir -p ${TMPDIR2}
+
+if [[ ! -d .git/ ]] ; then
+   cat <<EOF
+ERROR: not a git repository.
+       Try to do "git init"
+EOF
+   exit 1
+fi
+
+mkdir _bin _share
+cp ../_bin/*   _bin/
+cp ../_share/* _share/
+cp ../README.md .
+cp ../.gitignore .
+
+git add .
+git commit -a -m 'Initial commit'
+
+newtags=""
+for item in $(cat ./_share/gemversions.txt); do
+   branch=${item%%:*}
+   comps=${item#*:}
+   tag=${comps%%:*}
+   tag=${tag#*@}
+   echo "======== ${tag} (${branch}) ${comps}"
+   #set -x
+   if [[ "x$(git branch | grep ${branch})" == "x" ]] ; then
+      git checkout -b ${branch}
+   else
+      git checkout ${branch}
+   fi
+
+   echo > DEPENDENCIES
+   for comp1 in $(echo ${comps} | tr ':' ' ') ; do
+      compname=${comp1%%@*}
+      comptag=${comp1#*@}
+      echo "${compname} = ${reposbase2}/${compname}.git @ ${comptag}" >> DEPENDENCIES
+   done
+   git add DEPENDENCIES
+   git commit -a -m "DEPENDENCIES for ${tag}"
+
+   for comp1 in $(echo ${comps} | tr ':' ' ') ; do 
+      compname=${comp1%%@*}
+      comptag=${comp1#*@}
+      cmd=add; [[ -d ${compname} ]] && cmd=pull || true
+      remoteurl=${reposbase}/${compname}.git
+      remotename=${compname}
+
+      echo "---- ${tag} (${branch}) ${compname} ${comptag}"
+
+      if [[ "x$(git remote -v | grep ${remotename})" == "x" ]] ; then
+         git remote add ${remotename} ${remoteurl} #--no-tags
+         git fetch --tags ${remotename}
+      fi
+
+      tagfile=${TMPDIR2}/${branch}_${compname}.txt
+      logfile=${TMPDIR2}/${branch}_${compname}_${comptag}.log
+      echo "subtree_pull: tag=${comptag};" > ${logfile}
+      if [[ -f ${tagfile} ]] ; then
+         comptag0="$(cat ${tagfile})"
+         echo >> ${logfile}
+         git log --format=medium --date=iso ${comptag0}..${comptag} >> ${logfile}
+      fi
+      echo ${comptag} > ${tagfile}
+
+      git subtree ${cmd} -P ${compname} ${squash} ${remotename} ${comptag} -m "$(cat ${logfile})"
+   done
+   git tag -f ${tag}
+   newtags="${newtags} ${tag}"
+done
+
+## Cleanup branches
+for item in $(cat ./_share/gemversions.txt); do
+   comps=${item#*:}
+   for comp1 in $(echo ${comps} | tr ':' ' ') ; do
+      remotename=${comp1%%@*}
+      git remote remove ${remotename} 2>/dev/null || true
+   done
+done
+
+## Cleanup tags
+for tag1 in $(git tag); do
+   if [[ "x$(echo ${newtags} | grep ${tag1})" == "x" ]] ; then
+      git tag -d  ${tag1}
+   fi
+done
+
+## Garbage collection
+git reflog expire --expire-unreachable=now --all
+git gc --prune=now
+

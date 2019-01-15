@@ -1,0 +1,25 @@
+
+if [[ x${ATM_MODEL}${ATM_MODEL_BNDL}${ATM_MODEL_VERSION} != x ]] ; then
+   if [[ x$(echo $CMCLNG | cut -c1-2) == xfr ]] ; then
+	 cat<<EOF
+============================================================================
+ERREUR: Vous essayez de charger un model alors qu'une version est deja charge.
+        Version presente: ${ATM_MODEL} ${ATM_MODEL_BNDL} (${ATM_MODEL_VERSION})
+        SVP ouvrir une nouvelle session avant de refaire cette commande.
+============================================================================
+EOF
+   else
+	 cat<<EOF
+============================================================================
+ERROR: You are trying to load a model while one is already loaded.
+       Presente version: ${ATM_MODEL} ${ATM_MODEL_BNDL} (${ATM_MODEL_VERSION})
+       Please open a new session before doing this command.
+============================================================================
+EOF
+   fi
+   return 111
+fi
+
+export ATM_MODEL_BNDL=${1}
+export ATM_MODEL_VERSION=${ATM_MODEL_BNDL##*/}
+export ATM_MODEL_DSTP="${ATM_MODEL_DSTP:-$(date '+%Y-%m-%d %H:%M %Z')}"

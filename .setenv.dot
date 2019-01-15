@@ -1,0 +1,182 @@
+#!/bin/bash
+
+## Check that the user is sourcing this script
+_script_name=".setenv.dot"
+if [[ "${0##*/}" == ${_script_name} ]] ; then
+   cat 1>&2 <<EOF
+ERROR: This script should be sourced with:
+       source ${0}
+EOF
+    return 1
+fi
+unset _script_name
+
+## WARNING - bash only since it depends on ${!item}
+__b=1
+__a="__b"
+if [[ "x${!__a}" != "x${__b}" ]] ; then
+   cat 1>&2 <<EOF
+ERROR: Only supported in "bash"-like SHELL with support for \${!name} syntaxe
+EOF
+   unset __a __b
+   return 1
+fi
+unset __a __b
+
+_MYSELF="${0##*/}"
+DESC='Set EnvVar and Load Dependencies'
+USAGE="USAGE: ${_MYSELF} [-v] [-f] [--cmc|--science] [COMP_ARCH]"
+
+usage_long() {
+   toto=$(echo -e $USAGE)
+   more <<EOF
+$DESC
+
+$toto
+
+Options:
+    -h, --help     : print this help
+    -v, --verbose  : verbose mode
+        --cmc      : set dependencies for CMC network
+        --science  : set dependencies for Sience network
+        --official : 
+EOF
+}
+
+export RDEFULLCODE=1
+if [[ -d /ssm/net ]] ; then
+   export RDENETWORK=${RDENETWORK:-'cmc'}
+else
+   export RDENETWORK=${RDENETWORK:-'science'}
+fi
+# export COMP_ARCH_DEFAULT=intel13sp1u2
+# [[ x$BASE_ARCH == xAIX-powerpc7 ]] && COMP_ARCH_DEFAULT=xlf13
+_verbose=0
+_overridesok=0
+_versfx='-dev'
+while [[ $# -gt 0 ]] ; do
+   case $1 in
+      (-h|--help) usage_long; return 0;;
+      (-v|--_verbose) ((_verbose=_verbose+1));;
+      #TODO: option for _overridesok=1
+      #TODO: option for subset of components (forced_components list)
+      (--cmc) RDENETWORK=cmc ;;
+      (--science) RDENETWORK=science ;;
+      (--official) export ATM_MODEL_ISOFFICIAL='true' ; _versfx='';;
+      (savehist*) ;;
+      # (*) COMP_ARCH=${1:-${COMP_ARCH_DEFAULT}} ;;
+      (*)
+         if [[ x$1 != x ]] ; then
+           echo "ERROR: Option Not recognized: $1" 2>&1;
+           return 1;
+         fi;;
+    esac
+    shift
+done
+
+
+if [[ -f DEPENDENCIES ]] ; then
+   export RDECOMPONENTS="$(cat DEPENDENCIES | cut -d= -f1 | tr '\n' ' ')"
+else
+   export RDECOMPONENTS="$(find . -maxdepth 1 -type d | cut -d/ -f2 | grep -e '^[a-zA-Z]\+' | grep -v GEM_cfg | tr '\n' ' ')"
+fi
+
+
+## Set name=path var for each component
+for item in ${RDECOMPONENTS}; do
+   if [[ ${_overridesok} == 1 ]] ; then
+      export ${item}=${!item:-$(pwd)/${item}}
+   else
+      export ${item}=$(pwd)/${item}
+   fi
+   if [[ ! -d ${!item} ]] ; then
+      itemUC=$(echo ${item} | tr 'a-z' 'A-Z')
+      cat<<EOF
+ERROR: cannot find ${item}=${!item}
+       you may either link ${item} dir
+          ln -s /PATH/TO/${itemUC} ${item}
+       or define the env var
+          export ${item}=/PATH/TO/${itemUC}
+       then re-source this file
+EOF
+      return 1
+   fi
+done
+
+
+## Load external dependencies (including compiler)
+__here=$(pwd)
+cd ${modelutils:-__MODELUTILS_NOT_DEFINED__} || return 1
+. ./.setenv.dot --${RDENETWORK}  #WARNING: this overrides rde, vgrid, rpn_comm
+cd ${__here}
+unset __here
+
+#TODO: load components' external dep not covered in modelutils (like netcdf for SCM)
+
+## make sure local rde is used (may have been reset-ed by previous step)
+if [[ -d rde ]] ; then
+   export rde_version=dev
+   export rde=$(pwd)/rde
+fi
+
+
+#TODO: should run-time external dependencies (post) be loaded as well?
+#TODO: externals instead of straight ssmuse call with explicit list
+. s.ssmuse.dot GEM/d/gem-data/gem-data_4.2.0
+
+
+## Add bin, lib paths and set env var for each components
+for item in ${RDECOMPONENTS}; do
+   if [[ -d ${item}/bin ]] ; then
+      export PATH=$(pwd)/${item}/bin:${PATH}
+   fi
+   if [[ -d ${item}/lib/python ]] ; then
+      export PYTHONPATH=$(pwd)/${item}/lib/python:${PYTHONPATH}
+   fi
+   itemUC="$(echo ${item} | tr 'a-z' 'A-Z')"
+   if [[ -f ${item}/VERSION ]] ; then
+      itemv="$(cat ${item}/VERSION)"
+   elif [[ -f ${item}/include/Makefile.local.${item}.mk ]] ; then
+      itemv="$(make -f _share/Makefile.print.mk print-${itemUC}_VERSION OTHERMAKEFILE=$(pwd)/${item}/include/Makefile.local.${item}.mk)"
+   elif [[ -f ${item}/include/Makefile.local.mk ]] ; then
+      itemv="$(make -f _share/Makefile.print.mk print-${itemUC}_VERSION OTHERMAKEFILE=$(pwd)/${item}/include/Makefile.local.${item}.mk)"
+   elif [[ -f ${item}/Makefile ]] ; then
+      itemv="$(make -f _share/Makefile.print.mk print-${itemUC}_VERSION OTHERMAKEFILE=$(pwd)/${item}/Makefile)"
+   else
+      item2=${item}_version
+      itemv=${!item2}
+   fi
+   if [[ "x${itemv}" != "x" && "x${itemv}" != "xdev" ]] ; then
+      itemv=${itemv}${_versfx}
+   fi
+   echo ${item}_version=${itemv:-dev}
+   for mysetup in ${item}/bin/.rde.env_setup.dot ${item}/bin/.env_setup.dot0 ${item}/bin/.env_setup.dot ; do
+      if [[ -f ${mysetup} ]] ; then
+         # echo . ${mysetup} ${item} ${itemv:-dev} all $(pwd)/${item} $(pwd)/${item}
+         . ${mysetup} ${item} ${itemv:-dev} all $(pwd)/${item} $(pwd)/${item}
+      fi
+   done
+done
+unset item itemUC itemv item2 mysetup
+
+##missing: ATM_MODEL_VERSION, gemmod, MAESTRO_CURRENT_REF
+
+## Set bundle to present network
+# __here=$(pwd)
+# for item in ${RDECOMPONENTS}; do
+#    if [[ -d ${item} ]]; then
+#       cd ${item}
+#       for item in $(ls *-${RDENETWORK}); do
+#          ln -sf ${item} ${item%-*}
+#       done
+#       cd ${__here}
+#    fi
+# done
+
+
+## Add build/bin to PATH
+export PATH=$(pwd)/$(rdevar build/bin):$(pwd)/_bin:${PATH}
+export RDE_EXTRADIRS=".rde.no_extradirs"
+
+unset _verbose _overridesok _MYSELF DESC USAGE
+
