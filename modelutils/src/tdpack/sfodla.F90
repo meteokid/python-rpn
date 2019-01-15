@@ -16,7 +16,7 @@
 !**fonction sfodla  -  calcule la derivee selon t du 'ln ew'.
 !
       Function sfodla(tt)
-!
+      use tdpack, only: fodla
       implicit none
 #include <arch_specific.hf>
       Real sfodla, tt
@@ -33,15 +33,7 @@
 !
 !          - Input -
 ! tt       temperature in K
-!
-!Implicites
-Include "thermoconsts.inc"
-!Modules
-!
 !*
-!--------------------------------------------------------------------
-Include "dintern.inc"
-Include "fintern.inc"
 !--------------------------------------------------------------------
 !
 !

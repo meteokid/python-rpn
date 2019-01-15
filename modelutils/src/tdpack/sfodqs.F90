@@ -16,7 +16,7 @@
 !**fonction sfodqs  -  derivee selon t de qsat
 !
       Function sfodqs(tt,pr)
-!
+      use tdpack, only: foqst, fodqs
       implicit none
 #include <arch_specific.hf>
       Real sfodqs, tt, pr
@@ -35,17 +35,9 @@
 !          - Input -
 ! tt       temperature in K
 ! pr       pressure in Pa
-!
-!
-!Implicites
-Include "thermoconsts.inc"
-!Modules
-!
 !*
 !--------------------------------------------------------------------
       Real qs
-Include "dintern.inc"
-Include "fintern.inc"
 !--------------------------------------------------------------------
 !
       qs = foqst(tt,pr)

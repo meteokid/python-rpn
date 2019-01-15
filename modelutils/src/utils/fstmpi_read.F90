@@ -15,22 +15,25 @@
 
 !/@
 module fstmpi_read_mod
-use iso_c_binding
+   use iso_c_binding
    use vGrid_Descriptors
-   use vgrid_wb
-   use fst_mod
    use ezgrid_mod
+   use fst_mod
+   use hinterp4yy_mod
    use ptopo_utils
+   use vgrid_wb
    implicit none
    private
    !@objective 
    !@author  Stephane Chamberland, 2011-06
    !@description
    ! Public functions
-   public :: fstmpi_find,fstmpi_read,fstmpi_getmeta,fstmpi_get_gridid,fstmpi_get_hgridid,fstmpi_get_vgrid
-   ! 
+   public :: fstmpi_find, fstmpi_read, fstmpi_getmeta, fstmpi_get_gridid, &
+        fstmpi_get_hgridid, fstmpi_get_vgrid, fstmpi_rdhint, &
+        fstmpi_rdhint_3d_r4, fstmpi_rdhint_3d_r4_vect
+
    ! Public constants
-   public :: FST_FIND_LT,FST_FIND_LE,FST_FIND_NEAR,FST_FIND_GE,FST_FIND_GT
+   public :: FST_FIND_LT, FST_FIND_LE, FST_FIND_NEAR, FST_FIND_GE, FST_FIND_GT
 !@/
 
 #include <msg.h>
@@ -44,6 +47,11 @@ use iso_c_binding
 
    interface fstmpi_read
       module procedure fstmpi_read_3d_r4
+   end interface
+
+   interface fstmpi_rdhint
+      module procedure fstmpi_rdhint_3d_r4
+      module procedure fstmpi_rdhint_3d_r4_vect
    end interface
 
    integer,parameter :: CHARPERBYTE = 4
@@ -107,7 +115,8 @@ contains
 
 
    !/@
-   function fstmpi_read_3d_r4(F_key,F_data,F_fileid,F_gridid) result(F_istat)
+   function fstmpi_read_3d_r4(F_key, F_data, F_fileid, F_gridid, &
+        F_realloc_L) result(F_istat)
       implicit none
       !@objective
       !@arguments
@@ -115,23 +124,30 @@ contains
       real,pointer :: F_data(:,:,:)
       integer,intent(in),optional :: F_fileid
       integer,intent(out),optional :: F_gridid
+!!$      character(len=*),intent(out),optional :: F_nomvar_S, F_etiket_S, F_typvar_S
+!!$      integer,intent(out),optional :: F_dateo,F_deet,F_npas,F_ip1, F_ip2, F_ip3
+      logical,intent(in),optional :: F_realloc_L
       !@author
       !@return
       integer :: F_istat
       !@/
-      integer :: istat,nijk(4),mysize
+      logical :: realloc_L
+      integer :: istat, nijk(4), mysize
       ! ---------------------------------------------------------------------
 !!$      print *,'fstmpi_read',F_key; call flush(6)
       call ptopo_init_var()
       F_istat = RMN_ERR
       if (present(F_gridid)) F_gridid = RMN_ERR
       nijk = RMN_ERR
+      realloc_L = .false.
+      if (present(F_realloc_L)) realloc_L = F_realloc_L
 
       if (ptopo_isblocmaster_L) then
          if (present(F_fileid) .and. present(F_gridid)) then
-            F_istat = fst_read(F_key,F_data,F_fileid,F_gridid)
+            F_istat = fst_read(F_key,F_data,F_fileid,F_gridid, &
+                 F_realloc_L=realloc_L)
          else
-            F_istat = fst_read(F_key,F_data)
+            F_istat = fst_read(F_key,F_data, F_realloc_L=realloc_L)
          endif
          nijk(4) = F_istat
          if (RMN_IS_OK(F_istat)) nijk(1:3) = shape(F_data)
@@ -166,6 +182,193 @@ contains
       ! ---------------------------------------------------------------------
       return
    end function fstmpi_read_3d_r4
+
+
+  !/@
+   function fstmpi_rdhint_3d_r4(F_data1, F_status, F_keys1, F_hintlist_S, &
+        F_fileids, F_outgridid, F_coregridid, F_realloc_L) &
+        result(F_istat)
+      implicit none
+      !@objective
+      !@arguments
+      real, pointer :: F_data1(:,:,:)
+      integer, intent(out) :: F_status(:)
+      integer, intent(in) :: F_keys1(:)
+      character(len=*), intent(in) :: F_hintlist_S(:)
+      integer, intent(in) :: F_fileids(:)
+      integer, intent(in) :: F_outgridid
+      integer, intent(in), optional :: F_coregridid
+      logical,intent(in), optional :: F_realloc_L
+      !#TODO: alternate itf with hgridis_S so we have min, max as well
+      !@author
+      !@return
+      integer :: F_istat
+      !@/
+      logical :: realloc_L
+      integer :: istat, coregridid, nkeys, nhint, nfids, nij(2), ikey, fid, ingridid
+      character(len=12) :: nomvar_S
+      real, pointer :: indata1(:,:,:)
+      ! ---------------------------------------------------------------------
+      call msg(MSG_DEBUG, '(fstmpi) rdhint_3d_r4 [BEGIN]')
+      F_istat = RMN_ERR
+      F_status = RMN_ERR
+
+      realloc_L = .false.
+      coregridid = F_outgridid
+      if (present(F_realloc_L)) realloc_L = F_realloc_L
+      if (present(F_coregridid)) coregridid = F_coregridid
+
+      nkeys   = size(F_keys1)
+      nhint   = size(F_hintlist_S)
+      nfids   = size(F_fileids)
+
+      if (size(F_status) < nkeys) then
+         call msg(MSG_WARNING, '(fst) rdhint: status array too small')
+         return
+      endif
+
+      F_istat = ezgrid_params(F_outgridid, nij)
+      if (.not.RMN_IS_OK(F_istat)) then
+         call msg(MSG_WARNING, '(fst) rdhint: Problem getting grid params')
+         return
+      endif
+
+      F_istat = fst_checkalloc(F_data1, nij(1), nij(2), nkeys, realloc_L)
+      if (.not.RMN_IS_OK(F_istat)) return
+
+      nullify(indata1)
+      DO_NKEYS: do ikey = 1, nkeys
+         if (.not.RMN_IS_OK(F_keys1(ikey))) cycle
+
+         ingridid = -1
+         fid = F_fileids(min(ikey, nfids))
+         istat = fstmpi_read_3d_r4(F_keys1(ikey), indata1, fid, ingridid, &
+              F_realloc_L=realloc_L)
+         nomvar_S = ' ' !#TODO get nomvar from fst_read or getmeta
+         if (.not.RMN_IS_OK(istat)) then
+            F_status(ikey) = RMN_ERR
+            call msg(MSG_WARNING, '(fstmpi) rdhint: Problem reading: '//trim(nomvar_S))
+            cycle
+         endif
+         !#TODO: allow for optional stats of read field before interp
+
+         F_status(ikey) = hinterp4yy2d(F_data1, indata1, ikey, ingridid, &
+              F_outgridid, coregridid, F_hintlist_S(min(ikey,nhint)), &
+              nomvar_S)
+         if (.not.RMN_IS_OK(F_status(ikey))) then
+            call msg(MSG_WARNING, '(fstmpio) rdhint: Problem in hinterp4yy2d for: '//trim(nomvar_S))
+            cycle
+         endif
+
+      enddo DO_NKEYS
+      F_istat = maxval(F_status)
+
+      call msg(MSG_DEBUG, '(fstmpi) rdhint_3d_r4 [END]')
+      ! ---------------------------------------------------------------------
+      return
+   end function fstmpi_rdhint_3d_r4
+
+
+   !/@
+   function fstmpi_rdhint_3d_r4_vect(F_data1, F_data2, F_status, &
+        F_keys1, F_keys2, F_hintlist_S, &
+        F_fileids, F_outgridid, F_coregridid, F_realloc_L) &
+        result(F_istat)
+      implicit none
+      !@objective
+      !@arguments
+      real, pointer :: F_data1(:,:,:), F_data2(:,:,:)
+      integer, intent(out) :: F_status(:)
+      integer, intent(in) :: F_keys1(:), F_keys2(:)
+      character(len=*), intent(in) :: F_hintlist_S(:)
+      integer, intent(in) :: F_fileids(:)
+      integer, intent(in) :: F_outgridid
+      integer, intent(in), optional :: F_coregridid
+      logical,intent(in), optional :: F_realloc_L
+      !#TODO: alternate itf with hgridis_S so we have min, max as well
+      !@author
+      !@return
+      integer :: F_istat
+      !@/
+      logical :: realloc_L
+      integer :: istat, coregridid, nkeys, nhint, nfids, nij(2), ikey, fid, ingridid
+      character(len=12) :: nomvar1_S, nomvar2_S
+      real, pointer :: indata1(:,:,:), indata2(:,:,:)
+      ! ---------------------------------------------------------------------
+      call msg(MSG_DEBUG, '(fstmpi) rdhint_3d_r4_vect [BEGIN]')
+      F_istat = RMN_ERR
+      F_status = RMN_ERR
+
+      realloc_L = .false.
+      coregridid = F_outgridid
+      if (present(F_realloc_L)) realloc_L = F_realloc_L
+      if (present(F_coregridid)) coregridid = F_coregridid
+
+      nkeys   = size(F_keys1)
+      nhint   = size(F_hintlist_S)
+      nfids   = size(F_fileids)
+
+      if (nkeys /= size(F_keys2)) then
+         call msg(MSG_WARNING, '(fst) rdhint: incompatible list size')
+         F_istat = RMN_ERR
+         return
+      endif
+
+      if (size(F_status) < nkeys) then
+         call msg(MSG_WARNING, '(fst) rdhint: status array too small')
+         return
+      endif
+
+      F_istat = ezgrid_params(F_outgridid, nij)
+      if (.not.RMN_IS_OK(F_istat)) then
+         call msg(MSG_WARNING, '(fst) rdhint: Problem getting grid params')
+         return
+      endif
+
+      F_istat = fst_checkalloc(F_data1, nij(1), nij(2), nkeys, realloc_L)
+      if (.not.RMN_IS_OK(F_istat)) return
+      F_istat = fst_checkalloc(F_data2, nij(1), nij(2), nkeys, realloc_L)
+      if (.not.RMN_IS_OK(F_istat)) return
+
+      nullify(indata1, indata2)
+      DO_NKEYS: do ikey = 1, nkeys
+         if (.not.RMN_IS_OK(F_keys1(ikey))) cycle
+
+         ingridid = -1
+         fid = F_fileids(min(ikey, nfids))
+         istat = fstmpi_read_3d_r4(F_keys1(ikey), indata1, fid, ingridid, &
+              F_realloc_L=realloc_L)
+         nomvar1_S = '??' !#TODO get nomvar from fst_read or getmeta
+         if (.not.RMN_IS_OK(istat)) then
+            F_status(ikey) = RMN_ERR
+            call msg(MSG_WARNING, '(fstmpi) rdhint: Problem reading: '//trim(nomvar1_S))
+            cycle
+         endif
+         istat = fstmpi_read_3d_r4(F_keys2(ikey), indata2, fid, ingridid, &
+              F_realloc_L=realloc_L)
+         nomvar2_S = '??' !#TODO get nomvar from fst_read or getmeta
+         if (.not.RMN_IS_OK(istat)) then
+            F_status(ikey) = RMN_ERR
+            call msg(MSG_WARNING, '(fstmpi) rdhint: Problem reading: '//trim(nomvar2_S))
+            cycle
+         endif
+         !#TODO: allow for optional stats of read field before interp
+
+         F_status(ikey) = hinterp4yy2d(F_data1, F_data2, indata1, indata2, ikey, &
+              ingridid, F_outgridid, coregridid, &
+              F_hintlist_S(min(ikey, nhint)), nomvar1_S, nomvar2_S)
+         if (.not.RMN_IS_OK(F_status(ikey))) then
+            call msg(MSG_WARNING, '(fstmpio) rdhint: Problem in hinterp4yy2d for: '//trim(nomvar1_S)//' + '//trim(nomvar2_S))
+            cycle
+         endif
+
+      enddo DO_NKEYS
+      F_istat = maxval(F_status)
+
+      call msg(MSG_DEBUG, '(fstmpi) rdhint_3d_r4_vect [END]')
+      ! ---------------------------------------------------------------------
+      return
+   end function fstmpi_rdhint_3d_r4_vect
 
 
    !/@

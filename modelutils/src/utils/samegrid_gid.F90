@@ -64,13 +64,35 @@ integer function samegrid_gid ( F_sgid, F_g1d,F_g2d,F_g3d,F_g4d, &
          ideb = i
          if ( xps(i) .gt. (F_xpd(1) + eps1) ) exit
       end do
-      ideb = max(1,ideb-1)
+!
+!if ideb is last source point, check if xps(nis)>F_xpd(1)+eps
+!before giving correct ideb to tst_parpo
+!
+!
+   if (ideb .lt. nis) then
+       ideb = max(1,ideb-1)
+   else if ( xps(nis) .le. (F_xpd(1) + eps1) ) then
+       ideb = nis
+   else
+       ideb = max(1,ideb-1)
+   endif
 
       do j=1,njs
          jdeb = j
          if ( yps(j) .gt. (F_ypd(1) + eps1) ) exit
       end do
-      jdeb = max(1,jdeb-1)
+!
+!if jdeb is last source point, check if yps(njs)>F_ypd(1)+eps
+!before giving correct jdeb to tst_parpo
+!
+   if (jdeb .lt. njs) then
+       jdeb = max(1,jdeb-1)
+   else if ( yps(njs) .le. (F_ypd(1) + eps1) ) then
+       jdeb = njs
+   else
+       jdeb = max(1,jdeb-1)
+   endif
+
 
       cnt = samegrid_parpos (xps,nis, F_xpd,F_nid, ideb, eps2)
       moy = real(cnt)/real(F_nid)

@@ -16,7 +16,7 @@
 !**s/r mfoew  -  tension de vapeur saturante
 !
       Subroutine mfoew(ew,tt,ni,nk,n)
-!
+      use tdpack
       implicit none
 #include <arch_specific.hf>
       Integer ni, nk, n
@@ -39,17 +39,9 @@
 ! ni       horizontal dimension
 ! nk       vertical dimension
 ! n        number of points to process
-!
-!
-!Implicites
-Include "thermoconsts.inc"
-!Modules
-!
 !*
 !--------------------------------------------------------------------
       Integer k, i
-Include "dintern.inc"
-Include "fintern.inc"
 !--------------------------------------------------------------------
 !
       Do k=1,nk

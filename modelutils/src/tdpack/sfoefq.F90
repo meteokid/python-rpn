@@ -16,7 +16,7 @@
 !**fonction sfoefq  -  calcule tension de vapeur de hum. sp. et pres.
 !
       Function sfoefq(qq,pr)
-!
+      use tdpack, only: foefq
       implicit none
 #include <arch_specific.hf>
       Real sfoefq, qq, pr
@@ -33,16 +33,7 @@
 !          - Input -
 ! qq       specific humidity in kg/kg
 ! pr       pressure in Pa
-!
-!
-!Implicites
-Include "thermoconsts.inc"
-!Modules
-!
 !*
-!--------------------------------------------------------------------
-Include "dintern.inc"
-Include "fintern.inc"
 !--------------------------------------------------------------------
 !
       sfoefq = foefq(qq,pr)

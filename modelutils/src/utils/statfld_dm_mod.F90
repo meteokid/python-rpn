@@ -79,7 +79,13 @@ contains
       integer :: istat,lni,lnj,gni,gnj,gi0,gj0
       !---------------------------------------------------------------
       call ptopo_init_var()
-
+      F_mean = 0.
+      F_var = 0.
+      F_rmin = 0.
+      F_rmax = 0.
+      F_ijkmin = 0
+      F_ijkmax = 0
+ 
       lni = size(F_fld,1)
       lnj = size(F_fld,2)
       istat = ptopo_collect_dims(RPN_COMM_GRID,lni,lnj,gni,gnj,gi0,gj0)
@@ -89,9 +95,10 @@ contains
       endif
       pfld => F_fld
       istat = ptopo_collect(wk,pfld,RPN_COMM_GRID,gi0,gj0,lni,lnj)
-
+ 
       if (ptopo_grid_ipe == RPN_COMM_MASTER) then
          call statfld(wk,F_mean,F_var,F_rmin,F_rmax,F_ijkmin,F_ijkmax) 
+!!$      else !#TODO: bcast
       endif
       if (associated(wk)) deallocate(wk,stat=istat)
       !---------------------------------------------------------------
@@ -134,7 +141,13 @@ contains
       integer :: istat,lni,lnj,lnk,gni,gnj,gi0,gj0
       !---------------------------------------------------------------
       call ptopo_init_var()
-
+      F_mean = 0.
+      F_var = 0.
+      F_rmin = 0.
+      F_rmax = 0.
+      F_ijkmin = 0
+      F_ijkmax = 0
+ 
       lni = size(F_fld,1)
       lnj = size(F_fld,2)
       lnk = size(F_fld,3)
@@ -148,6 +161,7 @@ contains
 
       if (ptopo_grid_ipe == RPN_COMM_MASTER) then
          call statfld(wk,F_mean,F_var,F_rmin,F_rmax,F_ijkmin,F_ijkmax) 
+!!$      else !#TODO: bcast
       endif
       if (associated(wk)) deallocate(wk,stat=istat)
       !---------------------------------------------------------------

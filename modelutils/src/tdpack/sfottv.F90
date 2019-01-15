@@ -16,7 +16,7 @@
 !**fonction sfottv  -  calcule temp. a partir de tv et hum. sp.
 !
       Function sfottv(tv,qq)
-!
+      use tdpack, only: fottv
       implicit none
 #include <arch_specific.hf>
       Real sfottv, tv, qq
@@ -33,16 +33,7 @@
 !          - Input -
 ! tv       virtual temperature in Kelvins
 ! qq       specific humidity in kg/kg
-!
-!
-!Implicites
-Include "thermoconsts.inc"
-!Modules
-!
 !*
-!--------------------------------------------------------------------
-Include "dintern.inc"
-Include "fintern.inc"
 !--------------------------------------------------------------------
 !
       sfottv = fottv(tv,qq)

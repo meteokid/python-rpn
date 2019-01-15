@@ -16,7 +16,7 @@
 !**fonction sfopot - resout l'eqn de Poisson pour la temperature
 !
       Function sfopot(t0, p0, pf2)
-!
+      use tdpack, only: fopoit
       implicit none
 #include <arch_specific.hf>
 !
@@ -36,15 +36,7 @@
 !      pf2 - pressure (Pa) at the target level
 !
 !      result is in K
-!
-!Implicites
-Include "thermoconsts.inc"
-!Modules
-!
 !*
-!--------------------------------------------------------------------
-Include "dintern.inc"
-Include "fintern.inc"
 !--------------------------------------------------------------------
 !
       sfopot = fopoit(t0, p0, pf2)

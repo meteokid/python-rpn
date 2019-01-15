@@ -71,10 +71,17 @@ module incfg_mod
    !              accepted values: 
    !                0     (surface), 
    !                1     (arbitrary level 1), 
-   !                1-26  (arbitrary level 1 to 26), 
+   !                1,26  (arbitrary level 1 to 26), 
    !                -1    (caller provided list of levels), 
    !                tdiag (thermo diag level), 
    !                mdiag (momentum diag level)
+   !   * cat    : list of categories (for 4D vars) (default=-1)
+   !              accepted format: FIRST_CAT, LAST_CAT
+   !              LAST_CAT is optional
+   !              accepted values: 
+   !                1     (1st category), 
+   !                1,26  (categories 1 to 26), 
+   !                -1    (caller provided list of categories, all categories), 
    !   * typvar : typvar param of RPN-std files (default=' ')
    !              accepted values: C, A, P, R, ...
    !   * mandatory : define if the var is mandatory or not (defaut=default)
@@ -96,7 +103,7 @@ module incfg_mod
 
    type :: incfg_var_T
       character(len=INCFG_STRLEN) :: vn(2),file(NFILE_MAX),h_int,v_int,t_int,freq_type,lvl_type,typvar
-      integer :: freq_t0,freq_dt,freq_t1,lvl0,lvl1,mandatory
+      integer :: freq_t0,freq_dt,freq_t1,lvl0,lvl1,mandatory,cat0,cat1
       real :: vmin, vmax
    end type incfg_var_T
 
@@ -217,6 +224,8 @@ contains
          INCFG_VAR_DEFAULT%freq_t1 = 0
          INCFG_VAR_DEFAULT%lvl0 = 0
          INCFG_VAR_DEFAULT%lvl1 = 0
+         INCFG_VAR_DEFAULT%cat0 = -1
+         INCFG_VAR_DEFAULT%cat1 = -1
          INCFG_VAR_DEFAULT%typvar = ' '
          INCFG_VAR_DEFAULT%mandatory = -1
          INCFG_VAR_DEFAULT%vmin = -1*huge(INCFG_VAR_DEFAULT%vmin)
@@ -357,6 +366,8 @@ contains
             call priv_parse_freq(F_id,index,val_S)
          case('leve') !levels
             call priv_parse_level(F_id,index,val_S)
+         case('cat ')
+            call priv_parse_cat(F_id,index,val_S)
          case('hint') !hinterp
             do ii=1,size(KNOWN_H_INT)
                if (val_S(1:4) == KNOWN_H_INT(ii)(1:4)) &
@@ -543,7 +554,7 @@ contains
 
 
    !/@*
-   function incfg_meta(F_id,F_index,F_varname_S,F_varname2_S,F_files_S,F_h_int_S,F_v_int_S,F_t_int_S,F_lvl_type_S,F_lvl0,F_lvl1,F_needonce_L,F_ip1list,F_nip1,F_typvar_S,F_mandatory,F_vmin,F_vmax) result(F_istat)
+   function incfg_meta(F_id,F_index,F_varname_S,F_varname2_S,F_files_S,F_h_int_S,F_v_int_S,F_t_int_S,F_lvl_type_S,F_lvl0,F_lvl1,F_needonce_L,F_ip1list,F_nip1,F_typvar_S,F_mandatory,F_vmin,F_vmax,F_cat0,F_cat1) result(F_istat)
       implicit none
       !@objective
       !@arguments 
@@ -552,7 +563,7 @@ contains
       character(len=*),intent(inout),optional :: F_varname2_S
       character(len=*),intent(inout),optional :: F_files_S(:)
       character(len=*),intent(inout),optional :: F_h_int_S,F_v_int_S,F_t_int_S,F_lvl_type_S,F_typvar_S
-      integer,intent(out),optional :: F_lvl0,F_lvl1,F_ip1list(:),F_nip1,F_mandatory
+      integer,intent(out),optional :: F_lvl0,F_lvl1,F_ip1list(:),F_nip1,F_mandatory,F_cat0,F_cat1
       real,intent(out),optional :: F_vmin, F_vmax
       logical,intent(out),optional :: F_needonce_L
       !@return
@@ -613,8 +624,10 @@ contains
       endif
 
       if (present(F_lvl0)) F_lvl0 = m_list(F_id)%v(F_index)%lvl0
-
       if (present(F_lvl1)) F_lvl1 = m_list(F_id)%v(F_index)%lvl1
+
+      if (present(F_cat0)) F_cat0 = m_list(F_id)%v(F_index)%cat0
+      if (present(F_cat1)) F_cat1 = m_list(F_id)%v(F_index)%cat1
 
       if (present(F_nip1) .and. present(F_ip1list)) then
          F_nip1 = priv_get_ip1list(F_id,F_index,F_ip1list)
@@ -912,7 +925,7 @@ contains
       integer :: val,istat,n
       !------------------------------------------------------------------
       call str_split2list(parts_S,F_string_S,',',NMAX)
-      
+ 
       m_list(F_id)%v(F_index)%lvl0 = -1
       m_list(F_id)%v(F_index)%lvl1 = -1
 
@@ -964,6 +977,45 @@ contains
       !------------------------------------------------------------------
       return
    end subroutine priv_parse_level
+
+
+   !/@*
+   subroutine priv_parse_cat(F_id,F_index,F_string_S)
+      implicit none
+      character(len=*),intent(in) :: F_string_S
+      integer,intent(in) :: F_id,F_index
+      !*@/
+      integer,parameter :: NMAX = 3
+      character(len=1024) :: parts_S(NMAX),tmp_S
+      integer :: val,istat,n
+      !------------------------------------------------------------------
+      call str_split2list(parts_S,F_string_S,',',NMAX)
+ 
+      m_list(F_id)%v(F_index)%cat0 = -1
+      m_list(F_id)%v(F_index)%cat1 = -1
+
+      n = 1
+      read(parts_S(n),fmt=*,iostat=istat) val
+      if (istat /= 0 .or. parts_S(n) == ' ') then
+         call msg(MSG_WARNING,'(incfg) ignoring invalid cat: '//trim(F_string_S))
+         return
+      endif
+      m_list(F_id)%v(F_index)%cat0 = max(-1,val) !#max(0,val)
+      n = n+1
+      m_list(F_id)%v(F_index)%cat1 = m_list(F_id)%v(F_index)%cat0
+      if (val >= 0) then
+         read(parts_S(n),fmt=*,iostat=istat) val
+         if (istat == 0 .and. parts_S(n) /= ' ') then
+            m_list(F_id)%v(F_index)%cat1 = max(0,val)
+         endif
+         n = n+1
+      endif
+
+      if (parts_S(n) /= ' ') &
+           call msg(MSG_WARNING,'(incfg) ignoring extra cat params: '//trim(parts_S(n)))
+      !------------------------------------------------------------------
+      return
+   end subroutine priv_parse_cat
 
 
    !/@*

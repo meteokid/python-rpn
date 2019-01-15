@@ -5,7 +5,7 @@
 ! - EC-RPN License, 2121 TransCanada, suite 500, Dorval (Qc), CANADA, H9P 1J3
 ! - service.rpn@ec.gc.ca
 ! It is distributed WITHOUT ANY WARRANTY of FITNESS FOR ANY PARTICULAR PURPOSE.
-!-------------------------------------------------------------------------- 
+!--------------------------------------------------------------------------
 !/@*
 module gmm_itf_mod
    implicit none
@@ -15,5 +15,22 @@ module gmm_itf_mod
 !*@/
 
 #include <gmm.hf>
+
+#undef GMM_IS_OK
+#undef GMM_IS_ERROR
+
+   contains
+
+      logical function GMM_IS_OK(errcode)
+         implicit none
+         integer, intent(in) :: errcode
+         GMM_IS_OK = (errcode >= 0)
+      end function
+
+      logical function GMM_IS_ERROR(errcode)
+         implicit none
+         integer, intent(in) :: errcode
+         GMM_IS_ERROR = (errcode < 0)
+      end function
 
 end module gmm_itf_mod

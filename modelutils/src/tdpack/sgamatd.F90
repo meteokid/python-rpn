@@ -16,7 +16,7 @@
 !**s/r fonction sgamatd - pente de TD lors de VV non-sature
 !
       Function sgamatd(td, tt, ti, pr, typv, swph)
-!
+      use tdpack, only: schal, rgasd, eps1, grav
       implicit none
 #include <arch_specific.hf>
 !
@@ -52,15 +52,9 @@
 !       swph - if .true.: phase ice and water are considered
 !                 .false.: phase water for all temperatures with
 !                          computation of saturation
-!implicites
-Include "thermoconsts.inc"
-!modules
-      External schal
-!
 !*
 !----------------------------------------------------------------
-!
-      Real schal, latheat
+      Real latheat
 !
 !----------------------------------------------------------------
 !

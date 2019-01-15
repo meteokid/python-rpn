@@ -16,7 +16,7 @@
 !**fonction sfotvt  -  calcule tv de tt et hum. sp.
 !
       Function sfotvt(tt,qq)
-!
+      use tdpack, only: fotvt
       implicit none
 #include <arch_specific.hf>
       Real sfotvt, tt, qq
@@ -33,16 +33,7 @@
 !          - Input -
 ! tt       temperature in K
 ! qq       specific humidity in kg/kg
-!
-!
-!Implicites
-Include "thermoconsts.inc"
-!Modules
-!
 !*
-!--------------------------------------------------------------------
-Include "dintern.inc"
-Include "fintern.inc"
 !--------------------------------------------------------------------
 !
       sfotvt = fotvt(tt,qq)

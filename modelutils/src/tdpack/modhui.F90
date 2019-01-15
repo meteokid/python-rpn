@@ -16,7 +16,7 @@
 !**S/R modhui3  -  MODIFICATION DE HU EN HAUT DE 300 MB
 !
       SUBROUTINE modhui3(HU,TX,PS,SWPH,NI,NK,N)
-!
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 !
@@ -59,32 +59,15 @@
 ! NI       Horizontal dimension
 ! NK       Vertical dimension
 ! N        Number of points to process
-!
-!IMPLICITES
-include "thermoconsts.inc"
-!MODULES
-!
 !*
 !--------------------------------------------------------------------
 !
       REAL Qsat,Qnot,HRnot
       REAL ALPHA, HREL, HRPRIM, QPRIM
-!
-!
-!***********************************************************************
-!     AUTOMATIC ARRAYS
-!***********************************************************************
-!
       Real, Dimension(ni,nk) :: PN
       Real, Dimension(ni,nk) :: PN0
-!
-!***********************************************************************
-!
       REAL E, TD
       INTEGER K,K0, I
-!
-include "dintern.inc"
-include "fintern.inc"
 !--------------------------------------------------------------------
 !
 !

@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -41,12 +41,12 @@ module mu_jdate_mod
    integer, parameter, public :: MU_JDATE_LEAP_ON = 0
    integer, parameter, public :: MU_JDATE_LEAP_IGNORED = 1
    integer, parameter, public :: MU_JDATE_PDF_LEN = 16
-   integer(IDOUBLE), parameter, public :: MU_JDATE_MAX_INT = 464269103999
+   integer(IDOUBLE), parameter, public :: MU_JDATE_MAX_INT = 464269103999_IDOUBLE
    character(len=MU_JDATE_PDF_LEN), parameter, public :: MU_JDATE_MAX_STR = '99991231.235959'
    integer(IDOUBLE), parameter, public :: MU_JDATE_EPOCH_INT = 0
    character(len=MU_JDATE_PDF_LEN), parameter, public :: MU_JDATE_EPOCH_STR = '-47131124.000000'
    !@/
-   
+
    interface
 
       subroutine mu_set_leap_year(flag) bind(C, NAME='mu_set_leap_year')
@@ -54,7 +54,7 @@ module mu_jdate_mod
          implicit none
          integer(C_INT), value :: flag
       end subroutine mu_set_leap_year
-      
+
 
       subroutine mu_jd2ymd(jd, yy, mo, dd) bind(C, NAME='mu_jd2ymd')
          use iso_c_binding
@@ -228,7 +228,7 @@ contains
       date0 = F_cmcdate
       istat = newdate(date0,dat2,dat3,RMN_DATE_STAMP2PRINT)
       if (.not.RMN_IS_OK(istat)) return
-      
+
       yy = dat2/10000
       mo = mod(dat2,10000)/100
       dd = mod(dat2,100)
@@ -274,7 +274,7 @@ contains
       dat3 = hh*1000000 + mn*10000 + ss*100
       istat = newdate(F_cmcdate,dat2,dat3,RMN_DATE_PRINT2STAMP)
       if (.not.RMN_IS_OK(istat)) F_cmcdate = RMN_ERR
-      !------------------------------------------------------------------ 
+      !------------------------------------------------------------------
       return
    end function jdate_to_cmc
 
@@ -292,6 +292,10 @@ contains
       !-------------------------------------------------------------------
       F_jsec_8 = RMN_ERR
       date_S = adjustl(F_date_S)
+      if (date_S == '-1') then
+         F_jsec_8 = MU_JDATE_ANY
+         return
+      endif
       if (len_trim(date_S) < 8) return
 
       a = 0
@@ -342,8 +346,12 @@ contains
       integer(C_INT) :: yy,mo,dd,hh,mn,ss
       integer(C_LONG_LONG) :: jsec_8_c
       !------------------------------------------------------------------
+      if (F_jsec_8 == MU_JDATE_ANY) then
+         F_date_S = '-1'
+         return
+      endif
       F_date_S = ' '
-      
+
       jsec_8_c = F_jsec_8
       yy=0; mo=0; dd=0; hh=0; mn=0; ss=0
       call mu_js2ymdhms(jsec_8_c, yy, mo, dd, hh, mn, ss)
@@ -365,6 +373,10 @@ contains
       integer(C_INT) :: yy,mo,dd,hh,mn,ss
       integer(C_LONG_LONG) :: jsec_8_c
       !------------------------------------------------------------------
+      if (F_jsec_8 == MU_JDATE_ANY) then
+         F_year = RMN_ERR
+         return
+      endif
       jsec_8_c = F_jsec_8
       yy=0; mo=0; dd=0; hh=0; mn=0; ss=0
       call mu_js2ymdhms(jsec_8_c, yy, mo, dd, hh, mn, ss)
@@ -384,6 +396,10 @@ contains
       integer(C_INT) :: yy,mo,dd,hh,mn,ss
       integer(C_LONG_LONG) :: jsec_8_c
       !------------------------------------------------------------------
+      if (F_jsec_8 == MU_JDATE_ANY) then
+         F_month = RMN_ERR
+         return
+      endif
       jsec_8_c = F_jsec_8
       yy=0; mo=0; dd=0; hh=0; mn=0; ss=0
       call mu_js2ymdhms(jsec_8_c, yy, mo, dd, hh, mn, ss)
@@ -403,6 +419,10 @@ contains
       integer(C_INT) :: yy,mo,dd,hh,mn,ss
       integer(C_LONG_LONG) :: jsec_8_c
       !------------------------------------------------------------------
+      if (F_jsec_8 == MU_JDATE_ANY) then
+         F_day = RMN_ERR
+         return
+      endif
       jsec_8_c = F_jsec_8
       yy=0; mo=0; dd=0; hh=0; mn=0; ss=0
       call mu_js2ymdhms(jsec_8_c, yy, mo, dd, hh, mn, ss)
@@ -422,6 +442,10 @@ contains
       integer(C_INT) :: yy,mo,dd,hh,mn,ss
       integer(C_LONG_LONG) :: jsec_8_c
       !------------------------------------------------------------------
+      if (F_jsec_8 == MU_JDATE_ANY) then
+         F_day = RMN_ERR
+         return
+      endif
       jsec_8_c = F_jsec_8
       yy=0; mo=0; dd=0; hh=0; mn=0; ss=0
       call mu_js2ymdhms(jsec_8_c, yy, mo, dd, hh, mn, ss)
@@ -443,7 +467,7 @@ contains
       !------------------------------------------------------------------
       F_jsec2_8 = RMN_ERR
       if (F_month < 1 .or. F_month > 12) return
-      
+
       yy=F_year; mo=F_month; dd=1; hh=0; mn=0; ss=0
       yy2=F_year; mo2=F_month+1
       if (F_month == 12) then
@@ -453,7 +477,7 @@ contains
       jsec_8_c = RMN_ERR ; jsec2_8_c = RMN_ERR
       call mu_ymdhms2js(jsec_8_c,  yy,  mo,  dd, hh, mn, ss)
       call mu_ymdhms2js(jsec2_8_c, yy2, mo2, dd, hh, mn, ss)
-      
+
       if (jsec_8_c == RMN_ERR .or. jsec2_8_c == RMN_ERR) return
 
       F_jsec2_8 = jsec_8_c + (jsec2_8_c - jsec_8_c)/2

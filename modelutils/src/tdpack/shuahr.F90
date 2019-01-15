@@ -16,6 +16,7 @@
 !**fonction shuahr3  -  passage de hu a hr
 !
       Function shuahr3(hu,tt,ps,swph)
+      use tdpack, only: fohr, fohra
       implicit none
 #include <arch_specific.hf>
       Real shuahr3, hu, tt, ps
@@ -38,18 +39,9 @@
 !          .false. to pass tv for argument
 ! swph     .true. to consider water and ice phase
 !          .false. to consider water phase only
-!
-!
-!Implicites
-Include "thermoconsts.inc"
-!Modules
-!
 !*
 !--------------------------------------------------------------------
       Real tp
-!
-Include "dintern.inc"
-Include "fintern.inc"
 !--------------------------------------------------------------------
 !
 

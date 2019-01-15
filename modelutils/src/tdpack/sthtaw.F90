@@ -16,7 +16,7 @@
 !**s/r fonction sthtaw3  -  calcule tw ou thetaw
 !
       Function sthtaw3(hu,tt,ps,swph,swth)
-!
+      use tdpack, only: foqst, foqsa, fodqs, fodqa, cappa, ai, aw, bi, bw, cpd, slp, t1s, t2s
       implicit none
 #include <arch_specific.hf>
       Real sthtaw3, hu, tt, ps
@@ -45,20 +45,11 @@
 !          .false. to consider water phase only
 ! swth     .true. to calculate theta
 !          .false. to calculate tw
-!
-!
-!Implicites
-Include "thermoconsts.inc"
-!Modules
-!
 !*
 !--------------------------------------------------------------------
       Real q1, dq1, q0, th, h, ft0, dft0
       Real d, dlp, qp, pr, fac, l2ocprv
       Integer iter, n, j
-!
-Include "dintern.inc"
-Include "fintern.inc"
 !--------------------------------------------------------------------
 !     trouve d'abord  tw
 !     solutionne par methode de newton du 1er ordre.
@@ -148,7 +139,7 @@ Include "fintern.inc"
 !**s/r fonction sthtaw4  -  calcule tw ou thetaw
 !
       Function sthtaw4(hu,tt,ps,swph,swth,ti)
-!
+      use tdpack, only: schal, foqst, foqsa, fodqs, fodqa, sgamasp, cappa, ai, aw, bi, bw, cpd, slp, t1s, t2s
       implicit none
 #include <arch_specific.hf>
       Real sthtaw4, hu, tt, ps, ti
@@ -181,24 +172,13 @@ Include "fintern.inc"
 !          latent heat of sublimation
 !          if swph=false, ti is n/a
 !          ti must be .le. trpl
-!
-!
-!Implicites
-Include "thermoconsts.inc"
-!Modules
-      External sgamasp, schal
-!
 !*
 !--------------------------------------------------------------------
       Real q1, dq1, q0, th, ft0, dft0
       Real latheat, lvt0, lsti, dt, dtpr
       Real hscp
-      Real sgamasp, schal
       Real d, dlp, pr
       Integer iter, n, j
-!
-Include "dintern.inc"
-Include "fintern.inc"
 !--------------------------------------------------------------------
 !
 !

@@ -16,6 +16,7 @@
 !**s/r fonction sesahu3  -  passage de es a hu
 !
       Function sesahu3(es,tt,ps,swph)
+      use tdpack, only: foew, foewa, foqfe
       implicit none
 #include <arch_specific.hf>
       Real sesahu3, es, tt, ps
@@ -38,17 +39,9 @@
 ! ps       pression in Pa
 ! swph     .true. to consider water and ice phase
 !          .false. to consider water phase only
-!
-!Implicites
-Include "thermoconsts.inc"
-!Modules
-!
 !*
 !--------------------------------------------------------------------
       Real e, td
-!
-Include "dintern.inc"
-Include "fintern.inc"
 !--------------------------------------------------------------------
 !
       td = tt - es

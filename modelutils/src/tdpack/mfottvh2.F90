@@ -21,6 +21,7 @@
 !                          compte de la vapeur et des hydrometeores.
 !
       Subroutine mfottvh2(tt,tv,qq,qh,minx,maxx,miny,maxy,nk,i0,in,j0,jn,tt2vt)
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 !
@@ -41,15 +42,9 @@
 ! tv       virtual temperature in K
 ! qq       specific humidity in kg/kg
 ! qv       specific mass of hydrometeors in kg/kg
-!
-Include "thermoconsts.inc"
-!
 !*
 !--------------------------------------------------------------------
       Integer i,j,k
-
-Include "dintern.inc"
-Include "fintern.inc"
 !--------------------------------------------------------------------
 
       If (tt2vt) Then

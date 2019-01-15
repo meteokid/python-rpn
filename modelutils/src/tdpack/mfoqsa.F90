@@ -16,7 +16,7 @@
 !**s/r mfoqsa3  -  calcule hum sp saturante,(eau seulement)
 !
       Subroutine mfoqsa3(qs,tt,ps,ni,nk,n)
-!
+      use tdpack_const
       implicit none
 #include <arch_specific.hf>
 !
@@ -48,31 +48,19 @@
 ! ni       horizontal dimension
 ! nk       vertical dimension
 ! n        number of points to process
-!
-!
-!Implicites
-Include "thermoconsts.inc"
-!Modules
-!
 !*
 !--------------------------------------------------------------------
       Integer k, i
       Real*8 dtemp
-!
-!***********************************************************************
-!     Automatic arrays
-!***********************************************************************
-!
       Real*8, Dimension(ni,nk) :: xt
-!
+
+#define __FORTRAN__
+#include "tdpack_func.h"
+
 !***********************************************************************
-!
-Include "dintern.inc"
-Include "fintern.inc"
-!
       Do k=1,nk
       Do i=1,ni
-         xt(i,k)=foewaf(tt(i,k))
+         xt(i,k) = FOEWAF(tt(i,k))
       Enddo
       Enddo
 !
@@ -80,8 +68,8 @@ Include "fintern.inc"
 
       Do k=1,nk
       Do i=1,n
-         dtemp = fomult(xt(i,k))
-         qs(i,k) = foqstx(ps(i,k),dtemp)
+         dtemp = aerk1w*xt(i,k)
+         qs(i,k) = FOQSTX(ps(i,k),dtemp)
       Enddo
       Enddo
 !

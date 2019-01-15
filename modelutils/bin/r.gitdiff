@@ -17,7 +17,7 @@ USAGE="USAGE: ${0##*/} [-w] [-B] [i] [-q] [-d] -v] [--*diff*] [GIT_DIFF_OPTIONS]
 export ECDIFF=${ECDIFF:-diff}
 export ECDIFFARGS=${ECDIFFARGS:-""}
 export TMPDIR=${TMPDIR:-/tmp}
-GITDIFFARGS=""
+# GITDIFFARGS=""
 
 quick=0
 dirdiff=0
@@ -30,12 +30,12 @@ while [[ $# -gt 0 ]] ; do
     case $1 in
         -q) quick=1;;
         -d) dirdiff=1;;
-	-v) verbose=1;;
+        -v) verbose=1;;
         -[wB]) ignorewhite="${ignorewhite}${1#-}";;
         (-wB|-Bw) ignorewhite="wB";;
         -i) ignorecase="i";;
         --*diff*) export ECDIFF=${1#--} ;;
-	(-h|--help) echo $DESC ; echo -e $USAGE; exit 0;;
+        (-h|--help) echo $DESC ; echo -e $USAGE; exit 0;;
 #        -*) echo "ERROR: Unrecognized option $1"
 #            echo -e $USAGE
 #            echo "---- ABORT ----"
@@ -51,7 +51,7 @@ if [[ "x${ignorecase}" != "x" ]] ; then
     ECDIFFARGS="$ECDIFFARGS -${ignorecase}"
 fi
 if [[ $quick = 1 ]] ; then
-    GITDIFFARGS="--name-only"
+    GITDIFFARGS="--name-only -M -C --find-copies-harder"
 fi
 #if [[ $posargsnum -ge 3 ]] ; then
 #    echo "ERROR: support for more that 2 files/dir diff not yet implemented"
@@ -60,27 +60,32 @@ fi
 #    exit 1
 #fi
 
-export GIT_EXTERNAL_DIFF=`which r.git-diff-wrapper`
+if [[ $dirdiff == 0 ]] ; then
+   export GIT_EXTERNAL_DIFF=$(which r.git-diff-wrapper)
+else
+   export GIT_EXTERNAL_DIFF=$(which r.git-diff-wrapper-cp)
+   export ECDIFFTMPDIR=${ECDIFFTMPDIR:-${TMPDIR:-/tmp}}/$$
+   mkdir -p ${ECDIFFTMPDIR}/{left,right}
+fi
 
 if [[ "x${posargs# }" != "x" ]]; then
+    echo "+git diff ${GITDIFFARGS} ${posargs# }" 1>&2
     git diff ${GITDIFFARGS} ${posargs# }
 else
+    echo "+git diff ${GITDIFFARGS}" 1>&2
     git diff ${GITDIFFARGS}
 fi
 
+if [[ $dirdiff == 1 ]] ; then
+   ${ECDIFF:-xxdiff} ${ECDIFFARGS} ${ECDIFFTMPDIR}/{left,right}
+   rm -rf ${ECDIFFTMPDIR}/{left,right}
+fi
 exit 0
 
 #=========================================================
 #=========================================================
 #=========================================================
 #=========================================================
-
-#TODO: implement dirdiff [xxdiff, kdiff3, ... "svn diff" calls diff program for each different file
-#if [[ $dirdiff -eq 1 ]] ; then
-#	 echo "WARNING: dirdiff not yet implemented, comparing files one by one"
-#fi
-
-#TODO: fix for sub/dir on directory comparison
 
 ##
 # extract file from svn repos or return nothing if local file

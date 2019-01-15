@@ -16,7 +16,7 @@
 !**s/r fonction stetae - calcule thetae
 !
       Function stetae(tt, td, pr)
-!
+      use tdpack, only: sttlcl, fopoip, fopoit, foqsa, schal, sesahu3, foefq, cpd, tcdk
       implicit none
 #include <arch_specific.hf>
 !
@@ -39,25 +39,14 @@
 !note
 !      the saturation computations are done with respect to
 !      water only
-!
-!implicites
-Include "thermoconsts.inc"
-!modules
-!
 !*
 !---------------------------------------------------------------
-!
-      Real sttlcl, tl, pl
-      Real schal
+      Real tl, pl
       Real qsat, chal, teta
-      Real es, hu, e, prd, sesahu3
+      Real es, hu, e, prd
       Real tn, dp, tb, pb, qsdt, dtst, trm3, cw
-      Real tetaea, sgamasp, dt
+      Real tetaea, dt
       Real y, ttc, prm
-!
-Include "dintern.inc"
-Include "fintern.inc"
-!
 !--------------------------------------------------------------------
 !
       If ((tt-td).Gt.0.)Then

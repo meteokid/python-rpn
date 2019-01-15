@@ -16,6 +16,7 @@
 !**fonction sfoqfe  -  calcule hum. sp. de tension de vap. et pres.
 !
       Function sfoqfe(ee,pr)
+      use tdpack, only: foqfe
       implicit none
 #include <arch_specific.hf>
       Real sfoqfe, ee, pr
@@ -32,16 +33,7 @@
 !          - Input -
 ! ee       vapour pressure in Pa
 ! pr       pressure in Pa
-!
-!
-!Implicites
-Include "thermoconsts.inc"
-!Modules
-!
 !*
-!--------------------------------------------------------------------
-Include "dintern.inc"
-Include "fintern.inc"
 !--------------------------------------------------------------------
 !
       sfoqfe = foqfe(ee,pr)

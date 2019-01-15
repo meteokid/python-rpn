@@ -19,13 +19,44 @@
 #define DEF_MSG_OK 'OK   '
 #define DEF_MSG_FAIL 'FAIL '
 
+module testutils_stats
+   public
+   integer, save :: ntot = 0
+   integer, save :: nok = 0
+
+contains
+
+   subroutine testutils_stats_print()
+      implicit none
+#include <rmnlib_basics.hf>
+      logical :: canWrite_L
+      integer :: msgLevelMin, msgUnit
+      character(len=64) :: msgFormat_S
+      ! ---------------------------------------------------------------------
+      call msg_getInfo(canWrite_L, msgLevelMin, msgUnit, msgFormat_S)
+      if (.not.canWrite_L) return
+      write(RMN_STDERR, '(a)') '============================================='
+      write(RMN_STDERR, '(a,i6,a,i6,a,i6,a)') 'Successfull assertions:',nok, ' /', ntot, ' (failed=', ntot-nok,')'
+      write(RMN_STDERR, '(a)') '============================================='
+      call flush(RMN_STDERR)
+      ! ---------------------------------------------------------------------
+      return
+   end subroutine testutils_stats_print
+
+end module testutils_stats
+
 
 module testutils
-use iso_c_binding
+   use iso_c_binding
+   use ieee_arithmetic
    use str_mod, only: str_tab2space
+   use testutils_stats
    implicit none
    private
-   public :: testutils_initmpi, testutils_getenv_int,testutils_verbosity,testutils_set_name,testutils_set_tolerence,testutils_assert_eq,testutils_assert_ok
+   public :: testutils_initmpi, testutils_getenv_int,testutils_verbosity,testutils_set_name,testutils_set_tolerence,testutils_assert_eq,testutils_assert_ok, testutils_stats_print, testutils_assert_neq, testutils_assert_not_naninf
+
+   integer, public :: testutils_myproc = 0
+   integer, public :: testutils_npeio  = 1
 
 #include <rmnlib_basics.hf>
 #include <clib_interface_mu.hf>
@@ -35,6 +66,18 @@ use iso_c_binding
    interface testutils_assert_ok
       module procedure testutils_assert_ok1
       module procedure testutils_assert_ok2
+   end interface
+
+   interface testutils_assert_not_naninf
+      module procedure testutils_assert_not_naninf_r4
+      module procedure testutils_assert_not_naninf_r4_1d
+      module procedure testutils_assert_not_naninf_r4_2d
+      module procedure testutils_assert_not_naninf_r4_3d
+   end interface
+
+   interface testutils_assert_neq
+      module procedure testutils_assert_neq_i4
+      module procedure testutils_assert_neq_r4
    end interface
 
    interface testutils_assert_eq
@@ -61,16 +104,16 @@ use iso_c_binding
 contains
 
    !/@*
-   function testutils_initmpi(F_ngrids,F_npex,F_npey,F_nblocx,F_nblocy) result(F_myproc)
+   function testutils_initmpi(F_ngrids,F_npex,F_npey,F_nblocx,F_nblocy,F_npeio) result(F_myproc)
       implicit none
       !@objective init mpi for tests
       !@arguments
-      integer,intent(in),optional :: F_ngrids,F_npex,F_npey,F_nblocx,F_nblocy
+      integer,intent(in),optional :: F_ngrids,F_npex,F_npey,F_nblocx,F_nblocy,F_npeio
       !@return
       integer :: F_myproc
       !@author  Stephane Chamberland, 2010-05
       !*@/
-      integer :: err,ngrids,igrid,myproc,numproc,npex,npey,mycol,myrow,nblocx,nblocy,mydomain
+      integer :: err,ngrids,igrid,myproc,numproc,npex,npey,mycol,myrow,nblocx,nblocy,mydomain,npeio
       external :: testutils_get_doms,testutils_get_npxy
       !---------------------------------------------------------------------
       call rpn_comm_mydomain(testutils_get_doms,mydomain)
@@ -98,15 +141,26 @@ contains
       endif
       nblocx = min(nblocx,npex)
       nblocy = min(nblocy,npey)
-      err = rpn_comm_bloc(nblocx,nblocy)
+!!$      err = rpn_comm_bloc(nblocx,nblocy)
       err = rpn_comm_mype(myproc,mycol,myrow)
-      call rpn_comm_rank(RPN_COMM_BLOC_COMM,m_bloc_myproc,err)
+!!$      call rpn_comm_rank(RPN_COMM_BLOC_COMM,m_bloc_myproc,err)
+      testutils_myproc = myproc
+
+      if (present(F_npeio)) then
+         npeio = F_npeio
+      else
+         err = testutils_getenv_int('MPI_NPEIO',npeio)
+!!$         print *,'MPI_NPEIO=', err, npeio
+         if (.not.RMN_IS_OK(err)) npeio = 1
+      endif
+      testutils_npeio = npeio
 
       err = wb_put('ptopo/npx',npex)
       err = wb_put('ptopo/npy',npey)
       err = wb_put('ptopo/numproc',numproc)
       err = wb_put('ptopo/nblocx',nblocx)
       err = wb_put('ptopo/nblocy',nblocy)
+      err = wb_put('ptopo/npeio',npeio)
       err = wb_put('ptopo/ngrids',ngrids)
 
       err = wb_put('ptopo/igrid',igrid)
@@ -198,10 +252,14 @@ contains
          case('w')
             call msg_set_minMessageLevel(MSG_WARNING)
             istat = wb_verbosity(WB_MSG_WARN)
-         case('e')
+            istat= fstopc('MSGLVL','SYSTEM',.false.)
+        case('e')
             call msg_set_minMessageLevel(MSG_ERROR)
             istat = wb_verbosity(WB_MSG_ERROR)
+            istat= fstopc('MSGLVL','SYSTEM',.false.)
          end select
+      else
+         istat= fstopc('MSGLVL','SYSTEM',.false.)
       endif
       !---------------------------------------------------------------------
       return
@@ -230,6 +288,137 @@ contains
       ! ---------------------------------------------------------------------
       return
    end subroutine testutils_set_tolerence
+
+
+   !/@
+   subroutine testutils_assert_not_naninf_r4(F_userval,F_msg_S)
+      implicit none
+      real, intent(in) :: F_userval
+      character(len=*), intent(in) :: F_msg_S
+      !@/
+      character(len=DEF_MSG_MAXLEN) :: msg_S
+      logical :: ok_L
+!!$      real :: infinity_4
+      ! ---------------------------------------------------------------------
+      !#uses fortran 2003 ieee_is_nan() and ieee_is_finite()
+!!$      infinity_4 = huge(infinity_4)
+!!$      if (F_userval > infinity_4 .or. F_userval < -infinity_4) then
+      if (.not.ieee_is_finite(F_userval)) then
+         ok_L = .false.
+         write(msg_S,*) trim(F_msg_S)//' - Value is Inf'
+      else
+         ok_L = .true.
+         msg_S = F_msg_S
+      endif
+      if (ok_L) then
+!!$         if (F_userval /= F_userval) then
+      if (ieee_is_nan(F_userval)) then
+            ok_L = .false.
+            write(msg_S,*) trim(F_msg_S)//' - Value is NaN'
+         else
+            ok_L = .true.
+            write(msg_S,*) trim(F_msg_S)//' - Value is a valid number'
+         endif
+      endif
+      call testutils_assert_ok0(ok_L,m_name_S,msg_S)
+      ! ---------------------------------------------------------------------
+      return
+   end subroutine testutils_assert_not_naninf_r4
+
+
+   !/@
+   subroutine testutils_assert_not_naninf_r4_1d(F_userval,F_msg_S)
+      implicit none
+      real, intent(in) :: F_userval(:)
+      character(len=*), intent(in) :: F_msg_S
+      !@/
+      integer :: i
+      character(len=DEF_MSG_MAXLEN) :: msg_S
+      logical :: ok_L
+      ! ---------------------------------------------------------------------
+      ok_L = .true.
+      msg_S = F_msg_S
+      do i = lbound(F_userval,1), ubound(F_userval,1)
+         if (.not.ieee_is_finite(F_userval(i))) then
+            ok_L = .false.
+            write(msg_S,*) trim(F_msg_S)//' - Inf value found at: ',i
+         endif
+         if (ieee_is_nan(F_userval(i))) then
+            ok_L = .false.
+            write(msg_S,*) trim(F_msg_S)//' - NaN value found at: ',i
+         endif
+         if (.not.ok_L) exit
+      enddo
+      call testutils_assert_ok0(ok_L,m_name_S,msg_S)
+      ! ---------------------------------------------------------------------
+      return
+   end subroutine testutils_assert_not_naninf_r4_1d
+
+
+   !/@
+   subroutine testutils_assert_not_naninf_r4_2d(F_userval,F_msg_S)
+      implicit none
+      real, intent(in) :: F_userval(:,:)
+      character(len=*), intent(in) :: F_msg_S
+      !@/
+      integer :: i, j
+      character(len=DEF_MSG_MAXLEN) :: msg_S
+      logical :: ok_L
+      ! ---------------------------------------------------------------------
+      ok_L = .true.
+      msg_S = F_msg_S
+      do j = lbound(F_userval,2), ubound(F_userval,2)
+         do i = lbound(F_userval,1), ubound(F_userval,1)
+            if (.not.ieee_is_finite(F_userval(i,j))) then
+               ok_L = .false.
+               write(msg_S,*) trim(F_msg_S)//' - Inf value found at: ',i,j
+            endif
+            if (ieee_is_nan(F_userval(i,j))) then
+               ok_L = .false.
+               write(msg_S,*) trim(F_msg_S)//' - NaN value found at: ',i,j
+            endif
+            if (.not.ok_L) exit
+         enddo
+         if (.not.ok_L) exit
+      enddo
+      call testutils_assert_ok0(ok_L,m_name_S,msg_S)
+      ! ---------------------------------------------------------------------
+      return
+   end subroutine testutils_assert_not_naninf_r4_2d
+
+
+   !/@
+   subroutine testutils_assert_not_naninf_r4_3d(F_userval,F_msg_S)
+      implicit none
+      real, intent(in) :: F_userval(:,:,:)
+      character(len=*), intent(in) :: F_msg_S
+      !@/
+      integer :: i, j, k
+      character(len=DEF_MSG_MAXLEN) :: msg_S
+      logical :: ok_L
+      ! ---------------------------------------------------------------------
+      ok_L = .true.
+      msg_S = F_msg_S
+      do k = lbound(F_userval,3), ubound(F_userval,3)
+         do j = lbound(F_userval,2), ubound(F_userval,2)
+            do i = lbound(F_userval,1), ubound(F_userval,1)
+               if (.not.ieee_is_finite(F_userval(i,j,k))) then
+                  ok_L = .false.
+                  write(msg_S,*) trim(F_msg_S)//' - Inf value found at: ',i,j,k
+               endif
+               if (ieee_is_nan(F_userval(i,j,k))) then
+                  ok_L = .false.
+                  write(msg_S,*) trim(F_msg_S)//' - NaN value found at: ',i,j,k
+               endif
+               if (.not.ok_L) exit
+            enddo
+            if (.not.ok_L) exit
+         enddo
+      enddo
+      call testutils_assert_ok0(ok_L,m_name_S,msg_S)
+      ! ---------------------------------------------------------------------
+      return
+   end subroutine testutils_assert_not_naninf_r4_3d
 
 
    !/@
@@ -299,6 +488,28 @@ contains
 
 
    !/@
+   subroutine testutils_assert_neq_i4(F_userval,F_expected,F_msg_S)
+      implicit none
+      integer, intent(in) :: F_userval,F_expected
+      character(len=*), intent(in) :: F_msg_S
+      !@/
+      character(len=DEF_MSG_MAXLEN) :: msg_S
+      logical :: ok_L
+      ! ---------------------------------------------------------------------
+      if (F_userval /= F_expected) then
+         ok_L = .true.
+         msg_S = F_msg_S
+      else
+         ok_L = .false.
+         write(msg_S,*) trim(F_msg_S)//' - got,exp:',F_userval,' == ',F_expected
+      endif
+      call testutils_assert_ok0(ok_L,m_name_S,msg_S)
+      ! ---------------------------------------------------------------------
+      return
+   end subroutine testutils_assert_neq_i4
+
+
+   !/@
    subroutine testutils_assert_eq_i4(F_userval,F_expected,F_msg_S)
       implicit none
       integer, intent(in) :: F_userval,F_expected
@@ -351,6 +562,28 @@ contains
       return
    end subroutine testutils_assert_eq_i4_1d
 
+
+   !/@
+   subroutine testutils_assert_neq_r4(F_userval,F_expected,F_msg_S)
+      implicit none
+      real, intent(in) :: F_userval,F_expected
+      character(len=*), intent(in) :: F_msg_S
+      !@/
+      character(len=DEF_MSG_MAXLEN) :: msg_S
+      logical :: ok_L
+      ! ---------------------------------------------------------------------
+      !TODO-later: shoud we check relative error?
+      if (abs(dble(F_userval) - dble(F_expected)) > m_r_tolerence_8) then
+         ok_L = .true.
+         msg_S = F_msg_S
+      else
+         ok_L = .false.
+         write(msg_S,*) trim(F_msg_S)//' - got,exp:',F_userval,' == ',F_expected
+      endif
+      call testutils_assert_ok0(ok_L,m_name_S,msg_S)
+      ! ---------------------------------------------------------------------
+      return
+   end subroutine testutils_assert_neq_r4
 
    !/@
    subroutine testutils_assert_eq_r4(F_userval,F_expected,F_msg_S)
@@ -544,6 +777,7 @@ end module testutils
 
 !/@
 subroutine testutils_assert_ok0(F_ok_L,F_name_S,F_msg_S)
+   use testutils_stats
    implicit none
    logical, intent(in) :: F_ok_L
    character(len=*), intent(in) :: F_name_S,F_msg_S
@@ -560,6 +794,8 @@ subroutine testutils_assert_ok0(F_ok_L,F_name_S,F_msg_S)
    if (F_ok_L) istat = RMN_OK
    call msg_getInfo(canWrite_L,msgLevelMin,msgUnit,msgFormat_S)
    call collect_error(istat)
+   ntot = ntot + 1
+   if (RMN_IS_OK(istat)) nok = nok + 1
    if (.not.canWrite_L) return
    msg2_S = adjustl(F_msg_S)
    if (RMN_IS_OK(istat)) then

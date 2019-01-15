@@ -16,7 +16,7 @@
 !**s/r mthtaw3  -  calcule tw ou thetaw
 !
       Subroutine mthtaw3(tw,hu,tt,ps,swph,swth,ni,nk,n)
-!
+      use tdpack 
       implicit none
 #include <arch_specific.hf>
 !
@@ -55,28 +55,11 @@
 ! ni       horizontal dimension
 ! nk       vertical dimension
 ! n        number of treated points
-!
-!Implicites
-Include "thermoconsts.inc"
-!
-!Modules
-!
 !*
 !--------------------------------------------------------------------
-!
-!***********************************************************************
-!     Automatic arrays
-!***********************************************************************
-!
-!
-!***********************************************************************
-!
       Real q1, dq1, q0, th, h, ft0, dft0, prn
       Real dlp, d, l2ocprv, qp, fac
       Integer iter, i, k, nn, j
-!
-Include "dintern.inc"
-Include "fintern.inc"
 !--------------------------------------------------------------------
 !
       l2ocprv = 1.35e+07
@@ -178,7 +161,7 @@ Include "fintern.inc"
 !**s/r mthtaw4  -  calcule tw ou thetaw
 !
       Subroutine mthtaw4(tw,hu,tt,ps,swph,swth,ti,ni,nk,n)
-!
+      use tdpack
       implicit none
 #include <arch_specific.hf>
       Integer ni, nk, n
@@ -222,33 +205,11 @@ Include "fintern.inc"
 ! ni       horizontal dimension
 ! nk       vertical dimension
 ! n        number of treated points
-!
-!implicites
-Include "thermoconsts.inc"
-!
-!modules
-      External schal, sgamasp
-!
 !*
 !--------------------------------------------------------------------
-!
       Real q1, dq1, q0, th, ft0, dft0, prn
       Real dlp, d, qp, dt, dtpr, latheat, hscp
-      Real schal, sgamasp
       Integer iter, i, k, nn, j
-
-!***********************************************************************
-!
-!     Automatic array
-!
-!***********************************************************************
-!
-!
-!***********************************************************************
-!
-!
-Include "dintern.inc"
-Include "fintern.inc"
 !--------------------------------------------------------------------
 !
       Do k=1,nk

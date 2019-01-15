@@ -17,7 +17,7 @@
 !              -  (glace seulement)
 !
       Subroutine mfoeic(ei,tt,ni,nk,n)
-!
+      use tdpack
       implicit none
 #include <arch_specific.hf>
       Integer ni, nk, n
@@ -42,26 +42,10 @@
 ! ni       horizontal dimension
 ! nk       vertical dimension
 ! n        number of points to process
-!
-!Implicites
-Include "thermoconsts.inc"
-!Modules
-!
 !--------------------------------------------------------------------
       Integer i, k
-!--------------------------------------------------------------------
-!
-!***********************************************************************
-!     Automatic arrays
-!***********************************************************************
-!
       Real*8, Dimension(ni,nk) :: work
-!
 !***********************************************************************
-!
-Include "dintern.inc"
-Include "fintern.inc"
-!
       Do k=1,nk
          Do i=1,n
             work(i,k)=fesif(tt(i,k))
@@ -70,7 +54,7 @@ Include "fintern.inc"
       Call vexp(work,work,n*nk)
       Do k=1,nk
          Do i=1,n
-            ei(i,k)=fomult(work(i,k))
+            ei(i,k)=aerk1i*work(i,k)
          Enddo
       Enddo
 !

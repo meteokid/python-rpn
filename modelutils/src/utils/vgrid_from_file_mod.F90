@@ -20,13 +20,15 @@ module vgrid_from_file_mod
    use vgrid_wb
    use sort_mod
    use mu_jdate_mod
+   use ptopo_utils
    implicit none
    private
    !@objective 
    !@author Stephane Chamberland,2013-03
    !@description
    ! Public functions
-   public :: vgrid_from_file, vgrid_from_file_mpi, vgrid_from_file_rfld_key,vgrid_from_file_rfld_key_mpi
+   public :: vgrid_from_file, vgrid_from_file_mpi, vgrid_from_file_rfld_key, &
+        vgrid_from_file_rfld_key_mpi
    ! Public parameters
    public :: VGRID_FROM_FILE_NORFLD
    !*@/
@@ -64,7 +66,9 @@ contains
 
 
    !/@*
-   function vgrid_from_file_8(F_unit,F_varname_S,F_jdatev,F_vgrid,F_iplist,F_levtype_S,F_fstkeys,F_sfcRefKey) result(F_istat)
+   function vgrid_from_file_8(F_unit, F_varname_S, F_jdatev, F_vgrid, &
+        F_iplist, F_levtype_S, F_fstkeys, F_sfcRefKey, F_sfcRefKey2) &
+        result(F_istat)
       implicit none
       !@objective Get vgrid and ip1 list for specific field in file
       !@author Ron McTaggart-Cowan, 2012-08
@@ -78,30 +82,41 @@ contains
       integer,pointer              :: F_iplist(:)  !List of IP1s for the field
       character(len=*),intent(out) :: F_levtype_S  !Short level name
       integer,pointer,optional     :: F_fstkeys(:) !List of field's fst keys
-      integer,intent(out),optional :: F_sfcRefKey  !Key for Sfc Ref Field
+      integer,intent(out),optional :: F_sfcRefKey   !Key for Sfc Ref Field
+      integer,intent(out),optional :: F_sfcRefKey2  !Key for Sfc LS Ref Field
       !@return
       integer :: F_istat
       !*@/
-      integer :: datev
+      integer :: datev, sfcRefKey2
       !------------------------------------------------------------------
       datev = RMN_ANY_DATE
       if (F_jdatev /= MU_JDATE_ANY) datev = jdate_to_cmc(F_jdatev)
+      sfcRefKey2 = RMN_ERR
       if (present(F_fstkeys) .and. present(F_sfcRefKey)) then
-         F_istat = vgrid_from_file_4(F_unit,F_varname_S,datev,F_vgrid,F_iplist,F_levtype_S,F_fstkeys,F_sfcRefKey)
+         F_istat = vgrid_from_file_4(F_unit, F_varname_S, datev, F_vgrid, &
+              F_iplist, F_levtype_S, F_fstkeys, F_sfcRefKey, &
+              F_sfcRefKey2=sfcRefKey2)
       else if (present(F_fstkeys)) then
-         F_istat = vgrid_from_file_4(F_unit,F_varname_S,datev,F_vgrid,F_iplist,F_levtype_S,F_fstkeys)
+         F_istat = vgrid_from_file_4(F_unit, F_varname_S, datev, F_vgrid, &
+              F_iplist, F_levtype_S, F_fstkeys)
       else if (present(F_sfcRefKey)) then
-         F_istat = vgrid_from_file_4(F_unit,F_varname_S,datev,F_vgrid,F_iplist,F_levtype_S,F_sfcRefKey=F_sfcRefKey)
+         F_istat = vgrid_from_file_4(F_unit, F_varname_S, datev, F_vgrid, &
+              F_iplist, F_levtype_S, F_sfcRefKey=F_sfcRefKey, &
+              F_sfcRefKey2=sfcRefKey2)
       else
-         F_istat = vgrid_from_file_4(F_unit,F_varname_S,datev,F_vgrid,F_iplist,F_levtype_S)
+         F_istat = vgrid_from_file_4(F_unit, F_varname_S, datev, F_vgrid, &
+              F_iplist, F_levtype_S)
       endif
+      if (present(F_sfcRefKey2)) F_sfcRefKey2 = sfcRefKey2
       !------------------------------------------------------------------
       return
    end function vgrid_from_file_8
 
 
    !/@*
-   function vgrid_from_file_4(F_unit,F_varname_S,F_datev,F_vgrid,F_iplist,F_levtype_S,F_fstkeys,F_sfcRefKey) result(F_istat)
+   function vgrid_from_file_4(F_unit, F_varname_S, F_datev, F_vgrid, &
+        F_iplist, F_levtype_S, F_fstkeys, F_sfcRefKey, F_sfcRefKey2) &
+        result(F_istat)
       implicit none
       !@objective Get vgrid and ip1 list for specific field in file
       !@author Ron McTaggart-Cowan, 2012-08
@@ -116,6 +131,7 @@ contains
       character(len=*),intent(out) :: F_levtype_S  !Short level name
       integer,pointer,optional     :: F_fstkeys(:) !List of field's fst keys
       integer,intent(out),optional :: F_sfcRefKey  !Key for Sfc Ref Field
+      integer,intent(out),optional :: F_sfcRefKey2 !Key for Sfc LS Ref Field
       !@return
       integer :: F_istat
       !*@/
@@ -130,7 +146,7 @@ contains
       character(len=4) :: nomvar
       character(len=12) :: etiket
       character(len=1), dimension(NLEVTYP) :: levtype_S=(/'M','T'/)
-      logical :: sfc_L
+      logical :: sfc_L, ok_L
       !------------------------------------------------------------------
       F_istat = RMN_ERR
       F_levtype_S = ' '
@@ -139,7 +155,8 @@ contains
          if (associated(F_fstkeys)) deallocate(F_fstkeys,stat=ier)
          nullify(F_fstkeys)
       endif
-      if (present(F_sfcRefKey)) F_sfcrefkey = RMN_ERR
+      if (present(F_sfcRefKey))  F_sfcrefkey = RMN_ERR
+      if (present(F_sfcRefKey2)) F_sfcrefkey2 = RMN_ERR
 
       ier = fstinl(F_unit,ni,nj,nk,F_datev,' ',RMN_ANY_I,RMN_ANY_I,RMN_ANY_I,' ',F_varname_S,keylist,nkeys,size(keylist))
       if (ier < 0 .or. nkeys < 1) then
@@ -212,20 +229,31 @@ contains
       ! Check for identified type and return IP1 list of found variable
       if (F_levtype_S == ' ') then
          call msg(MSG_WARNING,'(vgrid_from_file) unable to find full input dataset for '//trim(F_varname_S))
-         return
+!!$         return
       endif
 
       ! Fill output fields
-      !#TODO: Memory leak if F_iplist, F_fstkeys already allocated
-      allocate(F_iplist(nip1))
-      if (present(F_fstkeys)) allocate(F_fstkeys(nip1))
+      ok_L = associated(F_iplist)
+      if (ok_L) ok_L = (size(F_iplist) >= nip1)
+      !#TODO: Memory leak if F_iplist already allocated but size too small
+      if (.not.ok_L) allocate(F_iplist(nip1))
+      if (present(F_fstkeys)) then
+         ok_L = associated(F_fstkeys)
+         if (ok_L) ok_L = (size(F_fstkeys) >= nip1)
+         !#TODO: Memory leak if F_fstkeys already allocated but size too small
+         if (.not.ok_L) allocate(F_fstkeys(nip1))
+      endif
       do i=1,nip1
          F_iplist(i) = fst_iplist(subip1list(i))
          if (present(F_fstkeys)) F_fstkeys(i) = keylist(subip1list(i))
       enddo
 
       if (F_levtype_S /= 'SFC' .and. present(F_sfcRefKey)) then
-         F_sfcRefKey = vgrid_from_file_rfld_key(F_unit,F_datev,F_vgrid)
+         F_sfcRefKey = vgrid_from_file_rfld_key(F_unit, F_datev, F_vgrid)
+         if (present(F_sfcRefKey2)) then
+            F_sfcRefKey2 = vgrid_from_file_rfld_key(F_unit, F_datev, F_vgrid, &
+                 F_rfls_L=.true.)
+         endif
       endif
 
       F_istat = RMN_OK
@@ -235,7 +263,9 @@ contains
 
 
    !/@*
-   function vgrid_from_file_mpi_8(F_unit,F_varname_S,F_jdatev,F_vgrid,F_iplist,F_levtype_S,F_fstkeys,F_sfcRefKey) result(F_istat)
+   function vgrid_from_file_mpi_8(F_unit, F_varname_S, F_jdatev, F_vgrid, &
+        F_iplist, F_levtype_S, F_fstkeys, F_sfcRefKey, F_sfcRefKey2, &
+        F_comm_S, F_ipe_master, F_ipe) result(F_istat)
       implicit none
       !@objective Get vgrid and ip1 list for specific field in file
       !@author Ron McTaggart-Cowan, 2012-08
@@ -250,29 +280,57 @@ contains
       character(len=*),intent(out) :: F_levtype_S  !Short level name
       integer,pointer,optional     :: F_fstkeys(:) !List of field's fst keys
       integer,intent(out),optional :: F_sfcRefKey  !Key for Sfc Ref Field
-      !@return
+      integer,intent(out),optional :: F_sfcRefKey2 !Key for LSSfc Ref Field
+       character(len=*), intent(in), optional :: F_comm_S  !- RPN_COMM communicator name
+      integer, intent(in), optional :: F_ipe_master !- Sending PE number in RPN_COMM communicator, default RPN_COMM_MASTER=0
+      integer, intent(in), optional :: F_ipe      !- PE number in RPN_COMM communicator, default RPN_COMM_MASTER=0
+     !@return
       integer :: F_istat
       !*@/
-      integer :: datev
+      integer :: datev, sfcrefkey2, me, ipe_master, istat
+      character(len=64) :: comm_S
       !------------------------------------------------------------------
+      comm_S = RPN_COMM_BLOC_COMM
+      if (present(F_comm_S)) comm_S = F_comm_S
+      if (present(F_ipe)) then
+         me = F_ipe
+      else
+         call rpn_comm_rank(comm_S, me, istat)
+      endif
+      ipe_master = RPN_COMM_MASTER
+      if (present(F_ipe_master)) ipe_master = F_ipe_master
+
       datev = RMN_ANY_DATE
       if (F_jdatev /= MU_JDATE_ANY) datev = jdate_to_cmc(F_jdatev)
+      sfcRefKey2 = RMN_ERR
       if (present(F_fstkeys) .and. present(F_sfcRefKey)) then
-         F_istat = vgrid_from_file_mpi_4(F_unit,F_varname_S,datev,F_vgrid,F_iplist,F_levtype_S,F_fstkeys,F_sfcRefKey)
+         F_istat = vgrid_from_file_mpi_4(F_unit, F_varname_S, datev, F_vgrid, &
+              F_iplist, F_levtype_S, F_fstkeys, F_sfcRefKey, sfcRefKey2, &
+              F_comm_S=comm_S,  F_ipe_master=ipe_master, F_ipe=me)
       else if (present(F_fstkeys)) then
-         F_istat = vgrid_from_file_mpi_4(F_unit,F_varname_S,datev,F_vgrid,F_iplist,F_levtype_S,F_fstkeys)
+         F_istat = vgrid_from_file_mpi_4(F_unit, F_varname_S, datev, F_vgrid, &
+              F_iplist, F_levtype_S, F_fstkeys, &
+              F_comm_S=comm_S,  F_ipe_master=ipe_master, F_ipe=me)
       else if (present(F_sfcRefKey)) then
-         F_istat = vgrid_from_file_mpi_4(F_unit,F_varname_S,datev,F_vgrid,F_iplist,F_levtype_S,F_sfcRefKey=F_sfcRefKey)
+         F_istat = vgrid_from_file_mpi_4(F_unit, F_varname_S, datev, F_vgrid, &
+              F_iplist, F_levtype_S, F_sfcRefKey=F_sfcRefKey, &
+              F_sfcRefKey2=sfcRefKey2, &
+              F_comm_S=comm_S,  F_ipe_master=ipe_master, F_ipe=me)
       else
-         F_istat = vgrid_from_file_mpi_4(F_unit,F_varname_S,datev,F_vgrid,F_iplist,F_levtype_S)
+         F_istat = vgrid_from_file_mpi_4(F_unit, F_varname_S, datev, F_vgrid, &
+              F_iplist, F_levtype_S, &
+              F_comm_S=comm_S,  F_ipe_master=ipe_master, F_ipe=me)
       endif
+      if (present(F_sfcRefKey2)) F_sfcRefKey2 = sfcRefKey2
       !------------------------------------------------------------------
       return
    end function vgrid_from_file_mpi_8
 
 
    !/@*
-   function vgrid_from_file_mpi_4(F_unit,F_varname_S,F_datev,F_vgrid,F_iplist,F_levtype_S,F_fstkeys,F_sfcRefKey) result(F_istat)
+   function vgrid_from_file_mpi_4(F_unit, F_varname_S, F_datev, F_vgrid, &
+        F_iplist, F_levtype_S, F_fstkeys, F_sfcRefKey, F_sfcRefKey2, &
+        F_comm_S, F_ipe_master, F_ipe) result(F_istat)
       implicit none
       !@objective Get vgrid and ip1 list for specific field in file
       !@author Stephane Chamberland, 2012-08
@@ -285,11 +343,17 @@ contains
       character(len=*),intent(out) :: F_levtype_S  !Short level name
       integer,pointer,optional     :: F_fstkeys(:) !List of field's fst keys
       integer,intent(out),optional :: F_sfcRefKey  !Key for Sfc Ref Field
+      integer,intent(out),optional :: F_sfcRefKey2 !Key for Sfc LS Ref Field
+      character(len=*), intent(in), optional :: F_comm_S  !- RPN_COMM communicator name
+      integer, intent(in), optional :: F_ipe_master !- Sending PE number in RPN_COMM communicator, default RPN_COMM_MASTER=0
+      integer, intent(in), optional :: F_ipe      !- PE number in RPN_COMM communicator, default RPN_COMM_MASTER=0
       !@return
       integer :: F_istat
       !*@/
-      integer :: levtype,istat,me
+      integer :: levtype, istat, me, ipe_master
       character(len=16) :: sfcfld_S
+      character(len=64) :: comm_S
+      logical :: ismaster_L
       !------------------------------------------------------------------
       F_istat = RMN_OK
       if (present(F_fstkeys)) then
@@ -297,25 +361,44 @@ contains
          if (associated(F_fstkeys)) deallocate(F_fstkeys,stat=istat)
          nullify(F_fstkeys)
       endif
-      if (present(F_sfcRefKey)) F_sfcrefkey = RMN_ERR
-      call rpn_comm_rank(RPN_COMM_BLOC_COMM,me,istat)
-      if (me == RPN_COMM_MASTER) then
+      if (present(F_sfcRefKey))  F_sfcrefkey  = RMN_ERR
+      if (present(F_sfcRefKey2)) F_sfcrefkey2 = RMN_ERR
+
+      comm_S = RPN_COMM_BLOC_COMM
+      if (present(F_comm_S)) comm_S = F_comm_S
+      if (present(F_ipe)) then
+         me = F_ipe
+      else
+         call rpn_comm_rank(comm_S, me, istat)
+      endif
+      ipe_master = RPN_COMM_MASTER
+      if (present(F_ipe_master)) ipe_master = F_ipe_master
+      ismaster_L = (me == ipe_master)
+
+      if (ismaster_L) then
          if (present(F_fstkeys)) then
-            F_istat = vgrid_from_file(F_unit,F_varname_S,F_datev,F_vgrid,F_iplist,F_levtype_S,F_fstkeys)
+            F_istat = vgrid_from_file(F_unit, F_varname_S, F_datev, F_vgrid, &
+                 F_iplist, F_levtype_S, F_fstkeys)
          else
-            F_istat = vgrid_from_file(F_unit,F_varname_S,F_datev,F_vgrid,F_iplist,F_levtype_S)
+            F_istat = vgrid_from_file(F_unit, F_varname_S, F_datev, F_vgrid, &
+                 F_iplist, F_levtype_S)
          endif
          levtype = VGRID_SURF_TYPE
          if (F_levtype_S(1:1) == 'M') levtype = VGRID_UPAIR_M_TYPE
          if (F_levtype_S(1:1) == 'T') levtype = VGRID_UPAIR_T_TYPE
          sfcfld_S = ' '
          if (F_levtype_S /= 'SFC' .and. present(F_sfcRefKey)) then
-            F_sfcRefKey = vgrid_from_file_rfld_key(F_unit,F_datev,F_vgrid)
+            F_sfcRefKey = vgrid_from_file_rfld_key(F_unit, F_datev, F_vgrid)
+            if (present(F_sfcRefKey2)) then
+               F_sfcRefKey2 = vgrid_from_file_rfld_key(F_unit, F_datev, &
+                    F_vgrid, F_rfls_L=.true.)
+            endif
          endif
       endif
       call collect_error(F_istat)
       if (.not.RMN_IS_OK(F_istat)) return
-      F_istat = vgrid_wb_bcast(F_vgrid,F_iplist,levtype,sfcfld_S,RPN_COMM_BLOC_COMM)
+      F_istat = vgrid_wb_bcast(F_vgrid, F_iplist, levtype, sfcfld_S, &
+           comm_S, ipe_master, me)
       !TODO: ?need to distribute F_sfcRefKey?
       F_levtype_S = 'SFC'
       if (levtype == VGRID_UPAIR_M_TYPE) F_levtype_S = 'M'
@@ -326,7 +409,8 @@ contains
 
 
    !/@*
-   function vgrid_from_file_rfld_key_mpi_8(F_unit,F_jdatev,F_vgrid) result(F_sfcRefKey)
+   function vgrid_from_file_rfld_key_mpi_8(F_unit, F_jdatev, F_vgrid, &
+        F_rfls_L) result(F_sfcRefKey)
       implicit none
       !@objective Get Key for Sfc Ref Field
       !@author Stephane Chamberland, 2013-11
@@ -334,6 +418,7 @@ contains
       integer,intent(in) :: F_unit                   !Input file unit (already opened)
       integer(IDOUBLE),intent(in) :: F_jdatev        !Valid date (jsec)
       type(vgrid_descriptor),intent(in) :: F_vgrid   !Vertical grid descriptor of record
+      logical,intent(in),optional :: F_rfls_L        !it .T. get Key for Sfc LS Ref Field
       !@return
       integer :: F_sfcRefKey
       !*@/
@@ -341,14 +426,19 @@ contains
       !------------------------------------------------------------------
       datev = RMN_ANY_DATE
       if (F_jdatev /= MU_JDATE_ANY) datev = jdate_to_cmc(F_jdatev)
-      F_sfcRefKey = vgrid_from_file_rfld_key_mpi_4(F_unit, datev, F_vgrid)
+      if (present(F_rfls_L)) then
+         F_sfcRefKey = vgrid_from_file_rfld_key_mpi_4(F_unit, datev, F_vgrid, F_rfls_L)
+      else
+         F_sfcRefKey = vgrid_from_file_rfld_key_mpi_4(F_unit, datev, F_vgrid)
+      endif
       !------------------------------------------------------------------
       return
    end function vgrid_from_file_rfld_key_mpi_8
 
 
    !/@*
-   function vgrid_from_file_rfld_key_mpi_4(F_unit,F_datev,F_vgrid) result(F_sfcRefKey)
+   function vgrid_from_file_rfld_key_mpi_4(F_unit, F_datev, F_vgrid, &
+        F_rfls_L) result(F_sfcRefKey)
       implicit none
       !@objective Get Key for Sfc Ref Field
       !@author Stephane Chamberland, 2013-11
@@ -356,6 +446,7 @@ contains
       integer,intent(in) :: F_unit                   !Input file unit (already opened)
       integer,intent(in) :: F_datev                  !Validity date (CMC datestamp format)
       type(vgrid_descriptor),intent(in) :: F_vgrid   !Vertical grid descriptor of record
+      logical,intent(in),optional :: F_rfls_L        !it .T. get Key for Sfc LS Ref Field
       !@return
       integer :: F_sfcRefKey
       !*@/
@@ -364,7 +455,11 @@ contains
       call rpn_comm_rank(RPN_COMM_BLOC_COMM,me,istat)
       F_sfcrefkey = RMN_OK
       if (me == RPN_COMM_MASTER) then
-         F_sfcRefKey = vgrid_from_file_rfld_key(F_unit,F_datev,F_vgrid)
+         if (present(F_rfls_L)) then
+            F_sfcRefKey = vgrid_from_file_rfld_key(F_unit, F_datev, F_vgrid, F_rfls_L)
+         else
+            F_sfcRefKey = vgrid_from_file_rfld_key(F_unit, F_datev, F_vgrid)
+         endif
       endif
       istat = F_sfcRefKey
       call collect_error(istat)
@@ -375,7 +470,8 @@ contains
 
 
    !/@*
-   function vgrid_from_file_rfld_key_8(F_unit,F_jdatev,F_vgrid) result(F_sfcRefKey)
+   function vgrid_from_file_rfld_key_8(F_unit, F_jdatev, F_vgrid, F_rfls_L) &
+        result(F_sfcRefKey)
       implicit none
       !@objective Get Key for Sfc Ref Field
       !@author Stephane Chamberland, 2013-11
@@ -383,6 +479,7 @@ contains
       integer,intent(in) :: F_unit                   !Input file unit (already opened)
       integer(IDOUBLE),intent(in) :: F_jdatev        !Valid date (jsec)
       type(vgrid_descriptor),intent(in) :: F_vgrid   !Vertical grid descriptor of record
+      logical,intent(in),optional :: F_rfls_L        !it .T. get Key for Sfc LS Ref Field
       !@return
       integer :: F_sfcRefKey
       !*@/
@@ -390,14 +487,19 @@ contains
       !------------------------------------------------------------------
       datev = RMN_ANY_DATE
       if (F_jdatev /= MU_JDATE_ANY) datev = jdate_to_cmc(F_jdatev)
-      F_sfcRefKey = vgrid_from_file_rfld_key_4(F_unit, datev, F_vgrid)
+      if (present(F_rfls_L)) then
+         F_sfcRefKey = vgrid_from_file_rfld_key_4(F_unit, datev, F_vgrid, F_rfls_L)
+      else
+         F_sfcRefKey = vgrid_from_file_rfld_key_4(F_unit, datev, F_vgrid)
+      endif
       !------------------------------------------------------------------
       return
    end function vgrid_from_file_rfld_key_8
 
 
    !/@*
-   function vgrid_from_file_rfld_key_4(F_unit,F_datev,F_vgrid) result(F_sfcRefKey)
+   function vgrid_from_file_rfld_key_4(F_unit, F_datev, F_vgrid, F_rfls_L) &
+        result(F_sfcRefKey)
       implicit none
       !@objective Get Key for Sfc Ref Field
       !@author Stephane Chamberland, 2013-11
@@ -405,6 +507,7 @@ contains
       integer,intent(in) :: F_unit                   !Input file unit (already opened)
       integer,intent(in) :: F_datev                  !Validity date (CMC datestamp format)
       type(vgrid_descriptor),intent(in) :: F_vgrid   !Vertical grid descriptor of record
+      logical,intent(in),optional :: F_rfls_L        !it .T. get Key for Sfc LS Ref Field
       !@return
       integer :: F_sfcRefKey
       !*@/
@@ -412,24 +515,34 @@ contains
            ig1,ig2,ig3,ig4,swa,lng,dltf,ubc,ex1,ex2,ex3,istat,ikind,ivers
       integer, dimension(MAXLEV) :: keylist
       character(len=1) :: typvar,grtyp
-      character(len=4) :: nomvar,sfcfld_S
+      character(len=4) :: nomvar,sfcfld_S,rfld_s
       character(len=12) :: etiket
       !------------------------------------------------------------------
       F_sfcRefKey = RMN_ERR
-      istat = vgd_get(F_vgrid,key='RFLD',value=sfcfld_S,quiet=.true.)
+      rfld_s = 'RFLD'
+      if (present(F_rfls_L)) then
+         if (F_rfls_L) rfld_s = 'RFLS'
+      endif
+      istat = vgd_get(F_vgrid, key=rfld_s, value=sfcfld_S, quiet=.true.)
       if (istat /= VGD_OK) then
-         istat = vgd_get(F_vgrid,key='KIND',value=ikind,quiet=.true.)
-         istat = vgd_get(F_vgrid,key='VERS',value=ivers,quiet=.true.)
-         if (ikind == 2.and. ivers == 1) then
+         istat = vgd_get(F_vgrid, key='KIND', value=ikind, quiet=.true.)
+         istat = vgd_get(F_vgrid, key='VERS', value=ivers, quiet=.true.)
+         if ((rfld_s == 'RFLD' .and. ikind == 2 .and. ivers == 1) .or. &
+              (rfld_s == 'RFLS' .and. ikind /= 5 .and. ivers /= 100)) then
             F_sfcRefKey = VGRID_FROM_FILE_NORFLD
          else
-            call msg(MSG_WARNING,'(vgrid_from_file) Problem with vgd_get for RFLD')
+            call msg(MSG_WARNING,'(vgrid_from_file) Problem with vgd_get for '//trim(rfld_s))
          endif
          return
       endif
-      ier = fstinl(F_unit,ni,nj,nk,F_datev,'',RMN_ANY_I,RMN_ANY_I,RMN_ANY_I,'',sfcfld_S,keylist,nkeys,size(keylist))
+      ier = fstinl(F_unit, ni, nj, nk, F_datev, '', RMN_ANY_I, RMN_ANY_I, &
+           RMN_ANY_I, '', sfcfld_S, keylist, nkeys, size(keylist))
+      if (rfld_s == 'RFLS' .and. (ier < 0 .or. nkeys < 1)) then
+         ier = fstinl(F_unit, ni, nj, nk, RMN_ANY_I, '', RMN_ANY_I ,RMN_ANY_I, &
+              RMN_ANY_I, '', sfcfld_S, keylist, nkeys, size(keylist))
+      endif
       if (ier < 0 .or. nkeys < 1) then
-         call msg(MSG_WARNING,'(vgrid_from_file) Cannot find any record for RFLD: '//trim(sfcfld_S))
+         call msg(MSG_WARNING,'(vgrid_from_file) Cannot find any record for '//trim(rfld_s)//': '//trim(sfcfld_S))
          return
       endif
       do i=1,nkeys

@@ -16,7 +16,7 @@
 !**fonction sfodle  -  calcule la derivee selon t du ln 'ew' ou 'ei'.
 !
       Function sfodle(tt)
-!
+      use tdpack, only: fodle
       implicit none
 #include <arch_specific.hf>
       Real sfodle,tt
@@ -34,15 +34,7 @@
 !
 !          - Input -
 ! tt       temperature in K
-!
-!Implicites
-Include "thermoconsts.inc"
-!Modules
-!
 !*
-!--------------------------------------------------------------------
-Include "dintern.inc"
-Include "fintern.inc"
 !--------------------------------------------------------------------
 !
 !

@@ -16,7 +16,7 @@
 !**fonction shrahu3  -  passage de hr a hu
 !
       Function shrahu3(hr,tt,ps,swph)
-!
+      use tdpack, only: foew, foewa, foqfe
       implicit none
 #include <arch_specific.hf>
       Real shrahu3, hr, tt, ps
@@ -39,18 +39,9 @@
 ! ps       pressure in Pa
 ! swph     .true. to consider water and ice phase
 !          .false. to consider water phase only
-!
-!
-!Implicites
-Include "thermoconsts.inc"
-!Modules
-!
 !*
 !--------------------------------------------------------------------
       Real e
-!
-Include "dintern.inc"
-Include "fintern.inc"
 !--------------------------------------------------------------------
 !
       If(swph)Then

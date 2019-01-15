@@ -15,6 +15,7 @@
 !-------------------------------------- LICENCE END --------------------------------------
 !**fonction sesahr3  -  passage de es a hr
       Function sesahr3(es,tt,ps,swph)
+      use tdpack, only: sesahu3, shuahr3
       implicit none
 #include <arch_specific.hf>
       Real sesahr3, es, tt, ps
@@ -35,19 +36,9 @@
 ! ps       pressure in Pa
 ! swph     .true. to consider water and ice phase
 !          .false. to consider water phase only
-!
-!Implicites
-Include "thermoconsts.inc"
-!Modules
-      External sesahu3, shuahr3
-!
 !*
 !--------------------------------------------------------------------
       Real hus
-!
-      Real sesahu3, shuahr3
-Include "dintern.inc"
-Include "fintern.inc"
 !--------------------------------------------------------------------
 !
       hus = sesahu3(es,tt,ps,swph)

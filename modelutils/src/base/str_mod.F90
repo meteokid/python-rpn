@@ -23,7 +23,7 @@ module str_mod
    !@author Stephane Chamberland, 2011-09
    !@description
    ! Public functions
-   public :: str_normalize,str_rm_quotes,str_tab2space,str_toint,str_toreal,str_tobool, str_concat
+   public :: str_normalize,str_rm_quotes,str_tab2space,str_toint,str_toreal,str_tobool, str_concat, str_encode_num
    ! Public constants
    !
 !@/
@@ -160,7 +160,7 @@ contains
       return
    end function str_tobool
 
-   
+ 
    !/@*
    subroutine str_concat(F_str_out_S,F_str_array_S,F_sep_S)
       implicit none
@@ -181,5 +181,40 @@ contains
       !---------------------------------------------------------------------
       return
    end subroutine str_concat
+
+
+   !/@*
+   function str_encode_num(F_val,F_codes_S) result(F_str_S)
+      implicit none
+      integer, intent(in) :: F_val
+      character(len=*),intent(in), optional  :: F_codes_S
+      character(len=512) :: F_str_S
+      !*@/
+      character(len=*), parameter :: DEFAULT_S = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+      integer :: ibase, iexp, iexpval, idiv, val, x
+      character(len=512) :: codes_S
+      !--------------------------------------------------------------------
+      F_str_S = ''
+      codes_s = DEFAULT_S
+      if (present(F_codes_S)) codes_S = F_codes_S
+      ibase = len_trim(codes_S)
+      if (ibase == 0) return
+      if (F_val < 0) return
+      if (F_val == 0) then
+         F_str_S = codes_S(1:1)
+         return
+      endif
+      F_str_S = ''
+      iexp = int(log(real(F_val)) / log(real(ibase)))
+      val = F_val
+      do x = iexp,0,-1
+         iexpval = ibase**x
+         idiv = val / iexpval
+         F_str_S = trim(F_str_S)//codes_S(idiv+1:idiv+1)
+         val = val - (idiv*iexpval)
+      enddo
+      !---------------------------------------------------------------------
+      return
+   end function str_encode_num
 
 end module str_mod

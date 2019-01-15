@@ -123,6 +123,7 @@ use iso_c_binding
    debug_L = debug_bk_L
 
    if (errcode<STOP_OK) then
+      call msg_buffer_flush()
       errcode2 = errcode
 !!$      if (hasCallBackFn) then
 !!$         errcode2 = callback_call_ftn(callBackFnNb,errcode)

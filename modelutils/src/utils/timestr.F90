@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -21,7 +21,7 @@ module timestr_mod
    use mu_jdate_mod, only: jdate_from_cmc, jdate_year, jdate_month
    implicit none
    private
-   !@objective 
+   !@objective
    !@description
    ! Public functions
    public :: timestr_parse,timestr_check,timestr_isstep,timestr2sec,timestr2step, &
@@ -34,7 +34,7 @@ module timestr_mod
 #include <rmnlib_basics.hf>
 #include <clib_interface_mu.hf>
 #include <msg.h>
-   
+
    interface timestr_parse
       module procedure timestr_parse_multi
       module procedure timestr_parse_1
@@ -96,10 +96,10 @@ contains
       integer :: F_nvals !# Number of values (-1 on error)
       !@description
       ! The time string takes the following formats
-      ! 
+      !
       ! Old format:
       !    999U
-      !    Where: 
+      !    Where:
       !       999: time value, any fortran accepted real number
       !       U  : units of given "time value" (optional), one of:
       !            P for steps (if dt not provided, equivalent to S)
@@ -109,7 +109,7 @@ contains
       !            D for days
       !       If U if not provided a default unit is used,
       !          F_default_S or 'hours' is not provided
-      ! 
+      !
       ! New formats, accepted formats:
       !    VALUE
       !    UNITS,VALUE
@@ -119,7 +119,7 @@ contains
       !    TODO: accept mix of the above
       !    Where :
       !    UNITS     : units of given time value (optional)
-      !                accepted values (case insensitive): 
+      !                accepted values (case insensitive):
       !                     steps, seconds, minutes, hours, days, months
       !                Only the first 3 letters are checked
       !                If not provided default units are used,
@@ -296,7 +296,7 @@ contains
       real :: nunits
       real(RDOUBLE) :: dt,fact_8
       character(len=64) :: units_S
-      
+
       F_sec = 0.
       if (present(F_default_S)) then
          F_status = timestr_parse(nunits,units_S,F_timestr_S,F_default_S)
@@ -630,7 +630,7 @@ contains
          F_status  = timestr_parse_multi(values,loop,hasloop_L,units_S,F_timestr_S)
       endif
       if (.not.RMN_IS_OK(F_status)) return
-      
+
       if (hasloop_L .or. F_status /= 1) then
          !#TODO: implement for other time specifications
          F_status = RMN_ERR
@@ -672,7 +672,7 @@ contains
          F_status  = timestr_parse_multi(values,loop,hasloop_L,units_S,F_timestr_S)
       endif
       if (.not.RMN_IS_OK(F_status)) return
-      
+
       if (hasloop_L .or. F_status /= 1) then
          !#TODO: implement for other time specifications
          F_status = RMN_ERR
@@ -705,7 +705,7 @@ contains
       !*@/
       integer :: interval,istat,prognum,prognum1,maxstep,gap
       real(RDOUBLE) :: fact_8, ris_8, seconds_8
-      
+
       F_status  = RMN_ERR
       maxstep = F_step+9999
       if (present(F_maxstep)) then
@@ -729,9 +729,9 @@ contains
          interval = nint(F_interval*fact_8)
          F_status = TIMESTR_NO_MATCH
          if (mod(F_step,interval) == 0) F_status = TIMESTR_MATCH
-         
+
       else !# IF_MON
-      
+
          gap = 1800/F_dt
          gap = gap + 1
 
@@ -774,9 +774,9 @@ contains
       !@return
       integer :: F_status
       !*@/
-      integer :: interval,istat,prognum,prognum1,maxstep,gap
-      real(RDOUBLE) :: fact_8, ris_8, seconds_8
-      
+      integer :: interval,istat,prognum,prognum1,maxstep
+      real(RDOUBLE) :: fact_8
+
       F_status  = RMN_ERR
       maxstep = F_step+9999
       if (present(F_maxstep)) then
@@ -800,9 +800,9 @@ contains
          interval = nint(F_interval*fact_8)
          F_status = TIMESTR_NO_MATCH
          if (mod(F_step,interval) == 0) F_status = TIMESTR_MATCH
-         
+
       else !# IF_MON
-         
+
          istat = timestr_prognum(prognum,F_units_S,F_interval,F_jdateo,F_dt,F_step,maxstep)
          if (.not.RMN_IS_OK(istat)) then
             call msg(MSG_ERROR,"(timestr_isstep) Unknown units: "//trim(F_units_S))

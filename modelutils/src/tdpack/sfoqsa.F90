@@ -16,7 +16,7 @@
 !**s/r sfoqsa  -  calcule hum sp saturante, eau seulement
 !
       Function sfoqsa(tt,pr)
-!
+      use tdpack, only: foqsa
       implicit none
 #include <arch_specific.hf>
       Real sfoqsa, tt, pr
@@ -34,16 +34,7 @@
 !          - Input -
 ! tt       temperature in K
 ! pr       pressure in Pa
-!
-!
-!Implicites
-Include "thermoconsts.inc"
-!Modules
-!
 !*
-!--------------------------------------------------------------------
-Include "dintern.inc"
-Include "fintern.inc"
 !--------------------------------------------------------------------
 !
 !

@@ -16,7 +16,7 @@
 !**fonction sfoqst  -  calcule humidite specifique saturante.
 !
       Function sfoqst(tt,pr)
-!
+      use tdpack, only: foqst
       implicit none
 #include <arch_specific.hf>
       Real sfoqst, tt, pr
@@ -34,16 +34,7 @@
 !          - Input -
 ! tt       temperature in K
 ! pr       pressure in P
-!
-!
-!Implicites
-Include "thermoconsts.inc"
-!Modules
-!
 !*
-!--------------------------------------------------------------------
-Include "dintern.inc"
-Include "fintern.inc"
 !--------------------------------------------------------------------
 !
       sfoqst = foqst(tt,pr)

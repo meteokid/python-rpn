@@ -34,38 +34,39 @@ module vinterp_mod
 
    interface vinterp
       module procedure vinterp0
+      module procedure vinterp0ls
       module procedure vinterp1
       module procedure vinterp10
       module procedure vinterp01
    end interface
 
-   real,parameter :: EPSILON_R4 = 1.e-6
+   real, parameter :: EPSILON_R4 = 1.e-6
+   real, parameter :: P0MIN = 1.
+   real, parameter :: P0MAX = 1.e6
+
 
 contains
 
    !/@*
-   function vinterp0(F_dataout,F_vgridout,F_ip1listout,F_datain,F_vgridin,F_ip1listin,F_sfcfldout,F_sfcfldin,F_nlinbot,F_msg_S) result(F_istat)
+   function vinterp0( &
+        F_dataout, F_vgridout, F_ip1listout, &
+        F_datain, F_vgridin, F_ip1listin, &
+        F_sfcfldout, F_sfcfldin, F_nlinbot, F_msg_S) result(F_istat)
       implicit none
       !@objective
       !@arguments
-      real,pointer :: F_dataout(:,:,:),F_datain(:,:,:)
+      real,pointer, contiguous :: F_dataout(:,:,:),F_datain(:,:,:)
       type(vgrid_descriptor),intent(in) :: F_vgridout,F_vgridin
       integer,intent(in) :: F_ip1listout(:),F_ip1listin(:)
-      real,pointer :: F_sfcfldout(:,:),F_sfcfldin(:,:)
+      real,pointer, contiguous :: F_sfcfldout(:,:),F_sfcfldin(:,:)
       integer,intent(in),optional :: F_nlinbot
       character(len=*),intent(in),optional :: F_msg_S
       !@return
       integer :: F_istat
       !*@/
-      character(len=256) :: msg_S,tmp_S
-      integer,pointer :: samevert_list(:)
-      integer :: istat,nlinbot,nijkout(3),nijkin(3),lijk(3),uijk(3),k
-      integer, dimension(size(F_datain,dim=3),1) :: slist
-      real,target :: sfcfld0(1,1)
-      real,pointer :: levelsin(:,:,:),levelsout(:,:,:),sfcfldin(:,:)
-      real,dimension(size(F_datain,dim=3)) :: scol
-      real,dimension(size(F_datain,dim=1),size(F_datain,dim=2),size(F_datain,dim=3)) :: sdatain,slevelsin
-      logical :: use_same_sfcfld_L,samevert_L
+      character(len=256) :: msg_S, tmp_S
+      integer :: nlinbot
+      real,pointer, contiguous :: sfcfldout2(:,:), sfcfldin2(:,:)
       !------------------------------------------------------------------
       call msg(MSG_DEBUG,'(vinterp) vinterp0 [BEGIN]')
       F_istat = RMN_ERR
@@ -77,12 +78,71 @@ contains
       endif
       nlinbot = 0 
       if (present(F_nlinbot)) nlinbot = F_nlinbot
+      nullify(sfcfldout2, sfcfldin2)
+      F_istat = vinterp0ls( &
+           F_dataout, F_vgridout, F_ip1listout, F_sfcfldout, sfcfldout2, &
+           F_datain, F_vgridin, F_ip1listin, F_sfcfldin, sfcfldin2, &
+           F_nlinbot, F_msg_S)
+      write(tmp_S,'(i6)') F_istat
+      call msg(MSG_DEBUG,'(vinterp) vinterp0 [END] '//trim(tmp_S))
+      !------------------------------------------------------------------
+      return
+   end function vinterp0
+
+
+   !/@*
+   function vinterp0ls( &
+        F_dataout, F_vgridout, F_ip1listout, F_sfcfldout, F_sfcfldout2,&
+        F_datain, F_vgridin, F_ip1listin, F_sfcfldin, F_sfcfldin2, &
+        F_nlinbot, F_msg_S) result(F_istat)
+      implicit none
+      !@objective
+      !@arguments
+      real,pointer :: F_dataout(:,:,:),F_datain(:,:,:)
+      type(vgrid_descriptor),intent(in) :: F_vgridout,F_vgridin
+      integer,intent(in) :: F_ip1listout(:),F_ip1listin(:)
+      real,pointer :: F_sfcfldout(:,:),F_sfcfldin(:,:)
+      real,pointer :: F_sfcfldout2(:,:),F_sfcfldin2(:,:)
+      integer,intent(in),optional :: F_nlinbot
+      character(len=*),intent(in),optional :: F_msg_S
+      !@return
+      integer :: F_istat
+      !*@/
+      character(len=256) :: msg_S, tmp_S
+      integer,pointer :: samevert_list(:)
+      integer :: istat, nlinbot, nijkout(3), nijkin(3), lijk(3), uijk(3), k
+      integer, dimension(size(F_datain,dim=3),1) :: slist
+      real,target :: sfcfld0(1,1)
+      real,pointer :: levelsin(:,:,:), levelsout(:,:,:), sfcfldin(:,:), sfcfldin2(:,:)
+      real,dimension(size(F_datain,dim=3)) :: scol
+      real,dimension(size(F_datain,dim=1),size(F_datain,dim=2),size(F_datain,dim=3)) :: sdatain, slevelsin
+!!$      real,dimension(size(F_datain,dim=1),size(F_datain,dim=2),size(F_datain,dim=3)),target :: sdatain, slevelsin
+!!$      real,dimension(size(F_datain,dim=1),size(F_datain,dim=2),1),target :: ssfcsin
+!!$      real,pointer :: datatmp(:,:,:)
+
+      logical :: use_same_sfcfld_L, samevert_L, ok_L
+      !------------------------------------------------------------------
+      call msg(MSG_DEBUG,'(vinterp) vinterp0ls [BEGIN]')
+      F_istat = RMN_ERR
+      msg_S = ''
+      if (present(F_msg_S)) msg_S = F_msg_S
+      if (.not.associated(F_datain)) then
+         call msg(MSG_WARNING,'(vinterp) Cannot Interpolate, null pointer: '//trim(msg_S))
+         return
+      endif
+      nlinbot = 0 
+      if (present(F_nlinbot)) nlinbot = F_nlinbot
+      nullify(sfcfldin2)
       if (associated(F_sfcfldin) .and. .not.associated(F_sfcfldin,F_sfcfldout)) then
          use_same_sfcfld_L = .false.
          sfcfldin => F_sfcfldin
+         if (associated(F_sfcfldin2)) sfcfldin2 => F_sfcfldin2
+!!$         print *,'(vinterp) sfcfldin => F_sfcfldin',use_same_sfcfld_L
       else
          use_same_sfcfld_L = .true.
          sfcfldin => F_sfcfldout
+         if (associated(F_sfcfldout2)) sfcfldin2 => F_sfcfldout2
+!!$         print *,'(vinterp) sfcfldin => F_sfcfldout',use_same_sfcfld_L
       endif
 
       nijkin  = shape(F_datain)
@@ -91,40 +151,40 @@ contains
          allocate(F_dataout(lijk(1):uijk(1),lijk(2):uijk(2),size(F_ip1listout))) !#,stat=istat
       endif
       nijkout = shape(F_dataout)
+      ok_L = .true.
+      if (associated(F_sfcfldout2)) ok_L = all(nijkout(1:2) == shape(F_sfcfldout2))
+      if (ok_L .and. associated(sfcfldin2)) ok_L = all(nijkout(1:2) == shape(sfcfldin2))
       if (.not.( &
+           ok_L .and. &
            all(nijkout(1:2) == nijkin(1:2)) .and. &
            all(nijkout(1:2) == shape(F_sfcfldout)) .and. &
            all(nijkout(1:2) == shape(sfcfldin)) .and. &
            nijkout(3) == size(F_ip1listout) .and. &
            nijkin(3)  == size(F_ip1listin) &
            )) then
-!!$         print *,'(vinterp)', &
-!!$              (all(nijkout(1:2) == nijkin(1:2))), &
-!!$              (all(nijkout(1:2) == shape(F_sfcfldout))), &
-!!$              (all(nijkout(1:2) == shape(sfcfldin))), &
-!!$              (nijkout(3) == size(F_ip1listout)), &
-!!$              (nijkin(3)  == size(F_ip1listin))
-!!$         print *,'(vinterp) a ',(all(nijkout(1:2) == nijkin(1:2))),' : ',nijkout(1:2),' : ',nijkin(1:2)
-!!$         print *,'(vinterp) b ',(all(nijkout(1:2) == shape(F_sfcfldout))),' : ',nijkout(1:2),' : ',shape(F_sfcfldout)
-!!$         print *,'(vinterp) c ',(all(nijkout(1:2) == shape(sfcfldin))),' : ',nijkout(1:2),' : ',shape(sfcfldin)
-!!$         print *,'(vinterp) d ',(nijkout(3) == size(F_ip1listout)),' : ',nijkout(3),' : ',size(F_ip1listout)
-!!$         print *,'(vinterp) e ',(nijkin(3)  == size(F_ip1listin)),' : ',nijkin(3),' : ',size(F_ip1listin)
-!!$         print *,'(vinterp) use_same_sfcfld_L=',use_same_sfcfld_L
-!!$         print *,'(vinterp) F_datain   ',lbound(F_datain),' : ',ubound(F_datain)
-!!$         print *,'(vinterp) F_dataout  ',lbound(F_dataout),' : ',ubound(F_dataout)
-!!$         print *,'(vinterp) ip1lstin   ',lbound(F_ip1listin),' : ',ubound(F_ip1listin),' : ',nijkin(3)
-!!$         print *,'(vinterp) ip1lstout  ',lbound(F_ip1listout),' : ',ubound(F_ip1listout),' : ',nijkout(3)
-!!$         print *,'(vinterp) sfcfldin   ',lbound(sfcfldin),' : ',ubound(sfcfldin)
-!!$         print *,'(vinterp) F_sfcfldout',lbound(F_sfcfldout),' : ',ubound(F_sfcfldout)
          call msg(MSG_WARNING,'(vinterp) Cannot Interpolate, not same shape: '//trim(msg_S))
+         print *,'(vinterp) ok_L=', ok_L
+         print *,'(vinterp) nijkout=', nijkout
+         if (associated(F_sfcfldout2)) &
+              print *,'(vinterp) shape(F_sfcfldout2)=', shape(F_sfcfldout2)
+         if (ok_L .and. associated(sfcfldin2)) &
+              print *,'(vinterp) shape(sfcfldin2)=', shape(sfcfldin2)
+         print *,'(vinterp) nijkin(1:2)=', nijkin(1:2)
+         print *,'(vinterp) shape(F_sfcfldout)=', shape(F_sfcfldout)
+         print *,'(vinterp) shape(sfcfldin)=', shape(sfcfldin)
+         print *,'(vinterp) size(F_ip1listout)=', size(F_ip1listout)
+         print *,'(vinterp) nijkin(3)=', nijkin(3)
+         print *,'(vinterp) size(F_ip1listin)=', size(F_ip1listin)
+         call flush(6)
          return
       endif
-      
+
       allocate(samevert_list(nijkout(3))) !#,stat=istat
       samevert_L = samevgrid(F_vgridin,F_ip1listin,F_vgridout,F_ip1listout,samevert_list)
       if (samevert_L .and. (.not.use_same_sfcfld_L) .and. &
            associated(F_sfcfldout) .and. associated(sfcfldin)) then
          if (any(abs(F_sfcfldout-sfcfldin) > EPSILON_R4)) samevert_L = .false.
+         !#TODO: if (any(abs(F_sfcfldout2-sfcfldin2) > EPSILON_R4)) samevert_L = .false.
       endif
 
       tmp_S = 'Interpolating'
@@ -133,12 +193,35 @@ contains
          tmp_S = 'No Interpolation for'
          sfcfld0 = 100000. !TODO: make sure F_vgridin is pressure based
          sfcfldin => sfcfld0
+         sfcfldin2 => sfcfld0
          F_istat = RMN_OK
       else
          !TODO: if vgrid needs sfcfield and sfcfld => null then error
-         F_istat = vgd_levels(F_vgridout,F_ip1listout,levelsout,F_sfcfldout,in_log=.false.)
+         if (minval(F_sfcfldout) < P0MIN .or. maxval(F_sfcfldout) > P0MAX) then
+            call msg(MSG_WARNING,'(vinterp) Cannot Interpolate, sfcfldout provided sfcfldout has wrong values: '//trim(msg_S))
+            F_istat = RMN_ERR
+            return
+         endif
+         if (associated(F_sfcfldout2)) then
+            F_istat = vgd_levels(F_vgridout, F_ip1listout, levelsout, &
+                 F_sfcfldout, in_log=.false., sfc_field_ls=F_sfcfldout2)
+         else
+            F_istat = vgd_levels(F_vgridout, F_ip1listout, levelsout, &
+                 F_sfcfldout, in_log=.false.)
+         endif
       endif
-      F_istat = min(vgd_levels(F_vgridin,F_ip1listin,levelsin,sfcfldin,in_log=.false.),F_istat)
+      if (minval(sfcfldin) < P0MIN .or. maxval(sfcfldin) > P0MAX) then
+         call msg(MSG_WARNING,'(vinterp) Cannot Interpolate, provided sfcfldin has wrong values: '//trim(msg_S))
+         F_istat = RMN_ERR
+         return
+      endif
+      if (associated(sfcfldin2)) then
+         F_istat = min(vgd_levels(F_vgridin, F_ip1listin, levelsin, &
+              sfcfldin, in_log=.false., sfc_field_ls=sfcfldin2), F_istat)
+      else
+         F_istat = min(vgd_levels(F_vgridin, F_ip1listin, levelsin, &
+              sfcfldin, in_log=.false.), F_istat)
+      endif
 
       if (.not.RMN_IS_OK(F_istat)) then
          call msg(MSG_WARNING,'(vinterp) Cannot Interpolate, problem getting levels: '//trim(msg_S))
@@ -162,55 +245,64 @@ contains
             scol(slist(k,1)) = maxval(scol)+1.
          enddo
 
+!!$         ssfcsin(:,:,1) = sfcfldin(:,:)
+!!$         datatmp => ssfcsin(:,:,:)
+!!$         call statfld_dm(datatmp, 'sfcfldin', 0, 'vinterp', 8)
+
          do k=1,size(scol)
             sdatain(:,:,k) = F_datain(:,:,slist(k,1))
             slevelsin(:,:,k) = levelsin(:,:,slist(k,1))
          enddo
-!!$         print '(2a,4i6,10e14.7,2l)','(input v)',trim(msg_S),&
-!!$              minval(F_ip1listout), maxval(F_ip1listout), &
-!!$              minval(F_ip1listin), maxval(F_ip1listin),&
+
+!!$         do k=1,size(scol)
+!!$             write(tmp_S, '(i3)') k
+!!$             print *,'(vinterp) k,ip1,nlinbot=',k,F_ip1listin(k),nlinbot
+!!$             datatmp => slevelsin(:,:,k:k)
+!!$             call statfld_dm(datatmp, trim(tmp_S)//' slevelsin ', 0, 'vinterp', 8)
+!!$          enddo
+!!$         do k=1,size(scol)
+!!$            write(tmp_S, '(i3)') k
+!!$            datatmp => sdatain(:,:,k:k)
+!!$            call statfld_dm(datatmp, trim(tmp_S)//' sdatain ', 0, 'vinterp', 8)
+!!$         enddo
+
+!!$         print *,'(vinterp) '//trim(msg_S)//' nlinbot=',nlinbot,nijkout
+!!$         print *,'(vinterp) '//trim(msg_S)//' sfcfldin=',minval(sfcfldin),maxval(sfcfldin),sum(dble(sfcfldin))/dble(float(size(sfcfldin)))
+!!$         print *,'(vinterp) '//trim(msg_S)//' slevelsin=',minval(slevelsin),maxval(slevelsin),sum(dble(slevelsin))/dble(float(size(slevelsin)))
+!!$         print *,'(vinterp) '//trim(msg_S)//' F_sfcfldout=',minval(F_sfcfldout),maxval(F_sfcfldout),sum(dble(F_sfcfldout))/dble(float(size(F_sfcfldout)))
+!!$         print *,'(vinterp) '//trim(msg_S)//' levelsout=',minval(levelsout),maxval(levelsout),sum(dble(levelsout))/dble(float(size(levelsout)))
+!!$         print *,'(vinterp) '//trim(msg_S)//' sdatain=',minval(sdatain),maxval(sdatain),sum(dble(sdatain))/dble(float(size(sdatain)))
+
          call vte_intvertx4(F_dataout,sdatain,slevelsin,levelsout, &
               nijkout(1)*nijkout(2),nijkin(3),nijkout(3),&
               msg_S,nlinbot)
-!!$         print '(2a,10x,6(a,2e14.7,x),i,2l)',&
-!!$              '(inp v) ',trim(msg_S),&
-!!$              'o :',minval(F_dataout), maxval(F_dataout),&
-!!$              'i :',minval(F_datain), maxval(F_datain),&
-!!$              'is:',minval(F_sfcfldin),maxval(F_sfcfldin),&
-!!$              'os:',minval(F_sfcfldout), maxval(F_sfcfldout),&
-!!$              'il:',minval(slevelsin), maxval(slevelsin), &
-!!$              'ol:',minval(levelsout), maxval(levelsout), &
-!!$              F_nlinbot,samevert_L,use_same_sfcfld_L
-      endif
 
-!!$      if (maxval(F_datain) /= minval(F_datain)) then
-!!$         ijk = maxloc(F_datain)
-!!$         do k=1,nijkin(3)
-!!$            print '(a,i3,2e,a,2e)','(vinterp) IN ',k,F_datain(ijk(1),ijk(2),k),levelsin(ijk(1),ijk(2),k),' : ',maxval(F_datain(:,:,k)),maxval(levelsin(:,:,k))
-!!$         enddo
-!!$         do k=1,nijkout(3)
-!!$            print '(a,i3,2e,a,2e)','(vinterp) OUT',k,F_dataout(ijk(1),ijk(2),k),levelsout(ijk(1),ijk(2),k),' : ',maxval(F_dataout(:,:,k)),maxval(levelsout(:,:,k))
-!!$         enddo
-!!$      endif
+!!$         print *,'(vinterp) '//trim(msg_S)//' F_dataout=',minval(F_dataout),maxval(F_dataout),sum(F_dataout)/float(size(F_dataout))
+
+     endif
 
       if (associated(samevert_list)) deallocate(samevert_list,stat=istat)
       if (associated(levelsout)) deallocate(levelsout,stat=istat)
       if (associated(levelsin)) deallocate(levelsin,stat=istat)
       write(tmp_S,'(i6)') F_istat
-      call msg(MSG_DEBUG,'(vinterp) vinterp0 [END] '//trim(tmp_S))
+      call msg(MSG_DEBUG,'(vinterp) vinterp0ls [END] '//trim(tmp_S))
       !------------------------------------------------------------------
       return
-   end function vinterp0
+   end function vinterp0ls
 
 
    !/@*
-   function vinterp1(F_dataout,F_vgridout_S,F_datain,F_vgridin_S,F_sfcfldout,F_sfcfldin,F_nlinbot,F_msg_S,F_use_same_sfcfld_L) result(F_istat)
+   function vinterp1(F_dataout, F_vgridout_S, F_datain, F_vgridin_S, &
+        F_sfcfldout, F_sfcfldin, F_nlinbot, F_msg_S, F_use_same_sfcfld_L, &
+        F_sfcfldout2, F_sfcfldin2) &
+        result(F_istat)
       implicit none
       !@objective
       !@arguments
       real,pointer :: F_dataout(:,:,:),F_datain(:,:,:)
       character(len=*),intent(in) :: F_vgridout_S,F_vgridin_S
       real,pointer,optional :: F_sfcfldout(:,:),F_sfcfldin(:,:)
+      real,pointer,optional :: F_sfcfldout2(:,:),F_sfcfldin2(:,:)
       integer,intent(in),optional :: F_nlinbot
       character(len=*),intent(in),optional :: F_msg_S
       logical,intent(in),optional :: F_use_same_sfcfld_L
@@ -218,9 +310,10 @@ contains
       integer :: F_istat
       !*@/
       character(len=256) :: msg_S,tmp_S
-      integer :: nlinbot
+      integer :: nlinbot, istat
       type(vgrid_descriptor) :: vgridout,vgridin
       real,pointer :: sfcfldout(:,:),sfcfldin(:,:)
+      real,pointer :: sfcfldout2(:,:),sfcfldin2(:,:)
       integer,pointer :: ip1listout(:),ip1listin(:)
       logical :: use_same_sfcfld_L
       !------------------------------------------------------------------
@@ -233,23 +326,44 @@ contains
       use_same_sfcfld_L = .false.
       if (present(F_use_same_sfcfld_L)) use_same_sfcfld_L = F_use_same_sfcfld_L
 
-      nullify(ip1listout,ip1listin,sfcfldout,sfcfldin)
+      nullify(ip1listout, ip1listin, sfcfldout, sfcfldin, sfcfldout2, sfcfldin2)
       if (present(F_sfcfldout)) then
          if (associated(F_sfcfldout)) sfcfldout => F_sfcfldout
       endif
       if (present(F_sfcfldin)) then
          if (associated(F_sfcfldin)) sfcfldin => F_sfcfldin
       endif
-      F_istat = priv_vgrid_details(F_vgridout_S,vgridout,ip1listout,sfcfldout)
+      if (present(F_sfcfldout2)) then
+         if (associated(F_sfcfldout2)) sfcfldout2 => F_sfcfldout2
+      endif
+      if (present(F_sfcfldin2)) then
+         if (associated(F_sfcfldin2)) sfcfldin2 => F_sfcfldin2
+      endif
+
+!!$      print *,'(vinterp) use_same_sfcfld_L=',use_same_sfcfld_L, associated(sfcfldout), associated(sfcfldin)
+
+      F_istat = priv_vgrid_details(F_vgridout_S, vgridout, ip1listout, &
+           sfcfldout, sfcfldout2)
       if (use_same_sfcfld_L) sfcfldin => sfcfldout
+      if (use_same_sfcfld_L) sfcfldin2 => sfcfldout2
       if (RMN_IS_OK(F_istat)) &
-           F_istat = priv_vgrid_details(F_vgridin_S,vgridin,ip1listin,sfcfldin)
+           F_istat = priv_vgrid_details(F_vgridin_S, vgridin, ip1listin, &
+                                        sfcfldin, sfcfldin2)
       if (.not.RMN_IS_OK(F_istat)) then
          call msg(MSG_WARNING,'(vinterp) Cannot Interpolate, missing vgrid info: '//trim(msg_S))
          return
       endif
 
-      F_istat = vinterp0(F_dataout,vgridout,ip1listout,F_datain,vgridin,ip1listin,sfcfldout,sfcfldin,nlinbot,msg_S)
+      F_istat = vinterp0ls( &
+           F_dataout, vgridout, ip1listout, sfcfldout, sfcfldout2, &
+           F_datain, vgridin, ip1listin, sfcfldin, sfcfldin2, nlinbot, msg_S)
+
+      istat = vgd_free(vgridout)
+      if (associated(ip1listout)) deallocate(ip1listout,stat=istat)
+
+      istat = vgd_free(vgridin)
+      if (associated(ip1listin)) deallocate(ip1listin,stat=istat)
+
       write(tmp_S,'(i6)') F_istat
       call msg(MSG_DEBUG,'(vinterp) vinterp1 [END] '//trim(tmp_S))
       !------------------------------------------------------------------
@@ -258,7 +372,9 @@ contains
 
 
    !/@*
-   function vinterp01(F_dataout,F_vgridout,F_ip1listout,F_datain,F_vgridin_S,F_sfcfldout,F_sfcfldin,F_nlinbot,F_msg_S) result(F_istat)
+   function vinterp01(F_dataout, F_vgridout, F_ip1listout, &
+        F_datain, F_vgridin_S, F_sfcfldout, F_sfcfldin, F_nlinbot, F_msg_S, &
+        F_sfcfldout2, F_sfcfldin2) result(F_istat)
       implicit none
       !@objective
       !@arguments
@@ -267,15 +383,17 @@ contains
       integer,intent(in) :: F_ip1listout(:)
       character(len=*),intent(in) :: F_vgridin_S
       real,pointer,optional :: F_sfcfldout(:,:),F_sfcfldin(:,:)
+      real,pointer,optional :: F_sfcfldout2(:,:),F_sfcfldin2(:,:)
       integer,intent(in),optional :: F_nlinbot
       character(len=*),intent(in),optional :: F_msg_S
       !@return
       integer :: F_istat
       !*@/
       character(len=256) :: msg_S,tmp_S
-      integer :: nlinbot
+      integer :: nlinbot, istat
       type(vgrid_descriptor) :: vgridin
       real,pointer :: sfcfldout(:,:),sfcfldin(:,:)
+      real,pointer :: sfcfldout2(:,:),sfcfldin2(:,:)
       integer,pointer :: ip1listin(:)
       !------------------------------------------------------------------
       call msg(MSG_DEBUG,'(vinterp) vinterp01 [BEGIN]')
@@ -285,20 +403,33 @@ contains
       nlinbot = 0 
       if (present(F_nlinbot)) nlinbot = F_nlinbot
 
-      nullify(ip1listin,sfcfldout,sfcfldin)
+      nullify(ip1listin, sfcfldout, sfcfldin, sfcfldout2, sfcfldin2)
       if (present(F_sfcfldout)) then
          if (associated(F_sfcfldout)) sfcfldout => F_sfcfldout
       endif
       if (present(F_sfcfldin)) then
          if (associated(F_sfcfldin)) sfcfldin => F_sfcfldin
       endif
-      F_istat = priv_vgrid_details(F_vgridin_S,vgridin,ip1listin,sfcfldin)
+      if (present(F_sfcfldout2)) then
+         if (associated(F_sfcfldout2)) sfcfldout2 => F_sfcfldout2
+      endif
+      if (present(F_sfcfldin2)) then
+         if (associated(F_sfcfldin2)) sfcfldin2 => F_sfcfldin2
+      endif
+      F_istat = priv_vgrid_details(F_vgridin_S, vgridin, ip1listin, &
+           sfcfldin, sfcfldin2)
       if (.not.RMN_IS_OK(F_istat)) then
          call msg(MSG_WARNING,'(vinterp) Cannot Interpolate, vgrid info: '//trim(msg_S))
          return
       endif
 
-      F_istat = vinterp0(F_dataout,F_vgridout,F_ip1listout,F_datain,vgridin,ip1listin,sfcfldout,sfcfldin,nlinbot,msg_S)
+      F_istat = vinterp0ls( &
+           F_dataout, F_vgridout, F_ip1listout, sfcfldout, sfcfldout2, &
+           F_datain, vgridin, ip1listin, sfcfldin, sfcfldin2, nlinbot, msg_S)
+
+      istat = vgd_free(vgridin)
+      if (associated(ip1listin)) deallocate(ip1listin,stat=istat)
+
       write(tmp_S,'(i6)') F_istat
       call msg(MSG_DEBUG,'(vinterp) vinterp01 [END] '//trim(tmp_S))
      !------------------------------------------------------------------
@@ -307,7 +438,9 @@ contains
 
 
    !/@*
-   function vinterp10(F_dataout,F_vgridout_S,F_datain,F_vgridin,F_ip1listin,F_sfcfldout,F_sfcfldin,F_nlinbot,F_msg_S) result(F_istat)
+   function vinterp10(F_dataout, F_vgridout_S, F_datain, F_vgridin, &
+        F_ip1listin, F_sfcfldout, F_sfcfldin, F_nlinbot, F_msg_S, &
+        F_sfcfldout2, F_sfcfldin2) result(F_istat)
       implicit none
       !@objective
       !@arguments
@@ -316,15 +449,17 @@ contains
       type(vgrid_descriptor),intent(in) :: F_vgridin
       integer,intent(in) :: F_ip1listin(:)
       real,pointer,optional :: F_sfcfldout(:,:),F_sfcfldin(:,:)
+      real,pointer,optional :: F_sfcfldout2(:,:),F_sfcfldin2(:,:)
       integer,intent(in),optional :: F_nlinbot
       character(len=*),intent(in),optional :: F_msg_S
       !@return
       integer :: F_istat
       !*@/
       character(len=256) :: msg_S,tmp_S
-      integer :: nlinbot
+      integer :: nlinbot, istat
       type(vgrid_descriptor) :: vgridout
       real,pointer :: sfcfldout(:,:),sfcfldin(:,:)
+      real,pointer :: sfcfldout2(:,:),sfcfldin2(:,:)
       integer,pointer :: ip1listout(:)
       !------------------------------------------------------------------
       call msg(MSG_DEBUG,'(vinterp) vinterp10 [BEGIN]')
@@ -334,20 +469,35 @@ contains
       nlinbot = 0 
       if (present(F_nlinbot)) nlinbot = F_nlinbot
 
-      nullify(ip1listout,sfcfldout,sfcfldin)
+      nullify(ip1listout, sfcfldout, sfcfldin, sfcfldout2, sfcfldin2)
       if (present(F_sfcfldout)) then
          if (associated(F_sfcfldout)) sfcfldout => F_sfcfldout
       endif
       if (present(F_sfcfldin)) then
          if (associated(F_sfcfldin)) sfcfldin => F_sfcfldin
       endif
-      F_istat = priv_vgrid_details(F_vgridout_S,vgridout,ip1listout,sfcfldout)
+      if (present(F_sfcfldout2)) then
+         if (associated(F_sfcfldout2)) sfcfldout2 => F_sfcfldout2
+      endif
+      if (present(F_sfcfldin2)) then
+         if (associated(F_sfcfldin2)) sfcfldin2 => F_sfcfldin2
+      endif
+
+      F_istat = priv_vgrid_details(F_vgridout_S, vgridout, ip1listout, &
+           sfcfldout, sfcfldout2)
       if (.not.RMN_IS_OK(F_istat)) then
          call msg(MSG_WARNING,'(vinterp) Cannot Interpolate, vgrid info: '//trim(msg_S))
          return
       endif
 
-      F_istat = vinterp0(F_dataout,vgridout,ip1listout,F_datain,F_vgridin,F_ip1listin,sfcfldout,sfcfldin,nlinbot,msg_S)
+      F_istat = vinterp0ls( &
+           F_dataout, vgridout, ip1listout, sfcfldout, sfcfldout2, &
+           F_datain, F_vgridin, F_ip1listin, sfcfldin, sfcfldin2, &
+           nlinbot, msg_S)
+
+      istat = vgd_free(vgridout)
+      if (associated(ip1listout)) deallocate(ip1listout,stat=istat)
+
       write(tmp_S,'(i6)') F_istat
       call msg(MSG_DEBUG,'(vinterp) vinterp10 [END] '//trim(tmp_S))
       !------------------------------------------------------------------
@@ -358,33 +508,40 @@ contains
    !==== Private Functions =================================================
 
 
-   function priv_vgrid_details(F_vgrid_S,F_vgrid,F_ip1list,F_sfcfld) result(F_istat)
+   function priv_vgrid_details(F_vgrid_S, F_vgrid, F_ip1list, &
+        F_sfcfld, F_sfcfld2) result(F_istat)
       implicit none
       character(len=*),intent(in) :: F_vgrid_S
       type(vgrid_descriptor),intent(out) :: F_vgrid
       integer,pointer :: F_ip1list(:)
       real,pointer :: F_sfcfld(:,:)
-      integer :: F_istat,istat,vtype
-      character(len=32) :: sfcfld_S
+      real,pointer :: F_sfcfld2(:,:)
+      integer :: F_istat, istat, vtype
+      character(len=32) :: sfcfld_S, sfcfld2_S
       !------------------------------------------------------------------
-      F_istat = vgrid_wb_get(F_vgrid_S,F_vgrid,F_ip1list,vtype,sfcfld_S)
-      if (RMN_IS_OK(F_istat) .and. sfcfld_S /= ' ' .and. .not.associated(F_sfcfld)) &
-           istat = gmm_get(sfcfld_S,F_sfcfld)
-
-      if (.not.(RMN_IS_OK(F_istat) .and. (associated(F_sfcfld) .or. sfcfld_S == ' '))) then
+      sfcfld2_S = ' '
+      F_istat = vgrid_wb_get(F_vgrid_S, F_vgrid, F_ip1list, vtype, &
+           sfcfld_S, sfcfld2_S)
+      if (RMN_IS_OK(F_istat)) then
+         if (sfcfld_S /= ' ' .and. .not.associated(F_sfcfld)) &
+              istat = gmm_get(sfcfld_S, F_sfcfld)
+         if (sfcfld2_S /= ' ' .and. .not.associated(F_sfcfld2)) &
+              istat = gmm_get(sfcfld2_S, F_sfcfld2)
+      endif
+      if (.not.(RMN_IS_OK(F_istat) .and. &
+           (associated(F_sfcfld) .or. sfcfld_S == ' '))) then
          istat = vgd_free(F_vgrid)
-         deallocate(F_ip1list,stat=istat)
+         if (associated(F_ip1list)) deallocate(F_ip1list, stat=istat)
          F_istat = RMN_ERR
-!!$      else
-!!$         if (associated(F_sfcfld).and.associated(F_ip1list)) then
-!!$            print *,'(vinterp) vgrid=',trim(F_vgrid_S),'; ref=',trim(sfcfld_S),'; nijk=',shape(F_sfcfld),size(F_ip1list)
-!!$         else
-!!$            print *,'(vinterp) vgrid=',trim(F_vgrid_S),'; ref=',trim(sfcfld_S)
-!!$         endif
+         return
+      endif
+      if (sfcfld2_S /= ' ' .and. .not.associated(F_sfcfld2)) then
+         istat = vgd_free(F_vgrid)
+         if (associated(F_ip1list)) deallocate(F_ip1list, stat=istat)
+         F_istat = RMN_ERR
       endif
       !------------------------------------------------------------------
       return
    end function priv_vgrid_details
 
 end module vinterp_mod
-
