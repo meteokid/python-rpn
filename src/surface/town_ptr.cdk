@@ -1,0 +1,43 @@
+      real, pointer, dimension(:) :: zq_canyon, zt_canyon, zu_canyon
+!      real, pointer, dimension(:) :: zg_town, zh_town, zle_town, zrn_town
+!      real, pointer, dimension(:) :: zg_roof, zh_roof, zle_roof, zrn_roof
+!      real, pointer, dimension(:) :: zg_road, zh_road, zle_road, zrn_road
+!      real, pointer, dimension(:) :: zg_wall, zh_wall, zle_wall, zrn_wall
+      real, pointer, dimension(:) :: zalfaq
+      real, pointer, dimension(:) :: zalfat
+      real, pointer, dimension(:) :: zalvis
+      real, pointer, dimension(:) :: zazim
+      real, pointer, dimension(:) :: zbm
+      real, pointer, dimension(:) :: zbt
+      real, pointer, dimension(:) :: zdlat
+      real, pointer, dimension(:) :: zdlon
+      real, pointer, dimension(:) :: zfc
+      real, pointer, dimension(:) :: zfcor
+      real, pointer, dimension(:) :: zfrv
+      real, pointer, dimension(:) :: zftemp
+      real, pointer, dimension(:) :: zfv
+      real, pointer, dimension(:) :: zfvap
+      real, pointer, dimension(:) :: zhst
+      real, pointer, dimension(:) :: zhumoins
+      real, pointer, dimension(:) :: zilmo
+      real, pointer, dimension(:) :: zqdiag
+      real, pointer, dimension(:) :: zqsurf
+      real, pointer, dimension(:) :: zrainrate
+      real, pointer, dimension(:) :: zsnodp
+      real, pointer, dimension(:) :: zsnowrate
+      real, pointer, dimension(:) :: ztdiag
+      real, pointer, dimension(:) :: zthetaa
+      real, pointer, dimension(:) :: ztsrad
+      real, pointer, dimension(:) :: ztsun
+      real, pointer, dimension(:) :: ztsurf
+      real, pointer, dimension(:) :: zudiag
+      real, pointer, dimension(:) :: zumoins
+      real, pointer, dimension(:) :: zvdiag
+      real, pointer, dimension(:) :: zvmoins
+      real, pointer, dimension(:) :: zz0
+      real, pointer, dimension(:) :: zz0t
+      real, pointer, dimension(:) :: zzenith
+      real, pointer, dimension(:) :: zztsl
+      real, pointer, dimension(:) :: zzusl
+
+

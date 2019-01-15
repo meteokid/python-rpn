@@ -1,0 +1,71 @@
+#!/bin/ksh
+#==== Building ============================================================
+#Note: this suppose you already installed modelutils and that
+#      it could be found in the location specified in ssmusedep.bndl
+#TODO: howto build with modelutils at the same time
+#      ouv_exp_rpnphy --dodeps
+#      make ... COMPONENTS="modelutils rpnphy"
+
+#git clone ssh://armnenv@localhost/~armnenv/GitDepots/rpnphy.git
+git clone ssh://localhost/~armnenv/GitDepots/rpnphy.git
+cd rpnphy
+#git checkout -b tmp rpnphy_VERSION
+#update version number (including leading 'x/') in ./include/Makefile.local.mk
+. ./.setenv.dot --cmc # --science
+./bin/ouv_exp_rpnphy
+rdemklink
+make buildclean
+make components_objects -j 6 
+make components_libs  MAKE_NO_LIBSO=1
+make components_abs 
+make components_ssm
+make buildclean
+
+#For additional ARCH (for each additional ARCH)
+      ssh MYMACH
+      cd /PATH/
+      . ./.setenv.dot
+      #./bin/ouv_exp_rpnphy #optional if build in same dir as above
+      rdemklink
+      make buildclean
+      make components_objects -j 6 
+      make components_libs  MAKE_NO_LIBSO=1
+      make components_abs 
+      make components_ssm_arch
+      make buildclean
+
+#For Debug libs (for each ARCH)
+      ssh MYMACH
+      cd /PATH/
+      . ./.setenv.dot
+      #./bin/ouv_exp_rpnphy #optional if build in same dir as above
+      export RDE_BUILDDIR_SFX=-d
+      rdemklink
+      make buildclean
+      make components_objects -j 6 
+      make components_libs  MAKE_NO_LIBSO=1
+      make components_ssm_arch  MAKE_SSM_NOMOD=1 MAKE_SSM_NOABS=1 MAKE_SSM_NOINC=1
+      make buildclean
+
+
+#==== Installing ==========================================================
+
+#This will install ssm pkg on all ARCH
+
+ssh MY_INSTALL_MACH
+cd /PATH/
+. ./.setenv.dot --cmc # --science
+make components_install CONFIRM_INSTALL=yes
+## make components_install CONFIRM_INSTALL=yes SSM_BASE=/ssm/net/rpn/MIG SSM_BASE2=""
+## make components_install CONFIRM_INSTALL=yes SSM_BASE=/fs/ssm/eccc/mrd/rpn/MIG SSM_BASE2=""
+
+#==== Uninstalling ========================================================
+
+#This will uninstall ssm pkg on all ARCH
+
+ssh MY_INSTALL_MACH
+cd /PATH/
+. ./.setenv.dot --cmc # --science
+make components_uninstall UNINSTALL_CONFIRM=yes
+## make components_uninstall UNINSTALL_CONFIRM=yes SSM_BASE=/ssm/net/rpn/MIG
+## make components_uninstall UNINSTALL_CONFIRM=yes SSM_BASE=/fs/ssm/eccc/mrd/rpn/MIG

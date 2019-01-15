@@ -1,0 +1,56 @@
+#!/bin/ksh
+
+DESC='Load package dependencies'
+USAGE="USAGE: ${MYSELF} [-v] [-f] [--cmc|--science] [COMP_ARCH]"
+
+usage_long() {
+   toto=$(echo -e $USAGE)
+   more <<EOF
+$DESC
+
+$toto
+
+Options:
+    -h, --help         : print this help
+    -v, --verbose      : verbose mode
+        --cmc          : set dependencies for CMC network
+        --science      : set dependencies for Sience network
+EOF
+}
+
+RDENETWORK=${RDENETWORK:-'science'}
+COMP_ARCH_DEFAULT=intel13sp1u2
+[[ x$BASE_ARCH == xAIX-powerpc7 ]] && COMP_ARCH_DEFAULT=xlf13
+verbose=0
+while [[ $# -gt 0 ]] ; do
+   case $1 in
+      (-h|--help) usage_long; exit 0;;
+      (-v|--verbose) ((verbose=verbose+1));;
+      (--cmc) RDENETWORK=cmc ;;
+      (--science) RDENETWORK=science ;;
+      (savehist*) ;;
+      # (*) if [[ x$1 != x ]] ; then myerror "Option Not recognized: $1";fi;;
+      (*) COMP_ARCH=${1:-${COMP_ARCH_DEFAULT}} ;;
+    esac
+    shift
+done
+
+echo "USING: COMP_ARCH=$COMP_ARCH"
+echo "LINKING for ${RDENETWORK:-science} NETWORK"
+for item in $(ls *-${RDENETWORK:-science}); do
+   ln -sf ${item} ${item%-*}
+done
+
+if [[ -f ssmusedep.bndl ]] ; then
+   echo ". s.ssmuse.dot ssmusedep.bndl"
+   . s.ssmuse.dot $(cat ssmusedep.bndl)
+fi
+
+COMP_ARCH_DEFAULT=${COMP_ARCH_DEFAULT:-${COMP_ARCH:-intel13sp1u2}}
+# [[ x$BASE_ARCH == xAIX-powerpc7 || x$ORDENV_PLAT == xaix-7.1-ppc7-64 ]] && COMP_ARCH_DEFAULT=${COMP_ARCH_DEFAULT:-${COMP_ARCH:-xlf13}}
+
+export PATH=$(pwd)/bin:$PATH
+#export TEST_S_AR=1
+export SSMVERSION=$(ssm version | cut -d. -f1)
+
+export rpnphy=$(pwd)

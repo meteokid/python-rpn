@@ -1,0 +1,16 @@
+      integer phy_lcl_gid, phy_lcl_ni, phy_lcl_nj, &
+              phy_lcl_i0 , phy_lcl_in, phy_lcl_j0, phy_lcl_jn, &
+              drv_glb_gid, drv_glb_ni, drv_glb_nj, &
+              drv_lcl_gid, drv_lcl_ni, drv_lcl_nj, &
+              drv_lcl_i0 , drv_lcl_in, drv_lcl_j0, drv_lcl_jn
+      integer phydim_ni,phydim_nj,phydim_nk,phy_lclcore_gid
+      integer, dimension(:,:,:), pointer :: ijdrv_mod, ijdrv_phy, ijphy
+
+      common /phy_grd_i/ &
+              phy_lcl_gid, phy_lcl_ni, phy_lcl_nj, &
+              phy_lcl_i0 , phy_lcl_in, phy_lcl_j0, phy_lcl_jn, &
+              drv_glb_gid, drv_glb_ni, drv_glb_nj, &
+              drv_lcl_gid, drv_lcl_ni, drv_lcl_nj, &
+              drv_lcl_i0 , drv_lcl_in, drv_lcl_j0, drv_lcl_jn
+      common /phy_grd_i/ phydim_ni,phydim_nj,phydim_nk,phy_lclcore_gid
+      common /phy_grd_p/ ijdrv_mod, ijdrv_phy, ijphy
