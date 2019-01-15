@@ -1,0 +1,293 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# Author: Stephane Chamberland <stephane.chamberland@canada.ca>
+# Copyright: LGPL 2.1
+"""
+Set of tools to read, filter, parse, compare and verify stats from GEM output RPNSTD files.
+"""
+import argparse
+import logging as _log
+import numpy as _np
+import sys
+import rpnpy.librmn.all as _rmn
+
+from verif_common import read_okvalues_file
+
+
+def cmp_out_files(ref_file, usr_file, rtol=1e-05, atol=1e-08, var_list=None, verbose=False):
+    """
+
+    Args:
+       ref_file : Reference file name
+       usr_file : User file name
+       rtol     : Relative error tolerence
+       atol     : Absolute error tolerence
+       var_list : list of var name to check (default=None for all vars)
+    Returns:
+       {
+       'nb_tot'  : total number of records checked (int)
+       'nb_skip' : number of skipped records, 1D (int)
+       'missing' : missing field in usr file, list of rec meta
+       'errors'  : fields with wrong shape in urs_file, list of rec meta
+       'failed'  : fields failing the test, list of rec meta
+       }
+    """
+    _rmn.fstopt(_rmn.FSTOP_MSGLVL, _rmn.FSTOPI_MSG_CATAST)
+    try:
+        ref_id = _rmn.fstopenall(ref_file, _rmn.FST_RO, verbose=verbose)
+    except:
+        raise IOError(" Oops! File does not exist or is not readable: {0}".
+                      format(ref_file))
+    try:
+        usr_id = _rmn.fstopenall(usr_file, _rmn.FST_RO, verbose=verbose)
+    except:
+       raise IOError(" Oops! File does not exist or is not readable: {0}".
+                      format(usr_file))
+ 
+    if var_list:
+        ref_klist = []
+        for var in var_list:
+            ref_klist += _rmn.fstinl(ref_id, nomvar=var)
+    else:
+        ref_klist = _rmn.fstinl(ref_id)
+
+    not_found = []
+    shape_error = []
+    failed = []
+    n_skipped = 0
+    for k in ref_klist:
+        meta = _rmn.fstprm(k)
+        usr_rec = _rmn.fstlir(usr_id, nomvar=meta['nomvar'],
+                              datev=meta['datev'], ip1=meta['ip1'])
+        if not usr_rec:
+            #TODO: make error msg optional
+            _log.warning('Skipping (not found): {nomvar} ip1={ip1} datev={datev}'.
+                       format(**meta))
+            not_found += [meta]
+            continue
+        ref_rec = _rmn.fstluk(k)
+        if len(usr_rec['d'].shape) != len(ref_rec['d'].shape):
+            #TODO: make error msg optional
+            _log.error('Skipping (different shape): {nomvar} ip1={ip1} datev={datev}'.
+                       format(**meta))
+            shape_error += [meta]
+            continue
+        if len(usr_rec['d'].shape) < 2:
+            #TODO: make msg optional
+            if verbose:
+                _log.info('Skipping (1D field): {nomvar} ip1={ip1} datev={datev}'.
+                          format(**meta))
+            n_skipped += 1
+            continue
+
+        ## _log.info('Found : {nomvar} ip1={ip1} datev={datev}\n'\
+        ##           .format(**meta))
+
+        ## if meta['nomvar'].upper().strip() == 'TT': #testing code
+        ##     usr_rec['d'][1,1] = 4.
+
+        diff_rec = _np.isclose(usr_rec['d'], ref_rec['d'],
+                               rtol=rtol, atol=atol)
+        if not _np.all(diff_rec):
+            ij = _np.where(diff_rec == False)
+            #TODO: make error msg optional
+            _log.error("{nomvar} ip1={ip1} datev={datev} [got: {1}, exp: {0}] {2}".
+                       format(str(ref_rec['d'][ij]), str(usr_rec['d'][ij]),
+                              str(zip(ij[0],ij[1])), **meta))
+            failed += [meta]
+ 
+    _rmn.fstcloseall(ref_id)
+    _rmn.fstcloseall(usr_id)
+
+    #TODO: option for no error on not_found
+    if len(shape_error) + len(not_found) + len(failed) > 0:
+        #TODO: make error msg optional
+        _log.error("FAIL cmp_out_files " +
+                   "(skipped={}, missing={}, errors={}, failed={}, total={})".
+                   format(n_skipped, len(not_found), len(shape_error),
+                          len(failed), len(ref_klist)))
+    else:
+        #TODO: make msg optional
+        _log.info("OK cmp_out_files, skipped fields (1D) {}/{}\n".
+                  format(n_skipped, len(ref_klist)))
+
+    return {
+        'nb_tot'  : len(ref_klist),
+        'nb_skip' : n_skipped,
+        'missing' : not_found,
+        'errors'  : shape_error,
+        'failed'  : failed
+        }
+
+
+def check_out_stats(usr_file, okvalues, var_list=None):
+    """Check values min, max, mean for specific vars...
+
+    Args:
+       usr_file : User file name
+       okvalues : dict of expected min max values
+                  as obtained from read_okvalues_file
+                  e.g.: { varname : (minval, maxval), ... }
+       var_list : list of var name to check (default=None for all vars)
+    Returns:
+       {
+       'nb_tot'   : total number of records checked (int)
+       'nb_skip'  : number of skipped records, 1D (int)
+       'nb_errors': number of field reading errors (int)
+       'failed'   : fields failing the test, list of rec meta
+       }
+    """
+    try:
+        usr_id = _rmn.fstopenall(usr_file, _rmn.FST_RO, verbose=True)
+    except:
+        raise IOError(" Oops! File does not exist or is not readable: {0}".
+                      format(usr_file))
+
+    if var_list:
+        klist = []
+        for var in var_list:
+            klist += _rmn.fstinl(usr_id, nomvar=var)
+    else:
+        klist = _rmn.fstinl(usr_id)
+
+    nb_errors = 0
+    nb_skipped = 0
+    failed = []
+    for key in klist:
+        meta = _rmn.fstprm(key)
+        name = meta['nomvar'].upper().strip()
+        if name not in okvalues.keys():
+            #TODO: make msg optional
+            ## _log.info('Skipping (no ok values): {nomvar}'.format(**meta))
+            nb_skipped += 1
+            continue
+        usr_rec = _rmn.fstluk(key)
+        if not usr_rec:
+            #TODO: make error msg optional
+            _log.error('Problem reading field at key={}'.format(key))
+            nb_errors += 1
+            continue
+        vmin = usr_rec['d'].min()
+        vmax = usr_rec['d'].max()
+        if (vmin < okvalues[name][0] or vmax > okvalues[name][1]):
+            del usr_rec['d']
+            usr_rec['minval'] = vmin
+            usr_rec['maxval'] = vmax
+            print("FAIL: {0} [{dateo} step={npas}, ip1={ip1}] out of range (MinVal={minval}, MaxVal={maxval})".format(name,**usr_rec))
+            failed += [usr_rec]
+
+    _rmn.fstcloseall(usr_id)
+
+    if nb_errors + len(failed) > 0:
+        #TODO: make error msg optional
+        _log.error("FAIL check_out_stats " +
+                   "(skipped={}, errors={}, failed={}, total={})".
+                   format(nb_skipped, nb_errors,
+                          len(failed), len(klist)))
+    else:
+        #TODO: make msg optional
+        _log.info("OK cmp_out_files, skipped fields (1D) {}/{}\n".
+                  format(nb_skipped, len(klist)))
+
+    return {
+        'nb_tot'   : len(klist),
+        'nb_skip'  : nb_skipped,
+        'nb_errors': nb_errors,
+        'failed'   : failed
+        }
+
+
+def _parse_user_args():
+    """Define accepted args and parse user input
+
+    Returns:
+       object, parse arguments return by argparse.ArgumentParser.parse_args()
+    """
+    DESC="Check GEM output RPNSTD files"
+    usage = """
+    %(prog)s -i FILENAME [-r REF_FILENAME] [options]"""
+    epilog="""
+    """
+    parser = argparse.ArgumentParser(
+        description=DESC, usage=usage, epilog=epilog,
+        prefix_chars='-+', formatter_class=argparse.RawDescriptionHelpFormatter)
+
+    #TODO: verbose
+
+    parser.add_argument("-i", "--input", dest="usr_file",
+                        type=str, required=True,
+                        help="User experiment output file/dir")
+
+    parser.add_argument("-r", "--ref", dest="ref_file",
+                        type=str, default=None,
+                        help="Reference output file/dir")
+
+    parser.add_argument("--varlist",  dest="var_list",
+                        nargs='*', type=str, default=[],
+                        metavar='VARNAME',
+                        help="Filter out records by nomvar values")
+
+    parser.add_argument("--rtol",  dest="rtol",
+                        type=float, default=1e-05,
+                        metavar='REL_ERR_TOL',
+                        help="Relative error tolerence [default=1e-05]")
+
+    parser.add_argument("--atol",  dest="atol",
+                        type=float, default=1e-08,
+                        metavar='ABS_ERR_TOL',
+                        help="Absolute error tolerence [default=1e-08]")
+
+    ## parser.add_argument("-n", "--ndigits",  dest="ndigits",
+    ##                     type=int, default=None,
+    ##                     help="Compare stats up to N significant digits")
+
+    parser.add_argument("--okvalues", dest="okvalues",
+                        type=str, default=None,
+                        help="Dictionary file of expected min max values for vars")
+
+    args = parser.parse_args()
+    #TODO: validate args values
+    ## if (args.view_diff or args.ndigits or args.keep_files) and not args.ref_file:
+    ##     _log.error("Need to provide a REF_FILE name [--ref] in this case.")
+    ##     sys.exit(1)
+    return args
+
+
+if __name__ == "__main__":
+    ## from pprint import pprint
+    ## import doctest
+    ## doctest.testmod()
+    ## _log.basicConfig(format='%(levelname)s: %(message)s', level=_log.ERROR)
+    _log.basicConfig(format='%(levelname)s: %(message)s', level=_log.INFO)
+    ## _log.basicConfig(format='%(message)s', level=_log.INFO)
+    args = _parse_user_args()
+    if args.ref_file:
+        cmp_out_files(args.ref_file, args.usr_file, args.rtol, args.atol,
+                      args.var_list)
+    if args.okvalues:
+        okvalues = read_okvalues_file(args.okvalues)
+        check_out_stats(args.usr_file, okvalues, args.var_list)
+
+    #fstcomp output:  NOM    ETIKET        IP1           IP2 IP3 E-REL-MAX  E-RE## L-MOY    VAR-A      C-COR        MOY-A        BIAIS      E-MAX      E-MOY
+    ## Description of Report Heading
+    ## Title	Description
+    ## CLEA	key of record found in file A
+    ## CLEB	key of record found in file B
+    ## NOM	nomvar - variable name of field
+    ## ETIKET	etiket - label of run/data
+    ## IP1	
+    ## ip1 - code of model level [../../LIBRARY_INDEX/c/convip.html (see convip)]
+    ## IP2	ip2 - hour of forecast
+    ## IP3	ip3
+    ## E-REL-MAX	maximum relative error => |1.0-A/B| where values A and B are compared. B must be non-zero so A and B could be switched for the purpose of calculation
+    ## E-REL-MOY	average relative error. See E-REL-MAX
+    ## VAR-A	variance of field in file A
+    ## C-COR	correlation (1.000 if fields are equal)
+    ## MOY-A	mean of field in file A
+    ## BIAIS	bias (0.000 if fields are equal)
+    ## E-MAX	maximum absolute error (0.000 if fields are equal)
+    ## E-MOY	average absolute error (0.000 if fields are equal)
+
+# -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
+# vim: set expandtab ts=4 sw=4:
+# kate: space-indent on; indent-mode cstyle; indent-width 4; mixedindent off;

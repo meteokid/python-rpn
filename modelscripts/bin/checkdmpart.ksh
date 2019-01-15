@@ -23,7 +23,7 @@ if [ -z "${domain}" ] ; then domain=0 ;fi
 cd ${ROOT_WORK}
 
 unset GEM_YINYANG
-GRDTYP=$(getnml -f ${WORKDIR}/model_settings.nml -n grid grd_typ_s 2> /dev/null | sed "s/'//g")
+GRDTYP=$(rpy.nml_get -f ${WORKDIR}/model_settings.nml grid/grd_typ_s 2> /dev/null | sed "s/'//g")
 if [ "$GRDTYP" == "GY" ] ; then 
   GEM_YINYANG=YES
   mkdir -p ${WORKDIR}/YIN/000-000 ${WORKDIR}/YAN/000-000

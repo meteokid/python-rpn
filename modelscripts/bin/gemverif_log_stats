@@ -1,0 +1,460 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# Author: Stephane Chamberland <stephane.chamberland@canada.ca>
+# Copyright: LGPL 2.1
+"""
+Set of tools to read, filter, parse, compare and verify stats from GEM listing files.
+
+Stats lines are expected to have one of the following formats:
+    oe-00000-00004:    0 uu => pw_uu:p    Mean:   -4.266605832760E-01 Var:    4.775630216273E+00 Min:[(  52,  30,  1)   -2.019871139526E+01] Max:[(  63,  11,  1)    1.762141799927E+01] phy_input
+    oe-00000-00004:   36 psng             Mean:    3.055095182477E-02 Var:    1.699401352907E-01 Min:[(   1,   1,  1)    0.000000000000E+00] Max:[( 133,  17,  1)    1.000000000000E+00] phystats
+    oe-00000-00004:    0  ME Mean:    2.193908666899E+03 Std:    5.593982277623E+03
+    oe-00000-00004:    0URT1 Mean:    3.919807607649E-01 Std:    1.384555456907E+01
+    oe-00000-00004:  Min:[(150,  1,  1)   -9.741644287109E+01] Max:[(144, 29,  1)    1.071353302002E+02]
+    oe-00000-00004:   36TT1  Mean:    2.430433639546E+02 Std:    3.102081850185E+01
+    oe-00000-00004:  Min:[(134, 48, 33)    1.852182922363E+02] Max:[(118, 39, 82)    3.145508728027E+02]
+"""
+import argparse
+import difflib
+import logging as _log
+## import nose.tools as _nt
+import numpy as _np
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+
+from verif_common import run_shell_cmd, read_okvalues_file
+
+
+def get_bloc_stats(filename):
+    """Get bloc stats from a GEM model log file and keep only relevent lines
+
+   Args:
+       filename : Name of the GEM listing file to read
+    Returns:
+       list, GEM listing file content trimmed of irrelevent lines
+    """
+    stats = []
+    try:
+        fd = open(filename, "r")
+        wordlist = ['Mean:','Min:',  'BLOC STAT', 'PERFORMING TIMESTEP',
+                    'END EXECUTION', ## 'GEMDM', 'GEMDYN', 'RPNPHY', 'Release',
+                    'ERROR', 'SIGSEGV', 'FAILED', 'STATUS_FROM_DOMAIN', 'ABORT']
+        try:
+            #TODO: decode --  line.decode(sys.stdin.encoding)
+            stats = [line for line in fd
+                     if (any(i in line for i in wordlist) and
+                         not 'Memory==' in line)]
+        finally:
+            fd.close()
+    except IOError:
+        raise IOError(" Oops! File does not exist or is not readable: {0}".
+                      format(filename))
+    if not len(stats):
+        raise ValueError(" Oops! Was not able to find any stats in: {0}".
+                         format(filename))
+    return merge_2lines_stats(stats)
+
+
+def merge_2lines_stats(stats):
+    """Merge 2 lines stats
+    Two lines stats are expected to have the following format:
+    oe-00000-00004:    0URT1 Mean:    3.919807607649E-01 Std:    1.384555456907E+01
+    oe-00000-00004:  Min:[(150,  1,  1)   -9.741644287109E+01] Max:[(144, 29,  1)    1.071353302002E+02]
+    """
+    line2nd = lambda x: ('Min:' in x and 'Mean:' not in x)
+    stats = [line.rstrip() + line1[16:]
+             if line2nd(line1) else line
+             for line, line1  in zip(stats, stats[1:])]
+    return [line for line in stats if not line2nd(line)]
+
+
+def filter_bloc_stats(stats, varlist, context=True):
+    """Keep only stats lines with matching varname
+
+    Args:
+       stats   : 
+       varlist : list of name to keep in stats
+       context : 
+    Returns:
+       list, trimmed stats with only varanme matching any in name varlist
+    """
+    ## wordlist = list(set([a.lower() for a in varlist] + [a.upper() for a in varlist]))
+    ## return [a for a in stats if ('Mean:' in a and any(i in a for i in wordlist))]
+    varlist = list(set(varlist))
+    ## regexplist = \
+    ##     [re.compile(r'\b'+a+r'\b', re.I) for a in varlist] + \
+    ##     [re.compile(r'\b[09]+'+a.upper()+r'\b') for a in varlist if len(a) == 4]
+    regexplist = \
+        [re.compile(r'[ \t]'+a+r'[ \t]', re.I) for a in varlist] + \
+        [re.compile(r'[ \t][09]+'+a.upper()+r'[ \t]') for a in varlist]
+        ## [re.compile(r'[ \t][09]+'+a.upper()+r'[ \t]') for a in varlist if len(a) == 4]
+    if context:
+        return [a for a in stats
+                if ('Mean:' not in a or any(re.search(i, a) for i in regexplist))]
+    else:
+        return [a for a in stats
+                if ('Mean:' in a and any(re.search(i, a) for i in regexplist))]
+
+
+def parse_bloc_stats(stats):
+    """Split stats in step, name, mean, std, min, max, ...
+
+    Args:
+       stats : 
+    Returns:
+        {
+        'proc'  : proc number
+        'Step'  : Stats valid at Step number
+        'Name'  : Stats of Varname
+        'Name2' : Stats of Long Varname
+        'Mean'  : Mean value
+        'Std'   : Standard deviation
+        'Min'   : Min value
+        'Minloc': Location of min value (i, j, k)
+        'Max'   : Max value
+        'Maxloc': Location of max value (i, j, k)
+        'orig'  : original stats line in the GEM listing
+        }
+    """
+    ## regexplist = \
+    ##     [re.compile(r'^(oe-[0-9]+[-][0-9]+:[ ])? [ \t](\w)+[ \t]', re.I) for a in varlist] + \
+    ##     [re.compile(r'^(oe-[0-9]+[-][0-9]+:[ ])? [ \t]([09])(w+)[ \t]') for a in varlist]
+    ##     r2ndline = re.compile(r'^oe-00000-[0-9][0-9][0-9][0-9][0-9]:  Min:')
+    ##     re.match(r2ndline, line):
+    ## stats = [(line, line.replace(', ',',').replace(' => ','=>').replace('[','').replace(']','').split()) for line in stats if 'Mean:' in line]
+
+    ## stats = [['Name:'] + line.replace(' Mean:',';Mean:;').replace(' Std: ',';Std:;').replace(' Var: ',';Var:;').replace(' Min:[',';Min:;[').replace(' Max:[',';Max:;[').replace('phy_input','').replace('phystats','').split(';') for line in stats if 'Mean:' in line]
+    ## ## stats = [[(k.strip(' :'),v.strip(' []\n')) for k,v in zip(line, line[1:]) if k.strip()[-1] == ':'] for line in stats]
+    ## stats = [dict((k.strip(' :'),v.strip(' []\n')) for k,v in zip(line, line[1:]) if k.strip()[-1] == ':') for line in stats]
+
+    subdict = {
+        ' Mean:' : ';Mean:;',
+        ' Std: ' : ';Std:;',
+        ' Var: ' : ';Std:;',
+        ' Min:[' : ';Min:;',
+        ' Max:[' : ';Max:;',
+        ']'         : '',
+        'phy_input' : '',
+        'phystats'  : '',
+        'indata'    : ''
+        }
+    subdict = dict((re.escape(k), v) for k, v in subdict.iteritems())
+    pattern = re.compile("|".join(subdict.keys()))
+    stats = [['orig:', line, 'Name:'] +
+             pattern.sub(lambda m: subdict[re.escape(m.group(0))], line).split(';')
+             for line in stats if 'Mean:' in line]
+    stats = [dict((k.strip(' :'),v.strip('\n').lstrip())
+                  for k,v in zip(line, line[1:]) if k.strip()[-1] == ':')
+             for line in stats]
+    stats = [{
+            'orig' : line['orig'],
+            'proc' : line['Name'].split(':')[0],
+            'Step' : "".join(line['Name'].split(':')[1:]).strip().split(' ')[0],
+            'Name' : ":".join(line['Name'].split(':')[1:]).lstrip().split(' '),
+            'nnnn' : len(":".join(line['Name'].split(':')[1:]).strip().split(' ')),
+            'Mean' : line['Mean'],
+            'Std'  : line['Std'],
+            'Min'  : line['Min'],
+            'Max'  : line['Max']
+            } for line in stats]
+    stats = [
+        {
+            'orig' : line['orig'],
+            'proc' : line['proc'],
+            'Step' : int(" ".join(line['Name'])[:-4].strip()),
+            'Name2' : " ".join(line['Name'])[-4:].strip().upper(),
+            'Name'  : " ".join(line['Name'])[-4:].strip().upper(),
+            'Mean'   : float(line['Mean']),
+            'Std'    : float(line['Std']),
+            'Minloc' : [int(a) for a in line['Min'].lstrip(' (').split(')')[0].strip().split(',')],
+            'Min'    : float(line['Min'].lstrip(' (').split(')')[1].strip()),
+            'Maxloc' : [int(a) for a in line['Max'].lstrip(' (').split(')')[0].strip().split(',')],
+            'Max'    : float(line['Max'].lstrip(' (').split(')')[1].strip())
+        } if line['nnnn'] == 1 else
+        {
+            'orig' : line['orig'],
+            'proc' : line['proc'],
+            'Step' : int(line['Step']),
+            'Name2'  : " ".join(line['Name'][1:]).replace('=>',';').split(';')[-1].strip().upper(),
+            'Name'   : " ".join(line['Name'][1:]).replace('=>',';').split(';')[0].strip().upper(),
+            'Mean'   : float(line['Mean']),
+            'Std'    : float(line['Std']),
+            'Minloc' : [int(a) for a in line['Min'].lstrip(' (').split(')')[0].strip().split(',')],
+            'Min'    : float(line['Min'].lstrip(' (').split(')')[1].strip()),
+            'Maxloc' : [int(a) for a in line['Max'].lstrip(' (').split(')')[0].strip().split(',')],
+            'Max'    : float(line['Max'].lstrip(' (').split(')')[1].strip())
+        } for line in stats]
+    #TODO: may want to re-org nested dict with step and varname e.g. stats[step][varname][*]
+    return stats
+
+
+def diff_bloc_stats(ref_stats, user_stats, ref_file='ref', user_file='user', nlines=3, difftool='unified'):
+    """Use difflib to compare previsouly trimmed stats
+
+   Args:
+       ref_stats  : 
+       user_stats : 
+       ref_file   : 
+       user_file  : 
+       nlines     : number of significant digits to keep for comparison
+       difftool   : difflib tool to use for comparison
+                    one of: 'Differ', 'ndiff', 'context', 'unified'
+    Returns:
+       list, output of the difflib tool
+    """
+    if difftool == 'Differ':
+        d = difflib.Differ()
+        return [line for line in d.compare(ref_stats, user_stats)
+                if line[0] in ('-', '+')]
+    elif difftool == 'ndiff':
+        return list(difflib.ndiff(ref_stats, user_stats,
+                                         fromfile=ref_file,
+                                         tofile=user_file, n=nlines))
+    elif difftool == 'context':
+        return list(difflib.context_diff(ref_stats, user_stats,
+                                         fromfile=ref_file,
+                                         tofile=user_file, n=nlines))
+    # elif difftool == 'unified':
+    return list(difflib.unified_diff(ref_stats, user_stats,
+                                     fromfile=ref_file,
+                                     tofile=user_file, n=nlines))
+
+def check_bloc_stats(stats, okvalues):
+    """Check values min, max, mean for specific var...
+
+    Args:
+       stats    : 
+       okvalues : dict of expected min max values
+                  as obtained from read_okvalues_file
+                  e.g.: { varname : (minval, maxval), ... }
+    Returns:
+       list, stat entries not passing the test
+    """
+    stats2 = [a for a in stats
+              if any(a[k] in okvalues.keys() for k in ['Name', 'Name2'])]
+    failed = []
+    for var in stats2:
+        #TODO: may check Mean as well
+        name = var['Name'] if var['Name'] in okvalues.keys() else var['Name2']
+        if var['Min'] < okvalues[name][0] or var['Max'] > okvalues[name][1]:
+            print("FAIL: [{Step:4}] {0} out of range (MinVal={Min}, MaxVal={Max})".format(name,**var))
+            failed += [var]
+        #TODO: option to print OK status
+        ## else:
+        ##     print("OK: [{Step:4}] {0}".format(name,**var))
+    if len(failed):
+        print("FAIL check_bloc_stats ({}/{} failed, tested for  for {} vars)".
+              format(len(failed), len(stats), len(okvalues.keys())))
+    else:
+        print("OK check_bloc_stats ({} tested for {} vars)".
+              format(len(stats), len(okvalues.keys())))
+    return failed
+
+
+def cmp_bloc_stats(ref_stats, user_stats, ndigits):
+    """Compare user values to ref with some tolerence for specific var...
+
+    Args:
+       ref_stats  : 
+       user_stats : 
+       ndigits    : number of significant digits to keep for comparison
+    Returns:
+       list, stat entries not passing the test
+    """
+    #TODO: add possible trimming
+    ## okvalues = {'TT1' : 5%rel, 1%abs,}
+    ## ref_stats2 = [a for a in ref_stats
+    ##           if any(a[k] in okvalues.keys() for k in ['Name', 'Name2'])]
+    ## user_stats2 = [a for a in user_stats
+    ##           if any(a[k] in okvalues.keys() for k in ['Name', 'Name2'])]
+    ## if len(ref_stats2) =! len(user_stats2):
+    if len(ref_stats) != len(user_stats):
+        raise ValueError('cmp_bloc_stats: Cannot compare, not same number of stat lines')
+    keylist = ['Mean', 'Std', 'Min', 'Max']
+    checkdigits = lambda r, u, d: abs(u-r) < 1.5 * 10**(-d)
+    checkval    = lambda r, u: [checkdigits(r[k], u[k], ndigits) for k in keylist]
+    failed = []
+    for i in range(len(ref_stats)):
+        ## name = var['Name'] if var['Name'] in okvalues.keys() else var['Name2']
+        name = ref_stats[i]['Name2']
+        if not all(checkval(ref_stats[i], user_stats[i])):
+            print("FAIL: [{:4}] {}\n\tRef: {}\n\tUsr: {})".
+                  format(ref_stats[i]['Step'], name,
+                         ref_stats[i]['orig'], user_stats[i]['orig']))
+            failed += [(ref_stats[i], user_stats[i])]
+        #TODO: option to print OK status
+        ## else:
+        ##     print("OK: [{Step:4}] {0}".format(name,**ref_stats[i]))
+        #TODO: optionally check for rel/abs errors
+        ## _np.allclose(a, b, rtol=1e-05, atol=1e-08, equal_nan=False, err_msg='', verbose=True)
+        ## _np.isclose(a, b, rtol=1e-05, atol=1e-08, equal_nan=False)
+        ## _nt.assert_almost_equals(x, y, places=7) #default is 7
+        ## _np.testing.assert_almost_equal(actual, desired, decimal=7, err_msg='', verbose=True)[source]
+    if len(failed):
+        print("FAIL cmp_bloc_stats ({}/{} failed)".
+              format(len(failed), len(ref_stats)))
+    else:
+        print("OK cmp_bloc_stats ({} tested)".format(len(ref_stats)))
+    return failed
+
+
+def view_diff_bloc_stats(ref_stats, user_stats, difftool='kdiff3', keep=False):
+    """Write stats to disk and optionally call an external diff viewer
+
+    Args:
+       ref_stats  : 
+       user_stats : 
+       difftool   : external diff viewer
+       keep       : keep temporary files if True
+    Returns:
+       None
+     """
+    tmpDirectory = tempfile.mkdtemp()
+    #TODO: loop on 2 files
+    ref_file2 = os.path.join(tmpDirectory, 'ref_log_stats')
+    try:
+        fd = open(ref_file2, "w")
+        try: fd.writelines(ref_stats) #TODO: encode?
+        finally: fd.close()
+    except IOError:
+        raise IOError(" Oops! File does not exist or is not readable: {0}".
+                      format(ref_file2))
+    user_file2 = os.path.join(tmpDirectory, 'user_log_stats')
+    try:
+        fd = open(user_file2, "w")
+        try: fd.writelines(user_stats) #TODO: encode?
+        finally: fd.close()
+    except IOError:
+        raise IOError(" Oops! File does not exist or is not readable: {0}".
+                      format(user_file2))
+    if difftool:
+        outlines = run_shell_cmd(difftool + " " + ref_file2 + " " + user_file2)
+        print("\n".join(outlines))
+    if keep:
+        _log.info("\tdiff -a " + ref_file2 + " " + user_file2)
+    else:
+        shutil.rmtree(tmpDirectory)
+
+
+def _parse_user_args():
+    """Define accepted args and parse user input
+
+    Returns:
+       object, parse arguments return by argparse.ArgumentParser.parse_args()
+    """
+    DESC="Check GEM listing files"
+    usage = """
+    %(prog)s -i FILENAME [-r REF_FILENAME] [options]"""
+    epilog="""
+    """
+    parser = argparse.ArgumentParser(
+        description=DESC, usage=usage, epilog=epilog,
+        prefix_chars='-+', formatter_class=argparse.RawDescriptionHelpFormatter)
+
+    #TODO: verbose
+
+    parser.add_argument("-i", "--input", dest="user_file",
+                        type=str, required=True,
+                        help="User experiment Logfile")
+
+    parser.add_argument("-r", "--ref", dest="ref_file",
+                        type=str, default=None,
+                        help="Reference Logfile")
+
+    parser.add_argument("--varlist",  dest="var_list",
+                        nargs='*', type=str, default=[],
+                        metavar='VARNAME',
+                        help="Filter out records by nomvar values")
+
+    parser.add_argument("--view",  dest="view_diff",
+                        type=str, default=None,
+                        metavar='DIFF',
+                        help="Tool name to use for external diff viewing")
+
+    parser.add_argument("-k", "--keep", dest="keep_files",
+                        action="store_true",
+                        help="Keep trimmed listings files")
+
+    parser.add_argument("-n", "--ndigits",  dest="ndigits",
+                        type=int, default=None,
+                        help="Compare stats up to N significant digits")
+
+    parser.add_argument("--okvalues", dest="okvalues",
+                        type=str, default=None,
+                        help="Dictionary file of expected min max values for vars")
+
+    args = parser.parse_args()
+    if (args.view_diff or args.ndigits or args.keep_files) and not args.ref_file:
+        _log.error("Need to provide a REF_FILE name [--ref] in this case.")
+        sys.exit(1)
+    return args
+
+
+if __name__ == "__main__":
+    ## from pprint import pprint
+    ## import doctest
+    ## doctest.testmod()
+    ## _log.basicConfig(format='%(levelname)s: %(message)s', level=_log.INFO)
+    #TODO: with this basicConfig ERROR is not print as prefix on _log.error()
+    _log.basicConfig(format='%(message)s', level=_log.INFO)
+    args = _parse_user_args()
+    #TODO: option to choose diffmode
+    #TODO: timing stats
+    #TODO: option to skip diff test
+
+    ref_stats  = get_bloc_stats(args.ref_file) if args.ref_file else None
+    user_stats = get_bloc_stats(args.user_file)
+    if len(args.var_list):
+        ref_stats = filter_bloc_stats(ref_stats, args.var_list) \
+            if ref_stats else None
+        user_stats = filter_bloc_stats(user_stats, args.var_list)
+
+    #TODO: check if the user run crashed or aborted, use END EXECUTION/ABORT
+
+    difflines = []
+    if ref_stats:
+        difflines = diff_bloc_stats(ref_stats, user_stats)
+
+    if len(difflines):
+        _log.info("FAIL diff_bloc_stats (Stats differ from Ref), See:\n\tdiff -a {} {}".
+                  format(args.ref_file, args.user_file))
+        if args.view_diff or args.keep_files:
+            if (not args.view_diff is None) and args.view_diff.lower() == 'text':
+                _log.info("".join(difflines))
+                _log.info("-"*78+"\n")
+            else:
+                view_diff_bloc_stats(ref_stats, user_stats, args.view_diff, args.keep_files)
+    elif ref_stats:
+        _log.info("OK diff_bloc_stats (identical), See:\n\t diff -a {} {}".
+                  format(args.ref_file, args.user_file))
+
+    user_stats_dict = None
+    if args.ndigits:
+        if len(difflines):
+            #TODO: catch parsing error
+            ref_stats_dict = parse_bloc_stats(ref_stats)
+            #pprint(ref_stats_dict)
+            user_stats_dict = parse_bloc_stats(user_stats)
+            cmp_bloc_stats(ref_stats_dict, user_stats_dict, ndigits=args.ndigits)
+        else:
+            _log.info("OK cmp_bloc_stats (Bitpattern match, not checked)")
+
+    if args.okvalues:
+        #TODO: catch parsing error
+        if user_stats_dict is None:
+            user_stats_dict = parse_bloc_stats(user_stats)
+        okvalues = read_okvalues_file(args.okvalues)
+        #TODO: Should 1st check that stats for requiered vars are present... crash case
+        if okvalues:
+            check_bloc_stats(user_stats_dict, okvalues)
+        else:
+            _log.info("OK check_bloc_stats (not checked, no avail values in {})".format(args.okvalues))
+
+
+# -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
+# vim: set expandtab ts=4 sw=4:
+# kate: space-indent on; indent-mode cstyle; indent-width 4; mixedindent off;

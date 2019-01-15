@@ -1,57 +1,52 @@
 #!/bin/ksh
 #
-set +x
+DESC="Find acceted values of GNI for use with FFT in GEM (GY version)"
+
 #====> Obtaining the arguments:
-eval `cclargs_lite $0 \
-      -min "150" "150"  "[min grid points for Y (G_nj)]"\
-      -max "250" "250"  "[max grid points for Y (G_nj)]"\
-      -help   "0"   "1"    "[help             ]"\
-      ++ $*`
-#
-if ((help)) then
-echo ie: findfftyy -min $min -max $max
-echo
-echo '-min "150" "150"  "[min grid points for Y (G_nj)]"'
-echo '-max "250" "250"  "[max grid points for Y (G_nj)]"'
-echo
-exit
-fi
+arguments=$*
+eval $(rpy.cclargs \
+   -D ":" \
+   --desc   "${DESC}" \
+   ${0##*/} \
+   -min "150" "150"  "[min grid points for X (G_ni)]"\
+   -max "250" "250"  "[max grid points for X (G_ni)]"\
+   ++ ${arguments})
 
 echo "findfftyy" -min $min -max $max
 echo "G_ni,G_nj numbers that would work for FFT:"
 
 let k=${min}
 while [ ${k} -le ${max} ] ; do
-let F_y=${k}
-let F_x=3*${F_y}
-let j=${F_x}+2
-let F_nn=${j}
-let F_n=$F_nn
-if (($F_nn <= 8))
-then let F_n=9
-fi
-let i=$F_n
-while true
+   let F_y=${k}
+   let F_x=3*${F_y}
+   let j=${F_x}+2
+   let F_nn=${j}
+   let F_n=$F_nn
+   if (($F_nn <= 8))
+   then let F_n=9
+   fi
+   let i=$F_n
+   while true
    do
-    if (($i == 1)) then
-       if (($F_nn == $F_n))
-            then 
+      if (($i == 1)) then
+         if (($F_nn == $F_n))
+         then
             echo 'G_ni = ' ${F_x}, 'G_nj = ',${F_y}
             break
-       else
+         else
             break
-       fi
-    fi
-    if (($i%2==0)) then
-    let i=$i/2
-    elif (($i%3==0)) then
-    let i=$i/3
-    elif (($i%5==0)) then
-    let i=$i/5
-    else
-       let F_n=$F_n+1
-       let i=$F_n
-    fi
+         fi
+      fi
+      if (($i%2==0)) then
+         let i=$i/2
+      elif (($i%3==0)) then
+         let i=$i/3
+      elif (($i%5==0)) then
+         let i=$i/5
+      else
+         let F_n=$F_n+1
+         let i=$F_n
+      fi
    done
    let k=${k}+1
 done

@@ -1,0 +1,44 @@
+#! /bin/bash
+#
+# gem-wjworker-ordsoumet.job
+
+MYSELF="${0##*/}"
+DESC='Worker Job deamon script to Run GEM Suite in Worker Job/Maestro'
+USAGE="USAGE: ${MYSELF} &"
+
+if [[ x$1 == x-h || x$1 == x--help ]] ; then
+   cat <<EOF
+
+$(echo ${DESC})
+
+    rm -rf ~/wj/ordsoumet
+    wjsetup ~/wj/ordsoumet
+    export WORKERJOB_WORKDIR=~/wj/ordsoumet
+    ${MYSELF} &
+
+See: https://portal.science.gc.ca/confluence/display/SCIDOCS/Using+WorkerJob+with+ord_soumet+and+Maestro
+
+EOF
+   exit 0
+fi
+
+export WORKERJOB_WORKDIR=~/wj/ordsoumet
+export LOGPATH="${WORKERJOB_WORKDIR}/ordsoumet.log"
+
+if [ ! -d "${WORKERJOB_WORKDIR}" ]; then
+    echo "ERROR: you need to setup wj with: wjsetup ${WORKERJOB_WORKDIR}" 1>&2
+    exit 1
+fi
+
+# run for a very long time, don't stop when idle
+export WORKERJOB_TTL=600000
+export WORKERJOB_MAXIDLE=600000
+
+# number of concurrent jobs to run
+export WORKERJOB_MAXJOBS=3
+
+# comma-separated list of queue names
+export WORKERJOB_QUEUES="default,xfer"
+
+# make sure wjworker is available!
+wjworker >> "${LOGPATH}" 2>&1

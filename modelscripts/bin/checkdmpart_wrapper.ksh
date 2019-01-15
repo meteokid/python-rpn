@@ -3,7 +3,6 @@
 arguments=$*
 echo $0 $arguments
 date
-
 eval `cclargs_lite -D " " $0 \
   -nmlfile        ""   ""   "[path to namelist        ]"\
   -domain         ""   ""   "[domain currently treated]"\
@@ -20,29 +19,53 @@ if [ -n "${bin}" ] ; then
   bin=${bin}/
 fi
 
-flag_topo=0
-unset GEM_YINYANG
-if [ ${check_namelist} -gt 0 ] ; then
-  BIN=$(which checkdmpart_${BASE_ARCH}.Abs)
-  /bin/rm -f ./gem_settings.nml
-  ln -s ${nmlfile} ./gem_settings.nml
-  GRDTYP=$(getnml -f gem_settings.nml -n grid grd_typ_s 2> /dev/null | sed "s/'//g")
-  if [ "$GRDTYP" == "GY" ] ; then 
-    GEM_YINYANG=YES
-  fi
-  export Ptopo_npex=${npex:-1} ; export Ptopo_npey=${npey:-1}
-  export GEM_YINYANG
-  ${bin}r.run_in_parallel -pgm ${BIN} -npex 1 -npey 1 | tee checkdmpart$$
-  set +ex
-  topo_ok=$(grep "CHECKDMPART IS OK" checkdmpart$$ | wc -l)
-  if [ $topo_ok -lt 1 ] ; then
-    printf "\n  Error: Illegal domain partitionning ${npex}x${npey} \n\n"
-    flag_topo=1
-  else
-     printf "\n CHECKDMPART IS OK: domain partitionning allowed\n\n"
-     max_io_pes=$(grep MAX_PES_IO checkdmpart$$ | awk '{print $NF}')
-     printf "\n MAXIMUM IO_PES= ${max_io_pes} \n\n"
-  fi            
-  rm -f checkdmpart$$ ./gem_settings.nml
+unset EIGEN_FILE
+if [ -n "${cache}" ] ; then
+  EIGEN_FILE=${cache}/$(eigen_filename.ksh ${nmlfile})
 fi
-if [ ${flag_topo} -gt 0 ] ; then exit 1 ; fi
+cat > checkdm.nml <<EOF
+&cdm_cfgs
+cdm_npex = ${npex}
+cdm_npey = ${npey}
+cdm_grid_L=.true.
+cdm_eigen_S='${EIGEN_FILE}'
+/
+EOF
+lis=checkdmpartlis$$
+set +ex
+printf "\n RUNNING checkdmpart.ksh \n\n"
+checkdmpart.ksh -cfg ${domain} -nmlfile ./checkdm.nml -gemnml ${nmlfile} 1> $lis 2>&1
+set -ex
+checkdmpart_status='ABORT'
+if [ -e checkdmpart_status.dot ] ; then . checkdmpart_status.dot; fi
+if [ "${checkdmpart_status}" != 'OK' ] ; then
+   printf "\n  Error: Problem with checkdmpart\n\n"
+   cat $lis
+   exit 1
+else
+   if [ ${verbose} -gt 0 ] ; then cat $lis ; fi
+   printf "\n  checkdmpart is OK\n\n"
+fi
+
+flag_err=0
+topo_allowed=$(grep topo_allowed checkdmpart_status.dot | sed 's/ //g' | sed 's/"//g' | sed 's/;//g'  | sed 's/=/_/g')
+if [ "${topo_allowed}" != "topo_allowed_${npex}x${npey}" ] ; then
+   printf "\n  Error: MPI topology NOT allowed\n\n"
+   flag_err=1
+else
+   printf "\n  MAXIMUM number of I/O PES for this configuration is: $(echo ${MAX_PES_IO} | sed 's/^0*//')\n\n"
+fi
+if [ "${Fft_fast_L}" != 'OK' ] ; then
+   printf "\n  Error: This G_ni is NOT FFT but you requested FFT\n\n"
+   flag_err=1
+fi     
+if [ "${SOLVER}" != 'OK' ] ; then
+   set +ex
+   printf "\n  Error: VERTICAL LAYERING IS INCOMPATIBLE WITH THE TIMESTEP"
+   printf "\n         THE SOLVER WILL NOT WORK\n\n"
+   flag_err=1
+   set -ex
+fi
+if [ $flag_err -gt 0 ] ; then exit 1 ; fi
+
+rm -f ./checkdm.nml checkdmpart_status.dot $lis status_MOD.dot

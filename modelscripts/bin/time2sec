@@ -1,7 +1,14 @@
 #!/bin/ksh
 
-if [[ -z ${1} ]] ; then
-  echo "Usage: $0 TIME_STRING"
+DESC='Convert a GEM timestring to seconds'
+
+if [[ -z ${1} || x${1} == x-h || x${1} == x-help || x${1} == x--help ]] ; then
+   cat <<EOF
+Usage: ${0##*/} TIME_STRING
+
+${DESC}
+
+EOF
   exit 1
 fi
 timestr=${1}

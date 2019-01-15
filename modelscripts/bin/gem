@@ -1,0 +1,18 @@
+#!/bin/ksh
+
+DESC='RPN Code Development Environment dispatcher'
+extratools="checknml diffnml runprep runmod devadd devrm devinfo findfft findfftyy findtopo grille linkit time2sec"
+
+prefix=${0##*/}
+if [[ x"$(which ${prefix}$1 2>/dev/null)" != x && x"$1" != x ]] ; then
+   cmd=$1 ; shift
+   ${prefix}${cmd} "$@"
+elif [[ x"$(which ${prefix}_$1 2>/dev/null)" != x && x"$1" != x ]] ; then
+   cmd=$1 ; shift
+   ${prefix}_${cmd} "$@"
+elif [[ x"$1" != x && x"$(echo :${extratools}: | tr ' ' ':' | grep ":$1:")" != x && x"$(which $1 2>/dev/null)" != x  ]] ; then
+   cmd=$1 ; shift
+   ${cmd} "$@"
+else
+   ${prefix}help
+fi

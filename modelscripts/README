@@ -1,11 +1,30 @@
 
 ==== Building ============================================================
-
 #git clone ssh://armnenv@localhost/~armnenv/GitDepots/modelscripts.git
 git clone ssh://localhost/~armnenv/GitDepots/modelscripts.git
 cd modelscripts
 #git checkout -b tmp modelscripts_VERSION
-#update version number (including leading 'x/') in Makefile
+
+#TODO: update version number (including leading 'x/') in Makefile
+#TODO: bin, lib, share/gem-mod, share/gem-ref
+
+#TODO: add to share/nml_updater/ref/
+#      in the exp with all the new code:
+      export NEW_ATM_MODEL_VERSION=???
+      make -j9 obj && make gem
+      gem_nml_mkref gem_settings.${NEW_ATM_MODEL_VERSION}.ref
+      rpy.nml_get -v -f gem_settings.${NEW_ATM_MODEL_VERSION}.ref \
+         > gem_settings.${NEW_ATM_MODEL_VERSION}.ref.kv
+      cat  gem_settings.${NEW_ATM_MODEL_VERSION}.ref.kv | cut -d= -f1 \
+         > gem_settings.${NEW_ATM_MODEL_VERSION}.ref.k
+
+#TODO: update share/nml_updater/upd/gem_nml_update_db.txt
+#      you may use this to get the delta:
+      export PRE_ATM_MODEL_VERSION=${ATM_MODEL_VERSION}
+      export NEW_ATM_MODEL_VERSION=???
+      diff gem_settings.${PRE_ATM_MODEL_VERSION}.ref.kv \
+           gem_settings.${NEW_ATM_MODEL_VERSION}.ref.kv
+
 . ./.setenv.dot --cmc
 make ssm
 

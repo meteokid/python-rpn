@@ -1,0 +1,200 @@
+#!/usr/bin/env ksh
+
+# Retrieve command line arguments
+arguments=$*
+usage="Usage: $0 EXP_NAME [options]"
+DESC="Import the GEM reference implementation"
+
+# Process command line arguments
+eval $(rpy.cclargs \
+    -D ":" \
+    --desc "${DESC}" \
+    --positional "EXP_NAME" \
+    ${0##*/} \
+    -f         "0"         "1"   "[Force overwrite of existing directory]" \
+    -d         "$(pwd)" "$(pwd)" "[Import in provided directory]" \
+    -hub_prefix "gem/${ATM_MODEL_VERSION}" ""   "[Prefix for remote hubs]" \
+    -no_link   "0"         "1"   "[Do not create links in experiment]" \
+    -dry_run   "0"         "1"   "[Prepare resources but do not run exp]" \
+    -v         "0"         "1"   "[Verbose output]" \
+    -tests     "0"         "1"   "[Import GemVerifRef instead of the RI]" \
+    -echo_exp  "0"         "1"   "[Emit SEQ_EXP_HOME value only]" \
+    ++ $arguments)
+expname=$*
+
+if [[ ${tests} -eq 1 ]] ; then
+   MAESTRO_CURRENT_REF=${gemverifref}
+fi
+
+if [[ ${echo_exp} -eq 0 ]] ; then
+   print "Creating experiment ${expname} from RI at ${MAESTRO_CURRENT_REF}"
+else
+   v=0
+fi
+if [[ $# -ne 1 ]] ; then
+   cat 1>&2 <<EOF
+
+ERROR: must provide one and only one EXP_NAME:
+${usage}
+
+EOF
+   exit 1
+fi
+
+if [[ ! -d ${MAESTRO_CURRENT_REF:-__not_set_MAESTRO_CURRENT_REF_not_set_} ]] ; then
+   if [[ ${tests} -eq 1 ]] ; then
+      echo "ERROR: \${gemverifref} must be set in your environment before you can continue" >&2
+   else
+      echo "ERROR: \${MAESTRO_CURRENT_REF} must be set in your environment before you can continue" >&2
+   fi
+   exit 1
+fi
+if [[ -d ${MAESTRO_CURRENT_REF}/ref ]] ; then
+   MAESTRO_CURRENT_REF=${MAESTRO_CURRENT_REF}/ref
+fi
+
+# Check that Maestro is loaded in the environment
+if [[ -z "${SEQ_MAESTRO_DOMAIN}" ]] ; then
+  echo "ERROR: Maestro must be loaded in your environment before you can continue" >&2
+  exit 1
+fi
+
+# Check that GEM is loaded in the environment
+if [[ -z "${ATM_MODEL_BNDL}" ]] ; then
+  print "ERROR: GEM must be loaded in your environment before you can continue"
+  exit 1
+fi
+
+cd ${d}
+
+# Create experiment
+parent=$(dirname ${expname})
+if [[ -d ${expname} ]] ; then
+   if [[ ${v} -gt 0 ]] ; then print "Found existing directory ${expname}" ; fi
+   if [[ ${f} -gt 0 ]] ; then
+      if [[ ${v} -gt 0 ]] ; then print "Force-removing ${expname}" ; fi
+      if [[ ${dry_run} -lt 1 ]] ; then rm -fr ${expname} ; fi
+   else
+      print "ERROR: Directory ${expname} already exists, use -f to overwrite" 1>&2
+      exit 1
+   fi
+else
+   mkdir -p ${parent}
+fi
+
+tmpfile=${parent}/.import_$$.log
+makeexp="import_maestro_exp -s ${MAESTRO_CURRENT_REF} -d ./${expname} -n -r"
+if [[ ${v} -gt 0 ]] ; then print "Importing ${expname} using ${makeexp}" ; fi
+if [[ ${dry_run} -lt 1 ]] ; then ${makeexp}  >${tmpfile} ; fi
+if [[ $? -ne 0 ]] ; then
+   print "Error importing RI using ${makeexp}" 1>&2
+   cat ${tmpfile} 1>&2
+   rm -f ${tmpfile}
+   exit 1
+fi
+if [[ ${v} -gt 0 ]] ; then cat ${tmpfile} ; fi
+rm -f ${tmpfile}
+if [[ $? -ne 0 ]] ; then
+   print "Error importing RI using ${makeexp}" 1>&2
+   exit 1
+fi
+if [[ ${v} -gt 0 ]] ; then print "Moving into experiment home (${expname})" ; fi
+if [[ ${dry_run} -lt 1 ]] ; then
+    cd ${expname}
+    export SEQ_EXP_HOME=$(pwd)
+fi
+
+# Set tool verbosity level
+if [[ ${v} -gt 0 ]] ; then
+    verbose="-v"
+else
+    verbose=""
+fi
+
+# Run link-generator unless supressed
+if [[ ${no_link} -lt 1 ]] ; then
+    if [[ ${echo_exp} -eq 0 ]] ; then print "Creating links under ${expname}" ; fi
+    makelinks ${verbose} -e ${hub_prefix}
+fi
+
+# Set initial date
+cmd="nodelogger -n /gem -d 20090427000000 -s boot -m 'Import Initialization'"
+if [[ ${v} -gt 0 ]] ; then
+    print "Setting RI date using \`${cmd}\`" fi
+    if [[ ${dry_run} -lt 1 ]] ; then eval ${cmd} ; fi
+else
+    if [[ ${dry_run} -lt 1 ]] ; then eval ${cmd} >/dev/null 2>&1 ; fi
+fi
+
+# Initialize the experiment (required for xflow_overview)
+cmd="maestro -n /gem -s initnode"
+if [[ ${v} -gt 0 ]] ; then
+    print "Initializing RI using \`${cmd}\`" fi
+    if [[ ${dry_run} -lt 1 ]] ; then eval ${cmd} ; fi
+else
+    if [[ ${dry_run} -lt 1 ]] ; then eval ${cmd} >/dev/null 2>&1 ; fi
+fi
+
+# Add GEM version information to experiment configuration
+cmd="perl -pi -e \"s|__GEM_VERSION__|${ATM_MODEL_BNDL##GEM/}|\" experiment.cfg"
+if [[ ${v} -gt 0 ]] ; then
+    print "Setting model version in experiment configuration using \`${cmd}\`"
+    if [[ ${dry_run} -lt 1 ]] ; then eval ${cmd} ; fi
+else
+    if [[ ${dry_run} -lt 1 ]] ; then eval ${cmd} >/dev/null ; fi
+fi
+
+# Add default ATM_MODEL_DFILES information to experiment configuration
+cmd="perl -pi -e \"s|__ATM_MODEL_DFILES__|${ATM_MODEL_DFILES}|\" experiment.cfg"
+if [[ ${v} -gt 0 ]] ; then
+    print "Setting ATM_MODEL_DFILES in experiment configuration using \`${cmd}\`"
+    if [[ ${dry_run} -lt 1 ]] ; then eval ${cmd} ; fi
+else
+    if [[ ${dry_run} -lt 1 ]] ; then eval ${cmd} >/dev/null ; fi
+fi
+
+# Add RI information for info plugin
+info_file=${SEQ_EXP_HOME}/.info
+if [[ ${v} -gt 0 ]] ; then
+    print "Adding RI information to experiment info file (${info_file})"
+fi
+if [[ ${dry_run} -lt 1 ]] ; then
+    printf "Initial Import from GEM Reference Implementation ${GEM_REF_VERSION}\n" >${info_file}
+    printf "======================================================\n\n" >>${info_file}
+    printf "  Import User: ${USER}\n  Import Date: $(date)\n" >>${info_file}
+    printf "  Import Destination: ${SEQ_EXP_HOME}\n" >>${info_file}
+    printf "  RI Path: ${MAESTRO_CURRENT_REF}\n" >>${info_file}
+    printf "  GEM Bundle Version for this RI: ${ATM_MODEL_BNDL}\n" >>${info_file}
+    printf "\nThis RI can be re-acquired in a new shell with '. ${SEQ_EXP_HOME}/.ref_load'\n" >>${info_file}
+    printf "\nAdditional Information\n======================\n\n" >>${info_file}
+    printf "  Module Links:\n$(ls -1l modules/)\n" >>${info_file}
+fi
+
+# Add experiment information to ref_load
+refload=${SEQ_EXP_HOME}/.ref_load
+if [[ ${v} -gt 0 ]] ; then print "Adding SEQ_EXP_HOME to ${refload}" ; fi
+if [[ ${dry_run} -lt 1 ]] ; then
+  tmp=${SEQ_EXP_HOME}/.tmp$$
+  printf "export SEQ_EXP_HOME=${SEQ_EXP_HOME}\n" >${tmp}
+  cat ${refload} >>${tmp}
+  mv -f ${tmp} ${refload}
+fi
+
+# Emit export message for SEQ_EXP_HOME
+if [[ ${echo_exp} -eq 0 ]] ; then
+    cat <<EOF
+
+Import complete
+
+Run the following to activate your new experiment:
+   export SEQ_EXP_HOME=${SEQ_EXP_HOME}
+EOF
+    if [[ ${tests} -eq 1 ]] ; then
+       cat <<EOF
+   gem_tests_build
+EOF
+    fi
+    echo
+else
+    print ${SEQ_EXP_HOME}
+fi

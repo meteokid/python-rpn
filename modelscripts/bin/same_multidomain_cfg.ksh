@@ -17,11 +17,11 @@ set -ex
 abort_file=${TASK_WORK}/${abortf}-$$
 touch ${abort_file}
 
-RDEB=$(getnml -f ${f} -n step Fcst_start_S        2> /dev/null | sed 's/"//g' | sed "s/'//g")
-RFIN=$(getnml -f ${f} -n step Fcst_end_S          2> /dev/null | sed 's/"//g' | sed "s/'//g")
-RRST=$(getnml -f ${f} -n step Fcst_rstrt_S        2> /dev/null | sed 's/"//g' | sed "s/'//g")
-BKUP=$(getnml -f ${f} -n step Fcst_bkup_S         2> /dev/null | sed 's/"//g' | sed "s/'//g")
-FREQ=$(getnml -f ${f} -n gem_cfgs Out3_postfreq_s 2> /dev/null | sed 's/"//g' | sed "s/'//g")
+RDEB=$(rpy.nml_get -f ${f} step/Fcst_start_S        2> /dev/null | sed 's/"//g' | sed "s/'//g")
+RFIN=$(rpy.nml_get -f ${f} step/Fcst_end_S          2> /dev/null | sed 's/"//g' | sed "s/'//g")
+RRST=$(rpy.nml_get -f ${f} step/Fcst_rstrt_S        2> /dev/null | sed 's/"//g' | sed "s/'//g")
+BKUP=$(rpy.nml_get -f ${f} step/Fcst_bkup_S         2> /dev/null | sed 's/"//g' | sed "s/'//g")
+FREQ=$(rpy.nml_get -f ${f} gem_cfgs/Out3_postfreq_s 2> /dev/null | sed 's/"//g' | sed "s/'//g")
 
 if [ "${deb}x" != "${RDEB}x" ] ; then
     printf "\n ### same_multidomain_cfg.ksh: ERROR Fcst_start_S must be the same for all domains\n\n"

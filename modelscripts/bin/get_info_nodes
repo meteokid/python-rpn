@@ -1,3 +1,4 @@
+#TODO: KEEP OR NOT? not used in model
 llq -s $1 2> /dev/null | grep "cmc.ec.gc.ca" 1> $TMPDIR/llq_list$$ 2> /dev/null
 echo `cat $TMPDIR/llq_list$$ 2> /dev/null | grep "Submitting Host" 2> /dev/null`
 hostmach=`cat $TMPDIR/llq_list$$ 2> /dev/null | grep MPI | awk 'BEGIN{FS="::"}{print $1}' 2> /dev/null`

@@ -1,0 +1,189 @@
+#!/bin/ksh
+# Prepare input for GEM
+printf "\n=====>  Prep.tsk starts: `date` ###########\n\n"
+
+nthreads=$(nodeinfo -n ${SEQ_NODE} | grep node.cpu= | cut -d '=' -f 2)
+nthreads=${nthreads##*x}
+if [ $nthreads -lt 1 ] ; then nthreads=1 ; fi
+
+abort_prefix=upload_abort_
+
+nb_cfg=$(ls -1d ${TASK_INPUT}/cfg_* | wc -l)
+if [ $nb_cfg -lt 1 ] ; then nb_cfg=1 ; fi
+sub_par=$((nthreads/nb_cfg))
+if [ $sub_par -lt 1 ] ; then sub_par=1 ; fi
+
+count=0
+for file in $(ls -1d ${TASK_INPUT}/cfg_*) ; do
+  echo === $file
+  if [[ -d ${file} ]] ; then
+    count=$(( count + 1 ))
+    bname=$(basename ${file})
+    listing=Um_upload_${bname}.lis
+    ${TASK_BIN}/Um_upload.ksh -inrep ${file} -nthreads ${sub_par} -abortf ${abort_prefix}${bname} 1> ${listing} 2>&1 &
+    if [[ $count -eq $nthreads ]]; then
+      date ; wait ; date
+      count=0
+    fi
+  fi
+done
+
+${TASK_BIN}/Upload_binaries.ksh \
+   -bindir ${MOD_GEM_bindir} -destination ${TASK_WORK}/BINMOD
+if [ -d ${TASK_WORK}/BINMOD ] ; then
+  export PATH=${TASK_WORK}/BINMOD:$PATH
+fi
+
+date ; wait ; date
+
+# Check for aborted functions
+if [[ $(find . -name "${abort_prefix}*" | wc -l) -gt 0 ]] ; then
+  echo "ERROR: One or more ${TASK_BIN}/Um_upload.ksh function calls aborted ... see listings ${PWD}/Um_upload_cfg_*.lis for details"
+  cat Um_upload_cfg_*.lis
+  exit 1
+fi
+
+printf "\n DONE with Um_upload.ksh into ${TASK_OUTPUT}\n\n"
+
+cpumult_check(){
+  set -x
+  mult_required=$1
+  mult_found=$2
+  taskname=$3
+  if [[ ${mult_found} -ne ${mult_required} ]] ; then
+    printf "\n\nError: A ${taskname} CPU multiplier of ${mult_found} is specified in the resource file, but ${mult_required} ${grid} domain(s) are requested by the configuration (GEM_cfg=${domain_cfgs}).\n \
+   To correct this problem, please make sure that the cpu.multiplier field of the resource file\n \
+   ${SEQ_EXP_HOME}/resources${SEQ_CONTAINER}/${taskname}.xml is ${grid_mult}x${NDOMAINS}.\n\n\n"
+    touch .abort_cpumult
+  fi
+}
+
+# Check grid configuration
+first_domain=$(ls -1d ${TASK_OUTPUT}/cfg_* | sort | head -n 1)
+grid=$(${TASK_BIN}/rpy.nml_get -f ${first_domain}/gem_settings.nml grid/Grd_typ_S | sed "s/[\"\']//g")
+
+# Check cpu.multiplier usage
+mult_mod=$(nodeinfo -n ${SEQ_CONTAINER}/Runmod -f res | grep cpu\.multiplier= | cut -d '=' -f 2)
+if [[ ${grid} == 'GY' ]] ; then
+  export GEM_YINYANG=YES
+  grid_mult=2
+else
+  grid_mult=1
+fi
+
+rm -f .abort_cpumult
+cpumult_check $((DOMAIN_wide  * grid_mult)) ${mult_mod} 'Runmod'
+if [[ -f .abort_cpumult ]] ; then exit 1 ; fi
+
+# Check that all domains have compatible configurations
+typeset -Z4 domain_number
+domain_number=${DOMAIN_start}
+NMLFILE=${TASK_OUTPUT}/cfg_${domain_number}/gem_settings.nml
+RDEB_m=$(rpy.nml_get -f ${NMLFILE} step/Fcst_start_S        2> /dev/null | sed 's/"//g' | sed "s/'//g")
+RFIN_m=$(rpy.nml_get -f ${NMLFILE} step/Fcst_end_S          2> /dev/null | sed 's/"//g' | sed "s/'//g")
+RRST_m=$(rpy.nml_get -f ${NMLFILE} step/Fcst_rstrt_S        2> /dev/null | sed 's/"//g' | sed "s/'//g")
+BKUP_m=$(rpy.nml_get -f ${NMLFILE} step/Fcst_bkup_S         2> /dev/null | sed 's/"//g' | sed "s/'//g")
+FREQ_m=$(rpy.nml_get -f ${NMLFILE} gem_cfgs/Out3_postfreq_s 2> /dev/null | sed 's/"//g' | sed "s/'//g")
+count=0 ; abort_file=samecfg_abort_
+domain_number=$((DOMAIN_start+1))
+while [ $domain_number -le $DOMAIN_end ] ; do
+  dname=cfg_$domain_number
+  NMLFILE=${TASK_OUTPUT}/${dname}/gem_settings.nml
+  count=$(( count + 1 ))
+  listing=same_config_${dname}.lis
+  ${TASK_BIN}/same_multidomain_cfg.ksh \
+     -f ${NMLFILE} -deb =${RDEB_m} -fin =${RFIN_m} -rst =${RRST_m} \
+     -bkp =${BKUP_m} -freq =${FREQ_m} -abortf ${abort_file}${dname} \
+     1> ${listing} 2>&1 &
+  if [ $count -eq $nthreads ] ; then
+     date ; wait ; date
+     count=0
+   fi
+   domain_number=$(( domain_number+1 ))
+done
+date ; wait ; date
+# Check for aborted functions
+if [[ $(find . -name "${abort_file}*" | wc -l) -gt 0 ]] ; then
+  echo "One or more ${TASK_BIN}/same_multidomain function calls aborted ... see listings in ${PWD}/same_config_* for details"
+  exit 1
+fi
+
+printf "\n Perform domain-specific preparations\n\n"
+
+ptopo=$(nodeinfo    -n ${SEQ_CONTAINER}/Runmod -f res | grep node\.cpu= | cut -d '=' -f 2)
+npex=$(echo ${ptopo} | cut -d "x" -f 1)
+npey=$(echo ${ptopo} | cut -d "x" -f 2)
+if [[ $(nodeinfo -n ${SEQ_NODE} -f res |  grep node\.mpi= | cut -d '=' -f 2) -eq 0 ]] ; then
+   resource_path=$(noderesource -n ${SEQ_NODE} | grep node\.resourcepath= | cut -d '=' -f 2)
+   message="Prep task must be run in an mpi queue.  Set mpi=\"1\" in ${resource_path}"
+   nodelogger -n ${SEQ_NODE} -s abort -m "${message}"
+   printf "\n\n*** ABORT *** ${message}\n\n\n" 1>&2
+   exit 1
+fi
+
+unset HEAD_script
+if [ -L ${TASK_BIN}/headscript ] ; then
+   src_head=$(${TASK_BIN}/readlink ${TASK_BIN}/headscript)
+   mach_head=$(echo ${src_head} | cut -d ":" -f 1)
+   if [ "${mach_head}" == "${src_head}" ] ; then
+      HEAD_script=${TASK_BIN}/headscript
+   else
+      src_head=$(echo ${src_head} | cut -d ":" -f 2)
+      scp ${mach_head}:${src_head} ${TASK_WORK}/headscript
+      HEAD_script=${TASK_WORK}/headscript
+   fi
+fi
+
+abort_prefix=prep_abort_
+count=0
+
+nb_cfg=$(ls -1d ${TASK_OUTPUT}/cfg_* | wc -l)
+if [ $nb_cfg -lt 1 ] ; then nb_cfg=1 ; fi
+sub_par=$((nthreads/nb_cfg))
+if [ $sub_par -lt 1 ] ; then sub_par=1 ; fi
+
+unset cache
+if [ "${MOD_GEM_cache}" != "<no value>" ] ; then
+  cache=${MOD_GEM_cache}
+fi
+
+for file in $(ls -1d ${TASK_OUTPUT}/cfg_*) ; do
+  if [[ -d ${file} ]] ; then
+    count=$(( count + 1 ))
+    domain=$(basename ${file})
+    listing=prep_${domain}.lis
+    analysis=${TASK_OUTPUT}/${domain}/ANALYSIS
+    inrep=${TASK_OUTPUT}/${domain}/MODEL_inrep
+    ${TASK_BIN}/Um_prep_domain.ksh \
+       -anal ${analysis} -input ${inrep} -o ${TASK_WORK}/${domain}  \
+       -headscript ${HEAD_script} -check_namelist ${check_namelist} \
+       -mkref_namelist ${mkref_namelist} \
+       -nmlfile ${TASK_OUTPUT}/${domain}/gem_settings.nml -verbose  \
+       -npex ${npex} -npey ${npey} -nthreads ${sub_par}             \
+       -abort ${abort_prefix}${domain} -bin ${TASK_BIN}             \
+       -cache "${cache}" 1> ${listing} 2>&1 &
+    if [[ $count -eq $nthreads ]]; then
+      date ; wait ; date
+      count=0
+    fi
+  fi
+done
+date ; wait ; date
+
+# Check for aborted functions
+if [[ $(find . -name "${abort_prefix}*" | wc -l) -gt 0 ]] ; then
+  echo "One or more ${TASK_BIN}/prep_domain function calls aborted ... see listings ${PWD}/prep_cfg_*.lis for details"
+  cat prep_cfg_*.lis
+  exit 1
+fi
+cat $(ls -1 prep_cfg_*.lis | head -n 1)
+
+for dir in $(ls -1d ${TASK_OUTPUT}/cfg_*) ; do
+  if [[ -d ${dir} ]] ; then
+    domain=$(basename ${dir})
+    /bin/rm -f ${TASK_OUTPUT}/${domain}/ANALYSIS
+    mv ${TASK_WORK}/${domain}/* ${TASK_OUTPUT}/${domain}
+  fi
+done
+
+printf "\n=====>  Prep.tsk ends: `date` ###########\n\n"

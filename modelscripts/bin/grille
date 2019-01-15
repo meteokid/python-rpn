@@ -1,12 +1,17 @@
 #!/bin/ksh
 
-eval `cclargs $0 \
-  -genphysx "0"     "1"     "[Produce geophysical fields with genphysx]"\
-  -xrec     "0"     "1"     "[Visualize grid with xrec                ]"\
-  -spi      "0"     "1"     "[Visualize grid with spi                 ]"\
-  -max2     "0"     "1"     "[Visualize grid with max2                ]"\
-  ++ $*`
-#
+DESC="Visualize and produce a GEM grid"
+
+eval $(rpy.cclargs \
+   -D ":" \
+   --desc "${DESC}" \
+   ${0##*/} \
+   -genphysx "0"     "1"     "[Produce geophysical fields with genphysx]"\
+   -xrec     "0"     "1"     "[Visualize grid with xrec                ]"\
+   -spi      "0"     "1"     "[Visualize grid with spi                 ]"\
+   -max2     "0"     "1"     "[Visualize grid with max2                ]"\
+   ++ $*)
+
 printf "\n#############################################\n"
 printf " GRILLE utility for gem version v_${ATM_MODEL_VERSION}\n"
 printf "############################################# \n\n"
@@ -26,7 +31,7 @@ WORKDIR=${ROOT_WORK}/cfg_0001
 cp gem_settings.nml ${WORKDIR}/model_settings.nml
 
 ngrids=1
-GRDTYP=$(Um_fetchnml2.ksh Grd_typ_s grid gem_settings.nml)
+GRDTYP=$(rpy.nml_get -f gem_settings.nml grid/Grd_typ_s | sed 's/"//g' | sed "s/'//g")
 if [ "$GRDTYP" == "GY" ] ; then 
   export GEM_YINYANG=YES
   ngrids=2
@@ -57,10 +62,16 @@ find ${WORKDIR} -type f -name "eigenv_v1_*" -exec mv {} . \;
 
 #================== View the grid(s) ================
 function launch_spi {
-   local _args="$*"
-   local _spi_version=7.6.2
-
-   (. ssmuse-sh -p /ssm/net/cmoe/apps/SPI_${_spi_version} ; SPI -field $_args)
+   if ! which SPI;then
+      echo "==================================================="
+      echo "   Error!"
+      echo "   Please load a version of SPI."
+      echo "   Search the wiki for SPI to learn how to load it."
+      echo "   Aborting"
+      echo "==================================================="
+      exit 1
+   fi
+   SPI -field $*
 }
 
 viewer=""

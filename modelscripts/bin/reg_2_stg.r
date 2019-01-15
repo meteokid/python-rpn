@@ -1,3 +1,4 @@
+#TODO: KEEP OR NOT? not used in model
 reg_2_stg <- function(file_level_reg='missing',rcoef_reg=-1,ptop_reg=-1,pref_reg=-1,rcoef_stg=c(1,1),zoom=0,overplot=0,digits=6,p_match=100000.) {
 
    #===========================================================================

@@ -1,2 +1,14 @@
 export AFSISIO=${AFSISIO:-${ATM_MODEL_DFILES}}
+DESC="Run GEM Model task (alias to Um_runmod.ksh)"
+
+# Check that interactive env was properly loaded
+if [[ "x${SEQ_EXP_HOME}" == "x" || \
+       $(true_path ${SEQ_EXP_HOME}/../gem) != $(true_path $(pwd)) ]] ; then
+    cat 1>&2 <<EOF
+ERROR: Interactive environement has not been properly set!
+       use ". ./.ssmuse_gem" before re-running "runmod"
+EOF
+    exit 1
+fi
+
 . r.call.dot Um_runmod.ksh $*

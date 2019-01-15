@@ -1,0 +1,1 @@
+Update an existing suite to use the current GEM module

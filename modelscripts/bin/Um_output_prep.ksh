@@ -72,20 +72,43 @@ if [ $cnt -gt 0 ] ; then
 fi
 
 # Time series file
-find -L ${input} -type f -name "time_series.bin" > series_found
+find -L ${input} -type f -name 'time_series.bin*' > series_found
 cnt=`cat series_found | wc -l`
+series_ok=1
 if [ $cnt -gt 0 ] ; then
   in_serie=`cat series_found`
   printf "\n  =====>  feseri -iserial ${in_serie} -omsorti time_series.fst \n"
-  ln -sf ${in_serie} .
-  ${TASK_BIN}/feseri -iserial time_series.bin -omsorti time_series.fst 1> /dev/null
-  if [ $? -ne 0 ]; then
-    printf "\n feseri aborted \n\n"
-    /bin/rm -f time_series.fst
-    flag_err=$((flag_err+1))
-  else
-    mv time_series.fst ${output}
-    nbfiles=$((nbfiles+cnt))
+  #ln -sf ${in_serie} .
+  for item in ${in_serie} ; do
+     itemnum=${item##*_}_YIN
+     if [[ x$(echo ${item} | sed 's|/YAN/|/|') != x${item} ]] ; then
+        itemnum=${item##*_}_YAN
+     fi
+     itemout=time_series.fst_${itemnum}
+     itemin=time_series.bin_${itemnum}
+     ln -s ${item} ${itemin}
+     ${TASK_BIN}/feseri -iserial ${itemin} -omsorti ${itemout} 1> ${itemin}.lis
+     if [ $? -ne 0 ]; then
+        printf "\n feseri aborted \n\n"
+        /bin/rm -f ${itemout} ${itemin}
+        flag_err=$((flag_err+1))
+        series_ok=0
+        break
+     else
+        /bin/rm -f ${item} ${itemin} 2> /dev/null || true
+     fi
+  done
+  if [[ $series_ok == 1 ]] ; then
+     if [[ x"$(ls time_series.fst_*_YIN 2>/dev/null)" != x"" ]] ; then
+        editfst -i 0 -s time_series.fst_*_YIN -d time_series.fst
+        mv time_series.fst ${output}
+        nbfiles=$((nbfiles+1))
+     fi
+     if [[ x"$(ls time_series.fst_*_YAN 2>/dev/null)" != x"" ]] ; then
+        editfst -i 0 -s time_series.fst_*_YAN -d time_series.fst_YAN
+        mv time_series.fst_YAN ${output}
+        nbfiles=$((nbfiles+1))
+     fi
   fi
 fi
 

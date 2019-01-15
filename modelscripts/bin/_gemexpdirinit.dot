@@ -1,0 +1,103 @@
+#!/bin/ksh
+
+# @Object: Create a development env. exp.dir. init script
+# @Author: S.Chamberland
+# @Date:
+
+# Check that the user is sourcing this script
+_script_name="_gemexpdirinit.dot"
+if [[ "${0##*/}" == ${_script_name} ]] ; then
+    echo "This script should be sourced with \`. ${0}\`"
+    exit 1
+fi
+unset _script_name
+
+_MYSELF=". gemdev.dot" #${0##*/}
+_verbose=0
+_quiet=0
+
+#==== Parse args
+_DESC='Create a development env. exp.dir. init script.'
+_USAGE="USAGE: ${_MYSELF} EXP_NAME [-f] [-v [-v]] [--cd] [-M MACH] [-F FRONT] [-u UPDATES]"
+_usage_long() {
+    toto=$(echo -e ${_USAGE})
+    more <<EOF
+${_DESC}
+
+$toto
+
+Options:
+    -h,  --help     : print this help
+    -v,  --verbose  : increase verbosity
+    -q,  --quiet    : quiet mode
+    -f,  --force    : Force overwrite of existing directories
+    -u,  --update  : List of additional packages to load
+EOF
+}
+
+
+myverb=""
+myforce=0
+myforcestr=""
+myupdate=""
+previous=""
+while [[ $# -gt 0 ]] ; do
+   case ${1} in
+      (-h|--help) _usage_long; return 0;;
+      (-v|--verbose) ((_verbose=_verbose+1)); myverb="${myverb} -v";;
+      (-vv|--vverbose) ((_verbose=_verbose+2)); myverb="-v -v";;
+      (-q|--quiet) _verbose=0; myverb="-q"; _quiet=1;;
+      (-f|--force) myforce=1; myforcestr="-f";;
+      (-u|-update|--update) ;;
+      (--update=*) myupdate="${1#*=}";;
+      (--) shift ; previous=""; break;;
+      (-*) echo "ERROR: Option Not recognized: ${1}" 1>&2; _usage_long; return 1;;
+      (*)
+         case ${previous} in
+            (-u|-update|--update) myupdate="${myupdate} ${1}";;
+            (*) "ERROR: Option Not recognized: ${1}" 1>&2; _usage_long;
+               return 1;;
+         esac;;
+   esac
+   if [[ x${1#-} != x${1} ]] ; then
+      previous=${1}
+   fi
+   shift
+done
+unset _usage_long
+
+if [[ x${SEQ_EXP_HOME} == x ]] ; then
+   SEQ_EXP_HOME=$(rdemodel_path storage)
+   printf "\n SEQ_EXP_HOME not defined, using ${SEQ_EXP_HOME} \n\n"
+fi
+
+_setenvfile=$(rdevar RDE_SETENV_DOT)
+cat > ${_setenvfile} <<EOF
+if [[ -z "\${ATM_MODEL_BNDL}" ]] ; then
+   . s.ssmuse.dot ${ATM_MODEL_BNDL:-NO_ATM_BNDL}
+elif [[ \${ATM_MODEL_BNDL} != ${ATM_MODEL_BNDL:-NO_ATM_BNDL} ]] ; then
+   cat 1>&2 <<EOF1
+
+   ** WARNING **
+   Mismatch of current \${ATM_MODEL_BNDL} in your environment and the experiment ${ATM_MODEL_BNDL:-NO_ATM_BNDL} in ${refload}
+   You should probably load this experiment in a new shell.
+
+EOF1
+fi
+export GEM_DEV_UPDATES="${GEM_DEV_UPDATES}"
+if [[ -n "\${GEM_DEV_UPDATES}" ]] ; then . s.ssmuse.dot \${GEM_DEV_UPDATES} ; fi
+export GEM_DEV_SUITE=${GEM_DEV_SUITE}
+export SEQ_EXP_HOME=${SEQ_EXP_HOME}
+export PATH=\${GEM_DEV_SUITE}/gem/bin/\${ORDENV_PLAT}:\${GEM_DEV_SUITE}/gem/bin:\${PATH}
+export PYTHONPATH=\${GEM_DEV_SUITE}/gem/lib:\${GEM_DEV_SUITE}/gem/bin:\${PYTHONPATH}
+EOF
+
+if [[ x$myforce == x1 ]] ; then
+   rm -f .ssmuse_gem
+fi
+if [[ ! -f .ssmuse_gem ]] ; then
+   ln -s ${_setenvfile} .ssmuse_gem 
+fi
+
+. ./${_setenvfile}
+unset _setenvfile

@@ -1,50 +1,66 @@
 #!/usr/bin/env ksh
 
+DESC="Print info related to the GEM dev experiment and suite"
+
+if [[ x$1 == x-h || x$1 == x--help ]] ; then
+   cat <<EOF
+
+usage: ${0##*/} [EXP]
+
+${DESC}
+
+positional arguments:
+  EXP     experiment dir name
+
+EOF
+   exit 0
+fi
+
 # Check for a prescribed development environment
 dev=${1}
 kind="Active"
 if [[ -n "${dev}" ]] ; then
-    kind="Found"
-    unset dev_suite_home
-    if [[ -n "${GEM_DEV_SUITE}" ]] ; then
-	dev_suite_home=$(dirname ${GEM_DEV_SUITE})
-    fi
-    if [[ ${dev_suite_home}/${dev} == ${GEM_DEV_SUITE} ]] ; then kind="Active" ; fi
-    found=0
-    for this_dev in ${dev} ${dev_suite_home}/${dev} ; do
-	if [[ -h ${this_dev}/suite ]] ; then
-	    export GEM_DEV_SUITE=$(r.read_link ${this_dev}/suite)
-	    found=1
-	elif [[ -h ${this_dev}/gem ]] ; then
-	    export GEM_DEV_SUITE=${this_dev}
-	    found=1
-	fi
-	if [[ ${found} -gt 1 ]] ; then break ; fi
-    done
-    if [[ ${found} -lt 1 ]] ; then
-	echo "No GEM development experiment in ${dev}" 2>&1
-	exit 1
-    fi
+   kind="Found"
+   unset dev_suite_home
+   if [[ -n "${GEM_DEV_SUITE}" ]] ; then
+      dev_suite_home=$(dirname ${GEM_DEV_SUITE})
+   fi
+   if [[ ${dev_suite_home}/${dev} == ${GEM_DEV_SUITE} ]] ; then kind="Active" ; fi
+   found=0
+   for this_dev in ${dev} ${dev_suite_home}/${dev} ; do
+      if [[ -h ${this_dev}/suite ]] ; then
+         export GEM_DEV_SUITE=$(r.read_link ${this_dev}/suite)
+         found=1
+      elif [[ -h ${this_dev}/gem ]] ; then
+         export GEM_DEV_SUITE=${this_dev}
+         found=1
+      fi
+      if [[ ${found} -gt 1 ]] ; then break ; fi
+   done
+   if [[ ${found} -lt 1 ]] ; then
+      echo "No GEM development experiment in ${dev}" 2>&1
+      exit 1
+   fi
 fi
 
 # Check for a development environment
 if [[ -z "${GEM_DEV_SUITE}" ]] ; then
-    echo "No active development environment:  use gemdev.dot to create one" 2>&1
-    exit 1
+   echo "No active development environment:  use gemdev.dot to create one" 2>&1
+   exit 1
 fi
 
 # Check that the development environment still exists
 if [[ ! -h ${GEM_DEV_SUITE}/gem ]] ; then
-    echo "GEM development environment ${GEM_DEV_SUITE} no longer exists"
-    exit 1
+   echo "GEM development environment ${GEM_DEV_SUITE} no longer exists"
+   exit 1
 fi
 
 # Find list of experiments in development suite
 unset exps
 for sub in $(ls -1d ${GEM_DEV_SUITE}/*) ; do
-    if [[ -e ${sub}/EntryModule ]] ; then
-	exps="${exps} $(basename ${sub})"
-    fi
+   if [[ -e ${sub}/EntryModule ]] ; then
+      exps="${exps} $(basename ${sub})"
+   fi
 done
 
 # Generate development environment information

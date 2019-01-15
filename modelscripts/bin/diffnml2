@@ -1,0 +1,163 @@
+#!/bin/ksh
+# @Object: Compare 2 settings (namelists) files
+# @Author: S.Chamberland
+# @Date:   June 2017
+. .rdebase.inc.dot
+
+DESC='Compare 2 settings (namelists) files.'
+USAGE="USAGE: ${MYSELF} [-v] [-h] [--diff=DIFF_TOOL] [-r|--ref=REF_FILE] [--values] [--nml=NML_NAMES] [--] [NML_FILENAME [NML_FILENAME2]]"
+usage_long() {
+	 toto=$(echo -e $USAGE)
+	 more <<EOF
+$DESC
+
+$toto
+
+Options:
+    -h, --help       : print this help
+    -v, --verbose    : verbose mode
+    -V, --values     : keep values in the comparison
+    -q, --quiet      : quick compares returning status
+    -r, --ref        : build a new ref. nml file
+    --ref=REF_FILE   : use provided REF_NML_FILENAME
+    --nml=NML_NAMES  : keep only NML_NAMES in comparison
+    --diff=DIFF_TOOL : diff tool to use
+                       DEFAULT: \${ECDIFF:-diff} (${ECDIFF:-diff})
+                       arguments to pass to the diff tool
+                       can be specified with
+                          export ECDIFFARGS='...'
+                       DEFAULT: \$ECDIFFARGS ($ECDIFFARGS)
+    --full           : Fill nml missing keys from ref nml
+
+With -r and without REF_NML_FILENAME, gem_nml_mkref is used to create a ref. nml.
+Default NML_FILENAME is ./gem_settings.nml
+
+EOF
+}
+
+refmode=0
+reffile=${ATM_MODEL_DFILES}/nml/ref/gem_settings.${ATM_MODEL_VERSION}.ref
+nmlfiles=""
+nml=""
+myverb=""
+myvalues=0
+myquiet=0
+myfull=0
+previous=""
+ECDIFF=${ECDIFF:-diff}
+while [[ $# -gt 0 ]] ; do
+   case ${1} in
+      (-h|--help) usage_long; exit 0;;
+      (-v|--verbose) ((verbose=verbose+1)); myverb="-v";;
+      (-V|--values) myvalues=1;;
+      (-q|--quiet) myquiet=1;;
+      (-r|--ref) refmode=1; reffile="${TMPDIR}/refnml$$";;
+      (--ref=*)  refmode=0; reffile="${1#*=}";;
+      (--nml=*) nml="^$(echo ${1#*=} | tr 'A-Z' 'a-z' | sed 's/[ ]/\/\\|^/')/";;
+      (--diff=*) ECDIFF=${1#*=};;
+      (--full) myfull=1;;
+      (--) shift ; break;;
+      (-*) myerror "Option Not recognized: ${1}";;
+      (*)
+         if [[ x"${previous}" == x"-r" || x"${previous}" == x"--ref" ]] ; then
+            refmode=0; reffile=${1};
+         else
+            nmlfiles="${nmlfiles} ${1}";
+         fi;;
+    esac
+	 previous=$1
+    shift
+done
+nmlfiles="${nmlfiles} $@"
+
+if [[ x"${nmlfiles}" == x"" ]] ; then
+   nmlfiles="./gem_settings.nml"
+fi
+
+if [[ $refmode == 1 ]] ; then
+   gem_nml_mkref ${myverb} ${reffile}
+fi
+
+keepref=1
+if [[ $(echo ${nmlfiles} | wc -w) != 1 ]] ; then
+   keepref=0
+fi
+if [[ ${keepref} == 1 || ${myfull} == 1 ]] ; then
+   if [[ ! -f ${reffile:-/NO/SUCH/FILE} ]] ; then
+      myerror "Reference nml file should exists and does not: ${reffile:-/NO/SUCH/FILE}"
+   fi
+fi
+
+status=0
+nmlfilekv2=""
+cnt=0
+for item in ${reffile} ${nmlfiles} ; do
+   if [[ ! -f ${item} ]] ; then
+      myerror "Provided Namelist file should exists and does not: ${item}"
+   fi
+   let cnt=cnt+1
+   nmlfilekv="${TMPDIR}/${item##*/}_${cnt}_$$"
+   if [[ ${item} != ${reffile:-/NO/SUCH/FILE} || ${keepref} == 1 ]] ; then
+      nmlfilekv2="${nmlfilekv2} ${nmlfilekv}"
+   fi
+   if [[ ${myvalues} == 0 ]] ; then
+      rpy.nml_get -f ${item} --listkeyval | cut -d= -f1 > ${nmlfilekv}
+   else
+      rpy.nml_get -f ${item} --listkeyval > ${nmlfilekv}
+   fi
+   if [[ x"${nml}" != x"" ]] ; then
+      grep -e "${nml}" ${nmlfilekv} > ${nmlfilekv}+
+      mv ${nmlfilekv}+ ${nmlfilekv}
+   fi
+   if [[ ${item} == ${reffile:-/NO/SUCH/FILE} ]] ; then
+      refnmlkv=${nmlfilekv}
+      if [[ ${myfull} == 1 ]] ; then
+         cat ${nmlfilekv} | sort > ${nmlfilekv}+
+         mv ${nmlfilekv}+ ${nmlfilekv}
+      fi
+   elif [[ x${refnmlkv} != x && ${myfull} == 1 ]] ; then
+      if [[ ${myvalues} == 0 ]] ; then
+         keylist="$(cat ${nmlfilekv})"
+      else
+         keylist="$(cat ${nmlfilekv} | cut -d= -f1)"
+      fi
+      filein=${nmlfilekv}_1
+      fileout=${nmlfilekv}_2
+      cp ${refnmlkv} ${filein}
+      for mykey in ${keylist} ; do
+         if [[ ${myvalues} == 0 ]] ; then
+            grep -v -e "^${mykey}$" ${filein} > ${fileout}
+         else
+            grep -v -e "^${mykey}=" ${filein} > ${fileout}
+         fi
+         tmpfile=${fileout}
+         fileout=${filein}
+         filein=${tmpfile}
+      done
+      mv ${filein} ${nmlfilekv}+
+      /bin/rm -f ${fileout} 2> /dev/null || true
+      cat ${nmlfilekv} >> ${nmlfilekv}+
+      cat ${nmlfilekv}+ | sort > ${nmlfilekv}
+      /bin/rm -f ${nmlfilekv}+
+   fi
+done
+
+if [[ ${myquiet} == 0 ]] ; then
+   myecho 0 +${ECDIFF} ${ECDIFFARGS} ${nmlfilekv2}
+   ${ECDIFF} ${ECDIFFARGS} ${nmlfilekv2}
+else
+   if [[ x"${myverb}" == x"" ]] ; then
+      status=$(diff -y ${nmlfilekv2} | grep '|' | wc -l)
+   else
+      diff -y ${nmlfilekv2} | grep '|'
+      status=$(diff -y ${nmlfilekv2} | grep '|' | wc -l)
+   fi
+fi
+
+rm -f ${nmlfilekv2} 2>/dev/null || true
+
+if [[ $refmode == 1 ]] ; then
+   /bin/rm -f ${reffile:-/dev/null} 2>/dev/null || true
+fi
+
+exit ${status}

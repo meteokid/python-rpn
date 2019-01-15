@@ -1,188 +1,383 @@
 #!/bin/ksh
-
-# Retrieve command line arguments
-arguments=$*
-usage="Usage: gemdev.dot EXP_NAME [options]"
+# @Object: Create a development env. exp.dir. and suite
+# @Author: R.McTaggartCowan, S.Chamberland
+# @Date:
 
 # Check that the user is sourcing this script
-script_name="gemdev.dot"
-if [[ "${0##*/}" == ${script_name} ]] ; then
+_script_name="gemdev.dot"
+if [[ "${0##*/}" == ${_script_name} ]] ; then
     echo "This script should be sourced with \`. ${0}\`"
     exit 1
 fi
+unset _script_name
 
-# Process command line arguments
-eval $(cclargs gemdev.dot "[Create a GEM development experiment]" \
-    -dev	""			""		"[GEM develompent directory base path]" \
-    -exp	""			""		"[Create additional experiments in suite]" \
-    -f		"0"			"1"		"[Force overwrite of existing directories]" \
-    -mach       ""                      ""		"[List of machines for setup]" \
-    -update "" "" "[List of additional packages to load]" \
-    -cd	        "0"			"1"		"[Change to model development directory upon completion]" \
-    -v          "0"			"1"		"[Verbose output]" \
-    -vv         "0"			"1"		"[Very verbose output]" \
-    ++ $arguments | sed 's/exit/return/')
-suite=$*
-if [[ $# -ne 1 ]] ; then echo ${usage} 1>&2 ; return 1 ; fi
+_MYSELF=". gemdev.dot" #${0##*/}
+_verbose=0
+_quiet=0
+
+myecho() {
+   if [[ ${_verbose} -ge $1 && ${_quiet} == 0 ]] ; then
+      shift
+      printf "$@\n" 2>&1
+   fi
+}
+
+myechoerror() {
+   if [[ ${_quiet} == 0 ]] ; then
+      printf "\nERROR: $1\n\n" 1>&2
+   fi
+}
+
+#==== Parse args
+_DESC='Create a development env. exp.dir. and suite.'
+_USAGE="USAGE: ${_MYSELF} EXP_NAME [-f] [-v [-v]] [--cd] [-M MACH] [-F FRONT] [-t] [-u UPDATES]"
+usage_long() {
+    toto=$(echo -e ${_USAGE})
+    more <<EOF
+${_DESC}
+
+$toto
+
+Note: This script must be sourced using the "." command
+
+Options:
+    -h,  --help     : print this help
+    -v,  --verbose  : increase verbosity
+    -q,  --quiet    : quiet mode
+    -f,  --force    : Force overwrite of existing directories
+    -cd, --cd       : Change to model development directory upon completion
+
+    -M,  --mach     : List of machines for setup
+    -F,  --front    : Name of frontend (PPP) host
+
+    -d,  --dev      : GEM develompent directory base path
+                      default: \${home_model:-\${HOME}/home}/gem/${ATM_MODEL_VERSION}/
+    -e,  --exp      : Create additional experiments in suite
+
+    -u,  --update  : List of additional packages to load
+
+    -c,  --copy    : copy code and suites from existing gemdev exp dir
+    -ln, --ln      : Link back copied configs in \${GEM_DEV_SUITE}/gem/GEM_cfgs_NAME
+
+    -t,  -tests    : import test suite as well as gem RI
+EOF
+}
+
+
+myverb=""
+myforce=0
+myforcestr=""
+mycd=0
+mymach="${TRUE_HOST}"
+myfront="${TRUE_HOST}"
+mydev=""
+myexp=""
+myupdate=""
+mysuite=""
+mycopy=""
+myln=""
+mytest=0
+previous=""
+while [[ $# -gt 0 ]] ; do
+   case ${1} in
+      (-h|--help) usage_long; return 0;;
+      (-v|--verbose) ((_verbose=_verbose+1)); myverb="${myverb} -v";;
+      (-vv|--vverbose) ((_verbose=_verbose+2)); myverb="-v -v";;
+      (-q|--quiet) _verbose=0; myverb="-q"; _quiet=1;;
+      (-f|--force) myforce=1; myforcestr="-f";;
+      (-cd|--cd) mycd=1;;
+      (-ln|--ln) myln="-ln";;
+      (-t|--tests) mytest=1;;
+
+      (-M|-mach|--mach) ;;
+      (--mach=*) mymach="${1#*=}";;
+
+      (-F|-front|--front) ;;
+      (--front=*) myfront="${1#*=}";;
+
+      (-d|-dev|--dev) ;;
+      (--dev=*) mydev="${1#*=}";;
+
+      (-e|-exp|--exp) ;;
+      (--exp=*) myexp="${1#*=}";;
+
+      (-u|-update|--update) ;;
+      (--update=*) myupdate="${1#*=}";;
+
+      (-c|-copy|--copy) ;;
+      (--copy=*) copy="${1#*=}";;
+
+      (--) shift ; previous=""; break;;
+      (-*) myechoerror "Option Not recognized: ${1}"; usage_long; return 1;;
+      (*)
+         case ${previous} in
+            (-M|-mach|--mach) mymach="${mymach} ${1}";;
+            (-F|-front|--front) myfront="${myfront} ${1}";;
+            (-d|-dev|--dev) mydev="${mydev} ${1}";;
+            (-e|-exp|--exp) myexp="${myexp} ${1}";;
+            (-u|-update|--update) myupdate="${myupdate} ${1}";;
+            (-c|-copy|--copy) mycopy="${1}";;
+            (*)
+               if [[ x${previous} == x ]] ; then
+                  mysuite="${mysuite} ${1}"
+               else
+                  myechoerror "Option Not recognized: ${1}"; usage_long; return 1
+               fi;;
+         esac;;
+   esac
+   if [[ x${1#-} != x${1} ]] ; then
+      previous=${1}
+   fi
+   shift
+done
+mysuite="${mysuite} $@"
+unset previous
+
+if [[ $(echo ${mysuite} | wc -w) != 1 ]] ; then
+   myechoerror "Should provide one and only one EXP_NAME: ${mysuite}"
+   usage_long
+   return 1
+fi
+
+mysuite=${mysuite# }
+mysuite=${mysuite% }
 initial_dir=$(pwd)
-if [[ ${vv} -gt 0 ]] ; then v=${vv} ; fi
-
-# Do nothing if storage_model is not properly defined
-if [[ -z "${storage_model}" ]] ; then
-   echo "ERROR: the storage_model environment variable is not defined" >&2
-   return 1
-fi
-if [[ ! -d "${storage_model}" ]] ; then
-   echo "ERROR: the storage_model environment variable does not point to an existing directory" >&2
-   return 1
+myverb2=""
+if [[ ${_verbose} -gt 1 ]] ; then
+   myverb2="-v"
 fi
 
-# Create development experiment home
-if [[ -n "${dev}" ]] ; then
-    case ${dev} in
-	/*) dev_home=${dev}/${suite} ;;
-	*) dev_home=${initial_dir}/${dev}/${suite} ;;
-    esac
-else
-    dev_home=${home_model:-${HOME}/home}/gem/${ATM_MODEL_VERSION}/${suite}
-fi
-if [[ ${v} -gt 0 ]] ; then echo "Creating GEM development directory at ${dev_home}" ; fi
-if [[ -e ${dev_home} ]] ; then
-  if [[ ${f} -gt 0 ]] ; then
-      gemrm -f ${dev_home}
-      rm -fr ${dev_home}
-  else
-      echo "Development directory ${dev_home} already exists, use -f to overwrite" 1>&2
+if [[ x"${mycopy}" != x"" ]] ; then
+   if [[ ! -d ${mycopy} ]] ; then
+      myechoerror "Could not copy from existing dev dir. Not Found: ${mycopy}"
       return 1
-  fi
+   fi
+   if [[ -f ${mycopy%/}/.rde.setenv.dot ]] ; then
+      myupdate="${myupdate} $(unset ATM_MODEL ATM_MODEL_BNDL ATM_MODEL_VERSION; . ${mycopy%/}/.rde.setenv.dot > /dev/null; echo ${GEM_DEV_UPDATES})"
+   fi
 fi
+
+#==== Create development experiment home
+if [[ -n "${mydev}" ]] ; then
+   case ${mydev} in
+      /*) dev_home=${mydev}/${mysuite} ;;
+      *) dev_home=${initial_dir}/${mydev}/${mysuite} ;;
+   esac
+else
+   dev_home=${home_model:-${HOME}/home}/gem/${ATM_MODEL_VERSION}/${mysuite}
+   dev_home=${dev_home% }
+fi
+if [[ -e ${dev_home} ]] ; then
+   if [[ ${myforce} -gt 0 ]] ; then
+      myecho 1 "+ Removing existing GEM dev. dir.: ${dev_home}"
+      gemrm ${dev_home} -f
+      rm -fr ${dev_home}
+   else
+      myechoerror "Development directory ${dev_home} already exists, use -f to overwrite"
+      return 1
+   fi
+fi
+myecho 1 "+ Creating GEM dev. dir.: ${dev_home}"
 mkdir -p ${dev_home}
 
-# Update environment
-if [[ -n "${update}" ]] ; then
-   r.check_shortcuts ${update}
-   if [[ $? -ne 0 ]] ; then
-      echo "One of more of the updates cannot be applied: ${update}" 1>&2
-      return 1
-   fi
-   if [[ ${vv} -gt 0 ]] ; then
-      . s.ssmuse.dot ${update}
-   else
-      . s.ssmuse.dot ${update} >/dev/null 2>&1
-   fi
-fi
-export GEM_DEV_UPDATES=${update}
 
-# Create the suite home directory
-case ${suite} in
-    /*) suite_base=${suite} ;;
-    *) suite_base=${suite_model:-${HOME}/.suites} ;;
-esac
-suite_home=${suite_base}/gem/${ATM_MODEL_VERSION}/${suite}
-if [[ ${v} -gt 0 ]] ; then echo "Creating GEM development suite at ${suite_home}" ; fi
-if [[ -e ${suite_home} ]] ; then
-  if [[ ${f} -gt 0 ]] ; then
-      rm -fr ${suite_home}
-  else
-      echo "Suite ${suite_home} already exists, use -f to overwrite" 1>&2
-      return 1
-  fi
+#==== Update environment
+if [[ -n "${GEM_DEV_UPDATES}" && "${GEM_DEV_UPDATES}" != "${myupdate}" ]] ; then
+   myechoerror "Conflicting updates (${GEM_DEV_UPDATES} ) and (${myupdate} )\n\nStart another shell for your new experiment"
+   return 1
 fi
+if [[ -n "${myupdate}" ]] ; then
+   myecho 1 "+ Update env. with: ${myupdate}"
+   r.check_shortcuts ${myupdate}
+   if [[ $? -ne 0 ]] ; then
+      myechoerror "One of more of the updates cannot be applied: ${myupdate}"
+      return 1
+   fi
+   if [[ ${_verbose} -gt 1 ]] ; then
+      . r.load.dot ${myupdate}
+   else
+      . r.load.dot ${myupdate} >/dev/null 2>&1
+   fi
+fi
+export GEM_DEV_UPDATES="${myupdate}"
+
+
+#====  Create the suite home directory
+case ${mysuite} in
+   /*) suite_base=${mysuite} ;;
+   *) suite_base=${suite_model:-${HOME}/.suites} ;;
+esac
+suite_home=${suite_base}/gem/${ATM_MODEL_VERSION}/${mysuite}
+if [[ -e ${suite_home} ]] ; then
+   if [[ ${myforce} -gt 0 ]] ; then
+      myecho 1 "+ Removing existing GEM dev. suite dir.: ${suite_home}"
+      rm -fr ${suite_home}
+   else
+      myechoerror "Suite ${suite_home} already exists, use -f to overwrite"
+      return 1
+   fi
+fi
+myecho 1 "+ Creating GEM dev. suite dir.: ${suite_home}"
 mkdir -p ${suite_home}
 
-# Create the base maestro experiment
+base_exp="base"
+export SEQ_EXP_HOME=$(normpath.py -p ${suite_home}/${base_exp})
+export GEM_DEV_SUITE=$(dirname ${SEQ_EXP_HOME})
+
+#==== Finalise experiment directory setup
+cd ${dev_home}
+myecho 1 "+ Setting up GEM development experiment"
+myecho 1 "++ _gemexpdirinit.dot"
+. _gemexpdirinit.dot ${myverb} ${myforcestr}
+myecho 1 "++ ouv_exp_gem"
+ouv_exp_gem ${myverb} ${myforcestr}
+myecho 1 "++ linkit"
+linkit ${myverb2} ${myforcestr}
+
+
+#==== Create suite convenience links
+myecho 1 "+ Create suite convenience links"
+ln -s ${GEM_DEV_SUITE} ${dev_home}/suite
+ln -s ${dev_home} ${GEM_DEV_SUITE}/gem
+ln -s ${dev_home}/.ssmuse_gem ${GEM_DEV_SUITE}/.ssmuse_gem
+
+if [[ ! -d ${dev_home}/suite || ! -d ${GEM_DEV_SUITE}/gem || ! -d ${GEM_DEV_SUITE} ]] ; then
+   myecho 0 "WARNING: Problem creating convenience links"
+   ls -dl ${dev_home}/suite ${GEM_DEV_SUITE}/gem ${GEM_DEV_SUITE}
+fi
+
+
+#==== Import the tests maestro suite in a experiment
+if [[ ${mytest} == 1 ]] ; then
+   myecho 1 "+ Import the tests maestro suite in a experiment"
+   cd ${dev_home}
+   base_exp="tests"
+   export SEQ_EXP_HOME=$(normpath.py -p ${suite_home}/${base_exp})
+   export GEM_DEV_SUITE=$(dirname ${SEQ_EXP_HOME})
+   myecho 1 "+ devadd ${base_exp} ${myverb} ${myforcestr} --tests ${myln}"
+   devadd ${base_exp} ${myverb} ${myforcestr} --tests ${myln}
+   if [[ $? -ne 0 ]] ; then
+      myechoerror "Problem while adding test experiment '${base_exp}'"
+      return 1
+   fi
+fi
+
+
+#==== Create the base maestro experiment
+update_exp() {
+   this_exp=${1}
+   mach1=${2}
+   front1=${3}
+   myecho 1 "++ update_exp ${this_exp} ${mach1} ${front1}"
+   config=${this_exp}/experiment.cfg
+   if [[ -n "${myupdate}" ]] ; then
+      cat >> ${config} <<EOF
+# update: shortcuts to packages to update over base GEM ${ATM_MODEL_VERSION}
+GEM_update="${myupdate}"
+EOF
+   fi
+   perl -pi -e "s|^(\s*BACKEND\s*=\s*).*|\1${mach1}|" ${this_exp}/resources/resources.def
+   if [[ "x${front1}" != "x" ]] ; then
+      perl -pi -e "s|^(\s*FRONTEND\s*=\s*).*|\1${front1}|" ${this_exp}/resources/resources.def
+      perl -pi -e "s|^(\s*SEQ_DEFAULT_MACHINE\s*=\s*).*|\1${front1}|" ${this_exp}/resources/resources.def
+   fi
+}
+
+myecho 1 "+ Create the base maestro experiment"
 cd ${suite_home}
 base_exp="base"
 export SEQ_EXP_HOME=$(normpath.py -p ${suite_home}/${base_exp})
 export GEM_DEV_SUITE=$(dirname ${SEQ_EXP_HOME})
-rh_prefix=$(echo ${GEM_DEV_SUITE} | rev | cut -d '/' -f 1-3 | rev)/${base_exp}
-if [[ ${vv} -gt 0 ]] ; then
-    gemimport ${base_exp} -hub_prefix=${rh_prefix} -v -f=${f}
-else
-    gemimport ${base_exp} -hub_prefix=${rh_prefix} -f=${f} >/dev/null 2>&1
-fi
+myecho 1 "+ devadd ${base_exp} ${myverb} ${myforcestr} --ln GEM_cfgs"
+devadd ${base_exp} ${myverb} ${myforcestr} --ln GEM_cfgs --copy ${MAESTRO_CURRENT_REF}/ref
 if [[ $? -ne 0 ]] ; then
-  echo "Error encountered during Maestro import\n" 1>&2
-  return 1
+   myechoerror "Problem while adding experiment '${base_exp}'"
+   return 1
 fi
-
-# Finalise experiment directory setup
-cd ${dev_home}
-forced=
-if [[ ${f} -gt 0 ]] ; then
-    forced=-f
-fi
-if [[ ${v} -gt 0 ]] ; then echo "Setting up GEM development experiment" ; fi
-if [[ ${vv} -gt 0 ]] ; then
-    ouv_exp_gem -v
-    linkit -v ${forced}
-else
-    ouv_exp_gem >/dev/null 2>&1
-    linkit ${forced} >/dev/null
-fi
-
-# Create links on requested remote hosts
 EXEC_HOST=${TRUE_HOST}
-for host in ${mach} ; do
-    if [[ ${v} -gt 0 ]] ; then echo "Configuring for ${host}" ; fi
-    cmd=". ${HOME}/.profile; . s.ssmuse.dot ${ATM_MODEL_BNDL} ${update}; export GEM_DEV_UPDATES=\"${update}\"; cd $(pwd); linkit"
-    if [[ ${EXEC_HOST} == ${TRUE_HOST} ]] ; then
-	EXEC_HOST=${host}
-    fi
-    if [[ ${vv} -gt 0 ]] ; then
-	echo "Running linkit on ${host}"
-	ssh -t ${host} ${cmd}
-    else
-	ssh -t ${host} ${cmd} >/dev/null 2>&1
-    fi
+_machlist="$(echo ${mymach} | tr ' ' '\n' | sort -u)"
+for host in ${_machlist}; do
+   if [[ ${EXEC_HOST} == ${TRUE_HOST} ]] ; then
+      EXEC_HOST=${host}
+   fi
+done
+myfront="$(echo ${myfront} | tr ' ' '\n' | sort -u)"
+_machlist="$(echo ${mymach} ${myfront} | tr ' ' '\n' | sort -u)"
+update_exp ${SEQ_EXP_HOME} ${EXEC_HOST} ${myfront}
+
+#==== Create links on requested remote hosts
+for host in ${_machlist}; do
+   myecho 1 "+ Configuring for ${host}"
+   cmd=". ${HOME}/.profile; . r.load.dot ${ATM_MODEL_BNDL} ${myupdate}; export GEM_DEV_UPDATES=\"${myupdate}\"; cd ${dev_home}; linkit ${myverb2}" #${myforcestr}
+   myecho 1 "++ Running linkit on ${host}"
+   if [[ ${_verbose} -gt 1 ]] ; then
+      ssh -t ${host} ${cmd}
+   else
+      ssh -t ${host} ${cmd} >/dev/null 2>&1
+   fi
+done
+unset _machlist
+
+
+#====
+myecho 1 "+ Add other experiments from RI: ${myexp}"
+EXEC_HOST=$(echo ${mymach} | cut -d' ' -f1)
+for this_exp in ${myexp} ; do
+   cd ${dev_home}
+   myecho 1 "+ devadd ${this_exp} ${myverb} ${myforcestr} ${myln}"
+   devadd ${this_exp} ${myverb} ${myln} ${myforcestr} ${myln}
+   update_exp ${SEQ_EXP_HOME}/../${this_exp} ${EXEC_HOST} ${myfront}
 done
 
-# Create suite convenience links
-ln -s ${GEM_DEV_SUITE} ${dev_home}/suite
-ln -s ${dev_home} ${GEM_DEV_SUITE}/gem
-ln -s ${dev_home}/.ssmuse_gem ${GEM_DEV_SUITE}
 
-# Import elements from RI for configuration
-update_dev_exp(){
-    this_exp=${1}
-    dev=${2}
-    config=${this_exp}/experiment.cfg
-    . ${config}
-    gemcfg_path=${dev}/GEM_cfgs/cfg_0000
-    mkdir -p ${gemcfg_path}
-    cp -r ${GEM_settings} ${GEM_outcfg} ${gemcfg_path}
-    setnml -f ${gemcfg_path}/gem_settings.nml gem_cfgs Out3_etik_s=\"$(basename ${this_exp})\"
-    exp_cfg=${this_exp}/configs
-    mkdir -p ${exp_cfg}
-    ln -s ${gemcfg_path}/* ${exp_cfg}
-    for entry in settings outcfg ; do
-	   perl -pi -e "s|^(GEM_${entry}=).*?([^/]+)$|\1${TRUE_HOST}:\\\${SEQ_EXP_HOME}\/configs/\2|" ${config}
-    done
-    perl -pi -e "s|^(GEM_ovbin=).*|\1${dev}|" ${config}
-    if [[ -n "${update}" ]] ; then
-       printf "\n# update: shortcuts to packages to update over base GEM ${ATM_MODEL_VERSION}\n" >>${config}
-       printf "GEM_update=\"${update}\"\n" >> ${config}
-    fi
-    mv ${config} ${gemcfg_path}/configexp.cfg
-    ln -s ${gemcfg_path}/configexp.cfg ${config}
-    perl -pi -e "s|^(\s*BACKEND\s*=\s*).*|\1${EXEC_HOST}|" ${this_exp}/resources/resources.def
-}
-if [[ ${v} -gt 0 ]] ; then echo "Finalizing experiment configuration" ; fi
-update_dev_exp ${GEM_DEV_SUITE}/${base_exp} ${GEM_DEV_SUITE}/gem
-for this_exp in ${exp} ; do
-    devadd ${this_exp} -v=${vv} -f=${f}
-done
-
-# Update the suite description file
-update_suite_desc
-
-# Leave the user in the requested location
-if [[ ${cd} -gt 0 ]] ; then
-    cd ${dev_home}
-else
-    cd ${initial_dir}
-    printf "\nCreated GEM development directory ${dev_home}\n\n"
+#====  copy existing devdir source and experiments
+if [[ x"${mycopy}" != x"" ]] ; then
+   cd ${dev_home}
+   myecho 0 "+ Copy existing code from: ${mycopy}"
+   mkdir -p ${TMPDIR}/$$ && cp .rde.* ${TMPDIR}/$$
+   rdecp -f ${mycopy} ${dev_home}
+   cp ${TMPDIR}/$$/.rde.* .
+   [[ ${_verbose} -gt 1 ]] && myverb='-v' || myverb=''
+   for entry in ${mycopy%/}/suite/* ; do
+      entry=${entry%/}
+      if [[ -d ${entry} && -h ${entry}/EntryModule ]] ; then
+         myecho 0 "+ Copy existing experiment from: ${entry}"
+         (cd ${dev_home} && devadd ${entry##*/} -f ${myverb} ${myln} -copy ${entry})
+      fi
+   done
+   unset entry
 fi
 
-# Garbage collection
+
+#====  Leave the user in the requested location
+if [[ ${mycd} -gt 0 ]] ; then
+   myecho 1 "+ Moved to newly created GEM dev. dir.: ${dev_home}"
+   cd ${dev_home}
+else
+   cd ${initial_dir}
+   myecho 0 "\n+ Created GEM development directory ${dev_home}\n"
+fi
+
+
+#====  Garbage collection
 while [[ -n "${1}" ]] ; do shift ; done
+
+
+unset _DESC
+unset _USAGE
+unset usage_long
+#unset update_dev_exp
+unset _MYSELF
+unset _verbose
+unset _quiet
+unset myverb
+unset myforce
+unset myforcestr
+unset mycd
+unset mymach
+unset myfront
+unset mydev
+unset myexp
+unset myupdate
+unset mysuite
+unset mycopy

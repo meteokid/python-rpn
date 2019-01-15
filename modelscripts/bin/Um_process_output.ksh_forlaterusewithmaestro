@@ -1,5 +1,7 @@
 #!/bin/ksh
 
+#TODO: KEEP OR NOT? not used in model
+
 launch_output_job ()
 {
 

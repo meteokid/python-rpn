@@ -140,7 +140,7 @@ cat >> $TASK_CFGFILE <<EOF
 # <executables>
 # ATM_MOD.Abs      ${PWD}/build-$ORDENV_PLAT/bin/$COMP_ARCH/maingemdm_${BASE_ARCH}.Abs
 # Um_cmclog.ksh    Um_cmclog.ksh
-# UM_MODEL         Um_model.ksh 
+# Um_model.ksh     Um_model.ksh 
 # r.mpirun         r.run_in_parallel
 # launch_sortie.ksh Um_process_output.ksh
 # </executables>

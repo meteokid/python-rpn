@@ -31,7 +31,7 @@ cnt=$((cnt/DOMAIN_wide))
 typeset -Z2 domain_cnt
 domain_cnt=$((cnt+1))
 
-if [ $(tty -s;echo $?) -ne 0 ] ; then 
+if [[ $(tty -s;echo $?) -ne 0 || "x$WORKERJOB_WORKER_JOBID" != "x" ]] ; then 
   name=S${domain_cnt}_$(echo ${1} | cut -f 2 -d "_" )
   if [[ -n "$SEQ_CONTAINER_LOOP_ARGS" ]]; then
        $SEQ_BIN/maestro -n $(dirname $SEQ_NODE)/StageOUT -s submit ${SEQ_CONTAINER_LOOP_ARGS},StageOUT=${name}
@@ -76,9 +76,16 @@ echo LALISTE: $laliste
 
 for REP in $laliste ; do
   printf "\n ===> Process_output: treating $REP $(date)\n"
+  current=$(echo $REP | sed 's/\^last//g')
+  stdeo=${current}_lnkdm_${ID_po}.lis
+  link_dm_files -src_dir ${OUTREP}/${current} -dst_dir ${OUTREP}/VALID_dm_diles -laststep ${current} 1> ${stdeo} 2>&1 &
   time launch_output_job ${REP} ${OUTREP} ${ID_po}
   echo $REP >> $file_done
 done
+echo wait STARTS $(date)
+wait
+echo wait DONE $(date)
+
 #printf "\n REMOVING LOCK on file ${file_done} $(date)\n"
 #rm -f ${file_done}.lock
 mv ${file2process} $(echo ${file2process} | cut -d"." -f 1).done

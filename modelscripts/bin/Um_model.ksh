@@ -76,20 +76,7 @@ nb_restart=0
 nb_end=0
 
 printf " ##### UM_TIMING: POST Um_model.ksh STARTING AT: `date`\n"
-if [[ "x${GEM_NDOMAINS}" != "x" ]] ; then
-   cfglist=""
-   start=$(echo ${GEM_NDOMAINS} | cut -d : -f1)
-   end=$(echo ${GEM_NDOMAINS} | cut -d : -f2)
-   idom=${start}
-   while [ ${idom} -le ${end} ] ; do
-      cfglist="${cfglist} cfg_$(printf "%4.4d" ${idom})"
-      idom=$((idom+1))
-   done
-else
-   cfglist=cfg_*
-fi
-
-for i in ${cfglist} ; do
+for i in cfg_* ; do
 
   fn=${TASK_OUTPUT}/${i}/${status_file}
   if [ -s ${fn} ] ; then

@@ -1,0 +1,126 @@
+#!/bin/ksh
+
+DESC='GEM Code Development and Running Environment help'
+extratools="checknml diffnml runprep runmod devadd devrm devinfo findfft findfftyy findtopo grille linkit time2sec"
+
+eval $(rpy.cclargparse \
+   -D " " \
+   ${0##*/} \
+   "${DESC}" \
+   " " \
+   "positional"  'nargs=*'    " "              "[TOOL]" \
+   "-l,--long"   'action=store_true'  'false'  "[long format]" \
+   "-w,--wiki"   'action=store_true'  'false'  "[print wiki syntax]" \
+   ++++ $*)
+
+
+echotitle() {
+   if [[ ${wiki} == 'False' ]] ; then
+      echo
+      echo == $1 ====================================
+   else
+      echo === $1 ===
+   fi
+}
+
+echohead() {
+   if [[ ${wiki} == 'False' ]] ; then
+      echo ========================================
+   fi
+}
+
+echofoot() {
+   if [[ ${wiki} == 'False' ]] ; then
+      echo ========================================
+   fi
+}
+
+echotr() {
+   if [[ ${wiki} == 'False' ]] ; then
+      cat <<EOF
+   $1
+      $2
+EOF
+   else
+      cat <<EOF
+|-
+| [[#$1|$1] || $2
+EOF
+   fi
+}
+
+if [[ $# -ne 0 ]] ; then
+   for item in $* ; do
+      echohead
+      toolnames="gem${item} gem_${item} gem-${item} ${item}"
+      tool="$(echo $(which ${toolnames}) | cut -d" " -f1)"
+      if [[ -n "${tool}" ]] ; then
+         echo "+ ${tool##*/} -h"
+         ${tool} -h
+      else
+         echo "WARNING: No such tool: gem $item"
+         echo ".        Use 'gem help' to get a list of gem tools"
+      fi
+   done
+   echofoot
+   exit 0
+fi
+
+
+echotitle "GEM Code Development and Running Environment"
+cat <<EOF
+
+Basic Env. Setup:
+   TODO:
+
+Basic Experiment Setup:
+   gemdev NAME --cd -v --front FRONTEND_MACH --mach BACKEND_MACH [BACKEND_MACH2...]
+
+Makefile help (after basic setup):
+   make help
+
+Env. Var:
+   storage_model
+
+EOF
+
+modelscripts=$(true_path $(which r.modelscripts_all-config) 2>/dev/null)
+modelscripts=${modelscripts%/*}
+modelscripts=${modelscripts%/*}
+expdir=$(pwd)
+toolslist0="$(cd ${modelscripts}/bin && ls gem[a-zA-Z0-9_-]* 2>/dev/null || true)"
+ovtoolslist="$(cd ${expdir}/bin && ls gem[a-zA-Z0-9_-]* 2>/dev/null || true)"
+toolslist="$(echo ${toolslist0} ${ovtoolslist} ${extratools} | tr ' ' '\n' | sort -u | tr '\n' ' ')"
+
+if [[ ${long} == 'False' || ${wiki} != 'False' ]] ; then
+
+   echotitle "List of tools"
+   echo ": For details use: gem help -l"
+   echo
+   [[ ${wiki} != 'False' ]] && echo '{| class="wikitable"' || true
+   for item in ${toolslist} ; do
+      #TODO: allow items to be skipped - keyword in file?
+      if [[ ${item} != ${item%-} ]] ; then continue ; fi
+      echotr ${item} "$(grep DESC= $(which ${item}) | cut -d= -f2- | grep -v \${item})"
+   done
+   [[ ${wiki} != 'False' ]] && echo '|}' || true
+fi
+
+if [[ ${long} == 'True' || ${wiki} != 'False' ]] ; then
+
+   for item in ${toolslist}; do
+      #TODO: allow items to be skipped - keyword in file?
+      if [[ ${item} != ${item%-} ]] ; then continue ; fi
+      echotitle ${item}
+      echo "$(grep DESC= $(which ${item}) | cut -d= -f2- | grep -v \${item})"
+      echo
+      [[ ${wiki} != 'False' ]] && echo "<pre>" || true
+      echo "+ ${item} --help"
+      echo
+      ${item} --help
+      [[ ${wiki} != 'False' ]] && echo "</pre>" || true
+   done
+   echofoot
+
+fi
+
