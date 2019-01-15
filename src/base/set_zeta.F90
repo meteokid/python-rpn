@@ -163,7 +163,7 @@
       schm_sleve_L = .true.
       if( Hyb_rcoef(3) == -1 .or. Hyb_rcoef(4) == -1 )then
          if( Hyb_rcoef(3) /= -1 .or. Hyb_rcoef(4) /= -1 )then
-            call handle_error_l(istat==.true.,'set_zeta','Incorrect rcoef 3 and/or 4')
+            call handle_error_l(.true.,'set_zeta','Incorrect rcoef 3 and/or 4')
          endif
           Schm_sleve_L = .false.
       endif

@@ -177,8 +177,8 @@
          err = min(vgd_put(vcoord, 'DIPT - IP1 of diagnostic level (t)',ztip), err)
          err = min(vgd_put(vcoordt,'DIPM - IP1 of diagnostic level (m)',zuip), err)
          err = min(vgd_put(vcoordt,'DIPT - IP1 of diagnostic level (t)',ztip), err)
-         if (vgd_get(vcoord ,'VIPM - level ip1 list (m)',ip1m) /= VGD_OK) err = -1
-         if (vgd_get(vcoordt,'VIPT - level ip1 list (t)',ip1t) /= VGD_OK) err = -1
+         if (vgd_get(vcoord ,'VIPM - level ip1 list (m)',ip1m,quiet=.true.) /= VGD_OK) err = -1
+         if (vgd_get(vcoordt,'VIPT - level ip1 list (t)',ip1t,quiet=.true.) /= VGD_OK) err = -1
          out3_sfcdiag_L= .true.
          err = min(vgrid_wb_put(VGRID_M_S,vcoord, ip1m,refp0_S,refp0ls_S,F_overwrite_L=.true.), err)
          err = min(vgrid_wb_put(VGRID_T_S,vcoordt,ip1t,refp0_S,refp0ls_S,F_overwrite_L=.true.), err)
