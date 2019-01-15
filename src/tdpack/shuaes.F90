@@ -15,11 +15,12 @@
 !-------------------------------------- LICENCE END --------------------------------------
 !**fonction shuaes3  -  passage de hu a es
 !
-      function shuaes3(hu,tt,ps,swph_L)
+      Function shuaes3(hu,tt,ps,swph)
+      use tdpack, only: aerk1w, aerk1i, aerk2w, aerk2i, aerk3w, aerk3i, foefq, trpl
       implicit none
 #include <arch_specific.hf>
-      real shuaes3, hu, tt, ps
-      logical swph_L
+      Real shuaes3, hu, tt, ps
+      Logical swph
 !
 !Author
 !          N. Brunet  (Jan91)
@@ -34,7 +35,7 @@
 ! hu       specific humidity in kg/kg
 ! tt       temperature in K
 ! ps       pressure in Pa
-! swph_L   .true. to consider water and ice phase
+! swph     .true. to consider water and ice phase
 !          .false. to consider water phase only
 !
 !Notes
@@ -42,29 +43,22 @@
 !     the maximum value of: max(hu,0.0000000001).
 !     to avoid the occurence of taking the log of a negative
 !     number
-!
-!Implicites
-include "thermoconsts.inc"
-!Modules
-!
-!
 !*
 !--------------------------------------------------------------------
-      real e, cte, td, petit
-!
-include "dintern.inc"
-include "fintern.inc"
+      Real e, cte, td, petit, alpha
 !--------------------------------------------------------------------
 !
       petit = 0.0000000001
-
-      e = FOEFQ(max(petit,hu),ps)
-      cte = alog(e/real(TTNS1))
-      if(td < TRPL .and. swph_L)then
-         td = (real(TTNS4I)*cte - real(TTNS3I)*TRPL) / (cte - real(TTNS3I))
-      else
-         td = (real(TTNS4W)*cte - real(TTNS3W)*TRPL) / (cte - real(TTNS3W))
-      end if
+      alpha = log(aerk1w/aerk1i)
+!note: cte_ice=cte+alpha
+!
+      e = foefq(Max(petit,hu),ps)
+      cte = alog(e/Real(aerk1w))
+      td = (Real(aerk3w)*cte - Real(aerk2w)*trpl)/(cte - Real(aerk2w))
+      If(td.Lt.trpl.And.swph)Then
+         td = (Real(aerk3i)*(cte + alpha) - Real(aerk2i)*trpl)/(cte + alpha - Real(aerk2i))
+      End If
+!
       shuaes3 = tt-td
-
-      end function shuaes3
+!
+      End Function shuaes3

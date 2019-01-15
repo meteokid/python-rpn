@@ -16,6 +16,7 @@
 !**s/r mhuahr3  -  passage de hu a hr
 !
       Subroutine mhuahr3(hr,hu,tt,ps,swph,ni,nk,n)
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 !
@@ -49,26 +50,9 @@
 ! ni       horizontal dimension
 ! nk       vertical dimension
 ! n        number of treated points
-!
-!
-!Implicites
-Include "thermoconsts.inc"
-!Modules
-!
 !*
 !--------------------------------------------------------------------
-!
-!***********************************************************************
-!     Automatic arrays
-!***********************************************************************
-!
-!
-!***********************************************************************
-!
       Integer i, k
-!
-Include "dintern.inc"
-Include "fintern.inc"
 !--------------------------------------------------------------------
 !
       If(swph)Then

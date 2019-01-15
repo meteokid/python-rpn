@@ -16,7 +16,7 @@
 !**s/r fonction shraes3  -  passage de hr a es
 !
       Function shraes3(hr,tt,ps,swph)
-!
+      use tdpack, only: shrahu3, shuaes3
       implicit none
 #include <arch_specific.hf>
       Real shraes3, hr, tt, ps
@@ -37,19 +37,9 @@
 ! ps       pressure in Pa
 ! swph     .true. to consider water and ice phase
 !          .false. to consider water phase only
-!
-!
-!Implicites
-Include "thermoconsts.inc"
-!Modules
-      Real, External :: shrahu3, shuaes3
-!
 !*
 !--------------------------------------------------------------------
       Real hus
-!
-Include "dintern.inc"
-Include "fintern.inc"
 !--------------------------------------------------------------------
 !
       hus = shrahu3(hr,tt,ps,swph)

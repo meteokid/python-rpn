@@ -20,7 +20,7 @@
 !                         compte de la vapeur et des hydrometeores.
 !
       Subroutine mfotvht(tv,tt,qq,qh,ni,nk,n)
-!
+      use tdpack
       implicit none
 #include <arch_specific.hf>
       Integer ni, nk, n
@@ -47,17 +47,9 @@
 ! ni       horizontal dimension
 ! nk       vertical dimension
 ! n        number of points to process
-!
-!Implicits
-Include "thermoconsts.inc"
-!Modules
-!
 !*
 !--------------------------------------------------------------------
       Integer i, k
-
-Include "dintern.inc"
-Include "fintern.inc"
 !--------------------------------------------------------------------
 
       Do k= 1,nk

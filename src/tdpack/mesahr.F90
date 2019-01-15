@@ -15,6 +15,7 @@
 !-------------------------------------- LICENCE END --------------------------------------
 
 subroutine mesahr3(hr,es,tt,ps,swph,ni,nk,n)
+   use tdpack
    implicit none
 #include <arch_specific.hf>
 
@@ -45,8 +46,6 @@ subroutine mesahr3(hr,es,tt,ps,swph,ni,nk,n)
    ! n        number of treated points
    !@notes
    !          The calculation is made by calls to mesahu3 and mhuahr3.
-
-   include "thermoconsts.inc"
 
    real, dimension(ni,nk) :: hu
 

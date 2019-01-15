@@ -39,6 +39,7 @@ end subroutine vte_intvertx3
 
 !/@*
 subroutine vte_intvertx4(F_dch,F_sch,F_srclev,F_dstlev,n,nks,nkd,F_var_S,F_nlinbot)
+   use tdpack
    implicit none
 #include <arch_specific.hf>
    !@ojective cubic vertical interpolation from eta/sigma to hybrid
@@ -73,12 +74,10 @@ subroutine vte_intvertx4(F_dch,F_sch,F_srclev,F_dstlev,n,nks,nkd,F_var_S,F_nlinb
    !  (Maybe the grid will be that precise in 2010!) (I don't even bother
    !  to add an if statement, for performance purpose...)
    !*@/
-#include <thermoconsts.inc>
 
    integer :: i,k,iter,niter,lev,lev_lin,k_surf,k_ciel
    integer :: top(n),bot(n),topcub(n),botcub(n),ref(n)
    real*8 :: deltalev,prxd,prda,prdb,prsaf,prsbf,prsad,prsbd
-   real*8 :: rgasd_8,stlo_8
    logical :: ascending_L
    !---------------------------------------------------------------
    ascending_L = (F_srclev(1,1) < F_srclev(1,nks))
@@ -176,8 +175,6 @@ subroutine vte_intvertx4(F_dch,F_sch,F_srclev,F_dstlev,n,nks,nkd,F_var_S,F_nlinb
 
    !- special case for VT
    if(F_var_S == 'VT') then
-      rgasd_8 = dble(rgasd)
-      stlo_8 = dble(stlo)
       do k=1,nkd
          do i=1,n
             if(F_srclev(i,k_ciel).lt.F_dstlev(i,k)) then
@@ -193,6 +190,7 @@ end subroutine vte_intvertx4
 
 !/@*
 subroutine vte_intvertx_isodst(F_dch,F_sch,F_srclev,F_dstlev,n,nks,nkd,F_var_S,F_nlinbot)
+   use tdpack
    implicit none
 #include <arch_specific.hf>
    !@ojective cubic vertical interpolation from eta/sigma to hybrid
@@ -227,12 +225,10 @@ subroutine vte_intvertx_isodst(F_dch,F_sch,F_srclev,F_dstlev,n,nks,nkd,F_var_S,F
    !  (Maybe the grid will be that precise in 2010!) (I don't even bother
    !  to add an if statement, for performance purpose...)
    !*@/
-#include <thermoconsts.inc>
 
    integer :: i,k,iter,niter,lev,lev_lin,k_surf,k_ciel
    integer :: top(n),bot(n),topcub(n),botcub(n),ref(n)
    real*8 :: deltalev,prxd,prda,prdb,prsaf,prsbf,prsad,prsbd
-   real*8 :: rgasd_8,stlo_8
    logical :: ascending_L
    !---------------------------------------------------------------
    ascending_L = (F_srclev(1,1) < F_srclev(1,nks))
@@ -330,8 +326,6 @@ subroutine vte_intvertx_isodst(F_dch,F_sch,F_srclev,F_dstlev,n,nks,nkd,F_var_S,F
 
    !- special case for VT
    if(F_var_S == 'VT') then
-      rgasd_8 = dble(rgasd)
-      stlo_8 = dble(stlo)
       do k=1,nkd
          do i=1,n
             if(F_srclev(i,k_ciel).lt.F_dstlev(k)) then

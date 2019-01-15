@@ -17,7 +17,7 @@
 !              -  (eau seulement)
 !
       Subroutine mfodla(de,tt,ni,nk,n)
-!
+      use tdpack
       implicit none
 #include <arch_specific.hf>
       Integer ni, nk, n
@@ -40,16 +40,9 @@
 ! ni       1st dimension of TT and DE
 ! nk       vertical dimension
 ! n        number of points to process
-!
-!Implicites
-Include "thermoconsts.inc"
-!Modules
-!
 !*
 !--------------------------------------------------------------------
       Integer k, i
-Include "dintern.inc"
-Include "fintern.inc"
 !--------------------------------------------------------------------
 !
 !

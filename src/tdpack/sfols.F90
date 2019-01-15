@@ -16,7 +16,7 @@
 !**fonction sfols - calcule la chaleur latente de sublimation
 !
       Function sfols(tt)
-!
+      use tdpack, only: fols
       implicit none
 #include <arch_specific.hf>
 !
@@ -32,15 +32,7 @@
 !      tt - temperature ini K
 !
 !      result is in J/kg
-!
-!Implicites
-Include "thermoconsts.inc"
-!Modules
-!
 !*
-!--------------------------------------------------------------------
-Include "dintern.inc"
-Include "fintern.inc"
 !--------------------------------------------------------------------
 !
       sfols = fols(tt)

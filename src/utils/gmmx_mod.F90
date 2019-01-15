@@ -464,6 +464,7 @@ contains
          call msg(MSG_ERROR,'(gmmx) new - Probleme getting vgrid info for: '//trim(F_name_S)//' VGRID='//trim(F_vgrid_S))
          return
       endif
+      istat = vgd_free(myvgrid)
       k0 = lbound(ip1list,1)
       kn = ubound(ip1list,1)
       is_2d_L = .false.

@@ -16,7 +16,7 @@
 !**s/r mfottv  -  calcule temp. a partir de tv et hum. sp.
 !
       Subroutine mfottv2(tt,tv,qq,minx,maxx,miny,maxy,nk,i0,in,j0,jn,tt2vt)
-!
+      use tdpack
       implicit none
 #include <arch_specific.hf>
       Logical tt2vt
@@ -39,16 +39,9 @@
 !          - Input -
 ! tv       virtual temperature in K
 ! qq       specific humidity in kg/kg
-!
-!Implicites
-Include "thermoconsts.inc"
-!Modules
-!
 !*
 !--------------------------------------------------------------------
       Integer k, i, j
-Include "dintern.inc"
-Include "fintern.inc"
 !--------------------------------------------------------------------
 !
       If (tt2vt) Then

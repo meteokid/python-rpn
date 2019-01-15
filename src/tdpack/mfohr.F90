@@ -17,6 +17,7 @@
 !               temperature and pression 
 
       Subroutine mfohr4 (hr, qq, tt, ps, ni, nk, n, satuco)
+      use tdpack_const
       implicit none
 #include <arch_specific.hf>
 
@@ -52,29 +53,30 @@
 ! ni       horizontal dimension
 ! nk       vertical dimension
 ! n        number of points to process
-!
-Include "thermoconsts.inc"
 
       Integer k, i
       real*8  temp1
 
-Include "dintern.inc"
-Include "fintern.inc"
-!
+#define __FORTRAN__
+#include "tdpack_func.h"
+
 !***********************************************************************
 !
       if (satuco) then
          Do k=1,nk
             Do i=1,n
-               temp1   = fomult(exp(foewf(tt(i,k))))
-               hr(i,k) = fohrx(qq(i,k),ps(i,k),temp1)
+               temp1   = FOEWF(tt(i,k))
+               temp1   = exp(temp1)
+               temp1   = FOMULTS(temp1, tt(i,k))
+               hr(i,k) = FOHRX(qq(i,k), ps(i,k), temp1)
             Enddo
          Enddo
       else
          Do k=1,nk
             Do i=1,n
-               temp1   = fomult(exp(foewaf(tt(i,k))))
-               hr(i,k) = fohrx(qq(i,k),ps(i,k),temp1)
+               temp1   = FOEWAF(tt(i,k))
+               temp1   = aerk1w*exp(temp1)
+               hr(i,k) = FOHRX(qq(i,k), ps(i,k), temp1)
             Enddo
          Enddo
       endif

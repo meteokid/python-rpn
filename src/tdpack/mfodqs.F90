@@ -16,7 +16,7 @@
 !**s/r mfodqs3  -  derivee selon t de qsat
 !
       Subroutine mfodqs3(dq,tt,ps,ni,nk,n)
-!
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 !
@@ -48,18 +48,10 @@
 ! ni       horizontal dimension
 ! nk       vertical dimension
 ! n        number of points to process
-!
-!Implicites
-Include "thermoconsts.inc"
-!Modules
-!
 !*
 !--------------------------------------------------------------------
       Real qs
-!
       Integer k, i
-Include "dintern.inc"
-Include "fintern.inc"
 !--------------------------------------------------------------------
 !
 !

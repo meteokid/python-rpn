@@ -16,7 +16,7 @@
 !**fonction sfohra  -  calcule hum rel de hum sp, temp et pression.
 !
       Function sfohra(qq,tt,pr)
-!
+      use tdpack, only: fohra
       implicit none
 #include <arch_specific.hf>
       Real sfohra, qq, tt, pr
@@ -35,16 +35,7 @@
 ! qq       specific humidity in kg/kg
 ! tt       temperature in K
 ! PR       pressure in Pa
-!
-!
-!Implicites
-Include "thermoconsts.inc"
-!Modules
-!
 !*
-!--------------------------------------------------------------------
-Include "dintern.inc"
-Include "fintern.inc"
 !--------------------------------------------------------------------
 !
 !

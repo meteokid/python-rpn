@@ -16,7 +16,7 @@
 !**fonction sfopop - resout l'eqn de Poisson pour la pression
 !
       Function sfopop(t0, tf2, p0)
-!
+      use tdpack, only: fopoip
       implicit none
 #include <arch_specific.hf>
 !
@@ -35,15 +35,7 @@
 !      tf2 - temperature (K) at the target level
 !
 !      result is in Pa
-!
-!Implicites
-Include "thermoconsts.inc"
-!Modules
-!
 !*
-!--------------------------------------------------------------------
-Include "dintern.inc"
-Include "fintern.inc"
 !--------------------------------------------------------------------
 !
       sfopop = fopoip(t0, tf2, p0)

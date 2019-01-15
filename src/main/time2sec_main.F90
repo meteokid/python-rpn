@@ -11,9 +11,9 @@ subroutine time2sec_main()
   !  CCARD preparation
   integer, parameter :: NARGS=2
   character(len=STRLEN), dimension(NARGS) :: &
-       arglist =(/'time.'    ,'dt.'/), &
-       def     =(/'UNDEFINED','1.'/), &
-       val     =(/'UNDEFINED','1.'/)
+       arglist, &
+       def, &
+       val
 
   !  Internal variables
   integer :: npos,istat
@@ -22,6 +22,12 @@ subroutine time2sec_main()
   character(len=STRLEN) :: timestr,dtstr
 
   !  Obtain arguments
+  arglist(1) = 'time.'
+  arglist(2) = 'dt.'
+  def(1) = 'UNDEFINED'
+  def(2) = '1.'
+  val(1) = 'UNDEFINED'
+  val(2) = '1.'
   call ccard(arglist,def,val,NARGS,npos)
   timestr = val(1)
   dtstr   = val(2)

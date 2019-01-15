@@ -16,7 +16,7 @@
 !**s/r mhuaes3  -  passage de hu a es
 !
       Subroutine mhuaes3(es,hu,tt,ps,swph,ni,nk,n)
-!
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 !
@@ -57,35 +57,21 @@
 !          if hu <= 0, the value of hu is not changed but the
 !          function max(hu,0.0000000001) will prevent the log
 !          of a negative number.
-!
-!
-!Implicites
-Include "thermoconsts.inc"
-!Modules
-!
 !*
 !--------------------------------------------------------------------
-!***********************************************************************
-!     Automatic arrays
-!***********************************************************************
-!
       Real, Dimension(n,nk) :: cte
-!
-!***********************************************************************
-!
-      Real td, petit
+      Real td, petit , alpha
       Integer  k, i
-!
-Include "dintern.inc"
-Include "fintern.inc"
 !--------------------------------------------------------------------
 !
 !
       petit = 0.0000000001
+      alpha = log(aerk1w/aerk1i)
+!note: cte_ice=cte+alpha
 !
       Do k=1,nk
       Do i=1,n
-          cte(i,k) = (foefq(Max(petit,hu(i,k)),ps(i,k)))/Real(ttns1)
+          cte(i,k) = (foefq(Max(petit,hu(i,k)),ps(i,k)))/Real(aerk1w)
       Enddo
       Enddo
 !
@@ -93,12 +79,12 @@ Include "fintern.inc"
 !
       Do k=1,nk
       Do i=1,n
-         td = (Real(ttns4w)*cte(i,k) - Real(ttns3w)*trpl)/ &
-              (cte(i,k) - Real(ttns3w))
+         td = (Real(aerk3w)*cte(i,k) - Real(aerk2w)*trpl)/ &
+              (cte(i,k) - Real(aerk2w))
 !
          If(td.Lt.trpl.And.swph) &
-            td = (Real(ttns4i)*cte(i,k) - Real(ttns3i)*trpl) &
-                  /(cte(i,k) - Real(ttns3i))
+            td = (Real(aerk3i)*(cte(i,k)+alpha) - Real(aerk2i)*trpl) &
+                  /(cte(i,k) + alpha - Real(aerk2i))
 !
          es(i,k) = tt(i,k) - td
       End Do

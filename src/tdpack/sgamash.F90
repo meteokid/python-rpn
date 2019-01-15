@@ -16,7 +16,7 @@
 !**s/r fonction sgamash - pente pseudo-adiabat sature (dt/dz)
 !
       Function sgamash(tt, pr, swph, ti)
-!
+      use tdpack, only: grav, cpd, eps1, rgasd, schal, foqst, foqsa
       implicit none
 #include <arch_specific.hf>
 !
@@ -43,23 +43,10 @@
 !            latent heat of sublimation
 !            if swph=false, ti is n/a
 !            ti must be .LE. trpl
-!
-!note
-!
-!implicites
-Include "thermoconsts.inc"
-!modules
-!
 !*
 !---------------------------------------------------------------
-!
-      Real schal
       Real latheat, lvt0, lsti, x, z
       Real gammad
-!
-Include "dintern.inc"
-Include "fintern.inc"
-!
 !--------------------------------------------------------------------
 !
       gammad = grav / cpd

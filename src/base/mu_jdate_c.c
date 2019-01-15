@@ -31,7 +31,7 @@
  * The date-time stamp (js) is in seconds equivalent to julian day + time of day
  * js type is long long (64bits or more))
  *
- * Author: S. Chamebrland (Jan 2016)
+ * Author: S. Chamberland (Jan 2016)
  * Author: FLIEGEL, FLANDERN, C. THIBEAULT (NOV 79) for Julian day convert to and from functions
  */
 

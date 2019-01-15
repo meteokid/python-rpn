@@ -16,7 +16,7 @@
 !**fonction sfolv - calcule la chaleur latente de condensation
 !
       Function sfolv(tt)
-!
+      use tdpack, only: folv
       implicit none
 #include <arch_specific.hf>
 !
@@ -32,15 +32,7 @@
 !      tt - temperature  in K
 !
 !      result is in J/kg
-!
-!Implicites
-Include "thermoconsts.inc"
-!Modules
-!
 !*
-!--------------------------------------------------------------------
-Include "dintern.inc"
-Include "fintern.inc"
 !--------------------------------------------------------------------
 !
       sfolv = folv(tt)

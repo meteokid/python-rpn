@@ -64,7 +64,7 @@ contains
    !  to add an if statement, for performance purpose...)
 
 #include <clib_interface_mu.hf>
-#include <thermoconsts.inc>
+#include "tdpack_const.hf"
 
       integer, parameter :: MAXLIST=20
       character*12  Schumann_list_S(MAXLIST)
@@ -75,7 +75,7 @@ contains
       integer, dimension (Minx:Maxx,Miny:Maxy) :: top, bot, &
                                                   topcub, botcub, ref
       real*8  :: deltalev,prxd,prda,prdb,prsaf,prsbf, &
-                 prsad,prsbd, rgasd_8,stlo_8
+                 prsad,prsbd
 !
 !-------------------------------------------------------------------
 !  
@@ -133,12 +133,9 @@ contains
          niter=int(log(real(nks))/log(2.0))+1
       endif
 
-      rgasd_8 = dble(rgasd)
-      stlo_8  = dble(stlo)
-
 !$omp parallel private(i,j,k,iter,lev,lev_lin,top,bot,topcub,botcub,ref, &
 !$omp                  deltalev,prxd,prda,prdb,prsaf,prsbf,prsad,prsbd)  &
-!$omp    shared(ascending_L,nlinbot,k_surf,k_ciel,niter,rgasd_8,stlo_8)
+!$omp    shared(ascending_L,nlinbot,k_surf,k_ciel,niter)
 
 !$omp do
       do k=1,nkd

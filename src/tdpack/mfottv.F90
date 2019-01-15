@@ -16,7 +16,7 @@
 !**s/r mfottv  -  calcule temp. a partir de tv et hum. sp.
 !
       Subroutine mfottv(tt,tv,qq,ni,nk,n)
-!
+      use tdpack
       implicit none
 #include <arch_specific.hf>
       Integer ni, nk, n
@@ -40,16 +40,9 @@
 ! ni       horizontal dimension
 ! nk       vertical dimension
 ! n        number of points to process
-!
-!Implicites
-Include "thermoconsts.inc"
-!Modules
-!
 !*
 !--------------------------------------------------------------------
       Integer k, i
-Include "dintern.inc"
-Include "fintern.inc"
 !--------------------------------------------------------------------
 !
       Do k=1,nk

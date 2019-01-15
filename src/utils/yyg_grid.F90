@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -21,7 +21,7 @@
       implicit none
       integer F_ni, F_nj, F_div, F_arakawa, F_gid, F_searchkey, F_iun
 !
-!author 
+!author
 !     Michel Desgagne  -  Spring 2012
 !
 !revision
@@ -32,7 +32,7 @@
 
       character*2  typ_S, grd_S
       character*4  var_S
-      character*12 lab_S, lste_S(2)
+      character*12 lab_S
 
       integer dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit, &
               dty, swa, lng, dlf, ubc, ex1, ex2, ex3, ip3_ts,ip1,ip2,ip3
@@ -53,7 +53,7 @@
       err= fstprm (F_searchkey, dte, det, ipas, ni1, nj1, nk1, bit, &
                    dty, p1, p2, p3, typ_S, var_S, lab_S, grd_S, g1, &
                    g2, g3, g4, swa, lng, dlf, ubc, ex1, ex2, ex3)
-      
+
 !     Normally var_S and F_arakawa would be encoded into g4
 !     (encoding/decoding function are required)
 
@@ -84,7 +84,7 @@
       real*8  F_posx(*), F_posy(*)
       real    F_corners(4)
 !
-!author 
+!author
 !     Michel Desgagne  -  Spring 2012
 !
 !revision
@@ -98,8 +98,8 @@
       character*12 lab_S
 
       integer dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit, &
-              dty, swa, lng, dlf, ubc, ex1, ex2, ex3, ip3_ts,ip1,ip2,ip3
-      integer ni1, nj1, nk1, err, n
+              dty, swa, lng, dlf, ubc, ex1, ex2, ex3
+      integer ni1, nj1, nk1, err
       real, dimension(:), allocatable :: yy
 
       integer ngrids
@@ -191,16 +191,20 @@
       real*8 delta_8
 !
 !     -----------------------------------------------------------
-!   
+!
       delta_8 = (F_xend-F_xbeg)/dble(NX-1)
+      F_x_8(1 ) = F_xbeg
+      F_x_8(NX) = F_xend
 
-      do i=1,NX
+      do i=2,NX-1
          F_x_8(i)= F_xbeg + (i-1)*delta_8
       end do
 
       delta_8 = (F_yend-F_ybeg)/dble(NY-1)
+      F_y_8(1 ) = F_ybeg
+      F_y_8(NY) = F_yend
 
-      do i=1,NY
+      do i=2,NY-1
          F_y_8(i)= F_ybeg + (i-1)*delta_8
       end do
 !
@@ -230,7 +234,6 @@
       real*8 xlat1,xlon1,xlat2,xlon2
       real*8 a_8,b_8,c_8,d_8,xyz1_8(3),xyz2_8(3)
       real*8 rot_8(3,3),invrot_8(3,3),xyz3_8(3),xyz4_8(3)
-      real*8 yyrot_8(3,3),mrot_8(3,3),m1rot_8(3,3)
       integer i,j
 !
 !-------------------------------------------------------------------

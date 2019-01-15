@@ -68,13 +68,34 @@ function is_samegrid2(nis,njs, g1s, g2s, g3s, g4s, xps,yps, &
       ideb = i
       if ( xps(i) .gt. (xpd(1) + eps1) ) exit
    end do
-   ideb = max(1,ideb-1)
+!
+!if ideb is last source point, check if xps(nis)>xpd(1)+eps
+!before giving correct ideb to tst_parpo
+!
+!
+   if (ideb .lt. nis) then
+       ideb = max(1,ideb-1)
+   else if ( xps(nis) .le. (xpd(1) + eps1) ) then
+       ideb = nis
+   else
+       ideb = max(1,ideb-1)
+   endif
 
    do j=1,njs
       jdeb = j
       if ( yps(j) .gt. (ypd(1) + eps1) ) exit
    end do
-   jdeb = max(1,jdeb-1)
+!
+!if jdeb is last source point, check if yps(njs)>ypd(1)+eps
+!before giving correct jdeb to tst_parpo
+!
+   if (jdeb .lt. njs) then
+       jdeb = max(1,jdeb-1)
+   else if ( yps(njs) .le. (ypd(1) + eps1) ) then
+       jdeb = njs
+   else
+       jdeb = max(1,jdeb-1)
+   endif
 
    cnt = tst_parpo (xps,nis, xpd,nid, ideb, eps2)
    moy = real(cnt)/real(nid)

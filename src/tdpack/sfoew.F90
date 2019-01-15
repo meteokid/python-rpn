@@ -16,6 +16,7 @@
 !**fonction sfoew  -  tension de vapeur saturante
 !
       Function sfoew(tt)
+      use tdpack, only: foew
       implicit none
 #include <arch_specific.hf>
       Real sfoew,tt
@@ -32,16 +33,7 @@
 !
 !          - Input -
 ! tt       temperature in K
-!
-!
-!Implicites
-Include "thermoconsts.inc"
-!Modules
-!
 !*
-!--------------------------------------------------------------------
-Include "dintern.inc"
-Include "fintern.inc"
 !--------------------------------------------------------------------
 !
       sfoew = foew(tt)

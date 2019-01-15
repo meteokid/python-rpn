@@ -63,7 +63,7 @@
 
          if (eqi .gt. 0) then
             eqi= eqi + deb - 1
-            
+ 
             if (trim(attributes(deb:eqi-1)) == 'WLOAD') then
                read(attributes(eqi+1:ind-1),*) default_wload
                F_wload=default_wload
@@ -71,7 +71,7 @@
             if (trim(attributes(deb:eqi-1)) == 'HZD'  ) then
                read(attributes(eqi+1:ind-1),*) default_hzd
                F_hzd  =default_hzd
-            endif                           
+            endif
             if (trim(attributes(deb:eqi-1)) == 'MONO' ) then
                read(attributes(eqi+1:ind-1),*) default_monot
                F_monot=default_monot
@@ -97,7 +97,7 @@
             F_monot=default_monot
             if (trim(attributes(deb:ind-1)) == 'MASS' ) &
             F_massc=default_massc
-            if (trim(attributes(deb:eqi-1)) == 'MIN'  ) &
+            if (trim(attributes(deb:ind-1)) == 'MIN'  ) &
             F_min  =default_vmin
          else
             eqi= eqi + deb - 1

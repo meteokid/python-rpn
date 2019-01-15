@@ -220,10 +220,9 @@ contains
       integer,pointer :: ip1list(:)
       integer :: npak,dtype,dateo,deet,npas,ip3,istat,nijk(3)
       logical :: writegrid_L,rewrite_L
-      character(len=2) :: grtyp_S,grref_S
       character(len=RMN_ETK_LEN) :: etiket_S
       character(len=RMN_VARTYPE_LEN) :: typvar_S
-      type(vgrid_descriptor),pointer :: myvgrid
+      type(vgrid_descriptor),pointer :: myvgrid  !#TODO: pointer?
       ! ---------------------------------------------------------------------
       call msg(MSG_DEBUG,'(fst) fst_write_3d_r4_vgd [BGN]')
       F_istat = priv_init(F_data,RMN_OK,dateo,deet,npas,npak,dtype,ip3,nijk,typvar_S,etiket_S,rewrite_L,writegrid_L)
@@ -252,6 +251,8 @@ contains
       if (writegrid_L) then
          istat = vgd_write(myvgrid,F_fileid,'fst')
       endif
+      istat = vgd_free(myvgrid)
+
       call msg(MSG_DEBUG,'(fst) fst_write_3d_r4_vgd [END]')
       ! ---------------------------------------------------------------------
       return
@@ -277,10 +278,9 @@ contains
       integer,pointer :: ip1list(:)
       integer :: npak,dtype,dateo,deet,npas,ip3,istat,nijk(3)
       logical :: writegrid_L,rewrite_L
-      character(len=2) :: grtyp_S,grref_S
       character(len=RMN_ETK_LEN) :: etiket_S
       character(len=RMN_VARTYPE_LEN) :: typvar_S
-      type(vgrid_descriptor),pointer :: myvgrid
+      type(vgrid_descriptor),pointer :: myvgrid  !#TODO: pointer?
       ! ---------------------------------------------------------------------
       call msg(MSG_DEBUG,'(fst) fst_write_3d_r4_vgd [BGN]')
       F_istat = priv_init(F_data,F_gridid,dateo,deet,npas,npak,dtype,ip3,nijk,typvar_S,etiket_S,rewrite_L,writegrid_L)
@@ -309,6 +309,8 @@ contains
       if (writegrid_L) then
          istat = vgd_write(myvgrid,F_fileid,'fst')
       endif
+      istat = vgd_free(myvgrid)
+
       call msg(MSG_DEBUG,'(fst) fst_write_3d_r4_vgd [END]')
       ! ---------------------------------------------------------------------
       return
@@ -332,13 +334,12 @@ contains
       !@return
       integer :: F_istat
       !@/
-      integer :: npak,dtype,dateo,deet,npas,ip1,ip2,ip3,l_ijk(3),u_ijk(3),nijk(3),ig14(4),istat,k,arbitrarykind,lnij(2),ij0(2)
+      integer :: npak,dtype,dateo,deet,npas,ip1,ip2,ip3,l_ijk(3),u_ijk(3),nijk(3),ig14(4),k,arbitrarykind,lnij(2),ij0(2)
       real :: zp1
       logical :: writegrid_L,rewrite_L
-      character(len=2) :: grtyp_S,grref_S
+      character(len=2) :: grtyp_S
       character(len=RMN_ETK_LEN) :: etiket_S
       character(len=RMN_VARTYPE_LEN) :: typvar_S
-      real,pointer :: ax(:,:),ay(:,:)
       ! ---------------------------------------------------------------------
       call msg(MSG_DEBUG,'(fst) fst_write_3d_r4 ip1 [BGN]')
 
@@ -417,13 +418,12 @@ contains
       !@return
       integer :: F_istat
       !@/
-      integer :: npak,dtype,dateo,deet,npas,ip1,ip2,ip3,l_ijk(3),u_ijk(3),nijk(3),ig14(4),istat,k,arbitrarykind,lnij(2),ij0(2),lnij0(2)
+      integer :: npak,dtype,dateo,deet,npas,ip1,ip2,ip3,l_ijk(3),u_ijk(3),nijk(3),ig14(4),k,arbitrarykind,lnij(2),ij0(2),lnij0(2)
       real :: zp1
       logical :: writegrid_L,rewrite_L
-      character(len=2) :: grtyp_S,grref_S
+      character(len=2) :: grtyp_S
       character(len=RMN_ETK_LEN) :: etiket_S
       character(len=RMN_VARTYPE_LEN) :: typvar_S
-      real,pointer :: ax(:,:),ay(:,:)
       ! ---------------------------------------------------------------------
       call msg(MSG_DEBUG,'(fst) fst_write_3d_r4 ip1 [BGN]')
       F_istat = priv_init(F_data,F_gridid,dateo,deet,npas,npak,dtype,ip3,u_ijk,typvar_S,etiket_S,rewrite_L,writegrid_L)
@@ -524,7 +524,6 @@ contains
       integer,intent(out) :: F_ig14(:),F_lnij(:),F_ij0(:)
       integer :: F_istat
       integer :: gridid,hx,hy,nij(2),isdieze,isperiodx,isperiody
-      logical :: periodx_L,periody_L
       !----------------------------------------------------------------------
       F_istat = hgrid_wb_get(F_gridid_S,gridid,F_ij0(1),F_ij0(2),F_lnij(1),F_lnij(2),hx,hy,isdieze,isperiodx,isperiody)
       F_grtyp_S = 'Z'
@@ -551,7 +550,7 @@ contains
       character(len=*),intent(out) :: F_grtyp_S
       integer,intent(out) :: F_ig14(:),F_nij(2)
       integer :: F_istat
-      integer :: istat,nij(2),ij0(2),igp14(4),lnij(2),gridid
+      integer :: istat,nij(2),ij0(2),igp14(4),gridid
       character(len=2) :: grref_S
       real,pointer :: ax(:,:),ay(:,:)
       !----------------------------------------------------------------------

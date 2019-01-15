@@ -16,7 +16,7 @@
 !**s/r fonction schal - chaleur latente selon TT et SWPH
 !
       Function schal(tt, ti, swph)
-!
+      use tdpack, only: chlc, trpl, folv, fols
       implicit none
 #include <arch_specific.hf>
 !
@@ -46,19 +46,10 @@
 !               at tt .ge. trpl, schal is folv
 !               at tt between ti and trpl, schal is a linear
 !               interpolation .
-!
-!implicites
-Include "thermoconsts.inc"
-!modules
-!
 !*
 !---------------------------------------------------------------
 !
       Real lsti, lvt0
-!
-Include "dintern.inc"
-Include "fintern.inc"
-!
 !--------------------------------------------------------------------
 !
       If(swph)Then

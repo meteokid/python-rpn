@@ -1,4 +1,4 @@
-!---------------------------------- LICENCE BEGIN -------------------------------
+!---------------------------------- LICENCE BEGIN ------------------------------
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
@@ -11,11 +11,11 @@
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-!---------------------------------- LICENCE END ---------------------------------
+!---------------------------------- LICENCE END --------------------------------
 
 !/@
 module ptopo_utils
-use iso_c_binding
+   use iso_c_binding
    implicit none
    private
    !@objective 
@@ -26,13 +26,23 @@ use iso_c_binding
    !   MULTIGRID COMM is split in pe (not matrix), GRID (not matrix)
    !   GRID      COMM is split in pe (2d-matrix),  BLOC (2d-matrix)
    !   BLOC      COMM is split in pe (2d-matrix)
+   !   I/O       COMM is split in pe (not matrix), Sub set of GRID PE used for I/O, optimally placed
+
    ! Public functions
-   public :: ptopo_init_var,ptopo_bloc_set, ptopo_openMP_set, ptopo_ismaster_L, ptopo_collect_dims, ptopo_collect_dims_ij0, ptopo_collect, ptopo_copyfirst2last, ptopo_iprocxy,ptopo_comm_pe_info
-   ! 
+   public :: ptopo_init_var, ptopo_bloc_set, ptopo_io_set, ptopo_openMP_set, ptopo_ismaster_L, ptopo_collect_dims, ptopo_collect_dims_ij0, ptopo_collect, ptopo_copyfirst2last, ptopo_iprocxy, ptopo_comm_pe_info, ptopo_get_io_params
+
    ! Public constants
-   ! 
+!!$   integer, parameter, public :: PTOPO_WORLD = 1
+!!$   integer, parameter, public :: PTOPO_DOMAIN = 2
+!!$   integer, parameter, public :: PTOPO_MULTIGRID = 3
+!!$   integer, parameter, public :: PTOPO_GRID = 4
+   integer, parameter, public :: PTOPO_BLOC = 5
+   integer, parameter, public :: PTOPO_IO = 6
+
    ! Public var
    integer,public,save :: &
+        ptopo_iotype = PTOPO_BLOC, &
+
         ptopo_npeOpenMP_resv = -1, &
         ptopo_npeOpenMP = -1, &
         ptopo_smt_fact = 1, &
@@ -47,6 +57,7 @@ use iso_c_binding
         ptopo_grid_ipe = 0, &         !- GRID, PE idx (rel. to GRID master)
         ptopo_grid_ipex = 0, &
         ptopo_grid_ipey = 0, &        !- GRID, PE idx along axes (col,row)
+
         ptopo_grid_nbloc = 1, &       !- GRID, nb of BLOC in GRID
         ptopo_grid_nblocx = 1, &
         ptopo_grid_nblocy = 1, &         !- GRID, nb of BLOC along axes
@@ -54,16 +65,28 @@ use iso_c_binding
         ptopo_grid_ibloc = 0, &          !- GRID, BLOC idx
         ptopo_grid_iblocx = 0, &
         ptopo_grid_iblocy = 0, &      !- GRID,  BLOC idx along axes
+
         ptopo_bloc_npe = 1, &         !- BLOC,  nb of PE in BLOC
         ptopo_bloc_npex = 1, &
         ptopo_bloc_npey = 1,&         !- BLOC,  nb of PE along axes(ncol,nrow)
         ptopo_bloc_ipe = 0, &         !- BLOC,  PE idx (rel. to bloc master)
         ptopo_bloc_ipex = 0, &
-        ptopo_bloc_ipey = 0           !- BLOC,  PE idx along axes (col,row)
+        ptopo_bloc_ipey = 0, &        !- BLOC,  PE idx along axes (col,row)
+
+        ptopo_io_npe = 1, &           !- I/O, Nb of PE for I/O on the GRID
+        ptopo_io_setno = -1, &        !- I/O, io_set number
+        ptopo_io_ipe = -1, &          !- I/O, PE idx in io_set
+        ptopo_io_comm_id = -1, &      !- 
+        ptopo_grid_ipe_io_master = 0  !- GRID, idx of PE's I/O master
+
    logical,public,save :: &
-        ptopo_isblocmaster_L = .true.  !- .true. if in communicator "BLOCMASTER"
+        ptopo_isblocmaster_L = .true., &  !- .T. if in communicator "BLOCMASTER"
+        ptopo_isiope_L = .true., &        !- .T. if ptopo_io_ipe >= 0
+        ptopo_isiomaster_L = .true.       !- .T. if ptopo_grid_ipe == ptopo_grid_ipe_io_master
    character(len=16),public,save :: &
-        ptopo_domname_S = ' '          !- Domain name of the current PE
+        ptopo_domname_S = ' '             !- Domain name of the current PE
+
+
 !!$   character(len=1024),public,save :: &
 !!$        ptopo_grid_basedir_S, &      !- basdir 
 !!$        ptopo_pe_basedir_S,   &      !- basdir 
@@ -74,6 +97,11 @@ use iso_c_binding
 #include <WhiteBoard.hf>
 #include <msg.h>
    include "rpn_comm.inc"
+
+   interface ptopo_get_io_params
+      module procedure ptopo_get_io_params_0
+      module procedure ptopo_get_io_params_1
+   end interface
 
    interface ptopo_collect
       module procedure ptopo_collect_r4_3d
@@ -98,6 +126,7 @@ contains
    !/@
    subroutine ptopo_init_var(F_ndomains,F_idomain,F_ngrids,F_igrid)
       implicit none
+      !@objective 
       !@argument
       integer,intent(in),optional :: F_ndomains,F_idomain,F_ngrids,F_igrid
       !@/
@@ -143,6 +172,9 @@ contains
       istat = wb_put('ptopo/idomain',ptopo_world_idom, WB_REWRITE_AT_RESTART)
       istat = wb_put('ptopo/ngrids',ptopo_dom_ngrids, WB_REWRITE_AT_RESTART)
       istat = wb_put('ptopo/igrid',ptopo_dom_igrid, WB_REWRITE_AT_RESTART)
+
+      istat = ptopo_io_set(ptopo_io_npe)
+
       call msg(MSG_DEBUG,'(ptopo) init_var [END]')
       !---------------------------------------------------------------------
       return
@@ -152,6 +184,7 @@ contains
    !/@
    function ptopo_bloc_set(F_nblocx,F_nblocy,F_bcast_L) result(F_istat)
       implicit none
+      !@objective 
       !@arguments
       integer,intent(inout) :: F_nblocx,F_nblocy
       logical,intent(in),optional :: F_bcast_L
@@ -181,8 +214,74 @@ contains
 
 
    !/@
+   function ptopo_io_set(F_io_npe) result(F_istat)
+      implicit none
+      !@objective 
+      !@arguments
+      integer,intent(in) :: F_io_npe
+      !@return
+      integer :: F_istat
+      !@/
+      logical, parameter :: DIAG_L = .false.
+      integer, parameter :: FILL_METHODE = 0
+      integer, parameter :: ORIGIN_PE = 0
+      integer :: istat
+      integer :: ptopo_io_pe_xcoord(F_io_npe), ptopo_io_pe_ycoord(F_io_npe)
+      !---------------------------------------------------------------------
+      call msg(MSG_DEBUG,'(ptopo) io_set [BEGIN]')
+      F_istat = RMN_ERR
+      call ptopo_init_var()
+
+      if (ptopo_io_setno >= 0 .and. F_io_npe /= ptopo_io_npe) then
+!!$         print *,ptopo_grid_ipe,'rpn_comm_free_io_set',ptopo_io_setno, F_io_npe, ptopo_io_npe
+         istat = rpn_comm_free_io_set(ptopo_io_setno)
+         ptopo_io_setno = -1
+      endif
+
+      ptopo_io_npe = max(1, min(F_io_npe, &
+                                min(ptopo_grid_npex, ptopo_grid_npey)**2))
+
+      if (ptopo_io_setno < 0) then
+!!$         print *,ptopo_grid_ipe,'rpn_comm_io_pe_valid_set', F_io_npe, ptopo_io_npe
+         istat = rpn_comm_io_pe_valid_set( &
+              ptopo_io_pe_xcoord, ptopo_io_pe_ycoord, &
+              ptopo_io_npe, ptopo_grid_npex, ptopo_grid_npey, &
+              DIAG_L, FILL_METHODE)
+         if (.not.RMN_IS_OK(istat)) then
+            ptopo_io_npe = 1
+            ptopo_io_setno = -1
+            ptopo_io_ipe = -1
+            ptopo_grid_ipe_io_master = 0
+            ptopo_isiope_L = .true.
+            ptopo_isiomaster_L = .true.
+            call msg(MSG_WARNING,'(ptopo) Unable to set requested I/O PE distribution')
+            return
+         endif
+         ptopo_io_setno = rpn_comm_create_io_set(ptopo_io_npe, FILL_METHODE)
+!!$         print *,ptopo_grid_ipe,'rpn_comm_create_io_set', ptopo_io_setno, ptopo_io_npe
+      endif
+
+      ptopo_io_ipe   = rpn_comm_is_io_pe(ptopo_io_setno)
+      ptopo_grid_ipe_io_master = rpn_comm_io_pe_gridid(ptopo_io_setno, ORIGIN_PE)
+      ptopo_io_comm_id   = rpn_comm_io_pe_comm(ptopo_io_setno)
+      ptopo_isiope_L     = (ptopo_io_ipe >= 0)
+      ptopo_isiomaster_L = (ptopo_grid_ipe_io_master == ptopo_grid_ipe)
+
+!!$      print *,ptopo_grid_ipe,'ptopo_io_set', ptopo_io_setno, ptopo_io_npe, ptopo_io_ipe, ptopo_grid_ipe_io_master
+!!$      F_grid_id    = rpn_comm_create_2dgrid (  G_ni, G_nj, &
+!!$                              l_minx, l_maxx, l_miny, l_maxy )
+
+      F_istat = RMN_OK
+      call msg(MSG_DEBUG,'(ptopo) io_set [END]')
+      !---------------------------------------------------------------------
+      return
+   end function ptopo_io_set
+
+
+   !/@
    function ptopo_openMP_set(F_npeOpenMP,F_smt_fact) result(F_npeOpenMPout)
       implicit none
+      !@objective 
       !@arguments
       integer,intent(in),optional :: F_npeOpenMP,F_smt_fact
       !@return
@@ -213,7 +312,7 @@ contains
    !/@*
    function ptopo_ismaster_L(F_comm_S) result(F_ismaster_L)
       implicit none
-      !@objective Get dims of bloc
+      !@objective 
       !@arguments
       character(len=*),intent(in) :: F_comm_S
       !@return
@@ -272,6 +371,70 @@ contains
       !---------------------------------------------------------------------
       return
    end subroutine ptopo_comm_pe_info
+
+  !/@*
+    function ptopo_get_io_params_1(F_isiomaster_L, F_isiope_L, &
+        F_comm_ipe_io_master, F_communicator_S) result(F_istat)
+      implicit none
+      !@objective Select ptopo/rpn_comm params depending if blocking or not
+      !@arguments
+      logical, intent(out) :: F_isiomaster_L, F_isiope_L
+      integer, intent(out) :: F_comm_ipe_io_master
+      character(len=*) :: F_communicator_S
+      !@return
+      integer :: F_istat
+      !*@/
+      !---------------------------------------------------------------------
+      F_istat = ptopo_get_io_params_0(ptopo_iotype, F_isiomaster_L, F_isiope_L, &
+           F_comm_ipe_io_master, F_communicator_S)
+      !---------------------------------------------------------------------
+      return
+   end function ptopo_get_io_params_1
+
+
+   !/@*
+    function ptopo_get_io_params_0(F_iotype, F_isiomaster_L, F_isiope_L, &
+        F_comm_ipe_io_master, F_communicator_S) result(F_istat)
+      implicit none
+      !@objective Select ptopo/rpn_comm params depending if blocking or not
+      !@arguments
+      integer, intent(in)  :: F_iotype
+      logical, intent(out) :: F_isiomaster_L, F_isiope_L
+      integer, intent(out) :: F_comm_ipe_io_master
+      character(len=*) :: F_communicator_S
+      !@return
+      integer :: F_istat
+      !*@/
+      !---------------------------------------------------------------------
+      call ptopo_init_var()
+      F_istat = RMN_OK
+      F_isiomaster_L = .false.
+      F_comm_ipe_io_master = RMN_ERR
+      F_communicator_S = ''
+      if (F_iotype == PTOPO_BLOC) then
+         F_isiomaster_L = ptopo_isblocmaster_L
+         F_isiope_L = ptopo_isblocmaster_L
+         F_comm_ipe_io_master = RPN_COMM_MASTER !#TODO: check this
+         !#TODO: = ptopo_grid_ipe_blocmaster
+         F_communicator_S = RPN_COMM_BLOC_COMM
+      elseif (F_iotype == PTOPO_IO) then
+         F_isiomaster_L = ptopo_isiomaster_L
+         F_isiope_L = ptopo_isiope_L
+         F_comm_ipe_io_master = ptopo_grid_ipe_io_master
+         F_communicator_S = RPN_COMM_GRID
+!!$      elseif (F_iotype == PTOPO_GRID) then  !#TODO: 
+!!$         F_isiomaster_L = (ptopo_grid_ipe == RPN_COMM_MASTER)
+!!$         F_isiope_L = RPN_COMM_MASTER
+!!$         F_comm_ipe_io_master = RPN_COMM_MASTER
+!!$         F_communicator_S = RPN_COMM_GRID
+!!$      elseif (F_iotype == ) then !#TODO: other WORLD, DOMAIN, MULTIGRID
+      else
+          F_istat = RMN_ERR
+      endif
+      !---------------------------------------------------------------------
+      return
+   end function ptopo_get_io_params_0
+
 
    !/@*
    function ptopo_collect_dims(F_comm_S,F_nil,F_njl,F_nic,F_njc,F_i0c,F_j0c) result(F_istat)
@@ -366,7 +529,8 @@ contains
       select case(F_comm_S)
       case(RPN_COMM_GRID)
          ismaster_L = (ptopo_grid_ipe == RPN_COMM_MASTER)
-         if (ismaster_L .and. .not.associated(F_fld_b)) print *,'ERROR: (ptopo_collect) .not.associated(F_fld_l)'
+         if (ismaster_L .and. .not.associated(F_fld_b)) &
+              print *,'ERROR: (ptopo_collect) .not.associated(F_fld_l)'
 
          F_istat = priv_collect_r4_3d(F_fld_b,F_fld_l,F_i0l,F_j0l,lni,lnj,F_comm_S,ismaster_L,ptopo_grid_npe)
       case(RPN_COMM_BLOC_COMM)
@@ -612,6 +776,7 @@ contains
       !------------------------------------------------------------------
       return
    end function ptopo_iprocxy
+
 
    !==== Private Functions =================================================
 

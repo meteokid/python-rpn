@@ -15,7 +15,6 @@
 
 !/@
 subroutine test_fstmpi()
-use iso_c_binding
    use testutils
    implicit none
    !@objective 
@@ -257,6 +256,7 @@ end subroutine test_fstmpi_find_read
 
 !/@
 subroutine test_fstmpi_write()
+   use iso_c_binding
    use testutils
    use fstmpi_mod
    use ezgrid_mod
@@ -273,7 +273,7 @@ subroutine test_fstmpi_write()
    integer,parameter :: NI0=50,NJ0=30,NK0=3,HALO=2
    character(len=256) :: nomvar_S,filename_S
    logical :: ok_L,ok2_L
-   integer :: funit,istat,gridid,grididh,grididfull,gridid2,lvlid,dateo,deet,npas,key,ig1,ig2,ig3,ig4,ip1,i,j,k,datev,ip1list(NK0)
+   integer :: funit,istat,gridid,grididh,grididfull,gridid2,key,ig1,ig2,ig3,ig4,ip1,i,j,k,datev,ip1list(NK0)
    real,pointer :: data2d(:,:),data2dh(:,:),data3d(:,:,:),data3dh(:,:,:)
    real :: ax(1-HALO:NI0+HALO,1),ay(1,1-HALO:NJ0+HALO)
    ! ---------------------------------------------------------------------

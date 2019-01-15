@@ -16,7 +16,7 @@
 !**fonction sfodqa  -  calcule la derivee selon t de qsat, eau seule.
 !
       Function sfodqa(tt,pr)
-!
+      use tdpack, only: foqsa, fodqa
       implicit none
 #include <arch_specific.hf>
       Real sfodqa, tt, pr
@@ -35,17 +35,9 @@
 !          - Input -
 ! tt       temperature in K
 ! pr       pressure in Pa
-!
-!
-!IMPLICITES
-Include "thermoconsts.inc"
-!MODULES
-!
 !*
 !--------------------------------------------------------------------
       Real qs
-Include "dintern.inc"
-Include "fintern.inc"
 !--------------------------------------------------------------------
 !
 !

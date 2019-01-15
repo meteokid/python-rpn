@@ -63,3 +63,31 @@ cd /PATH/
 make components_uninstall UNINSTALL_CONFIRM=yes
 ## make components_uninstall UNINSTALL_CONFIRM=yes SSM_BASE=/ssm/net/rpn/MIG
 ## make components_uninstall UNINSTALL_CONFIRM=yes SSM_BASE=/fs/ssm/eccc/mrd/rpn/MIG
+
+==== Patching the git repos ==============================================
+
+Patch are produced by
+
+# https://www.devroom.io/2009/10/26/how-to-create-and-apply-a-patch-with-git/
+git apply --stat PATCH.patch
+git apply --check PATCH.patch
+
+# Selective application
+# git apply --reject PATH/TO/INCLUDE PATCH.patch
+# git apply --reject --include PATH/TO/INCLUDE PATCH.patch
+# git am    --include PATH/TO/INCLUDE  PATCH.patch
+# git apply --exclude PATH/TO/EXCLUDE PATCH.patch
+# git am    --exclude PATH/TO/EXCLUDE  PATCH.patch
+
+# Full apply
+git am --signoff PATCH.patch
+
+# Fixing apply/am problems
+# https://stackoverflow.com/questions/25846189/git-am-error-patch-does-not-apply
+# https://www.drupal.org/node/1129120
+
+# With --reject: 
+# * inspect the reject
+# * apply the patch manually (with an editor)
+# * add file modified by the patch (git add...)
+# * git am --continue

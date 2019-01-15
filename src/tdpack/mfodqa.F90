@@ -17,7 +17,7 @@
 !              -  (eau seulement)
 !
       Subroutine mfodqa3(dq,tt,ps,ni,nk,n)
-!
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 !
@@ -48,24 +48,10 @@
 ! ni       horizontal dimension
 ! nk       vertical dimension
 ! n        number of points to process
-!
-!Implicites
-Include "thermoconsts.inc"
-!Modules
 !*
 !--------------------------------------------------------------------
       Real qs
-!
-!***********************************************************************
-!     Automatic arrays
-!***********************************************************************
-!
-!
-!***********************************************************************
-!
       Integer k, i
-Include "dintern.inc"
-Include "fintern.inc"
 !--------------------------------------------------------------------
 !
 !

@@ -25,11 +25,15 @@ module fst_mod
    !@author  Stephane Chamberland, 2011-04
    !@description
    ! Public functions
-   public :: fst_open,fst_close,fst_find,fst_read,fst_write,fst_get_gridid,fst_getmeta,fst_get_hgridid,fst_get_vgrid,fst_write_opt
+   public :: fst_open, fst_close, fst_find, fst_read, fst_rdhint, fst_write, &
+        fst_get_gridid, fst_getmeta, fst_get_hgridid, fst_get_vgrid, &
+        fst_write_opt, fst_checkalloc, fst_checkalloc2
+   public :: fst_find_vect, fst_find_0, fst_find_3d_vect, fst_find_3d_0
    ! Public constants
-   logical,parameter,public :: FST_READONLY   = .true.
-   public :: FST_FIND_LT,FST_FIND_LE,FST_FIND_NEAR,FST_FIND_GE,FST_FIND_GT, &
-        FST_NPAK_DEFAULT,FST_NPAK_FULL32,FST_OPT_OUTGRID_TYPE,FST_ZGRID,FST_DIEZEGRID
+   logical, parameter, public :: FST_READONLY   = .true.
+   public :: FST_FIND_LT, FST_FIND_LE, FST_FIND_NEAR, FST_FIND_GE,  &
+        FST_FIND_GT, FST_NPAK_DEFAULT, FST_NPAK_FULL32, FST_OPT_OUTGRID_TYPE, &
+        FST_ZGRID, FST_DIEZEGRID, FST_FIND_DIAG_T, FST_FIND_DIAG_M
 !@/
 
 #include <rmnlib_basics.hf>
@@ -39,7 +43,7 @@ module fst_mod
 contains
 
    !/@
-   function fst_open(F_filename_S,F_readonly_L,F_dir_ok_L) result(F_fileid)
+   function fst_open(F_filename_S, F_readonly_L, F_dir_ok_L) result(F_fileid)
       implicit none
       !@objective Open rpn std file
       !@arguments
@@ -53,10 +57,10 @@ contains
       integer,parameter :: NMAXFILES = 2048, FSTD89 = 1, FSTD98 = 33
       
       logical :: readonly_L,dir_ok_L,is_file_L,is_dir_L,can_read_L
-      integer :: istat,nfiles,nfiles2,ifile,unitlist(NMAXFILES),n,ftype
+      integer :: istat,nfiles,nfiles2,ifile,unitlist(NMAXFILES),ftype
       character(len=32) :: type_S
       character(len=512) :: msg_S
-      character(len=RMN_PATH_LEN) :: name_S,filelist_S(NMAXFILES)
+      character(len=RMN_PATH_LEN) :: filelist_S(NMAXFILES)
 
       integer, external :: wkoffit
       ! ---------------------------------------------------------------------

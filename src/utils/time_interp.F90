@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -40,16 +40,22 @@ module time_interp_mod
    integer,parameter,public :: TIME_INTERP_NEXT = 4
    integer,parameter,public :: TIME_INTERP_INCREMENT = 5
    integer,parameter,public :: TIME_INTERP_INCR = TIME_INTERP_INCREMENT
-   integer,parameter,public :: TIME_INTERP_NTYPES = 5
+   integer,parameter,public :: TIME_INTERP_ANY = 6
+   integer,parameter,public :: TIME_INTERP_NONE = 7
+   integer,parameter,public :: TIME_INTERP_NTYPES = 7
+   character(len=9),parameter,public :: &
+        TIME_INTERP_TYPELIST_S(TIME_INTERP_NTYPES) = &
+        (/'nearest  ', 'linear   ', 'step     ', 'next     ', &
+          'increment', 'any      ', 'none     '/)
+
    integer,parameter,public :: TIME_INTERP_FOUND_PREV = 97
    integer,parameter,public :: TIME_INTERP_FOUND_NEXT = 98
    integer,parameter,public :: TIME_INTERP_NOT_FOUND = -99
    integer,parameter,public :: TIME_INTERP_NEED_NEXT = -98
    integer,parameter,public :: TIME_INTERP_NEED_PREV = -97
+
    real,   parameter,public :: TIME_INTERP_WEIGHT_FACT = 100000.
-   character(len=9),parameter,public :: &
-        TIME_INTERP_TYPELIST_S(TIME_INTERP_NTYPES) = &
-        (/'nearest  ','linear   ','step     ','next     ','increment'/)
+
    !*@/
 #include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -110,6 +116,7 @@ module time_interp_mod
    real(RDOUBLE),parameter :: EPSILON_8 = 1.d-5
    real(RDOUBLE),parameter :: SEC_PER_HOURS_8 = 3600.0D0
    real,parameter :: EPSILON = 1.e-5
+   integer, parameter :: NVLIST = 3
 
 contains
 
@@ -168,7 +175,7 @@ contains
       character(len=GMM_MAXNAMELENGTH) :: varname_S
       integer :: istat1,istat2
       type(gmm_metadata) :: mymeta
-      real,pointer :: dummy3d(:,:,:)
+      real,pointer, contiguous :: dummy3d(:,:,:)
       !----------------------------------------------------------------------
       F_istat   = TIME_INTERP_NOT_FOUND
       F_datev1  = RMN_ERR
@@ -210,7 +217,7 @@ contains
       jdatev  = jdate_from_cmc(F_datev)
       jdatev1 = jdate_from_cmc(F_datev1)
       jdatev2 = jdate_from_cmc(F_datev2)
-      F_weight = time_interp_weight_lin_8(jdatev,jdatev1,jdatev2) 
+      F_weight = time_interp_weight_lin_8(jdatev,jdatev1,jdatev2)
       !----------------------------------------------------------------------
       return
    end function time_interp_weight_lin_4
@@ -447,9 +454,9 @@ contains
       if (datev1 /= RMN_ERR) &
            weight = time_interp_weight_type_8(itype,F_datev,datev1,datev2)
 
-!!$      write(msg_S,'(a,i,f5.2,a)') '(time_interp) Status0/weight0: ',istat,weight,' '//trim(F_varname_S)//' at '//trim(datev_S)//' [type='//trim(itype_S)//']'
-      write(msg_S,*) '(time_interp) Status0/weight0: ',istat,weight,' '//trim(F_varname_S)//' at '//trim(datev_S)//' [type='//trim(itype_S)//']'
-      call msg(MSG_INFOPLUS,trim(msg_S))
+!!$      write(msg_S,'(a,i,f9.6,a)') ' Status0/weight0: ',istat,weight,' '//trim(F_varname_S)//' at '//trim(datev_S)//' [type='//trim(itype_S)//']'
+      write(msg_S,*) 'Status0/weight0: ',istat,weight,' '//trim(F_varname_S)//' at '//trim(datev_S)//' [type='//trim(itype_S)//']'
+      call msg(MSG_INFOPLUS,'(time_interp)'//trim(msg_S))
 
       select case(istat)
       case(RMN_OK)
@@ -481,10 +488,10 @@ contains
          F_istat = TIME_INTERP_NOT_FOUND
          if (itype == TIME_INTERP_NEXT) F_istat = TIME_INTERP_NEED_NEXT
      end select
-         
-!!$      write(msg_S,'(a,i,f5.2,a)') '(time_interp) Status/weight: ',F_istat,weight,' '//trim(F_varname_S)//' at '//trim(datev_S)//' [type='//trim(itype_S)//']'
-      write(msg_S,*) '(time_interp) Status/weight: ',F_istat,weight,' '//trim(F_varname_S)//' at '//trim(datev_S)//' [type='//trim(itype_S)//']'
-      call msg(MSG_INFOPLUS,trim(msg_S))
+ 
+!!$      write(msg_S,'(a,i,f9.6,a)') ' Status/weight: ',F_istat,weight,' '//trim(F_varname_S)//' at '//trim(datev_S)//' [type='//trim(itype_S)//']'
+      write(msg_S,*) 'Status/weight: ',F_istat,weight,' '//trim(F_varname_S)//' at '//trim(datev_S)//' [type='//trim(itype_S)//']'
+      call msg(MSG_INFOPLUS,'(time_interp)'//trim(msg_S))
       !----------------------------------------------------------------------
       return
    end function time_interp_status_8
@@ -493,7 +500,7 @@ contains
    !/@*
    function time_interp_set0_4(F_data,F_varname_S,F_datev,F_in_restart_L,F_flag) result(F_istat)
       implicit none
-      real,pointer :: F_data(:,:,:)
+      real,pointer, contiguous :: F_data(:,:,:)
       character(len=*),intent(in) :: F_varname_S
       integer,intent(in) :: F_datev
       logical,intent(in),optional :: F_in_restart_L
@@ -519,7 +526,7 @@ contains
    !/@*
    function time_interp_set0_8(F_data,F_varname_S,F_datev,F_in_restart_L,F_flag) result(F_istat)
       implicit none
-      real,pointer :: F_data(:,:,:)
+      real,pointer, contiguous :: F_data(:,:,:)
       character(len=*),intent(in) :: F_varname_S
       integer(IDOUBLE),intent(in) :: F_datev
       logical,intent(in),optional :: F_in_restart_L
@@ -529,7 +536,7 @@ contains
       integer :: myflag
       !----------------------------------------------------------------------
       myflag = 0
-      if (present(F_flag)) myflag = F_flag      
+      if (present(F_flag)) myflag = F_flag
       if (present(F_in_restart_L)) then
          F_istat = time_interp_set1_8(F_data,F_varname_S,F_datev,' ',' ',F_in_restart_L,F_flag=myflag)
       else
@@ -543,7 +550,7 @@ contains
    !/@*
    function time_interp_set1_4(F_data,F_varname_S,F_datev,F_vgrid_S,F_sfcfld_S,F_in_restart_L,F_flag) result(F_istat)
       implicit none
-      real,pointer :: F_data(:,:,:)
+      real,pointer, contiguous :: F_data(:,:,:)
       character(len=*),intent(in) :: F_varname_S,F_vgrid_S,F_sfcfld_S
       integer,intent(in) :: F_datev
       logical,intent(in),optional :: F_in_restart_L
@@ -567,19 +574,21 @@ contains
 
 
    !/@*
-   function time_interp_set1_8(F_data,F_varname_S,F_datev,F_vgrid_S,F_sfcfld_S,F_in_restart_L,F_flag) result(F_istat)
+   function time_interp_set1_8(F_data,F_varname_S,F_datev,F_vgrid_S, &
+        F_sfcfld_S,F_in_restart_L,F_flag,F_sfcfld2_S) result(F_istat)
       implicit none
-      real,pointer :: F_data(:,:,:)
+      real,pointer, contiguous :: F_data(:,:,:)
       character(len=*),intent(in) :: F_varname_S,F_vgrid_S,F_sfcfld_S
       integer(IDOUBLE),intent(in) :: F_datev
       logical,intent(in),optional :: F_in_restart_L
       integer,intent(in),optional :: F_flag
+      character(len=*),intent(in),optional :: F_sfcfld2_S
       integer :: F_istat
       !*@/
       integer :: istat,istat2,rstst_flag,myflag
       real :: weight
       character(len=MU_JDATE_PDF_LEN) datev_S
-      character(len=512) :: msg_S
+      character(len=512) :: msg_S, sfcfld2_S
       !----------------------------------------------------------------------
       F_istat = RMN_ERR
       if (trim(F_varname_S)==' ' .or. .not.associated(F_data)) return
@@ -589,17 +598,20 @@ contains
       endif
       myflag = 0
       if (present(F_flag)) myflag = F_flag
+      sfcfld2_S = ' '
+      if (present(F_sfcfld2_S)) sfcfld2_S = F_sfcfld2_S
 
       datev_S = jdate_to_print(F_datev)
       msg_S = ' '
-      write(msg_S,'(a,2e14.6,a)') trim(F_varname_S)//' valid at '//trim(datev_S)//' [minmax=',minval(F_data),maxval(F_data),'] vgd='//trim(F_vgrid_S)//'; rfld='//trim(F_sfcfld_S)
+!!$      write(msg_S,'(a,2e14.6,a)') trim(F_varname_S)//' valid at '//trim(datev_S)//' [minmax=',minval(F_data),maxval(F_data),'] vgd='//trim(F_vgrid_S)//'; rfld='//trim(F_sfcfld_S)//' '//trim(sfcfld2_S)
+      write(msg_S,'(a)') trim(F_varname_S)//' valid at '//trim(datev_S)//' vgd='//trim(F_vgrid_S)//'; rfld='//trim(F_sfcfld_S)//' '//trim(sfcfld2_S)
 
       weight = time_interp_weight(F_varname_S,F_datev,istat)
       select case(istat)
       case(RMN_OK)
          if (weight-EPSILON > 1.) then
             istat2 = priv_shuffle(F_varname_S)
-            F_istat = priv_setdata(TIME_INTERP_NEXT,F_varname_S,F_datev,F_vgrid_S,F_sfcfld_S,rstst_flag,myflag,F_data)
+            F_istat = priv_setdata(TIME_INTERP_NEXT,F_varname_S,F_datev,F_vgrid_S,F_sfcfld_S,rstst_flag,myflag,F_data, sfcfld2_S)
          else
             if (weight < 0.) then
                call msg(MSG_INFOPLUS,'(time_interp) Backward set not yet implemented: '//trim(msg_S))
@@ -610,7 +622,7 @@ contains
          endif
       case(TIME_INTERP_FOUND_PREV)
          if (abs(weight) > EPSILON) then
-            F_istat = priv_setdata(TIME_INTERP_NEXT,F_varname_S,F_datev,F_vgrid_S,F_sfcfld_S,rstst_flag,myflag,F_data)
+            F_istat = priv_setdata(TIME_INTERP_NEXT,F_varname_S,F_datev,F_vgrid_S,F_sfcfld_S,rstst_flag,myflag,F_data, sfcfld2_S)
             if (weight < 0.) istat2 = priv_shuffle(F_varname_S)
          else
             call msg(MSG_INFOPLUS,'(time_interp) Set cannot replace a value within existing time range: '//trim(msg_S))
@@ -618,7 +630,7 @@ contains
       case(TIME_INTERP_FOUND_NEXT)
          continue
       case default
-            F_istat = priv_setdata(TIME_INTERP_PREV,F_varname_S,F_datev,F_vgrid_S,F_sfcfld_S,rstst_flag,myflag,F_data)
+            F_istat = priv_setdata(TIME_INTERP_PREV,F_varname_S,F_datev,F_vgrid_S,F_sfcfld_S,rstst_flag,myflag,F_data, sfcfld2_S)
       end select
 
       if (RMN_IS_OK(F_istat)) then
@@ -639,7 +651,7 @@ contains
       integer,intent(in) :: F_next_prev
       integer,intent(out) :: F_datev
       type(gmm_metadata),intent(out),optional :: F_meta
-      real,pointer,optional :: F_data(:,:,:)
+      real,pointer, optional :: F_data(:,:,:)
       character(len=*),intent(out),optional :: F_vgrid_S,F_sfcfld_S
       integer,intent(out),optional :: F_flag
       integer :: F_istat
@@ -665,19 +677,19 @@ contains
 
 
    !/@*
-   function time_interp_retrieve_8(F_varname_S,F_next_prev,F_datev,F_meta,F_data,F_vgrid_S,F_sfcfld_S,F_flag) result(F_istat)
+   function time_interp_retrieve_8(F_varname_S,F_next_prev,F_datev,F_meta,F_data,F_vgrid_S,F_sfcfld_S,F_flag, F_sfcfld2_S) result(F_istat)
       implicit none
       character(len=*),intent(in) :: F_varname_S
       integer,intent(in) :: F_next_prev
       integer(IDOUBLE),intent(out) :: F_datev
       type(gmm_metadata),intent(out),optional :: F_meta
-      real,pointer,optional :: F_data(:,:,:)
-      character(len=*),intent(out),optional :: F_vgrid_S,F_sfcfld_S
+      real,pointer, optional :: F_data(:,:,:)
+      character(len=*),intent(out),optional :: F_vgrid_S, F_sfcfld_S, F_sfcfld2_S
       integer,intent(out),optional :: F_flag
       integer :: F_istat
       !*@/
       character(len=512) :: msg_S,dummy_S
-      character(len=GMM_MAXNAMELENGTH) :: varname_S,vlist0_S(2),datev_S
+      character(len=GMM_MAXNAMELENGTH) :: varname_S,vlist0_S(NVLIST),datev_S
       integer :: istat,nitems
       type(gmm_metadata) :: mymeta
       real,pointer :: dummy3d(:,:,:)
@@ -687,6 +699,7 @@ contains
       if (present(F_meta)) F_meta = GMM_NULL_METADATA
       if (present(F_vgrid_S)) F_vgrid_S = ' '
       if (present(F_sfcfld_S)) F_sfcfld_S = ' '
+      if (present(F_sfcfld2_S)) F_sfcfld2_S = ' '
       if (present(F_flag)) F_flag = 0
 
       varname_S = priv_varname(F_varname_S,F_next_prev)
@@ -710,17 +723,19 @@ contains
          F_datev = priv_meta2date(mymeta)
          datev_S = ' ' ; msg_S = ' '
          datev_S = jdate_to_print(F_datev)
-         write(msg_S,'(a,2e14.6,a)') trim(dummy_S)//' valid at '//trim(datev_S)//' [minmax=',minval(dummy3d),maxval(dummy3d),']'
+!!$         write(msg_S,'(a,2e14.6,a)') trim(dummy_S)//' valid at '//trim(datev_S)//' [minmax=',minval(dummy3d),maxval(dummy3d),']'
+         write(msg_S,'(a)') trim(dummy_S)//' valid at '//trim(datev_S)
       endif
       call msg(MSG_INFOPLUS,'(time_interp) Retrieve: '//trim(msg_S))
       if (.not.RMN_IS_OK(F_istat)) return
 
       if (present(F_meta)) F_meta = mymeta
-      if (present(F_vgrid_S) .or. present(F_sfcfld_S)) then
+      if (present(F_vgrid_S) .or. present(F_sfcfld_S) .or. present(F_sfcfld2_S)) then
          istat = wb_get(varname_S,vlist0_S,nitems)
          if (RMN_IS_OK(istat)) then
             if (present(F_vgrid_S)) F_vgrid_S = vlist0_S(1)
             if (present(F_sfcfld_S)) F_sfcfld_S = vlist0_S(2)
+            if (present(F_sfcfld2_S)) F_sfcfld2_S = vlist0_S(3)
 !!$         else
 !!$            F_istat = TIME_INTERP_NOT_FOUND
          endif
@@ -777,6 +792,7 @@ contains
       character(len=16) datev_S,varname_S
       character(len=512) :: itype_S,msg_S
       !----------------------------------------------------------------------
+      call msg(MSG_DEBUG, '(time_interp) get ptr [BEGIN]')
       F_istat = RMN_ERR
       itype = TIME_INTERP_LINE
       incr_len = 1.
@@ -788,7 +804,7 @@ contains
 
       weight = time_interp_weight(itype,F_datev,F_datev0,F_datev1)
       if (weight < -EPSILON .or. weight > 1.+EPSILON) then
-         call msg(MSG_INFOPLUS,'(time_interp) ERROR - Get ('//trim(itype_S)//'): Does not extrapolate')
+         call msg(MSG_DEBUG,'(time_interp) ERROR - Get ptr ('//trim(itype_S)//'): Does not extrapolate')
          F_istat = TIME_INTERP_NEED_NEXT
          if (weight < -EPSILON) F_istat = TIME_INTERP_NEED_PREV
          return
@@ -802,6 +818,7 @@ contains
             lijk = lbound(F_data1) ; uijk = ubound(F_data1)
             allocate(F_data(lijk(1):uijk(1),lijk(2):uijk(2),lijk(3):uijk(3)),stat=istat)
          else
+            call msg(MSG_DEBUG,'(time_interp) ERROR Get ptr - Only got null pointer as input')
             return
          endif
       else
@@ -813,12 +830,15 @@ contains
             if (.not.all(shape(F_data)==shape(F_data1))) ok_L = .false.
          endif
          if (.not.ok_L) then
-            call msg(MSG_INFOPLUS,'(time_interp) ERROR - Get ('//trim(itype_S)//'):  Cannot get values, array bounds not compatible')
+            call msg(MSG_DEBUG,'(time_interp) ERROR - Get ptr ('//trim(itype_S)//'):  Cannot get values, array bounds not compatible')
             return
          endif
       endif
 
-      if (.not.associated(F_data)) return
+      if (.not.associated(F_data)) then
+         call msg(MSG_DEBUG,'(time_interp) ERROR Get ptr - Probleme allocating mem')
+         return
+      endif
 
       if (abs(weight) < EPSILON .and. itype /= TIME_INTERP_INCR) then
          if (.not.associated(F_data0)) then
@@ -829,13 +849,17 @@ contains
       else if (abs(weight-1.) < EPSILON .and. itype /= TIME_INTERP_INCR) then
          if (.not.associated(F_data1)) then
             F_istat = TIME_INTERP_NEED_NEXT
+            call msg(MSG_DEBUG,'(time_interp) get_ptr - NEED_NEXT')
             return
          endif
          F_data = F_data1
       else
-         if (.not.(associated(F_data0).and.associated(F_data1))) return
+         if (.not.(associated(F_data0).and.associated(F_data1))) then
+            call msg(MSG_DEBUG,'(time_interp) ERROR Get ptr - Missing input data (null ptr)')
+            return
+         endif
          if (.not.all(shape(F_data0)==shape(F_data1))) then
-            call msg(MSG_INFOPLUS,'(time_interp) ERROR - Get ('//trim(itype_S)//'):  Cannot get values, array bounds not compatible')
+            call msg(MSG_DEBUG,'(time_interp) ERROR - Get ('//trim(itype_S)//'):  Cannot get values, array bounds not compatible')
             return
          endif
          if (itype == TIME_INTERP_INCR) then
@@ -851,13 +875,15 @@ contains
          datev_S = jdate_to_print(F_datev)
          msg_S = ' '
          if (itype /= TIME_INTERP_INCR) then
-            write(msg_S,'(a,a,2e14.6,a,f5.2,a,f5.2,a)') trim(varname_S),' valid at '//trim(datev_S)//' [minmax=',minval(F_data),maxval(F_data),'] (data=',1.-weight,'*data0 + ',weight,'*data1)'
+            write(msg_S,'(a,a,2e14.6,a,f9.6,a,f9.6,a)') trim(varname_S),' valid at '//trim(datev_S)//' [minmax=',minval(F_data),maxval(F_data),'] (data=',1.-weight,'*data0 + ',weight,'*data1)'
          else
             write(msg_S,'(a,a,2e14.6,a)') trim(varname_S),' valid at '//trim(datev_S)//' [minmax=',minval(F_data),maxval(F_data),']'
          endif
          call msg(MSG_INFOPLUS,'(time_interp) Get ('//trim(itype_S)//'): '//trim(msg_S))
       endif
-      F_istat = RMN_OK
+      F_istat = max(RMN_OK, nint(abs(weight)*TIME_INTERP_WEIGHT_FACT))
+      write(msg_S, *) F_istat
+      call msg(MSG_DEBUG, '(time_interp) get ptr [END] '//trim(msg_S))
       !----------------------------------------------------------------------
       return
    end function time_interp_ptr_8
@@ -1001,7 +1027,7 @@ contains
    function priv_shuffle(F_varname_S) result(F_istat)
       implicit none
       character(len=*),intent(in) :: F_varname_S
-      character(len=GMM_MAXNAMELENGTH) :: list_S(2),vlist1_S(2),vlist2_S(2)
+      character(len=GMM_MAXNAMELENGTH) :: list_S(2),vlist1_S(NVLIST),vlist2_S(NVLIST)
       integer :: F_istat,istat,nitems
       list_S(1) = priv_varname(F_varname_S,TIME_INTERP_PREV)
       list_S(2) = priv_varname(F_varname_S,TIME_INTERP_NEXT)
@@ -1014,17 +1040,17 @@ contains
 
 
    !/@*
-   function priv_setdata(F_next_prev,F_varname_S,F_datev,F_vgrid_S,F_sfcfld_S,F_rstst_flag,F_myflag,F_data) result(F_istat)
+   function priv_setdata(F_next_prev,F_varname_S,F_datev,F_vgrid_S,F_sfcfld_S,F_rstst_flag,F_myflag,F_data, F_sfcfld2_S) result(F_istat)
       implicit none
       real,pointer :: F_data(:,:,:)
-      character(len=*),intent(in) :: F_varname_S,F_vgrid_S,F_sfcfld_S
+      character(len=*),intent(in) :: F_varname_S,F_vgrid_S,F_sfcfld_S, F_sfcfld2_S
       integer,intent(in) :: F_next_prev
       integer(IDOUBLE),intent(in) :: F_datev
       integer,intent(in) :: F_rstst_flag,F_myflag
       integer :: F_istat
       !*@/
       type(gmm_metadata) :: meta0
-      character(len=GMM_MAXNAMELENGTH) :: varname_S,varname2_S,vlist_S(2)
+      character(len=GMM_MAXNAMELENGTH) :: varname_S,varname2_S,vlist_S(NVLIST)
       logical :: ok_L
       integer :: istat,ldims(3),udims(3),ii
       real,pointer :: data(:,:,:)
@@ -1068,6 +1094,7 @@ contains
       data = F_data
       vlist_S(1) = F_vgrid_S
       vlist_S(2) = F_sfcfld_S
+      vlist_S(3) = F_sfcfld2_S
       istat = wb_put(varname_S,vlist_S,WB_REWRITE_MANY)
       F_istat = RMN_OK
       !----------------------------------------------------------------------

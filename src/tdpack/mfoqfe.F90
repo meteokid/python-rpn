@@ -16,7 +16,7 @@
 !**s/r mfoqfe3  -  calcule hum. sp. de tension de vap. et pres.
 !
       Subroutine mfoqfe3(qq,ee,ps,ni,nk,n)
-!
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 !
@@ -46,25 +46,9 @@
 ! ni       horizontal dimension
 ! nk       vertical dimension
 ! n        number of points to process
-!
-!
-!Implicites
-Include "thermoconsts.inc"
-!Modules
-!
 !*
 !--------------------------------------------------------------------
       Integer i, k
-!
-!***********************************************************************
-!     Automatic arrays
-!***********************************************************************
-!
-!
-!***********************************************************************
-!
-Include "dintern.inc"
-Include "fintern.inc"
 !--------------------------------------------------------------------
 !
 !

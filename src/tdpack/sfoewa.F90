@@ -16,7 +16,7 @@
 !**fonction sfoewa  -  calcule tension de vapeur saturante ew.
 !
       Function sfoewa(tt)
-!
+      use tdpack, only: foewa
       implicit none
 #include <arch_specific.hf>
       Real sfoewa, tt
@@ -33,16 +33,7 @@
 !
 !          - Input -
 ! tt       temperature in K
-!
-!
-!Implicites
-Include "thermoconsts.inc"
-!Modules
-!
 !*
-!--------------------------------------------------------------------
-Include "dintern.inc"
-Include "fintern.inc"
 !--------------------------------------------------------------------
 !
 !

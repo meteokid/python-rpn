@@ -16,7 +16,7 @@
 !**fonction sttlcl - calcule la temperature du lcl
 !
       Function sttlcl(td, tt)
-!
+      use tdpack, only: cpd, eps1, folv
       implicit none
 #include <arch_specific.hf>
 !
@@ -36,19 +36,9 @@
 !arguments
 !      tt - temperature (K) at the base of the ascent
 !      td - dew point temp (K) at the base of the ascent
-!
-!implicites
-Include "thermoconsts.inc"
-!modules
-!
 !*
 !--------------------------------------------------------------------
-!
       Real a, x, y
-!
-Include "dintern.inc"
-Include "fintern.inc"
-!
 !-------------------------------------------------------------------
 !
       If(td .Ge. tt)Then

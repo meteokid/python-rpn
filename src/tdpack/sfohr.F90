@@ -16,7 +16,7 @@
 !**fonction sfohr  -  calcule hum rel de hum sp, temp et pression
 !
       Function sfohr(qq,tt,pr)
-!
+      use tdpack, only: fohr
       implicit none
 #include <arch_specific.hf>
       Real sfohr, qq, tt, pr
@@ -35,16 +35,7 @@
 ! qq       specific humidity in kg/kg
 ! tt       temperature in K
 ! pr       pressure in Pa
-!
-!
-!Implicites
-Include "thermoconsts.inc"
-!Modules
-!
 !*
-!--------------------------------------------------------------------
-Include "dintern.inc"
-Include "fintern.inc"
 !--------------------------------------------------------------------
 !
       sfohr = fohr(qq,tt,pr)

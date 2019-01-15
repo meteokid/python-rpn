@@ -165,7 +165,7 @@ contains
          m_files(F_id,ifile)%isdir_L = .false.
       endif
       if (present(F_isdir_L)) m_files(F_id,ifile)%isdir_L = F_isdir_L
-      
+
       if (m_files(F_id,ifile)%isdir_L) then
          F_istat = clib_isdir(trim(m_basedir_S(F_id))//'/'//trim(F_filename_S))
          if (.not.RMN_IS_OK(F_istat)) then
@@ -400,7 +400,9 @@ contains
 
 
    !/@*
-   function input_files_vgrid_4(F_id,F_file_idx,F_varname_S,F_ip2,F_datev,F_vgrid_S,F_sfcfld,F_sfcgridid) result(F_istat)
+   function input_files_vgrid_4(F_id, F_file_idx, F_varname_S, F_ip2, &
+        F_datev, F_vgrid_S, F_sfcfld, F_sfcgridid, &
+        F_sfcfld2, F_sfcgridid2) result(F_istat)
       implicit none
       !@objective
       !@arguments
@@ -410,6 +412,8 @@ contains
       character(len=*),intent(out) :: F_vgrid_S
       real,pointer,optional :: F_sfcfld(:,:,:)
       integer,intent(out),optional :: F_sfcgridid
+      real,pointer,optional :: F_sfcfld2(:,:,:)
+      integer,intent(out),optional :: F_sfcgridid2
       !@return
       integer :: F_istat
       !*@/
@@ -417,7 +421,14 @@ contains
       !------------------------------------------------------------------
       jdatev = jdate_from_cmc(F_datev)
       if (present(F_sfcfld).and.present(F_sfcgridid)) then
-         F_istat = input_files_vgrid_8(F_id,F_file_idx,F_varname_S,F_ip2,jdatev,F_vgrid_S,F_sfcfld,F_sfcgridid)
+         if (present(F_sfcfld2).and.present(F_sfcgridid2)) then
+            F_istat = input_files_vgrid_8(F_id, F_file_idx, F_varname_S, &
+                 F_ip2, jdatev, F_vgrid_S, F_sfcfld, F_sfcgridid, &
+                 F_sfcfld2, F_sfcgridid2)
+         else
+            F_istat = input_files_vgrid_8(F_id, F_file_idx, F_varname_S, &
+                 F_ip2, jdatev, F_vgrid_S, F_sfcfld, F_sfcgridid)
+         endif
       else
          F_istat = input_files_vgrid_8(F_id,F_file_idx,F_varname_S,F_ip2,jdatev,F_vgrid_S)
       endif
@@ -427,7 +438,9 @@ contains
 
 
    !/@*
-   function input_files_vgrid_8(F_id,F_file_idx,F_varname_S,F_ip2,F_jdatev,F_vgrid_S,F_sfcfld,F_sfcgridid) result(F_istat)
+   function input_files_vgrid_8(F_id, F_file_idx, F_varname_S, F_ip2, &
+        F_jdatev, F_vgrid_S, F_sfcfld, F_sfcgridid, &
+        F_sfcfld2, F_sfcgridid2) result(F_istat)
       implicit none
       !@objective
       !@arguments
@@ -437,13 +450,15 @@ contains
       character(len=*),intent(out) :: F_vgrid_S
       real,pointer,optional :: F_sfcfld(:,:,:)
       integer,intent(out),optional :: F_sfcgridid
+      real,pointer,optional :: F_sfcfld2(:,:,:)
+      integer,intent(out),optional :: F_sfcgridid2
       !@return
       integer :: F_istat
       !*@/
-      type(vgrid_descriptor) :: vgrid,vgrid0
+      type(vgrid_descriptor) :: vgrid, vgrid0
       integer,pointer :: ip1list(:)
-      integer :: fileid,istat,sfcRefKey
-      character(len=4) :: levtype_S,sfcfld_S
+      integer :: fileid, istat, sfcRefKey, sfcRefKey2
+      character(len=4) :: levtype_S, sfcfld_S, sfcfld2_S
       !------------------------------------------------------------------
       call msg(MSG_DEBUG,'(input_files) vgrid [BEGIN]')
       call priv_init()
@@ -456,32 +471,51 @@ contains
       if (present(F_sfcfld).and.present(F_sfcgridid)) then
          nullify(F_sfcfld)
          F_sfcgridid = RMN_ERR
-         istat = vgrid_from_file_mpi(fileid,F_varname_S,F_jdatev,vgrid,ip1list,levtype_S,F_sfcRefKey=sfcRefKey)
+         istat = vgrid_from_file_mpi(fileid, F_varname_S, F_jdatev, vgrid, &
+              ip1list, levtype_S, F_sfcRefKey=sfcRefKey, &
+              F_sfcRefKey2=sfcRefKey2)
          if (RMN_IS_OK(sfcRefKey)) then
-            istat = fstmpi_read(sfcRefKey,F_sfcfld,fileid,F_sfcgridid)
+            istat = fstmpi_read(sfcRefKey, F_sfcfld, fileid, F_sfcgridid)
+            if (.not.RMN_IS_OK(istat)) &
+                 call msg(MSG_WARNING,'(input_files) Problem reading vgrid Sfc Ref field')
+         endif
+         if (present(F_sfcfld2) .and. present(F_sfcgridid2 ).and. &
+              RMN_IS_OK(sfcRefKey2)) then
+            nullify(F_sfcfld)
+            F_sfcgridid2 = RMN_ERR
+            istat = fstmpi_read(sfcRefKey2, F_sfcfld2, fileid, F_sfcgridid2)
             if (.not.RMN_IS_OK(istat)) &
                  call msg(MSG_WARNING,'(input_files) Problem reading vgrid Sfc Ref field')
          endif
       else
-         istat = vgrid_from_file_mpi(fileid,F_varname_S,F_jdatev,vgrid,ip1list,levtype_S)
+         istat = vgrid_from_file_mpi(fileid, F_varname_S, F_jdatev, vgrid, &
+              ip1list, levtype_S)
       endif
       if (.not.RMN_IS_OK(istat)) then
          call msg(MSG_WARNING,'(input_files) vgrid, problem getting vgrid from file for '//trim(F_varname_S))
          return
       endif
-      istat = vgd_get(vgrid,'RFLD',sfcfld_S,quiet=.true.)
+      istat = vgd_get(vgrid, 'RFLD', sfcfld_S, quiet=.true.)
       if (istat /= VGD_OK) sfcfld_S = ' '
+      istat = vgd_get(vgrid, 'RFLS', sfcfld2_S, quiet=.true.)
+      if (istat /= VGD_OK) sfcfld2_S = ' '
       F_vgrid_S = 'in/'//trim(F_varname_S)
-      istat = vgrid_wb_get(F_vgrid_S,vgrid0)
+      istat = vgrid_wb_get(F_vgrid_S, vgrid0)
       if (.not.RMN_IS_OK(istat)) then
-         istat = vgrid_wb_put(F_vgrid_S,vgrid,ip1list,sfcfld_S)
+         istat = vgrid_wb_put(F_vgrid_S, vgrid, ip1list, sfcfld_S, sfcfld2_S)
       elseif (.not.(vgrid0 == vgrid)) then
          call msg(MSG_WARNING,'(input_files) vgrid, ignoring an inconsistant vgrid for '//trim(F_varname_S))
          return
       endif
+      istat = vgd_free(vgrid0)
       if (present(F_sfcfld).and.present(F_sfcgridid)) then
          if (associated(F_sfcfld) .and. any(sfcfld_S == (/'P0','p0'/))) then
             F_sfcfld = F_sfcfld * MB2PA
+         endif
+      endif
+      if (present(F_sfcfld2).and.present(F_sfcgridid2)) then
+         if (associated(F_sfcfld2) .and. any(sfcfld2_S == (/'P0','p0'/))) then
+            F_sfcfld2 = F_sfcfld2 * MB2PA
          endif
       endif
       if (associated(ip1list)) deallocate(ip1list,stat=istat)
@@ -493,7 +527,8 @@ contains
 
 
    !/@*
-   function input_files_sfcref_4(F_id,F_file_idx,F_datev,F_vgrid,F_sfcfld,F_sfcgridid) result(F_istat)
+   function input_files_sfcref_4(F_id, F_file_idx, F_datev, F_vgrid, &
+        F_sfcfld, F_sfcgridid, F_rfls_L) result(F_istat)
       implicit none
       !@objective
       !@arguments
@@ -502,20 +537,26 @@ contains
       type(vgrid_descriptor),intent(in) :: F_vgrid
       real,pointer :: F_sfcfld(:,:,:)
       integer,intent(out) :: F_sfcgridid
+      logical,intent(in), optional :: F_rfls_L
       !@return
       integer :: F_istat
       !*@/
       integer(IDOUBLE) :: jdatev
+      logical :: rfls_L
       !------------------------------------------------------------------
       jdatev = jdate_from_cmc(F_datev)
-      F_istat = input_files_sfcref_8(F_id,F_file_idx,jdatev,F_vgrid,F_sfcfld,F_sfcgridid)
+      rfls_L = .false.
+      if (present(F_rfls_L)) rfls_L = F_rfls_L
+      F_istat = input_files_sfcref_8(F_id, F_file_idx, jdatev, F_vgrid, &
+           F_sfcfld, F_sfcgridid, rfls_L)
       !------------------------------------------------------------------
       return
    end function input_files_sfcref_4
 
 
    !/@*
-   function input_files_sfcref_8(F_id,F_file_idx,F_jdatev,F_vgrid,F_sfcfld,F_sfcgridid) result(F_istat)
+   function input_files_sfcref_8(F_id, F_file_idx, F_jdatev, F_vgrid, &
+        F_sfcfld, F_sfcgridid, F_rfls_L) result(F_istat)
       implicit none
       !@objective
       !@arguments
@@ -524,28 +565,37 @@ contains
       type(vgrid_descriptor),intent(in) :: F_vgrid
       real,pointer :: F_sfcfld(:,:,:)
       integer,intent(out) :: F_sfcgridid
+      logical,intent(in), optional :: F_rfls_L
       !@return
       integer :: F_istat
       !*@/
       integer :: fileid,sfcRefKey,istat
       character(len=4) :: sfcfld_S
+      logical :: rfls_L
       !------------------------------------------------------------------
       call msg(MSG_DEBUG,'(input_files) sfcref  [BEGIN]')
       call priv_init()
       F_istat = RMN_ERR
       F_sfcgridid = RMN_ERR
-      fileid = input_files_open1(F_id,F_file_idx)
+      rfls_L = .false.
+      if (present(F_rfls_L)) rfls_L = F_rfls_L
+      fileid = input_files_open1(F_id, F_file_idx)
       nullify(F_sfcfld)
-      sfcRefKey = vgrid_from_file_rfld_key_mpi(fileid,F_jdatev,F_vgrid)
+      sfcRefKey = vgrid_from_file_rfld_key_mpi(fileid, F_jdatev, F_vgrid, &
+           rfls_L)
       if (sfcRefKey == VGRID_FROM_FILE_NORFLD) then
          F_istat = RMN_OK
          return
       endif
-      F_istat = fstmpi_read(sfcRefKey,F_sfcfld,fileid,F_sfcgridid)
+      F_istat = fstmpi_read(sfcRefKey, F_sfcfld, fileid, F_sfcgridid)
       if (.not.RMN_IS_OK(F_istat)) then
          call msg(MSG_WARNING,'(input_files) Problem reading vgrid Sfc Ref field')
       endif
-      istat = vgd_get(F_vgrid,key='RFLD',value=sfcfld_S,quiet=.true.)
+      if (rfls_L) then
+         istat = vgd_get(F_vgrid, key='RFLS', value=sfcfld_S, quiet=.true.)
+      else
+         istat = vgd_get(F_vgrid, key='RFLD', value=sfcfld_S, quiet=.true.)
+      endif
       if (associated(F_sfcfld) .and. any(sfcfld_S == (/'P0','p0'/))) then
          F_sfcfld = F_sfcfld * MB2PA
       endif

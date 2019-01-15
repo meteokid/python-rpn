@@ -15,7 +15,7 @@
 
 !/@
 module fstmpi_mod
-use iso_c_binding
+   use iso_c_binding
    use fst_mod
    use fstmpi_read_mod
    use fstmpi_write_mod
@@ -26,8 +26,10 @@ use iso_c_binding
    !@author  Stephane Chamberland, 2011-06
    !@description
    ! Public functions
-   public :: fstmpi_open,fstmpi_close,fstmpi_find,fstmpi_read,fstmpi_write,fstmpi_getmeta,fstmpi_get_gridid,fstmpi_get_hgridid,fstmpi_get_vgrid
-   ! 
+   public :: fstmpi_open, fstmpi_close, fstmpi_find, fstmpi_read, fstmpi_rdhint, &
+        fstmpi_rdhint_3d_r4, fstmpi_rdhint_3d_r4_vect, fstmpi_write, &
+        fstmpi_getmeta, fstmpi_get_gridid, fstmpi_get_hgridid, fstmpi_get_vgrid
+
    ! Public constants
    public :: FST_READONLY,FST_FIND_LT,FST_FIND_LE,FST_FIND_NEAR,FST_FIND_GE,FST_FIND_GT,FST_NPAK_DEFAULT,FST_NPAK_FULL32
 !@/
@@ -55,7 +57,7 @@ contains
       integer :: istat,mysize,mydata(1)
       ! ---------------------------------------------------------------------
       call msg(MSG_DEBUG,'(fstmpi) open [BEGIN]')
-      call ptopo_init_var()      
+      call ptopo_init_var()
       F_fileid = RMN_ERR
       if (ptopo_isblocmaster_L) then
          readonly_L = .not.FST_READONLY

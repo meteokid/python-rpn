@@ -16,6 +16,7 @@
 !**s/r mesahu3  -  passage de es a hu
 !
       Subroutine mesahu3(hu,es,tt,ps,swph,ni,nk,n)
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 !
@@ -51,29 +52,12 @@
 ! ni       horizontal dimension
 ! nk       vertical dimension
 ! n        number of treated points
-!
-!
-!Implicites
-Include "thermoconsts.inc"
-!Modules
-!
 !*
 !--------------------------------------------------------------------
-!
-!***********************************************************************
-!     Automatic arrays
-!***********************************************************************
-!
-!
-!***********************************************************************
-!
       Real e, td
       Real tp, tg, hus
       Real epsil
       Integer k, i, iter, niter
-!
-Include "dintern.inc"
-Include "fintern.inc"
 !--------------------------------------------------------------------
 !
 !

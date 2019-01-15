@@ -16,7 +16,7 @@
 !**s/r mhraes3  -  passage de hr a es
 !
       Subroutine mhraes3(es,hr,tt,ps,swph,ni,nk,n)
-!
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 !
@@ -54,24 +54,9 @@
 !Notes
 !          The calculation is done by calls to 2 routines mhrahu3
 !          and mhuaes3.
-!
-!
-!Implicites
-Include "thermoconsts.inc"
-!Modules
-      External :: mhrahu3, mhuaes3
-!
 !*
 !--------------------------------------------------------------------
-!
-!***********************************************************************
-!     Automatic arrays
-!***********************************************************************
-!
       Real, Dimension(ni,nk) :: hu
-!
-!***********************************************************************
-!
 !--------------------------------------------------------------------
 !
 !

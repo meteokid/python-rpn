@@ -101,9 +101,9 @@ contains
 
 !!$      if (h_int_S(1:4) == 'near' .and. &
 !!$           .not.any(F_h_int_S(1:1) == (/'n','N'/))) then
-!!$         print *,'(input) Changed from '//trim(F_h_int_S)//' to Nearest horizontal interpolation for: '//trim(F_varname_S )//' '//trim(F_varname2_S )
+!!$         print *,'(hinterp4yy) Changed from '//trim(F_h_int_S)//' to Nearest horizontal interpolation for: '//trim(F_varname_S )//' '//trim(F_varname2_S )
 !!$      else
-!!$         print *,'(input) Not Changed '//trim(F_h_int_S)//' horizontal interpolation for: '//trim(F_varname_S )//' '//trim(F_varname2_S )
+!!$         print *,'(hinterp4yy) Not Changed '//trim(F_h_int_S)//' horizontal interpolation for: '//trim(F_varname_S )//' '//trim(F_varname2_S )
 !!$      endif
 
 !!$      print *,'hinterp4yy2d',subgridid,';',trim(onesubgrid_S),';',trim(h_int_S)
@@ -117,9 +117,9 @@ contains
       istat = min(ezsetopt('USE_1SUBGRID',trim(onesubgrid_S)),istat)
 
       if (h_int_S(1:4) == 'near') &
-           call msg(MSG_INFO,'(input) Nearest horizontal interpolation for: '//trim(F_varname_S )//' '//trim(F_varname2_S ))
+           call msg(MSG_INFO,'(hinterp4yy) Nearest horizontal interpolation for: '//trim(F_varname_S )//' '//trim(F_varname2_S ))
       if (h_int_S(1:4) /= 'near') &
-           call msg(MSG_INFOPLUS,'(input) Horizontal Interpolation for: '//trim(F_varname_S )//' '//trim(F_varname2_S ))
+           call msg(MSG_INFOPLUS,'(hinterp4yy) Horizontal Interpolation for: '//trim(F_varname_S )//' '//trim(F_varname2_S ))
 
       if (F_varname2_S == ' ' .or. .not.associated(F_indata2) .or. .not.associated(F_outdata2)) then
          F_istat = ezsint(F_outdata(:,:,F_k),F_indata)
@@ -136,7 +136,7 @@ contains
 
       if (RMN_IS_OK(F_istat)) then
 !!$         if (any(F_outdata(:,:,F_k) == huge(1.))) then
-!!$            call msg(MSG_WARNING,'(input) Extrapolation occured for: '//trim(F_varname_S))
+!!$            call msg(MSG_WARNING,'(hinterp4yy) Extrapolation occured for: '//trim(F_varname_S))
 !!$            F_istat = RMN_ERR
 !!$         else
             F_istat = HINTERP4YY_OK

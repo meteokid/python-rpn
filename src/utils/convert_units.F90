@@ -27,7 +27,7 @@ module convert_units_mod
 #include <rmnlib_basics.hf>
 #include <clib_interface_mu.hf>
 #include <msg.h>
-   include "thermoconsts.inc"
+#include "tdpack_const.hf"
 
    interface convert_units
       module procedure convert_units_r4_2d

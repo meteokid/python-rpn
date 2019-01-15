@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -130,7 +130,7 @@ contains
       !@objective
       !@arguments
       integer,intent(in) :: F_id,F_index,F_step,F_hgridid
-      real,pointer :: F_data(:,:,:) 
+      real,pointer :: F_data(:,:,:)
       character(len=*),intent(out),optional :: F_varname_S
       !@return
       integer :: F_istat
@@ -153,13 +153,13 @@ contains
       !@arguments
       integer,intent(in) :: F_id,F_index,F_step,F_hgridid
       character(len=*),intent(in) :: F_vgridid_S
-      real,pointer :: F_data(:,:,:) 
+      real,pointer :: F_data(:,:,:)
       character(len=*),intent(out),optional :: F_varname_S
       !@return
       integer :: F_istat
       !*@/
       character(len=32) :: varname_S,varname2_S
-      real,pointer :: data2(:,:,:) 
+      real,pointer :: data2(:,:,:)
       integer :: istat
       !----------------------------------------------------------------------
       call msg(MSG_DEBUG,'(input) get3d_scalar [BEGIN]')
@@ -201,7 +201,7 @@ contains
 
 
    !/@*
-   function input_get3d_vect(F_id,F_index,F_step,F_hgridid,F_vgridid_S,F_data,F_data2,F_varname_S,F_varname2_S) result(F_istat)
+   function input_get3d_vect(F_id,F_index,F_step,F_hgridid,F_vgridid_S,F_data,F_data2,F_varname_S,F_varname2_S,F_ovname1_S, F_ovname2_S) result(F_istat)
       implicit none
       !@objective
       !@arguments
@@ -209,6 +209,7 @@ contains
       character(len=*),intent(in) :: F_vgridid_S
       real,pointer :: F_data(:,:,:),F_data2(:,:,:)
       character(len=*),intent(out),optional :: F_varname_S,F_varname2_S
+      character(len=*),intent(in),optional :: F_ovname1_S, F_ovname2_S  !#input name overrides
       !@return
       integer :: F_istat
       !*@/
@@ -216,6 +217,7 @@ contains
       character(len=256) :: tmp_S,vn1_S,fn1_S,fn2_S
       integer :: istat,ii,ig1,ig2,ig3,ig4,fileidx,filetype
       integer,target :: ip1list(NMAX_LEVELS)
+      logical :: ip1list_alloc_L
       type(vgrid_descriptor),target :: vgrid
       type(input_var_T) :: fld
       !----------------------------------------------------------------------
@@ -234,9 +236,22 @@ contains
          call msg(MSG_WARNING,'(input) Problem getting input var metadata')
          return
       endif
+      if (present(F_ovname1_S)) then
+         if (F_ovname1_S /= '') then
+            fld%vn(1) = F_ovname1_S
+            istat = clib_tolower(fld%vn(1))
+            if (present(F_ovname2_S)) then
+               if (F_ovname2_S /= '') then
+                  fld%vn(2) = F_ovname2_S
+                  istat = clib_tolower(fld%vn(2))
+               endif
+            endif
+         endif
+      endif
       if (present(F_varname_S)) F_varname_S = fld%vn(1)
       if (present(F_varname2_S)) F_varname2_S = fld%vn(2)
 
+      ip1list_alloc_L = .false.
       fld%ip1list => ip1list
       fld%vtype = VGRID_GROUND_TYPE
       if (lvl_type_S(1:5) == 'tdiag') then
@@ -247,10 +262,11 @@ contains
       IF_V_INT: if (fld%vint_S /= 'none') then
          IF_VGRID: if (F_vgridid_S == ' ') then
             call msg(MSG_WARNING,'(input) Cannot interpolate, no dest vgrid provided for: '//trim(fld%vn(1))//' [v_int='//trim(fld%vint_S)//']')
-            return           
+            return
          else
             fld%vgrid_S = F_vgridid_S
             nullify(fld%ip1list)
+            ip1list_alloc_L = .true.
             istat = vgrid_wb_get(F_vgridid_S,vgrid,fld%ip1list,fld%vtype,fld%sfc_S)
             if (.not.RMN_IS_OK(istat)) then
                call msg(MSG_WARNING,'(input) Problem getting vgrid meta, cannot get: '//trim(fld%vn(1))//' [vgrid='//trim(F_vgridid_S)//']')
@@ -264,6 +280,7 @@ contains
          if (fld%nk == 1 .and. ip1list(1) == -1) then
             if (F_vgridid_S /= ' ') then
                nullify(fld%ip1list)
+               ip1list_alloc_L = .true.
                istat = vgrid_wb_get(F_vgridid_S,vgrid,fld%ip1list)
                if (.not.RMN_IS_OK(istat)) then
                   call msg(MSG_WARNING,'(input) Problem getting vgrid meta, cannot get: '//trim(fld%vn(1))//' [vgrid='//trim(F_vgridid_S)//']')
@@ -273,7 +290,7 @@ contains
                if (associated(fld%ip1list)) fld%nk = size(fld%ip1list)
             else
                call msg(MSG_WARNING,'(input) Cannot get data, level list unknown, no dest vgrid provided for: '//trim(fld%vn(1)))
-               return           
+               return
             endif
          endif
       endif IF_V_INT
@@ -345,6 +362,10 @@ contains
          filetype = input_files_get_type(F_id,fileidx)
          F_istat = priv_input_data(fld,F_id,fileidx,filetype)
       enddo DOFILES
+      if (associated(fld%ip1list) .and. ip1list_alloc_L) then
+         istat = vgd_free(fld%vgrid)
+         deallocate(fld%ip1list,stat=istat)
+      endif
       write(tmp_S,*) F_istat
       call msg(MSG_DEBUG,'(input) get_vect [END] '//trim(tmp_S))
       !----------------------------------------------------------------------
@@ -405,7 +426,7 @@ contains
               datevfuzz,FST_FIND_NEAR,hdata,sfcfld,vgrid_S,sfc_S)
          if (F_fld%vint_S /= 'none') &
               F_istat = min(priv_vinterp(F_fld,hdata,sfcfld,vgrid_S),F_istat)
-         
+
       case default !# line, near, step, next
 
          inrestart_L = .not.F_fld%needonce_L
@@ -485,7 +506,7 @@ contains
                istat = time_interp_retrieve(F_fld%vn(2),TIME_INTERP_NEXT, &
                     myjdatev,F_data=hdatan(2)%p)
             endif
-            
+
             istat = time_interp_status(F_fld%vn(1),F_fld%jdatev,t_int_type)
             TI_STAT: if (istat == 0) then
                F_istat = priv_vinterp(F_fld,hdatap,sfcfldp,vgridp_S)
@@ -654,6 +675,7 @@ contains
       integer(IDOUBLE) :: jdatev2
       integer,target :: ip1list0(1)
       integer,pointer :: ip1list(:)
+      logical :: ip1list_alloc_L
       type(input_ptr_T) :: indata(2)
       type(vgrid_descriptor) :: vgrid
       !------------------------------------------------------------------
@@ -674,10 +696,12 @@ contains
       if (associated(F_fld%d(2)%p)) F_hdata(2)%p => F_fld%d(2)%p
       nullify(F_sfcfld,indata(1)%p,indata(2)%p)
 
+      ip1list_alloc_L = .false.
       IF_VINT: if (F_fld%vint_S /= 'none') then
          istat = input_files_vgrid(F_id,F_file_idx,F_fld%vn(1),RMN_ANY_I, &
               RMN_ANY_DATE,F_vgrid_S)
          nullify(ip1list)
+         ip1list_alloc_L = .true.
          istat = min(vgrid_wb_get(F_vgrid_S,vgrid,ip1list,vtype,F_sfc_S),istat)
          call collect_error(istat)
          if (F_vgrid_S == '' .or. .not.RMN_IS_OK(istat)) then
@@ -689,7 +713,7 @@ contains
          if (associated(F_fld%d(2)%p)) &
               allocate(F_hdata(2)%p(lij(1):uij(1),lij(2):uij(2),nk))!,stat=istat2)
       endif IF_VINT
-      
+
       IF_DIAG: if (any(F_fld%vtype == (/VTYPE_TDIAG,VTYPE_MDIAG/))) then
          istat = input_files_vgrid(F_id,F_file_idx,F_fld%vn(1),RMN_ANY_I, &
               RMN_ANY_DATE,vgrid_S)
@@ -705,6 +729,8 @@ contains
          call msg_verbosity(vb0)
          if (RMN_IS_OK(istat) .and. RMN_IS_OK(ip1list0(1))) then
             nk = 1
+            if (associated(ip1list) .and. ip1list_alloc_L) &
+                 deallocate(ip1list,stat=istat)
             ip1list => ip1list0
          else
             call msg(MSG_INFOPLUS,'(input) Problem getting vgrid diag for '//trim(F_fld%vn(1))//' '//trim(F_fld%vn(2)))
@@ -714,6 +740,8 @@ contains
             dummy_S = ' '
             call convip(ip1, zp1, ikind, RMN_CONV_P2IPNEW, dummy_S, .not.RMN_CONV_USEFORMAT_L)
             ip1list0(1) = ip1
+            if (associated(ip1list) .and. ip1list_alloc_L) &
+                 deallocate(ip1list,stat=istat)
             ip1list => ip1list0
          endif
       endif IF_DIAG
@@ -769,6 +797,10 @@ contains
          endif
          if (.not.RMN_IS_OK(istat)) F_istat = RMN_ERR
       endif IF_RFLD
+
+      if (associated(ip1list) .and. ip1list_alloc_L) &
+           deallocate(ip1list,stat=istat)
+
       write(tmp_S,*) F_istat
       call msg(MSG_DEBUG,'(input) read_interp [END] '//trim(tmp_S))
       !----------------------------------------------------------------------
@@ -791,8 +823,8 @@ contains
       !*@/
       character(len=256) :: tmp_S
       logical :: same_sfc_L
-      integer :: nlinbot, ivar
-      real,pointer :: sfcfld(:,:),sfcfldout(:,:)
+      integer :: nlinbot, ivar, istat
+      real,pointer :: sfcfld(:,:),sfcfldout(:,:),sfcfldls(:,:),sfcfldoutls(:,:)
       !------------------------------------------------------------------
       call msg(MSG_DEBUG,'(input) vinterp [BEGIN]')
       F_istat = RMN_ERR
@@ -802,7 +834,7 @@ contains
 
       F_istat = RMN_OK
       IF_VINT: if (F_fld%vint_S == 'none') then
-         
+
          do ivar = 1,2
             if (F_fld%vn(ivar) /= ' ' .and. associated(F_fld%d(ivar)%p) &
                  .and. associated(F_hdata(ivar)%p)) then
@@ -813,7 +845,7 @@ contains
                endif
             endif
          enddo
- 
+
       else !IF_VINT
 
          nlinbot = 0
@@ -822,32 +854,36 @@ contains
               nlinbot = size(F_fld%d(1)%p,3)
          if (any(F_fld%vint_S(1:4) == (/'l-co','c-co'/)) .and. &
               F_fld%hstat == HINTERP4YY_NONE) same_sfc_L = .true.
-         sfcfld => F_sfcfld(:,:,1)
+         nullify(sfcfld)
+         if (associated(F_sfcfld)) sfcfld => F_sfcfld(:,:,1)
 
-         nullify(sfcfldout)
+         nullify(sfcfldout, sfcfldls, sfcfldoutls)
          if (present(F_same_sfc_L)) then
-            if (F_same_sfc_L.and. associated(F_sfcfld)) sfcfldout => sfcfld
+            if (F_same_sfc_L) then
+               if (associated(F_sfcfld)) sfcfldout => F_sfcfld(:,:,1)
+               !#TODO: if (associated(F_sfcfldls)) sfcfldoutls => F_sfcfldls(:,:,1)
+            endif
          endif
-
 
          do ivar = 1,2
             if (F_fld%vn(ivar) /= ' ' .and. associated(F_hdata(ivar)%p)) then
                if (associated(sfcfldout)) then
-                  F_istat = min(&
-                       vinterp(F_fld%d(ivar)%p,F_fld%vgrid_S, &
-                           F_hdata(ivar)%p,F_vgrid_S,&
-                           F_sfcfldout=sfcfldout,F_sfcfldin=sfcfld, &
-                           F_nlinbot=nlinbot,F_msg_S=F_fld%vn(ivar), &
-                           F_use_same_sfcfld_L=same_sfc_L) &
-                       ,F_istat)
+                  istat = vinterp( &
+                       F_fld%d(ivar)%p, F_fld%vgrid_S,  &
+                       F_hdata(ivar)%p, F_vgrid_S, &
+                       sfcfldout, sfcfld,  &
+                       nlinbot, F_fld%vn(ivar), same_sfc_L, &
+                       sfcfldoutls, sfcfldls)
+                  F_istat = min(istat, F_istat)
                else
-                  F_istat = min(&
-                       vinterp(F_fld%d(ivar)%p,F_fld%vgrid_S, &
-                           F_hdata(ivar)%p,F_vgrid_S, &
-                           F_sfcfldin=sfcfld, &
-                           F_nlinbot=nlinbot,F_msg_S=F_fld%vn(ivar), &
-                           F_use_same_sfcfld_L=same_sfc_L) &
-                       ,F_istat)
+                  istat = vinterp( &
+                       F_fld%d(ivar)%p, F_fld%vgrid_S,  &
+                       F_hdata(ivar)%p, F_vgrid_S,  &
+                       F_sfcfldin=sfcfld,  &
+                       F_nlinbot=nlinbot, F_msg_S=F_fld%vn(ivar),  &
+                       F_use_same_sfcfld_L=same_sfc_L, &
+                       F_sfcfldin2=sfcfldls)
+                  F_istat = min(istat, F_istat)
                endif
             endif
          enddo

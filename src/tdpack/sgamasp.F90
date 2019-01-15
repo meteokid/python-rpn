@@ -16,7 +16,7 @@
 !**s/r fonction sgamasp - pente pseudo-adiabat sature (dt/dp)
 !
       Function sgamasp(tt, pr, swph, ti)
-!
+      use tdpack, only: foqsa, foqst, schal, rgasd, eps1, cpd, cappa
       implicit none
 #include <arch_specific.hf>
 !
@@ -46,21 +46,9 @@
 !
 !note
 !       we compute (- dt/dp): so the result is >0
-!
-!implicites
-Include "thermoconsts.inc"
-!modules
-      External schal
-!
 !*
 !---------------------------------------------------------------
-!
-      Real schal
       Real latheat, lvt0, lsti, x, z
-!
-Include "dintern.inc"
-Include "fintern.inc"
-!
 !--------------------------------------------------------------------
 !
 !     calcule la chaleur latente

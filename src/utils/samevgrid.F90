@@ -145,6 +145,10 @@ contains
       else
          F_same_L = samevgrid_vgip(vgridin,ip1listin,vgridout,ip1listout)
       endif
+      if (associated(ip1listin)) deallocate(ip1listin,stat=istat)
+      if (associated(ip1listout)) deallocate(ip1listout,stat=istat)
+      istat = vgd_free(vgridin)
+      istat = vgd_free(vgridout)
       !------------------------------------------------------------------
       return
    end function samevgrid_str

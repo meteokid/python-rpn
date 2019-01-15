@@ -29,7 +29,9 @@ module output_mod
    !@author Stephane Chamberland, 2012-01
    !@description
    ! Public functions
-   public :: output_new, output_getlist, output_close, output_set_basedir, output_get_basedir, output_set_diag_level, output_get_diag_level, output_writevar, output_writestep, output_set_postproc
+   public :: output_new, output_getlist, output_close, output_set_basedir, &
+        output_get_basedir, output_set_diag_level, output_get_diag_level, &
+        output_writevar, output_writestep, output_set_postproc
    ! Public constants
    !
 !@/
@@ -188,7 +190,11 @@ contains
 
 !!$      logical :: periodx_L,periody_L
 !!$      integer :: gridid_out,lni,lnj,gi0,gj0,li0,lin,lj0,ljn,l_ijk2(3),u_ijk2(3)
-      integer :: istat,istat2,datev,dateo,deet,l_ijk(3),u_ijk(3),mystep,nidxlist,idxlist(NLIST_MAX),nn,idx,dtype,nbits,filt_pass,ip3,nlevels,nlinbot,dij,fileid,level_type_in,surf_level_idx,crop_gi0,crop_gj0,crop_gin,crop_gjn,src_grid_id,src_grid_gi0,src_grid_gj0,src_lni,src_lnj
+      integer :: istat, istat2, datev, dateo, deet, l_ijk(3), u_ijk(3), &
+           mystep, nidxlist, idxlist(NLIST_MAX), nn, idx, dtype, nbits, &
+           filt_pass, ip3, nlevels, nlinbot, dij, fileid, level_type_in, &
+           surf_level_idx, crop_gi0, crop_gj0, crop_gin, crop_gjn, &
+           src_grid_id, src_grid_gi0, src_grid_gj0,src_lni, src_lnj
       logical :: rewrite_L,flip_L,fullplane_L
       integer,target :: ip1list_out(NLEVELS_MAX)
       character(len=16) :: etk_S,grid_etk_S,lvltype_S,v_int_S
@@ -680,6 +686,7 @@ contains
 
       if (.not.associated(F_sfc_field_ref)) then
          istat = vgd_get(F_vgrid_in,key='RFLD',value=sfc_field_S)
+         if (istat /= VGD_OK) sfc_field_S = ''
          istat = gmm_get(sfc_field_S,F_sfc_field_ref,mymeta)
          if (.not.RMN_IS_OK(istat)) then
             call msg(MSG_ERROR,'(Output) Sfc ref field not found ('//trim(sfc_field_S)//') Cannot vertically interpolate')
