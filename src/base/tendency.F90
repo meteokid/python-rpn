@@ -66,6 +66,7 @@ contains
       real, pointer, dimension(:,:), contiguous :: zhuphytd, zhuplus, zqcphytd, zqcplus, zqdifv, ztdifv, ztphytd, ztplus, zuphytd, zudifv, zuplus, zvphytd, zvdifv, zvplus, zwphytd, zwplus
       !-------------------------------------------------------------
       call msg_toall(MSG_DEBUG, 'tendency [BEGIN]')
+      if (timings_L) call timing_start_omp(450, 'tendency', 46)
 
       MKPTR2D(zhuphytd, huphytd, vbus)
       MKPTR2D(zhuplus , huplus, dbus)
@@ -120,7 +121,8 @@ contains
             enddo
          enddo
       endif
- 
+
+      if (timings_L) call timing_stop_omp(450)
       call msg_toall(MSG_DEBUG, 'tendency [END]')
       !-------------------------------------------------------------
       return

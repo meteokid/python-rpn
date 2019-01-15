@@ -60,6 +60,7 @@ subroutine glaciers1(BUS, BUSSIZ, PTSURF, PTSURFSIZ, TRNCH, KOUNT, N, M, NK)
 #define x(fptr,fj,fk) ptsurf(vd%fptr%i)+(fk-1)*surflen+fj-1
 
    integer, parameter :: INDX_SFC = INDX_GLACIER
+   real, parameter :: ZT_RHO = 1.5              !Height used to compute air density (m)
 
    real, save :: CON1,CON2,CON3,CON4,CON5,CON6
    real, save :: CON7,CON8,CON9,CON10,CON11,CON12
@@ -75,6 +76,7 @@ subroutine glaciers1(BUS, BUSSIZ, PTSURF, PTSURFSIZ, TRNCH, KOUNT, N, M, NK)
    real,dimension(n) :: scr9, scr10, scr11, t2, vmod, vdir, zsnodp_m
    real, dimension(n) :: zu10, zusr    ! wind at 10m and at the sensor level 
    real, dimension(n) :: zref_sw_surf, zemit_lw_surf, zzenith
+   real, dimension(n) :: my_ta, my_qa
 
    real,pointer,dimension(:) :: al, albsfc, cmu, ctu, fc_glac
    real,pointer,dimension(:) :: fsol, fv_glac, zemisr
@@ -156,7 +158,7 @@ subroutine glaciers1(BUS, BUSSIZ, PTSURF, PTSURFSIZ, TRNCH, KOUNT, N, M, NK)
    zrunofftot(1:n) => bus( x(runofftot,1,indx_sfc) : )
    zsnodp   (1:n) => bus( x(snodp,1,indx_sfc) : )
    ztsrad   (1:n) => bus( x(tsrad,1,1)        : )
-   ztsurf   (1:n) => bus( x(tsurf,1,1)        : )
+   ztsurf   (1:n) => bus( x(tsurf,1,indx_sfc) : )
    zudiag   (1:n) => bus( x(udiag,1,1)        : )
    zudiagtyp(1:n) => bus( x(udiagtyp,1,indx_sfc) : )
    zudiagtypv(1:n) => bus( x(udiagtypv,1,indx_sfc) : )
@@ -498,6 +500,14 @@ subroutine glaciers1(BUS, BUSSIZ, PTSURF, PTSURFSIZ, TRNCH, KOUNT, N, M, NK)
 
 !       6.     The fluxes
 !       -----------------
+      
+      ! Compute diagnostic quantities at 1.5m
+      i = sl_sfclayer(th,hu,vmod,vdir,zzusl,zztsl,ts,qsice,z0m,z0h,zdlat,zfcor, &
+           hghtt_diag=ZT_RHO,t_diag=my_ta,q_diag=my_qa,tdiaglim=GLACIER_TDIAGLIM)
+      if (i /= SL_OK) then
+         call physeterror('glaciers', 'error 3 returned by sl_sfclayer()')
+         return
+      endif
 
 !VDIR NODEP
       do I=1,N
@@ -508,7 +518,7 @@ subroutine glaciers1(BUS, BUSSIZ, PTSURF, PTSURFSIZ, TRNCH, KOUNT, N, M, NK)
         ZALFAT    (I) = - CTU(I) * ( TS   (I)-TH(I) )
         ZALFAQ    (I) = - CTU(I) * ( QSICE(I)-HU(I) )
         if (.not.IMPFLX) CTU (I) = 0.
-        RHOA      (I) = PS(I)/(RGASD * ZTDIAG(I)*(1.+DELTA*ZQDIAG(I)))
+        RHOA      (I) = PS(I)/(RGASD * my_ta(i)*(1.+DELTA*my_qa(i)))
         FC_GLAC(I)    = -CPD *RHOA(I)*ZALFAT(I)
         FV_GLAC(I)    = -(CHLC+CHLF)*RHOA(I)*ZALFAQ(I)
 

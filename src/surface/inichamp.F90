@@ -47,6 +47,7 @@ subroutine inichamp4(kount, trnch, ni, nk)
    real, pointer, dimension(:,:), contiguous :: zhst, ztmoins
    !***********************************************************************
    call msg_toall(MSG_DEBUG, 'inichamp [BEGIN]')
+   if (timings_L) call timing_start_omp(401, 'inichamp', 46)
 
    nullify(zglacier, zglsea, zh, zmg, zsnoden, ztglacier, &
         ztmice, ztsrad, ztwater,zhst, ztmoins)
@@ -120,6 +121,7 @@ subroutine inichamp4(kount, trnch, ni, nk)
 
    endif NEW_TOPO
 
+   if (timings_L) call timing_stop_omp(401)
    call msg_toall(MSG_DEBUG, 'inichamp [END]')
 
    return

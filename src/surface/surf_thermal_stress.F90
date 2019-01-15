@@ -44,7 +44,7 @@ subroutine SURF_THERMAL_STRESS(PTA, PQA,                               &
    integer, intent(IN)  :: N
 
    real, dimension(N), intent(IN)  :: PTA        ! Air temperature (K)
-   real, dimension(N), intent(INout)  :: PQA     !  Air specific humidity  (kg/kg)
+   real, dimension(N), intent(IN)  :: PQA        !  Air specific humidity  (kg/kg)
    real, dimension(N), intent(IN)  :: PPS        !  air pressure at the surface
 
    real, dimension(N), intent(IN)  :: PU10       !  wind speed at 10m (m/s)
@@ -336,9 +336,7 @@ real function WETBULBT_SURF(PPA,PTA,PQA)
    ZT=PTA-TCDK          ! convert in Celcius
    ZP=0.01*PPA         ! convert in hPa
    qsat=N_QSAT(PTA,PQA,PPA)
-   if(PQA<0)PQA=0.0
-   if(qsat<PQA)PQA=qsat
-   ZRH=100.*PQA/qsat
+   ZRH=100.*max(min(PQA,qsat),0.)/qsat
 
    ZTD=DWPT(ZT,ZRH)
    !    2. Compute the saturation mixing ratio in g/kg

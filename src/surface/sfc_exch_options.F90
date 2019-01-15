@@ -39,7 +39,7 @@ contains
       include "isbapar.cdk"
       include "tebcst.cdk"
 
-      integer :: ier, nv, options, iverb
+      integer :: ier, nv, options, iverb, i
       !---------------------------------------------------------------------
       F_istat = RMN_ERR
 
@@ -54,8 +54,14 @@ contains
       ier = min(wb_get('phy/rad_off',rad_off),ier)
       ier = min(wb_get('phy/radslope',radslope),ier)
       ier = min(wb_get('phy/atm_external',atm_external),ier)
+      ier = min(wb_get('phy/timings',timings_L),ier)
       ier = min(wb_get('phy/update_alwater',update_alwater),ier)
       ier = min(wb_get('phy/z0veg_only',z0veg_only),ier)
+      ier = min(wb_get('phy/nphyoutlist',nphyoutlist),ier)
+      if (nphyoutlist > 0) then
+         allocate(phyoutlist_S(nphyoutlist))
+         ier = min(wb_get('phy/phyoutlist',phyoutlist_S,nphyoutlist),ier)
+      endif
 
       ier = min(wb_put('sfc/beta',beta,options),ier)
       ier = min(wb_put('sfc/bh91_a',bh91_a,options),ier)
@@ -85,9 +91,7 @@ contains
       ier = min(wb_put('sfc/veg_rs_mult',veg_rs_mult,options),ier)
       ier = min(wb_put('sfc/z0dir',z0dir,options),ier)
       ier = min(wb_put('sfc/zt',zt,options),ier)
-      ier = min(wb_put('sfc/zta',zta,options),ier)
       ier = min(wb_put('sfc/zu',zu,options),ier)
-      ier = min(wb_put('sfc/zua',zua,options),ier)
 
       iverb = wb_verbosity(iverb)
 
@@ -102,6 +106,17 @@ contains
             call msg(MSG_ERROR,'(sfc_exch_options) Problem converting kntveg_S='//trim(kntveg_S))
             return
          endif
+      endif
+
+      ! Trigger calculation of on-demand diagnostics
+      if (associated(phyoutlist_S)) then
+         i = 1
+         do while (i <= nphyoutlist .and. .not.thermal_stress)
+            if (any(phyoutlist_S(i) == (/'dxsu','dxhd','gxsu','gxhd','gtsu', &
+                 'gthd','rtsu','rthd','qssu','qssk','qlsk','qsrd','qlrd',  &
+                 'qwsl','qlwl'/))) thermal_stress = .true.
+            i = i+1
+         enddo
       endif
 
       F_istat = RMN_OK

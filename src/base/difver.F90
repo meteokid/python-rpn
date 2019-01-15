@@ -101,7 +101,7 @@ contains
       real, pointer, dimension(:), contiguous   :: zalfat, zalfaq, zbm, zbm0, zbt_ag, &
            zfc_ag, zfdsi, zfdss, &
            zfl, zfnsi, zfq, zfv_ag, &
-           zmg, zqsurf_ag, ztsurf, ztsrad, &
+           zmg, zqsurf_ag, ztsrad, &
            zustress, zvstress, zue, zh
       real, pointer, dimension(:,:), contiguous :: tu, tv, tw, tt, tq, tl, uu, vv, w, &
            t, q, sg, zsigw, zsigt, zsigm, tm, &
@@ -133,7 +133,6 @@ contains
       MKPTR1D(zfq, fq, f)
       MKPTR1D(zh, h, f)
       MKPTR1D(zmg, mg, f)
-      MKPTR1D(ztsurf, tsurf, f)
       MKPTR1D(ztsrad, tsrad, f)
       MKPTR1D(zue, ue, v)
       MKPTR1D(zustress, ustress, v)

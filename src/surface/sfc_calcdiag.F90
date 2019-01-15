@@ -58,6 +58,7 @@ contains
       real :: moyhri, tmp_r
       !-------------------------------------------------------------------
       call msg_toall(MSG_DEBUG, 'sfc_calcdiag [BEGIN]')
+      if (timings_L) call timing_start_omp(480, 'sfc_alcdiag', 46)
 
       IF_ISBA: if (schmsol == 'ISBA') then
 
@@ -150,6 +151,7 @@ contains
 
       endif IF_ISBA
 
+      if (timings_L) call timing_stop_omp(480)
       call msg_toall(MSG_DEBUG, 'sfc_calcdiag [END]')
       !-------------------------------------------------------------------
       return

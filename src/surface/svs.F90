@@ -521,7 +521,7 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
       do i=1,n
 !
 !
-        bus(x(tsurf  ,i,1        )) = bus(x(tsa  ,i,1        ))
+        bus(x(tsurf  ,i,indx_sfc )) = bus(x(tsa  ,i,1        ))
         bus(x(tsrad  ,i,1        )) = TRAD(i)
 !
 !       CALCULATE LAND-ATMOSPHERE OUTCOMING WATER FLUX

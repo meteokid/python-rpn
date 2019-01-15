@@ -55,6 +55,8 @@ subroutine isba3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
 
    integer, parameter :: INDX_SFC = INDX_SOIL
    logical, parameter :: ISBA_TDIAGLIM = .false.
+   real, parameter :: HGHTM_DIAG0 = 10.
+   real, parameter :: HGHTT_DIAG0 = 1.5
 
    integer I,m,zopt
 
@@ -270,7 +272,7 @@ subroutine isba3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
    ztsoil1  (1:n) => bus( x(tsoil,1,1)        : )
    ztsoil2  (1:n) => bus( x(tsoil,1,2)        : )
    ztsrad   (1:n) => bus( x(tsrad,1,1)        : )
-   ztsurf   (1:n) => bus( x(tsurf,1,1)        : )
+   ztsurf   (1:n) => bus( x(tsurf,1,indx_sfc) : )
    zudiag   (1:n) => bus( x(udiag,1,1)        : )
    zudiagtyp(1:n) => bus( x(udiagtyp,1,indx_sfc) : )
    zudiagtypv(1:n) => bus( x(udiagtypv,1,indx_sfc) : )
@@ -441,7 +443,7 @@ subroutine isba3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
    else
       i = sl_sfclayer(zthetaa,hu,vmod,vdir,zzusl,zztsl,ztsoil1,zqsurf, &
            z0m,z0h,zdlat,zfcor,optz0=zopt,L_min=sl_Lmin_soil, &
-           hghtm_diag=zu,hghtt_diag=zt,t_diag=my_ta,u_diag=my_ua, &
+           hghtm_diag=HGHTM_DIAG0,hghtt_diag=HGHTT_DIAG0,t_diag=my_ta,u_diag=my_ua, &
            v_diag=my_va,tdiaglim=ISBA_TDIAGLIM)
       if (i /= SL_OK) then
          call physeterror('isba', 'error returned by sl_sfclayer()')

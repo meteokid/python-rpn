@@ -68,7 +68,9 @@ contains
       !----------------------------------------------------------------
 
       if (.not.series_isstep()) return
+
       call msg_toall(MSG_DEBUG, 'extdiag [BEGIN]')
+      if (timings_L) call timing_start_omp(495, 'extdiag', 46)
 
       s1 = ni*(nk-1)-1
       nkm1 = nk-1
@@ -297,6 +299,7 @@ contains
          endif
       enddo
 
+      if (timings_L) call timing_stop_omp(495)
       call msg_toall(MSG_DEBUG, 'extdiag [END]')
       !----------------------------------------------------------------
       return

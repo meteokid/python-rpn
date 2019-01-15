@@ -84,6 +84,7 @@ contains
 
       if (.not.stochphy) return
       call msg_toall(MSG_DEBUG, 'ens_ptp [BEGIN]')
+      if (timings_L) call timing_start_omp(455, 'ens_ptp', 46)
 
       nullify(zabekfc); if (abekfc > 0) zabekfc(1:ni) => f( abekfc:)
       zmrk2  (1:ni)      => f( mrk2:)
@@ -102,6 +103,7 @@ contains
          do i=1,ni
             zmrk2(i)=0.0
          enddo
+         if (timings_L) call timing_stop_omp(455)
          return
       endif
 
@@ -162,6 +164,7 @@ contains
          enddo
       enddo
 
+      if (timings_L) call timing_stop_omp(455)
       call msg_toall(MSG_DEBUG, 'ens_ptp [END]')
       !--------------------------------------------------------------------
       return

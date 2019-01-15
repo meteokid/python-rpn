@@ -70,7 +70,7 @@ subroutine phyexe(e, d, f, v, esiz, dsiz, fsiz, vsiz, trnch, kount, ni, nk)
    include "tables.cdk"
    include "physteps.cdk"
 
-   integer :: iverb, nkm1, istat
+   integer :: iverb, nkm1
    character(len=64) :: tmp_S
 
    real, dimension(ni,nk) :: uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0
@@ -141,7 +141,7 @@ subroutine phyexe(e, d, f, v, esiz, dsiz, fsiz, vsiz, trnch, kount, ni, nk)
    call ens_ptp2(d, v, f, dsiz, fsiz, vsiz, ni, nk, kount)
    if (phy_error_L) return
 
-   call calcdiag1(tplus0, huplus0, qcplus0, d, f, v, delt, trnch, kount, ni, nk)
+   call calcdiag1(tplus0, huplus0, qcplus0, d, f, v, delt, kount, ni, nk)
    if (phy_error_L) return
 
    call sfc_calcdiag3(f, v, fsiz, vsiz, moyhr, acchr, delt, trnch, kount, step_driver, ni, nk)

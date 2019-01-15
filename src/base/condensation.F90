@@ -23,7 +23,7 @@ contains
 
    !/@*
    subroutine condensation3(d, dsiz, f, fsiz, v, vsiz, &
-        tplus0, t0, huplus0, q0, qc0, ilab, beta, &
+        tplus0, t0, huplus0, q0, qc0, ilab, dbdt, &
         lkfbe, dt, ni, nk, kount, trnch)
       use debug_mod, only: init2nan
       use tdpack_const, only: GRAV
@@ -64,12 +64,12 @@ contains
       ! q0       initial humidity humidity  at t+dT
       ! qc0      initial total condensate mixing ratio at t+dT
       ! ilab     flag array: an indication of convective activity from Kuo schemes
-      ! beta     estimated averaged cloud fraction growth rate for kuostd
+      ! dbdt     estimated averaged cloud fraction growth rate for kuostd
 
       integer, intent(in) :: fsiz,vsiz,dsiz,ni,nk,kount,trnch
       real,    intent(in) :: dt
       integer,dimension(ni,nk-1), intent(inout) :: ilab
-      real,   dimension(ni), intent(inout)      :: beta
+      real,   dimension(ni), intent(inout)      :: dbdt
       real,   dimension(ni,nk-1), intent(inout) :: tplus0,t0,huplus0,q0,qc0
       real,   target, intent(inout)             :: f(fsiz), v(vsiz), d(dsiz)
       logical, intent(in) :: lkfbe
@@ -80,6 +80,7 @@ contains
       ! 002      PV-nov2014: fix communication between deep convection and MY_Dm
       !*@/
 #include <msg.h>
+      include "surface.cdk"
 
       logical, parameter :: NK_BOTTOM = .true.  !(.T. for nk at bottom)
       integer, parameter :: N_DIAG_2D = 20      !number of diagnostic 2D fields
@@ -193,7 +194,7 @@ contains
          call consun1(zste , zsqe , zsqce , a_tls, a_tss, a_fxp, &
               zcter, zcqer, zcqcer, tlcr  , tscr  , ccf, &
               lttp    , zttm   , lhup     , zhum    , zfm   , zfm1  , &
-              psp , psm  , ilab  , beta  , sigma, dt  , &
+              psp , psm  , ilab  , dbdt  , sigma, dt  , &
               zrnflx, zsnoflx, zf12 , zfevp  , &
               zfice, zclr, zcls, ni , nkm1)
 
@@ -285,17 +286,17 @@ contains
             zsqre(:,:)  = qrp(:,:)
          endif
 
-         !#  Predicted Particle Properties (P3) microphysics (v2.10.0)
+         !#  Predicted Particle Properties (P3) microphysics (v3.1.4)
          if (p3_ncat == 1) then
 
             if (p3_comptend) qitend(:,:) = qti1p(:,:)
 
             istat1 = mp_p3_wrapper_gem(qqm,qqp,ttm,ttp,dt,p3_dtmax,ww,psp,zgztherm,sigma,   &
                     kount,trnch,ni,nkm1,a_tls,a_tss,a_tls_rn1,a_tls_rn2,a_tss_sn1,          &
-                    a_tss_sn2,a_tss_sn3,a_tss_pe1,a_tss_pe2,a_tss_snd,                      &
-                    a_zet,a_zec,a_effradc,qcp,ncp,qrp,nrp,p3_ncat,                          &
-                    N_DIAG_2D,diag_2d,N_DIAG_3D,diag_3d,qi_type,                            &
-                    p3_depfact,p3_subfact,p3_debug,p3_scpf_on,p3_pfrac,p3_resfact,a_fxp,    &
+                    a_tss_sn2,a_tss_sn3,a_tss_pe1,a_tss_pe2,a_tss_snd,a_zet,a_zec,          &
+                    a_effradc,qcp,ncp,qrp,nrp,p3_ncat,N_DIAG_2D,diag_2d,N_DIAG_3D,diag_3d,  &
+                    qi_type,p3_depfact,p3_subfact,p3_debug,a_h_cb,a_h_sn,a_vis,a_vis1,      &
+                    a_vis2,a_vis3,a_slw,p3_scpf_on,p3_pfrac,p3_resfact,a_fxp,               &
                     qti1p,qmi1p,nti1p,bmi1p,a_effradi1)
             if (istat1 >= 0) then
                iwc_total = qti1p
@@ -308,10 +309,10 @@ contains
 
             istat1 = mp_p3_wrapper_gem(qqm,qqp,ttm,ttp,dt,p3_dtmax,ww,psp,zgztherm,sigma,   &
                     kount,trnch,ni,nkm1,a_tls,a_tss,a_tls_rn1,a_tls_rn2,a_tss_sn1,          &
-                    a_tss_sn2,a_tss_sn3,a_tss_pe1,a_tss_pe2,a_tss_snd,                      &
-                    a_zet,a_zec,a_effradc,qcp,ncp,qrp,nrp,p3_ncat,                          &
-                    N_DIAG_2D,diag_2d,N_DIAG_3D,diag_3d,qi_type,                            &
-                    p3_depfact,p3_subfact,p3_debug,p3_scpf_on,p3_pfrac,p3_resfact,a_fxp,    &
+                    a_tss_sn2,a_tss_sn3,a_tss_pe1,a_tss_pe2,a_tss_snd,a_zet,a_zec,          &
+                    a_effradc,qcp,ncp,qrp,nrp,p3_ncat,N_DIAG_2D,diag_2d,N_DIAG_3D,diag_3d,  &
+                    qi_type,p3_depfact,p3_subfact,p3_debug,a_h_cb,a_h_sn,a_vis,a_vis1,      &
+                    a_vis2,a_vis3,a_slw,p3_scpf_on,p3_pfrac,p3_resfact,a_fxp,               &
                     qti1p,qmi1p,nti1p,bmi1p,a_effradi1,                                     &
                     qti2p,qmi2p,nti2p,bmi2p,a_effradi2)
             if (istat1 >= 0) then
@@ -326,10 +327,10 @@ contains
 
             istat1 = mp_p3_wrapper_gem(qqm,qqp,ttm,ttp,dt,p3_dtmax,ww,psp,zgztherm,sigma,   &
                     kount,trnch,ni,nkm1,a_tls,a_tss,a_tls_rn1,a_tls_rn2,a_tss_sn1,          &
-                    a_tss_sn2,a_tss_sn3,a_tss_pe1,a_tss_pe2,a_tss_snd,                      &
-                    a_zet,a_zec,a_effradc,qcp,ncp,qrp,nrp,p3_ncat,                          &
-                    N_DIAG_2D,diag_2d,N_DIAG_3D,diag_3d,qi_type,                            &
-                    p3_depfact,p3_subfact,p3_debug,p3_scpf_on,p3_pfrac,p3_resfact,a_fxp,    &
+                    a_tss_sn2,a_tss_sn3,a_tss_pe1,a_tss_pe2,a_tss_snd,a_zet,a_zec,          &
+                    a_effradc,qcp,ncp,qrp,nrp,p3_ncat,N_DIAG_2D,diag_2d,N_DIAG_3D,diag_3d,  &
+                    qi_type,p3_depfact,p3_subfact,p3_debug,a_h_cb,a_h_sn,a_vis,a_vis1,      &
+                    a_vis2,a_vis3,a_slw,p3_scpf_on,p3_pfrac,p3_resfact,a_fxp,               &
                     qti1p,qmi1p,nti1p,bmi1p,a_effradi1,                                     &
                     qti2p,qmi2p,nti2p,bmi2p,a_effradi2,                                     &
                     qti3p,qmi3p,nti3p,bmi3p,a_effradi3)
@@ -346,10 +347,10 @@ contains
 
             istat1 = mp_p3_wrapper_gem(qqm,qqp,ttm,ttp,dt,p3_dtmax,ww,psp,zgztherm,sigma,   &
                     kount,trnch,ni,nkm1,a_tls,a_tss,a_tls_rn1,a_tls_rn2,a_tss_sn1,          &
-                    a_tss_sn2,a_tss_sn3,a_tss_pe1,a_tss_pe2,a_tss_snd,                      &
-                    a_zet,a_zec,a_effradc,qcp,ncp,qrp,nrp,p3_ncat,                          &
-                    N_DIAG_2D,diag_2d,N_DIAG_3D,diag_3d,qi_type,                            &
-                    p3_depfact,p3_subfact,p3_debug,p3_scpf_on,p3_pfrac,p3_resfact,a_fxp,    &
+                    a_tss_sn2,a_tss_sn3,a_tss_pe1,a_tss_pe2,a_tss_snd,a_zet,a_zec,          &
+                    a_effradc,qcp,ncp,qrp,nrp,p3_ncat,N_DIAG_2D,diag_2d,N_DIAG_3D,diag_3d,  &
+                    qi_type,p3_depfact,p3_subfact,p3_debug,a_h_cb,a_h_sn,a_vis,a_vis1,      &
+                    a_vis2,a_vis3,a_slw,p3_scpf_on,p3_pfrac,p3_resfact,a_fxp,               &
                     qti1p,qmi1p,nti1p,bmi1p,a_effradi1,                                     &
                     qti2p,qmi2p,nti2p,bmi2p,a_effradi2,                                     &
                     qti3p,qmi3p,nti3p,bmi3p,a_effradi3,                                     &
