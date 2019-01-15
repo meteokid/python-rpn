@@ -1,0 +1,41 @@
+#!/usr/bin/env ksh
+
+# Check for a GEM development environment
+if [[ -z "${GEM_DEV_SUITE}" ]] ; then
+    echo "No active development environment:  use gemdev.dot to create one"
+    exit 1
+fi
+
+# Set suite description file name
+suite_desc=${GEM_DEV_SUITE}/.dev_suite.xml
+suite_name=$(basename ${GEM_DEV_SUITE})
+
+# Experiment addition syntax
+add_exp(){
+    sfile=${1}
+    exp=${2}
+    cat >> ${sfile} <<EOF_EXP
+    <Exp>${exp}</Exp>
+EOF_EXP
+}
+
+# Suite file header
+cat > ${suite_desc} <<EOF_HEADER
+<?xml version='1.0'?>
+<!DOCTYPE GroupList[]>
+<GroupList>
+  <Group name="GEM Development (${suite_name})">
+EOF_HEADER
+
+# Add experiments to suite description file
+for entry in ${GEM_DEV_SUITE}/* ; do
+    if [[ -d ${entry} && -h ${entry}/EntryModule ]] ; then
+	add_exp ${suite_desc} ${entry}
+    fi
+done
+
+# Suite file footer
+cat >> ${suite_desc} <<EOF_FOOTER
+  </Group>
+</GroupList>
+EOF_FOOTER

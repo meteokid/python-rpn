@@ -1,0 +1,74 @@
+#!/bin/ksh
+#TODO: implement [-d DIR_DEPTH] option
+DESC='Create tags code navigation files for emacs (default) or vi; scan local files, optionally scan model files and other dir'
+USAGE="USAGE: ${0##*/} [--vi] [--model] [OTHER_DIR] [OTHER_DIR]"
+
+DEPTH=1
+DOVI=0
+domodel=0
+posargs=""
+posargsnum=0
+while [[ $# -gt 0 ]] ; do
+    case $1 in
+        (-h|--help) echo $DESC ; echo -e $USAGE; exit 0;;
+		  -d) DEPTH=$2; shift ;;
+		  --vi) DOVI=1;;
+		  --model) domodel=1;;
+        -*) echo "ERROR: Unrecognized option $1"
+            echo -e $USAGE
+            echo "---- ABORT ----"
+            exit 1;;
+        *) posargs="$posargs $1" ; ((posargsnum=posargsnum+1));;
+    esac
+    shift
+done
+
+dirlist="."
+if [[ domodel -eq 1 ]] ; then
+   if [[ x$(echo $ATM_MODEL_BNDL | cut -c1-3) != xGEM ]] ; then
+      echo "WARNING: not recognized GEM model loaded, may not add path correctly"
+   fi
+   [[ x$modelutils != x ]] && dirlist="$dirlist $(ls -d ${modelutils}/src/* 2>/dev/null)"
+   [[ x$gemdyn != x ]] && dirlist="$dirlist $(ls -d ${gemdyn}/src/* 2>/dev/null)"
+   [[ x$rpnphy != x ]] && dirlist="$dirlist $(ls -d ${rpnphy}/src/* 2>/dev/null)"
+fi
+if [[ posargsnum -gt 0 ]] ; then
+	 dirlist="$dirlist $posargs"
+fi
+tagprogs="etags"
+tagfilename="TAGS"
+if [[ DOVI -eq 1 ]] ; then
+	 tagprogs="ctags"
+	 tagfilename="tags"
+fi
+
+EXT_F='.ftn .ftn90 .cdk .cdk90 .hf .inc .f .f90 '
+EXT_C='.h .c'
+
+rm -f $tagfilename
+for mydir in $dirlist ; do
+	 echo "Scanning $mydir/"
+	 for extfile in $EXT_F ; do
+		  filelist=`ls ${mydir}/*${extfile} 2>/dev/null`
+		  for myfile in $filelist ; do
+				for tagexe in $tagprogs ; do
+						  $tagexe $myfile --language=fortran --append #--defines 
+				done
+		  done
+	 done
+	 for extfile in $EXT_C ; do
+		  filelist=`ls ${mydir}/*${extfile} 2>/dev/null`
+		  for myfile in $filelist ; do
+				for tagexe in $tagprogs ; do
+						  $tagexe $myfile --append #--defines 
+				done
+		  done
+	 done
+done
+
+#	 find . -maxdepth $DEPTH -type f -name '*.ftn*' -exec $item --language=fortran --defines --append {} \;
+#	 find . -maxdepth $DEPTH -type f -name '*.cdk*' -exec $item --language=fortran --defines --append {} \;
+#	 find . -maxdepth $DEPTH -type f -name '*.hf' -exec $item --language=fortran --defines --append {} \;
+#	 find . -maxdepth $DEPTH -type f -name '*.inc*' -exec $item --language=fortran --defines --append {} \; 
+#	 find . -maxdepth $DEPTH -type f -name '*.h' -exec $item  --defines --append {} \;
+#	 find . -maxdepth $DEPTH -type f -name '*.c' -exec $item  --defines --append {} \;

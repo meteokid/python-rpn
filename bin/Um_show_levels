@@ -1,0 +1,332 @@
+#!/bin/bash
+
+# Autor  : Andre Plante wither 2009-2010
+#
+# Object : To plot model levels over a hill based on info in gem_settings.nml
+#
+# Input  :
+# --------
+#          see cclargs below
+# Output :
+# --------
+#          levels_zoom0.ps : plot showing all levels
+#          levels_zoom1.ps : plot showing bottum levels near the sea
+#          levels_zoom2.ps : plot showing bottum levels over the mountain top
+#
+#====================================================================================
+eval `cclargs \
+ -title         UNSET              UNSET              "[Graph title]"\
+ -gem_settings  gem_settings.nml   gem_settings.nml   "[gem settings file]"\
+ -gem3_settings UNSET              UNSET              "[gem 3 gem_settings to compare]"\
+ -p_below_hill  100000             100000             "[Surface pressure in Pa for which levels will match]"\
+ -p_top_hill    50000              50000              "[Pressure in Pa over mountain top for graph]"\
+ -ptop_graph    =-1                =-1                "[Top of graph in Pa, equals hiest ptop if -1]"\
+ -pbot_graph    =-1                =-1                "[Bottom of graph in pa]"\
+ -plot_thermo   0                  1                  "[Tracer les niveaux thermo (non,oui)]"\
+ -overplot      0                  1                  "[Overplot current levels en v3 levels only if key -gem3_settings is present]"\
+ -xrange_delta  0,0                0,0                "[xrange on delta ln(pi) graph]"\
+ -thickness     0                  1                  "[Show thickness instead of delta]"\
+ -show          ghostscript        display            "[Show ps files which option]"\
+ -out_name      UNSET              UNSET              "[output file name, zoom may be appended]"\
+ -zoom          0                  0                  "[zoom 0 1 2 3]"\
+ -font_f        1                  1.25               "[Multiplying factor applied on graph fonts]"\
+ -width         7.5                7.5                "[Plotting area width]"\
+ -height        10.                10.                "[Plotting area height]"\
+ -format        ps                 eps                "[File format ps or eps]"\
+ -print         0                  1                  "[print file to ${PRINTER}]"\
+ -debug         0                  1                  "[set -x]"\
+ ++ $*`
+
+if [ $# -ne 0 ];then
+   echo "You must use at least the key -gem_settings (gem_settings_file)"
+   exit
+fi
+
+#==============================================================================
+
+if [ ${ATM_MODEL_VERSION:-UNSET} = UNSET ];then
+
+   echo "You must set a model version"
+   exit
+
+fi
+
+if [ $(echo ${ATM_MODEL_VERSION:0:5} | sed 's/\.//g') -lt 400 ];then
+
+   echo "Model version not supported"
+   exit
+
+fi
+
+set ${gem_settings}
+
+if [ "${title:-UNSET}" = UNSET ];then
+
+   title="V_${MODEL_VERSION}, ${1##*/} ${2##*/}"
+
+   if [ ${gem3_settings} != UNSET ];then
+      title="${title} vs V3 ${gem3_settings##*/}"
+   fi
+
+fi
+
+#==============================================================================
+
+if [ ${debug} = 1 ];then
+   set -x
+fi
+
+#==============================================================================
+case $format in
+   ps):;;
+  eps):;;
+    *)echo "Format ${format} not supported"
+      exit 1;;
+esac
+
+#==============================================================================
+
+set -e
+
+#==============================================================================
+if ! which R ;then
+   echo "This script needs R, it is not available on this computer, try a Linux box"
+   exit
+fi
+
+#==============================================================================
+
+for ITEM in ${@}
+do
+   if [ ! -f ${ITEM} ];then
+      echo "File ${ITEM} must exist and does not"
+      echo abort
+      exit 1
+   fi
+done
+
+#==============================================================================
+
+MAITRE=$PWD
+mkdir ${TMPDIR}/${$}
+#trap "rm -fr ${TMPDIR}/${$}" 0 1 2 3 4 5 6 7 8 10 12 13 14 15
+
+for I in $(seq 1 ${#})
+do
+   mkdir -p ${TMPDIR}/${$}/current_${I}
+   eval FILE=\$${I}
+   set +e
+   voir -iment ${FILE} > /dev/null 2>&1
+   STATUS=${?}
+   set -e
+   if [ ${STATUS} -ne 0 ];then
+      cp ${FILE} ${TMPDIR}/${$}/current_${I}/settings
+   else
+      toc2nml -fst ${FILE} > ${TMPDIR}/${$}/current_${I}/settings
+   fi
+done
+
+if [ ${gem3_settings} != UNSET ];then
+   mkdir -p ${TMPDIR}/${$}/v3
+   if file ${gem3_settings} | grep -q 'ASCII text';then
+      cp ${gem3_settings} ${TMPDIR}/${$}/v3/settings
+   else
+      toc2nml -fst ${gem3_settings} > ${TMPDIR}/${$}/v3/settings
+   fi
+fi
+cd ${TMPDIR}/${$}
+
+#==============================================================================
+# Get namlist info in texte files.
+
+for I in $(seq 1 ${#})
+do
+   cd current_${I}
+   getnml --file settings -o 'nml-' hyb grd_rcoef
+   # cstv_ptop_8
+   echo "NOTE : The following command may produce an error if cstv_ptop_8 is not"
+   echo "       in the namelist, if this happens, cstv_ptop_8 will be computed from hyb levels like in GEM 4.7 and up"
+   rm -f nml-cstv_ptop_8
+   getnml --file settings -o 'nml-' cstv_ptop_8
+   if [ ! -f nml-cstv_ptop_8.txt ];then
+      # Potp will be computed
+      # B will be zero for first mometum level
+      echo -2 > nml-cstv_ptop_8.txt
+   fi
+   # lam_gbpil_t
+   echo "NOTE : The following command may produce an error if Lam_gbpil_T is not"
+   echo "       in the namelist, if this happens, Lam_gbpil_T be set to -1 (non top piloting)"
+   rm -f nml-lam_gbpil_t.txt
+   getnml --file settings -o 'nml-' lam_gbpil_t
+   if [ ! -f nml-lam_gbpil_t.txt ];then
+      echo '-1' > nml-lam_gbpil_t.txt
+   fi
+   cd -
+done
+
+if [ ${gem3_settings} != UNSET ];then
+
+   if [ ${#} = 2 ];then
+      echo "==========================="
+      echo "You already have two graphs"
+      echo " ABORT !!!                 "
+      echo "==========================="
+      exit
+   fi
+
+   cd v3
+   #cp ${gem3_settings} ${TMPDIR}/${$}
+   getnml --file settings -o 'nml-' hyb grd_rcoef
+   echo "NOTE : The following command may produce an error if pres_pref is not"
+   echo "       in the namelist, if this happens, pres_pref will be set to 800."
+   rm -f nml-pres_pref.txt
+   getnml --file settings -o 'nml-' pres_pref
+   if [ ! -f nml-pres_pref.txt ];then
+      echo 800. > nml-pres_pref.txt
+   fi
+   echo "NOTE : The following command may produce an error if pres_ptop is not"
+   echo "       in the namelist, if this happens, pres_ptop will be computed from hyb(1) and pref"
+   getnml --file settings -o 'nml-' pres_ptop
+   if [ ! -f nml-pres_ptop.txt ];then
+      echo -1 > nml-pres_ptop.txt
+   fi
+
+   cd -
+
+fi
+
+#==============================================================================
+
+if [ ${gem3_settings} = UNSET ];then
+
+   # Current version graphe only
+
+   R_PROC_NAME=show_stg_levels
+   rm -f ${R_PROC_NAME}.r
+   R_PROC=$(which ${R_PROC_NAME}.r)
+
+   if [ "${R_PROC}" = "" ];then
+      echo "Cannot find ${R_PROC_NAME}.r"
+      exit 1
+   fi
+   cat > job.r <<EOF
+      source('${R_PROC}')
+      ${R_PROC_NAME}(
+         title='${title}',            
+         file1_levels='current_1/nml-hyb.txt',
+         file1_rcoef='current_1/nml-grd_rcoef.txt',
+         file1_ptop='current_1/nml-cstv_ptop_8.txt',
+         gbpil_t1=$(cat current_1/nml-lam_gbpil_t.txt),
+         sets=${#},
+         file2_levels='current_2/nml-hyb.txt',
+         file2_rcoef='current_2/nml-grd_rcoef.txt',
+         file2_ptop='current_2/nml-cstv_ptop_8.txt',
+         gbpil_t2=$(cat current_2/nml-lam_gbpil_t.txt),
+         p_below_hill=${p_below_hill},
+         p_top_hill=${p_top_hill},
+         ptop_graph=${ptop_graph},
+         pbot_graph=${pbot_graph},
+         xrange_delta=c(${xrange_delta}),
+         overplot=${overplot},
+         zoom=${zoom},
+         plot_thermo=${plot_thermo},
+	 width=${width},height=${height},
+         font_f=${font_f},
+	 format='${format}'
+       )
+EOF
+ 
+   rm -f out.${format}
+   R --no-save < job.r      
+
+   if [ ${?} != 0 ];then
+      echo "Problem with ${R_PROC_NAME}.r"
+      echo "aborting"
+      exit 1
+   fi
+     
+   mv out.${format} ${out_name}_zoom${ZOOM}.${format}
+
+   cp *.${format} ${MAITRE}
+   echo "See file *.${format} "
+
+   if [ ${print} = 1 ];then
+      if [ "${PRINTER}" = "" ];then
+         echo The variable PRINTER must be defined.
+         exit 1
+      fi
+      lpr -P${PRINTER} ${out_name}_zoom${ZOOM}.${format}
+      echo See printer ${PRINTER}
+   fi
+
+   if [ ${show} != "nil" ];then
+      ${show} ${out_name}_zoom${ZOOM}.${format}
+   fi
+
+else
+
+   # Current version graph along with 3.x.x graph
+   R_PROC_NAME=show_stg_reg_levels
+   rm -f ${R_PROC_NAME}.r
+   R_PROC=$(which ${R_PROC_NAME}.r)
+
+   if [ "${R_PROC}" = "" ];then
+      echo "Cannot find ${R_PROC_NAME}.r"
+      exit 1
+   fi
+   
+   cat > job.r <<EOF
+      source('${R_PROC}')
+         ${R_PROC_NAME}(
+            title='${title}',
+            file_levels='current_1/nml-hyb.txt',
+	    file_rcoef='current_1/nml-grd_rcoef.txt',
+	    file_ptop='current_1/nml-cstv_ptop_8.txt',
+	    gbpil_t=$(cat current_1/nml-lam_gbpil_t.txt),
+	    file_levels_3='v3/nml-hyb.txt',
+	    file_rcoef_3='v3/nml-grd_rcoef.txt',
+	    file_pref_3='v3/nml-pres_pref.txt',
+	    file_ptop_3='v3/nml-pres_ptop.txt',
+	    p_below_hill=${p_below_hill},
+	    p_top_hill=${p_top_hill},
+	    ptop_graph=${ptop_graph},
+            pbot_graph=${pbot_graph},
+	    overplot=${overplot},
+	    zoom=${zoom},
+	    plot_thermo=${plot_thermo})
+EOF
+
+   rm -f out.${format}
+   R --no-save < job.r
+
+   if [ ! -f out.${format} ];then
+      echo "Problem with ${R_PROC_NAME}.r"
+      echo "aborting"
+      exit 1
+   fi
+
+   if [ ${zoom} = 0 ];then
+      zoom=''
+   else
+         ZOOM=_zoom${zoom}
+   fi
+      
+   if [ "${out_name}" = UNSET ];then
+      NAME=levels_${MODEL_VERSION}_vs_v3${ZOOM}.${format}
+   else
+      NAME=${out_name}${ZOOM}.${format}
+   fi
+
+   mv out.${format} ${NAME}
+
+   cp ${NAME} ${MAITRE}
+   echo "See file ${NAME}"
+  	 
+   if [ ${show} != 'nil' ];then
+      ${show} ${NAME}
+   fi
+
+fi
+
+# fin
+#==============================================================================

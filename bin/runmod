@@ -1,0 +1,2 @@
+export AFSISIO=${AFSISIO:-${ATM_MODEL_DFILES}}
+. r.call.dot Um_runmod.ksh $*

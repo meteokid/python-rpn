@@ -1,0 +1,20 @@
+#!/bin/ksh
+
+if [[ -z ${1} ]] ; then
+  echo "Usage: $0 TIME_STRING"
+  exit 1
+fi
+timestr=${1}
+
+# Clean up string if necessary
+timestr=$(echo ${timestr} | perl -p -e "s/[\'\"]//g")
+
+# Call time-conversion executable with negative protection
+tmpfile=${TMPDIR:-/tmp}/time2sec.${USER}.$$
+time2sec_main.Abs -time =${timestr} 2>${tmpfile}
+if [[ -s ${tmpfile} ]] ; then
+    cat ${tmpfile} >&2
+    echo "Error returned by time2sec converter" >&2
+    exit 1
+fi
+

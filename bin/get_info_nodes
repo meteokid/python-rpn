@@ -1,0 +1,10 @@
+llq -s $1 2> /dev/null | grep "cmc.ec.gc.ca" 1> $TMPDIR/llq_list$$ 2> /dev/null
+echo `cat $TMPDIR/llq_list$$ 2> /dev/null | grep "Submitting Host" 2> /dev/null`
+hostmach=`cat $TMPDIR/llq_list$$ 2> /dev/null | grep MPI | awk 'BEGIN{FS="::"}{print $1}' 2> /dev/null`
+if [ `echo $hostmach | wc -w` -gt 0 ] ;then
+  echo $hostmach
+else
+  echo `cat $TMPDIR/llq_list$$ 2> /dev/null | grep "Allocated Host" | awk 'BEGIN{FS="::"}{print $1}' 2> /dev/null`
+fi
+/bin/rm -f $TMPDIR/llq_list$$
+

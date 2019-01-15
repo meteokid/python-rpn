@@ -1,0 +1,65 @@
+#!/usr/bin/env ksh
+# Completely remove a development experiment
+
+confirmed=0
+if [[ x"${1}" == x"-f" ]] ; then
+  confirmed=1
+  shift
+fi
+
+# Check command line arguments
+if [[ -z "${1}" ]] ; then
+  print "Usage: $0 EXP_NAME" 1>&2
+  exit 1
+fi
+exp=${1}
+if [[ ! -d ${exp} ]] ; then
+  print "Experiment ${exp} does not exist" 1>&2
+  exit 1
+fi
+
+# Confirm removal
+if [[ ${confirmed} -lt 1 ]] ; then 
+while true ; do
+  printf "Remove experiment ${exp} and all associated storage/suite space? [y/n] "
+  read yn
+  case ${yn} in
+    [Yy]* )
+      confirmed=1
+      break;;
+    [Nn]* )
+      print "Exiting updater"
+      exit 0
+      break;;
+    *)
+      print "Please answer yes or no"
+  esac
+done
+fi
+if [[ ${confirmed} -lt 1 ]] ; then 
+  print "Aborting on impossible situation with answer=${yn}" 1>&2
+  exit 1
+fi
+
+# Remove storage targets if they exist
+linkit_log=${exp}/.linkit.log
+if [[ -f ${linkit_log} ]] ; then
+  while read entry ; do
+     host=${entry%%:*}
+     path=${entry##*:}
+     ssh -n ${host} rm -rf ${path}/
+  done <${linkit_log}
+fi
+
+# Remove development home target
+devel_link=${exp}/suite
+if [[ -h ${devel_link} ]] ; then
+  target=$(r.read_link ${devel_link})
+  rm -fr ${target}
+#  we should not do this rmdir ...
+#  rmdir $(dirname ${target})
+fi
+
+# Remove the experiment
+rm -fr ${exp}
+

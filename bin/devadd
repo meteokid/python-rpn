@@ -1,0 +1,68 @@
+#!/usr/bin/env ksh
+
+# Retrieve command line arguments
+arguments=$*
+usage="Usage: $0 EXP_NAME [options]"
+
+# Check for a GEM development environment
+if [[ -z "${GEM_DEV_SUITE}" ]] ; then
+    echo "No active development environment:  use gemdev.dot to create one"
+    exit 1
+fi
+
+# Process command line arguments
+eval $(cclargs $0 "[Add to an existing GEM development suite]" \
+    -f		"0"			"1"	"[Force overwrite of existing directory]" \
+    -v          "0"			"1"	"[Verbose output]" \
+    -copy	"base"			""	"[Existing experiment to copy]" \
+    ++ $arguments)
+explist=$*
+if [[ $# -lt 1 ]] ; then echo ${usage} 1>&2 ; return 1 ; fi
+
+# Check for a valid suite
+if [[ ! -d ${GEM_DEV_SUITE} ]] ; then
+    echo "Development suite ${GEM_DEV_SUITE} is no longer available" 1>&2
+    exit 1
+fi
+cd ${GEM_DEV_SUITE}
+
+# Check for a valid experiment to copy
+update_dev_exp(){
+    exp=${1}
+    src=${2}
+    exp_cfg=${exp}/configs
+    src_cfg=${src}/configs
+    mkdir -p ${exp_cfg}
+    cp -L ${src}/experiment.cfg ${exp}
+    cp -L ${src_cfg}/gem_settings.nml ${src_cfg}/outcfg.out ${exp_cfg}
+    setnml -f ${exp_cfg}/gem_settings.nml gem_cfgs Out3_etik_s=\"$(basename ${exp})\"
+    rm -fr {exp}/resources
+    cp -Lr ${src}/resources ${exp}
+}
+copy_exp=${GEM_DEV_SUITE}/${copy}
+if [[ ! -d ${copy_exp} ]] ; then
+    echo "Cannot copy configuration from ${copy_exp}" 1>&2
+    exit 1
+fi
+
+# Create the requested maestro experiments
+for expname in ${explist} ; do
+
+   rh_prefix=$(echo ${GEM_DEV_SUITE} | rev | cut -d '/' -f 1-3 | rev)/$(basename ${expname})
+   if [[ ${v} -gt 0 ]] ; then 
+      gemimport ${expname} -hub_prefix=${rh_prefix} -v -f=${f}
+   else
+      gemimport ${expname} -hub_prefix=${rh_prefix} -f=${f} >/dev/null 2>&1
+   fi
+   if [[ $? -ne 0 ]] ; then
+      echo "Error encountered during Maestro import\n" 1>&2
+      exit 1
+   fi
+
+   # Update the installation
+   update_dev_exp ${GEM_DEV_SUITE}/${expname} ${copy_exp}
+
+   # Update the suite description file
+   update_suite_desc
+
+done

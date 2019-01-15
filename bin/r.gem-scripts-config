@@ -1,0 +1,156 @@
+#!/bin/ksh
+
+myname=${0##*/}         #r.pkg-config
+mypath=`true_path ${0}` #/path/to/domain/pkg/bin/r.pkg-config
+mypath=${mypath%/*}     #/path/to/domain/pkg/bin
+mypath=${mypath%/*}     #/path/to/domain/pkg
+mypkg=${mypath##*/}     #pkg
+mypath=${mypath%/*}     #/path/to/domain
+mydom=${mypath##*/}     #domain
+
+mydom_name=${mydom%%_*}
+mydom_ver=`echo $mydom | cut -d_ -f2`
+mydom_platform=`echo $mydom | cut -d_ -f3`
+
+DESC='Provide configuration details for an SsmPackage'
+USAGE="USAGE: ${0##*/} [--version] [--bin] [--lib] [--inc] [--src] [--rcspath] [--arch]  [--all] [--pkg] [--forinstall] [--forall] [--forpkg pkg_ver_platform]"
+
+one=0
+dover=0
+dobin=0
+dolib=0
+doinc=0
+dosrc=0
+dorcspath=0
+doarch=0
+doall=0
+dopkg=0
+whatpkg="published"
+forpkg='*_*_*'
+posargs=""
+posargsnum=0
+while [[ $# -gt 0 ]] ; do
+    case $1 in
+        (-h|--help) echo $DESC ; echo -e $USAGE; exit 0;;
+		  (--version) dover=1; one=1;;
+		  (--bin) dobin=1; one=1;;
+		  (--lib) dolib=1; one=1;;
+		  (--inc) doinc=1; one=1;;
+		  (--src) dosrc=1; one=1;;
+		  (--rcspath) dorcspath=1; one=1;;
+		  (--arch) doarch=1; one=1;;
+		  (--all) doall=1; one=1;;
+		  (--pkg) dopkg=1; one=1;;
+		  (--forinstall) whatpkg="installed";;
+		  (--forall) whatpkg="all";;
+		  (--forpkg) forpkg="$2"; shift;;
+        -*) echo "ERROR: Unrecognized option $1"
+            echo -e $USAGE
+            echo "---- ABORT ----"
+            exit 1;;
+        *) posargs="$posargs $1" ; ((posargsnum=posargsnum+1));;
+    esac
+    shift
+done
+
+[[ $one -eq 0 ]] && doall=1
+
+if [[ $dover -eq 1 && $doall -eq 0 ]] ; then
+	 echo $mydom_ver
+	 exit
+fi
+
+if [[ x"${whatpkg}" == x"all" ]] ; then
+	 pkglist0=`/bin/ls -d ${mypath}/$forpkg 2>/dev/null`
+else
+	 pkglist0=`/bin/ls -d ${mypath}/etc/ssm.d/${whatpkg}/$forpkg 2>/dev/null`
+fi
+pkglist=""
+for item in $pkglist0 ; do
+	 isdomconfig="$(echo ${item##*/} | grep domconfig)"
+	 if [[ x$isdomconfig == x ]] ; then
+		  pkglist="$pkglist ${item##*/}"
+	 fi
+done
+pkglist=`echo $pkglist`
+
+pkg_version=""
+binpath=""
+libpath=""
+incpath=""
+srcpath=""
+rcspath=""
+archlist0=""
+#for item in `/bin/ls ${mypath}/etc/ssm.d/${whatpkg}/*/bin/r.*_*-config 2>/dev/null` ; do
+for item0 in $pkglist ; do
+	 item="${mypath}/$mypkg/.ssm.d/r.pkg-config ${item0##*/}"
+	 if [[ $doall -eq 1 ]] ; then
+		  a=`$item --version`
+		  [[ x"$a" != x"" ]] && pkg_version="$a:$pkg_version"
+	 fi
+	 if [[ $doall -eq 1 || $dobin -eq 1 ]] ; then
+		  a=`$item --bin`
+		  [[ x"$a" != x"" ]] && binpath="$a:$binpath"
+	 fi
+	 if [[ $doall -eq 1 || $dolib -eq 1 ]] ; then
+		  a=`$item --lib`
+		  [[ x"$a" != x"" ]] && libpath="$a:$libpath"
+	 fi
+	 if [[ $doall -eq 1 || $doinc -eq 1 ]] ; then
+		  a=`$item --inc`
+		  [[ x"$a" != x"" ]] && incpath="$a:$incpath"
+	 fi
+	 if [[ $doall -eq 1 || $dosrc -eq 1 ]] ; then
+		  a=`$item --src`
+		  [[ x"$a" != x"" ]] && srcpath="$a:$srcpath"
+	 fi
+	 if [[ $doall -eq 1 || $dorcspath -eq 1 ]] ; then
+		  a=`$item --rcspath`
+		  [[ x"$a" != x"" ]] && rcspath="$a:$rcspath"
+	 fi
+	 if [[ $doall -eq 1 || $doarch -eq 1 ]] ; then
+		  a=`$item --arch`
+		  [[ x"$a" != x"" ]] && archlist0="$a:$archlist0"
+	 fi
+done
+pkg_version=${pkg_version%:*}
+binpath=${binpath%:*}
+libpath=${libpath%:*}
+incpath=${incpath%:*}
+srcpath=${srcpath%:*}
+rcspath=${rcspath%:*}
+
+archlist=""
+for item in `echo $archlist0 | tr ':' ' '`; do
+	 if [[ x$(echo $archlist | grep $item 2>/dev/null) == x ]] ; then
+		  archlist="${myarch}:${archlist}"
+	 fi
+done
+archlist=${archlist%:*}
+
+if [[ $doall -eq 1 ]] ; then
+	 if [[ $(echo $pkglist | wc -w) -eq 1 ]] ;then
+		  echo "pkg_version=$pkg_version"
+	 fi
+	 cat <<EOF
+version=$mydom_ver
+binpath=${binpath}
+libpath=${libpath}
+incpath=${incpath}
+srcpath=${srcpath}
+rcspath=${rcspath}
+archlist=${archlist}
+pkglist_${whatpkg}="${pkglist}"
+EOF
+else
+	 [[ $dobin -eq 1 ]] && echo ${binpath}
+	 [[ $dolib -eq 1 ]] && echo ${libpath}
+	 [[ $doinc -eq 1 ]] && echo ${incpath}
+	 [[ $dosrc -eq 1 ]] && echo ${srcpath}
+	 [[ $dorcspath -eq 1 ]] && echo ${rcspath}
+	 [[ $doarch -eq 1 ]] && echo ${archlist}
+	 [[ $dopkg -eq 1 ]] && echo ${pkglist}
+fi
+
+set -x
+

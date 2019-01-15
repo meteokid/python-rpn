@@ -1,0 +1,116 @@
+#!/bin/bash
+
+# Autor  : Andre Plante Nov. 2010
+#
+# Object : To make gem vertical levels
+#
+# Input  :
+# --------
+#          see cclargs below
+# Output :
+# --------
+#          gem_settings.nml_Lnb where nb is the number of levels
+#
+#==============================================================================
+eval `cclargs \
+ -config       demo demo "[config file, if set to demo use demo parameters]"\
+ -show         0    1    "[Show amplification factors]"\
+ -debug        0    1    "[set -x]"\
+ ++ $*`
+
+#==============================================================================
+
+if [ ${debug} = 1 ];then
+   set -x
+fi
+
+#==============================================================================
+
+set -e
+
+#==============================================================================
+
+if [ ${ATM_MODEL_VERSION:-UNSET} = UNSET ];then
+
+   echo "You must set a model version"
+   exit
+
+fi
+
+if [ $(echo ${ATM_MODEL_VERSION:0:5} | sed 's/\.//g') -lt 400 ];then
+
+   echo "Model version not supported"
+   exit
+
+fi
+
+#==============================================================================
+
+MAITRE=${PWD}
+WORK=${TMPDIR}/${$}
+mkdir ${TMPDIR}/${$}
+
+#==============================================================================
+if [ ${config} != demo ];then
+   if [ ! -f ${config} ];then
+      echo "No such file: ${config}"
+      exit
+   fi
+else
+   config=$PWD/config_make_levels_${$}.txt
+   cat > config_make_levels_${$}.txt <<EOF
+ &gem_make_level
+   pres_first_level=.1
+   pin=1000. , 975   , 950   , 400   , 130   , 50    , .1
+   amp=1.500 , 1.190 , 1.115 , 1.002 , 1.010 , 1.052 , 1.102
+   height_above_ground=10.
+ /
+EOF
+fi
+cp ${config} ${TMPDIR}/${$}
+
+#==============================================================================
+
+PROC=make_levels
+set +e
+FILE_R=$(which ${PROC}.r)
+set -e
+if [ "${FILE_R}" = "" ];then
+   echo "cannot find proc ${PROC}.r"
+   exit
+fi
+cp ${FILE_R} ${TMPDIR}/${$} 
+
+#==============================================================================
+
+cd ${TMPDIR}/${$}
+
+#==============================================================================
+# Retreive parameter from speudo namelist
+
+getnml --file ${config##*/} -o 'nml-' pres_first_level height_above_ground pin amp
+
+#==============================================================================
+
+cat > job.r <<EOF
+   source('${PROC}.r')
+   ${PROC}(pres_first_level=$(cat nml-pres_first_level.txt),
+              height_above_ground=$(cat nml-height_above_ground.txt),
+              pin=c($(cat nml-pin.txt)),
+              amp=c($(cat nml-amp.txt))
+           )
+EOF
+
+R --no-save < job.r
+
+SETTINGS=$(ls gem_settings.nml*)
+FIGURE=$(ls *.ps)
+mv ${SETTINGS} ${MAITRE}
+echo "See ${SETTINGS}"
+mv ${FIGURE} ${MAITRE}
+
+cd -
+
+if [ ${show} = 1 ];then
+   display ${FIGURE}
+fi

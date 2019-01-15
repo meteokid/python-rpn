@@ -1,0 +1,188 @@
+#!/bin/ksh
+
+# Retrieve command line arguments
+arguments=$*
+usage="Usage: gemdev.dot EXP_NAME [options]"
+
+# Check that the user is sourcing this script
+script_name="gemdev.dot"
+if [[ "${0##*/}" == ${script_name} ]] ; then
+    echo "This script should be sourced with \`. ${0}\`"
+    exit 1
+fi
+
+# Process command line arguments
+eval $(cclargs gemdev.dot "[Create a GEM development experiment]" \
+    -dev	""			""		"[GEM develompent directory base path]" \
+    -exp	""			""		"[Create additional experiments in suite]" \
+    -f		"0"			"1"		"[Force overwrite of existing directories]" \
+    -mach       ""                      ""		"[List of machines for setup]" \
+    -update "" "" "[List of additional packages to load]" \
+    -cd	        "0"			"1"		"[Change to model development directory upon completion]" \
+    -v          "0"			"1"		"[Verbose output]" \
+    -vv         "0"			"1"		"[Very verbose output]" \
+    ++ $arguments | sed 's/exit/return/')
+suite=$*
+if [[ $# -ne 1 ]] ; then echo ${usage} 1>&2 ; return 1 ; fi
+initial_dir=$(pwd)
+if [[ ${vv} -gt 0 ]] ; then v=${vv} ; fi
+
+# Do nothing if storage_model is not properly defined
+if [[ -z "${storage_model}" ]] ; then
+   echo "ERROR: the storage_model environment variable is not defined" >&2
+   return 1
+fi
+if [[ ! -d "${storage_model}" ]] ; then
+   echo "ERROR: the storage_model environment variable does not point to an existing directory" >&2
+   return 1
+fi
+
+# Create development experiment home
+if [[ -n "${dev}" ]] ; then
+    case ${dev} in
+	/*) dev_home=${dev}/${suite} ;;
+	*) dev_home=${initial_dir}/${dev}/${suite} ;;
+    esac
+else
+    dev_home=${home_model:-${HOME}/home}/gem/${ATM_MODEL_VERSION}/${suite}
+fi
+if [[ ${v} -gt 0 ]] ; then echo "Creating GEM development directory at ${dev_home}" ; fi
+if [[ -e ${dev_home} ]] ; then
+  if [[ ${f} -gt 0 ]] ; then
+      gemrm -f ${dev_home}
+      rm -fr ${dev_home}
+  else
+      echo "Development directory ${dev_home} already exists, use -f to overwrite" 1>&2
+      return 1
+  fi
+fi
+mkdir -p ${dev_home}
+
+# Update environment
+if [[ -n "${update}" ]] ; then
+   r.check_shortcuts ${update}
+   if [[ $? -ne 0 ]] ; then
+      echo "One of more of the updates cannot be applied: ${update}" 1>&2
+      return 1
+   fi
+   if [[ ${vv} -gt 0 ]] ; then
+      . s.ssmuse.dot ${update}
+   else
+      . s.ssmuse.dot ${update} >/dev/null 2>&1
+   fi
+fi
+export GEM_DEV_UPDATES=${update}
+
+# Create the suite home directory
+case ${suite} in
+    /*) suite_base=${suite} ;;
+    *) suite_base=${suite_model:-${HOME}/.suites} ;;
+esac
+suite_home=${suite_base}/gem/${ATM_MODEL_VERSION}/${suite}
+if [[ ${v} -gt 0 ]] ; then echo "Creating GEM development suite at ${suite_home}" ; fi
+if [[ -e ${suite_home} ]] ; then
+  if [[ ${f} -gt 0 ]] ; then
+      rm -fr ${suite_home}
+  else
+      echo "Suite ${suite_home} already exists, use -f to overwrite" 1>&2
+      return 1
+  fi
+fi
+mkdir -p ${suite_home}
+
+# Create the base maestro experiment
+cd ${suite_home}
+base_exp="base"
+export SEQ_EXP_HOME=$(normpath.py -p ${suite_home}/${base_exp})
+export GEM_DEV_SUITE=$(dirname ${SEQ_EXP_HOME})
+rh_prefix=$(echo ${GEM_DEV_SUITE} | rev | cut -d '/' -f 1-3 | rev)/${base_exp}
+if [[ ${vv} -gt 0 ]] ; then
+    gemimport ${base_exp} -hub_prefix=${rh_prefix} -v -f=${f}
+else
+    gemimport ${base_exp} -hub_prefix=${rh_prefix} -f=${f} >/dev/null 2>&1
+fi
+if [[ $? -ne 0 ]] ; then
+  echo "Error encountered during Maestro import\n" 1>&2
+  return 1
+fi
+
+# Finalise experiment directory setup
+cd ${dev_home}
+forced=
+if [[ ${f} -gt 0 ]] ; then
+    forced=-f
+fi
+if [[ ${v} -gt 0 ]] ; then echo "Setting up GEM development experiment" ; fi
+if [[ ${vv} -gt 0 ]] ; then
+    ouv_exp_gem -v
+    linkit -v ${forced}
+else
+    ouv_exp_gem >/dev/null 2>&1
+    linkit ${forced} >/dev/null
+fi
+
+# Create links on requested remote hosts
+EXEC_HOST=${TRUE_HOST}
+for host in ${mach} ; do
+    if [[ ${v} -gt 0 ]] ; then echo "Configuring for ${host}" ; fi
+    cmd=". ${HOME}/.profile; . s.ssmuse.dot ${ATM_MODEL_BNDL} ${update}; export GEM_DEV_UPDATES=\"${update}\"; cd $(pwd); linkit"
+    if [[ ${EXEC_HOST} == ${TRUE_HOST} ]] ; then
+	EXEC_HOST=${host}
+    fi
+    if [[ ${vv} -gt 0 ]] ; then
+	echo "Running linkit on ${host}"
+	ssh -t ${host} ${cmd}
+    else
+	ssh -t ${host} ${cmd} >/dev/null 2>&1
+    fi
+done
+
+# Create suite convenience links
+ln -s ${GEM_DEV_SUITE} ${dev_home}/suite
+ln -s ${dev_home} ${GEM_DEV_SUITE}/gem
+ln -s ${dev_home}/.ssmuse_gem ${GEM_DEV_SUITE}
+
+# Import elements from RI for configuration
+update_dev_exp(){
+    this_exp=${1}
+    dev=${2}
+    config=${this_exp}/experiment.cfg
+    . ${config}
+    gemcfg_path=${dev}/GEM_cfgs/cfg_0000
+    mkdir -p ${gemcfg_path}
+    cp -r ${GEM_settings} ${GEM_outcfg} ${gemcfg_path}
+    setnml -f ${gemcfg_path}/gem_settings.nml gem_cfgs Out3_etik_s=\"$(basename ${this_exp})\"
+    exp_cfg=${this_exp}/configs
+    mkdir -p ${exp_cfg}
+    ln -s ${gemcfg_path}/* ${exp_cfg}
+    for entry in settings outcfg ; do
+	   perl -pi -e "s|^(GEM_${entry}=).*?([^/]+)$|\1${TRUE_HOST}:\\\${SEQ_EXP_HOME}\/configs/\2|" ${config}
+    done
+    perl -pi -e "s|^(GEM_ovbin=).*|\1${dev}|" ${config}
+    if [[ -n "${update}" ]] ; then
+       printf "\n# update: shortcuts to packages to update over base GEM ${ATM_MODEL_VERSION}\n" >>${config}
+       printf "GEM_update=\"${update}\"\n" >> ${config}
+    fi
+    mv ${config} ${gemcfg_path}/configexp.cfg
+    ln -s ${gemcfg_path}/configexp.cfg ${config}
+    perl -pi -e "s|^(\s*BACKEND\s*=\s*).*|\1${EXEC_HOST}|" ${this_exp}/resources/resources.def
+}
+if [[ ${v} -gt 0 ]] ; then echo "Finalizing experiment configuration" ; fi
+update_dev_exp ${GEM_DEV_SUITE}/${base_exp} ${GEM_DEV_SUITE}/gem
+for this_exp in ${exp} ; do
+    devadd ${this_exp} -v=${vv} -f=${f}
+done
+
+# Update the suite description file
+update_suite_desc
+
+# Leave the user in the requested location
+if [[ ${cd} -gt 0 ]] ; then
+    cd ${dev_home}
+else
+    cd ${initial_dir}
+    printf "\nCreated GEM development directory ${dev_home}\n\n"
+fi
+
+# Garbage collection
+while [[ -n "${1}" ]] ; do shift ; done

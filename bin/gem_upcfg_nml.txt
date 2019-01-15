@@ -1,0 +1,404 @@
+version=nml.1
+
+#file = gem_settings.nml > newname
+#class = settings > newclass
+
+file = gem_settings.nml
+class = Settings
+
+#------
+fileVersion = 4.4.0-b1 > 4.4.0-b2
+
+# > ensembles / Ens_ptp_env_hor_f
+
+#------
+fileVersion = 4.4.0-b2 > 4.4.0-b3
+
+gement / Mod_runstrt_S   > step / Step_runstrt_S
+gement / Pil_nesdt       > step / Step_nesdt
+gement / Leap_years_L    > step / Step_leapyears_L
+gem_cfgs / cstv_dt_8     > step / step_dt
+gem_cfgs / Lam_nesdt     > step / Step_nesdt
+gem_cfgs / Lam_runstrt_S > step / Step_runstrt_S
+gem_cfgs / Sol_eps       > gem_cfgs / Sol_fgm_eps
+gem_cfgs / Sol_maxits    > gem_cfgs / Sol_fgm_maxits
+gem_cfgs / Step_bkup     > step / Step_bkup
+gem_cfgs / Step_cleanup  >
+gem_cfgs / Step_gstat    > step / Step_gstat
+gem_cfgs / Step_rsti     > step / Step_rsti
+gem_cfgs / Step_total    > step / Step_total
+gem_cfgs / Step_spinphy  > step / Step_spinphy
+grdc / Grdc_proj_S       >
+grdc / Grdc_runend_S     > #&Grdc/Grdc_runend_S is now specified in &Grdc/Grdc_end_S (value change) - see GEM doc for details
+grdc / Grdc_runstrt_S    > #&Grdc/Grdc_runstrt_S is now specified in &Grdc/Grdc_start_S (value change) - see GEM doc for details
+theo_cfgs / Lam_runstrt_S > step / Step_runstrt_S
+bubble_cfgs / Lam_nesdt   > step / Step_nesdt
+
+msg = Other nml parameters may have changed, please refer to GEM doc for details
+
+# > grid / Grd_overlap
+# > gem_cfgs / Sol_yyg_eps
+# > gem_cfgs / Sol_yyg_maxits
+# > modipc_cfgs / Mod_runstrt_S
+# > modipc_cfgs / tracers_ntr
+# > modipc_cfgs / tracers_name
+# > modipc_cfgs / tracers_sval
+
+#------
+fileVersion = 4.4.0-b3 > 4.4.0-b4
+fileVersion = 4.4.0-b4 > 4.4.0-b5
+fileVersion = 4.4.0-b5 > 4.4.0-b6
+fileVersion = 4.4.0-b6 > 4.4.0-b7
+
+msg = new option: &gem_cfgs/Eq_sponge, it is advised to replase the physic eponge by the new parameter
+
+# > gem_cfgs / Eq_sponge
+
+#------
+fileVersion = 4.4.0-b7 > 4.4.0-b8
+
+adw_cfgs/ adw_thermopos_S > #&adw_cfgs/ adw_thermopos_L replaces adw_thermopos_S, use adw_thermopos_L=.true. for adw_thermopos_S='traj'
+gem_cfgs / Schm_zdotMid_L >
+gem_cfgs / Schm_pior_L    >
+mtn_cfgs / Schm_zdotMid_L >
+mtn_cfgs / Schm_pior_L    >
+msg = new options: &gem_cfgs/Schm_mteul_L ; &gem_cfgs/Schm_NoTopThL_L
+# > gem_cfgs / Schm_mteul_L
+# > gem_cfgs / Schm_NoTopThL_L
+# > mtn_cfgs / Schm_mteul_L
+# > mtn_cfgs / Schm_NoTopThL_L
+
+#------
+fileVersion = 4.4.0-b8 > 4.4.0-b9
+fileVersion = 4.4.0-b9 > 4.4.0-b10
+
+physics_cfgs / eponge > #You may use &gem_cfgs/eq_sponge to replace &physics_cfgs/eponge
+
+msg = adw_thermopos_L default value changed to .false.
+
+#------
+fileVersion = 4.4.0-b10 > 4.4.0-b11
+
+gem_cfgs / Vspng_coef  > #Vspng_coef was replaced by Vspng_coeftop with new units, see doc
+gem_cfgs / Vspng_mf    > 
+gem_cfgs / Vspng_nutop > 
+
+msg = New gem_cfgs options: Schm_Tlift, Out3_lieb_levels, Out3_lieb_maxite, Out3_lieb_conv ;\n New physics_cfgs options: pbl_coupled, pbl_ktop, pbl_ricrit, pbl_tsplit, pbl_zsplit
+
+#------
+fileVersion = 4.4.0-b11 > 4.4.0-b12
+
+msg = added temporary physics_cfgs/gdps_aggressive option
+
+#------
+fileVersion = 4.4.0-b12 > 4.4.0-b13
+fileVersion = 4.4.0-b13 > 4.4.0-b14
+fileVersion = 4.4.0-b14 > 4.4.0-rc1
+fileVersion = 4.4.0-rc1 > 4.4.0-rc2
+
+msg = new gem_cfgs/Schm_hzdzdt_L option
+
+#------
+fileVersion = 4.4.0-rc2 > 4.4.0-rc3
+fileVersion = 4.4.0-rc3 > 4.4.0-rc4
+fileVersion = 4.4.0-rc4 > 4.4.0-rc5
+fileVersion = 4.4.0-rc5 > 4.4.0-rc6
+fileVersion = 4.4.0-rc6 > 4.4.0-rc7
+fileVersion = 4.4.0-rc7 > 4.4.0-rc8
+fileVersion = 4.4.0-rc8 > 4.4.0-rc9
+
+physics_cfgs / gdps_aggressive > #gdps_aggressive=.true. is now the hard coded value
+
+#------
+fileVersion = 4.4.0-rc9 > 4.4.0-rc10
+fileVersion = 4.4.0-rc10 > 4.4.0
+
+msg = new gem_cfgs/Schm_hzduav_L option
+
+# > gem_cfgs/Schm_hzduav_L
+
+#------
+fileVersion = 4.4.0 > 4.5.0-a1
+
+gem_cfgs / Hzd_hzdmain_0_L >
+gem_cfgs / Hzd_hzdmain_1_L >
+gem_cfgs / Hzd_t0_1_L >
+gem_cfgs / Hzd_t1_1_L >
+
+#------
+fileVersion = 4.5.0-a1 > 4.5.0-a2
+
+physics_cfgs / gdps_aggressive > #gdps_aggressive=.true. is now the hard coded value
+
+#------
+fileVersion = 4.5.0-a2 > 4.5.0-a3
+physics_cfgs / facdifv > #
+physics_cfgs / factdt  > # factdt=1 is now the hard coded value
+
+#------
+fileVersion = 4.5.0-a3 > 4.5.0-a4
+fileVersion = 4.5.0-a4 > 4.5.0-a5
+
+msg = new gem_cfgs/Schm_hzduav_L option
+
+# > gem_cfgs/Schm_hzduav_L
+physics_cfgs / phy_pck_version > #removed, not more check of physic version
+
+#------
+fileVersion = 4.5.0-a5 > 4.5.0-a6
+gement / Anal_perturb_L > #Pertubation is now with gem_cfgs 
+
+msg = gem_cfgs/Schm_NoTopTH default changed to .T.; New init cond pertubation methode set by gem_cfgs/perturb_nbits and gem_cfgs/perturb_npts, replaces gement/anal_perturb_L
+
+#------
+fileVersion = 4.5.0-a6 > 4.5.0-a7
+fileVersion = 4.5.0-a7 > 4.5.0-a8
+
+adw_cfgs / adw_useadx_L > # adw no longer exists
+adw_cfgs / adw_thermopos_L > #
+
+# > adw_cfgs/ adw_cub_traj_L
+# > adw_cfgs/ adw_trajdebug_L
+
+# > gem_cfgs/Schm_trapeze_L
+# > gem_cfgs/Schm_superwinds_L
+
+gem_cfgs/Schm_mteul_L > #
+gem_cfgs/Schm_NoTopThL_L > # now forced to .T.
+
+msg = physics_2 and adw no longer exists
+
+#------
+fileVersion = 4.5.0-a8 > 4.5.0-a9
+
+adw_cfgs / adw_trajdebug_L > # adw no longer exists
+gem_cfgs / Schm_hzdzdt_L > # adw no longer exists
+gem_cfgs / Schm_hzduav_L > # adw no longer exists
+# > gem_cfgs / Schm_hzdadw_L
+# > gem_cfgs / Hzd_theta_L
+# > gem_cfgs / Out3_fullplane_L
+# > gem_cfgs / Out3_uendode_L
+
+physics_cfgs / cortm > #removed, no more twater correction
+
+#------
+fileVersion = 4.5.0-a9 > 4.5.0-a10
+fileVersion = 4.5.0-a10 > 4.5.0-b1
+
+gem_cfgs / Out3_uendode_L > gem_cfgs / Out3_uencode_L #fix Out3_uencode_L typo
+gem_cfgs / Hzd_theta_L > #Replace Hzd_theta_L with Hzd_lnr_theta, Hzd_pwr_theta
+# > gem_cfgs / Hzd_lnr_theta
+# > gem_cfgs / Hzd_pwr_theta
+
+#------
+fileVersion = 4.5.0-b1 > 4.5.0-b2
+fileVersion = 4.5.0-b2 > 4.5.0-b3
+
+# > physics_cfgs / z0trdps300
+
+msg = new physics_cfgs/z0trdps300
+
+#------
+fileVersion = 4.5.0-b3 > 4.5.0-b4
+
+# > gem_cfgs / Vspng_vec_L
+msg = new gem_cfgs / Vspng_vec_L
+
+#------
+fileVersion = 4.5.0-b4 > 4.5.0-b5
+fileVersion = 4.5.0-b5 > 4.5.0-b6
+
+# > gem_cfgs / Schm_Adw_extrap_L
+msg = new gem_cfgs / Schm_Adw_extrap_L
+
+#------
+fileVersion = 4.5.0-b6 > 4.5.0-b7
+
+# > physics_cfgs / p_runlgt
+
+msg = new physics_cfgs/p_runlgt
+
+#------
+fileVersion = 4.5.0-b7 > 4.5.0-b8
+# gemdyn_version=${_version} : no nml changes
+# rpnphy_version=5.5.0-b6    : no nml changes
+
+#------
+fileVersion = 4.5.0-b8 > 4.5.0-b9
+# gemdyn_version=${_version}
+# rpnphy_version=5.5.0-b7
+
+gem_cfgs / Schm_NoTopThL_L >  #Removed Schm_NoTopThL_L
+series   / P_serg_srsus_L  >  #Removed P_serg_srsus_L
+
+# > physics_cfgs / kfcfdbk
+# > physics_cfgs / kfcprod
+
+msg = new option to KFC physics_cfgs/kfcfdbk, physics_cfgs/kfcprod
+msg = series have been moved to the physc, nml is identical but for the removed option: series/P_serg_srsus_L
+
+#------
+fileVersion = 4.5.0-b9 > 4.5.0-rc1
+# gemdyn_version=${_version} : no nml changes
+# rpnphy_version=5.5.0-rc1   : no nml changes
+fileVersion = 4.5.0-rc1 > 4.5.0-rc2 : no nml changes
+# gemdyn_version=${_version} : no nml changes
+# rpnphy_version=5.5.0-rc2   : no nml changes
+fileVersion = 4.5.0-rc2 > 4.5.0-rc3
+# gemdyn_version=${_version}
+# rpnphy_version=5.5.0-rc3 : no nml changes
+
+gem_cfgs / schm_moist_L > #Removed schm_moist_L - was not used in the code
+
+#------
+fileVersion = 4.5.0-rc3 > 4.5.0-rc4
+fileVersion = 4.5.0-rc4 > 4.5.0
+fileVersion = 4.5.0 > 4.6.0-b1
+fileVersion = 4.6.0-a1 > 4.6.0-a2
+fileVersion = 4.6.0-a2 > 4.6.0-a3
+fileVersion = 4.6.0-a3 > 4.6.0-b1
+fileVersion = 4.6.0-b1 > 4.6.0-b2
+fileVersion = 4.6.0-b2 > 4.6.0-rc1
+fileVersion = 4.6.0-rc1 > 4.6.0-rc2
+fileVersion = 4.6.0-rc2 > 4.6.0-rc3
+fileVersion = 4.6.0-rc3 > 4.6.0-rc4
+fileVersion = 4.6.0-rc4 > 4.6.0-rc5
+fileVersion = 4.6.0-rc5 > 4.6.0-rc6
+
+# > gement/E_tr_anydate_L
+
+fileVersion = 4.6.0-rc6 > 4.6.0-rc7
+fileVersion = 4.6.0-rc7 > 4.6.0-rc8
+fileVersion = 4.6.0-rc8 > 4.6.0
+
+fileVersion = 4.6.0-rc3 > 4.7.0-a1
+fileVersion = 4.7.0-a1 > 4.7.0-a2
+fileVersion = 4.7.0-a2 > 4.7.0-a3
+fileVersion = 4.7.0-a3 > 4.7.0-a4
+fileVersion = 4.7.0-a4 > 4.7.0-a5
+
+gem_cfgs / schm_adw_extrap_L > #Removed schm_adw_extrap_L
+
+fileVersion = 4.7.0-a5 > 4.7.0-a6
+
+adw_cfgs / adw_nosetint_L > #Removed adw_nosetint_L
+adw_cfgs / adw_cub_traj_L > #Removed adw_cub_traj_L
+gem_cfgs / Hzd_type_S     > #Removed Hzd_type_S
+gem_cfgs / Schm_wload_L   > #Removed Schm_wload_L
+# > gem_cfgs / Schm_cub_traj_L #New
+# > surface_cfgs / z0hcon      #New
+
+physics_cfgs / convec      > #Removed convec
+physics_cfgs / kfcdepth    > convection_cfgs / kfcdepth
+physics_cfgs / kfcdet      > convection_cfgs / kfcdet
+physics_cfgs / kfcdlev     > convection_cfgs / kfcdlev
+physics_cfgs / kfcmom      > convection_cfgs / kfcmom
+physics_cfgs / kfcfdbk     > convection_cfgs / kfcfdbk
+physics_cfgs / kfcpcp      > convection_cfgs / kfcpcp
+physics_cfgs / kfcprod     > convection_cfgs / kfcprod
+physics_cfgs / kfcrad      > convection_cfgs / kfcrad
+physics_cfgs / kfctimea    > convection_cfgs / kfctimea
+physics_cfgs / kfctimec    > convection_cfgs / kfctimec
+physics_cfgs / kfctrig4    > convection_cfgs / kfctrig4
+physics_cfgs / kfctriga    > convection_cfgs / kfctriga
+physics_cfgs / kfctrigl    > convection_cfgs / kfctrigl
+physics_cfgs / kfctriglat  > convection_cfgs / kfctriglat
+physics_cfgs / triglat     > convection_cfgs / triglat
+physics_cfgs / z0hcon        > #Removed z0hcon
+physics_cfgs / z0mtype       > #Removed z0mtype
+physics_simplified / lin_kph > #Removed lin_kph
+physics_simplified / lin_lsc > #Removed lin_lsc
+physics_simplified / lin_pbl > #Removed lin_pbl
+physics_simplified / lin_sgo > #Removed lin_sgo
+
+# > convection_cfgs / deep     #New
+# > convection_cfgs / kch      #New
+# > convection_cfgs / kens     #New
+# > convection_cfgs / kice     #New
+# > convection_cfgs / ktdia    #New
+# > convection_cfgs / lch1conv #New
+# > convection_cfgs / ldeep    #New
+# > convection_cfgs / ldown    #New
+# > convection_cfgs / lrefresh #New
+# > convection_cfgs / lsettadj #New
+# > convection_cfgs / lshal    #New
+# > convection_cfgs / shal     #New
+# > convection_cfgs / xtadjd   #New
+# > convection_cfgs / xtadjs   #New
+
+fileVersion = 4.7.0-a6 > 4.7.0-a7
+# ???
+fileVersion = 4.7.0-a7 > 4.7.0-a8
+# ???
+fileVersion = 4.7.0-a8 > 4.7.0-a9
+# ???
+fileVersion = 4.7.0-a9 > 4.7.0-b1
+# ???
+fileVersion = 4.7.0-b1 > 4.7.0-b2
+# ???
+
+fileVersion = 4.7.0-b2 > 4.7.0-b3
+# > gem_cfgs / Schm_nblendyy   #New
+convection_cfgs / kch      > convection_cfgs / bkf_kch
+convection_cfgs / kens     > convection_cfgs / bkf_kens
+convection_cfgs / kice     > convection_cfgs / bkf_kice
+convection_cfgs / ktdia    > convection_cfgs / bkf_ktdia
+convection_cfgs / lch1conv > convection_cfgs / bkf_lch1conv
+convection_cfgs / ldeep    > convection_cfgs / bkf_ldeep
+convection_cfgs / ldown    > convection_cfgs / bkf_ldown
+convection_cfgs / lrefresh > convection_cfgs / bkf_lrefresh
+convection_cfgs / lsettadj > convection_cfgs / bkf_lsettadj
+convection_cfgs / lshal    > convection_cfgs / bkf_lshal
+convection_cfgs / shal     > convection_cfgs / bkf_shal
+convection_cfgs / xtadjd   > convection_cfgs / bkf_xtadjd
+convection_cfgs / xtadjs   > convection_cfgs / bkf_xtadjs
+convection_cfgs / kfcpcp   > #Removed kfcpcp
+
+fileVersion = 4.7.0-b3 > 4.7.0-b4
+# ???
+
+fileVersion = 4.7.0-b4 > 4.7.0-b5
+# ???
+
+fileVersion = 4.7.0-b5 > 4.7.0-b6
+msg = To update from 4.7.0-b5 to 4.7.0-b6 please use gem_upcfg_4.7.0-b5-b6.py
+
+fileVersion = 4.7.0-b6 > 4.7.0-b7
+# ???
+
+fileVersion = 4.7.0-b7 > 4.7.0-b8
+# ???
+
+fileVersion = 4.7.0-b8 > 4.7.0-b9
+gem_cfgs / Schm_psadj_L >    # > gem_cfgs / Schm_psadj_S
+# > gem_cfgs / Schm_psadj_S  # New var replacing gem_cfgs / Schm_psadj_L
+
+fileVersion = 4.7.0-b9 > 4.7.0-b9i
+fileVersion = 4.7.0-b9i > 4.7.0-b10
+gem_cfgs / Cstv_ptop_8   >    # removed Cstv_ptop_8
+gem_cfgs / Schm_psadj_S  >    # > gem_cfgs / Schm_psadj_L
+# > gem_cfgs / Schm_psadj_L   # New var replacing gem_cfgs / Schm_psadj_S
+gem_cfgs/ Schm_angular_displacement_L > # removed Schm_angular_displacement_L, forced to True
+surface_cfgs / agregat   >    # removed, Now agregat is forced to True
+
+fileVersion = 4.7.0-b10 > 4.7.0-b11
+# > physics_cfgs / indiag_list_s # New var indiag_list_s overrides list of diag var recylcing
+adw_cfgs / adw_gccsa_L   >    # removed
+
+# gem_cfgs / Schm_trapeze_L   #  changed default from false to true
+# > gem_cfgs / Schm_hor_int_traj_L  # New var: horizontal interpolation of trajectories, default to false
+
+fileVersion = 4.7.0-b11 > 4.7.0-rc1
+fileVersion = 4.7.0-rc1 > 4.7.0-rc2
+# > surface_cfgs / isba_rainonsnow_fluxfix # New vat to activate isba fix (default to False)
+
+fileVersion = 4.7.0-rc2 > 4.7.0-rc3
+fileVersion = 4.7.0-rc3 > 4.7.0-rc4
+fileVersion = 4.7.0-rc4 > 4.7.0-rc5
+fileVersion = 4.7.0-rc5 > 4.7.0-rc6
+fileVersion = 4.7.0-rc6 > 4.7.0
+
+fileVersion = 4.7.0 > 4.8-a1
+fileVersion = 4.8-a1 > 4.8-a2
+fileVersion = 4.8-a2 > 4.8.a3
+fileVersion = 4.8.a3 > 4.8.a4

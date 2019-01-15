@@ -1,0 +1,338 @@
+#!/bin/ksh
+myself=${0##*/}
+DESC='Show Version info for GEM components'
+USAGE="USAGE: ${myself##*/} [-h] [--src] [--bin] [--lib] [--inc] [--all]"
+GITDEPOTBASE=~armnenv/GitDepots
+#BNDLBASE=/home/ordenv/ssm-domains/ssm-setup-1.0/dot-profile-setup_1.0_multi/notshared/data/ssm_domains
+BNDLBASE=~armnenv/SsmBundles
+#BNDLBASE=~armnsch/SsmBundles
+
+#---- Functions ------------------------------------------------------
+#====
+usage_long() {
+	 toto=$(echo -e $USAGE)
+	 more <<EOF
+$DESC
+
+$toto
+
+Options:
+    -h, --help : print this help
+    --src      : provide src path
+    --bin      : provide bin path
+    --lib      : provide lib path
+    --inc      : provide include path
+
+    --all      : version, src, bin, lib, inc
+
+EOF
+}
+
+#====
+is_bundle() {
+	 _gemversion=$1
+    _isfile="$(ls -d $BNDLBASE/${_gemversion}.bndl 2>/dev/null)"
+    if [[ x${_isfile} == x ]] ; then
+	    _gemversion=GEM/$1
+       _isfile="$(ls -d $BNDLBASE/${_gemversion}.bndl 2>/dev/null)"
+    fi
+    if [[ x${_isfile} == x ]] ; then
+	    _gemversion=GEM/x/$1
+       _isfile="$(ls -d $BNDLBASE/${_gemversion}.bndl 2>/dev/null)"
+    fi
+    if [[ x${_isfile} == x ]] ; then
+	    _gemversion=''
+    elif [[ ! -r ${_isfile} ]] ; then
+	    _gemversion=''
+    fi
+    echo $_gemversion
+}
+
+#====
+get_versions() {
+	 _bndlno=x${1:-1}
+	 _component=${2:-gemdyn}
+    if [[ $_bndlno == x1 ]] ; then
+       _bndllist="$mygembndl1list"
+    else
+       _bndllist="$mygembndl2list"
+    fi
+    _version="$(echo $_bndllist | tr ' ' '\n' | grep /${_component}_)"
+    _atform="$(echo $_bndllist | tr ' ' '\n' | grep @ | grep /${_component})"
+    if [[ x${_version} == x && x${_atform} != x ]] ; then
+       _version="$(echo ${_atform%%@*})"
+    fi
+    [[ x${_version} == x ]] && _version="$(echo $_bndllist | tr ' ' '\n' | grep /${_component})"
+	 _version="$(echo ${_version##*/})"
+    _version=${_version#*_}
+    _version=${_version%_*}
+    if [[ x${_version} == x ]] ; then
+       _gemdom="$(echo $_bndllist | tr ' ' '\n' | grep /gem_)"
+       _version="$(ls -1d ${_gemdom}/etc/ssm.d/published/* | grep /${_component} | grep all)"
+       [[ x${_version} == x ]] && _version="$(ls -1d ${_gemdom}/etc/ssm.d/published/* | grep /${_component} | grep multi)"
+       _version=${_version##*/}
+       _version="$(echo ${_version} | cut -d_ -f2)"
+    fi
+	 echo ${_version}
+}
+
+#====
+get_buildlib_versions() {
+    _bndlno=${1:-1}
+    _component=$2
+    _gemdynversion=$3
+    _gemdynsrcpath=$(get_src_path ${_bndlno} gemdyn src ${_gemdynversion})
+    _utilsversion=$4
+    _utilssrcpath=$(get_src_path ${_bndlno} modelutils src ${_utilsversion})
+    _version="$(cat ${_utilssrcpath}/include/${EC_ARCH}/Makefile.comp.mk | grep ^${_component}  | grep '=' | cut -d= -f2 | tr '()' '{}')"
+    [[ x${_version} == x ]] && \
+      _version="$(cat ${_utilssrcpath}/include/${BASE_ARCH}/Makefile.arch.mk | grep ^${_component}  | grep '=' | cut -d= -f2 | tr '()' '{}')"
+    [[ x${_version} == x ]] && \
+      _version="$(cat ${_utilssrcpath}/include/Makefile.local.mk | grep ^${_component}  | grep '=' | cut -d= -f2 | tr '()' '{}')"
+    [[ x${_version} == x ]] && \
+      _version="$(cat ${_utilssrcpath}/include/recettes | grep ^${_component}  | grep '=' | cut -d= -f2 | tr '()' '{}')"
+    [[ x${_version} == x ]] && \
+       _version="$(cat ${_gemdynsrcpath}/include/build_components | grep ${_component} | grep '=' | cut -d= -f2 | tr '()' '{}')"
+    _gemversion=$mygembndl1
+    [[ x$_bndlno == x2 ]] && _gemversion=$mygembndl2
+    [[ x$ATM_MODEL_BNDL == x$_gemversion ]] && _version=$(eval "echo ${_version}")
+         echo ${_version}
+}
+
+#====
+get_compiler() {
+	 _bndlno=x${1:-1}
+    if [[ $_bndlno == x1 ]] ; then
+       _bndllist="$mygembndl1list"
+    else
+       _bndllist="$mygembndl2list"
+    fi
+    _component=pgi
+    _path="$(echo $_bndllist | tr ' ' '\n' | grep -i /${_component})"
+    if [[ x${_path} == x ]] ; then
+       _component=xlf
+       _path="$(echo $_bndllist | tr ' ' '\n' | grep -i /${_component})"
+    fi
+	 _version="$(echo ${_path##*/})"
+    _version="$(echo ${_version} | sed 's/\.sh$//')"
+    echo ${_version}
+}
+
+#====
+get_src_path(){
+	 _bndlno=${1:-1}
+	 _component=$2
+    _srcorbin=${3:-src}
+    _version=$4
+    [[ x$_version == x ]] && _version="$(get_versions $_bndlno ${_component})"
+    _dom=__NO-SUCH-DIR__
+    for mysubdir in \
+       GEM/d/x \
+       ENV/d/x \
+       GEM/d/x/${_component} \
+       ENV/d/x/${_component} \
+       GEM/d/${_component} \
+       ENV/d/${_component} ; do
+       if [[ -d ${BNDLBASE}/${mysubdir}/${_component}_${_version} ]] ; then
+          _dom=${mysubdir}/${_component}_${_version}
+          break
+       elif [[ -d ${BNDLBASE}/${mysubdir}/${_component}/${_version} ]]; then 
+          _dom=${mysubdir}/${_component}/${_version}
+          break
+       fi
+    done
+    echo $(ls -d ${BNDLBASE}/${_dom}/${_component}_${_version}_all/${_srcorbin} 2>/dev/null)
+}
+
+#====
+echocol() {
+	 _nbcol=$1
+	 _str=${2:-' '}
+
+	 _len="$(echo ${_str}| wc -c)"
+	 #let _nbcol=$_nbcol-$_len
+    _nbcol=$((_nbcol-_len))
+	 myspace=""
+	 while [[ _nbcol -gt 0 ]] ; do
+		  myspace="$myspace "
+		  let _nbcol=$_nbcol-1
+	 done
+	 echo "${_str}$myspace"
+}
+
+#---- Inline Options -------------------------------------------------
+myversion=1
+mysrc=0
+mybin=0
+mylib=0
+myinc=0
+mygembndl1=""
+mygembndl2=""
+previous=""
+while [[ $# -gt 0 ]] ; do
+    case $1 in
+        (-h|--help) usage_long; exit 0;;
+        (--src) mysrc=1;;
+        (--bin) mybin=1;;
+        (--lib) mylib=1;;
+        (--inc) myinc=1;;
+        (--all) mysrc=1;mybin=1;mylib=1;myinc=1;;
+        *) echo "ERROR: Unrecognized option $1"
+            echo -e $USAGE
+            echo "---- ABORT ----"
+            exit 1;;
+    esac
+	 previous=$1
+    shift
+done
+
+[[ x$mygembndl1 == x ]] && mygembndl1=${ATM_MODEL_BNDL}
+
+mygembndl1b=$(is_bundle $mygembndl1)
+if [[ x$mygembndl1b == x ]] ; then
+	 echo "ERROR: GEM bundle $mygembndl1 Not Found"
+	 echo -e $USAGE
+	 echo "---- ABORT ----"
+	 exit 1  	 
+fi
+mygembndl1=$mygembndl1b
+
+[[ x$mygembndl2 == x ]] && mygembndl2=$mygembndl1 && mygembndl1=${ATM_MODEL_BNDL}
+[[ x$mygembndl2 == x$mygembndl1 ]] && mygembndl2=''
+
+if [[ x$mygembndl1 == x ]] ; then
+	 echo "ERROR: You Need to Provide at least one VERSION (e.g. GEM/4.2.0)"
+	 echo -e $USAGE
+	 echo "---- ABORT ----"
+	 exit 1  	 
+fi
+
+if [[ x$mygembndl2 != x ]] ; then
+   mygembndl2b=$(is_bundle $mygembndl2)
+   if [[ x$mygembndl2b == x ]] ; then
+	   echo "ERROR: GEM bundle $mygembndl2 Not Found"
+	   echo -e $USAGE
+	   echo "---- ABORT ----"
+	   exit 1
+   fi
+   mygembndl2=$mygembndl2b
+   [[ x$mygembndl2 == x$mygembndl1 ]] && mygembndl2=''
+fi
+
+
+#---------------------------------------------------------------------
+defmylist() {
+mygembndl1list="$(s.resolve_ssm_shortcuts $mygembndl1 2>/dev/null | grep -v '++' | grep -v Prepend)" #grep -v @${_gemversion} | 
+[[ x$mygembndl2 != x ]] && mygembndl2list="$(s.resolve_ssm_shortcuts $mygembndl2 2>/dev/null | grep -v '++' | grep -v Prepend)" #grep -v @${_gemversion} | 
+}
+#time \
+defmylist
+
+setmyversions() {
+gdata1=$(get_versions 1 gem-data)
+gemdyn1=$(get_versions 1 gemdyn)
+rpnphy1=$(get_versions 1 rpnphy)
+utils1=$(get_versions 1 modelutils)
+gemscripts1=$(get_versions 1 gem-scripts)
+vgrid1=$(get_versions 1 vgrid)
+rmn1=$(get_buildlib_versions 1 RMN_VERSION $gemdyn1 $utils1)
+comm1=rpn_comm$(get_buildlib_versions 1 COMM_VERSION $gemdyn1 $utils1)
+compil1=$(get_compiler 1)
+if [[ x$mygembndl2 != x ]] ; then
+   gdata2=$(get_versions 2 gem-data)
+   gemdyn2=$(get_versions 2 gemdyn)
+   rpnphy2=$(get_versions 2 rpnphy)
+   utils2=$(get_versions 2 modelutils)
+   gemscripts2=$(get_versions 2 gem-scripts)
+   vgrid2=$(get_versions 2 vgrid)
+   rmn2=$(get_buildlib_versions 2 RMN_VERSION $gemdyn2 $utils2)
+   comm2=rpn_comm$(get_buildlib_versions 2 COMM_VERSION $gemdyn2 $utils2)
+   compil2=$(get_compiler 2)
+fi
+}
+#time \
+setmyversions
+
+mybndlver1="${mygembndl1##*/}"
+
+if [[ x$myversion == x1 ]] ; then
+	 echo -e "#=============================================================="
+	 echo -e "#Version     $(echocol 18 $mygembndl1) $mygembndl2"
+	 echo -e "#--------------------------------------------------------------"
+	 echo -e "#gem-data    $(echocol 18 $gdata1) $gdata2"
+	 echo -e "#gemdyn      $(echocol 18 $gemdyn1) $gemdyn2"
+	 echo -e "#rpnphy      $(echocol 18 $rpnphy1) $rpnphy2"
+	 echo -e "#modelutils  $(echocol 18 $utils1) $utils2"
+	 echo -e "#scripts     $(echocol 18 $gemscripts1) $gemscripts2"
+	 echo -e "#vgrid       $(echocol 18 $vgrid1) $vgrid2"
+	 echo -e "#RMN         $(echocol 18 $rmn1) $rmn2"
+	 echo -e "#rpn_comm    $(echocol 18 $comm1) $comm2"
+	 echo -e "#Compiler    $(echocol 18 $compil1) $compil2"
+	 echo -e "#=============================================================="
+	 echo "#More details at: https://wiki.cmc.ec.gc.ca/wiki/GEM/Change_Log"
+	 echo "#Changing Component Version: https://wiki.cmc.ec.gc.ca/wiki/GEM/Component_Swap"
+    echo
+fi
+
+if [[ x$mysrc == x1 ]] ; then
+	 echo -e "#=============================================================="
+	 echo -e "#Src Path    $(echocol 18 $mygembndl1)"
+	 echo -e "#--------------------------------------------------------------"
+	 echo -e "#gemdyn      $(get_src_path 1 gemdyn src $gemdyn1)"
+	 echo -e "#rpnphy      $(get_src_path 1 rpnphy src $rpnphy1)"
+	 echo -e "#modelutils  $(get_src_path 1 modelutils src $utils1)"
+	 echo -e "#scripts     $(get_src_path 1 gem-scripts bin $gemscripts1)"
+	 #echo -e "#vgrid       $vgriddom1"
+	 echo -e "#=============================================================="
+    echo
+fi
+
+if [[ x$mybin == x1 ]] ; then
+   vgridbin="$(which print_toctoc)"
+   gemdmbin="$(which maingemdm_REL_${BASE_ARCH}.Abs)"
+	 echo -e "#=============================================================="
+	 echo -e "#Bin Path    $(echocol 18 $mygembndl1)"
+	 echo -e "#--------------------------------------------------------------"
+	 echo -e "#gem         ${gemdmbin%/*}"
+	 echo -e "#gemdyn      $(get_src_path 1 gemdyn bin $gemdyn1)"
+	 echo -e "#rpnphy      $(get_src_path 1 rpnphy bin $rpnphy1)"
+	 echo -e "#modelutils  $(get_src_path 1 modelutils bin $utils1)"
+	 echo -e "#scripts     $(get_src_path 1 gem-scripts bin $gemscripts1)"
+	 echo -e "#vgrid       ${vgridbin%/*}"
+	 echo -e "#=============================================================="
+    echo "#Script Override can be specified at: \$HOME/modeles/GEMDM/v_${mybndlver1}/bin"
+    echo
+fi
+
+if [[ x$mylib == x1 ]] ; then
+	 echo -e "#=============================================================="
+	 echo -e "#Lib Path    $(echocol 18 $mygembndl1)"
+	 echo -e "#--------------------------------------------------------------"
+	 echo -e "#gemdyn      $(s.locate --lib=static gemdyn)"
+	 echo -e "#rpnphy      $(s.locate --lib=static rpnphy)"
+	 echo -e "#modelutils  $(s.locate --lib=static modelutils)"
+	 echo -e "#vgrid       $(s.locate --lib=static descrip)"
+	 echo -e "#RMN         $(s.locate --lib=static $rmn1)"
+	 echo -e "#rpn_comm    $(s.locate --lib=static ${comm1})"
+	 echo -e "#=============================================================="
+    echo
+fi
+
+if [[ x$myinc == x1 ]] ; then
+   vgridinc="$(s.locate --inc=.mod vgrid_descriptors)"
+	 echo -e "#=============================================================="
+	 echo -e "#Include Path $(echocol 18 $mygembndl1)"
+	 echo -e "#--------------------------------------------------------------"
+	 echo -e "#gem-data    $ATM_MODEL_DFILES"
+	 echo -e "#gemdyn      $(get_src_path 1 gemdyn include $gemdyn1)"
+	 echo -e "#rpnphy      $(get_src_path 1 rpnphy include $rpnphy1)"
+	 echo -e "#modelutils  $(get_src_path 1 modelutils include $utils1)"
+	 echo -e "#scripts     $(get_src_path 1 gem-scripts bin $gemscripts1)"
+	 echo -e "#vgrid       ${vgridinc%/*}"
+	 echo -e "#RMN         "
+	 echo -e "#rpn_comm    $(s.locate --inc=.inc rpn_comm)"
+	 echo -e "#=============================================================="
+    echo
+fi
+
+exit 0

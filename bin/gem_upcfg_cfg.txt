@@ -1,0 +1,156 @@
+version=cfg.1
+
+#file = configexp.cfg > newname
+#class =  > newclass
+
+file = configexp.cfg
+class = Configs
+
+#------
+fileVersion = 4.4.0-b1 > 4.4.0-b2
+fileVersion = 4.4.0-b2 > 4.4.0-b3
+
+UM_EXEC_lam_init > UM_EXEC_model_input
+UM_EXEC_lam_bcs > #UM_EXEC_lam_bcs deleted - now merged with UM_EXEC_lam_init in UM_EXEC_model_input
+UM_EXEC_geophy > #UM_EXEC_geophy deleted (value changed), please refer to GEM doc for details on the new way of specifying geophys fields file
+
+msg = Other config parameters may have changed, please refer to GEM doc for details
+
+#------
+fileVersion = 4.4.0-b3 > 4.4.0-b4
+fileVersion = 4.4.0-b4 > 4.4.0-b5
+fileVersion = 4.4.0-b5 > 4.4.0-b6
+fileVersion = 4.4.0-b6 > 4.4.0-b7
+
+UM_EXEC_casc > UM_EXEC_xcasc
+
+msg = new UM_EXEC_phy_intable (set physic input var list details)
+
+# > UM_EXEC_phy_intable
+
+#------
+fileVersion = 4.4.0-b7 > 4.4.0-b8
+fileVersion = 4.4.0-b8 > 4.4.0-b9
+fileVersion = 4.4.0-b9 > 4.4.0-b10
+fileVersion = 4.4.0-b10 > 4.4.0-b11
+fileVersion = 4.4.0-b11 > 4.4.0-b12
+fileVersion = 4.4.0-b12 > 4.4.0-b13
+fileVersion = 4.4.0-b13 > 4.4.0-b14
+fileVersion = 4.4.0-b14 > 4.4.0-rc1
+fileVersion = 4.4.0-rc1 > 4.4.0-rc2
+fileVersion = 4.4.0-rc2 > 4.4.0-rc3
+fileVersion = 4.4.0-rc3 > 4.4.0-rc4
+fileVersion = 4.4.0-rc4 > 4.4.0-rc5
+fileVersion = 4.4.0-rc5 > 4.4.0-rc6
+fileVersion = 4.4.0-rc6 > 4.4.0-rc7
+fileVersion = 4.4.0-rc7 > 4.4.0-rc8
+fileVersion = 4.4.0-rc8 > 4.4.0-rc9
+
+msg = new UM_EXEC_ntsortie (Numebr of CPUs for the sortie job)
+
+# > UM_EXEC_ntsortie
+
+#------
+fileVersion = 4.4.0-rc9 > 4.4.0-rc10
+fileVersion = 4.4.0-rc10 > 4.4.0-rc11
+fileVersion = 4.4.0-rc11 > 4.4.0
+fileVersion = 4.4.0 > 4.5.0-a1
+fileVersion = 4.5.0-a1 > 4.5.0-a2
+fileVersion = 4.5.0-a2 > 4.5.0-a3
+fileVersion = 4.5.0-a3 > 4.5.0-a4
+fileVersion = 4.5.0-a4 > 4.5.0-a5
+
+msg = new UM_EXEC_cache (Full path of a cache directory for gemdm)
+
+# > UM_EXEC_cache
+
+#------
+fileVersion = 4.5.0-a5 > 4.5.0-a6
+
+msg = new BATCH_launch_class
+
+#------
+fileVersion = 4.5.0-a6 > 4.5.0-a7
+fileVersion = 4.5.0-a7 > 4.5.0-a8
+
+# > BATCH_launch_norset
+# > UM_EXEC_split3df 
+msg = new BATCH_launch_norset make use of LL resources set; new UM_EXEC_split3df To split 3df files
+
+#------
+fileVersion = 4.5.0-a8 > 4.5.0-a9
+fileVersion = 4.5.0-a9 > 4.5.0-a10
+fileVersion = 4.5.0-a10 > 4.5.0-b1
+
+UM_EXEC_exp > GEM_exp
+UM_EXEC_anal > GEM_anal
+UM_EXEC_inrep > GEM_inrep
+UM_EXEC_model_input > GEM_model_input
+UM_EXEC_ovbin > GEM_ovbin
+UM_EXEC_climato > GEM_climato
+UM_EXEC_geophy > GEM_geophy
+UM_EXEC_d2z > GEM_d2z
+UM_EXEC_yy2e > GEM_yy2e
+UM_EXEC_xfer > GEM_xfer
+UM_EXEC_xferl > GEM_xferl
+UM_EXEC_xcasc > GEM_xcasc
+UM_EXEC_dplusp > GEM_dplusp
+UM_EXEC_headscript_E > GEM_headscript_E
+UM_EXEC_split3df > GEM_split3df
+UM_EXEC_phy_intable > GEM_phy_intable
+UM_EXEC_ozone > GEM_ozone
+UM_EXEC_radtab > GEM_radtab
+UM_EXEC_const > GEM_const
+UM_EXEC_cache > GEM_cache
+UM_EXEC_timing > GEM_timing
+UM_EXEC_out_block > GEM_out_block
+UM_EXEC_smt > GEM_smt
+UM_EXEC_bind > GEM_bind
+
+UM_EXEC_anclima > GEM_anclima   #unused option UM_EXEC_anclima removed
+UM_EXEC_ntsortie > GEM_ntsortie #set UM_EXEC_ntsortie as "cpu" in Sortie job resource file
+UM_EXEC_prefix > GEM_prefix     #use mv or rename commands instead of UM_EXEC_prefix
+UM_EXEC_tailscript_E > GEM_tailscript_E           #UM_EXEC_tailscript options removed
+UM_EXEC_tailscript_M_each > GEM_tailscript_M_each #UM_EXEC_tailscript options removed
+UM_EXEC_tailscript_M_last > GEM_tailscript_M_last #UM_EXEC_tailscript options removed
+UM_EXEC_tailjob_M_each > GEM_tailjob_M_each       #UM_EXEC_tailscript options removed
+UM_EXEC_tailjob_M_last > GEM_tailjob_M_last       #UM_EXEC_tailscript options removed
+UM_EXEC_tailscript_X_each > GEM_tailscript_X_each #UM_EXEC_tailscript options removed
+UM_EXEC_tailscript_X_last > GEM_tailscript_X_last #UM_EXEC_tailscript options removed
+UM_EXEC_tailjob_X_each > GEM_tailjob_X_each  #UM_EXEC_tailjob options removed
+UM_EXEC_tailjob_X_last > GEM_tailjob_X_last  #UM_EXEC_tailjob options removed
+UM_EXEC_tailjob_X > GEM_tailjob_X            #UM_EXEC_tailjob options removed
+UM_EXEC_ppid > GEM_ppid         #option UM_EXEC_ppid removed
+UM_EXEC_xchgdir > GEM_xchgdir   #option UM_EXEC_xchgdir and functionality removed
+UM_EXEC_r_ntr > GEM_r_ntr       #options UM_EXEC_r_ntr removed
+UM_EXEC_r_mod > GEM_r_mod       #options UM_EXEC_r_mod removed
+UM_EXEC_r_upl > GEM_r_upl       #options UM_EXEC_r_upl removed
+UM_EXEC_busper > GEM_busper     #option UM_EXEC_busper and functionality removed
+UM_EXEC_RTinput > GEM_RTinput   #option UM_EXEC_RTinput and functionality removed
+UM_EXEC_cmclog > GEM_cmclog     #option UM_EXEC_cmclog and functionality removed
+UM_EXEC_barrier > GEM_barrier   #option UM_EXEC_barrier and functionality removed
+UM_EXEC_instances > GEM_instances #option UM_EXEC_instances and functionality removed
+UM_EXEC_upload > GEM_upload     #option UM_EXEC_upload and functionality removed
+UM_EXEC_onexferjob > GEM_onexferjob #option UM_EXEC_onexferjob and functionality removed
+UM_EXEC_clean > GEM_clean       #option UM_EXEC_clean and functionality removed
+UM_EXEC_ptopo > GEM_ptopo       #set UM_EXEC_ptopo as "cpu" in Model job resource file
+
+#------
+fileVersion = 4.5.0-b1 > 4.5.0-b2
+fileVersion = 4.5.0-b2 > 4.5.0-b3
+fileVersion = 4.5.0-b3 > 4.5.0-b4
+
+GEM_yy2e > #replaced by more explicit GEM_yyoutput
+
+# > GEM_yyoutput #replacing GEM_yy2e
+
+msg = new GEM_yyoutput replacing GEM_yy2e
+
+#------
+fileVersion = 4.5.0-b4 > 4.5.0-b5
+fileVersion = 4.5.0-b5 > 4.5.0-b6
+fileVersion = 4.5.0-b6 > 4.5.0-b7
+
+# > new GEM_cpus_ntr
+
+msg = new GEM_cpus_ntr

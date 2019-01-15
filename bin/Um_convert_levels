@@ -1,0 +1,252 @@
+#!/bin/ksh
+
+# Autor  : Andre Plante winter 2009-2010
+#
+# Object : To convert GEMDM v3* levels to GEMDM v_4.1.2 levels and Vice Versa
+#          Levels from v3* and V4* will macth for surface pressure below the hill which is
+#          given by key -p_hill_below (default to 100000 Pa)
+#
+# Input  :
+# --------
+#          see cclargs below
+# Output :
+# --------
+#          levels_zoom0.ps : plot showing all levels
+#          levels_zoom1.ps : plot showing bottum levels near the sea
+#          levels_zoom2.ps : plot showing bottum levels over the mountain top
+#
+#====================================================================================
+
+eval `cclargs \
+ -title         UNSET  UNSET  "[Graph title]"\
+ -gem_settings  UNSET  UNSET  "[gem 4 gem_settings to convert]"\
+ -gem3_settings UNSET  UNSET  "[gem 3 gem_settings to convert]"\
+ -rcoef         UNSET  UNSET  "[rcoefs real,real]"\
+ -p_below_hill  100000 100000 "[Surface pressure in Pa for which levels will match]"\
+ -p_top_hill    50000  50000  "[Pressure in Pa over mountain top for graph]"\
+ -digits        6      6      "[Number of digits on output hyb values]"\
+ -ptop_graph    =-1    =-1    "[Top of graph in Pa, equals hiest ptop if -1]"\
+ -pbot_graph    =-1    =-1    "[Bottom of graph in pa]"\
+ -overplot      0      1      "[Overplot V4 levels on v3 levels]"\
+ -plot_thermo   0      1      "[Plot thermo levels]"\
+ -show          0      1      "[Show graph]"\
+ -zoom          0      0      "[zoom 0 1 2 3]"\
+ ++ $*`
+
+if [ $# -ne 0 ];then
+   echo "You must use at lest the key -gem_settings (gem_settings_file) and key -rcoef (real value)"
+   exit 
+fi
+
+#==============================================================================
+
+if [ ${ATM_MODEL_VERSION:-UNSET} = UNSET ];then
+
+   echo "You must set a model version"
+   exit
+
+fi
+
+if [ $(echo ${ATM_MODEL_VERSION:0:5} | sed 's/\.//g') -lt 400 ];then
+
+   echo "Model version not supported"
+   exit
+
+fi
+
+if [ ${gem_settings} = UNSET -a ${gem3_settings} = UNSET ];then
+   echo "You must use key -gem_settings or -gem3_settings"
+   echo abort
+   exit 1
+fi
+
+if [ ${gem_settings} != UNSET -a ${gem3_settings} != UNSET ];then
+   echo "You must use only one of the following keys -gem_settings or -gem3_settings"
+   echo abort
+   exit 1
+fi
+
+if [ ${gem_settings} != UNSET ];then
+   DIRECTION=stg_2_reg
+   echo "Converting levels from GEM V4* to GEM V3*"
+   settings=${gem_settings}
+fi
+
+if [ ${gem3_settings} != UNSET ];then
+   DIRECTION=reg_2_stg
+   echo "Converting levels from GEM V3* to GEM V4*"
+   settings=${gem3_settings}
+fi
+
+if [ ${title:-UNSET} = UNSET ];then
+   case ${DIRECTION} in
+       stg_2_reg)title="Convert GEM V4* to GEM V3 from nml ${gem_settings##*/}";;
+       reg_2_stg)title="Convert GEM V3* to GEM V4 from nml ${gem_settings##*/}";;
+               *)echo "Error 1 in $0 please report to developer";;
+   esac
+fi
+
+if [ ! -f ${settings} ];then
+   echo "File ${settings} must exist and does not"
+   echo abort
+   exit 1
+fi
+
+#==============================================================================
+if ! which R ;then
+   echo "This script needs R, it is not available on this computer, try a Linux box"
+   exit
+fi
+
+#==============================================================================
+
+MAITRE=$PWD
+mkdir ${TMPDIR}/${$}
+trap "rm -fr ${TMPDIR}/${$}" 0 1 2 3 4 5 6 7 8 10 12 13 14 15
+cp ${settings} ${TMPDIR}/${$}
+cd ${TMPDIR}/${$}
+
+#==============================================================================
+
+case ${DIRECTION} in
+
+   reg_2_stg)
+   
+      # Get namlist info in text files.
+
+      getnml --file ${gem3_settings} -o 'nml-' hyb grd_rcoef
+      rm -f nml-pres_pref.txt      
+      echo "NOTE : The following command may produce an error if pres_pref is not"
+      echo "       in the namelist, if this happens, pres_pref will by set to 800."
+      getnml --file ${gem3_settings} -o 'nml-' pres_pref
+      if [ ! -f nml-pres_pref.txt ];then
+         echo 800. > nml-pres_pref.txt
+      fi      
+      echo "NOTE : The following command may produce an error if pres_ptop is not"
+      echo "       in the namelist, if this happens, pres_ptop will be computed from hyb(1) and pref"
+      getnml --file ${gem3_settings} -o 'nml-' pres_ptop
+      if [ ! -f nml-pres_ptop.txt ];then
+         echo -1 > nml-pres_ptop.txt
+      fi
+
+      if [ "${rcoef}" = UNSET ];then
+         rcoef='1.0,1.0'
+      fi
+
+      R_PROC_NAME=${DIRECTION}
+      rm -f ${R_PROC_NAME}.r
+      R_PROC=$(which ${R_PROC_NAME}.r)
+      if [ "${R_PROC}" = "" ];then
+	  echo "Cannot find ${R_PROC_NAME}.r"
+	  exit 1
+      fi      
+
+      cp ${R_PROC} .
+
+      cat > job.r <<EOF
+         source('$PWD/${R_PROC_NAME}.r')
+         ${R_PROC_NAME}(file_level_reg='nml-hyb.txt',
+          rcoef_reg=$(cat nml-grd_rcoef.txt),
+          ptop_reg=$(cat nml-pres_ptop.txt),
+          pref_reg=$(cat nml-pres_pref.txt),
+          rcoef_stg=c(${rcoef}),
+          digits=${digits},
+          p_match=${p_below_hill})
+EOF
+
+      rm -f out.ps
+      R --no-save < job.r
+
+      if [ ${?} -ne 0 ];then
+         echo "Problem with ${R_PROC_NAME}.r"
+         echo abort
+	 exit 1
+      fi
+
+      if [ ${show} = 1 ];then
+
+	 cp out_reg_2_stg.txt conv_gem_settings
+
+         Um_show_levels -gem3_settings ${gem3_settings##*/}\
+                        -gem_settings conv_gem_settings\
+                        -p_below_hill ${p_below_hill}\
+                        -p_top_hill ${p_top_hill}\
+                        -out_name ${MAITRE}/conv_${gem3_settings##*/}_to_GEM_V4\
+                        -overplot=${overplot}\
+			-plot_thermo=${plot_thermo}\
+                        -ptop_graph=${ptop_graph}\
+                        -pbot_graph=${pbot_graph}\
+                        -zoom=${zoom}
+
+
+      fi
+      cp out_reg_2_stg.txt $MAITRE/.
+      echo "See file $MAITRE/out_reg_2_stg.txt"
+
+      :;;
+
+   stg_2_reg)
+
+      if [ ${rcoef} = UNSET ];then
+         echo "You must use key -rcoef (real value)"
+         echo abort
+         exit 1
+      fi
+
+      # Get namlist info in texte files.
+      getnml --file ${gem_settings##*/} -o 'nml-' hyb grd_rcoef cstv_ptop_8
+
+	  cat nml-grd_rcoef.txt
+
+
+      R_PROC_NAME=${DIRECTION}
+      rm -f ${R_PROC_NAME}.r
+      R_PROC=$(which ${R_PROC_NAME}.r)
+      if [ "${R_PROC}" = "" ];then
+	  echo "Cannot find ${R_PROC_NAME}.r"
+	  exit 1
+      fi
+      cp ${R_PROC} .
+      cat > job.r <<EOF
+         source('${R_PROC_NAME}.r')
+         ${R_PROC_NAME}(file_level_stg='nml-hyb.txt',
+          rcoef_stg=c($(cat nml-grd_rcoef.txt)),
+          ptop_stg=$(cat nml-cstv_ptop_8.txt),
+          pref_reg=800.,
+          rcoef_reg=${rcoef},
+          digits=${digits},
+          p_match=${p_below_hill})
+EOF
+
+      rm -f out.ps
+      R --no-save < job.r
+
+      if [ ${?} != 0 ];then 
+         echo "Problem with ${R_PROC_NAME}.r"
+         echo "aborting"
+         exit 1
+      fi
+
+      if [ ${show} = 1 ];then
+	 echo '&dummt' > conv_settings
+	 cat out_stg_2_reg.txt >> conv_settings
+	 echo '/' >> conv_settings
+         Um_show_levels -gem_settings ${gem_settings##*/}\
+                        -gem3_settings conv_settings\
+                        -p_below_hill ${p_below_hill}\
+                        -p_top_hill ${p_top_hill}\
+                        -out_name ${MAITRE}/conv_${gem_settings##*/}_to_GEM_V3\
+                        -overplot=${overplot}\
+                        -plot_thermo=${plot_thermo}\
+                        -ptop_graph=${ptop_graph}\
+                        -pbot_graph=${pbot_graph}\
+                        -zoom=${zoom}
+      fi
+      cp out_stg_2_reg.txt $MAITRE/.
+      echo "See file out_stg_2_reg.txt"
+      :;;
+
+esac
+
+# fin
+#==============================================================================

@@ -1,0 +1,26 @@
+#!/bin/ksh
+set +x
+#wrapper of Um_output_d2z.ksh for interactive mode
+#====> Obtaining the arguments:
+eval `cclargs_lite $0 \
+     -rep      "RUNMOD/output"  "RUNMOD/output"    "[output directory]"\
+     -nbf      "0"       "0"   "[nb of files to re-assemble]"\
+     -prefix   ""        ""    "[added prefix to output file names]"\
+     -split    "0"       "1"   "[bemol is asked to produce coarse and core outpu
+ts]"\
+  ++ $*`
+
+laststepdir=`find ./${rep} -name "laststep*" | xargs`
+echo ${laststepdir}
+ienati=`echo ${laststepdir} | wc -w`
+echo $ienati
+
+if [ ${ienati} -eq 1 ] ; then
+    mv ./${rep}/laststep_*/???-???/* ./${rep}
+    rm -rf ./${rep}/laststep_*
+    Um_output_d2z.ksh -rep ${rep} -nbf ${nbf} -prefix ${prefix} -split ${split}
+else
+    echo "-rep" ./${rep}/laststep_* not found
+    exit 1
+fi
+

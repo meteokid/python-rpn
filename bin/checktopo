@@ -1,0 +1,164 @@
+#!/bin/ksh
+#
+cat <<EOF
+======================================================================
+ERROR: checktopo no longer exists
+       Please use checkdmpart_\${BASE_ARCH}.Abs instead
+======================================================================
+EOF
+exit 1
+
+set +x
+#====> Obtaining the arguments:
+eval `cclargs_lite $0 \
+     -gni      "24"  "24"    "[Nb of points along axis X]"\
+     -gnj      "12"  "12"    "[Nb of points along axis Y]"\
+     -gnk      "6"   "6"     "[Nb of points along axis Z]"\
+     -npx      "1"   "1"     "[Nb of PEs    along axis X]"\
+     -npy      "1"   "1"     "[Nb of PEs    along axis Y]"\
+     -cfl      "0"   "1"     "[Nb of CFL points         ]"\
+     -hblen    "0"  "10"     "[Nb of points for blending]"\
+     -vspng    "0"   "1"     "[Vspng_nk greater than 0  ]"\
+     -help     "0"   "1"     "[help                     ]"\
+  ++ $*`
+#
+echo
+echo "GEMDM version" ${ATM_MODEL_VERSION}
+if ((help)) then
+echo ie: checktopo -gni $gni -gnj $gnj -gnk $gnk -npx $npx -npy $npy -cfl $cfl - hblen $hblen -vspng $vspng
+echo
+echo '-gni      "24"  "24"    "[Nb of points along axis X]"'
+echo '-gnj      "12"  "12"    "[Nb of points along axis Y]"'
+echo '-gnk      "6"   "6"     "[Nb of points along axis Z]"'
+echo '-npx      "1"   "1"     "[Nb of PEs    along axis X]"'
+echo '-npy      "1"   "1"     "[Nb of PEs    along axis Y]"'
+echo '-cfl      "0"   "1"     "[Nb of CFL points         ]"'
+echo '-hblen    "0"   "10"    "[Nb of points for blending]"'
+echo '-vspng    "0"   "1"     "[vertical sponge          ]"'
+echo
+exit
+fi
+echo checktopo -gni $gni -gnj $gnj -gnk $gnk -npx $npx -npy $npy -vspng $vspng -cfl $cfl -hblen $hblen
+
+if (($cfl > 0)) then
+     let pil=$cfl+8
+else 
+let pil=0
+fi
+echo "Chosen maxcfl="$cfl," gives ====> pil="$pil
+
+#Check G_ni on npex
+let mindim=$hblen+$pil
+let gtot=$gni+$pil+$pil
+let val1=$gtot+$npx-1
+let val1=$val1/$npx
+let val3=$npx-1
+let val3=$val3*$val1
+let val2=$gtot-$val3
+let val4=$val2-1
+if (($val2 <= 1)) then
+    echo 'RPN_COMM_LIMIT: invalid decomposition'
+    echo 'npx= '$npx 'is NOT OK for G_ni='$gni'; use findtopo on ',$gtot
+else 
+    if (($val4 <=$mindim)) then
+      echo 'LAM grid topology too small for chosen processor topology'
+      echo 'End tile along X has only' $val4 'points and pil+blen=' $mindim
+    else
+       echo 'npx= '$npx 'is OK for G_ni='$gni,'l_ni=',$val1,'min l_ni=',$val4
+    fi
+fi
+#get ldnh_maxx: nxlmaxx=maxx=count(1)
+let nxlmaxx=$val1
+let maxx=$val1
+let nxlmod=$nxlmaxx%2
+let ldnh_maxx=$maxx+1-$nxlmod
+#Check G_nj on npey
+let gtot=$gnj+$pil+$pil
+let val1=$gtot+$npy-1
+let val1=$val1/$npy
+let val3=$npy-1
+let val3=$val3*$val1
+let val2=$gtot-$val3
+let val4=$val2-1
+if (($val2 <= 1)) then
+    echo 'RPN_COMM_LIMIT: invalid decomposition'
+    echo 'npy= '$npy 'is NOT OK for G_nj='$gnj'; use findtopo on ', $gtot
+else
+    if (($val4 <=$mindim)) then
+      echo 'LAM grid topology too small for chosen processor topology'
+      echo 'End tile along Y has only' $val4 'points and pil+blen=' $mindim
+    else
+       echo 'npy= '$npy 'is OK for G_nj='$gnj,'l_nj=',$val1,'min l_nj=',$val4
+    fi
+fi
+#get ldnh_maxy: nxlmaxy=maxy=count(1)
+let nxlmaxy=$val1
+let maxy=$val1
+let nxlmod=$nxlmaxy%2
+let ldnh_maxy=$maxy+1-$nxlmod
+#Check G_nk on npex
+let gtot=$gnk
+let val1=$gtot+$npx-1
+let val1=$val1/$npx
+let val3=$npx-1
+let val3=$val3*$val1
+let val2=$gtot-$val3
+if (($val2 <= 1)) then
+    echo 'RPN_COMM_LIMIT: invalid decomposition'
+    echo 'npx= '$npx 'is NOT OK for G_nk='$gnk'; use findtopo'
+else
+    echo 'npx= '$npx 'is OK for G_nk='$gnk
+fi
+#Check Schm_nith on npex
+let gtot=$gnk-1
+let val1=$gtot+$npx-1
+let val1=$val1/$npx
+let val3=$npx-1
+let val3=$val3*$val1
+let val2=$gtot-$val3
+if (($val2 <= 1)) then
+    echo 'RPN_COMM_LIMIT: invalid decomposition'
+    echo 'npx= '$npx 'is NOT OK for Schm_nith='$gnk-1'; use findtopo'
+else
+    echo 'npx= '$npx 'is OK for Schm_nith='$gtot
+fi
+#Check G_ni on npey (Transpose 2)
+let gtot=$gni+$pil+$pil
+let val1=$gtot+$npy-1
+let val1=$val1/$npy
+let val3=$npy-1
+let val3=$val3*$val1
+let val2=$gtot-$val3
+if (($val2 <= 1)) then
+    echo 'RPN_COMM_LIMIT: invalid decomposition'
+    echo 'npy= '$npy 'is NOT OK for G_ni='$gni'; use findtopo on ',$gtot
+else
+    echo 'npy= '$npy 'is OK for G_ni='$gni
+fi
+
+if ((vspng > 0)) then
+   let gtot=$ldnh_maxy
+   let val1=$gtot+$npx-1
+   let val1=$val1/$npx
+   let val3=$npx-1
+   let val3=$val3*$val1
+   let val2=$gtot-$val3
+   if (($val2 <= 1)) then
+       echo 'CANNOT PARTITION ' $ldnh_maxy 'POINTS IN' $npx 'SUBDOMAINS'
+       echo 'npx= '$npx 'is NOT OK for ldnh_maxy= '$ldnh_maxy ';findtopo'
+   else
+       echo 'npx= '$npx 'is OK for ldnh_maxy='$gtot '(vspng)'
+   fi
+   let gtot=$ldnh_maxx
+   let val1=$gtot+$npy-1
+   let val1=$val1/$npy
+   let val3=$npy-1
+   let val3=$val3*$val1
+   let val2=$gtot-$val3
+   if (($val2 <= 1)) then
+       echo 'CANNOT PARTITION ' $ldnh_maxx 'POINTS IN' $npy 'SUBDOMAINS'
+       echo 'npy= '$npy 'is NOT OK for ldnh_maxx= '$ldnh_maxx ';findtopo'
+   else
+       echo 'npy= '$npy 'is OK for ldnh_maxx='$gtot '(vspng)'
+   fi
+fi
