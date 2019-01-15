@@ -1,0 +1,411 @@
+!/**********************************************************************/
+!/*                                                                    */
+!/*   Licensed Materials - Property of IBM.                            */
+!/*   IBM MASS Library component for AIX, V6.1                         */
+!/*   5724-X15                                                         */
+!/*   Copyright IBM Corp. and by others 2008,2010.                     */
+!/*   All Rights Reserved.                                             */
+!/*   US Government Users Restricted Rights -                          */
+!/*   Use, duplication or disclosure restricted by                     */
+!/*   GSA ADP Schedule Contract with IBM Corp.                         */
+!/*                                                                    */
+!/**********************************************************************/
+!/* SCCS ID STRING    78  1.5 8/29/08 13:59:20        7/14/09 03:42:30 */
+
+      interface
+
+!*---------------------------------------------------------------------------*
+!* Fortran interfaces for the Power7 vector single-precision MASS functions. *
+!*---------------------------------------------------------------------------*
+
+      subroutine vsacos(z,x,n)
+      real*4 z(*),x(*)
+      integer*4 n
+      end subroutine vsacos
+
+      subroutine vsacosh(z,x,n)
+      real*4 z(*),x(*)
+      integer*4 n
+      end subroutine vsacosh
+
+      subroutine vsasin(z,x,n)
+      real*4 z(*),x(*)
+      integer*4 n
+      end subroutine vsasin
+
+      subroutine vsasinh(z,x,n)
+      real*4 z(*),x(*)
+      integer*4 n
+      end subroutine vsasinh
+
+      subroutine vsatan(z,x,n)
+      real*4 z(*),x(*)
+      integer*4 n
+      end subroutine vsatan
+
+      subroutine vsatan2(z,x,y,n)
+      real*4 z(*),x(*),y(*)
+      integer*4 n
+      end subroutine vsatan2
+
+      subroutine vsatanh(z,x,n)
+      real*4 z(*),x(*)
+      integer*4 n
+      end subroutine vsatanh
+
+      subroutine vscbrt(z,x,n)
+      real*4 z(*),x(*)
+      integer*4 n
+      end subroutine vscbrt
+
+      subroutine vscos(z,x,n)
+      real*4 z(*),x(*)
+      integer*4 n
+      end subroutine vscos
+
+      subroutine vscosh(z,x,n)
+      real*4 z(*),x(*)
+      integer*4 n
+      end subroutine vscosh
+
+      subroutine vscosisin(z,x,n)
+      real*4 z(*),x(*)
+      integer*4 n
+      end subroutine vscosisin
+
+      subroutine vsdiv(z,x,y,n)
+      real*4 z(*),x(*),y(*)
+      integer*4 n
+      end subroutine vsdiv
+
+      subroutine vserf(z,x,n)
+      real*4 z(*),x(*)
+      integer*4 n
+      end subroutine vserf
+
+      subroutine vserfc(z,x,n)
+      real*4 z(*),x(*)
+      integer*4 n
+      end subroutine vserfc
+
+      subroutine vsexp(z,x,n)
+      real*4 z(*),x(*)
+      integer*4 n
+      end subroutine vsexp
+
+      subroutine vsexp2(z,x,n)
+      real*4 z(*),x(*)
+      integer*4 n
+      end subroutine vsexp2
+
+      subroutine vsexp2m1(z,x,n)
+      real*4 z(*),x(*)
+      integer*4 n
+      end subroutine vsexp2m1
+
+      subroutine vsexpm1(z,x,n)
+      real*4 z(*),x(*)
+      integer*4 n
+      end subroutine vsexpm1
+
+      subroutine vshypot(z,x,y,n)
+      real*4 z(*),x(*),y(*)
+      integer*4 n
+      end subroutine vshypot
+
+      subroutine vslgamma(z,x,n)
+      real*4 z(*),x(*)
+      integer*4 n
+      end subroutine vslgamma
+
+      subroutine vslog(z,x,n)
+      real*4 z(*),x(*)
+      integer*4 n
+      end subroutine vslog
+
+      subroutine vslog10(z,x,n)
+      real*4 z(*),x(*)
+      integer*4 n
+      end subroutine vslog10
+
+      subroutine vslog1p(z,x,n)
+      real*4 z(*),x(*)
+      integer*4 n
+      end subroutine vslog1p
+
+      subroutine vslog2(z,x,n)
+      real*4 z(*),x(*)
+      integer*4 n
+      end subroutine vslog2
+
+      subroutine vslog21p(z,x,n)
+      real*4 z(*),x(*)
+      integer*4 n
+      end subroutine vslog21p
+
+      subroutine vspow(z,x,y,n)
+      real*4 z(*),x(*),y(*)
+      integer*4 n
+      end subroutine vspow
+
+      subroutine vsqdrt(z,x,n)
+      real*4 z(*),x(*)
+      integer*4 n
+      end subroutine vsqdrt
+
+      subroutine vsrcbrt(z,x,n)
+      real*4 z(*),x(*)
+      integer*4 n
+      end subroutine vsrcbrt
+
+      subroutine vsrec(z,x,n)
+      real*4 z(*),x(*)
+      integer*4 n
+      end subroutine vsrec
+
+      subroutine vsrqdrt(z,x,n)
+      real*4 z(*),x(*)
+      integer*4 n
+      end subroutine vsrqdrt
+
+      subroutine vsrsqrt(z,x,n)
+      real*4 z(*),x(*)
+      integer*4 n
+      end subroutine vsrsqrt
+
+      subroutine vssin(z,x,n)
+      real*4 z(*),x(*)
+      integer*4 n
+      end subroutine vssin
+
+      subroutine vssincos(y,z,x,n)
+      real*4 z(*),x(*),y(*)
+      integer*4 n
+      end subroutine vssincos
+
+      subroutine vssinh(z,x,n)
+      real*4 z(*),x(*)
+      integer*4 n
+      end subroutine vssinh
+
+      subroutine vssqrt(z,x,n)
+      real*4 z(*),x(*)
+      integer*4 n
+      end subroutine vssqrt
+
+      subroutine vstan(z,x,n)
+      real*4 z(*),x(*)
+      integer*4 n
+      end subroutine vstan
+
+      subroutine vstanh(z,x,n)
+      real*4 z(*),x(*)
+      integer*4 n
+      end subroutine vstanh
+
+
+!*---------------------------------------------------------------------------*
+!* Fortran interfaces for the Power7 vector double-precision MASS functions. *
+!*---------------------------------------------------------------------------*
+
+      subroutine vacos(z,x,n)
+      real*8 z(*),x(*)
+      integer*4 n
+      end subroutine vacos
+
+      subroutine vacosh(z,x,n)
+      real*8 z(*),x(*)
+      integer*4 n
+      end subroutine vacosh
+
+      subroutine vasin(z,x,n)
+      real*8 z(*),x(*)
+      integer*4 n
+      end subroutine vasin
+
+      subroutine vasinh(z,x,n)
+      real*8 z(*),x(*)
+      integer*4 n
+      end subroutine vasinh
+
+      subroutine vatan(z,x,n)
+      real*8 z(*),x(*)
+      integer*4 n
+      end subroutine vatan
+
+      subroutine vatan2(z,x,y,n)
+      real*8 z(*),x(*),y(*)
+      integer*4 n
+      end subroutine vatan2
+
+      subroutine vatanh(z,x,n)
+      real*8 z(*),x(*)
+      integer*4 n
+      end subroutine vatanh
+
+      subroutine vcbrt(z,x,n)
+      real*8 z(*),x(*)
+      integer*4 n
+      end subroutine vcbrt
+
+      subroutine vcos(z,x,n)
+      real*8 z(*),x(*)
+      integer*4 n
+      end subroutine vcos
+
+      subroutine vcosh(z,x,n)
+      real*8 z(*),x(*)
+      integer*4 n
+      end subroutine vcosh
+
+      subroutine vcosisin(z,x,n)
+      real*8 z(*),x(*)
+      integer*4 n
+      end subroutine vcosisin
+
+      subroutine vdiv(z,x,y,n)
+      real*8 z(*),x(*),y(*)
+      integer*4 n
+      end subroutine vdiv
+
+      subroutine verf(z,x,n)
+      real*8 z(*),x(*)
+      integer*4 n
+      end subroutine verf
+
+      subroutine verfc(z,x,n)
+      real*8 z(*),x(*)
+      integer*4 n
+      end subroutine verfc
+
+      subroutine vexp(z,x,n)
+      real*8 z(*),x(*)
+      integer*4 n
+      end subroutine vexp
+
+      subroutine vexp2(z,x,n)
+      real*8 z(*),x(*)
+      integer*4 n
+      end subroutine vexp2
+
+      subroutine vexp2m1(z,x,n)
+      real*8 z(*),x(*)
+      integer*4 n
+      end subroutine vexp2m1
+
+      subroutine vexpm1(z,x,n)
+      real*8 z(*),x(*)
+      integer*4 n
+      end subroutine vexpm1
+
+      subroutine vhypot(z,x,y,n)
+      real*8 z(*),x(*),y(*)
+      integer*4 n
+      end subroutine vhypot
+
+      subroutine vlgamma(z,x,n)
+      real*8 z(*),x(*)
+      integer*4 n
+      end subroutine vlgamma
+
+      subroutine vlog(z,x,n)
+      real*8 z(*),x(*)
+      integer*4 n
+      end subroutine vlog
+
+      subroutine vlog10(z,x,n)
+      real*8 z(*),x(*)
+      integer*4 n
+      end subroutine vlog10
+
+      subroutine vlog1p(z,x,n)
+      real*8 z(*),x(*)
+      integer*4 n
+      end subroutine vlog1p
+
+      subroutine vlog2(z,x,n)
+      real*8 z(*),x(*)
+      integer*4 n
+      end subroutine vlog2
+
+      subroutine vlog21p(z,x,n)
+      real*8 z(*),x(*)
+      integer*4 n
+      end subroutine vlog21p
+
+      subroutine vpow(z,x,y,n)
+      real*8 z(*),x(*),y(*)
+      integer*4 n
+      end subroutine vpow
+
+      subroutine vqdrt(z,x,n)
+      real*8 z(*),x(*)
+      integer*4 n
+      end subroutine vqdrt
+
+      subroutine vrcbrt(z,x,n)
+      real*8 z(*),x(*)
+      integer*4 n
+      end subroutine vrcbrt
+
+      subroutine vrec(z,x,n)
+      real*8 z(*),x(*)
+      integer*4 n
+      end subroutine vrec
+
+      subroutine vrqdrt(z,x,n)
+      real*8 z(*),x(*)
+      integer*4 n
+      end subroutine vrqdrt
+
+      subroutine vrsqrt(z,x,n)
+      real*8 z(*),x(*)
+      integer*4 n
+      end subroutine vrsqrt
+
+      subroutine vsin(z,x,n)
+      real*8 z(*),x(*)
+      integer*4 n
+      end subroutine vsin
+
+      subroutine vsincos(y,z,x,n)
+      real*8 z(*),x(*),y(*)
+      integer*4 n
+      end subroutine vsincos
+
+      subroutine vsinh(z,x,n)
+      real*8 z(*),x(*)
+      integer*4 n
+      end subroutine vsinh
+
+      subroutine vsqrt(z,x,n)
+      real*8 z(*),x(*)
+      integer*4 n
+      end subroutine vsqrt
+
+      subroutine vtan(z,x,n)
+      real*8 z(*),x(*)
+      integer*4 n
+      end subroutine vtan
+
+      subroutine vtanh(z,x,n)
+      real*8 z(*),x(*)
+      integer*4 n
+      end subroutine vtanh
+
+
+!*--------------------------------------------------------------------*
+!* Fortran interfaces for the Power7 vector integer MASS functions.   *
+!*--------------------------------------------------------------------*
+
+      integer*4 function vpopcnt4 (x,n)
+      integer*4 x(*),n
+      end function vpopcnt4
+
+      integer*4 function vpopcnt8 (x,n)
+      integer*8 x(*)
+      integer*4 n
+      end function vpopcnt8
+
+      end interface
+

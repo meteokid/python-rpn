@@ -1,0 +1,79 @@
+#!/bin/ksh
+# flags that should be defined for this platform. example below is for Intel 64 bit under linux
+# this file is necessary for our s.f77, s.f90, s.compile utilities to work properly
+#
+define="-DLittle_Endian -DWITH_intel -DAMD64 -DLINUX_X86_64"
+
+# name of the mpi library -l${MPI_LIB} will be added for loading
+MPI_LIB=${MPI_LIB}
+# mpi compiler calls for FORTRAN and C (depends on the local mpi implementation, this is for mpich/openmpi)
+MPI_FC="mpif90 "
+MPI_F90C="mpif90"
+MPI_CC=mpicc
+
+# name of the FORTRAN compiler to use for .f/.F files
+FC=${F77C:-ifort}
+# name of the FORTRAN compiler to use for .f90/.F90 files
+F90C=${F90C:-ifort}
+
+# name of the C compiler
+CC="${CC:-icc}"
+# name of the C++ compiler
+CPP=${CPP:-icpc}
+
+# flags if building shared objects is desired or not
+FC_STATIC="${FC_STATIC:--static-intel}"
+FC_SHARED="-shared"
+CC_SHARED="-shared"
+
+# in some cases the compiler does not use -D -I -L or -l
+Dprefix=""
+Iprefix="-I"
+Lprefix="-L"
+lprefix="-l"
+
+# basic options to the FORTRAN compiler. position independent code is desirable, BIG ENDIAN I/O is necessary
+#                                        include path should include current directory
+FC_options=${FC_options:-"-assume byterecl -convert big_endian -msse3 -fpe0 -fpic -reentrancy threaded -traceback -threads ${Iprefix}. -g -C -traceback -ftrapuv"}
+FC_LD_options="-Wl,--allow-shlib-undefined -fpic -g -traceback -ftrapuv"   # added when linking/loading
+
+# flags to add to the FORTRAN compiler to get OpenMP support
+OPENMP="-openmp"
+# flags to add to the C compiler to get OpenMP support
+OPENMPCC="-D_REENTRANT -D_THREAD_SAFE -openmp"
+
+# basic options to the C compiler, example below is for gcc , position independent code is desirable
+#                                        include path should include current directory
+CC_options="-Wl,--allow-shlib-undefined -Wtrigraphs -fpic -I. -traceback -msse3 -g -C -traceback"
+CC_options_NOLD="-fpic -I. -traceback -msse3 -g -traceback"
+
+# flags for the FORTRAN compiler to get different optimization levels
+# level 2 is agggressive but still safe, level 0 is no optimization at all, level 4 is no holds barred
+F_Opt[0]=-O0
+F_Opt[1]=-O1
+F_Opt[2]=-O2
+F_Opt[3]="-O2 -simd"
+F_Opt[4]="-O3 -simd"
+
+# flags for the FORTRAN compiler to get the DEBUG mode
+O_DEBUG="-g -ftrapuv -traceback"
+
+# flags for the C compiler to get different optimization levels
+# level 2 is agggressive but still safe, level 0 is no optimization at all, level 4 is no holds barred
+C_Opt[0]=-O0
+C_Opt[1]=-O1
+C_Opt[2]=-O2
+C_Opt[3]="-O2 -simd"
+C_Opt[4]="-O3 -simd"
+
+# flags for the FORTRAN compiler to get the PROFILE mode
+prof_option="-p"
+
+# the ar archiver, normally ar
+AR=ar
+
+# libraries containing the massv (IBM vector library) entry points, standard and safe versions
+# -l$VECTOR_LIBS or -l$VECTOR_LIBS_safe added to compiler call
+#VECTOR_LIBS=massvp4_safe
+#VECTOR_LIBS_safe=massvp4_safe
+echo "Compiler Rules applied for Linux intel13sp1u2 (2013_sp1.2.144)"

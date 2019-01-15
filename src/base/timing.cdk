@@ -1,0 +1,11 @@
+
+      integer, parameter :: MAX_instrumented=400
+
+      integer timer_cnt(MAX_instrumented), timer_level(MAX_instrumented)
+      common/timing_i/ timer_cnt, timer_level
+      
+      real*8 tb(MAX_instrumented), sum_tb(MAX_instrumented)
+      common/timing_r8/ sum_tb,tb
+
+      character*16 Timing_S, nam_subr_S(MAX_instrumented) 
+      common/timing_c/ nam_subr_S , Timing_S

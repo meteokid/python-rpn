@@ -1,0 +1,28 @@
+
+       !---- arch_specific.hf (AIX-powerpc7)
+       include "mass.include"
+       include "massvp7_wrap.inc"
+       !---- 
+#ifndef AIX_POWERPC7
+#define AIX_POWERPC7
+#endif
+
+#ifndef ARCH_SPECIFIC_HF
+#define ARCH_SPECIFIC_HF
+#endif
+
+#ifndef VPOW_WRAPPERS
+#define VPOW_WRAPPERS
+#define vpow1n vpow1n_wrap
+#define vpown1 vpown1_wrap
+#define vpownn vpownn_wrap
+#define vspow1n vspow1n_wrap
+#define vspown1 vspown1_wrap
+#define vspownn vspownn_wrap
+#define VPOW1N vpow1n_wrap
+#define VPOWN1 vpown1_wrap
+#define VPOWNN vpownn_wrap
+#define VSPOW1N vspow1n_wrap
+#define VSPOWN1 vspown1_wrap
+#define VSPOWNN vspownn_wrap
+#endif

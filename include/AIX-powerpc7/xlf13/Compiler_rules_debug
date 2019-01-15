@@ -1,0 +1,51 @@
+#!/bin/ksh
+#export LANG=en_US
+define="-DAIX"
+FC="xlf90_r -qfixed"
+MPI_FC="mpxlf90_r -qfixed"
+F90C="xlf90_r -qsuffix=f=f90"
+MPI_F90C="mpxlf90_r -qsuffix=f=f90" 
+CC="cc_r"
+CPP="xlC"
+MPI_CC="mpcc_r"
+MPI_CPP="mpCC_r"
+FC_SHARED="-qmkshrobj"
+CC_SHARED="-qmkshrobj"
+CPP_SHARED="-qmkshrobj"
+Dprefix="-WF,"
+Iprefix="-I"
+Lprefix="-L"
+lprefix="-l"
+
+OPENMP="-qsmp=noauto"
+OPENMPCC="-qsmp=noauto"
+
+#FC_options="$User_FC_options -qxlf2003=polymorphic -qstrict -qtbtable=full -q64=largetype -qcache=auto -qarch=auto -qextname -qlargepage -qtune=auto -qnosave -qflttrap=ov:zerodivide:enable:imp -qsigtrap=xl__trce -qfloat=nofold ${Iprefix}. ${Iprefix}${ARMNLIB}/include ${Iprefix}${ARMNLIB}/include/${ARCH}"
+#CC_options=" -qcpluscmt -qweaksymbol -qlargepage -q64 -qtbtable=full -qflttrap=ov:zerodivide:enable:imp -I. -I${ARMNLIB}/include -I${ARMNLIB}/include/${ARCH} -D_REENTRANT"
+#CPP_options="-qweaksymbol -qlargepage -q64 -qtbtable=full -qflttrap=ov:zerodivide:enable:imp -I. -I${ARMNLIB}/include -I${ARMNLIB}/include/${ARCH} -D_REENTRANT"
+
+FC_options="$User_FC_options -qxlf2003=polymorphic -qstrict -qtbtable=full -q64=largetype -qcache=auto -qarch=auto -qextname -qlargepage -qtune=auto -qnosave -qflttrap=ov:zerodivide:enable:invalid -qsigtrap=xl__trce -qfloat=nofold ${Iprefix}. ${Iprefix}${ARMNLIB}/include ${Iprefix}${ARMNLIB}/include/${ARCH} -g -C -qinitauto=FF"
+
+CC_options=" -qcpluscmt -qweaksymbol -qlargepage -q64 -qtbtable=full -qflttrap=ov:zerodivide:enable:invalid -I. -I${ARMNLIB}/include -I${ARMNLIB}/include/${ARCH} -D_REENTRANT -g -C -qinitauto=FF"
+
+CPP_options="-qweaksymbol -qlargepage -q64 -qtbtable=full -qflttrap=ov:zerodivide:enable:invalid -I. -I${ARMNLIB}/include -I${ARMNLIB}/include/${ARCH} -D_REENTRANT -g -C -qinitauto=FF"
+
+F_Opt[0]=-O0
+F_Opt[1]=-O2
+F_Opt[2]=-O3
+F_Opt[3]="-O4"
+F_Opt[4]="-O5"
+O_DEBUG=-g
+C_Opt[0]=-qnooptimize
+C_Opt[1]=-O2
+C_Opt[2]=-O3
+C_Opt[3]=-O4
+C_Opt[4]=-O5
+COMPILE_ON=azur
+DISTRIBUTE_TO=azur
+AR=ar
+ARFLAGS="-X 64"
+O_DEBUG="-g"
+prof_option="-pg"
+VECTOR_LIBS=massvp4
+VECTOR_LIBS_safe=massvp4_safe

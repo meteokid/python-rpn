@@ -1,0 +1,24 @@
+export MP_LABELIO=yes
+export TARGET_CPU_LIST=-1
+export MP_EAGER_LIMIT=64K #one of the first variables to experiment with
+export MP_IMM_SEND_BUFFERS=4 #default 1? for 64 task per node recommended 2
+export MP_RFIFO_SIZE=16777216 #receive FIFO size, default 8-16MB/adapter 
+
+export MP_S_ATOA_PERM=no #need round robin hostlist ordering
+export MP_REXMIT_BUF_SIZE=32800 #set to eager limit + MPI msg header (32b)
+export MP_REXMIT_BUF_CNT=256
+export MP_BUFFER_MEM=256MB #default: 64MB, max: 256MB
+export MP_CLOCK_SOURCE=ntp
+export MP_STDOUTMODE=unordered
+export MP_CHECKPOINT=no
+#export MP_PULSE=100
+export MP_S_BSR_BARRIER=no #currently a problem with BSR PAMI alg 10/20/11
+export HFI_RDMA_BREAKUP_COUNT=32
+export MP_SHM_ATTACH_THRESH=1000000
+export MP_S_CC_XMEM_ATTACH=1000000
+export MEMORY_AFFINITY=MCM
+export MP_S_COUNT_LIMIT=2000000
+export MP_S_POLL_COUNT=2000000
+export MP_RDMA_ROUTE_MODE=hw_direct_striped   #also experiment with setting 
+export MP_FIFO_ROUTE_MODE=hw_direct_striped      #also experiment with setting 
+export MP_SHARED_MEMORY=yes # can also try =no

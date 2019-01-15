@@ -1,0 +1,39 @@
+#!/bin/sh
+##
+# svn diff call-back s/r for external diff [Diff Wrapper]
+# Based on example program in http://svnbook.red-bean.com/
+#
+# @usage svn diff --diff-cmd r.svn-diff-wrapper [URL [URL]]
+#
+# @date  21 June 2007
+# @autor Stephane Chamberland
+##
+
+# Configure your favorite diff program here.
+
+# Subversion provides the paths we need as the sixth and seventh 
+# parameters.
+PARAMS=$(echo $1 | sed 's/_/ /g')
+LEFT=${6}
+RIGHT=${7}
+
+if [[ "x$(diff -q $LEFT $RIGHT)" == "x" ]] ; then
+
+# Return an errorcode of 0 if no differences were detected, 1 if some were.
+    exit 0
+
+fi
+
+if [[ "x$PARAMS" == "x-u" ]] ; then
+    PARAMS="diff"
+fi
+
+
+# Call the diff command (change the following line to make sens for
+# your merge program).
+$PARAMS $LEFT $RIGHT
+
+# Return an errorcode of 0 if no differences were detected, 1 if some were.
+# Any other errorcode will be treated as fatal.
+
+exit 1
