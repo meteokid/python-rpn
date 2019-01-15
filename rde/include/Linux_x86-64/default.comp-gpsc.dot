@@ -1,0 +1,1 @@
+export COMP_ARCH=${COMP_ARCH:-intel-2016.1.156}

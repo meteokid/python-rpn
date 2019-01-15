@@ -1,0 +1,57 @@
+#!/bin/ksh
+# @Object: Checkout library version of a source file
+# @Author: S.Chamberland
+# @Date:   March 2014
+MYSELF=${0##*/}
+
+DESC='Checkout if filename.ext has ext in list'
+USAGE="USAGE: ${MYSELF} [-h] --ext="EXTLIST" FILE"
+
+usage_long() {
+	 toto=$(echo $USAGE)
+	 more <<EOF
+$DESC
+
+$toto
+
+Options:
+    -h, --help  : print this help
+        --ext   : No error if file.ext not in ext list
+    FILE        : filename
+    EXTLIST     : space separated list of accepted ext with leading dot
+
+EOF
+}
+
+myextlist=""
+myfile=""
+while [[ $# -gt 0 ]] ; do
+   case $1 in
+      (-h|--help) usage_long; exit 0;;
+      (--ext=*) myextlist="$myextlist ${1#*=}";;
+      (--ext) ;;
+      (-*) myerror "Option Not recognized: $1";;
+      *)
+         case $previous in
+            (--ext) myextlist="$myextlist $1";;
+            *) myfile=$1 ;;
+         esac ;;
+    esac
+	 previous=$1
+    shift
+done
+
+if [[ x"$myfile" == x"" || x"$myextlist" == x"" ]] ; then
+   echo "ERROR: need to provide a Filename and an extension list"
+   usage_long
+   exit 1
+fi
+
+ext=${myfile##*.} 
+if [[ x$ext == x$myfile ]] ; then ext="" ; fi
+isSrc="$(echo :${myextlist}: | tr ' ' ':' | grep -F :.${ext:-_______}:)"
+if [[ x"$isSrc" == x ]] ; then
+   echo 0
+else
+   echo 1
+fi

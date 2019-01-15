@@ -1,0 +1,47 @@
+#!/bin/ksh
+
+COMPILING_FORTRAN=YES
+#. rde.get_compiler_rules.dot
+
+_mydefines="-define $(echo ${DEFINES} | sed 's/  */;/g' | sed 's/;-D/;/g' | sed 's/^-D//g')"
+_myincludes="${INCLUDES} ${EC_INCLUDE_PATH} $(rdevar srcpath_include)"
+_myincludes="-I $(echo ${_myincludes} | sed 's/  */;/g')"
+#_mylibpath="$(s.prefix "${Lprefix}" ${LIBRARIES_PATH} ${EC_LD_LIBRARY_PATH})"
+#_mylibs="$(s.prefix "${lprefix}" ${LIBRARIES} ${SYSLIBS} )"
+
+#FC_options="$(echo ${FC_options} | sed 's/-I\.//')"
+
+F90C='forchk'
+
+if [[ -n $Verbose ]] ; then
+   cat <<EOF
+
+#   ${FC_options} \\
+#   ${FFLAGS} \\
+
+${F90C:-ERROR_F90C_undefined} \\
+   $_mydefines \\
+   $(echo $_myincludes | sed 's/;/;\\\n   /g') \\
+   "$@" \\
+   ${SourceFile}
+
+EOF
+fi
+
+SourceFile1=${SourceFile}
+# if [[ ${SourceFile##*/} != ${SourceFile} ]] ; then
+#    if [[ -f ${SourceFile##*/} ]] ; then
+#       echo "WARNING: overriting ${SourceFile}" 1>&2
+#    fi
+#    cp ${SourceFile} .
+#    SourceFile1=${SourceFile##*/}
+# fi
+
+#   ${FC_options} \
+#   ${FFLAGS} \
+
+${F90C:-ERROR_F90C_undefined} \
+   $_mydefines \
+   $_myincludes \
+   "$@" \
+   ${SourceFile1}

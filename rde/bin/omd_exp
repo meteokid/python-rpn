@@ -1,0 +1,11 @@
+#!/bin/ksh
+ 
+cat 1>&2 <<EOF
+
+WARNING: you are using RDE (RPN Dev. Env.) which is not compatible with ouv_exp
+
+If your intent was to checkout a file, you need to run:
+  rde co $*
+
+EOF
+exit 1

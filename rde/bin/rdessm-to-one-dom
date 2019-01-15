@@ -1,0 +1,77 @@
+#!/bin/ksh
+
+myself=$0
+DESC='Re-Publish SSM pkg from a list of domains into a single domain'
+USAGE="USAGE: ${myself##*/} [-h] [-v] -b BNDLFILE -d DESTDIR"
+usage_long() {
+         toto=$(echo -e $USAGE)
+         more <<EOF
+$DESC
+
+$toto
+
+Options:
+    -h, --help : print this help
+    -v, --verbose : 
+    -b, --bndl BUNDLE_FILE
+    -d, --dom  DEST_DOMAIN_DIR
+
+EOF
+}
+
+EC_ARCH_LIST="${EC_ARCH_LIST:-Linux_x86-64 AIX-powerpc7}"
+
+myverbose=
+mybndl=''
+mydest=''
+while [[ $# -gt 0 ]] ; do
+    case $1 in
+        (-h|--help) usage_long; exit 0;;
+        (-v|--verbose) myverbose=-v ;;
+        (-b|--bndl) mybndl=$2; shift ;;
+        (-d|--dom) mydest=$2; shift ;;
+        (-*) echo "ERROR: Unrecognized option $1"
+            echo -e $USAGE
+            echo "---- ABORT ----"
+            exit 1;;
+        (*) if [[ x$1 != x ]] ; then 
+            echo "ERROR: Unrecognized arg $1"
+            echo -e $USAGE
+            echo "---- ABORT ----"
+            exit 1;
+            fi;;
+    esac
+    shift
+done
+
+if [[ ! -f "$mybndl" || x$mydest == x ]] ; then
+   usage_long
+   exit 1
+fi
+
+if [[ x$myverbose != x ]] ; then
+   set -x
+fi
+
+mylist="$(cat $mybndl)"
+
+mkdir -p ${mydest%/*}
+ssm created -d $mydest
+
+if [[ ! -d "$mydest" ]] ; then
+   usage_long
+   exit 1
+fi
+
+for item in $mylist ; do
+   mypkglist="$(ssm listd -d $item -o name)"
+   for mypkg in $mypkglist ; do
+      mydom="$(ssm listd -d $item -p $mypkg -o install_domain)"
+      mystate="$(ssm listd -d $item -p $mypkg -o state | tr 'A-Z' 'a-z')"
+      if [[ x$mystate == xp ||  x$mystate == xip ]] ; then
+         ssm publish --yes --force -P $mydest -d $mydom -p $mypkg
+      else
+         echo IGNORE $mystate $mypkg $mydom
+      fi
+   done
+done

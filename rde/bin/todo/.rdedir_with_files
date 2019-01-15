@@ -1,0 +1,28 @@
+#!/bin/ksh
+# @Object: Echo the include path trimmed from empty dirs
+# @Author: S.Chamberland
+# @Date:   March 2014
+
+
+#DESC='Echo the include path trimmed from empty dirs'
+
+if [[ x$1 == x-h || x$1 == x--help ]] ; then
+	 more <<EOF
+Echo the include path trimmed from empty dirs
+
+USAGE: pfdir_with_files [VPATH]
+
+       VPATH : source dir to look into [Default: .]
+
+EOF
+    exit 0
+fi
+
+
+newline='\n'
+if [[ x$1 == x-n ]] ; then
+   newline=' '
+   shift
+fi
+VPATH=${1:-.}
+for item in $(find -L $VPATH -type f) ; do echo ${item%/*} ; done | sort -u | tr '\n' "$newline"

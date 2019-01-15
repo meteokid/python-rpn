@@ -1,0 +1,118 @@
+#!/usr/bin/env python
+import os
+import optparse
+import fnmatch
+
+DESC='Search for files in a directory hierarchy'
+RESTRICTED_FNAME = '.restricted'
+
+def rdeisnamematch(name, namepattern=None, lnodotdir=False):
+    if not name.strip():
+        return False
+    try:
+        basename = os.path.split(os.path.abspath(name))[-1]
+    except:
+        basename = name
+    if lnodotdir and basename[0] == '.':
+        return False
+    if namepattern:
+        ## renamepattern = fnmatch.translate(namepattern)
+        if not fnmatch.fnmatch(basename, namepattern):
+            return False
+    return True
+
+def rdeisdirrestriced(mydir, restrict_list):
+    isrestricted = False
+    if mydir.strip() and restrict_list:
+        rfname = os.path.join(os.path.abspath(mydir),RESTRICTED_FNAME)
+        if os.path.isfile(rfname):
+            isrestricted = True
+            if os.stat(rfname).st_size != 0:
+                myfile = open(rfname, "r")
+                for line in myfile:
+                    if line.strip() in (restrict_list):
+                        isrestricted = False
+                        break
+                myfile.close()
+    return isrestricted
+
+
+def listfiles(mydir, ftype='dfl', dirnamepattern=None, namepattern=None, lfollow=False, restrict_list='', lnodotdir=False, lnotempty=False, maxdepth=256):
+    """
+    """
+    mydirdepth = len(os.path.normpath(mydir).split('/'))
+    ftypelist  = list(ftype)
+    for root, folders, files in os.walk(mydir, followlinks=lfollow):
+        if len(root.split('/')) - mydirdepth > int(maxdepth):
+            folders[:] = []
+        else:
+            if dirnamepattern:
+                dirok = rdeisnamematch(root, dirnamepattern, lnodotdir)
+            else:
+                dirok = rdeisnamematch(root, lnodotdir=lnodotdir)
+            if not dirok:
+                folders[:] = []
+            else:
+                if rdeisdirrestriced(root, restrict_list):
+                    folders[:] = []
+                else:
+                    if 'd' in ftypelist:
+                        if (not lnotempty) or len(files) > 0:
+                            if rdeisnamematch(root, namepattern, lnodotdir):
+                                yield root
+                    if 'f' in ftypelist:
+                        for filename in files:
+                            if rdeisnamematch(filename, namepattern):
+                                yield os.path.join(root, filename)
+                    if 'l' in ftypelist:
+                        for filename in folders + files:
+                            fullname = os.path.join(root, filename)
+                            if (rdeisnamematch(filename, namepattern) and
+                                os.path.islink(fullname)):
+                                yield fullname
+ 
+
+if __name__ == "__main__":
+    usage = "usage: \n\t%prog PATH [-type l/d/f] "
+    parser = optparse.OptionParser(usage=usage)
+    parser.add_option("-L", "--follow-links",
+                      action="store_true", dest="lfollow", default=False,
+                      help="Follow links")
+    parser.add_option("-t", "--type",
+                      dest="ftype", default="dfl",
+                      help="Filter by type [dfl]")
+    parser.add_option("", "--name",
+                      dest="namepattern", default="",
+                      help="Filter by pattern")
+    parser.add_option("", "--dirname",
+                      dest="dirnamepattern", default="",
+                      help="Skip dir not matching provided pattern")
+    parser.add_option("", "--restricted",
+                      dest="restrict_str", default="",
+                      help="Skip restricted dirs, you can provided a whitelist")
+    parser.add_option("", "--notempty",
+                      action="store_true", dest="lnotempty", default=False,
+                      help="Exclude dirs without files")
+    parser.add_option("", "--nodotdir",
+                      action="store_true", dest="lnodotdir", default=False,
+                      help="Skip hidden dirs")
+    parser.add_option("", "--maxdepth",
+                      dest="maxdepth", default="256",
+                      help="Descend at most levels of directories below the command line arguments")
+    (options, args) = parser.parse_args()
+    restrict_list = None
+    if options.restrict_str:
+        restrict_list = options.restrict_str.split()
+        restrict_list.extend([x.strip()+':' for x in restrict_list])
+    for mydir in args:
+        for myfile in listfiles(mydir, options.ftype,
+                                options.dirnamepattern,
+                                options.namepattern,
+                                options.lfollow,
+                                restrict_list,
+                                options.lnodotdir,
+                                options.lnotempty,
+                                int(options.maxdepth)):
+            print(myfile)
+
+ 

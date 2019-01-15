@@ -1,0 +1,1 @@
+export COMP_ARCH=${COMP_ARCH:-PrgEnv-intel-5.2.82}

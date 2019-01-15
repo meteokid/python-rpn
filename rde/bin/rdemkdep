@@ -1,0 +1,152 @@
+#!/bin/ksh
+# @Object: Build depedecies list
+# @Author: S.Chamberland
+# @Date:   Oct 2014
+. .rdebase.inc.dot
+
+DESC='Build depedecies list'
+USAGE="USAGE: ${MYSELF} [-h] [-v] [--supp myfile.supp] [--arch ARCH]"
+
+usage_long() {
+	 toto=$(echo -e $USAGE)
+	 more <<EOF
+$DESC
+
+$toto
+
+Options:
+    -h, --help         : print this help
+    -v, --verbose      : verbose mode
+    -f, --force        : 
+        --dup_ok       : No Error on duplicate file names
+        --supp         : override default rdedep.pl error suppression file
+                         Default: $DEP_SUPP_FILE_SYS
+                         If PATH is provided (colon separated), 
+                         the supp file is a concatenation of
+                         all \$PATH and \$PATH/rdedep.supp
+                         with $DEP_SUPP_FILE_SYS.
+        --arch         : make dep for provided ARCHs
+        --prof         : run in profiler
+
+The list of dependencies is done from the list of files in: \$(pwd) \$(rdevar srcpath)
+
+EOF
+}
+#    FILES              : space separated list of src files or dir
+
+mystatus=0
+myforce=0
+DEP_SUPP_FILE_SYS=$rde/etc/rdedep-sys.supp
+DEP_SUPP_FILE_GEM=$rde/etc/rdedep-gem.supp
+#DEP_SUPP_FILE0=$rde/etc/rdedep-sys+gem.supp
+#DEP_SUPP_FILE_PATH0="$DEP_SUPP_FILE_GEM"
+DEP_SUPP_FILE_PATH0=":"
+DEP_SUPP_FILE_PATH=""
+DEP_ARCH="$(rdevar rde_arch)"
+VERBOSE=''
+PERLPROF=''
+DEP_DUP_OK=''
+DEP_FLAT=--flat
+#DEP_FLAT=--short
+while [[ $# -gt 0 ]] ; do
+   case $1 in
+      (-h|--help) usage_long; exit 0;;
+      (-v|--verbose) ((verbose=verbose+1)) ; VERBOSE="${VERBOSE} -v";;
+      (--dup_ok) DEP_DUP_OK=--dup_ok ;;
+      (--supp) DEP_SUPP_FILE_PATH="$DEP_SUPP_FILE_PATH0" ;
+         if [[ x$2 != x && x$(echo $2 | cut -c1) != x- ]] ; then
+            shift ; DEP_SUPP_FILE_PATH=$1
+         fi;;
+      (--arch) 
+         if [[ x$2 != x && x$(echo $2 | cut -c1) != x- ]] ; then
+            shift ; DEP_ARCH=$1
+         fi;;
+      (--prof) PERLPROF="perl -d:DProf ${rde}/bin/";
+         echo "Perl profiling on; use 'dprofpp -r -E' to view prof results";;
+      (*) if [[ x$1 != x ]] ; then myerror "Option Not recognized: $1"; fi;;
+    esac
+    shift
+done
+
+#rde_exit_if_not_rdetopdir
+
+DEP_SUPP_FILE=""
+if [[ x$DEP_SUPP_FILE_PATH != x ]] ; then
+   DEP_SUPP_FILE=$TMPDIR/rdedep.supp-$$
+   cat $DEP_SUPP_FILE_SYS > $DEP_SUPP_FILE
+   for item in $(echo $DEP_SUPP_FILE_PATH | tr ':' ' ') ; do
+      if [[ -f $item ]] ; then
+         cat $item >> $DEP_SUPP_FILE
+      elif [[ -f ${item}/rdedep.supp ]] ; then
+         cat $item/rdedep.supp >> $DEP_SUPP_FILE
+      elif [[ -f ${item}/.rdedep.supp ]] ; then
+         cat $item/.rdedep.supp >> $DEP_SUPP_FILE
+      fi
+   done
+fi
+echo DEP_SUPP_FILE_PATH=$DEP_SUPP_FILE_PATH
+echo DEP_SUPP_FILE=$DEP_SUPP_FILE
+
+if [[ x$DEP_SUPP_FILE != x ]] ; then
+   DEP_SUPP_FILE_ARG="--supp=$DEP_SUPP_FILE"
+fi
+
+mkdepfn() {
+   MYARCH=$1
+   MYARCH_OLD="$(rdevar --arch $MYARCH -- base_arch)"
+   MAKEFILEDEP="$(rdevar --arch $MYARCH -- Makefile_dep)"
+   SRCPATH="$(rdevar --arch $MYARCH_OLD -- srcpath)"
+   SRCPATH_MAXDEPTH="$(rdevar --arch $MYARCH_OLD -- srcpath_maxdepth)"
+   TOPDIROPT=""
+   TOPDIRLIST="$(rdevar --arch $MYARCH_OLD -- srcpath_topdirs)"
+   if [[ x$TOPDIRLIST == x && x${SRCPATH_MAXDEPTH:-0} != x0 ]] ; then
+      TOPDIRLIST="$(rdevar --arch $MYARCH_OLD -- srcpath_r)"
+   fi
+   if [[ x$TOPDIRLIST != x ]] ; then
+      TOPDIROPT="--topdirs=$(echo $TOPDIRLIST | tr ' ' ':')"
+   fi
+   OVERRIDEDIR="--override_dir=$ROOT"
+   if [[ x"$SRCPATH" == x ]] ; then
+      SRCPATH="$(pwd)"
+      OVERRIDEDIR=""
+   fi
+   if [[ x$OVERRIDEDIR != x ]] ; then
+      OVERRIDEDIR2=$(true_path ${OVERRIDEDIR#*=})
+      for item in $SRCPATH ; do
+         if [[ x$OVERRIDEDIR2 == x$(true_path $item) ]] ; then
+         #TODO: should remove it from srcpath instead
+            OVERRIDEDIR=""
+         fi
+      done
+   fi
+
+   rm -f $TMPDIR/${MAKEFILEDEP}
+   ${MYTIME} ${PERLPROF}rdedep.pl ${VERBOSE} ${DEP_DUP_OK} ${DEP_FLAT} \
+      --deep-include \
+      --any_inc \
+      --soft-restriction \
+      --libext=.a.fl \
+      --out=$TMPDIR/${MAKEFILEDEP} \
+      $DEP_SUPP_FILE_ARG \
+      $TOPDIROPT \
+      $OVERRIDEDIR \
+      $SRCPATH
+   mystatus=$?
+   if [[ $mystatus  == 0 ]] ; then
+      rm -f ${MAKEFILEDEP} 
+      mv $TMPDIR/${MAKEFILEDEP} ${MAKEFILEDEP}
+   fi
+}
+
+mystatus=0
+for item in $DEP_ARCH ; do
+   mkdepfn $item
+   if [[ x$mystatus != x0 ]] ; then
+      exit $mystatus
+   fi
+done
+
+#TODO: remove --any when code is clean from cross dir includes
+#TODO:   --inc="$(echo $SRCPATH | sed 's| |/include:|g')
+
+exit $mystatus

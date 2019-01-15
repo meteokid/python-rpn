@@ -1,0 +1,97 @@
+#!/bin/ksh
+#
+# s.f90
+
+# set EC_LD_LIBRARY_PATH and EC_INCLUDE_PATH using LD_LIBRARY_PATH
+#export EC_LD_LIBRARY_PATH=`s.generate_ec_path --lib`
+#export EC_INCLUDE_PATH=`s.generate_ec_path --include`
+
+COMPILING_FORTRAN=YES
+. rde.get_compiler_rules.dot
+
+## De-Archive .a.fl objects
+_alllibs="${LIBRARIES} ${SYSLIBS}"
+forceobjdir=.fo-$$
+if [[ x${WILL_LINK} == xyes ]] ; then
+   _alllibs=""
+   #TODO: should libs and libpaths be treated reversly?
+   mkdir ${forceobjdir} >/dev/null 2>&1
+   rm -f ${forceobjdir}/*.o
+   cd ${forceobjdir}/
+   for mylib in ${LIBRARIES} ${SYSLIBS} ; do
+      _found=0
+      for mypath in ${LIBRARIES_PATH} ${EC_LD_LIBRARY_PATH} ; do
+         if [[ -r ${mypath}/lib${mylib}.a.fl ]] ; then
+            if [[ -n $Verbose ]] ; then
+               echo "ar x ${mypath}/lib${mylib}.a.fl"
+            fi
+            ar x ${mypath}/lib${mylib}.a.fl
+            _found=1
+            break
+         fi
+      done
+      if [[ ${_found} == 0 ]] ; then
+         _alllibs="${_alllibs} ${mylib}"
+      fi
+   done
+   cd ..
+
+   ## Removed redondant .a.fl objects
+   for item2 in $@ ${FFLAGS}; do
+      if [[ x${item2##*.} == xo ]] ; then
+         if [[ -n $Verbose ]] ; then
+            echo "rm -f ${forceobjdir}/${item2##*/}"
+         fi
+         rm -f ${forceobjdir}/${item2##*/} 2>/dev/null
+      fi
+   done
+fi
+
+# _mydefines="$(s.prefix "${Dprefix}" ${DEFINES} )"
+# _myincludes="$(s.prefix "${Iprefix}" ${INCLUDES} ${EC_INCLUDE_PATH})"
+_mylibpath="$(s.prefix "${Lprefix}" ${LIBRARIES_PATH} ${EC_LD_LIBRARY_PATH})"
+_mylibs="$(s.prefix "${lprefix}" ${_alllibs} )"
+_myfobj="$(ls ${forceobjdir}/*.o 2>/dev/null |tr '\n' ' ' 2>/dev/null)"
+
+
+if [[ -n $Verbose ]] ; then
+   _myobj=""
+   FFLAGS2=""
+   for _item in ${FFLAGS} ; do
+      if [[ x${_item##*.} == xo ]] ; then
+         _myobj="$_myobj $_item"
+      else
+         FFLAGS2="$FFLAGS2 $_item"
+      fi
+   done
+   # $_mydefines \\
+   # $_myincludes \\
+
+   cat <<EOF
+
+${F90C:-ERROR_F90C_undefined} ${SourceFile} \\
+   ${FC_options} \\
+   ${FC_LD_options} \\
+   ${FFLAGS2} \\
+   $(echo $_mylibpath  | sed 's/ / \\\n   /g') \\
+   $_mylibs \\
+   $_myobj \\
+   $_myfobj \\
+   "$@"
+
+EOF
+fi
+   # $_mydefines \
+   # $_myincludes \
+${F90C:-ERROR_F90C_undefined} ${SourceFile} ${FC_options} ${FC_LD_options} \
+   ${FFLAGS} \
+   $_mylibpath \
+   $_myfobj \
+   $_mylibs \
+   "$@"
+_status=$?
+
+rm -f ${forceobjdir}/*.o 2>/dev/null
+rmdir ${forceobjdir} 2>/dev/null
+
+exit ${_status}

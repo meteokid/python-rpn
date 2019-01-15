@@ -1,0 +1,6 @@
+module swap PrgEnv-cray/5.2.82 PrgEnv-intel/5.2.82
+
+. ssmuse-sh \
+  -d hpco/eccc/201402/04/base \
+  -d eccc/mrd/rpn/libs/16.0-beta \
+  -d eccc/mrd/rpn/utils/16.0-beta 

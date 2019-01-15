@@ -1,0 +1,5 @@
+Package: rde
+Version: __VERSION__
+Platform:  all
+Maintainer: armnenv <armnenv@ec.gc.ca>
+Description: RPN Development Environment (RDE) is a light weight code development environment 

@@ -1,0 +1,73 @@
+#!/bin/ksh 
+DESC='Create a version file with component, version, OS, compiler, date info'
+PKGNAME=$1
+PKGVERSION=$2
+DESTDIR=${3:-.}
+MODE=${4:-sh}
+NAMEFMT=${5:-l}
+if [[ x$PKGNAME == x || x$PKGNAME == x-h || x$PKGNAME == x--help || x$PKGVERSION == x ]] ; then
+	 more <<EOF
+ERROR: PKGNAME or PKGVERSION not provided
+
+$DESC
+
+USAGE: $0 PKGNAME PKGVERSION \${DESTDIR:-.} \${MODE:-sh} \${NAMEFMT:-l}
+
+Where:
+   PKGNAME    : Name of the program/lib
+   PKGVERSION : Version of the program/lib
+   DESTDIR    : (optional) Where to create the file (Default: .)
+   MODE       : (optional) Type of versin file to create (Default: sh)
+                Knownk values: sh, c, f, py
+   NAMEFMT    : (optional) If MODE=sh and NAMEFMT=s
+                File name will be short format (.VERSION)
+                instead if long (\${pkgname_}_version.ext)  
+
+The version file defines the following variables in the spefcified language:
+   \${PKGNAME}_NAME_S
+   \${PKGNAME}_VERSION_S
+   \${PKGNAME}_DSTP_S
+   \${PKGNAME}_EC_ARCH_S
+   \${PKGNAME}_ORDENV_ARCH_S
+   \${PKGNAME}_ORDENV_PLAT_S
+   \${PKGNAME}_COMP_ARCH_S
+
+EOF
+    exit 1
+fi
+PKGNAME=$(echo $PKGNAME | tr 'a-z' 'A-Z')
+PKGVERSION=$(echo $PKGVERSION)
+pkgname_=$(echo $PKGNAME | tr 'A-Z' 'a-z')
+production_date=$(date '+%Y-%m-%d %H:%M %Z')
+
+mkdir -p ${DESTDIR} 2>/dev/null || true
+chmod u+w ${DESTDIR} || true
+versionfilename=${DESTDIR}/${pkgname_}_version.dot
+[[ x${NAMEFMT} == xs ]] && versionfilename=${DESTDIR}/.VERSION
+prefix='export'
+sep='='
+if [[ x$MODE == xc ]] ; then
+   versionfilename=${DESTDIR}/${pkgname_}_version.h
+   prefix='#define'
+   sep=' '
+elif [[ x$MODE == xf ]] ; then
+   versionfilename=${DESTDIR}/${pkgname_}_version.inc
+   prefix='       character(len=50),parameter ::'
+   sep=' = '
+elif [[ x$MODE == xpy ]] ; then
+   versionfilename=${DESTDIR}/${pkgname_}_version.py
+   prefix=''
+   sep=' = '
+fi
+cat > ${versionfilename} << EOF
+$prefix ${PKGNAME}_NAME_S${sep}"${PKGNAME}"
+$prefix ${PKGNAME}_VERSION_S${sep}"${PKGVERSION}"
+$prefix ${PKGNAME}_DSTP_S${sep}"${production_date}"
+$prefix ${PKGNAME}_EC_ARCH_S${sep}"${EC_ARCH}"
+$prefix ${PKGNAME}_ORDENV_ARCH_S${sep}"${ORDENV_ARCH:-UNKNOWN}"
+$prefix ${PKGNAME}_ORDENV_PLAT_S${sep}"${ORDENV_PLAT:-$(uname -spvr)}"
+$prefix ${PKGNAME}_COMP_ARCH_S${sep}"${COMP_ARCH:-${EC_ARCH#*/}}"
+EOF
+[[ $? == 0 ]] && echo ${versionfilename} & exit 0
+exit 1
+

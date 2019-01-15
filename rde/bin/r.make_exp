@@ -1,0 +1,11 @@
+#!/bin/ksh
+ 
+cat 1>&2 <<EOF
+
+WARNING: you are using RDE (RPN Dev. Env.) which is not compatible with r.make_exp
+
+If your intent was to create/update the Makefile, you need to run:
+  rde mkdep
+
+EOF
+exit 1

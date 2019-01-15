@@ -1,0 +1,298 @@
+#!/bin/ksh
+. .rdebase.inc.dot
+
+DESC='Diff locally modified src compared to library version'
+USAGE="USAGE: ${MYSELF} [-h] [-v] [-l|--list|--status] [-d|--dirmode] [--diff=DIFF_TOOL] [DIFFARGS] [FILES]"
+BUILDDIFF=${ROOT}/$(rdevar build)/tmp-diff-$$
+
+usage_long() {
+	 toto=$(echo -e $USAGE)
+	 more <<EOF
+$DESC
+
+$toto
+
+Options:
+    -h, --help           : print this help
+    -v, --verbose        : verbose mode
+    -l, --list, --status : print list of modified / removed / new files
+    -d, --dirmode        : Do a directory diff if possible
+                           DEFAULT: file by file diff
+    -R  --recurse        : recursively look into SRCPATH dirs
+    --diff=DIFF_TOOL     : diff tool to use 
+                           DEFAULT: \${ECDIFF:-diff} (${ECDIFF:-diff})
+    DIFFARGS             : arguments to pass to the diff tool
+                           DEFAULT: \$ECDIFFARGS ($ECDIFFARGS)
+    FILES                : space separated list of src files or dir
+                           DEFAULT: all locally modified src files
+EOF
+}
+
+mystatus=0
+listmode=0
+dirmode=0
+myrecurse=0
+ECDIFF=${ECDIFF:-diff}
+ECDIFFARGS=${ECDIFFARGS}
+PATHLIST=""
+if [[ x$1 == x-f ]] ;  then
+   myforce=1
+   shift
+fi
+while [[ $# -gt 0 ]] ; do
+   case $1 in
+      (-h|--help) usage_long; exit 0;;
+      (-v|--verbose) ((verbose=verbose+1));;
+      (-l|--list|--status) listmode=1;;
+      (-d|--dirmode) dirmode=1;;
+      (-R|--recurse) myrecurse=1;;
+      (--diff=*) ECDIFF=${1#*=};;
+      (-*) ECDIFFARGS="${ECDIFFARGS} $1";;
+        *) PATHLIST="$PATHLIST $1";;
+    esac
+    previous=$1
+    shift
+done
+
+if [[ x"$PATHLIST" == x"" ]] ; then
+   PATHLIST=.
+fi
+
+rde_exit_if_not_rdetopdir
+
+#followlinks='-L'
+followlinks=''
+SRC_USR=$(pwd)/.
+
+# # find_src_file MYDIR MYFILE
+# find_src_file() {
+#    _myfile=$2
+#    _here=$(pwd)
+#    cd ${1}
+#    if [[ -f ${_myfile} ]] ; then
+#       echo ${_myfile}
+#    elif [[ $myrecurse == 1 ]] ; then
+#       _mypath="$(find ${followlinks} . -name ${_myfile} -type f 2>/dev/null)"
+#       echo ${_mypath#./}
+#    fi
+#    cd ${_here}
+# }
+
+# find_src_file_list MYDIR MYFILE
+find_src_file_list() {
+   _myfile=$2
+   _myrecurse=${3:-1}
+   _here=$(pwd)
+   cd ${1}
+   if [[ -f ${_myfile} ]] ; then
+      echo ${_myfile}
+   elif [[ -d ${_myfile} ]] ; then
+      if [[ $_myrecurse == 1 ]] ; then
+         _mypath="$(find ${followlinks} ${_myfile} -type f 2>/dev/null)"
+      else
+         _mypath="$(rdefind ${followlinks} ${_myfile} --type f --maxdepth 0 2>/dev/null)"
+      fi
+      for _myfile2 in $_mypath ; do
+         mytype="$(echo ${_myfile2##*.} | cut -c1 | tr 'cfhiCFHIt' 'fffffffff')"
+         if [[ x$mytype == xf ]] ; then
+            echo ${_myfile2#./}
+         fi
+      done
+   elif [[ $_myrecurse == 1 ]] ; then
+      _mypath="$(find ${followlinks} . -name ${_myfile} -type f 2>/dev/null)"
+      echo ${_mypath#./}
+   fi
+   cd ${_here}
+}
+
+# is_src_local_deleted() {
+#    _myfile=$1
+#    _itempath=${_myfile%/*}
+#    _itemname=${_myfile##*/}
+#    _itemname2=${_itemname#.rm.}
+#    if [[ -f ${SRC_REF}/${_itempath}/${_itemname2}  && \
+#          -f ${SRC_USR}/${_itempath}/.rm.${_itemname2} \
+#          ]] ; then
+#       echo ${_itempath}/${_itemname2}
+#    fi
+#    echo ""
+# }
+
+# isrestricted() {
+#    #set -x
+#    _myfile=$1
+#    _myfiledel=$1
+#    _isrestricted=""
+#    for _mydir in ${SRC_REF} ${SRC_USR} ; do
+#       _subdirall=""
+#       _subdirlist="$(echo ${_myfile%/*} | tr '/' ' ')"
+#       for _subdir in ${_subdirlist} ; do
+#          _subdirall="${_subdirall}/${_subdir}/"
+#          _restricfile=${_mydir}/${_subdirall}/.restricted
+#          if [[ -f $_restricfile ]] ; then
+#             if [[ x"$(cat $_restricfile | grep ${BASE_ARCH}:)" == x && \
+#                x"$(cat $_restricfile | grep ${EC_ARCH}:)" == x ]] ; then
+#                _isrestricted="RESTRICTED"
+#             else
+#                _isrestricted=""
+#             fi
+#          fi
+#       done
+#    done
+#    echo ${_isrestricted}
+# }
+
+
+
+echo_file_status() {
+   #_myfile=$1
+   # _itemname2=$(is_src_local_deleted ${1})
+   # _isrestricted="$(isrestricted ${1} ${_itemname2})"
+   # file_usr="$(rdelocate -l ${1} 2>/dev/null)"
+   file_usr=${1}
+   file_ref="$(rdelocate -r ${1} 2>/dev/null)"
+   # if [[ x${_itemname2} != x ]] ; then
+   #    echo DEL ${_itemname2} ${_isrestricted}
+   # elif [[ x${file_usr} != x ]] ; then
+   if [[ x${file_usr} != x ]] ; then
+      if [[ x${file_ref} != x ]] ; then
+         _isdiff=1
+         diff ${file_ref} ${file_usr} >/dev/null 2>&1 && _isdiff=0
+         if [[ ${_isdiff} == 1 ]] ; then
+            echo MOD ${1} ${_isrestricted}
+         else
+            echo REF ${1} ${_isrestricted}
+         fi
+      else
+         echo NEW ${1} ${_isrestricted}
+      fi
+   else
+      echo ??? ${1} ${_isrestricted}
+   fi
+}
+
+
+
+do_file_diff() {
+   _myfile=$1
+   _status0="$(echo_file_status ${_myfile})"
+   _status=${_status0% *}
+   _myfile2=${_status0#* }
+   file_usr="$(rdelocate -l ${_myfile} 2>/dev/null)"
+   file_ref="$(rdelocate -r ${_myfile} 2>/dev/null)"
+   if [[ x${_status} == xMOD || x${_status} == REF ]] ; then
+      cd $ROOT
+      myecho 0 +${ECDIFF} ${ECDIFFARGS} ${file_ref} ${file_usr}
+      ${ECDIFF} ${ECDIFFARGS} ${file_ref} ${file_usr}
+   else
+      myecho 0 +${_status0}
+   fi
+}
+
+build_diff_tree() {
+   mystderr 0 "+ build_diff_tree"
+   #set -x
+   #cd ${SRC_USR}
+   #_myfilelist="$(find . -type f)"
+   #_mydirlist="$(find . -type d)"
+   cd ${ROOT}
+   rm -rf ${BUILDDIFF}
+   # for _item in ${SRC_REF} ${SRC_USR} ; do
+   #    for _mysubdir in ${_mydirlist} ; do
+   #       mkdir -p ${BUILDDIFF}/${_item}/${_mysubdir} 2>/dev/null || true
+   #    done
+   # done
+   for _item in SRC_REF SRC_USR ; do
+      mkdir -p ${BUILDDIFF}/${_item} 2>/dev/null || true
+   done
+   for mypath in $PATHLIST ; do
+      _myfilelist="$(find_src_file_list ${SRC_USR} $mypath $myrecurse)"   
+      mycache="$(rdelocate -r ${_myfilelist} 2>/dev/null)"
+      for _myfile in ${_myfilelist} ; do
+         # file_usr="$(rdelocate -l ${_myfile} 2>/dev/null)"
+         # file_ref="$(rdelocate -r ${_myfile} 2>/dev/null)"
+         file_usr=${_myfile}
+         file_ref="$(echo $mycache | tr ' ' '\n' | grep /${myfile} 2>/dev/null)"
+         cp $file_usr ${BUILDDIFF}/SRC_USR/
+         if [[ x${file_ref} != x ]] ; then
+            cp $file_ref ${BUILDDIFF}/SRC_REF/
+         fi
+      # _status0="$(echo_file_status ${_myfile})"
+      # _status=${_status0% *}
+      # _myfile2=${_status0#* }
+      # for _item in ${SRC_REF} ${SRC_USR} ; do
+      #    if [[ -f ${_item}/${_myfile2} ]] ; then
+      #       cp ${_item}/${_myfile2} ${BUILDDIFF}/${_item}/${_myfile2}
+      #    fi
+      # done
+      # if [[ x${_status} == xDEL ]] ; then
+      #    rm -f ${BUILDDIFF}/SRC_USR/${_myfile2}
+      # fi
+      done
+   done
+}
+
+do_dir_diff() {
+   _mydir=$1
+   cd ${BUILDDIFF}
+   mystderr 0 + ${ECDIFF} ${ECDIFFARGS} SRC_REF/${_mydir} SRC_USR/${_mydir}
+   ${ECDIFF} ${ECDIFFARGS} SRC_REF/${_mydir} SRC_USR/${_mydir}
+   cd ${ROOT}
+}
+
+do_list_diff() {
+   for mypath in $PATHLIST ; do
+      mystderr 0 "+ build_file_list"
+      myfilelist="$(find_src_file_list ${SRC_USR} $mypath $myrecurse)"
+      mycache="$(rdelocate -r $myfilelist 2>/dev/null)"
+      for myfile in $myfilelist ; do
+         file_ref="$(echo $mycache | tr ' ' '\n' | grep /${myfile} 2>/dev/null)"
+         # if [[ x${myfile} != x ]] ; then
+            if [[ x${file_ref} != x ]] ; then
+               _isdiff=1
+               diff ${file_ref} ${myfile} >/dev/null 2>&1 && _isdiff=0
+               if [[ ${_isdiff} == 1 ]] ; then
+                  echo MOD ${myfile}
+               else
+                  echo REF ${myfile}
+               fi
+            else
+               echo NEW ${myfile}
+            fi
+         # else
+         #    echo ??? ${myfile}
+         # fi
+      done
+   done
+}
+
+if [[ $listmode == 1 ]] ; then
+   do_list_diff
+   exit 0
+fi
+
+if [[ $dirmode == 1 ]] ; then
+   build_diff_tree
+fi
+
+for mypath in $PATHLIST ; do
+   myfilelist="$(find_src_file_list ${SRC_USR} $mypath $myrecurse)"
+   if [[ x"$myfilelist" == x ]] ; then
+      myecho 1 "No file for: $mypath"
+   else
+      if [[ $dirmode == 0 ]] ; then
+         for myfile in $myfilelist ; do
+            do_file_diff $myfile
+         done
+      else
+         do_dir_diff $mypath
+      fi
+   fi
+ done
+
+if [[ $dirmode == 1 ]] ; then
+   rm -rf ${BUILDDIFF}
+fi
+
+
+exit $mystatus

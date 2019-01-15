@@ -1,0 +1,7 @@
+. ssmuse-sh \
+  -d hpco/tmp/eccc/201402/03/base \
+  -d hpco/exp/intel-2016.1.15 \
+  -p hpco/exp/jdm536/code-tools/code-tools_2.0_all \
+  -d eccc/mrd/rpn/libs/16.0-beta \
+  -d eccc/mrd/rpn/utils/16.0-beta \
+  -d main/opt/openmpi/openmpi-1.6.5/intelcomp-2016.1.156

@@ -1,0 +1,5 @@
+. s.ssmuse.dot \
+   /ssm/net/hpcs/201402/02/base  \
+   /ssm/net/hpcs/201402/02/pgi1401 \
+   /ssm/net/rpn/utils/15.2 \
+   /ssm/net/rpn/libs/15.2

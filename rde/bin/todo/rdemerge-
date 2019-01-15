@@ -1,0 +1,168 @@
+#!/bin/ksh
+. .pfbase.inc.dot
+DESC='Help Merging another dev dir into locally modified src'
+USAGE="USAGE: ${MYSELF} [-h] [-v] [--tool=MERGE_TOOL] OTHER_DIR"
+BUILDDIFF=${ROOT}/$(pfmodel_link build)/tmp-diff-$$
+
+usage_long() {
+	 toto=$(echo -e $USAGE)
+	 more <<EOF
+$DESC
+
+$toto
+
+Options:
+    -h, --help           : print this help
+    -v, --verbose        : verbose mode
+    --tool=MERGE_TOOL    : diff tool to use 
+                           DEFAULT: \${ECMERGE:kdiff3}
+                           Merge tool must accept syntax like:
+                           MERGE_TOOL  DIR_ORIGIN  DIR_OTHER  DIR_MINE
+    OTHER_DIR            : dir-tree with files to be merged
+EOF
+}
+
+mystatus=0
+ECMERGE=${ECMERGE:-kdiff3}
+PATHLIST=""
+while [[ $# -gt 0 ]] ; do
+   case $1 in
+      (-h|--help) usage_long; exit 0;;
+      (-v|--verbose) ((verbose=verbose+1));;
+      (--tool=*) ECMERGE=${1#*=};;
+        *) PATHLIST="$PATHLIST $1";;
+    esac
+	 previous=$1
+    shift
+done
+
+if [[ x"$PATHLIST" == x"" ]] ; then
+   myerror "You must provide a dev dir with locally modified code to merge"
+fi
+
+pf_exit_if_not_pftopdir
+
+is_src_local_deleted() {
+   _myfile=$1
+   _mydir=$2
+   _itempath=${_myfile%/*}
+   _itemname=${_myfile##*/}
+   _itemname2=${_itemname#.rm.}
+   if [[ -f ${ROOT}/${SRC_REF}/${_itempath}/${_itemname2}  && \
+         -f ${_mydir}/${_itempath}/.rm.${_itemname2} \
+         ]] ; then
+      echo ${_itempath}/${_itemname2}
+   fi
+   echo ""
+}
+
+build_diff_tree() {
+   myecho 1 '++ build_diff_tree'
+   _mydir=$1
+   
+   cd ${ROOT}/${SRC_USR}
+   _myfilelist1="$(find . -type f)"
+   _mydirlist1="$(find . -type d)"
+
+   cd ${_mydir}
+   _myfilelist2="$(find . -type f)"
+   _mydirlist2="$(find . -type d)"
+
+   cd ${ROOT}
+   rm -rf ${BUILDDIFF}
+   mkdir -p ${BUILDDIFF}
+
+   myecho 1 "rsync -a ${ROOT}/${SRC_USR}/ ${BUILDDIFF}/${SRC_USR}/"
+   rsync -a ${ROOT}/${SRC_USR}/ ${BUILDDIFF}/${SRC_USR}/
+
+   myecho 1 "mkdir {${SRC_REF},${SRC_USR},other}/{${_mydirlist1},${_mydirlist2}}"
+   for _item in ${SRC_REF} ${SRC_USR} other ; do
+      for _mysubdir in ${_mydirlist1} ${_mydirlist2} ; do
+         if [[ ! -d ${BUILDDIFF}/${_item}/${_mysubdir} ]] ; then
+            mkdir -p ${BUILDDIFF}/${_item}/${_mysubdir} 2>/dev/null || true
+         fi
+      done
+   done
+
+   myecho 1 "cp ${_myfilelist1}"
+   for _myfile in ${_myfilelist1} ; do
+      _delfname="$(is_src_local_deleted ${_myfile} ${ROOT}/${SRC_USR})"
+      if [[ x"$_delfname" == x"" ]] ; then
+         cp ${ROOT}/${SRC_REF}/${_myfile} ${BUILDDIFF}/${SRC_REF}/${_myfile} 2>/dev/null || true
+         #cp ${ROOT}/${SRC_USR}/${_myfile} ${BUILDDIFF}/${SRC_USR}/${_myfile}
+         cp ${ROOT}/${SRC_REF}/${_myfile} ${BUILDDIFF}/other/${_myfile} 2>/dev/null || true
+         chmod u+w ${BUILDDIFF}/${SRC_REF}/${_myfile} ${BUILDDIFF}/other/${_myfile} 2>/dev/null || true
+      else
+         cp ${ROOT}/${SRC_REF}/${_delfname} ${BUILDDIFF}/${SRC_REF}/${_delfname} 2>/dev/null || true
+         echo DELETED > ${BUILDDIFF}/${SRC_USR}/${_delfname}
+         rm -f ${BUILDDIFF}/${SRC_USR}/${_myfile}
+         cp ${ROOT}/${SRC_REF}/${_delfname} ${BUILDDIFF}/other/${_delfname} 2>/dev/null || true
+         chmod u+w ${BUILDDIFF}/${SRC_USR}/${_delfname} ${BUILDDIFF}/other/${_delfname}
+      fi
+   done
+   chmod u+w -R ${BUILDDIFF}
+
+   myecho 1 "cp ${_myfilelist2}"
+   for _myfile in ${_myfilelist2} ; do
+      _delfname="$(is_src_local_deleted ${_myfile} ${_mydir})"
+      if [[ x"$_delfname" == x"" ]] ; then
+         cp ${ROOT}/${SRC_REF}/${_myfile} ${BUILDDIFF}/${SRC_REF}/${_myfile} 2>/dev/null || true
+         cp ${_mydir}/${_myfile} ${BUILDDIFF}/other/${_myfile} 2>/dev/null || true
+         chmod u+w ${BUILDDIFF}/${SRC_REF}/${_myfile} ${BUILDDIFF}/other/${_myfile} 2>/dev/null || true
+         if [[ ! -f ${BUILDDIFF}/${SRC_USR}/${_myfile} ]] ; then
+            cp ${ROOT}/${SRC_REF}/${_myfile} ${BUILDDIFF}/${SRC_USR}/${_myfile} 2>/dev/null || true
+            chmod u+w ${BUILDDIFF}/${SRC_USR}/${_myfile} 2>/dev/null || true
+         fi
+      else
+         cp ${ROOT}/${SRC_REF}/${_delfname} ${BUILDDIFF}/${SRC_REF}/${_delfname} 2>/dev/null || true
+         echo DELETED > ${BUILDDIFF}/other/${_delfname}
+         chmod u+w ${BUILDDIFF}/${SRC_REF}/${_delfname} ${BUILDDIFF}/other/${_delfname} 2>/dev/null || true
+         if [[ ! -f ${BUILDDIFF}/${SRC_USR}/${_delfname} ]] ; then
+            cp ${ROOT}/${SRC_REF}/${_myfile} ${BUILDDIFF}/${SRC_USR}/${_delfname} 2>/dev/null || true
+            chmod u+w ${BUILDDIFF}/${SRC_USR}/${_delfname} 2>/dev/null || true
+         fi
+      fi
+   done
+   chmod u+w -R ${BUILDDIFF}
+}
+
+do_dir_diff() {
+   myecho 1 '++ do_dir_diff'
+   cd ${BUILDDIFF}
+   myecho 0 +${ECMERGE} ${SRC_REF} other ${SRC_USR}
+   ${ECMERGE} ${SRC_REF} other ${SRC_USR}
+   cd ${ROOT}
+}
+
+merge_back() {
+   myecho 1 '++ merge_back'
+   #TODO: Move ${BUILDDIFF}/SRC_USR merge resulr to ROOT/SRC_USR
+   cd ${BUILDDIFF}/${SRC_USR}
+   find . -name '*.orig' -exec rm -rf {} \;
+   _myfilelist1="$(find . -type f)"
+   for _myfile in ${_myfilelist1} ; do
+      if [[ x"$(cat ${_myfile})" == x"DELETED" ]] ; then
+         mv ${_myfile} $(echo_deleted_tag ${_myfile})
+      fi
+   done
+   set -x
+   rm -rf ${ROOT}/${SRC_USR}
+   mkdir -p ${ROOT}/${SRC_USR} 2>/dev/null || true
+   rsync -a ${BUILDDIFF}/${SRC_USR}/ ${ROOT}/${SRC_USR}/
+}
+
+for mypath in $PATHLIST ; do
+   if [[ ! -d $mypath ]] ; then
+      myerror "No such dir, skipping: $mypath"
+      continue
+   fi
+   if [[ -d $mypath/src ]] ; then
+      mypath=$mypath/src
+   fi
+   build_diff_tree $mypath
+   do_dir_diff
+   merge_back
+done
+rm -rf ${BUILDDIFF}
+
+exit $mystatus

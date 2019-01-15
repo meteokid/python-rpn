@@ -1,0 +1,105 @@
+#!/bin/ksh
+# @Object: Check Duplicate files in provided PATH
+# @Author: S.Chamberland
+# @Date:   March 2014
+. .pfbase.inc.dot
+
+DESC='Check Duplicate files in provided PATH'
+USAGE="USAGE: ${MYSELF} [-h] [-v] [--ext='.ext1 .ext2 ...'] [--src=/PATH/TO/SRC | --files=LIST_OF_FILES] [-r] PATH"
+
+usage_long() {
+	 toto=$(echo -e $USAGE)
+	 more <<EOF
+$DESC
+
+$toto
+
+Options:
+    -h, --help         : print this help
+    -v, --verbose      : verbose mode
+    -r, --recursive    : check file recursively in /PATH/TO/SRC
+    --ext=EXTLIST      : List of file extensions to check
+    --src=/PATH/TO/SRC : Location of src files
+    --files=FILES      : check the list of files
+    --use-find         : use find instead of s.locate
+    PATH               : space separated list of dir to check for duplicates
+EOF
+}
+
+PATHLIST=""
+recurse=0
+extlist=""
+srcdir=""
+srcfiles=""
+verbose=0
+usefind=0
+while [[ $# -gt 0 ]] ; do
+   case $1 in
+      (-h|--help) usage_long; exit 0;;
+      (-v|--verbose) ((verbose=verbose+1));;
+      (-r|--recursive) recurse=1;;
+      (--ext=*) extlist=${1#*=};;
+      (--src=*) srcdir=${1#*=};;
+      (--files=*) srcfiles=${1#*=};;
+      (--use-find) usefind=1;;
+      (--) shift ; break;;
+      (-*) myerror "Option Not recognized: $1";;
+        *) PATHLIST="$PATHLIST $1";;
+    esac
+	 previous=$1
+    shift
+done
+PATHLIST="$PATHLIST $@"
+
+if [[ x"$PATHLIST" == x ]] ; then
+   myerror "Must provide at least one PATH"
+fi
+if [[ x"$srcdir" == x ]] ; then
+   srcdir=.
+fi
+
+mydup() {
+   _myfile=$1
+   _myfile2=${_myfile##*/}
+   if [[ ${usefind} == 1 ]] ; then
+      _list="$(find ${EC_INCLUDE_PATH} -type f -name ${_myfile2})"
+   else
+      _list="$(s.locate --allmatches --inc=.${_myfile2##*.} ${_myfile2%.*} | sort -u)"
+   fi
+   if [[ $(echo $_list | wc -w) -gt 1 ]] ; then
+      echo $_myfile2 : $(echo $_list | wc -w) : $_list
+   fi
+}
+
+export EC_INCLUDE_PATH="${PATHLIST}"
+for mydir in $srcdir; do
+   myecho 1 "Checking files in: $mydir"
+   # if [[ $recurse == 1 ]] ; then
+      for myfile in $(find $mydir -type f) ; do
+         myecho 2 "Checking file: $myfile"
+         if [[ x$extlist == x || x"$(echo $extlist | grep \.${myfile##*.})" != x ]] ; then
+            mydup $myfile
+         fi
+      done
+   #TODO: no recursive mode
+   # else
+   #    # set -x
+   #    myfilelist="$(ls $mydir/)"
+   #    #for myfile in $(ls $mydir/) ; do
+   #    echo myfilelist=${myfilelist}
+   #    for myfile in ${myfilelist} ; do
+   #       myecho 2 "Checking file: $myfile"
+   #       if [[ -f $myfile ]] ; then
+   #          myecho 2 "Checking file: $myfile"
+   #          if [[ x$extlist == x || x"$(echo $extlist | grep \.${myfile##*.})" != x ]] ; then
+   #             mydup $myfile
+   #         fi
+   #       fi
+   #    done
+   #    set +x
+   # fi
+done
+for myfile in $srcfiles ; do
+   myecho 2 "Checking file: $myfile"
+   mydup $myfile
+done

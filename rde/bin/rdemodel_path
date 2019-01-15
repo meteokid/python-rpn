@@ -1,0 +1,56 @@
+#!/bin/ksh
+# Return the path to the model directory specified as the argument
+
+MYSELF=${0##*/}
+DESC='Return the path to the model directory specified as the argument'
+USAGE="Usage: ${MYSELF} [-h] [-l] [storage | home]"
+
+usage_long() {
+	 toto=$(echo -e $USAGE)
+	 more 1>&2 <<EOF
+$DESC
+
+$toto
+
+Options:
+    -h, --help  : print this help
+    -l, --local : for local dir, ignore SEQ_EXP_HOME
+
+EOF
+}
+
+mylocal=0
+while [[ $# -gt 0 ]] ; do
+   case $1 in
+      (-h|--help) usage_long; exit 0;;
+      (-l|--local) mylocal=1;;
+      (storage) type=$1;;
+      (home) type=$1;;
+      (*) if [[ x$1 != x ]] ; then 
+         echo "ERROR: Option Not recognized: $1" 1>&2 ; usage_long; exit 1;
+         fi;;
+    esac
+    shift
+done
+
+# Check that appropriate env variable is set and valid
+target_base=$(eval echo \$${type}_model)
+if [ ! "$target_base" ] ; then
+   printf "Error: must define environment variable ${type}_model\n" 1>&2
+   exit 1
+fi
+if [[ ! -d ${target_base} ]] ; then
+  printf "Error: directory ${target_base} (\$${type}_model) does not exist\n" 1>&2
+  exit 1
+fi
+
+# Create full path name with hash extension for return
+if [[ $mylocal == 0 && -n ${SEQ_EXP_HOME} && -d ${SEQ_EXP_HOME} ]] ; then
+   mypath=$(true_path ${SEQ_EXP_HOME})
+   myname=${SEQ_EXP_HOME##*/}
+else
+   mypath=$(true_path .)
+   myname=${mypath##*/}
+fi
+myhash=$(echo $mypath | cksum | cut -d" " -f1)
+echo ${target_base}/${myname}_${myhash}

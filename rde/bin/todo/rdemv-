@@ -1,0 +1,87 @@
+#!/bin/ksh
+# @Object: Rename a src file, Checkout library version of a source file if need be
+# @Author: S.Chamberland
+# @Date:   March 2014
+. .pfbase.inc.dot
+
+DESC='Rename a src file, Checkout library version of a source file if need be'
+USAGE="USAGE: ${MYSELF} [-h] [-v] [-l] [-f] OLDNAME NEWNAME"
+
+usage_long() {
+	 toto=$(echo -e $USAGE)
+	 more <<EOF
+$DESC
+
+$toto
+
+Options:
+    -h, --help         : print this help
+    -v, --verbose      : verbose mode
+    -l, --local        : move only locally modified file, keep ref file if any
+    -f, --force        : 
+    OLDNAME NEWNAME    : old and new name of the file
+
+EOF
+}
+
+mystatus=0
+mylocal=''
+myforce=0
+while [[ $# -gt 0 ]] ; do
+   case $1 in
+      (-h|--help) usage_long; exit 0;;
+      (-v|--verbose) ((verbose=verbose+1));;
+      (-l|--local) mylocal='-l';;
+      (-f|--force) myforce=1;;
+      (--) shift ; break;;
+      (-*) myerror "Option Not recognized: $1";;
+        *) break;;
+    esac
+	 previous=$1
+    shift
+done
+
+pf_exit_if_not_pftopdir
+
+if [[ $# -ne 2 ]] ; then
+   myerror "Need to provide old and new filename"
+fi
+
+OLDNAME=$1
+NEWNAME=$2
+
+pfco $OLDNAME 2>/dev/null || true
+OLDNAME2=$(pflocate $OLDNAME 2>/dev/null)
+if [[ x$OLDNAME2 == x ]] ; then
+   myerror "No such file: $OLDNAME"
+   return 1
+fi
+if [[ x$OLDNAME == x$NEWNAME || x${OLDNAME2#*/} == x$NEWNAME || x$OLDNAME2 == x${OLDNAME2%/*}/$NEWNAME ]] ; then
+   myerror "Cannot move to samefile: $OLDNAME $NEWNAME"
+   return 1
+fi
+
+if [[ x${OLDNAME} == x${OLDNAME%/*} && x${NEWNAME} == x${NEWNAME%/*} ]] ; then
+   if [[ -f ${OLDNAME2%/*}/$NEWNAME && x$force != x1 ]] ; then
+      mystderr 0 "WARNING: Filename already exists ${OLDNAME2%/*}/$NEWNAME"
+      mystderr 0 "To overwrite use: ${MYSELF} -f $OLDNAME $NEWNAME"
+      return 1
+   fi
+   myecho 0 "++ Moved $OLDNAME2 to ${OLDNAME2%/*}/$NEWNAME"
+   cp $OLDNAME2 ${OLDNAME2%/*}/$NEWNAME
+else
+   if [[ -f ${OLDNAME2%/*}/$NEWNAME && x$force != x1 ]] ; then
+      mystderr 0 "WARNING: Filename already exists $NEWNAME"
+      mystderr 0 "To overwrite use: ${MYSELF} -f $OLDNAME $NEWNAME"
+      return 1
+   fi
+   myecho 0 "++ Moved $OLDNAME2 to ${SRC_USR}/$NEWNAME"
+   cp $OLDNAME2 ${SRC_USR}/$NEWNAME
+fi
+pfrm  $mylocal $OLDNAME >/dev/null 2>&1
+echo "mv $OLDNAME2 ${SRC_USR}/$NEWNAME" > $(echo_deleted_tag $OLDNAME2)
+myecho 0 "++ WARNING: You need to do 'make dep' before recompiling"
+
+if [[ -f .pf.flatsrc ]] ; then
+   pflinkflat
+fi

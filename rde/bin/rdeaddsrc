@@ -1,0 +1,172 @@
+#!/bin/ksh
+#
+. .rdebase.inc.dot
+
+DESC='Add a path to SRCPATH for RPN Code Dev Env'
+USAGE="USAGE: ${MYSELF} [-v] [-f] [-R] [-k] [--reset] DIRLIST"
+
+usage_long() {
+	 toto=$(echo -e $USAGE)
+	 more <<EOF
+$DESC
+
+$toto
+
+Options:
+    -h, --help         : print this help
+    -v, --verbose      : verbose mode
+    -f, --force        : force add path even if not existing
+    -R  --recurse      : recursively include dirs
+        --reset        : replace existing SRCPATH if any
+    -k, --keep         : keep existing SRCPATHFILE as backup if any
+        --arch [ARCH]  : restrict SRCPATH to 
+                         BASE_ARCH, EC_ARCH or ORDENV_PLAT == ARCH
+                         default: no restriction
+                         default ARCH=ORDENV_PLAT
+        --topdirs      : list of top dirs, used for grouping
+
+    DIRLIST: space separated
+EOF
+}
+
+#TODO: add option to set SRCPATH_INCLUDE independent of SRCPATH
+
+RDE_BASE_ARCH=$(rdevar rde_base_arch)
+RDE_BASE_ARCH_EQUIV=$(rdevar rde_base_arch_equiv)
+myforce=0
+myreset=0
+mykeep=0
+mymaxdepth=0
+DIRLIST=''
+previous=""
+myarch=""
+mytopdirs=""
+while [[ $# -gt 0 ]] ; do
+   case $1 in
+      (-h|--help) usage_long; exit 0;;
+      (-v|--verbose) ((verbose=verbose+1));;
+      (-f|--force) myforce=1;;
+      (-R|--recurse) mymaxdepth=9;;
+      (-k|--keep) mykeep=1;;
+      (--reset) myreset=1;;
+      (--arch) myarch=${RDE_BASE_ARCH_EQUIV}; mykeep=1;;
+      (--topdirs) mytopdirs=$2 ; shift;;
+      (--) shift ; break;;
+      (-*) myerror "Option Not recognized: $1";;
+        *) 
+         case $previous in
+            (-R|--recurse) mymaxdepth=$1;;
+            (--arch) myarch=$1;;
+            *) DIRLIST="$DIRLIST $1" ;;
+         esac ;;
+    esac
+    previous=$1
+    shift
+done
+if [[ "x$*" != x ]] ; then
+   DIRLIST="$DIRLIST $*"
+fi
+if [[ "x$DIRLIST" == x ]] ; then
+   echo DIRLIST=$DIRLIST
+   myerror "You need to provide at least one dir"
+fi
+
+RESTRICT_LIST=""
+if [[ x$myarch != x ]] ; then
+   export BASE_ARCH1=${myarch%/*}
+   export BASE_ARCH_F=${BASE_ARCH1:-${RDE_BASE_ARCH_EQUIV}}
+   if [[ x$myarch == x$BASE_ARCH_F ]] ; then
+      export COMP_ARCH=${COMP_ARCH:-${EC_ARCH#*/}}
+   else
+      export COMP_ARCH1=${myarch#*/}
+      export COMP_ARCH=${COMP_ARCH1:-${COMP_ARCH:-${EC_ARCH#*/}}}
+   fi
+   export EC_ARCH_F=${BASE_ARCH_F}/${EC_ARCH}
+   export ORDENV_PLAT_F=${BASE_ARCH_F}
+   RESTRICT_LIST="${BASE_ARCH_F} ${EC_ARCH_F} ${ORDENV_PLAT_F} ${ORDENV_PLAT_F}/${COMP_ARCH}"
+fi
+SRCPATH="$(rdevar srcpath)"
+SRCPATH_R="$(rdevar srcpath_r)"
+if [[ x$myreset == x0 ]] ; then
+   mymaxdepth0="$(rdevar srcpath_maxdepth)"
+   if [[ x$mymaxdepth0 != x ]] ; then
+      if [[ x$mymaxdepth0 != x$mymaxdepth && x$mymaxdepth != x0 ]] ; then
+         myerror "Cannot change recursivity unless you use --reset"
+      fi
+      mymaxdepth=$mymaxdepth0
+   fi
+   mystderr 1 "Previous SRCPATH=$SRCPATH"
+else
+   mystderr 1 "Ignoring/Replacing Previous SRCPATH=$SRCPATH"
+   SRCPATH=""
+   SRCPATH_R=""
+fi
+
+SRCPATH1=""
+for mydir in $DIRLIST; do
+   if [[ ! -d $mydir ]] ; then
+      if [[ x$myforce == x0 ]] ; then
+         mystderr 0 "WARNING: Dir does not exist or unreadable, ignored: "
+         mystderr 0 "$mydir"
+         mystderr 0 "To force include use: ${MYSELF} -f $mydir"
+         continue
+      else
+         mystderr 1 "WARNING: Dir does not exist or unreadable, forced include: "
+         mystderr 1 "$mydir"
+      fi
+   fi
+   SRCPATH1="$SRCPATH1 $mydir"
+done
+SRCPATH_R="$SRCPATH_R $SRCPATH1"
+SRCPATH="\$SRCPATH_R"
+
+if [[ x$mymaxdepth != x0 ]] ; then
+   SRCPATH1=""
+   for mydir in $SRCPATH_R; do
+      mystderr 1 "Recursively Looking for SRCPATH into: $mydir"
+      #SRCPATH1="$SRCPATH1 $mydir"
+      if [[ x$myarch != x ]] ; then
+         SRCPATH1="$SRCPATH1 $(rdefind $mydir --type d -L --maxdepth $mymaxdepth --restricted "${RESTRICT_LIST}" --nodotdir --notempty --dirname '[a-zA-Z0-9]*' | sort -r)"
+      else
+         SRCPATH1="$SRCPATH1 $(rdefind $mydir --type d -L --maxdepth $mymaxdepth --nodotdir --notempty --dirname '[a-zA-Z0-9]*' | sort -r)"
+      fi
+   done
+   SRCPATH="$SRCPATH1"
+   mystderr 1 "Setting SRCPATH_INCLUDE"
+   SRCPATH_INCLUDE=""
+   # for mydir in $SRCPATH1 ; do
+   #    mystderr 1 "Checking INCPATH: $mydir"
+   #    if [[ x"$(rdefind $mydir --type f -L --maxdepth 0 --name '[a-zA-Z0-9]*')" != x"" ]] ; then
+   #       SRCPATH_INCLUDE="${SRCPATH_INCLUDE} ${mydir}"
+   #    fi
+   # done
+   SRCPATH_INCLUDE="$(rdefind --type d -L --maxdepth 0 --notempty $SRCPATH1)"
+   #TODO: remove empty inc dir
+fi
+
+
+if [[ x$mykeep == x0 ]] ; then
+   rm -f $SRC_PATH_FILE
+fi
+mystderr 1 "Updating SRC_PATH_FILE with"
+mystderr 1 "SRCPATH=\"$SRCPATH\""
+mystderr 1 "SRCPATH_INCLUDE=\"$SRCPATH_INCLUDE\""
+if [[ x$myarch != x ]] ; then
+#TODO: update to add all equiv arch also
+cat >> $SRC_PATH_FILE <<EOF
+SRCPATH_ARCH_LIST="\$SRCPATH_ARCH_LIST $myarch"
+if [[ x\${RDE_BASE_ARCH:-NIL} == x$myarch || x\${RDE_BASE_ARCH_EQUIV:-NIL} == x$myarch || x\${RDE_ARCH:-NIL} == x$myarch || x\$BASE_ARCH == x$myarch || x\$EC_ARCH == x$myarch || x\$COMP_ARCH == x$myarch || x\$ORDENV_PLAT == x$myarch || x\$ORDENV_PLAT/\$COMP_ARCH == x$myarch ]] ; then
+EOF
+fi
+cat >> $SRC_PATH_FILE <<EOF
+SRCPATH_MAXDEPTH=$mymaxdepth
+SRCPATH_R="$SRCPATH_R"
+SRCPATH="$SRCPATH"
+SRCPATH_TOPDIRS="${mytopdirs}"
+SRCPATH_INCLUDE="${SRCPATH_INCLUDE}"
+EOF
+if [[ x$myarch != x ]] ; then
+cat >> $SRC_PATH_FILE <<EOF
+fi
+EOF
+fi
