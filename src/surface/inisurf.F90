@@ -401,8 +401,9 @@ subroutine inisurf4(kount, ni, nk, trnch)
 
       !  Initialize the parameters that depend on vegetation
 
-      if (any('vegfen' == phyinread_list_s(1:phyinread_n))) then
-         call inicover2(0, ni, trnch)
+      if (any('vegfen' == phyinread_list_s(1:phyinread_n)) .or. &
+           (kntveg > 0 .and. mod(kount,kntveg) == 0)) then
+          call inicover2(kount, ni, trnch)
       endif
 
       ! Sand and clay fractions of the soil are taken as simple averages 

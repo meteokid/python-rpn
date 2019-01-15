@@ -17,6 +17,7 @@
 subroutine sfcexch_options2()
    use sfc_options
    use sfcbus_mod
+   use timestr_mod, only: timestr2step
    implicit none
 #include <arch_specific.hf>
    !@Object initialization of the surface parameters at the beginning
@@ -76,6 +77,15 @@ subroutine sfcexch_options2()
       call msg(MSG_ERROR,'(sfc_exch_options) probleme in wb_put/get')
       call qqexit(1)
    endif
+
+   if (kntveg_S /= '') then
+      ier = timestr2step(kntveg, kntveg_S, dble(delt))
+      if (.not.RMN_IS_OK(ier)) then
+         call msg(MSG_ERROR,'(sfc_exch_options) Problem converting kntveg_S='//trim(kntveg_S))
+         call qqexit(1)
+      endif
+   endif
+
    !----------------------------------------------------------------------
    return
 end subroutine sfcexch_options2
