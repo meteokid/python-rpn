@@ -1,0 +1,57 @@
+#if defined(DOC)
+
+!
+!**comdeck adv.cdk
+!________________________________________________________________________
+!                                                                        |
+! VARIABLES FOR ADVECTION                                                |
+!________________________________________________________________________|
+!                |                                                       |
+! NAME           | DESCRIPTION                                           |
+!----------------|-------------------------------------------------------|
+!
+!________________________________________________________________________|
+! MASS-CONSERVATION for Chemical Tracers                                 |
+!________________________________________________________________________|
+! adv_verbose       | Activate conservation diagnostics if /=0           |
+! adv_BC_min_max_L  |switch:.T.:MONO(CLIPPING) after Bermejo-Conde Def.=T|
+! adv_ILMC_min_max_L|switch:.T.:MONO(CLIPPING) after ILMC          Def.=T|
+! adv_ILMC_sweep_max|Number of neighborhood zones in ILMC          Def.=2|
+! adv_scaling       |Scaling for mass of tracer: 1=CO2(Def.),2=O3,0=None |
+! adv_SLICE_rebuild |Type of rebuild in SLICE Def.=2 (CW)                |
+!                   |SLICE_rebuild=1 (LP)                                |
+!                   |SLICE_rebuild=2 (CW)                                |
+! adv_pil_sub_s     | South boundary in GY for an embedded LAM           |
+! adv_pil_sub_n     | North boundary in GY for an embedded LAM           |
+! adv_pil_sub_w     |  West boundary in GY for an embedded LAM           |
+! adv_pil_sub_e     |  East boundary in GY for an embedded LAM           |
+!________________________________________________________________________|
+!
+#endif
+
+
+      logical :: adv_rhst_mono_L  , adv_catmullrom_L,&
+                 adv_BC_min_max_L, adv_ILMC_min_max_L
+      integer :: adv_ILMC_sweep_max , &
+                 adv_SLICE_rebuild, adv_verbose
+      integer :: adv_pil_sub_s,adv_pil_sub_n,adv_pil_sub_w,adv_pil_sub_e,adv_scaling
+
+      common /adv_nml_l/ adv_rhst_mono_L  , adv_catmullrom_L,&
+                         adv_BC_min_max_L, adv_ILMC_min_max_L
+
+      common /adv_nml_i/ adv_ILMC_sweep_max, &
+                         adv_SLICE_rebuild, adv_verbose, &
+                         adv_pil_sub_s, adv_pil_sub_n, adv_pil_sub_w, adv_pil_sub_e, adv_scaling
+
+      namelist /adv_cfgs/ adv_rhst_mono_L 
+      namelist /adv_cfgs/ adv_catmullrom_L
+      namelist /adv_cfgs/ adv_BC_min_max_L
+      namelist /adv_cfgs/ adv_ILMC_sweep_max
+      namelist /adv_cfgs/ adv_ILMC_min_max_L
+      namelist /adv_cfgs/ adv_SLICE_rebuild
+      namelist /adv_cfgs/ adv_verbose
+      namelist /adv_cfgs/ adv_pil_sub_s
+      namelist /adv_cfgs/ adv_pil_sub_n
+      namelist /adv_cfgs/ adv_pil_sub_w
+      namelist /adv_cfgs/ adv_pil_sub_e
+      namelist /adv_cfgs/ adv_scaling

@@ -1,0 +1,3 @@
+
+      real,save,pointer,dimension(:,:,:) :: adw_mask_o =>null(), adw_mask_i =>null()
+

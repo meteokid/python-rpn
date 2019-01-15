@@ -1,0 +1,3 @@
+      integer, dimension(:,:), pointer :: outd_sorties,outp_sorties, &
+                                          outc_sorties
+      COMMON /Out_pt/ outd_sorties,outp_sorties,outc_sorties

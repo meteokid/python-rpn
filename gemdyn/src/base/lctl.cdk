@@ -1,0 +1,31 @@
+
+#if defined (DOC)
+!
+!revision
+! v2_20 - Desgagne M.       - add debug logical Lctl_debug_L
+!
+!**comdeck lctl.cdk
+!
+!______________________________________________________________________
+!                                                                      |
+!  TIME LOOP CONTROL VARIABLES                                         |
+!______________________________________________________________________|
+!                    |                                                 |
+! NAME               | DESCRIPTION                                     |
+!--------------------|-------------------------------------------------|
+! Lctl_step          | current time step of the integration            |
+! Lctl_debug_L       | true to print more during integraton            |
+! Lctl_rxstat_S      | 'GLB_8' for debug blocstat;'LCL_4' for OPS blocs|
+! Lctl_cktimeleft_L  | true to check if job will be pre-empted         |
+!                    | false for default as true could slow the job    |
+!----------------------------------------------------------------------
+!
+!
+#endif
+      character*6 Lctl_rxstat_S
+      logical Lctl_debug_L,Lctl_cktimeleft_L
+      integer Lctl_step
+!
+      common / Lctl   / Lctl_step
+      common / Lctl_l / Lctl_debug_L,Lctl_cktimeleft_L
+      common / Lctl_s / Lctl_rxstat_S

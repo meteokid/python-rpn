@@ -1,0 +1,20 @@
+
+#if defined (DOC)
+!
+!**comdeck dimout.cdk
+!
+!______________________________________________________________________
+!                                                                      |
+!  LIMITS FOR OUTPUT REQUESTS                                          |
+!______________________________________________________________________|
+!                    |                                                 |
+! NAME               | DESCRIPTION                                     |
+!--------------------|-------------------------------------------------|
+! MAXSET             | maximum number of sets that can be defined      |
+! MAXELEM            | maximum number of elements per set              |
+! MAXGRID            | maximum number of grid output definitions       |
+!----------------------------------------------------------------------
+!
+#endif
+      integer MAXSET,MAXELEM,MAXGRID
+      PARAMETER (MAXSET = 32, MAXELEM = 200, MAXGRID=4)

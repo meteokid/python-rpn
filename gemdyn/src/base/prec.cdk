@@ -1,0 +1,41 @@
+
+#if defined (DOC)
+!
+!**comdeck prec.cdk
+!
+!revision
+! v3_23 - Qaddouri A.          - initial version
+!
+!______________________________________________________________________
+!                                                                      |
+!PROJECTION OPERATORS and VARIABLES ASSOCIATED WITH THE PRECONDITIONING|
+!______________________________________________________________________|
+!                    |                                                 |
+! NAME               | DESCRIPTION                                     |
+!--------------------|-------------------------------------------------|
+! Prec_xevec_8       | Local horizontal eigenvectors                   |
+! Prec_xeval_8       | Local horizontal eigenvalues                    |
+!--------------------|-------------------------------------------------|
+! Prec_ai_8          |  sub-   diagonal of LU factorization            |
+! Prec_bi_8          |         diagonal of LU factorization            |
+! Prec_ci_8          |  super- diagonal of LU factorization            |
+!----------------------------------------------------------------------
+! Prec_ncol          |                                                 |
+! Prec_mycol         |                                                 |
+!----------------------------------------------------------------------|
+!
+!
+#endif
+!
+      integer Prec_ncol,Prec_mycol
+      common / prec_i / Prec_ncol,Prec_mycol
+!
+      real*8, dimension(:), pointer :: Prec_xevec_8,Prec_xeval_8
+      real*8, dimension(:), pointer :: Prec_ai_8,Prec_bi_8,Prec_ci_8
+      common / prec_p / Prec_xevec_8,Prec_xeval_8
+      common / prec_p / Prec_ai_8,Prec_bi_8,Prec_ci_8
+
+
+
+
+		  

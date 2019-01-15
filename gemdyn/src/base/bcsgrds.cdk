@@ -1,0 +1,8 @@
+
+      integer bcs_nia,bcs_nja,bcs_nka,bcs_ntra
+      logical ana_zd_L,ana_w_L,ana_q_L,ana_vt_L,ana_horzint_L
+      Real*8,dimension(:),pointer :: ana_am_8,ana_bm_8,ana_at_8,ana_bt_8
+      
+      common /bcshdg_1/ bcs_nia,bcs_nja,bcs_nka,bcs_ntra
+      common /bcshdg_2/ ana_am_8,ana_bm_8,ana_at_8,ana_bt_8
+      common /bcshdg_3/ ana_zd_L,ana_w_L,ana_q_L,ana_vt_L,ana_horzint_L

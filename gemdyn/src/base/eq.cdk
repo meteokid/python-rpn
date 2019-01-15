@@ -1,0 +1,14 @@
+      integer eq_nlev
+
+      real P_lmvd_weigh_high_lat, P_lmvd_weigh_low_lat
+      real P_lmvd_high_lat      , P_lmvd_low_lat
+      real, dimension(1000) :: Eq_sponge
+      real, dimension(:,:), pointer :: eponmod
+      real, dimension(:  ), pointer :: coef,cm,cp
+
+      common / Eq_i / eq_nlev
+      common / Eq_r / P_lmvd_weigh_high_lat, P_lmvd_weigh_low_lat, &
+                      P_lmvd_high_lat      , P_lmvd_low_lat      , &
+                      Eq_sponge, eponmod, coef, cm, cp
+
+

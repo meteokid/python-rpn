@@ -1,0 +1,2 @@
+      real Hzd_div_damp
+      common /div_damp/ Hzd_div_damp

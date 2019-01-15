@@ -1,0 +1,115 @@
+#if !defined(__ADX_INTERP__)
+#define __ADX_INTERP__
+
+!**comdeck adx_interp.cdk
+
+!----------------------------------------------------------------------|
+! LOCALISATION PARAMETERS                                              |
+!----------------------------------------------------------------------|
+! adx_ovdx_8   | \                                                     |
+! adx_ovdy_8   |   inverse of shortest grid distance in x,y,z          |
+! adx_ovdz_8   | /                                                     |
+! adx_x00_8    | \                                                     |
+! adx_y00_8    | / reference coordinate for localisation in x,y,z      |
+! adx_lcx      | \                                                     |
+! adx_lcy      |   fine grid to variable grid equivalence used for     |
+! adx_lcz      | / fast localisation                                   |
+!----------------------------------------------------------------------|
+! PRECOMPUTED INTERPOLATION PARAMETERS                                 |
+!----------------------------------------------------------------------|
+! adx_dlx_8    |
+! adx_dly_8    |
+! adx_dlz_8    |
+! adx_bsx_8    |
+! adx_bsy_8    |
+! adx_bsz_8    |
+! adx_dix_8    |
+! adx_diy_8    |
+! adx_diz_8    |
+! adx_xbc_8    | Coefficients for linear interpolation in x,y and z
+! adx_ybc_8    |
+! adx_zbc_8    |
+! adx_xabcd_8  | Coefficients for Lagrange 3D in x,y and z
+! adx_xbacd_8  |
+! adx_xcabd_8  |
+! adx_xdabc_8  |
+! adx_yabcd_8  |
+! adx_ybacd_8  |
+! adx_ycabd_8  |
+! adx_ydabc_8  |
+! adx_zabcd_8  |
+! adx_zbacd_8  |
+! adx_zcabd_8  |
+! adx_zdabc_8  |
+!----------------------------------------------------------------------|
+
+      type :: ADX_TYPE_V_R8
+         sequence
+         real*8, dimension(:), pointer :: t,m
+      end type ADX_TYPE_V_R8
+
+      type :: ADX_TYPE_V_I
+         sequence
+         integer, dimension(:), pointer :: t,m
+      end type ADX_TYPE_V_I
+
+      type :: ADX_TYPE_SV_R8
+         sequence
+         real*8, dimension(:), pointer :: t,m,s
+      end type ADX_TYPE_SV_R8
+
+      type :: ADX_TYPE_SV_I
+         sequence
+         integer, dimension(:), pointer :: t,m,s
+      end type ADX_TYPE_SV_I
+
+      integer :: pnz
+      integer,dimension(:),pointer :: adx_lcx,adx_lcy
+
+      real*8 :: adx_ovdx_8, adx_ovdy_8, adx_ovdz_8
+      real*8 :: adx_x00_8,  adx_y00_8
+
+      real*8, dimension(:),pointer :: adx_dlx_8, adx_bsx_8, adx_dix_8
+      real*8, dimension(:),pointer :: adx_dly_8, adx_bsy_8, adx_diy_8
+      real*8, dimension(:),pointer :: adx_diz_8
+      real*8, dimension(:),pointer :: adx_xbc_8, adx_ybc_8
+      real*8, dimension(:),pointer :: adx_xabcd_8,adx_xbacd_8,adx_xcabd_8,adx_xdabc_8
+      real*8, dimension(:),pointer :: adx_yabcd_8,adx_ybacd_8,adx_ycabd_8,adx_ydabc_8
+
+      type(ADX_TYPE_V_R8) :: adx_dlz_8
+      type(ADX_TYPE_SV_R8) :: adx_zbc_8
+      type(ADX_TYPE_SV_R8) :: adx_zabcd_8, adx_zbacd_8, adx_zcabd_8, adx_zdabc_8
+
+      type(ADX_TYPE_SV_R8) :: adx_bsz_8
+      type(ADX_TYPE_SV_I)  :: adx_lcz
+
+      common /adx2_interp_ip/ adx_lcx,adx_lcy
+
+      common /adx_interp_r8/ adx_ovdx_8, adx_ovdy_8, adx_ovdz_8
+      common /adx_interp_r8/ adx_x00_8,  adx_y00_8
+
+      common /adx_interp_r8p/ adx_dlx_8, adx_bsx_8, adx_dix_8
+      common /adx_interp_r8p/ adx_dly_8, adx_bsy_8, adx_diy_8
+      common /adx_interp_r8p/ adx_diz_8
+      common /adx_interp_r8p/ adx_xbc_8, adx_ybc_8
+      common /adx_interp_r8p/ adx_xabcd_8,adx_xbacd_8,adx_xcabd_8,adx_xdabc_8
+      common /adx_interp_r8p/ adx_yabcd_8,adx_ybacd_8,adx_ycabd_8,adx_ydabc_8
+
+      common /adx_interp_vr8/ adx_dlz_8
+      common /adx_interp_vr8/ adx_zbc_8
+      common /adx_interp_vr8/ adx_zabcd_8, adx_zbacd_8, adx_zcabd_8,adx_zdabc_8
+
+      common /adx_interp_svr8/ adx_bsz_8
+      common /adx_interp_svi/  adx_lcz
+
+      real, dimension(:),pointer :: adx_capx1,adx_capy1,adx_capz1
+      real, dimension(:),pointer :: adx_xdd1,adx_ydd1,adx_xgg1,adx_ygg1
+      real, dimension(:),pointer :: adx_n1,adx_c1
+      real, dimension(:),pointer :: adx_capx2,adx_capy2,adx_capz2
+
+      common /adx2_r4p/ adx_capx1,adx_capy1,adx_capz1
+      common /adx2_r4p/ adx_xdd1,adx_ydd1,adx_xgg1,adx_ygg1
+      common /adx2_r4p/ adx_n1,adx_c1
+      common /adx2_r4p/ adx_capx2,adx_capy2,adx_capz2
+
+#endif

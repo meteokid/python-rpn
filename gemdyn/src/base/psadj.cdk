@@ -1,0 +1,2 @@
+      real*8 PSADJ_g_avg_ps_initial_8,PSADJ_scale_8
+      common /psdaj/ PSADJ_g_avg_ps_initial_8,PSADJ_scale_8

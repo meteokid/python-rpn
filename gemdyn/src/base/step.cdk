@@ -1,0 +1,55 @@
+!
+!revisions
+! v3_02 - Winger K.         - add variable Step_cleanup
+!
+!**comdeck step.cdk
+!
+!______________________________________________________________________
+!                                                                      |
+!  VARIABLES ASSOCIATED WITH FFT                                       |
+!______________________________________________________________________|
+!                    |                                                 |
+! NAME               | DESCRIPTION                                     |
+!--------------------|-------------------------------------------------|
+! Step_runstrt_S     | Starting date for model run  (yyyymmdd.hhmmss)  |
+! Step_total         | Total number of timesteps for model run         |
+! Fcst_rstrt_S       | save a restart file + stop every Fcst_rstrt_S   |
+! Fcst_bkup_S        | save a restart file + continue every Fcst_bkup_S|
+! Fcst_bkup_additional_S | save a restart file + continue at that time |
+! Step_leapyears_L   | account for leap years                          |
+! Step_gstat         | Number of timesteps for a global stat (glbstat) |
+! Step_dt_8          | Length of model timestep (sec)                  !
+!----------------------------------------------------------------------
+!
+      character*16 Step_runstrt_S  , Fcst_start_S  , &
+         Fcst_end_S  , Fcst_nesdt_S, Fcst_gstat_S  , &
+         Fcst_rstrt_S, Fcst_spinphy_S              , &
+         Fcst_bkup_S , Fcst_bkup_additional_S
+
+      logical Step_leapyears_L
+
+      integer Step_total, Step_gstat, Step_delay, Step_spinphy, &
+              Step_kount, Step_alarm, Step_CMCdate0           , &
+              Step_initial, Step_bkup_additional
+
+      real*8  Step_dt, Step_nesdt, Step_maxwall
+
+      common / Step_S / Step_runstrt_S    , Fcst_start_S, &
+              Fcst_end_S  , Fcst_nesdt_S  , Fcst_gstat_S, &
+              Fcst_rstrt_S, Fcst_spinphy_S              , &
+              Fcst_bkup_S , Fcst_bkup_additional_S
+
+      common / Step_L / Step_leapyears_L
+
+      common / Step_I / Step_total   , Step_gstat, Step_delay, &
+                        Step_spinphy , Step_kount            , &
+                        Step_alarm   , Step_CMCdate0         , &
+                        Step_initial , Step_bkup_additional
+
+      common / Step_R / Step_dt, Step_nesdt, Step_maxwall
+
+      namelist /step/ Step_runstrt_S , Fcst_start_S                ,&
+                      Fcst_end_S     , Fcst_nesdt_S, Fcst_gstat_S  ,&
+                      Fcst_rstrt_S   , Fcst_bkup_S , Fcst_spinphy_S,&
+                      Fcst_bkup_additional_S, Step_alarm           ,&
+                      Step_leapyears_L, Step_dt

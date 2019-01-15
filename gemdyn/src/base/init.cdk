@@ -1,0 +1,37 @@
+
+#if defined (DOC)
+!
+!**comdeck init.cdk
+!
+!______________________________________________________________________
+!                                                                      |
+! INITIALIZATION AND DIGITAL FILTER PARAMETERS (set_init)              |
+!______________________________________________________________________|
+!                    |                                                 |
+! NAME               | DESCRIPTION                                     |
+!--------------------|-------------------------------------------------|
+! Init_balgm_L       | .true. to perform initialization                |
+! Init_dfwin_L       | .true. to apply windowing                       |
+! Init_dftr_L        | .true. passive tracers digitally filtered       |
+!                    | .false.  passive tracers set to result obtained |
+!                    |          at mid-period during initialization    |
+!                    |          period (no filtering)                  |
+! Init_dfnp          | number of points for digital filter             |
+!                    | (equals the number of timesteps +1)             |
+! Init_dfpl_8        | period limit of digital filter (secs.)          |
+! Init_dfco          | vector of digital filter coefficients           |
+!----------------------------------------------------------------------
+!
+#endif
+!
+      character*16 Init_dflength_S, Init_dfpl_S
+      logical  Init_balgm_L, Init_dfwin_L, Init_dftr_L, Init_mode_L
+      integer  Init_dfnp, Init_halfspan
+      real, dimension(:), pointer :: Init_dfco
+      real*8   Init_dfpl_8
+!
+      common / inits / Init_dflength_S, Init_dfpl_S
+      common / initl / Init_balgm_L, Init_dfwin_L, Init_dftr_L, Init_mode_L
+      common / initn / Init_dfnp, Init_halfspan
+      common / initr / Init_dfpl_8
+      common / initp / Init_dfco

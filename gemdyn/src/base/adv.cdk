@@ -1,0 +1,2 @@
+      character*12 Adv_component_S
+      common /adv_comp_S/ Adv_component_S

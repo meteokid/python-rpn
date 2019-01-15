@@ -1,0 +1,29 @@
+      real, pointer, dimension (:,:,:) ::  pxt => null()
+      real, pointer, dimension (:,:,:) ::  pyt => null()
+      real, pointer, dimension (:,:,:) ::  pzt => null()
+
+      real, pointer, dimension (:,:,:) ::  pxmu => null()
+      real, pointer, dimension (:,:,:) ::  pymu => null()
+      real, pointer, dimension (:,:,:) ::  pzmu => null()
+      
+      real, pointer, dimension (:,:,:) ::  pxmv => null()
+      real, pointer, dimension (:,:,:) ::  pymv => null()
+      real, pointer, dimension (:,:,:) ::  pzmv => null()
+      
+      real, pointer, dimension (:,:,:) ::  pxmu_s => null()
+      real, pointer, dimension (:,:,:) ::  pymu_s => null()
+      real, pointer, dimension (:,:,:) ::  pzmu_s => null()
+
+      real, pointer, dimension (:,:,:) ::  pxmv_s => null()
+      real, pointer, dimension (:,:,:) ::  pymv_s => null()
+      real, pointer, dimension (:,:,:) ::  pzmv_s => null()
+
+      real, pointer, dimension (:,:)    :: pxtn => null()
+      real, pointer, dimension (:,:)    :: pytn => null()
+      real, pointer, dimension (:,:)    :: pztn => null()
+
+     common /adv_position_t/ pxt,pyt,pzt,pxtn,pytn,pztn
+     common /adv_position_mu/ pxmu,pymu,pzmu
+     common /adv_position_mv/ pxmv,pymv,pzmv
+     common /adv_position_mu_s/ pxmu_s,pymu_s,pzmu_s
+     common /adv_position_mv_s/ pxmv_s,pymv_s,pzmv_s

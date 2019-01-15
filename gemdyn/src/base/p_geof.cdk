@@ -1,0 +1,36 @@
+
+#if defined (DOC)
+!
+!revision
+! v2_20 - Pellerin P.            - adaptation to physics 3.6.6
+! v3_11 - Gravel S.              - add new field for varying topo
+! v4_03 - Plante A.              - time level on topo for varying topo.
+!
+!**comdeck p_geof.cdk
+!
+!______________________________________________________________________
+!                                                                      |
+!  GMM VARIABLES ASSOCIATED WITH GEOPHYSICAL FIELDS (set_geof)         |
+!______________________________________________________________________|
+!                    |                                                 |
+! NAME               | DESCRIPTION                                     |
+!--------------------|-------------------------------------------------|
+! fis0               | Phi srf at current timestep                     |
+! topo_low           | Low resolution analysis orography before growth |
+! topo_high          | High resolution target orography after growth   |
+!-----------------------------------------------------------------------
+!
+#endif
+!
+      real, pointer, dimension (:,:) :: fis0      => null()
+      real, pointer, dimension (:,:) :: topo_low  => null()
+      real, pointer, dimension (:,:) :: topo_high => null()
+ 
+#if !defined(GMM_IS_OK)
+#define GMM_IS_OK(errcode) (errcode >= 0)
+      integer, parameter :: GMM_MAXNAMELENGTH = 32
+#endif
+
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_fis0_s, gmmk_topo_low_s, gmmk_topo_high_s
+
+      common /geof_n_gmm/ gmmk_fis0_s, gmmk_topo_low_s, gmmk_topo_high_s

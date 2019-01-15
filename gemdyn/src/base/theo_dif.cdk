@@ -1,0 +1,3 @@
+      real    hdif_lnr
+      integer hdif_pwr
+      common/theo_dif/hdif_lnr,hdif_pwr

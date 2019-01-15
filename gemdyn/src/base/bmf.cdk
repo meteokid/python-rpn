@@ -1,0 +1,3 @@
+
+      integer Bmf_time1, Bmf_time2, Bmf_dtyp, Bmf_hh, Bmf_mm,Bmf_ss
+      common /bmf/ Bmf_time1, Bmf_time2, Bmf_dtyp, Bmf_hh, Bmf_mm,Bmf_ss
