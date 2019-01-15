@@ -9,7 +9,7 @@ endif
 #    $(error Not found: $(modelutils)/VERSION)
 # endif
 # MODELUTILS_VERSION0  = $(shell cat $(modelutils)/VERSION | sed 's|x/||')
-MODELUTILS_VERSION0  = x/1.5.rc2
+MODELUTILS_VERSION0  = x/1.5.rc3
 MODELUTILS_VERSION   = $(notdir $(MODELUTILS_VERSION0))
 MODELUTILS_VERSION_X = $(dir $(MODELUTILS_VERSION0))
 

@@ -698,10 +698,13 @@ contains
       character(len=*), intent(in) :: F_name_S
       integer :: F_id
 
+      integer, parameter :: NWORD=8
+      integer, parameter :: NCHARPERWORD=4
+      integer, parameter :: NCHAR=NWORD*NCHARPERWORD
       integer, external :: f_crc32
-      character(len=32) :: name_S
+      character(len=NCHAR) :: name_S
       integer :: crc, lbuf, n, i0, i1
-      integer :: buf(8)
+      integer :: buf(NCHAR)  !#deliberatly have bigger buffer to prevent crc32 outof bound
       !---------------------------------------------------------------------
       if (len_trim(F_name_S) == 0) then
          F_id = 0
@@ -710,9 +713,10 @@ contains
       crc = 0
       lbuf = size(buf)
       name_S = F_name_S
-      do n=1, lbuf
-         i0 = 1+(n-1)*4
-         i1 = n*4
+      buf = 0
+      do n=1, NWORD
+         i0 = 1+(n-1)*NCHARPERWORD
+         i1 = n*NCHARPERWORD
          buf(n) = transfer(name_S(i0:i1), buf(n))
       enddo
       F_id = abs(f_crc32(crc, buf, lbuf))
