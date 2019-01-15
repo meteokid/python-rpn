@@ -1,8 +1,9 @@
 
-gem=git@gitlab.science.gc.ca:MIG/gem.git/gem_5.0.rc2
-gemdyn=git@gitlab.science.gc.ca:MIG/gemdyn.git/gemdyn_5.0.rc2
-rpnphy=git@gitlab.science.gc.ca:MIG/rpnphy.git/rpnphy_6.0.rc2
-modelutils=git@gitlab.science.gc.ca:MIG/modelutils.git/modelutils_1.5.rc2
-modelscripts=git@gitlab.science.gc.ca:MIG/modelscripts.git/modelscripts_5.0.rc2
+gem=git@gitlab.science.gc.ca:MIG/gem.git/gem_5.0.rc3
+gemdyn=git@gitlab.science.gc.ca:MIG/gemdyn.git/gemdyn_5.0.rc3
+rpnphy=git@gitlab.science.gc.ca:MIG/rpnphy.git/rpnphy_6.0.rc3
+modelutils=git@gitlab.science.gc.ca:MIG/modelutils.git/modelutils_1.5.rc3
+modelscripts=git@gitlab.science.gc.ca:MIG/modelscripts.git/modelscripts_5.0.rc3
 rde=git@gitlab.science.gc.ca:MIG/rde.git/rde_1.1.3
-rpnpy=git@gitlab.science.gc.ca:MIG/python-rpn.git/rpnpy_2.0.5
+rpnpy=git@gitlab.science.gc.ca:MIG/python-rpn.git/rpnpy_2.0.6
+scm=git@gitlab.science.gc.ca:MIG/scm.git/scm_2.0.rc3
