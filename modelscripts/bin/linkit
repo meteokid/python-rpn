@@ -1,0 +1,75 @@
+#!/bin/ksh
+# 
+set -e
+
+if [[ -r ${gem}/share/Makefile.user.mk ]] ; then
+   if [[ "x$1" == "x-f" && -r Makefile.user.mk ]] ; then
+      echo "Saving a copy of previous Makefile.user.mk to Makefile.user.mk-$$"
+      mv Makefile.user.mk Makefile.user.mk-$$
+   fi
+   if [[ ! -r Makefile.user.mk ]] ; then
+      echo "Copying release Makefile.user.mk"
+      cp ${gem}/share/Makefile.user.mk .
+   fi
+fi
+
+rdemklink $1
+
+#storage=$(model_path storage)
+storage=$(rdevar storage)
+BUILDRUN=$(rdevar build/run)
+BUILDBIN=$(rdevar build/bin)
+
+logfile=$(pwd)/.linkit.log
+echo ${TRUE_HOST:-$(hostname)}:$storage >> $logfile
+
+
+for item in PREP RUNMOD ; do
+   #/bin/rm -rf ${BUILDRUN}/$item
+   mkdir -p ${BUILDRUN}/$item 2> /dev/null
+   /bin/rm -f $item
+   ln -s ${BUILDRUN}/$item $item
+done
+
+# if [[ x$1 == x-f ]] ; then
+#    rm -rf BINMOD
+# fi
+mkdir BINMOD 2> /dev/null || true
+if [[ x$1 == x-f ]] ; then
+   rm -rf BINMOD/$BASE_ARCH
+fi
+if [[ ! -e $BASE_ARCH ]] ; then
+   ln -sf ${TRUE_HOST:-$(hostname)}:$(pwd)/${BUILDBIN} BINMOD/$BASE_ARCH 2> /dev/null || true
+fi
+
+for item in maingemdm; do
+   absname=${item}_${BASE_ARCH}.Abs
+   if [[ x$1 == x-f ]] ; then
+      /bin/rm -f ${BUILDBIN}/${absname}
+   fi
+   touch ${BUILDBIN}/${absname}
+   if [[ ! -s ${BUILDBIN}/${absname} ]] ; then
+      if [[ -n "${GEM_DEV_UPDATES}" ]] ; then
+         cat > ${BUILDBIN}/${absname} <<EOF
+#!/usr/bin/env ksh
+message="Rebuild GEM executable with 'make gemdm' to include updates ${GEM_DEV_UPDATES}"
+if [[ -n "\${MP_CHILD}" && \${MP_CHILD} -eq 0 ]] ; then
+  printf "\nERROR: \${message}\n\n" 1>&2
+  if [[ -n "\${SEQ_NODE}" ]] ; then
+    nodelogger -n \${SEQ_NODE} -s abort -d \${SEQ_DATE} \${SEQ_LOOP_ARGS} -m \"\${message}\"
+  fi
+fi
+exit 1
+EOF
+         echo "Creating update stub. Run 'make gemdm' to update build for execution."
+         chmod a+x ${BUILDBIN}/${absname}
+      else
+         absname2=${item}_REL_${BASE_ARCH}.Abs
+         abspath2=$(which $absname2)
+         echo "Copying release binary: $abspath2"
+         cp $abspath2 ${BUILDBIN}/${absname}
+      fi
+   fi
+   chmod 755 ${BUILDBIN}/${absname}
+done
+

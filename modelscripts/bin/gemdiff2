@@ -1,0 +1,348 @@
+#!/bin/ksh
+
+myself=${0##*/}
+DESC='Show change log or file diff between GEM versions'
+USAGE="USAGE: ${myself##*/} [-h] [-v] \\ \n
+       \t [--log | --filelist | --filenames | --version | --diff [DIFF_TOOL] | --dirdiff [DIFF_TOOL] ] \\ \n 
+       \t [--all] \\ \n
+       \t [--dyn] \\ \n
+       \t [--phy] \\ \n
+       \t [--utils] \\ \n
+       \t [--scripts]  \\ \n
+       \t [--local]  \\ \n
+       \t VERSION [VERSION2]"
+GITDEPOTBASE=~armnenv/GitDepots
+BNDLBASE=~armnenv/SsmBundles
+
+#---- Functions ------------------------------------------------------
+#====
+usage_long() {
+	 toto=$(echo -e $USAGE)
+	 more <<EOF
+$DESC
+
+$toto
+
+Options:
+    -h, --help : print this help
+
+    --diff     : [default] iteratively show the diff of all different files
+                 cannot be mixed with other modes 
+                 (--dirdiff, -- filelist, --log, --version)
+    --dirdiff  : show the directory diff
+                 cannot be mixed with other modes 
+                 (--diff, -- filelist, --log, --version)
+    --filelist : list the files that were changed and/or renamed
+    --filenames: list the files that were changed and/or renamed (short form)
+    --log      : list the log messages of all commits between the 2 versions
+    --version  : print version numbers
+    --omd_exp  : extract 'filelist' (result depends on local .exper_cour
+
+    --all      : [default] show diff, log or filelist of all components
+    --dyn      : show diff, log or filelist of gemdyn files
+    --phy      : show diff, log or filelist of rpnphy files
+    --utils    : show diff, log or filelist of modelutiles files
+    --scripts  : show diff, log or filelist of gem-scripst files
+
+    --local    : consider local modifications in the comparison
+                 A 3way diff is done if kdiff3 is provided,
+                 otherwise only the first provided model version is compared
+                 (--log mode is not available with this option)
+
+    VERSION    : version to compare against (e.g. GEM/4.2.0)
+    VERSION2   : 2nd version in the comparison (present version if not provided)
+
+    For --diff and --dirdiff modes, 
+    1) a diff tool can be specified as argument (e.g. xxdiff, kdiff3, ...)
+       if not provided it default to the value of the env var ECDIFF
+       or to the basic text diff is used
+       (e.g. export ECDIFF=xxdiff)
+    2) diff arguments can be provided by setting them in 
+       the ECDIFFARGS env var
+       (e.g. export ECDIFFARGS="-wB")
+
+    For --diff, --filelist modes, since they use "git", 
+    "git diff" options can be set in the GITDIFFARGS env var, 
+    default added options are "-M -C" (detect renamed and copied files)
+    (e.g. export GITDIFFARGS="-b -w --stat")
+
+EOF
+}
+
+#====
+echocol() {
+	 _nbcol=$1
+	 _str=${2:-' '}
+
+	 _len="$(echo ${_str}| wc -c)"
+	 #let _nbcol=$_nbcol-$_len
+    _nbcol=$((_nbcol-_len))
+	 myspace=""
+	 while [[ _nbcol -gt 0 ]] ; do
+		  myspace="$myspace "
+		  let _nbcol=$_nbcol-1
+	 done
+	 echo "${_str}$myspace"
+}
+
+#====
+is_bundle() {
+	 _gemversion=$1
+    _isfile="$(ls -d $BNDLBASE/${_gemversion}.bndl 2>/dev/null)"
+    if [[ x${_isfile} == x ]] ; then
+	    _gemversion=GEM/$1
+       _isfile="$(ls -d $BNDLBASE/${_gemversion}.bndl 2>/dev/null)"
+    fi
+    if [[ x${_isfile} == x ]] ; then
+	    _gemversion=GEM/x/$1
+       _isfile="$(ls -d $BNDLBASE/${_gemversion}.bndl 2>/dev/null)"
+    fi
+    if [[ x${_isfile} == x ]] ; then
+	    _gemversion=''
+    elif [[ ! -r ${_isfile} ]] ; then
+	    _gemversion=''
+    fi
+    echo $_gemversion
+}
+
+#====
+get_info() {
+	_bndl=$1
+	_no=$2
+   if [[ x${_bndl} == x${ATM_MODEL_BNDL} ]] ; then
+      echo "modelutils${_no}=$modelutils \; rpnphy${_no}=$rpnphy \; gemdyn${_no}=$gemdyn \; modelutils_version${_no}=$modelutils_version \; rpnphy_version${_no}=$rpnphy_version \; gemdyn_version${_no}=$gemdyn_version \; ATM_MODEL_DFILES${_no}=$ATM_MODEL_DFILES"
+   else
+      echo $(unset ATM_MODEL ATM_MODEL_BNDL ATM_MODEL_VERSION ; . s.ssmuse.dot $_bndl > /dev/null ; echo "modelutils${_no}=$modelutils \; rpnphy${_no}=$rpnphy \; gemdyn${_no}=$gemdyn \; modelutils_version${_no}=$modelutils_version \; rpnphy_version${_no}=$rpnphy_version \; gemdyn_version${_no}=$gemdyn_version \; ATM_MODEL_DFILES${_no}=$ATM_MODEL_DFILES")
+   fi
+}
+
+
+#====
+get_src_path(){
+	 _bndlno=${1:-1}
+	 _component=$2
+    _srcorbin=${3:-src}
+    eval "echo $(echo \$${_component}${_bndlno})"
+}
+
+#====
+domydiff() {
+	 _component=$1
+	 _ver1=$2
+	 _ver2=$3
+	 _srcorbin=$4
+	 cd $GITDEPOTBASE/${_component}.git
+	 echo -e "#=============================================================="
+	 echo -e "#$(echocol 18 GEM_BUNDLE) $(echocol 18 $mygembndl1) $mygembndl2"
+	 echo -e "#$(echocol 18 ${_component}) $(echocol 18 ${_ver1}) ${_ver2}"
+	 echo -e "#--------------------------------------------------------------"
+	 echo -e "#PATH to ${_component}_${_ver1} src: $(get_src_path 1 ${_component} ${_srcorbin})"
+	 echo -e "#PATH to ${_component}_${_ver2} src: $(get_src_path 2 ${_component} ${_srcorbin})"
+
+    _filelist="$(git diff --name-only --text -M -C ${GITDIFFARGS} ${_component}_${_ver1} ${_component}_${_ver2})"
+    if [[ "x$_filelist" == "x" ]] ; then
+       echo -e "#$(echocol 18 ----------) No Changed File"
+	 echo -e "#=============================================================="
+       return 0
+    fi
+
+	 if [[ x$mylog == x1 ]] ; then
+		  echo -e "#---- Change Log ----------------------------------------------"
+		  #git log --summary --reverse ${_component}_${_ver1}...${_component}_${_ver2}
+		  git log --reverse --pretty=medium ${_component}_${_ver1}...${_component}_${_ver2} | grep -v '^commit'
+	 fi
+	 if [[ x$myfilelist == x1 ]] ; then
+		  echo -e "#---- Changed Files -------------------------------------------"
+		  #git diff --name-only --text -M -C ${GITDIFFARGS} ${_component}_${_ver1} ${_component}_${_ver2}
+        echo -e $_filelist | tr ' ' '\n'
+	 fi
+	 if [[ x$mydiff != x ]] ; then
+		  echo -e "#---- Diff of Files -------------------------------------------"
+		  export ECDIFF=$mydiff
+		  export ECDIFFARGS=${ECDIFFARGS:-""}
+		  export GITDIFFARGS="${GITDIFFARGS:-''} --text -M -C"
+		  export GITDIFFARFG="${GITDIFFARGS}"
+		  #if [[ x$mydiff == xdiff ]] ; then
+		  #		git diff ${GITDIFFARGS} ${_component}_${_ver1} ${_component}_${_ver2}
+		  #else
+				r.gitdiff --${mydiff} ${_component}_${_ver1} ${_component}_${_ver2}
+		  #fi
+	 fi
+
+	 if [[ x$mydirdiff != x ]] ; then
+		  echo -e "#---- Dir Diff ------------------------------------------------"
+		  export ECDIFF=$dirmydiff
+		  export ECDIFFARGS=${ECDIFFARGS:-""}
+		  _src1=$(get_src_path 1 ${_component} ${_srcorbin} ${_ver1})
+		  _src2=$(get_src_path 2 ${_component} ${_srcorbin} ${_ver2})
+		  echo ${mydirdiff} ${ECDIFFARGS} ${_src1} ${_src2}
+		  ${mydirdiff} ${ECDIFFARGS} ${_src1}  ${_src2}
+	 fi
+	 
+	 echo -e "#=============================================================="
+}
+
+#---- Inline Options -------------------------------------------------
+mydiff="${ECDIFF:-diff}"
+mydirdiff=""
+myfilelist=0
+myexplist=0
+mylog=0
+myversion=0
+myall=1
+mydyn=0
+myphy=0
+myutils=0
+myscripts=0
+mylocal=0
+mygembndl1=""
+mygembndl2="$ATM_MODEL_BNDL"
+previous=""
+while [[ $# -gt 0 ]] ; do
+    case $1 in
+        (-h|--help) usage_long; exit 0;;
+		  (--diff) [[ x$(echo $2 | cut -c1) != x- && \
+           x$(echo $2 | cut -c1) != x && \
+           x$(echo $2 | cut -c1-3) != xGEM ]] && \
+           mydiff=$2 && shift ;;
+		  (--dirdiff) mydiff=""; mydirdiff="${ECDIFF:-diff}" ; \
+           [[ x$(echo $2 | cut -c1) != x- && \
+           x$(echo $2 | cut -c1) != x && \
+           x$(echo $2 | cut -c1-3) != xGEM ]] && \
+           mydirdiff=$2 && shift ;;
+		  (--filelist) mydiff=""; myfilelist=1 ;;
+		  (--filenames) mydiff=""; myfilelist=1 ; myexplist=1;;
+		  (--log) mydiff=""; mylog=1 ;;
+		  (--version) mydiff=""; myversion=1 ;;
+		  (--all) myall=1 ;;
+		  (--dyn) myall=0; mydyn=1 ;;
+		  (--phy) myall=0; myphy=1 ;;
+		  (--utils) myall=0; myutils=1 ;;
+		  (--scripts) myall=0; myscripts=1 ;;
+		  (--local) mylocal=1 ;;
+        -*) echo "ERROR: Unrecognized option $1"
+            echo -e $USAGE
+            echo "---- ABORT ----"
+            exit 1;;
+        *)  [[ x$mygembndl1 != x ]] && mygembndl2=$1 ; [[ x$mygembndl1 == x ]] && mygembndl1=$1 ;;
+    esac
+	 previous=$1
+    shift
+done
+
+[[ x$mygembndl1 == x ]] && mygembndl1=${ATM_MODEL_BNDL}
+
+mygembndl1b=$(is_bundle $mygembndl1)
+if [[ x$mygembndl1b == x ]] ; then
+	 echo "ERROR: GEM bundle $mygembndl1 Not Found"
+	 echo -e $USAGE
+	 echo "---- ABORT ----"
+	 exit 1  	 
+fi
+mygembndl1=$mygembndl1b
+
+[[ x$mygembndl2 == x ]] && mygembndl2=$mygembndl1 && mygembndl1=${ATM_MODEL_BNDL}
+[[ x$mygembndl2 == x$mygembndl1 ]] && mygembndl2=''
+
+if [[ x$mygembndl1 == x ]] ; then
+	 echo "ERROR: You Need to Provide at least one VERSION (e.g. GEM/4.2.0)"
+	 echo -e $USAGE
+	 echo "---- ABORT ----"
+	 exit 1  	 
+fi
+
+if [[ x$mygembndl2 == x ]] ; then
+	if [[ "x${myfilelist}${mylog}${mydiff}${mydirdiff}" != "x00" && x$mylocal == x0 ]] ; then
+		echo "ERROR: You need to specify 2 versions"
+		echo -e $USAGE
+		echo "---- ABORT ----"
+		exit 1  	 
+	fi
+fi
+
+if [[ x$mygembndl2 != x ]] ; then
+   mygembndl2b=$(is_bundle $mygembndl2)
+   if [[ x$mygembndl2b == x ]] ; then
+	   echo "ERROR: GEM bundle $mygembndl2 Not Found"
+	   echo -e $USAGE
+	   echo "---- ABORT ----"
+	   exit 1
+   fi
+   mygembndl2=$mygembndl2b
+   [[ x$mygembndl2 == x$mygembndl1 ]] && mygembndl2=''
+fi
+
+
+if [[ x$myall = x1 ]] ; then
+	 mydyn=1
+	 myphy=1
+	 myutils=1
+	 myscripts=1
+fi
+
+#---------------------------------------------------------------------
+eval "$(get_info $mygembndl1 1)"
+eval "$(get_info $mygembndl2 2)"
+
+if [[ x$myversion == x1 ]] ; then
+	 echo -e "#=============================================================="
+	 echo -e "#GEM_BUNDLE  $(echocol 18 $mygembndl1) $mygembndl2"
+	 echo -e "#--------------------------------------------------------------"
+	 echo -e "#gem-mod     $(echocol 18 $gemmod_version1) $gemmod_version2"
+	 echo -e "#gem-data    $(echocol 18 $gdata1) $gdata2"
+	 echo -e "#gemdyn      $(echocol 18 $gemdyn_version1) $gemdyn_version2"
+	 echo -e "#rpnphy      $(echocol 18 $rpnphy_version1) $rpnphy_version2"
+	 echo -e "#modelutils  $(echocol 18 $modelutils_version1) $modelutils_version2"
+	 echo -e "#scripts     $(echocol 18 $gemscripts1) $gemscripts2"
+	 echo -e "#vgrid       $(echocol 18 $vgrid1) $vgrid2"
+	 echo -e "#RMN         $(echocol 18 $rmn1) $rmn2"
+	 echo -e "#rpn_comm    $(echocol 18 $comm1) $comm2"
+	 echo -e "#Compiler    $(echocol 18 $compil1) $compil2"
+	 echo -e "#=============================================================="
+	 echo "#More details at: https://wiki.cmc.ec.gc.ca/wiki/GEM/Change_Log"
+	 echo "#Changing Component Version: https://wiki.cmc.ec.gc.ca/wiki/GEM/Component_Swap"
+fi
+
+if [[ x$mylocal == x1 ]] ; then
+	 localdiff
+	 exit 0
+fi
+
+if [[ x$mylog == x1 || x$myfilelist == x1 || x$mydiff != x || x$mydirdiff != x ]] ; then
+   if [[ x$mydyn == x1 ]] ; then
+       cmd="domydiff gemdyn $gemdyn_version1 ${gemdyn_version2:-?} src"
+       if [[ x$myexplist ==  x1 ]] ; then
+          $cmd | grep -v \# | grep -v ssmuse_dependencies.bndl | grep -v include/ | cut -d'/' -f2
+       else
+		    $cmd 
+       fi
+	 fi
+	 if [[ x$myphy == x1 ]] ; then
+		 cmd="domydiff rpnphy $rpnphy_version1 ${rpnphy_version2:-?} src"
+       if [[ x$myexplist ==  x1 ]] ; then
+          $cmd | grep -v \# | grep -v ssmuse_dependencies.bndl | grep -v include/ | cut -d'/' -f2
+       else
+		    $cmd 
+       fi
+	 fi
+	 if [[ x$myutils == x1 ]] ; then
+		 cmd="domydiff modelutils $modelutils_version1 ${modelutils_version2:-?} src"
+       if [[ x$myexplist ==  x1 ]] ; then
+          $cmd | grep -v \# | grep -v ssmuse_dependencies.bndl | grep -v include/ | cut -d'/' -f2
+       else
+		    $cmd 
+       fi
+	 fi
+	 if [[ x$myscripts == x1 ]] ; then
+		 cmd="domydiff gem-scripts $gemscripts_version1 ${gemscripts_version2:-?} bin"
+       if [[ x$myexplist ==  x1 ]] ; then
+          $cmd | grep -v \# | grep -v ssmuse_dependencies.bndl | grep -v include/ | cut -d'/' -f2
+       else
+		    $cmd 
+       fi
+	 fi
+fi
+
+#gemdiff- --filelist --dyn --phy --utils GEM/x/4.6.0-a3 GEM/x/4.6.0-b1 | grep -v \# | grep -v ssmuse_dependencies.bndl | grep -v include/ | cut -d'/' -f2
+
+exit 0

@@ -1,0 +1,42 @@
+#!/bin/ksh
+
+arguments=$*
+echo $0 $arguments
+
+eval `cclargs_lite -D " " $0 \
+  -cfg           "0:0"          "0:0"       "[configurations to consider]"\
+  -dircfg        "GEM_cfgs"     "GEM_cfgs"  "[location of config files  ]"\
+  -npe           "1"            "1"         "[# of simultaneous threads ]"\
+  -verbose       "0"            "1"         "[verbose mode              ]"\
+  ++ $arguments`
+
+export AFSISIO=${AFSISIO:-${ATM_MODEL_DFILES}}
+
+DOMAIN_start=`echo $cfg | sed 's/:/ /' | awk '{print $1}'`
+DOMAIN_end=`  echo $cfg | sed 's/:/ /' | awk '{print $2}'`
+typeset -Z4 domain_number
+
+default_DIR_ATM=${ATM_MODEL_DFILES}/bcmk
+anal=${default_DIR_ATM}/2009042700_000
+ici=$PWD
+export PATH=${PWD}/build-$ORDENV_PLAT/bin/$COMP_ARCH:$PATH
+set -ex ; export SETMEX=-ex
+cd PREP ; cd $ici
+rm -fr PREP/*
+domain_number=$DOMAIN_start
+while [ $domain_number -le $DOMAIN_end ] ; do
+  dname=cfg_$domain_number
+  DEST=${PWD}/PREP/output/${dname}
+  work=${PWD}/PREP/work
+  /bin/rm -rf $DEST ${work} ; mkdir -p $DEST ${work}
+  . ${dircfg}/${dname}/configexp.cfg
+  anal=${GEM_anal}
+  input=${GEM_inrep}
+  Um_prep_domain.ksh -anal ${GEM_anal} -input \'${GEM_inrep}\' \
+      -o ${DEST} -work ${work} -headscript ${GEM_headscript_E} \
+      -check_namelist ${GEM_check_settings} -bin               \
+      -nmlfile ${dircfg}/$dname/gem_settings.nml -nthreads $npe\
+      -verbose $verbose
+  ln -s ${GEM_inrep} ${DEST}/MODEL_inrep
+  domain_number=$(( domain_number+1 ))
+done

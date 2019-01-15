@@ -1,0 +1,193 @@
+#!/bin/ksh
+#
+# Construit un arbre de dependances dans une librairie fortran
+# (.ftn) a partir d'une porte d'entree quelconque (user specified).
+#
+# Auteur  :	Michel Desgagne 	Nov 1992
+#
+# Histoire:
+#		Michel Roch		Aug 1993
+#		  - traitement des majuscules
+#		  - nombres dans les 6 premieres colonnes
+# 		Michel Desgagne		Aug 1993
+#                 - fonction fouille (remplace script treepr)
+#
+# Ce script prend pour acquis que le nom utilise a
+# l'appel de chaque routine est le meme que le nom
+# du fichier ".ftn" dans lequel reside cette routine.
+#
+# Utilisation: tree <nom-du-main> [-lib  [path de la librairie .ftn]]
+#                                 [-niv  [niveau]]
+#                                 [-full [0;1]]
+#              treee -h    =====> sequence d'appel (cclargs)
+#
+eval `cclargs $0 \
+       -lib  "." "lib" "[Repertoire ou se trouve la librairie]"\
+       -niv  "10" "1"        "[Nombre de niveaux]"\
+       -full "1"  "0"        "[Arbre complet (1) ou partiel (0)]"\
+  ++ $*`
+#
+#####################################################
+echo
+#
+# Le nom du "main" doit etre specifie
+#
+if test $# -lt 1
+then
+  echo "Le nom du main doit etre specifie."
+  echo
+  exit
+else
+  main=$1
+fi
+#
+/bin/rm $main"_arbre" $TMPDIR/.nivtree* 2> /dev/null
+#
+# Definition de la fonction fouille (appelee a chaque niveau)
+#
+fouille()
+{
+#
+  fcheck=$TMPDIR/.nivtree$1
+  nbtab=`expr $1 - 1`
+  nb=`grep -i $2$ $fcheck | wc -l | awk '{print $1}'`
+#
+  flagimp=0
+  flaggo=1
+  if test $nb -eq 0
+  then
+    echo $2 >> $fcheck
+    imp=$2
+    flagimp=1
+  else
+    if test $3 -eq 1
+    then
+      imp=${2}%
+      flagimp=1
+      flaggo=0
+    fi
+  fi
+#
+  if test $flagimp -eq 1
+  then
+    ntab=0
+    while test $ntab -lt $nbtab
+    do
+      echo "\t\c" >> ${4}_arbre
+      ntab=`expr $ntab + 1`
+    done
+    echo "$imp" >> ${4}_arbre
+  fi
+#
+  echo $flaggo
+#
+}
+#
+module()
+{
+	tr "[A-Z]" "[a-z]"    | \
+	sed 's/\(.*call\)//p' | \
+	awk 'BEGIN{FS="("}{print $1}'
+}
+#
+ext=.ftn
+mainext=$main$ext
+search_string="^[^c\*].*call"
+#
+echo $mainext
+#
+for i in `grep -i "$search_string" $lib/$mainext | module`
+do
+  flaggo1=`fouille 1 $i $full $main`
+  if test $niv -ge 2 -a $flaggo1 -gt 0
+  then
+#
+echo "\t" $i
+#
+    for ii in `grep -i "$search_string" $lib/$i$ext | module`
+    do
+      flaggo2=`fouille 2 $ii $full $main`
+      if test $niv -ge 3 -a $flaggo2 -gt 0
+      then
+#
+echo "\t\t" $ii
+#
+        for iii in `grep -i "$search_string" $lib/$ii$ext | module`
+        do
+          flaggo3=`fouille 3 $iii $full $main`
+          if test $niv -ge 4 -a $flaggo3 -gt 0
+          then
+#
+echo "\t\t\t" $iii
+#
+            for iv in `grep -i "$search_string" $lib/$iii$ext | module`
+            do
+              flaggo4=`fouille 4 $iv $full $main`
+              if test $niv -ge 5 -a $flaggo4 -gt 0
+              then
+#
+echo "\t\t\t\t" $iv
+#
+                for v in `grep -i "$search_string" $lib/$iv$ext| module`
+                do
+                  flaggo5=`fouille 5 $v $full $main`
+                  if test $niv -ge 6 -a $flaggo5 -gt 0
+                  then
+#
+echo "\t\t\t\t\t" $v
+#
+    for vi in `grep -i "$search_string" $lib/$v$ext | module`
+    do
+      flaggo6=`fouille 6 $vi $full $main`
+      if test $niv -ge 7 -a $flaggo6 -gt 0
+      then
+#
+echo "\t\t\t\t\t\t" $vi
+#
+        for vii in `grep -i "$search_string" $lib/$vi$ext | module`
+        do
+          flaggo7=`fouille 7 $vii $full $main`
+          if test $niv -ge 8 -a $flaggo7 -gt 0
+          then
+#
+echo "\t\t\t\t\t\t\t" $vii
+#
+            for viii in `grep -i "$search_string" $lib/$vii$ext| module`
+            do
+              flaggo8=`fouille 8 $viii $full $main`
+              if test $niv -ge 9 -a $flaggo8 -gt 0
+              then
+#
+echo "\t\t\t\t\t\t\t\t" $viii
+#
+            for ix in `grep -i "$search_string" $lib/$viii$ext | module`
+            do
+              flaggo9=`fouille 9 $ix $full $main`
+              if test $niv -ge 10 -a $flaggo9 -gt 0
+              then
+#
+echo "\t\t\t\t\t\t\t\t\t" $ix
+#
+            for x in `grep -i "$search_string" $lib/$ix$ext | module`
+            do
+              flaggo10=`fouille 10 $x $full $main`
+	    done
+#
+               fi
+               done
+              fi
+              done 2> /dev/null
+             fi
+             done 2> /dev/null
+           fi
+           done 2> /dev/null
+         fi
+         done 2> /dev/null
+       fi
+       done 2> /dev/null
+     fi
+    done 2> /dev/null
+   fi
+   done 2> /dev/null
+ fi
+done 2> /dev/null

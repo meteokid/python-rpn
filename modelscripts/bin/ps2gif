@@ -1,0 +1,14 @@
+#!/bin/ksh
+#
+if test $# -eq 0 ; then
+  echo "\nMust provide a file name\n"
+  exit
+fi
+reso=300
+if test $# -eq 2 ; then
+  reso=$2
+fi
+gs5 -dNOPAUSE -sDEVICE=ppmraw -r$reso -sOutputFile=output.ppm $1.ps -c quit 
+ppmmerge ppmquant 256 output.ppm | ppmmerge ppmtogif > $1.gif
+/bin/rm -f output.ppm
+#

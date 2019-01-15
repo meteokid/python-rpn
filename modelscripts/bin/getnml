@@ -1,0 +1,53 @@
+#!/usr/bin/env python
+#!/usr/bin/env python2
+import modelcfg,optparse,sys,os,string,re
+
+if __name__ == "__main__":
+    
+    # Command line arguments
+    usage = "usage: \n\t%prog [options] key1 [key2] ...\n\t%prog [options] nml1/key1 [nml2/key2] ..."
+    parser = optparse.OptionParser(usage=usage)
+    parser.add_option("-f","--file",dest="nml_file",default="./gem_settings.nml",
+                      help="Name of FILE containing namelist [default 'gem_settings.nml']",metavar="FILE")
+    parser.add_option("-o","--output",dest="prefix",default=None,
+                      help="PREFIX for output file name [default STDOUT]",metavar="PREFIX")
+    parser.add_option("-n","--namelist",dest="namelist",default=None,
+                      help="NAMELIST to search for keys [default all]",metavar="NAMELIST")
+    parser.add_option("-k","--keys",dest="keys",action="store_true",
+                      help="Include KEY in output expressions (useful for 'eval')",metavar="KEY")
+    (options,args) = parser.parse_args()
+
+    # Retrieve namelist entries
+    cfg = modelcfg.Settings(file=options.nml_file)
+
+    # Check for required inputs
+    if not len(args):
+        parser.print_help()
+        sys.exit(1)   
+
+    # Generate output
+    outputSuffix = '.txt'
+    for entry in args:
+        outFile = None
+        try:
+            (nml2,key2) = re.split('/',entry)
+        except ValueError:
+            nml2 = options.namelist
+            key2 = entry
+        expr = (options.keys) and key2+'=' or ''
+        try:
+            value = cfg.get(key2,namelist=nml2)
+        except KeyError:
+            sys.stderr.write(str(sys.exc_info()[1])+'\n')
+            continue
+        if options.prefix:
+            outFile = options.prefix+key2+outputSuffix
+            try:
+                fd = open(outFile,"w")
+            except OSError:
+                sys.stderr.write("Error: cannot open output file "+outFile+" for writing\n")
+                sys.exit(1)
+        else:
+            fd = sys.stdout            
+        fd.write(expr+str(value)+'\n')        
+        if outFile: fd.close()

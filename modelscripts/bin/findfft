@@ -1,0 +1,53 @@
+#!/bin/ksh
+#
+set +x
+#====> Obtaining the arguments:
+eval `cclargs_lite $0 \
+      -min "150" "150"  "[min grid points for X (G_ni)]"\
+      -max "250" "250"  "[max grid points for X (G_ni)]"\
+      -help   "0"   "1"    "[help             ]"\
+      ++ $*`
+#
+if ((help)) then
+echo ie: findfft -min $min -max $max
+echo
+echo '-min "150" "150"  "[min grid points for X (G_ni)]"'
+echo '-max "250" "250"  "[max grid points for X (G_ni)]"'
+echo
+exit
+fi
+
+echo "findfft" -min $min -max $max
+echo "G_ni numbers that would work for FFT:"
+
+let j=${min}
+while [ ${j} -le ${max} ] ; do
+let F_nn=${j}
+let F_n=$F_nn
+if (($F_nn <= 8))
+then let F_n=9
+fi
+let i=$F_n
+while true
+   do
+    if (($i == 1)) then
+       if (($F_nn == $F_n))
+            then echo 'gni = ' ${j}
+            break
+       else
+            break
+       fi
+    fi
+    if (($i%2==0)) then
+    let i=$i/2
+    elif (($i%3==0)) then
+    let i=$i/3
+    elif (($i%5==0)) then
+    let i=$i/5
+    else
+       let F_n=$F_n+1
+       let i=$F_n
+    fi
+   done
+   let j=${j}+1
+done

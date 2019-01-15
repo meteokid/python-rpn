@@ -1,0 +1,26 @@
+#!/bin/ksh
+# Return the path to the model directory specified as the argument
+
+# Check for required argument (becomes "type")
+if [[ -z "$1" ]] ; then
+   printf "Usage: $0 [home,storage,suite]\n"
+   exit 1
+fi
+type=$1
+
+# Check that appropriate env variable is set and valid
+target_base=$(eval echo \$${type}_model)
+if [ ! "$target_base" ] ; then
+   printf "Error: must define environment variable ${type}_model\n" 1>&2
+   exit 1
+fi
+if [[ ! -d ${target_base} ]] ; then
+  printf "Error: directory ${target_base} (\$${type}_model) does not exist\n" 1>&2
+  exit 1
+fi
+
+# Create full path name with hash extension for return
+mypath=$(true_path .)
+myname=${mypath##*/}
+myhash=$(echo $mypath | cksum | cut -d" " -f1)
+echo ${target_base}/${myname}_${myhash}

@@ -1,0 +1,44 @@
+
+==== Building ============================================================
+
+#git clone ssh://armnenv@localhost/~armnenv/GitDepots/modelscripts.git
+git clone ssh://localhost/~armnenv/GitDepots/modelscripts.git
+cd modelscripts
+#git checkout -b tmp modelscripts_VERSION
+#update version number (including leading 'x/') in Makefile
+. ./.setenv.dot --cmc
+make ssm
+
+==== Installing ==========================================================
+
+---- CMC Network ----
+
+ssh MY_INSTALL_MACH
+cd /PATH/
+. ./.setenv.dot --cmc
+OTHERUSER=~armnsch
+make install CONFIRM_INSTALL=yes SSM_DEPOT_DIR=${OTHERUSER}/SsmDepot
+
+---- Science Network ----
+
+ssh MY_INSTALL_MACH
+cd /PATH/
+. ./.setenv.dot --science
+make install CONFIRM_INSTALL=yes SSM_BASE=/fs/ssm/eccc/mrd/rpn/MIG SSM_BASE2=""
+
+
+==== Uninstalling ========================================================
+
+---- CMC Network ----
+
+ssh MY_INSTALL_MACH
+cd /PATH/
+. ./.setenv.dot --cmc
+make uninstall UNINSTALL_CONFIRM=yes
+
+---- Science Network ----
+
+ssh MY_INSTALL_MACH
+cd /PATH/
+. ./.setenv.dot --science
+make uninstall UNINSTALL_CONFIRM=yes SSM_BASE=/fs/ssm/eccc/mrd/rpn/MIG

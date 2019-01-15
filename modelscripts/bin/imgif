@@ -1,0 +1,51 @@
+#!/bin/ksh
+#
+if [ "$HOSTTYPE" != "hp720" ] ; then
+   echo "\nThis script can only be run on HPs\n"
+   exit 1
+fi
+#
+eval `cclargs $0 \
+       -p  "0" "1" "[Pour produire un .pict simultanement]"\
+       -d  "0" "1" "[Pour produire un .gif dether simultanement]"\
+  ++ $*`
+#
+#####################################################
+echo
+#
+# Le nom du "fichier" doit etre specifie
+#
+if test $# -lt 1
+then
+  echo "Le nom du fichier doit etre specifie."
+  echo '\nUsage: imgif <filename> [-p]\n'
+  echo
+  exit
+else
+  fich=$1
+fi
+#
+if test -s ${fich}.gif ; then
+  if test $d -gt 0 ; then
+    echo "${fich}.gif =====> ${fich}_d.pict"
+    pnmmerge giftopnm < ${fich}.gif | ppmtopgm | pgmmerge pgmenhance -1 | pnmmerge pnmscale 2 | pgmmerge pgmtopbm | ppmmerge ppmtogif > ${fich}_d.gif
+  fi
+  if test $p -gt 0 ; then
+    echo "${fich}.gif =====> ${fich}.pict"
+    pnmmerge giftopnm < ${fich}.gif | ppmtopgm | pgmmerge pgmenhance -1 | pnmmerge pnmscale 2 | pgmmerge pgmtopbm | ppmmerge ppmtopict > ${fich}_d.pict
+  fi
+  exit
+fi
+echo On construit ${fich}.gif
+xwd | xwdtoppm | ppmmerge ppmtogif > ${fich}.gif
+if test $d -gt 0 ; then
+  echo "${fich}.gif =====> ${fich}_d.pict"
+  pnmmerge giftopnm < ${fich}.gif | ppmtopgm | pgmmerge pgmenhance -1 | pnmmerge pnmscale 2 | pgmmerge pgmtopbm | ppmmerge ppmtogif > ${fich}_d.gif
+fi
+if test $p -gt 0 ; then
+  echo "${fich}.gif =====> ${fich}.pict"
+  pnmmerge giftopnm < ${fich}.gif | ppmtopgm | pgmmerge pgmenhance -1 | pnmmerge pnmscale 2 | pgmmerge pgmtopbm | ppmmerge ppmtopict > ${fich}_d.pict
+fi
+#
+
+

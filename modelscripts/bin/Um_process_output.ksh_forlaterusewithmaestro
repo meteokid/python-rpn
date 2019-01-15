@@ -1,0 +1,130 @@
+#!/bin/ksh
+
+launch_output_job ()
+{
+
+REP_OUTPUT_SRC=`true_path $(echo $1 | sed 's/\^last//g')`
+stepnumber=`basename $REP_OUTPUT_SRC`
+
+DIRname=`dirname $REP_OUTPUT_SRC`
+DOMAIN=`basename $DIRname`
+
+if [ -s configexp.cfg ] ; then
+  . ./configexp.cfg 2> /dev/null || true
+  cp configexp.cfg ${REP_OUTPUT_SRC}
+fi
+
+STATUS_file=status_MOD.dot
+if [ -s ${STATUS_file} ] ; then
+  . ./${STATUS_file}
+  cat ${STATUS_file} >> ${REP_OUTPUT_SRC}/configexp.cfg
+fi
+
+if [ -n "$SEQ_EXP_HOME" ] ; then 
+#  typeset -Z10 laststep
+  domain=$(basename ${PWD} | sed 's/cfg_//')
+  laststep=$(echo ${1} | cut -f 2 -d "_" | sed "s/^0*//" | cut -f 1 -d "^" | sed "s/^0*//")
+  lastjob=$(echo ${1} | grep "\^last" | wc -l)
+  if [ ${lastjob} -gt 0 ] ;then
+    lastjob="^last"
+  else
+    lastjob=""
+  fi
+  jobname=D${domain}_S${laststep}${lastjob}
+  if [[ -n "$SEQ_CONTAINER_LOOP_ARGS" ]]; then
+       $SEQ_BIN/maestro -n $(dirname $SEQ_NODE)/Sortie -s submit ${SEQ_CONTAINER_LOOP_ARGS},Sortie=${jobname}
+  else
+       $SEQ_BIN/maestro -n $(dirname $SEQ_NODE)/Sortie -s submit -l Sortie=${jobname}
+  fi
+else
+
+  if [ -n "$BATCH_launch_upload" ] ; then
+    find ${BATCH_launch_upload}/${DOMAIN}/ -type f -name "Um_tailscript_X_each_*" -exec ls -l {} \; -exec cp {} ${REP_OUTPUT_SRC} \;
+    find ${BATCH_launch_upload}/${DOMAIN}/ -type f -name "Um_tailjob_X_each_*"    -exec ls -l {} \; -exec cp {} ${REP_OUTPUT_SRC} \;
+
+    if [ "$_status" = "ED" ] ; then
+      find ${BATCH_launch_upload}/${DOMAIN}/ -type f -name "Um_tailscript_X_last_*" -exec ls -l {} \; -exec cp {} ${REP_OUTPUT_SRC} \;
+      find ${BATCH_launch_upload}/${DOMAIN}/ -type f -name "Um_tailjob_X_last_*"    -exec ls -l {} \; -exec cp {} ${REP_OUTPUT_SRC} \;
+    else
+      echo BATCH_launch_xferl= >> ${REP_OUTPUT_DST}/configexp.cfg
+    fi
+  fi
+
+  if [ -d ${BATCH_launch_upload}/cfg_all ] ; then
+    increase_path="export PATH=\"`true_path ${BATCH_launch_upload}/cfg_all`:\$PATH\""
+  fi
+
+  BASEDIR=${BATCH_launch_execdir}/RUNMOD_output/${DOMAIN}_${stepnumber}
+  /bin/rm -rf ${BASEDIR} ; mkdir -p ${BASEDIR}/input
+  ln -s ${BATCH_launch_execdir}/RUNMOD/output/${DOMAIN}/${stepnumber}/* ${BASEDIR}/input
+
+  domname=`echo ${DOMAIN}     | sed 's/cfg_/D/'`
+  stename=`echo ${stepnumber} | sed 's/laststep_//'`
+  ppid=$((stename+0))
+
+  lisname=${BATCH_launch_exp}_S_${BATCH_launch_ppid}_${domname}_L${ppid}
+  jobname=SORTIEjob_${domname}_${stename}.$$
+
+  cat > ${jobname} << EOF01
+set +x
+. r.ssmuse.dot profile
+. s.ssmuse.dot ${ATM_MODEL_BNDL}-run
+$increase_path
+
+time JOBATM_S.tsk ${BASEDIR}
+
+STEP_ID=\`echo \$LOADL_STEP_ID | sed 's/cmc\.ec\.gc\.ca\.//'\`
+llq -l \$STEP_ID
+EOF01
+
+  pwd
+  cat ${jobname}
+
+  batch_class=""
+  if [ -n "${BATCH_launch_class}" ] ; then batch_class="-queue ${BATCH_launch_class}"    ; fi
+
+  if [ ${BATCH_launch_onexferjob:-0} -eq 0 -a ${BATCH_launch_time_post:-0} -gt 0 ] ; then
+    echo "ord_soumet `true_path ${jobname}` -t ${BATCH_launch_time_post} -cm 1G -mach $BATCH_launch_mach -listing $BATCH_launch_listings -jn ${lisname} -cpus 1x${BATCH_launch_ntsortie} ${batch_class} -resid ${BATCH_RESID}" | ssh ${TRUE_HOST} bash --login
+  else
+    cp ${jobname} ${BATCH_launch_execdir}/RUNMOD_output
+    chmod 755 ${BATCH_launch_execdir}/RUNMOD_output/${jobname}
+  fi
+
+  /bin/rm -f ${jobname}
+fi
+
+}
+
+if [ ! -s ${1:-pasdefichier} ]; then exit; fi
+
+fn=$$
+cp $1 ${1}_work$fn
+fn=`basename ${1}_work$fn`
+
+REPOUTPUT=`dirname $1`
+FILEINPUT=`basename $1`
+cd $REPOUTPUT
+
+file_done=output_done
+
+if [ -s $file_done ] ; then
+  laliste=''
+  for i in `cat $fn` ; do
+    cnt=`grep $i $file_done | wc -l`
+    if [ $cnt -eq 0 ] ; then
+      laliste=${laliste}" "$i
+    fi
+  done
+else
+  laliste=`cat $fn`
+fi
+
+for REP in $laliste ; do
+  printf "\n ===> Um_process_output-${FILEINPUT} `basename $REPOUTPUT` $REP $(date)\n"
+  stepnumber=`basename $REP | sed 's/laststep_/S/'`
+  listing=`dirname $REP`/launch_output_task_${stepnumber}_$$
+  launch_output_job $REP 1> ${listing}.lis 2> ${listing}.err
+  echo $REP >> $file_done
+done
+
+/bin/rm -f $fn
