@@ -49,18 +49,20 @@ while [[ $# -gt 0 ]] ; do
             echo -e $USAGE
             echo "---- ABORT ----"
             exit 1;;
-       (*) ssmpkglist="$ssmpkglist $1"
+        (*) ssmpkglist="$ssmpkglist $1"
     esac
     shift
 done
-ssmpkglist="$(set -x;cd $depot && ls -1 $ssmpkglist $* 2>/dev/null)"
-
+# echo ssmpkglist1=$ssmpkglist
+# ssmpkglist="$(set -x;cd $depot && ls -1 ${ssmpkglist} $* 2>/dev/null)"
+# echo ssmpkglist2=$ssmpkglist
+ssmpkglist="$(ls -1 ${ssmpkglist} 2>/dev/null | tr '\n' ' ')"
 _status=0
 
-if [[ -e $domain ]] ; then
-   printf "SSM domain dir already exists: $domain"
+if [[ -e ${domain} ]] ; then
+   printf "SSM domain dir already exists: $domain\n"
 else
-   printf "SSM domain dir does NOT exists: $domain"
+   printf "SSM domain dir does NOT exists: $domain\n"
    _status=1
 fi
 
@@ -76,9 +78,9 @@ if [[ ${_status} == 0 ]] ; then
       fi
       state="$(ssm listd -d ${domain} -p ${ssmpkg} -o state)"
       if [[ "x${state}" == "xIP" ]] ; then
-         printf "SSM package state IP: ${ssmpkg}"
+         printf "SSM package state IP: ${ssmpkg}\n"
       else
-         printf "SSM package state NOT IP (${state}): ${ssmpkg}"
+         printf "SSM package state NOT IP (${state}): ${ssmpkg}\n"
          _status=1
       fi
    done
@@ -94,23 +96,35 @@ if [[ ${_status} == 0 ]] ; then
       fi
       echo ${ssmpkg} > ${_tmp1}
    done
-   cat ${myself##*/}-$$-1 | sort -u >  ${_tmp1}b
+   cat ${_tmp1} | sort -u >  ${_tmp1}b
    ssm listd -d ${domain} -o name | tr ' ' '\n' | sort -u > ${_tmp2}
    diff -B -w -q ${_tmp1}b ${_tmp2}
    _status=$?
    if [[ ${_status} != 0 ]] ; then
-      printf "SSM domain contains extra packages: $domain"
+      printf "SSM domain contains extra packages: $domain\n"
       set -x
       diff -B -w ${_tmp1}b ${_tmp2}
       set +x
    fi
 fi
 
-if [[ -e $bndl ]] ; then
-   printf "SSM bndl already exists: $bndl"
+_linkedbndl=0
+if [[ -e ${bndl:-__bndl_undefined__} ]] ; then
+   printf "SSM bndl already exists: ${bndl:-__bndl_undefined__}\n"
 else
-   printf "SSM bndl does NOT exists: $bndl"
-   _status=1
+   if [[ -L ${bndl%.bndl} ]] ; then
+      _linkedbndl=1
+      bndl=${bndl%.bndl}
+      if [[ "x$(true_path ${bndl})" == "x$(true_path ${domain})" ]] ; then
+         printf "SSM bndl already exists (as link to domain): ${bndl}\n"
+      else
+         printf "SSM bndl exists (as link to WRONG domain): ${bndl}\n"
+         _status=1
+      fi
+   else
+      printf "SSM bndl does NOT exists: ${bndl:-__bndl_undefined__}\n"
+      _status=1
+   fi
 fi
 
 bndl2=${TMPDIR}/${myself##*/}-$$-1
@@ -132,31 +146,41 @@ if [[ x$postbndl != x ]] ; then
    cat $postbndl >> ${bndl2}
 fi
 
-if [[ "$(cat ${bndl2})" == "$domain" ]] ; then
+domain2="$(cat ${bndl2} | tr '\n' ' ')"
+if [[ "x${domain2% }" == "x${domain:-__domain_undefined__}" ]] ; then
    rm -f ${bndl2}
    if [[ x$ssmbase != x ]] ; then
-      ln -s $ssmbase/$domain ${bndl2}
+      ln -s ${ssmbase:-/dev/null}/${domain:-_domain__undefined__} ${bndl2}
    else
-      ln -s $domain ${bndl2}
+      ln -s ${domain:-_domain__undefined__} ${bndl2}
    fi
 fi
 
-if [[ -l ${bndl2} || -l ${bndl} ]] ; then
-   if [[ ! -l ${bndl2} || ! -l ${bndl} ]] ; then
-      _status=1
-   fi
-fi
-if [[ ! -l ${bndl2} && ! -l ${bndl} ]] ; then
-   diff -B -w -q ${bndl2} ${bndl}
-   _status=$?
-fi
+if [[ -e ${bndl2} && -e ${bndl:-__bndl_undefined__} ]] ; then
 
-if [[ ${_status} != 0 ]] ; then
-   printf "SSM bndl differs: ${bndl2} ${bndl}"
-   ls -l ${bndl2} ${bndl}
-   set -x
-   diff -B -w ${bndl2} ${bndl}
-   set +x
+   if [[ -L ${bndl2} || -L ${bndl:-__bndl_undefined__} ]] ; then
+      if [[ ! -L ${bndl2} || ! -L ${bndl:-__bndl_undefined__} ]] ; then
+         ls -l ${bndl2}
+         ls -l ${bndl:-__bndl_undefined__}
+         _status=1
+      fi
+   fi
+
+   if [[ ${_linkedbndl} == 0 ]] ; then
+      if [[ ! -L ${bndl2} && ! -L ${bndl:-__bndl_undefined__} ]] ; then
+         diff -B -w -q ${bndl2} ${bndl:-__bndl_undefined__}
+         _status=$?
+      fi
+
+      if [[ ${_status} != 0 ]] ; then
+         printf "SSM bndl differs: ${bndl2} ${bndl:-__bndl_undefined__}\n"
+         ls -l ${bndl2} ${bndl:-__bndl_undefined__}
+         set -x
+         diff -B -w ${bndl2} ${bndl:-__bndl_undefined__}
+         set +x
+      fi
+   fi
+
 fi
 
 exit ${_status}

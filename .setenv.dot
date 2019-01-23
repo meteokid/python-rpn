@@ -51,13 +51,13 @@ else
 fi
 # export COMP_ARCH_DEFAULT=intel13sp1u2
 # [[ x$BASE_ARCH == xAIX-powerpc7 ]] && COMP_ARCH_DEFAULT=xlf13
-_verbose=0
+_myverbose=""
 _overridesok=0
 _versfx='-dev'
 while [[ $# -gt 0 ]] ; do
    case $1 in
       (-h|--help) usage_long; return 0;;
-      (-v|--_verbose) ((_verbose=_verbose+1));;
+      (-v|--_verbose) _myverbose="--verbose";;
       #TODO: option for _overridesok=1
       #TODO: option for subset of components (forced_components list)
       (--cmc) RDENETWORK=cmc ;;
@@ -106,61 +106,63 @@ done
 
 ## Load external dependencies (including compiler)
 __here=$(pwd)
-cd ${modelutils:-__MODELUTILS_NOT_DEFINED__} || return 1
-. ./.setenv.dot --${RDENETWORK}  #WARNING: this overrides rde, vgrid, rpn_comm
-cd ${__here}
-unset __here
-
-#TODO: load components' external dep not covered in modelutils (like netcdf for SCM)
-for item in */ssmusedep.external.bndl-${RDENETWORK} ; do
-    . r.load.dot $(cat ${item} | tr '\n' ' ')
+for __item in _migdep ${RDECOMPONENTS}; do
+   if [[ -f ${__item}/.setenv.dot ]] ; then
+      echo "+ . ./${__item}/.setenv.dot --external ${_myverbose}"
+      cd ${__item}
+      . ./.setenv.dot --external ${_myverbose}
+      cd ${__here}
+   else
+      echo "===> WARNING: Cannot find: ${item}/.setenv.dot <===" 1>&2
+   fi
 done
+unset __here __item
 
 ## make sure local rde is used (may have been reset-ed by previous step)
-if [[ -d rde ]] ; then
-   export rde_version=dev
-   export rde=$(pwd)/rde
+if [[ "x${rde}" == "x" ]] ; then
+   echo "===> ERROR: \${rde} not set <===" 1>&2
+   return 1
+fi
+if [[ "x$(true_path ${rde})" != "x$(true_path $(pwd)/rde)" ]] ; then
+   echo "===> ERROR: not using local rde: rde=${rde} <===" 1>&2
+   return 1
 fi
 
 
-#TODO: should run-time external dependencies (post) be loaded as well?
-#TODO: externals instead of straight ssmuse call with explicit list
-. s.ssmuse.dot GEM/d/gem-data/gem-data_4.2.0
-
-
 ## Add bin, lib paths and set env var for each components
-for item in ${RDECOMPONENTS}; do
-   if [[ -d ${item}/bin ]] ; then
-      export PATH=$(pwd)/${item}/bin:${PATH}
-   fi
-   if [[ -d ${item}/lib/python ]] ; then
-      export PYTHONPATH=$(pwd)/${item}/lib/python:${PYTHONPATH}
-   fi
-   itemUC="$(echo ${item} | tr 'a-z' 'A-Z')"
-   if [[ -f ${item}/VERSION ]] ; then
-      itemv="$(cat ${item}/VERSION)"
-   elif [[ -f ${item}/include/Makefile.local.${item}.mk ]] ; then
-      itemv="$(make -f _share/Makefile.print.mk print-${itemUC}_VERSION OTHERMAKEFILE=$(pwd)/${item}/include/Makefile.local.${item}.mk)"
-   elif [[ -f ${item}/include/Makefile.local.mk ]] ; then
-      itemv="$(make -f _share/Makefile.print.mk print-${itemUC}_VERSION OTHERMAKEFILE=$(pwd)/${item}/include/Makefile.local.${item}.mk)"
-   elif [[ -f ${item}/Makefile ]] ; then
-      itemv="$(make -f _share/Makefile.print.mk print-${itemUC}_VERSION OTHERMAKEFILE=$(pwd)/${item}/Makefile)"
-   else
-      item2=${item}_version
-      itemv=${!item2}
-   fi
-   if [[ "x${itemv}" != "x" && "x${itemv}" != "xdev" ]] ; then
-      itemv=${itemv}${_versfx}
-   fi
-   echo ${item}_version=${itemv:-dev}
-   for mysetup in ${item}/bin/.rde.env_setup.dot ${item}/bin/.env_setup.dot0 ${item}/bin/.env_setup.dot ; do
-      if [[ -f ${mysetup} ]] ; then
-         # echo . ${mysetup} ${item} ${itemv:-dev} all $(pwd)/${item} $(pwd)/${item}
-         . ${mysetup} ${item} ${itemv:-dev} all $(pwd)/${item} $(pwd)/${item}
-      fi
-   done
-done
-unset item itemUC itemv item2 mysetup
+#TODO: is this needed since we do .setenv.dot for each comp...
+# for item in ${RDECOMPONENTS}; do
+#    if [[ -d ${item}/bin ]] ; then
+#       export PATH=$(pwd)/${item}/bin:${PATH}
+#    fi
+#    if [[ -d ${item}/lib/python ]] ; then
+#       export PYTHONPATH=$(pwd)/${item}/lib/python:${PYTHONPATH}
+#    fi
+#    itemUC="$(echo ${item} | tr 'a-z' 'A-Z')"
+#    if [[ -f ${item}/VERSION ]] ; then
+#       itemv="$(cat ${item}/VERSION)"
+#    # elif [[ -f ${item}/include/Makefile.local.${item}.mk ]] ; then
+#    #    itemv="$(make -f _share/Makefile.print.mk print-${itemUC}_VERSION OTHERMAKEFILE=$(pwd)/${item}/include/Makefile.local.${item}.mk)"
+#    # elif [[ -f ${item}/include/Makefile.local.mk ]] ; then
+#    #    itemv="$(make -f _share/Makefile.print.mk print-${itemUC}_VERSION OTHERMAKEFILE=$(pwd)/${item}/include/Makefile.local.${item}.mk)"
+#    # elif [[ -f ${item}/Makefile ]] ; then
+#    #    itemv="$(make -f _share/Makefile.print.mk print-${itemUC}_VERSION OTHERMAKEFILE=$(pwd)/${item}/Makefile)"
+#    else
+#       item2=${item}_version
+#       itemv=${!item2}
+#    fi
+#    if [[ "x${itemv}" != "x" && "x${itemv}" != "xdev" ]] ; then
+#       itemv=${itemv}${_versfx}
+#    fi
+#    echo ${item}_version=${itemv:-dev}
+#    for mysetup in ${item}/bin/.rde.env_setup.dot ${item}/bin/.env_setup.dot0 ${item}/bin/.env_setup.dot ; do
+#       if [[ -f ${mysetup} ]] ; then
+#          # echo . ${mysetup} ${item} ${itemv:-dev} all $(pwd)/${item} $(pwd)/${item}
+#          . ${mysetup} ${item} ${itemv:-dev} all $(pwd)/${item} $(pwd)/${item}
+#       fi
+#    done
+# done
+# unset item itemUC itemv item2 mysetup
 
 ##missing: ATM_MODEL_VERSION, gemmod, MAESTRO_CURRENT_REF
 
@@ -181,5 +183,5 @@ unset item itemUC itemv item2 mysetup
 export PATH=$(pwd)/$(rdevar build/bin):$(pwd)/_bin:${PATH}
 export RDE_EXTRADIRS=".rde.no_extradirs"
 
-unset _verbose _overridesok _MYSELF DESC USAGE
+unset _myverbose _overridesok _MYSELF DESC USAGE usage_long
 

@@ -76,7 +76,7 @@ done
 
 ## rdegrep -e -i '^[ ]*namelist[ ]*/'
 
-ignorefile="rpnphy/src/series/series.cdk"
+ignorefile="rpnphy/src/series/series.cdk rpnpy/bin/rpy.ftnnml2wiki ftnnml2wiki"
 ignorenml="split3df_in split3df_out cdm_cfgs"
 
 for name in ${_complist}; do
@@ -119,8 +119,8 @@ EOF
          if [[ ${mynml} == ${mynml%_p} ]] ; then
             echo ${myfile} ${mynml} 1>&2
             set -x
-            ../_bin/ftnnml2wiki.py ${_md} ${_sort} -i ${myfile} -n ${mynml} >> ${_outdir:-.}/${name}.${_format}
-            set +x
+             ../_bin/ftnnml2wiki.py ${_md} ${_sort} -i ${myfile} -n ${mynml} >> ${_outdir:-.}/${name}.namelists.${_format}
+           set +x
          else
             echo Skipping ${myfile} ${mynml} 1>&2
          fi

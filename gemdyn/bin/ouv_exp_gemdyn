@@ -74,10 +74,11 @@ EOF
 fi
 
 
-SRCLIST="${modelutils}/include ${rpnphy}/include ${gemdyn}/include ${gemdyn}/src"
+INCLIST="${modelutils}/include ${rpnphy}/include ${gemdyn}/include "
+SRCLIST="${gemdyn}/src"
 TOPDIRS="${gemdyn}"
 if [[ $dodeps == 1 ]] ; then
-   SRCLIST="${modelutils}/include ${modelutils}/src ${rpnphy}/include ${rpnphy}/src ${gemdyn}/include ${gemdyn}/src"
+   SRCLIST="${modelutils}/src ${rpnphy}/src ${gemdyn}/src"
    TOPDIRS="${modelutils} ${rpnphy} ${gemdyn}"
 fi
 
@@ -85,4 +86,5 @@ rm -f $(rdevar srcpathfile)
 for myarch in $EC_ARCH_LIST ; do
    myarchold=$(rdevar --arch ${myarch} base_arch)
    rdeaddsrc ${myverbose} -R --arch ${myarchold} --reset --topdirs "${TOPDIRS}" ${SRCLIST}
+   rdeaddsrc ${myverbose} -R --arch ${myarchold} --reset --include "${INCLIST}"
 done

@@ -3,12 +3,33 @@ $(info ## ====================================================================)
 $(info ## File: $$rpnphy/include/Makefile.ssm.mk)
 $(info ## )
 endif
-#---- SSM build  upport  -------------------------------------------
+
+#------------------------------------
 
 RPNPHY_SSMALL_NAME  = rpnphy$(RPNPHY_SFX)_$(RPNPHY_VERSION)_all
 RPNPHY_SSMARCH_NAME = rpnphy$(RPNPHY_SFX)+$(COMP_ARCH)_$(RPNPHY_VERSION)_$(SSMARCH)
 RPNPHY_SSMALL_FILES  = $(RPNPHY_SSMALL_NAME).ssm
 RPNPHY_SSMARCH_FILES = $(RPNPHY_SSMARCH_NAME).ssm
+
+ifeq (,$(RDENETWORK))
+   ifneq (,$(wildcard /ssm/net/*))
+      RDENETWORK=cmc
+   else
+      RDENETWORK=science
+   endif
+endif
+ifeq (science,$(RDENETWORK))
+   ifeq (,$(SSM_PREFIX))
+      SSM_PREFIX = eccc/mrd/rpn/MIG/
+   endif
+endif
+
+
+# SSM_TEST_INSTALL = 1
+ifeq (1,$(SSM_TEST_INSTALL))
+   RPNPHY_VERSION_X = test/
+   SSM_TEST_INSTALL_RELDIR = test/
+endif
 
 SSM_DEPOT_DIR := $(HOME)/SsmDepot
 SSM_BASE      := $(HOME)/SsmBundles
@@ -27,7 +48,7 @@ $(RPNPHY_SSMALL_FILES): rpnphy_ssm_all rm_rpnphy_ssm_all.ssm $(SSM_DEPOT_DIR)/$(
 rm_rpnphy_ssm_all.ssm:
 	rm -f $(SSM_DEPOT_DIR)/$(RPNPHY_SSMALL_NAME).ssm
 $(SSM_DEPOT_DIR)/$(RPNPHY_SSMALL_NAME).ssm:
-	cd $(BUILDSSM)  ;\
+	cd $(BUILDSSM) ;\
 	chmod a+x $(basename $(notdir $@))/bin/* 2>/dev/null || true ;\
 	tar czvf $@ $(basename $(notdir $@))
 	ls -l $@
@@ -35,7 +56,7 @@ $(SSM_DEPOT_DIR)/$(RPNPHY_SSMALL_NAME).ssm:
 rpnphy_ssm_all: rm_rpnphy_ssm_all $(BUILDSSM)/$(RPNPHY_SSMALL_NAME)
 rm_rpnphy_ssm_all:
 	rm -rf $(BUILDSSM)/$(RPNPHY_SSMALL_NAME)
-$(BUILDSSM)/$(RPNPHY_SSMALL_NAME):
+$(BUILDSSM)/$(RPNPHY_SSMALL_NAME): rpnphy_ssmusedep_bndl
 	rm -rf $@ ; mkdir -p $@ ; \
 	rsync -av --exclude-from=$(DIRORIG_rpnphy)/.ssm.d/exclude $(DIRORIG_rpnphy)/ $@/ ; \
 	echo "Dependencies (s.ssmuse.dot): " > $@/BUILDINFO ; \
@@ -84,19 +105,47 @@ $(BUILDSSM)/$(RPNPHY_SSMARCH_NAME):
 		cp $(RPNPHY_ABS_FILES) $@/bin/$(BASE_ARCH) ; \
 	fi ; \
 	cp -R $(DIRORIG_rpnphy)/.ssm.d $@/ ; \
-	.rdemk_ssm_control rpnphy $(RPNPHY_VERSION) $(SSMORDARCH) $@/BUILDINFO $@/DESCRIPTION > $@/.ssm.d/control 
+	.rdemk_ssm_control rpnphy $(RPNPHY_VERSION) $(SSMORDARCH) $@/BUILDINFO $@/DESCRIPTION > $@/.ssm.d/control
 
+
+.PHONY: rpnphy_ssmusedep_bndl rpnphy_ssmusedep_bndl_rm rpnphy_ssmusedep_bndl_all
+rpnphy_ssmusedep_bndl: | rpnphy_ssmusedep_bndl_rm rpnphy_ssmusedep_bndl_all
+rpnphy_ssmusedep_bndl_rm:
+	rm -f $(rpnphy)/ssmusedep.bndl $(rpnphy)/ssmusedep_post.bndl
+rpnphy_ssmusedep_bndl_all: $(rpnphy)/ssmusedep.bndl $(rpnphy)/ssmusedep_post.bndl
+	ls -l $(rpnphy)/ssmusedep.bndl $(rpnphy)/ssmusedep_post.bndl
+$(rpnphy)/ssmusedep.bndl:
+	touch $@ ;\
+	if [[ -f $(rpnphy)/DEPENDENCIES.external.bndl ]] ; then \
+	   cat $(rpnphy)/DEPENDENCIES.external.bndl >> $@ ;\
+	fi ;\
+	echo >> $@ ;\
+	if [[ -f $(rpnphy)/DEPENDENCIES.external.$${RDENETWORK}.bndl ]] ; then \
+	   cat $(rpnphy)/DEPENDENCIES.external.$${RDENETWORK}.bndl >> $@ ;\
+	fi ;\
+	echo >> $@ ;\
+	if [[ -f $(rpnphy)/DEPENDENCIES.mig.bndl ]] ; then \
+	   for i in `cat $(rpnphy)/DEPENDENCIES.mig.bndl | tr '\n' ' '` ; do \
+	      i2="$$(echo $$i | sed 's|/x/|/|g')" ;\
+	      if [[ "x$(SSM_TEST_INSTALL_RELDIR)" == "x" ]] ; then i2=$$i ; fi ;\
+	      i0=$${i2%/*} ;\
+	      i1=`echo $${i2} | sed "s|$${i0%/*}/||"` ;\
+	      echo $(SSM_PREFIX)$${i0%/*}/$(SSM_TEST_INSTALL_RELDIR)$${i1} >> $@ ;\
+	      echo $(SSM_PREFIX)$${i0%/*}/$(SSM_TEST_INSTALL_RELDIR)$${i1} ;\
+	   done ;\
+	fi
+$(rpnphy)/ssmusedep_post.bndl:
+	touch $@
 
 .PHONY: rpnphy_install rpnphy_uninstall
-#TODO: install all pkg should be a git repos
-rpnphy_install: 
+rpnphy_install: rpnphy_ssmusedep_bndl
 	if [[ x$(CONFIRM_INSTALL) != xyes ]] ; then \
 		echo "Please use: make $@ CONFIRM_INSTALL=yes" ;\
 		exit 1;\
 	fi
 	cd $(SSM_DEPOT_DIR) ;\
 	rdessm-install -v \
-			--git \
+			--git $(SSM_SKIP_INSTALLED) \
 			--dest=$(RPNPHY_SSM_BASE_DOM)/rpnphy_$(RPNPHY_VERSION) \
 			--bndl=$(RPNPHY_SSM_BASE_BNDL)/$(RPNPHY_VERSION).bndl \
 			--pre=$(rpnphy)/ssmusedep.bndl \
@@ -117,5 +166,5 @@ rpnphy_uninstall:
 			--uninstall
 
 ifneq (,$(DEBUGMAKE))
-$(info ## ==== $$rpnphy/include/Makefile.ssm.mk [END] ========================)
+$(info ## ==== $$rpnphy/include/Makefile.ssm.mk [END] ====================)
 endif

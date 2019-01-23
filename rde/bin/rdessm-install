@@ -100,7 +100,7 @@ if [[ ${myskip} == 1 ]] ; then
    _status=installed
    rdessm-install-check --dest=${domain} --bndl=${bndl} --pre=${prebndl} \
       --post=${postbndl} --base=${ssmbase} ${ssmpkglist} || _status=
-   if [[ x${_status} == installed ]] ; then
+   if [[ "x${_status}" == "xinstalled" ]] ; then
       cat <<EOF
 WARNING: Domain, packages and bundle already fully installed and published
          domain: ${domain}

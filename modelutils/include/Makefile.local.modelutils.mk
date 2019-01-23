@@ -5,11 +5,10 @@ $(info ## )
 endif
 ## General/Common definitions for models (excluding Etagere added ones)
 
-# ifeq (,$(wildcard $(modelutils)/VERSION))
-#    $(error Not found: $(modelutils)/VERSION)
-# endif
-# MODELUTILS_VERSION0  = $(shell cat $(modelutils)/VERSION | sed 's|x/||')
-MODELUTILS_VERSION0  = x/1.5.rc4
+ifeq (,$(wildcard $(modelutils)/VERSION))
+   $(error Not found: $(modelutils)/VERSION)
+endif
+MODELUTILS_VERSION0  = $(shell cat $(modelutils)/VERSION)
 MODELUTILS_VERSION   = $(notdir $(MODELUTILS_VERSION0))
 MODELUTILS_VERSION_X = $(dir $(MODELUTILS_VERSION0))
 
@@ -49,7 +48,7 @@ MODELUTILS_TESTS_LIB_0     = modelutils_tests
 MODELUTILS_IFORT_LIB_0     = modelutils_ov_ifort
 MODELUTILS_TDPACK_LIB_0    = modelutils_tdpack
 
-MODELUTILS_LIB_MERGED_NAME_0 = modelutils0
+MODELUTILS_LIB_MERGED_NAME_0 = modelutils
 MODELUTILS_LIBS_MERGED_0 = modelutils_main modelutils_driver modelutils_utils $(MODELUTILS_TDPACK_LIB_0) modelutils_base
 MODELUTILS_LIBS_OTHER_0  = $(LIBMUSTUBS_0) $(LIBMUTMG_0) $(MODELUTILS_IFORT_LIB_0)
 MODELUTILS_LIBS_EXTRA_0  = $(MODELUTILS_DUMMYMPISTUBS_0) $(MODELUTILS_TESTS_LIB_0)

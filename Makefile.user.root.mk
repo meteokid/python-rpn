@@ -1,6 +1,6 @@
 ifneq (,$(DEBUGMAKE))
 $(info ## ====================================================================)
-$(info ## File: $$gem/Makefile.user.root.mk)
+$(info ## File: $$mig/Makefile.user.root.mk)
 $(info ## )
 endif
 
@@ -17,9 +17,11 @@ extrafilesclean:
 	## rm -rf GEM_cfg*  # should these be removed as well?... only if not in git
 	rm -rf .rde* BINMOD
 	rm -f  .linkit.log .ssmuse_gem suite PREP RUNMOD
+	rm -f  */ssmusedep*bndl gem/ATM_MODEL_*
+
 distclean: $(RDE_TARGET_DISTCLEAN) extrafilesclean
 
 
 ifneq (,$(DEBUGMAKE))
-$(info ## ==== Makefile.user.mk [END] ========================================)
+$(info ## ==== $$mig/Makefile.user.mk [END] ========================================)
 endif

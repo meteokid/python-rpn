@@ -6,11 +6,10 @@ endif
 
 ## GEM model and GemDyn definitions
 
-# ifeq (,$(wildcard $(gemdyn)/VERSION))
-#    $(error Not found: $(gemdyn)/VERSION)
-# endif
-# GEMDYN_VERSION0  = $(shell cat $(gemdyn)/VERSION | sed 's|x/||')
-GEMDYN_VERSION0  = x/5.0.rc3
+ifeq (,$(wildcard $(gemdyn)/VERSION))
+   $(error Not found: $(gemdyn)/VERSION)
+endif
+GEMDYN_VERSION0  = $(shell cat $(gemdyn)/VERSION)
 GEMDYN_VERSION   = $(notdir $(GEMDYN_VERSION0))
 GEMDYN_VERSION_X = $(dir $(GEMDYN_VERSION0))
 
@@ -23,7 +22,7 @@ LIBCPLPATH   =
 LIBCPL       =
 LIBCANONICAL =
 
-GEMDYN_LIB_MERGED_NAME_0 = gemdyn0
+GEMDYN_LIB_MERGED_NAME_0 = gemdyn
 GEMDYN_LIBS_MERGED_0 = gemdyn_main gemdyn_base gemdyn_canonical
 GEMDYN_LIBS_OTHER_0  = $(LIBCPL) $(LIBCANONICAL)
 GEMDYN_LIBS_ALL_0    = $(GEMDYN_LIBS_MERGED_0) $(GEMDYN_LIBS_OTHER_0)

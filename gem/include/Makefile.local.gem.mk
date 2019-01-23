@@ -4,12 +4,10 @@ $(info ## File: $$gem/include/Makefile.local.gem.mk)
 $(info ## )
 endif
 
-# ifeq (,$(wildcard $(gem)/VERSION))
-#    $(error Not found: $(gem)/VERSION)
-# endif
-# GEM_VERSION   = $(shell cat $(gem)/VERSION)
-# GEM_VERSION_X = x/
-GEM_VERSION0  = x/5.0.rc4
+ifeq (,$(wildcard $(gem)/VERSION))
+   $(error Not found: $(gem)/VERSION)
+endif
+GEM_VERSION0  = $(shell cat $(gem)/VERSION)
 GEM_VERSION   = $(notdir $(GEM_VERSION0))
 GEM_VERSION_X = $(dir $(GEM_VERSION0))
 

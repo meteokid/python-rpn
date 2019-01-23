@@ -11,17 +11,10 @@ export ATM_MODEL_ISOFFICIAL := true
 export BUILDNAME = 
 RBUILD_EXTRA_OBJ0    := 
 
-ifeq (,$(vgrid))
-COMP_VGRID = vgrid
-endif
-ifeq (,$(rpncomm))
-COMP_RPNCOMM = rpncomm
-endif
-
-COMPONENTS        := $(COMP_VGRID) $(COMP_RPNCOMM) modelutils rpnphy gemdyn gem
+COMPONENTS        := gem
 COMPONENTS_UC     := $(foreach item,$(COMPONENTS),$(call rdeuc,$(item)))
 
-COMPONENTS2       := $(COMP_VGRID) $(COMP_RPNCOMM) modelutils rpnphy gemdyn $(COMPONENTS)
+COMPONENTS2       := modelutils rpnphy gemdyn $(COMPONENTS)
 COMPONENTS2_UC    := $(foreach item,$(COMPONENTS2),$(call rdeuc,$(item)))
 
 COMPONENTS_VFILES := $(foreach item,$(COMPONENTS2_UC),$($(item)_VFILES))
@@ -98,5 +91,5 @@ components_install: $(COMPONENTS_INSTALL_ALL)
 components_uninstall: $(COMPONENTS_UNINSTALL_ALL)
 
 ifneq (,$(DEBUGMAKE))
-$(info ## ==== Makefile.user.mk [END] ========================================)
+$(info ## ==== $$gem/Makefile.user.mk [END] ========================================)
 endif

@@ -209,16 +209,18 @@ if [[ ${dodeps} == 1 ]] ; then
 else
    SRCLIST=""
    INCLIST="${vgrid_include} ${rpncomm_include} ${modelutils}/include ${rpnphy}/include ${gemdyn}/include ${gem}/include" #TODO: add other RDE_COMPONENTS incdir
-   TOPDIRS="${gemdyn}"
+   TOPDIRS="${gem}"
 fi
 
 rm -f ${CONST_SRCPATHFILE}
 for myarch in $EC_ARCH_LIST ; do
    myarchold=$(rdevar --arch ${myarch} base_arch)
-   if [[ "x${myverbose}" == "x-v" ]] ; then
-      echo "+ rdeaddsrc ${myverbose} -R --arch ${myarchold} --reset --topdirs '${TOPDIRS}' ${SRCLIST}"
+   if [[ "x${SRCLIST}" != "x" ]] ; then
+      if [[ "x${myverbose}" == "x-v" ]] ; then
+         echo "+ rdeaddsrc ${myverbose} -R --arch ${myarchold} --reset --topdirs '${TOPDIRS}' ${SRCLIST}"
+      fi
+      rdeaddsrc ${myverbose} -R --arch ${myarchold} --reset --topdirs "${TOPDIRS}" ${SRCLIST}
    fi
-   rdeaddsrc ${myverbose} -R --arch ${myarchold} --reset --topdirs "${TOPDIRS}" ${SRCLIST}
    if [[ "x${myverbose}" == "x-v" ]] ; then
       echo "+ rdeaddsrc ${myverbose} -R --arch ${myarchold} --reset --include ${INCLIST}"
    fi

@@ -1,6 +1,6 @@
 ifneq (,$(DEBUGMAKE))
 $(info ## ====================================================================)
-$(info ## File: $$gem/Makefile.user.mk)
+$(info ## File: $$mig/Makefile.user.mk)
 $(info ## )
 endif
 
@@ -15,7 +15,7 @@ ifeq (,$(rpncomm))
 COMP_RPNCOMM = rpncomm
 endif
 
-COMPONENTS        := $(RDECOMPONENTS)
+COMPONENTS        := migdep $(RDECOMPONENTS)
 COMPONENTS_UC     := $(foreach item,$(COMPONENTS),$(call rdeuc,$(item)))
 
 COMPONENTS2       := $(RDECOMPONENTS) $(COMPONENTS)
@@ -34,18 +34,13 @@ COMPONENTS_VFILES := $(foreach item,$(COMPONENTS2_UC),$($(item)_VFILES))
 
 
 MYSSMINCLUDEMK0 = $(foreach item,$(COMPONENTS),$($(item))/include/Makefile.ssm.mk)
-MYSSMINCLUDEMK = $(wildcard $(RDE_INCLUDE0)/Makefile.ssm.mk $(MYSSMINCLUDEMK0))
+MYSSMINCLUDEMK = $(wildcard $(RDE_INCLUDE0)/Makefile.ssm.mk $(migdep)/include/Makefile.local.migdep.mk $(MYSSMINCLUDEMK0))
 ifneq (,$(MYSSMINCLUDEMK))
    ifneq (,$(DEBUGMAKE))
       $(info include $(MYSSMINCLUDEMK))
    endif
    include $(MYSSMINCLUDEMK)
 endif
-
-ifeq (,$(DIRORIG_gem))
-DIRORIG_gem = $(gem)
-endif
-
 #------------------------------------
 ifeq (-d,$(RDE_BUILDDIR_SFX))
 COMP_RULES_FILE = $(MODELUTILS_COMP_RULES_DEBUG)
@@ -110,23 +105,29 @@ components_ssm_arch: $(COMPONENTS_SSM_ARCH)
 
 COMPONENTS_INSTALL_ALL := $(foreach item,$(COMPONENTS_UC),$($(item)_INSTALL))
 COMPONENTS_UNINSTALL_ALL := $(foreach item,$(COMPONENTS_UC),$($(item)_UNINSTALL))
+myinfo:
+	echo RDECOMPONENTS=$(RDECOMPONENTS)
+	echo COMPONENTS=$(COMPONENTS)
+	echo COMPONENTS_UC=$(COMPONENTS_UC)
+	echo COMPONENTS2=$(COMPONENTS2)
+	echo COMPONENTS2_UC=$(COMPONENTS2_UC)
+	echo COMPONENTS_VFILES=$(COMPONENTS_VFILES)
+	echo RDE_BUILDDIR_SFX=$(RDE_BUILDDIR_SFX)
+	echo COMPONENTS_LIBS_FILES=$(COMPONENTS_LIBS_FILES)
+	echo COMPONENTS_ABS=$(COMPONENTS_ABS)
+	echo COMPONENTS_ABS_FILES=$(COMPONENTS_ABS_FILES)
+	echo COMPONENTS_SSM_ALL=$(COMPONENTS_SSM_ALL)
+	echo COMPONENTS_SSM_ARCH=$(COMPONENTS_SSM_ARCH)
+	echo COMPONENTS_INSTALL_ALL=$(COMPONENTS_INSTALL_ALL)
+	echo MYSSMINCLUDEMK0=$(MYSSMINCLUDEMK0)
+	echo RDE_INCLUDE0=$(RDE_INCLUDE0)
+	echo MYSSMINCLUDEMK=$(MYSSMINCLUDEMK)
+
 $(info COMPONENTS_INSTALL_ALL=$(COMPONENTS_INSTALL_ALL))
 .PHONY: components_install components_uninstall
 components_install: $(COMPONENTS_INSTALL_ALL)
-	for i in $(COMPONENTS) ; do \
-		if [[ -f $(ROOT)/$$i/Makefile ]] ; then \
-			cd $(ROOT)/$$i && \
-			make -f Makefile $${i}_install CONFIRM_INSTALL=$(CONFIRM_INSTALL) || true ; \
-		fi ; \
-	done
 components_uninstall: $(COMPONENTS_UNINSTALL_ALL)
-	for i in $(COMPONENTS) ; do \
-		if [[ -f $(ROOT)/$$i/Makefile ]] ; then \
-			cd $(ROOT)/$$i && \
-			make -f Makefile $${i}_uninstall UNINSTALL_CONFIRM=$(UNINSTALL_CONFIRM) || true ; \
-		fi ; \
-	done
 
 ifneq (,$(DEBUGMAKE))
-$(info ## ==== Makefile.user.mk [END] ========================================)
+$(info ## ==== $$mig/Makefile.user.mk [END] ========================================)
 endif

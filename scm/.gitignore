@@ -1,9 +1,7 @@
-VERSION
 BUILDINFO
 __build__
 __dist__
 *.orig
-bin/.env_setup.dot
 Makefile
 Makefile.build.mk
 Makefile.rules.mk

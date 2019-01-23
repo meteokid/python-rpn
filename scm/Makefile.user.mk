@@ -87,5 +87,5 @@ components_install: $(COMPONENTS_INSTALL_ALL)
 components_uninstall: $(COMPONENTS_UNINSTALL_ALL)
 
 ifneq (,$(DEBUGMAKE))
-$(info ## ==== Makefile.user.mk [END] ========================================)
+$(info ## ==== $$scm/Makefile.user.mk [END] ========================================)
 endif

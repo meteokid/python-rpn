@@ -75,5 +75,5 @@ components_uninstall: $(COMPONENTS_UNINSTALL_ALL)
 
 
 ifneq (,$(DEBUGMAKE))
-$(info ## ==== Makefile.user.mk [END] ========================================)
+$(info ## ==== $$gemdyn/Makefile.user.mk [END] ========================================)
 endif

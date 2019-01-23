@@ -6,11 +6,10 @@ endif
 
 ## RPNPhy definitions
 
-# ifeq (,$(wildcard $(rpnphy)/VERSION))
-#    $(error Not found: $(rpnphy)/VERSION)
-# endif
-# RPNPHY_VERSION0  = $(shell cat $(rpnphy)/VERSION | sed 's|x/||')
-RPNPHY_VERSION0  = x/6.0.rc4
+ifeq (,$(wildcard $(rpnphy)/VERSION))
+   $(error Not found: $(rpnphy)/VERSION)
+endif
+RPNPHY_VERSION0  = $(shell cat $(rpnphy)/VERSION)
 RPNPHY_VERSION   = $(notdir $(RPNPHY_VERSION0))
 RPNPHY_VERSION_X = $(dir $(RPNPHY_VERSION0))
 
@@ -19,6 +18,10 @@ RPNPHY_SFX = $(RDE_LIBS_SFX)
 PHYBINDIR = $(BINDIR)
 
 ## Some Shortcut/Alias to Lib Names
+ifeq (1,$(MODELUTILS_LIBS_DEP))
+   $(info include $(modelutils)/include/Makefile.local.modelutils.mk)
+   include $(modelutils)/include/Makefile.local.modelutils.mk
+endif
 RPNPHY_LIBS_DEP = $(MODELUTILS_LIBS_V) $(MODELUTILS_LIBS_DEP)
 
 LIBCLASS_0       = 
@@ -26,7 +29,7 @@ LIBCPLPHY_0      = rpnphy_cpl_stubs
 LIBPHYSURFACES_0 = rpnphy_surface
 LIBCHM_0         = rpnphy_chm_stubs
 
-RPNPHY_LIB_MERGED_NAME_0 = rpnphy0
+RPNPHY_LIB_MERGED_NAME_0 = rpnphy
 RPNPHY_LIBS_MERGED_0 = rpnphy_main rpnphy_api rpnphy_base $(LIBPHYSURFACES_0) rpnphy_series rpnphy_utils
 RPNPHY_LIBS_OTHER_0  = $(LIBCLASS_0) $(LIBCHM_0) $(LIBCPLPHY_0)
 RPNPHY_LIBS_ALL_0    = $(RPNPHY_LIBS_MERGED_0) $(RPNPHY_LIBS_OTHER_0)

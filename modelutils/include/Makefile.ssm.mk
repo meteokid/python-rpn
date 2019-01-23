@@ -11,6 +11,26 @@ MODELUTILS_SSMARCH_NAME = modelutils$(MODELUTILS_SFX)+$(COMP_ARCH)_$(MODELUTILS_
 MODELUTILS_SSMALL_FILES  = $(MODELUTILS_SSMALL_NAME).ssm
 MODELUTILS_SSMARCH_FILES = $(MODELUTILS_SSMARCH_NAME).ssm
 
+ifeq (,$(RDENETWORK))
+   ifneq (,$(wildcard /ssm/net/*))
+      RDENETWORK=cmc
+   else
+      RDENETWORK=science
+   endif
+endif
+ifeq (science,$(RDENETWORK))
+   ifeq (,$(SSM_PREFIX))
+      SSM_PREFIX = eccc/mrd/rpn/MIG/
+   endif
+endif
+
+
+# SSM_TEST_INSTALL = 1
+ifeq (1,$(SSM_TEST_INSTALL))
+   MODELUTILS_VERSION_X = test/
+   SSM_TEST_INSTALL_RELDIR = test/
+endif
+
 SSM_DEPOT_DIR := $(HOME)/SsmDepot
 SSM_BASE      := $(HOME)/SsmBundles
 SSM_BASE2     := $(HOME)/SsmBundles
@@ -36,7 +56,7 @@ $(SSM_DEPOT_DIR)/$(MODELUTILS_SSMALL_NAME).ssm:
 modelutils_ssm_all: rm_modelutils_ssm_all $(BUILDSSM)/$(MODELUTILS_SSMALL_NAME)
 rm_modelutils_ssm_all:
 	rm -rf $(BUILDSSM)/$(MODELUTILS_SSMALL_NAME)
-$(BUILDSSM)/$(MODELUTILS_SSMALL_NAME):
+$(BUILDSSM)/$(MODELUTILS_SSMALL_NAME): modelutils_ssmusedep_bndl
 	rm -rf $@ ; mkdir -p $@ ; \
 	rsync -av --exclude-from=$(DIRORIG_modelutils)/.ssm.d/exclude $(DIRORIG_modelutils)/ $@/ ; \
 	echo "Dependencies (s.ssmuse.dot): " > $@/BUILDINFO ; \
@@ -85,19 +105,48 @@ $(BUILDSSM)/$(MODELUTILS_SSMARCH_NAME):
 		cp $(MODELUTILS_ABS_FILES) $@/bin/$(BASE_ARCH) ; \
 	fi ; \
 	cp -R $(DIRORIG_modelutils)/.ssm.d $@/ ; \
-	.rdemk_ssm_control modelutils $(MODELUTILS_VERSION) $(SSMORDARCH) $@/BUILDINFO $@/DESCRIPTION > $@/.ssm.d/control 
+	.rdemk_ssm_control modelutils $(MODELUTILS_VERSION) $(SSMORDARCH) $@/BUILDINFO $@/DESCRIPTION > $@/.ssm.d/control
 
+
+.PHONY: modelutils_ssmusedep_bndl modelutils_ssmusedep_bndl_rm modelutils_ssmusedep_bndl_all
+modelutils_ssmusedep_bndl: | modelutils_ssmusedep_bndl_rm modelutils_ssmusedep_bndl_all
+modelutils_ssmusedep_bndl_rm:
+	rm -f $(modelutils)/ssmusedep.bndl $(modelutils)/ssmusedep_post.bndl
+modelutils_ssmusedep_bndl_all: $(modelutils)/ssmusedep.bndl $(modelutils)/ssmusedep_post.bndl
+	ls -l $(modelutils)/ssmusedep.bndl $(modelutils)/ssmusedep_post.bndl
+$(modelutils)/ssmusedep.bndl:
+	touch $@ ;\
+	if [[ -f $(modelutils)/DEPENDENCIES.external.bndl ]] ; then \
+	   cat $(modelutils)/DEPENDENCIES.external.bndl >> $@ ;\
+	fi ;\
+	echo >> $@ ;\
+	if [[ -f $(modelutils)/DEPENDENCIES.external.$${RDENETWORK}.bndl ]] ; then \
+	   cat $(modelutils)/DEPENDENCIES.external.$${RDENETWORK}.bndl >> $@ ;\
+	fi ;\
+	echo >> $@ ;\
+	if [[ -f $(modelutils)/DEPENDENCIES.mig.bndl ]] ; then \
+		set -x ;\
+	   for i in `cat $(modelutils)/DEPENDENCIES.mig.bndl | tr '\n' ' '` ; do \
+	      i2="$$(echo $$i | sed 's|/x/|/|g')" ;\
+	      if [[ "x$(SSM_TEST_INSTALL_RELDIR)" == "x" ]] ; then i2=$$i ; fi ;\
+	      i0=$${i2%/*} ;\
+	      i1=`echo $${i2} | sed "s|$${i0%/*}/||"` ;\
+	      echo $(SSM_PREFIX)$${i0%/*}/$(SSM_TEST_INSTALL_RELDIR)$${i1} >> $@ ;\
+	      echo $(SSM_PREFIX)$${i0%/*}/$(SSM_TEST_INSTALL_RELDIR)$${i1} ;\
+	   done ;\
+	fi
+$(modelutils)/ssmusedep_post.bndl:
+	touch $@
 
 .PHONY: modelutils_install modelutils_uninstall
-#TODO: install all pkg should be a git repos
-modelutils_install: 
+modelutils_install: modelutils_ssmusedep_bndl
 	if [[ x$(CONFIRM_INSTALL) != xyes ]] ; then \
 		echo "Please use: make $@ CONFIRM_INSTALL=yes" ;\
 		exit 1;\
 	fi
 	cd $(SSM_DEPOT_DIR) ;\
 	rdessm-install -v \
-			--git \
+			--git $(SSM_SKIP_INSTALLED) \
 			--dest=$(MODELUTILS_SSM_BASE_DOM)/modelutils_$(MODELUTILS_VERSION) \
 			--bndl=$(MODELUTILS_SSM_BASE_BNDL)/$(MODELUTILS_VERSION).bndl \
 			--pre=$(modelutils)/ssmusedep.bndl \

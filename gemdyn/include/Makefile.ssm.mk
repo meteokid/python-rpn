@@ -4,12 +4,32 @@ $(info ## File: $$gemdyn/include/Makefile.ssm.mk)
 $(info ## )
 endif
 
-#----  SSM build Support ------------------------------------------------
+#------------------------------------
 
 GEMDYN_SSMALL_NAME  = gemdyn$(GEMDYN_SFX)_$(GEMDYN_VERSION)_all
 GEMDYN_SSMARCH_NAME = gemdyn$(GEMDYN_SFX)+$(COMP_ARCH)_$(GEMDYN_VERSION)_$(SSMARCH)
 GEMDYN_SSMALL_FILES  = $(GEMDYN_SSMALL_NAME).ssm
 GEMDYN_SSMARCH_FILES = $(GEMDYN_SSMARCH_NAME).ssm
+
+ifeq (,$(RDENETWORK))
+   ifneq (,$(wildcard /ssm/net/*))
+      RDENETWORK=cmc
+   else
+      RDENETWORK=science
+   endif
+endif
+ifeq (science,$(RDENETWORK))
+   ifeq (,$(SSM_PREFIX))
+      SSM_PREFIX = eccc/mrd/rpn/MIG/
+   endif
+endif
+
+
+# SSM_TEST_INSTALL = 1
+ifeq (1,$(SSM_TEST_INSTALL))
+   GEMDYN_VERSION_X = test/
+   SSM_TEST_INSTALL_RELDIR = test/
+endif
 
 SSM_DEPOT_DIR := $(HOME)/SsmDepot
 SSM_BASE      := $(HOME)/SsmBundles
@@ -28,7 +48,7 @@ $(GEMDYN_SSMALL_FILES): gemdyn_ssm_all rm_gemdyn_ssm_all.ssm $(SSM_DEPOT_DIR)/$(
 rm_gemdyn_ssm_all.ssm:
 	rm -f $(SSM_DEPOT_DIR)/$(GEMDYN_SSMALL_NAME).ssm
 $(SSM_DEPOT_DIR)/$(GEMDYN_SSMALL_NAME).ssm:
-	cd $(BUILDSSM)  ;\
+	cd $(BUILDSSM) ;\
 	chmod a+x $(basename $(notdir $@))/bin/* 2>/dev/null || true ;\
 	tar czvf $@ $(basename $(notdir $@))
 	ls -l $@
@@ -36,7 +56,7 @@ $(SSM_DEPOT_DIR)/$(GEMDYN_SSMALL_NAME).ssm:
 gemdyn_ssm_all: rm_gemdyn_ssm_all $(BUILDSSM)/$(GEMDYN_SSMALL_NAME)
 rm_gemdyn_ssm_all:
 	rm -rf $(BUILDSSM)/$(GEMDYN_SSMALL_NAME)
-$(BUILDSSM)/$(GEMDYN_SSMALL_NAME):
+$(BUILDSSM)/$(GEMDYN_SSMALL_NAME): gemdyn_ssmusedep_bndl
 	rm -rf $@ ; mkdir -p $@ ; \
 	rsync -av --exclude-from=$(DIRORIG_gemdyn)/.ssm.d/exclude $(DIRORIG_gemdyn)/ $@/ ; \
 	echo "Dependencies (s.ssmuse.dot): " > $@/BUILDINFO ; \
@@ -56,13 +76,13 @@ gemdyn_ssm_arch_rm:
 	rm -rf $(BUILDSSM)/$(GEMDYN_SSMARCH_NAME)
 $(BUILDSSM)/$(GEMDYN_SSMARCH_NAME):
 	mkdir -p $@/lib/$(EC_ARCH) ; \
-	ln -s ./$(EC_ARCH)/. $@/lib/$(COMP_ARCH)/. ; \
+	ln -s ./$(EC_ARCH)/. $@/lib/$(COMP_ARCH) ; \
 	touch $@/lib/libdummy_$(GEMDYN_SSMARCH_NAME).a ; \
 	cd $(LIBDIR) ; \
 	rsync -av `ls libgemdyn*.a libgemdyn*.a.fl libgemdyn*.so 2>/dev/null` $@/lib/$(EC_ARCH)/ ; \
 	if [[ x$(MAKE_SSM_NOMOD) != x1 ]] ; then \
 		mkdir -p $@/include/$(EC_ARCH) ; \
-		ln -s ./$(EC_ARCH)/. $@/include/$(COMP_ARCH)/. ; \
+		ln -s ./$(EC_ARCH)/. $@/include/$(COMP_ARCH) ; \
 		touch $@/include/dummy_$(GEMDYN_SSMARCH_NAME).inc ; \
 		cd $(MODDIR) ; \
 		cp $(GEMDYN_MOD_FILES) $@/include/$(EC_ARCH) ; \
@@ -85,18 +105,47 @@ $(BUILDSSM)/$(GEMDYN_SSMARCH_NAME):
 		cp $(GEMDYN_ABS_FILES) $@/bin/$(BASE_ARCH) ; \
 	fi ; \
 	cp -R $(DIRORIG_gemdyn)/.ssm.d $@/ ; \
-	.rdemk_ssm_control gemdyn $(GEMDYN_VERSION) $(SSMORDARCH) $@/BUILDINFO $@/DESCRIPTION > $@/.ssm.d/control 
+	.rdemk_ssm_control gemdyn $(GEMDYN_VERSION) $(SSMORDARCH) $@/BUILDINFO $@/DESCRIPTION > $@/.ssm.d/control
 
+
+.PHONY: gemdyn_ssmusedep_bndl gemdyn_ssmusedep_bndl_rm gemdyn_ssmusedep_bndl_all
+gemdyn_ssmusedep_bndl: | gemdyn_ssmusedep_bndl_rm gemdyn_ssmusedep_bndl_all
+gemdyn_ssmusedep_bndl_rm:
+	rm -f $(gemdyn)/ssmusedep.bndl $(gemdyn)/ssmusedep_post.bndl
+gemdyn_ssmusedep_bndl_all: $(gemdyn)/ssmusedep.bndl $(gemdyn)/ssmusedep_post.bndl
+	ls -l $(gemdyn)/ssmusedep.bndl $(gemdyn)/ssmusedep_post.bndl
+$(gemdyn)/ssmusedep.bndl:
+	touch $@ ;\
+	if [[ -f $(gemdyn)/DEPENDENCIES.external.bndl ]] ; then \
+	   cat $(gemdyn)/DEPENDENCIES.external.bndl >> $@ ;\
+	fi ;\
+	echo >> $@ ;\
+	if [[ -f $(gemdyn)/DEPENDENCIES.external.$${RDENETWORK}.bndl ]] ; then \
+	   cat $(gemdyn)/DEPENDENCIES.external.$${RDENETWORK}.bndl >> $@ ;\
+	fi ;\
+	echo >> $@ ;\
+	if [[ -f $(gemdyn)/DEPENDENCIES.mig.bndl ]] ; then \
+	   for i in `cat $(gemdyn)/DEPENDENCIES.mig.bndl | tr '\n' ' '` ; do \
+	      i2="$$(echo $$i | sed 's|/x/|/|g')" ;\
+	      if [[ "x$(SSM_TEST_INSTALL_RELDIR)" == "x" ]] ; then i2=$$i ; fi ;\
+	      i0=$${i2%/*} ;\
+	      i1=`echo $${i2} | sed "s|$${i0%/*}/||"` ;\
+	      echo $(SSM_PREFIX)$${i0%/*}/$(SSM_TEST_INSTALL_RELDIR)$${i1} >> $@ ;\
+	      echo $(SSM_PREFIX)$${i0%/*}/$(SSM_TEST_INSTALL_RELDIR)$${i1} ;\
+	   done ;\
+	fi
+$(gemdyn)/ssmusedep_post.bndl:
+	touch $@
 
 .PHONY: gemdyn_install gemdyn_uninstall
-gemdyn_install: 
+gemdyn_install: gemdyn_ssmusedep_bndl
 	if [[ x$(CONFIRM_INSTALL) != xyes ]] ; then \
 		echo "Please use: make $@ CONFIRM_INSTALL=yes" ;\
 		exit 1;\
 	fi
 	cd $(SSM_DEPOT_DIR) ;\
 	rdessm-install -v \
-			--git \
+			--git $(SSM_SKIP_INSTALLED) \
 			--dest=$(GEMDYN_SSM_BASE_DOM)/gemdyn_$(GEMDYN_VERSION) \
 			--bndl=$(GEMDYN_SSM_BASE_BNDL)/$(GEMDYN_VERSION).bndl \
 			--pre=$(gemdyn)/ssmusedep.bndl \
@@ -117,5 +166,5 @@ gemdyn_uninstall:
 			--uninstall
 
 ifneq (,$(DEBUGMAKE))
-$(info ## ==== $$gemdyn/include/Makefile.ssm.mk [END] ========================)
+$(info ## ==== $$gemdyn/include/Makefile.ssm.mk [END] ====================)
 endif

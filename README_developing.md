@@ -110,7 +110,8 @@ Compiling and Building
 make sure you do the *initial setup*, including compilation,
 on the machine where the job will be submitted.
 
-*Note 2*: The compiler is specified in `modelutils`'s dependencies.
+*Note 2*: The compiler is specified as an external dependency in 
+the "`_migdep/DEPENDENCIES.external.*.bndl`" files.
 Compiler options, rules and targets are specified in each components's
 Makefiles (`*/include/Makefile.local*mk` files).  
 See **TODO** below for more details.

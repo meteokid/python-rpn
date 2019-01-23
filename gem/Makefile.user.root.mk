@@ -9,8 +9,8 @@ components_install:
 components_uninstall:
 	$(MYTIME) $(MAKE) -f Makefile.build.mk $(NOPRINTDIR) $@ $(MYMAKE_VARS)
 
-export RDE_USE_FULL_VPATH=1
+# export RDE_USE_FULL_VPATH=1
 
 ifneq (,$(DEBUGMAKE))
-$(info ## ==== Makefile.user.mk [END] ========================================)
+$(info ## ==== $$gem/Makefile.user.mk [END] ========================================)
 endif

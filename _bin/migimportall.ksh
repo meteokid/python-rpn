@@ -96,26 +96,31 @@ EOF
    exit 1
 fi
 
-${mygit} checkout master > /dev/null 2>&1 || true
 
-for item in ${adddir} ; do
-   if [[ -d ../${item} && ! -d ${item} ]] ; then
-      cp -R ../${item}/ .
-   fi
-done
-for item in _bin/.setenv.dot _share/README*md _share/.gitignore _share/Makefile.user*mk ; do
-   if [[ -f ${item} && ! -f ${item##*/} ]] ; then
-      mv ${item} ${item##*/}
-   fi
-done
-# for item in _bin/.setenv.dot ; do
-#    if [[ -f ${item} && ! -f ${item##*/} ]] ; then
-#       ln -s ${item} ${item##*/}
-#    fi
-# done
+if [[ "x${adddir}" != "x" ]] ; then
 
-${mygit} add .
-${mygit} commit -a -m 'Base import system update'
+   ${mygit} checkout master > /dev/null 2>&1 || true
+
+   for item in ${adddir} ; do
+      if [[ -d ../${item} && ! -d ${item} ]] ; then
+         cp -R ../${item}/ .
+      fi
+   done
+   for item in _bin/.setenv.dot _share/README*md _share/.gitignore _share/Makefile.user*mk ; do
+      if [[ -f ${item} && ! -f ${item##*/} ]] ; then
+         mv ${item} ${item##*/}
+      fi
+   done
+   # for item in _bin/.setenv.dot ; do
+   #    if [[ -f ${item} && ! -f ${item##*/} ]] ; then
+   #       ln -s ${item} ${item##*/}
+   #    fi
+   # done
+
+   ${mygit} add .
+   ${mygit} commit -a -m 'Base import system update'
+
+fi
 
 
 newtags="$(${mygit} tag | tr '\n' ' ')"
@@ -141,11 +146,12 @@ for item in $(cat ${versionsfile} | tr ' ' ':' | tr '\n' ' '); do
       fi
    fi
 
-   if [[ "x$(${mygit} branch | grep ${branch})" == "x" ]] ; then
-      ${mygit} checkout -b ${branch}
-   else
-      ${mygit} checkout ${branch}
-   fi
+   # if [[ "x$(${mygit} branch | grep ${branch})" != "x" || "x$(${mygit} branch -r | grep origin/${branch})" != "x" ]] ; then
+   #    ${mygit} checkout ${branch}
+   # else
+   #    ${mygit} checkout -b ${branch}
+   # fi
+   ${mygit} checkout ${branch} || ${mygit} checkout -b ${branch}
 
    echo > DEPENDENCIES
    for comp1 in $(echo ${components} | tr ':' ' ') ; do

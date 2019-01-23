@@ -4,12 +4,10 @@ $(info ## File: $$scm/include/Makefile.local.scm.mk)
 $(info ## )
 endif
 
-# ifeq (,$(wildcard $(scm)/VERSION))
-#    $(error Not found: $(scm)/VERSION)
-# endif
-# SCM_VERSION   = $(shell cat $(scm)/VERSION)
-# SCM_VERSION_X = x/
-SCM_VERSION0  = x/2.0.rc4
+ifeq (,$(wildcard $(scm)/VERSION))
+   $(error Not found: $(scm)/VERSION)
+endif
+SCM_VERSION0  = $(shell cat $(scm)/VERSION)
 SCM_VERSION   = $(notdir $(SCM_VERSION0))
 SCM_VERSION_X = $(dir $(SCM_VERSION0))
 

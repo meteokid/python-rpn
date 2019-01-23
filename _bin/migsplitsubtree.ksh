@@ -28,13 +28,14 @@ Options:
     -h, --help     : print this help
     -v, --verbose  : verbose mode
     -f, --force    : force operation (tag and push)
-        --tag      : Add tag for each compoents (COMPNAME_VERSION)
-        --patch    : Create patches for each components from provided tag
+        --tag      : Add tag for each component (COMPNAME_VERSION)
+        --patch    : Create patches for each component from provided tag
         --push     : Push each components upstream
                      TODO: option to provide base URL
                      TODO: option to provide remote branch name
         --clean    : remove split branches and remote branches, tags
                      [--push, --tags, --patch are then ignored]
+        --dryrun   : Show what would be done (not doing it)
 EOF
 }
 
@@ -45,6 +46,7 @@ _patch=''
 _push=0
 _clean=0
 _mydry=0
+_quiet=0
 while [[ $# -gt 0 ]] ; do
    case $1 in
       (-h|--help) usage_long; exit 0;;
@@ -70,19 +72,27 @@ while [[ $# -gt 0 ]] ; do
    shift
 done
 
+mystdout() {
+   if [[ ${_verbose} -ge $1 && ${_quiet} == 0 ]] ; then
+      shift
+      printf "$@" 2>&1
+      echo 2>&1
+   fi
+}
+mystderr() {
+   if [[ ${_verbose} -ge $1 && ${_quiet} == 0 ]] ; then
+      shift
+      printf "$@" 1>&2
+      echo 1>&2
+   fi
+}
+
 
 ## Get component version number
 get_version() {
    _item=${1}
-   _itemUC="$(echo ${_item} | tr 'a-z' 'A-Z')"
    if [[ -f ${_item}/VERSION ]] ; then
       _itemv="$(cat ${_item}/VERSION)"
-   elif [[ -f ${_item}/include/Makefile.local.${_item}.mk ]] ; then
-      _itemv="$(make -f _share/Makefile.print.mk print-${_itemUC}_VERSION OTHERMAKEFILE=$(pwd)/${_item}/include/Makefile.local.${_item}.mk)"
-   elif [[ -f ${_item}/include/Makefile.local.mk ]] ; then
-      _itemv="$(make -f _share/Makefile.print.mk print-${_itemUC}_VERSION OTHERMAKEFILE=$(pwd)/${_item}/include/Makefile.local.${_item}.mk)"
-   elif [[ -f ${_item}/Makefile ]] ; then
-      _itemv="$(make -f _share/Makefile.print.mk print-${_itemUC}_VERSION OTHERMAKEFILE=$(pwd)/${_item}/Makefile)"
    else
       _item2=${_item}_version
       _itemv=${!_item2}
@@ -97,7 +107,7 @@ get_version() {
 ## Get list of components
 getcomplist() {
    if [[ -f DEPENDENCIES ]] ; then
-      export RDEDEPS="$(cat DEPENDENCIES | tr '\n' ' ')"
+      export RDEDEPS="$(cat DEPENDENCIES | sed 's/ //g' | tr '\n' ' ')"
    else
       echo "ERROR: cannot find DEPENDENCIES file" 1>&2
       exit 1
@@ -160,14 +170,33 @@ git2patch() {
 # * existing M.m1-branch: base version is at HEAD of existing M.m1-branch ${localtag1}
 # * New M.m1-branch: M1.m-branch ${localtag1} does not exists
 # * New M.m0.f-branch: new branch of an older version, base version is NOT HEAD of existing M1.m-branch ${localtag1}
+
+# get_remote_branch() {
+#    echo ":::::::: =$1=$2=$3=" 1>&2
+#    set -x
+#    remoteurl=$1
+#    remotebranch=$2
+#    localtag1=$3
+
+#    remotehash0="$(git rev-parse origin/${remotebranch} 2>/dev/null | grep -v origin/${remotebranch})"
+# }
+
+#TODO: we should find the last commit/branch in origin and infer the new branch from there
 get_remote_branch() {
+   mystderr 1 "+ get_remote_branch $*"
    remoteurl=$1
    remotetag0=$2
    localtag1=$3
 
-   remotehash0="$(git ls-remote --tags ${remoteurl} ${remotetag0} | awk '{ print $1}')"
+   remotehash0="$(git ls-remote --tags ${remoteurl} ${remotetag0} | awk '{ print $1}')"  ## remotetag0 is an existing remote tag
    if [[ "x${remotehash0}" == "x" ]] ; then
-      remotehash0="$(git ls-remote --heads ${remoteurl} ${remotetag0} | awk '{ print $1}')"
+      remotehash0="$(git ls-remote --heads ${remoteurl} ${remotetag0} | awk '{ print $1}')"  ## remotetag0 is an existing remote branch
+   fi
+   if [[ "x${remotehash0}" == "x" ]] ; then
+      if [[ ${remotetag0%-branch} == ${remotetag0} ]] ; then
+         mybranch0=${remotetag0%.*}-branch
+         remotehash0="$(git ls-remote --heads ${remoteurl} ${mybranch0} | awk '{ print $1}')"  ## remotetag0-branch is an existing remote branch
+      fi
    fi
 
    #TODO: should we allow push to master? For sure local master is mig's master not component's master, we would need to find a way around it...
@@ -179,10 +208,9 @@ get_remote_branch() {
    #    return 0
    # fi
 
+   mybranch1=${remotetag0%.*}-branch
    if [[ ${remotetag0%-branch} != ${remotetag0} ]] ; then
       mybranch1=${remotetag0}
-   else
-      mybranch1=${remotetag0%.*}-branch
    fi
    remotehash1="$(git ls-remote --heads ${remoteurl} ${mybranch1} | awk '{ print $1}')"
    if [[ "x${remotehash0}" == "x${remotehash1}" ]] ; then
@@ -212,7 +240,6 @@ WARNING: Pushing code off an older version (not HEAD of a branch)
          This should be merged/rebased on top of an existing branch [e.g. ${localtag1%.*}-branch]
 EOF
    fi
-
    echo ${mybranch1}
 }
 
@@ -240,11 +267,19 @@ EOF
 
    if [[ ${_clean} == 1 ]] ; then continue ; fi
 
-   version="$(get_version ${name})"
+   version0="$(get_version ${name})"
+   versionx="${version0%/*}"
+   if [[ "x${version0}" == "x${versionx}" ]] ; then
+      versionx=""
+   else
+      versionx=${versionx}/
+   fi
+   version="${version0##*/}"
    localtag1=${name}_${version}
    mybranch1="$(get_remote_branch ${remoteurl} ${remotetag0} ${localtag1})"
 
-   echo "==== ${name} = ${mybranch1} : ${localtag1} [$remoteurl / ${remotetag0}]"
+   # echo "==== ${name}: url=${remoteurl}; branch=${mybranch1}; tag=${localtag1} (was ${remotetag0})"
+   echo "==== ${name}: url=${remoteurl}; branch=${mybranch1}; tag=${localtag1}"
    if [[ ${_mydry} == 1 ]] ; then
       continue
    fi
@@ -284,7 +319,14 @@ if [[ ${_clean} == 1 && ${_mydry} == 0 ]] ; then
    echo "==== Cleanup imported remote branches and tags"
    for item in $(getcomplist); do
       name=${item%%=*} ; rt=${item#*=} ; remoteurl=${rt%/*} ; remotetag0=${rt##*/}
-      version="$(get_version ${name})"
+      version0="$(get_version ${name})"
+      versionx="${version0%/*}"
+      if [[ "x${version0}" == "x${versionx}" ]] ; then
+         versionx=""
+      else
+         versionx=${versionx}/
+      fi
+      version="${version0##*/}"
       localtag1=${name}_${version}
       mybranch1="$(get_remote_branch ${remoteurl} ${remotetag0} ${localtag1})"
       echo "==== Clean: ${name} ${mybranch1}"
