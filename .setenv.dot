@@ -1,95 +1,153 @@
-#!/bin/ksh
+#!/bin/bash
 
-DESC='Load package dependencies'
-USAGE="USAGE: ${MYSELF} [-v] [--dev [--cmc|--science]]"
+## Check that the user is sourcing this script
+_script_name=".setenv.dot"
+if [[ "${0##*/}" == ${_script_name} ]] ; then
+   cat 1>&2 <<EOF
+ERROR: This script should be sourced with:
+       source ${0}
+EOF
+    return 1
+fi
+unset _script_name
 
-usage_long() {
-   toto=$(echo -e $USAGE)
+if [[ ${BASH_SOURCE#/} == ${BASH_SOURCE} ]] ; then
+   __scriptpath=$(pwd)/${BASH_SOURCE%/*}
+else
+   __scriptpath=${BASH_SOURCE%/*}
+fi
+__scriptpath=${__scriptpath%/.}
+
+__DESC='Load package dependencies'
+__USAGE="USAGE: ${MYSELF} [-v] [-f] [--cmc|--science]"
+
+__usage_long() {
+   __toto=$(echo -e ${__USAGE})
    more <<EOF
-$DESC
+${__DESC}
 
-$toto
+${__toto}
 
 Options:
     -h, --help         : print this help
     -v, --verbose      : verbose mode
+    -e, --external     : only load external dependencies
+        --dev          : fully load exernal deps for development
         --cmc          : set dependencies for CMC network
         --science      : set dependencies for Sience network
 EOF
+   unset __toto
 }
 
-RDENETWORK=${RDENETWORK:-science}
-verbose=0
+if [[ -d /ssm/net ]] ; then
+   export RDENETWORK=${RDENETWORK:-'cmc'}
+elif [[ -d /fs/ssm ]] ; then
+   export RDENETWORK=${RDENETWORK:-'science'}
+fi
+
+__verbose=0
+__external=0
 _rpnpy_dev_mode_=""
 while [[ $# -gt 0 ]] ; do
    case $1 in
-      (-h|--help) usage_long; exit 0;;
-      (-v|--verbose) ((verbose=verbose+1));;
+      (-h|--help) __usage_long; exit 0;;
+      (-v|--verbose) ((__verbose=__verbose+1));;
       (--dev) _rpnpy_dev_mode_="$1" ;;
-      (--cmc) RDENETWORK=cmc ;;
-      (--cmc_u12) RDENETWORK=cmc_u12 ;;
-      (--science) RDENETWORK=science ;;
+      (-e|--external) __external=1; _rpnpy_dev_mode_="1";;
+      (--cmc) export RDENETWORK=cmc ;;
+      (--science) export RDENETWORK=science ;;
       (savehist*) ;;
       # (*) if [[ x$1 != x ]] ; then myerror "Option Not recognized: $1";fi;;
-      (*) echo "IGNORED: $1" ;;
+      # (*) COMP_ARCH=${1:-${COMP_ARCH_DEFAULT}} ;;
+      (*) echo "WARNING: ignoring '$1'"
     esac
     shift
 done
 
-if [[ x"$_rpnpy_dev_mode_" == x"--dev" ]] ; then
-   if [[ "x$RDENETWORK" == "xcmc" ]] ; then
-      echo "LINKING for CMC NETWORK"
-      for item in $(ls *-cmc .*-cmc); do
-         echo "+ ln -sf ${item} ${item%-*}"
-         ln -sf ${item} ${item%-*}
-      done
-   elif [[ "x$RDENETWORK" == "xcmc_u12" ]] ; then
-      echo "LINKING for CMC NETWORK for Ubuntu 12"
-      for item in $(ls *-cmc_u12 .*-cmc_u12); do
-         echo "+ ln -sf ${item} ${item%-*}"
-         ln -sf ${item} ${item%-*}
-      done
-   else
-      echo "LINKING for Science NETWORK"
-      for item in $(ls *-science .*-science); do
-         ln -sf ${item} ${item%-*}
-         echo "+ ln -sf ${item} ${item%-*}"
-      done
-   fi
-
-   echo 'Loading dev env: ssmusedep-dev.bndl'
-   . s.ssmuse.dot $(cat ssmusedep-dev.bndl)
-else
-   echo 'Loading Run-time env'
+#=== Simulate installed bndl loading of external dep
+if [[ x${_rpnpy_dev_mode_} != x ]] ; then
+   for __bndlname in DEPENDENCIES.external.bndl DEPENDENCIES.external.${RDENETWORK}.bndl ; do
+      if [[ -f ${__bndlname} ]] ; then
+         echo "+ . \${${__scriptpath##*/}}/${__bndlname}"
+         . r.load.dot $(cat ${__bndlname})
+      fi
+   done
 fi
 
+if [[ ${__external} == 0 ]] ; then
+   __bndlname=DEPENDENCIES.mig.bndl
+   if [[ -f ${__bndlname} ]] ; then
+      echo "+ . \${${__scriptpath##*/}}/${__bndlname}"
+      . r.load.dot $(cat ${__bndlname})
+   fi
+fi
 
-for _myfile in ssmusedep_${COMP_ARCH}.bndl ssmusedep.bndl ssmusedep_post.bndl ; do
-   if [[ -f ${_myfile} && -s ${_myfile} ]] ; then
-      echo ". s.ssmuse.dot ${_myfile}"
-      . s.ssmuse.dot $(cat ${_myfile})
+if [[ x${ATM_MODEL_DFILES} == x ]] ; then
+   for __item in /fs/ssm/eccc/mrd/rpn/MIG/GEM/d/gem-data/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles /home/ordenv/ssm-domains9/release/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles ; do
+      if [[ -d ${__item} ]] ; then
+         export ATM_MODEL_DFILES=${ATM_MODEL_DFILES:-${__item}}
+      fi
+   done
+fi
+
+# if [[ x${AFSISIO_ENV_HOME} == x ]] ; then
+#    #TODO: default AFSISIO on science?
+#    for __item in /ssm/net/cmoi/base/master/afsisio-env_1.3b6_all/lib/afsisio-env  ; do
+#       if [[ -d ${__item} ]] ; then
+#          export AFSISIO_ENV_HOME=${AFSISIO_ENV_HOME:-${__item}}
+#       fi
+#    done
+# fi
+
+#=== Simulate installed bndl post loading
+if [[ -f ${__scriptpath}/VERSION ]] ; then
+   rpnpy_version0="$(cat ${__scriptpath}/VERSION)"
+fi
+for __item in /home/ordenv/ssm-domains9/log /home/sgem000/log ; do
+   if [[ -d ${__item} ]] ; then
+      export RPNPY_LOGDIR=${RPNPY_LOGDIR:-${__item}}
    fi
 done
-unset _myfile
+. $(pwd)/bin/.env_setup.dot rpnpy ${rpnpy_version:-${rpnpy_version0}} all ${__scriptpath} ${__scriptpath}
+# export rpnpy=${__scriptpath}
 
-rpnpy_version=dev
-if [[ -f VERSION ]] ; then
-   rpnpy_version="$(cat VERSION)"
+#=== Simulate installed bndl post loading of .setenv.__extlib__.${ORDENV_PLAT}.dot
+
+if [[ x${_rpnpy_dev_mode_} != x ]] ; then
+   __item=${TMPDIR}/.rpy.mk.setenv.__extlib__.$$
+  ${__scriptpath}/bin/.rpy.mk.setenv.__extlib__ ${__item}
+  echo "+ source ${__item}  ## \${${__scriptpath##*/}}"
+  . ${__item}
+  cat ${__item}
+  rm -f ${__item}
+else
+   for __item in RPNPY_RMN_LIBPATH RPNPY_RMN_VERSION RPNPY_VGD_LIBPATH RPNPY_VGD_VERSION RPNPY_BURPC_LIBPATH RPNPY_BURPC_VERSION AFSISIO CMCGRIDF ATM_MODEL_DFILES; do
+      if [[ x${!__item} == x ]] ; then
+         echo "===> WARNING: ${__item} Not defined <===" 1>&2
+      fi
+   done
 fi
+export SSMVERSION=$(ssm version | cut -d. -f1)
 
-. $(pwd)/bin/.env_setup.dot rpnpy ${rpnpy_version} all $(pwd) $(pwd)
-
+#=== Add Local paths
 if [[ x"$_rpnpy_dev_mode_" == x"--dev" ]] ; then
    _rpnpy_rde_libdir_=$(rdevar build/lib)
    _rpnpy_rde_libdir0_=build-${ORDENV_PLAT}/lib/${COMP_ARCH}
 fi
 
-export PATH=$(pwd)/bin:$PATH
-export PYVERSION="$(python -V 2>&1 | cut -d' ' -f2 | cut -d'.' -f1-2)"
-export PYTHONPATH=$(pwd):$(pwd)/build/lib.$(uname -s | tr 'A-Z' 'a-z')-$(uname -m)-${PYVERSION}:$PYTHONPATH
-export LD_LIBRARY_PATH=$(pwd)/build/lib.$(uname -s | tr 'A-Z' 'a-z')-$(uname -m)-${PYVERSION}:$(pwd)/${_rpnpy_rde_libdir_:-${_rpnpy_rde_libdir0_}}:$LD_LIBRARY_PATH
+export PATH=${__scriptpath}/bin:$PATH
+export PYTHONPATH=${__scriptpath}/lib:$PYTHONPATH
 
-if [[ x"$_rpnpy_dev_mode_" == x"--dev" ]] ; then
-   unset _rpnpy_rde_libdir_ _rpnpy_rde_libdir0_
-fi
-unset _rpnpy_dev_mode_
+export PYVERSION="$(python -V 2>&1 | cut -d' ' -f2 | cut -d'.' -f1-2)"
+export PYTHONPATH=${__scriptpath}/lib:${_scriptpath}/build/lib.$(uname -s | tr 'A-Z' 'a-z')-$(uname -m)-${PYVERSION}:${PYTHONPATH}
+export LD_LIBRARY_PATH=${_scriptpath}/build/lib.$(uname -s | tr 'A-Z' 'a-z')-$(uname -m)-${PYVERSION}:${_scriptpath}/${_rpnpy_rde_libdir_:-${_rpnpy_rde_libdir0_}}:$LD_LIBRARY_PATH
+
+#====
+
+## export RPNPY_RMN_VERSION=${RPNPY_RMN_VERSION:-_rpnpy}
+## export RPNPY_RMN_LIBPATH=
+
+## export RPNPY_VGD_VERSION=${RPNPY_VGD_VERSION:-_rpnpy}
+## export RPNPY_VGD_LIBPATH=
+
+unset __DESC __USAGE __usage_long __verbose __external __item __bndlname __scriptpath _rpnpy_dev_mode_
