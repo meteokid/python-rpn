@@ -14,6 +14,8 @@ for arg in ${arguments} ; do
    case ${arg} in
       -exp) found_exp=1 ;;
       --exp) found_exp=1 ;;
+      -exp=*) found_exp=1 ; exp=${arg#*=};;
+      --exp=*) found_exp=1 ; exp=${arg#*=};;
    esac
 done
 if [[ ${found_exp} -gt 0 ]] ; then

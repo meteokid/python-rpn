@@ -119,6 +119,7 @@ while [[ $# -gt 0 ]] ; do
       (--dev=*) mydev="${1#*=}";;
 
       (-e|-exp|--exp) ;;
+      (-exp=*) myexp="${1#*=}";;
       (--exp=*) myexp="${1#*=}";;
 
       (-u|-update|--update) ;;
