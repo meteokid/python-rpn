@@ -74,21 +74,21 @@ contains
       integer :: n
       if (F_msgLevel < buffer_min_level) return
 !$omp critical
-      if (nBuffer > 0) then
-         if (F_msgLevel == levelBuffer(nBuffer) .and. &
-              F_Message == msgBuffer(nBuffer)) &
-              return
+      if (nBuffer == 0 .or. .not.( &
+           F_msgLevel == levelBuffer(max(1,nBuffer)) .and. &
+           F_Message == msgBuffer(max(1,nBuffer))) &
+           ) then
+         nBuffer = nBuffer + 1
+         if (nBuffer > MSG_NMAXBUFFER) then
+            do n = 2,MSG_NMAXBUFFER
+               levelBuffer(n-1) = levelBuffer(n)
+               msgBuffer(n-1) = msgBuffer(n)
+            enddo
+            nBuffer = MSG_NMAXBUFFER
+         endif
+         levelBuffer(nBuffer) = F_msgLevel
+         msgBuffer(nBuffer) = F_Message
       endif
-      nBuffer = nBuffer + 1
-      if (nBuffer > MSG_NMAXBUFFER) then
-         do n = 2,MSG_NMAXBUFFER
-            levelBuffer(n-1) = levelBuffer(n)
-            msgBuffer(n-1) = msgBuffer(n)
-         enddo
-         nBuffer = MSG_NMAXBUFFER
-      endif
-      levelBuffer(nBuffer) = F_msgLevel
-      msgBuffer(nBuffer) = F_Message
 !$omp end critical
       return
    end subroutine buffer_add
