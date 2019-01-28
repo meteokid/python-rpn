@@ -135,11 +135,13 @@ if [ $cnt -gt 0 ] ; then
         datelist="$(ls time_series_*.fst_*_* 2>/dev/null | sed 's/time_series_//' | cut -d'.' -f1-2 | tr ' ' '\n' | sort -u | tr '\n' ' ')"
         for serdate in ${datelist} ; do
            for yinyan in YIN YAN; do
+            if [[ x"$(ls time_series_${serdate}.fst_*_${yinyan} 2>/dev/null)" != x"" ]] ; then 
               editfst -i 0 \
                  -s time_series_${serdate}.fst_*_${yinyan} \
                  -d time_series_${serdate}_${yinyan}.fst
               mv time_series_${serdate}_${yinyan}.fst ${output}
               nbfiles=$((nbfiles+1))
+            fi    
            done
            mv ${output}/time_series_${serdate}_YIN.fst \
               ${output}/time_series_${serdate}.fst 2>/dev/null || true
