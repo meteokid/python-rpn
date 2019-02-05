@@ -142,7 +142,7 @@ $(rpnpy)/ssmusedep_post.bndl:
 	touch $@
 
 .PHONY: rpnpy_install rpnpy_uninstall
-rpnpy_install: $(rpnpy)/ssmusedep.bndl $(rpnpy)/ssmusedep_post.bndl
+rpnpy_install: rpnpy_ssmusedep_bndl
 	if [[ x$(CONFIRM_INSTALL) != xyes ]] ; then \
 		echo "Please use: make $@ CONFIRM_INSTALL=yes" ;\
 		exit 1;\
