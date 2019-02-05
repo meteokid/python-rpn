@@ -9,7 +9,7 @@ endif
 # endif
 # SCM_VERSION   = $(shell cat $(scm)/VERSION)
 # SCM_VERSION_X = x/
-SCM_VERSION0  = x/2.0.rc3
+SCM_VERSION0  = x/2.0.rc4
 SCM_VERSION   = $(notdir $(SCM_VERSION0))
 SCM_VERSION_X = $(dir $(SCM_VERSION0))
 

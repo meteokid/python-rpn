@@ -30,3 +30,6 @@ fileVersion: 2.0.b7b > 2.0.b7brde
 
 #------
 fileVersion: 2.0.b7brde > 2.0.rc3
+
+#------
+fileVersion: 2.0.rc3 > 2.0.r4

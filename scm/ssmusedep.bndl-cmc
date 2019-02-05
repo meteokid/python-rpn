@@ -1,5 +1,5 @@
 
-ENV/x/rpnphy/6.0.rc3
+ENV/x/rpnphy/6.0.rc4
 ENV/py/2.7/rpnpy/2.0.6
 
 cmds/apps/cdf/base/master

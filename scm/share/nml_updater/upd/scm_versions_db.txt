@@ -3,3 +3,4 @@ scm_2.0.b7b:rpnphy_6.0.b7
 scm_2.0.b7brde:rpnphy_6.0.b7rde
 
 scm_2.0.rc3:rpnphy_6.0.rc3
+scm_2.0.rc4:rpnphy_6.0.rc4
