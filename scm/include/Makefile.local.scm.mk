@@ -24,7 +24,9 @@ endif
 TMPFILELIST = $(wildcard $(modelutils)/include/Makefile.local*.mk)
 ifeq (,$(TMPFILELIST))
 endif
+ifneq (,$(DEBUGMAKE))
 $(info include $(TMPFILELIST))
+endif
 include $(TMPFILELIST)
 endif
 
@@ -35,7 +37,9 @@ endif
 TMPFILELIST = $(wildcard $(rpnphy)/include/Makefile.local*.mk)
 ifeq (,$(TMPFILELIST))
 endif
+ifneq (,$(DEBUGMAKE))
 $(info include $(TMPFILELIST))
+endif
 include $(TMPFILELIST)
 endif
 

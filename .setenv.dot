@@ -112,6 +112,9 @@ cd ${__here}
 unset __here
 
 #TODO: load components' external dep not covered in modelutils (like netcdf for SCM)
+for item in */ssmusedep.external.bndl-${RDENETWORK} ; do
+    . r.load.dot $(cat ${item} | tr '\n' ' ')
+done
 
 ## make sure local rde is used (may have been reset-ed by previous step)
 if [[ -d rde ]] ; then
