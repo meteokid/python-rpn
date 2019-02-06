@@ -1,3 +1,4 @@
+!COMP_ARCH=intel-2016.1.156 ; -add=-C -g -traceback -ftrapuv
 !---------------------------------- LICENCE BEGIN -------------------------------
 ! SCM - Library of kernel routines for the RPN single column model
 ! Copyright (C) 1990-2017 - Division de Recherche en Prevision Numerique
@@ -2611,6 +2612,7 @@ contains
      real, dimension(:,:,:), pointer :: fld
 
      ! Copy field on the bus if output space is available
+     nullify(fld)
      F_status = phy_get(fld,F_iname,F_npath='V',F_bpath='PVD')
      if (F_status == RMN_OK) istat = phy_put(fld,F_oname,F_npath='V',F_bpath='PDV',F_quiet=.true.)
 
