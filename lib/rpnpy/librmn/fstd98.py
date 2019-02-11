@@ -696,6 +696,8 @@ def fst_edit_dir(key, datev=-1, dateo=-1, deet=-1, npas=-1, ni=-1, nj=-1, nk=-1,
     if isinstance(key, dict):
         key = key['key']
 
+    #TODO: should accept all args as a dict in the key arg
+
     if isinstance(key, (list, tuple)):
         for key2 in key:
             fst_edit_dir(key2, datev, dateo, deet, npas, ni, nj, nk,
