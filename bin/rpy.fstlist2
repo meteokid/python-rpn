@@ -371,7 +371,7 @@ if __name__ == "__main__":
         
 
     if len(args.inputFile) == 0:
-        logging.error("You need to provied at least one file name [-i FILENAME]\n\n")
+        logging.error("You need to provide at least one file name [-i FILENAME]\n\n")
         sys.exit(1)
 
     keylist = ('nomvar', 'typvar', 'etiket', 'ip1', 'ip2', 'ip3', 'datev')
