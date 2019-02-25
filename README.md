@@ -22,39 +22,36 @@ Getting the code
 ----------------
 
 If not already done, you may clone the MIG repository and checkout the version you want to run/work on with the following command (example for version 5.0.0):
-````bash
-MYVERSION=5.0.0     ## Obviously, you'll need to change this to the desired version
 
-## There are 2 URL options:
+    MYVERSION=5.0.0  ## Change this to the desired version
 
-## Option 1: Main URL, GitLab.science account needed
-MYURL=git@gitlab.science.gc.ca:MIG/mig
+    ## There are 2 URL options:
 
-## Option 2: HTTPS URL, "git push" not possible with this URL
-# MYURL=https://gitlab.science.gc.ca/MIG/mig.git
+    ## Option 1: Main URL, GitLab.science account needed
+    MYURL=git@gitlab.science.gc.ca:MIG/mig
 
-MYTAG=mig_${MYVERSION}
-git clone ${MYURL} ${MYTAG}
-cd ${MYTAG}
+    ## Option 2: HTTPS URL, "git push" not possible with this URL
+    # MYURL=https://gitlab.science.gc.ca/MIG/mig.git
 
-## Check if ${MYTAG} exists
-taglist=":$(git tag -l | tr '\n' ':')"
-if [[ "x$(echo ${taglist} | grep :${MYTAG}:)" == "x" ]] ; then
-    echo "===> ERROR: not such tag: ${MYTAG} <==="
-fi
+    MYTAG=mig_${MYVERSION}
+    git clone ${MYURL} ${MYTAG}
+    cd ${MYTAG}
 
-## There are 2 branch options (existing or new branch):
+    ## Check if ${MYTAG} exists
+    taglist=":$(git tag -l | tr '\n' ':')"
+    if [[ "x$(echo ${taglist} | grep :${MYTAG}:)" == "x" ]] ; then
+        echo "===> ERROR: not such tag: ${MYTAG} <==="
+    fi
 
-## Option 1: Continue on existing branch - ${MYTAG} is the HEAD of its branch
-MYBRANCH=${MYTAG%.*}-branch
-git checkout ${MYBRANCH}
+    ## There are 2 branch options (existing or new branch):
 
-## Option 2: Develop on a new branch - ${MYTAG} is NOT the HEAD of any branch
-# MYBRANCH=${MYTAG}-${USER}-branch
-# git checkout -b ${MYBRANCH} ${MYTAG}
-````
+    ## Option 1: Continue on existing branch - ${MYTAG} is the HEAD of its branch
+    MYBRANCH=${MYTAG%.*}-branch
+    git checkout ${MYBRANCH}
 
-> **TODO**: automate existing or new branch selection
+    ## Option 2: Develop on a new branch - ${MYTAG} is NOT the HEAD of any branch
+    # MYBRANCH=${MYTAG}-${USER}-branch
+    # git checkout -b ${MYBRANCH} ${MYTAG}
 
 
 Building, Running and Modifying MIG/GEM
@@ -131,8 +128,11 @@ Abbreviations
 
 *[SPS]: Surface Prediction System, driver of RPN physics surface processes  
 *[SCM]: Single Column Model, driver of RPN physics  
-*[GEM]: Global Environmental Multi-scale atmosperic model from RPN, ECCC  
+*[GEM]: Global Environmental Multi-scale atmospheric model from RPN, ECCC  
 *[MIG]: Model Infrastructure Group at RPN, ECCC  
 
 *[SSM]: Simple Software Manager (a super simplified package manager for software at CMC/RPN, ECCC)  
 *[RDE]: Research Development Environment, a super simple code dev. env. at RPN  
+
+
+> **TODO**: automate existing or new branch selection

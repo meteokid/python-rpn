@@ -31,9 +31,10 @@ where:
 
   * `M `: Major version number
   * `.m`: minor version number
-  * `-b`: (*optional*) branch number<br>Some development following a
-    version but not on the main GEM dev trunk
-  * `.f`: bug fix number<br>Even minor bug fix would get a version increase
+  * `-b`: (*optional*) branch number  
+    Some development following a version but not on the main GEM dev trunk
+  * `.f`: bug fix number  
+    Even minor bug fix would get a version increase
     (no more touch up). Bug fix number are increased from zero:
     * `0 `: 1st release
     * `>0`: bug fix version
@@ -41,13 +42,14 @@ where:
 > As long as the first 2 digits (`M.m-b`) are the same, model usage should
 > remain the same for end user.
 
+
 Development Versions
 --------------------
 
 Previously only release (production ready) versions were distributed,
 development code was living in some developer's directory.
 From version 4.2 on, development versions are packaged and distributed for
-easier code sharing among main developers and potiential use by user needing
+easier code sharing among main developers and potential use by user needing
 the latest developments.
 
 The new naming convention for development versions is as follow
@@ -64,13 +66,14 @@ The new naming convention for development versions is as follow (From GEM 4.8)
   * `x/`: identify an e**X**perimental version
   * `M `: **M**ajor version number
   * `.m`: **m**inor version number
-  * `-b`: (*optional*) **b**ranch number<br>Some development following a
-    version but not on the main GEM dev trunk
+  * `-b`: (*optional*) **b**ranch number  
+    Some development following a version but not on the main GEM dev trunk
   * `S`: development **S**tate, one of the following:
     * **a**: (*alpha*) code still under heavy development, new unstable
-      features introduction<br>*Who should use alpha (a) versions*:
+      features introduction  
+      *Who should use alpha (a) versions*:
       **Only core GEM developers should use alpha versions**.
-    * **b**: (*beta*) debugging and stabilisation of the code base, new
+    * **b**: (*beta*) debugging and stabilization of the code base, new
       feature may be introduced if they are stable/mature enough.  
       *Who should use beta (b) versions*: These versions *may be used with
       caution for cutting edge projects* and other developments needing the
@@ -80,20 +83,22 @@ The new naming convention for development versions is as follow (From GEM 4.8)
       *Who should use release candidates (rc)*: *Anyone planning to use the
       new GEM version should run tests with the latest "rc" version* to make
       sure needed bug fix can be introduced before release.
-  * `i`: development **i**teration number<br>Developement iteration number is
-    reset to 1 when *development state* change;<br>the higher the
-    **i**teration number is, the closest code is to the next *development
+  * `i`: development **i**teration number  
+    Development iteration number is reset to 1 when *development state* change;  
+    the higher the **i**teration number is, the closest code is to the next *development
     state/stage*, the more stable or feature full it should be.
+
 
 Git Repositories Tags
 ---------------------
 
-Tags in the Git repositories follow mostly the same conventions exept for
-the follwoing differences:
+Tags in the Git repositories follow mostly the same conventions except for
+the following differences:
 
   * component name is in lower case
   * `/x/` is never added
   * `_` (underscores) are used as separators instead of `/` (slashes)
+
 
 See Also
 --------
@@ -123,7 +128,7 @@ Abbreviations
 
 *[SPS]: Surface Prediction System, driver of RPN physics surface processes  
 *[SCM]: Single Column Model, driver of RPN physics  
-*[GEM]: Global Environmental Multi-scale atmosperic model from RPN, ECCC  
+*[GEM]: Global Environmental Multi-scale atmospheric model from RPN, ECCC  
 *[MIG]: Model Infrastructure Group at RPN, ECCC  
 
 *[SSM]: Simple Software Manager (a super simplified package manager for software at CMC/RPN, ECCC)  

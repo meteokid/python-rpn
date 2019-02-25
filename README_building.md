@@ -26,29 +26,27 @@ MIG/GEM source code using Version Control.
 Quick Start
 -----------
 
-````bash
-export storage_model=${storage_model:-/PATH/TO/SCRATCH/DIR/}
-# ISOFFICIAL=--official    ## For explicit use by librarian only
-. ./.setenv.dot -v ${ISOFFICIAL}
+    export storage_model=${storage_model:-/PATH/TO/SCRATCH/DIR/}
+    # ISOFFICIAL=--official    ## For explicit use by librarian only
+    . ./.setenv.dot -v ${ISOFFICIAL}
 
-## Option 1: w/o running env.
-ouv_exp_mig -v
-rdemklink -v
+    ## Option 1: w/o running env.
+    ouv_exp_mig -v
+    rdemklink -v
 
-## Option 2: with running env.
-# . gemdev.dot myexp -v --gitlocal
+    ## Option 2: with running env.
+    # . gemdev.dot myexp -v --gitlocal
 
-make buildclean
-make dep
-make vfiles
+    make buildclean
+    make dep
+    make vfiles
 
-export MAKE_NPE=6
-make libs -j ${MAKE_NPE:-6}
-make abs  #-j ${MAKE_NPE:-6}
+    export MAKE_NPE=6
+    make libs -j ${MAKE_NPE:-6}
+    make abs  #-j ${MAKE_NPE:-6}
 
-make distclean
-rm -f */ssmusedep*bndl gem/ATM_MODEL_*
-````
+    make distclean
+    rm -f */ssmusedep*bndl gem/ATM_MODEL_*
 
 
 Basic profile and directory setup
@@ -61,9 +59,8 @@ See this [SSC Getting Started doc](https://portal.science.gc.ca/confluence/displ
 A scratch dir (big temporary space) is needed to host compilation,
 building and running produced files.
 This scratch dir is found by the system with the `${storage_model}` var.
-````bash
-export storage_model=/PATH/TO/SCRATCH/DIR/
-````
+
+    export storage_model=/PATH/TO/SCRATCH/DIR/
 
 > **TODO**:
 >  * other expected dir
@@ -94,11 +91,9 @@ The following commands perform that setup.
 > The location of the *scratch*/*big_data* space is defined with the
 > `${storage_model}` environment variable.
 
-````bash
-export storage_model=${storage_model:-/PATH/TO/SCRATCH/DIR/}
-# ISOFFICIAL=--official    ## For explicit use by librarian only
-. ./.setenv.dot -v ${ISOFFICIAL}
-````
+    export storage_model=${storage_model:-/PATH/TO/SCRATCH/DIR/}
+    # ISOFFICIAL=--official    ## For explicit use by librarian only
+    . ./.setenv.dot -v ${ISOFFICIAL}
 
 
 #### Files, Directories and Links SetUp ####
@@ -106,14 +101,12 @@ export storage_model=${storage_model:-/PATH/TO/SCRATCH/DIR/}
 *This step needs to be performed only once for this working directory
 or after performing "`make distclean`".*
 
-````bash
-## Option 1: Compile/Build environment only
-ouv_exp_mig -v
-rdemklink -v
+    ## Option 1: Compile/Build environment only
+    ouv_exp_mig -v
+    rdemklink -v
 
-## Option 2: Compile/Build environment and interactive/batch running environment
-# . gemdev.dot myexp -v --gitlocal
-````
+    ## Option 2: Compile/Build and interactive/batch running environment
+    # . gemdev.dot myexp -v --gitlocal
 
 
 Compiling and Building
@@ -131,18 +124,17 @@ Compiling and Building
 
 Initially it is best to make sure to start with a clean slate.  
 *This should be done once initially and every time the "dependency list" is modified.*
-````bash
-make buildclean
-````
+
+    make buildclean
+
 
 Use the following Makefile targets to compile the build libs and abs.  
 *This needs to be done initially and every time the code is modified.*
-````bash
-make dep
-make vfiles
-make libs -j ${MAKE_NPE:-6}
-make abs  #-j ${MAKE_NPE:-6}
-````
+
+    make dep
+    make vfiles
+    make libs -j ${MAKE_NPE:-6}
+    make abs  #-j ${MAKE_NPE:-6}
 
 > *Note*: If you're planning on running in batch mode, submitting to another
 > machine, make sure you do the *initial setup*, including compilation,
@@ -152,10 +144,9 @@ Cleaning up
 -----------
 
 To remove all files created by the setup, compile and build process, use the `distclean` target.
-````bash
-make distclean
-rm -f */ssmusedep*bndl gem/ATM_MODEL_*
-````
+
+    make distclean
+    rm -f */ssmusedep*bndl gem/ATM_MODEL_*
 
 
 See Also
@@ -185,7 +176,7 @@ Abbreviations
 
 *[SPS]: Surface Prediction System, driver of RPN physics surface processes  
 *[SCM]: Single Column Model, driver of RPN physics  
-*[GEM]: Global Environmental Multi-scale atmosperic model from RPN, ECCC  
+*[GEM]: Global Environmental Multi-scale atmospheric model from RPN, ECCC  
 *[MIG]: Model Infrastructure Group at RPN, ECCC  
 
 *[SSM]: Simple Software Manager (a super simplified package manager for software at CMC/RPN, ECCC)  

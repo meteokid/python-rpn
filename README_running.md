@@ -68,8 +68,8 @@ Use "`gemrun --help`" for a list of all options.
 > your user account.  
 > This setup is beyond the scope of this doc... (**TODO**: reference to external doc)
 
-> Running in batch mode is currently only possible with installed GEM and SCM versions.  
-> Work to support running batch from version controled code build locally is in progress.
+> *Running in batch mode is currently only possible with installed GEM and SCM versions.*  
+> *Work to support running batch from version controlled code build locally is in progress.*
 
 
 Cleaning Up
@@ -114,7 +114,7 @@ Abbreviations
 
 *[SPS]: Surface Prediction System, driver of RPN physics surface processes  
 *[SCM]: Single Column Model, driver of RPN physics  
-*[GEM]: Global Environmental Multi-scale atmosperic model from RPN, ECCC  
+*[GEM]: Global Environmental Multi-scale atmospheric model from RPN, ECCC  
 *[MIG]: Model Infrastructure Group at RPN, ECCC  
 
 *[SSM]: Simple Software Manager (a super simplified package manager for software at CMC/RPN, ECCC)  
