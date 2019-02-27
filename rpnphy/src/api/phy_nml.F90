@@ -350,6 +350,11 @@ contains
          call msg(MSG_ERROR,'(phy_nml_check) tofd = '//trim(tofd)//' : Should be one of: '//trim(msg_S))
          return
       endif
+
+      if (tofd /= 'NIL') then
+         call msg(MSG_ERROR,'(phy_nml_check) TOFD='//trim(tofd)//' -- is broken thus disabled until fixed in the dev version')
+         return
+      endif
  
       if (simisccp) then
          call msg(MSG_ERROR,'(phy_nml_check) simisccp=.true. -- no longuer supported')

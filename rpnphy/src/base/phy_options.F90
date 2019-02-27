@@ -897,6 +897,7 @@ module phy_options
    !# Select a turbulent orographic form drag scheme
    !# * 'NIL'        : No turbulent orographic form drag scheme
    !# * 'BELJAARS04' : Form drag scheme described by Beljaars et al. (2006; QJRMS)
+   !# WARNING: This option is broken thus disabled- will be fixed in dev branch
    character(len=16) :: tofd         = 'NIL'
    namelist /physics_cfgs/ tofd
    namelist /physics_cfgs_p/ tofd
