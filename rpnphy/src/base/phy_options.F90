@@ -847,7 +847,8 @@ module phy_options
    namelist /physics_cfgs/ sgo_windfac
    namelist /physics_cfgs_p/ sgo_windfac
 
-   !# Run ISCCP cloud simulator (cccmarad only) if .true.
+   !# (DEPRECATED) Run ISCCP cloud simulator (cccmarad only) if .true.
+   !# WARNING: This option is no longuer suppored, will be removed
    logical           :: simisccp     = .false.
    namelist /physics_cfgs/ simisccp
    namelist /physics_cfgs_p/ simisccp
