@@ -42,6 +42,8 @@ See Also:
 
 import os
 import re as _re
+import sys
+import copy
 import ctypes as _ct
 import numpy as _np
 from rpnpy.librmn import proto_burp as _rp
@@ -56,7 +58,12 @@ from rpnpy import C_MKSTR as _C_MKSTR
 
 _ERR_INV_DATYP = 16
 
-_mrbcvt_dict_full = {}
+_mrbcvt_dict = {
+    'path'  : '',
+    'raise' : False,
+    'init'  : False,
+    'dict'  : {}
+    }
 #_mrbcvt_dict_full.__doc__ = """
 #    Parsed BUFR table B into a python dict,
 #    see mrbcvt_dict function
@@ -1607,12 +1614,62 @@ def mrbcol(bufrids):
     return cmcids
 
 
+def mrbcvt_dict_path_set(filepath='', raiseError=False):
+    """
+    Override default BURP_TABLE_B path/filename and reset the dict content.
+
+    Args:
+        filepath   : BURP_TABLE_B path/filename
+        raiseError : raise an exception on table decoding error (default: False)
+    Returns
+        None
+    Raises:
+        IOError if file not found
+
+    See Also:
+        mrbcvt_dict
+        mrbcvt_dict_bufr
+    """
+    if filepath.strip() != '' and not os.path.isfile(filepath):
+        raise IOError(" Oops! File does not exist or is not readable: {0}".format(filepath))
+    _mrbcvt_dict.update({
+        'path'  : filepath.strip(),
+        'raise' : raiseError,
+        'init'  : False,
+        'dict'  : {}
+        })
+
+
+def mrbcvt_dict_get():
+    """
+    Return a copy decoded BURP_TABLE_B used by mrbcvt
+
+    Args:
+        None
+    Returns
+        dict, decoded BURP_TABLE_B used by mrbcvt
+    Raises:
+        IOError if file not found
+
+    See Also:
+        mrbcvt_dict
+        mrbcvt_dict_bufr
+    """
+    if not _mrbcvt_dict['init']:
+        _mrbcvt_dict_full_init()
+    return copy.deepcopy(_mrbcvt_dict['dict'])
+
+
 def _mrbcvt_dict_full_init():
     """
     Read BUFR table B and parse into a dict
     in preparation for use in other functions
     """
-    if not len(_mrbcvt_dict_full.keys()):
+    if _mrbcvt_dict['init']:
+        return
+
+    mypath = _mrbcvt_dict['path']
+    if not mypath:
         AFSISIO = os.getenv('AFSISIO', '')
         mypath = os.path.join(AFSISIO.strip(), 'datafiles/constants',
                               _rbc.BURP_TABLE_B_FILENAME)
@@ -1620,40 +1677,54 @@ def _mrbcvt_dict_full_init():
             AFSISIO2 = os.getenv('rpnpy', '/')
             mypath = os.path.join(AFSISIO2.strip(), 'share',
                                   _rbc.BURP_TABLE_B_FILENAME)
+
+    try:
+        ## sys.stderr.write('_mrbcvt_dict_full_init: '+mypath+"\n") #TODO: print this in verbose mode
+        fd = open(mypath, "r")
+        try: rawdata = fd.readlines()
+        finally: fd.close()
+    except IOError:
+        raise IOError(" Oops! File does not exist or is not readable: {0}".format(mypath))
+
+    hasError = False
+    for item in rawdata:
+        if item[0] == '*' or len(item.strip()) == 0:
+            continue
         try:
-            ## print('_mrbcvt_dict_full_init: '+mypath) #TODO: print this in verbose mode
-            fd = open(mypath, "r")
-            try: rawdata = fd.readlines()
-            finally: fd.close()
-        except IOError:
-            raise IOError(" Oops! File does not exist or is not readable: {0}".format(mypath))
-        for item in rawdata:
-            if item[0] != '*':
-                id1 = int(item[0:6])
-                d = {
-                    'e_error'   : 0,
-                    'e_cmcid'   : mrbcol(id1),
-                    'e_bufrid'  : id1,
-                    'e_bufrid_F': int(item[0]),
-                    'e_bufrid_X': int(item[1:3]),
-                    'e_bufrid_Y': int(item[3:6]),
-                    'e_cvt'     : 1,
-                    'e_desc'    : item[8:51].strip(),
-                    'e_units'   : item[52:63].strip(),
-                    'e_scale'   : int(item[63:66]),
-                    'e_bias'    : int(item[66:77]),
-                    'e_nbits'   : int(item[77:83]),
-                    'e_multi'   : 0
-                    }
-                if item[50] == '*':
-                    d['e_cvt'] = 0
-                    d['e_desc'] = item[8:50].strip()
-                ## elif d['e_units'] in ('CODE TABLE', 'FLAG TABLE', 'NUMERIC'):
-                elif d['e_units'] in ('CODE TABLE', 'FLAG TABLE'):  #TODO: check if NUMERIC should be included
-                    d['e_cvt'] = 0
-                if len(item) > 84 and item[84] == 'M':
-                    d['e_multi'] = 1
-                _mrbcvt_dict_full[id1] = d
+            id1 = int(item[0:6])
+            d = {
+                'e_error'   : 0,
+                'e_cmcid'   : mrbcol(id1),
+                'e_bufrid'  : id1,
+                'e_bufrid_F': int(item[0]),
+                'e_bufrid_X': int(item[1:3]),
+                'e_bufrid_Y': int(item[3:6]),
+                'e_cvt'     : 1,
+                'e_desc'    : item[8:51].strip(),
+                'e_units'   : item[52:63].strip(),
+                'e_scale'   : int(item[63:66]),
+                'e_bias'    : int(item[66:77]),
+                'e_nbits'   : int(item[77:83]),
+                'e_multi'   : 0
+                }
+            if item[50] == '*':
+                d['e_cvt'] = 0
+                d['e_desc'] = item[8:50].strip()
+            ## elif d['e_units'] in ('CODE TABLE', 'FLAG TABLE', 'NUMERIC'):
+            elif d['e_units'] in ('CODE TABLE', 'FLAG TABLE'):  #TODO: check if NUMERIC should be included
+                d['e_cvt'] = 0
+            if len(item) > 84 and item[84] == 'M':
+                d['e_multi'] = 1
+            _mrbcvt_dict['dict'][id1] = d
+        except:
+            if not hasError:
+                hasError = True
+                sys.stderr.write("WARNING: mrbcvt_dict_full_init - problem decoding line in file: {}\n".format(mypath))
+            sys.stderr.write("WARNING, offending line: {}\n".format(item.strip()))
+            if _mrbcvt_dict['raise']:
+                raise
+    _mrbcvt_dict['init'] = True
+
 
 def mrbcvt_dict_find_id(desc, nmax=999, flags=_re.IGNORECASE):
     """
@@ -1679,15 +1750,16 @@ def mrbcvt_dict_find_id(desc, nmax=999, flags=_re.IGNORECASE):
         mrbcvt_dict
         mrbcvt_dict_bufr
     """
-    if not len(_mrbcvt_dict_full.keys()):
+    if not _mrbcvt_dict['init']:
         _mrbcvt_dict_full_init()
     e_bufrid = []
-    for k, v in _mrbcvt_dict_full.items():
+    for k, v in _mrbcvt_dict['dict'].items():
         if _re.match(desc, v['e_desc'], flags):
             e_bufrid.append(v['e_bufrid'])
         if len(e_bufrid) >= nmax:
             break
     return e_bufrid
+
 
 def mrbcvt_dict_bufr(bufrid, raise_error=True, cmcid=None):
     """
@@ -1745,12 +1817,12 @@ def mrbcvt_dict_bufr(bufrid, raise_error=True, cmcid=None):
         mrfloc
         burp_open
     """
-    if not len(_mrbcvt_dict_full.keys()):
+    if not _mrbcvt_dict['init']:
         _mrbcvt_dict_full_init()
     if not cmcid:
         cmcid = mrbcol(bufrid)
     try:
-        return _mrbcvt_dict_full[bufrid]
+        return _mrbcvt_dict['dict'][bufrid]
     except KeyError:
         if raise_error:
             raise

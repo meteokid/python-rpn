@@ -2,6 +2,48 @@
 **
 ** LE MEME FICHIER EST AUSSI DISPONIBLE EN FRANCAIS SOUS LE NOM table_b_bufr_f.
 **
+** VERSION 031.080 December 2018 Rabah Hachelaf
+** Update to Version 31
+** Add 001044 003028 010103
+** Add 013163 013164
+** Add 025190 025191
+** Add 033092
+** Add 040043 040044 040045 040046 040047 040048 040049 040050 040051 040052 040053 040054 040055
+** Add 040056 040057 040058 040059 040060 040061 040062 040063 040064 040065 040066 040067 040068
+** Add 040069 040070 040071 040072 040073
+** 
+** VERSION 030.080 July 2018 Nedka Pentcheva
+** Update to Version 30
+** Add 013162
+** Add 013230 for Jose Garcia
+** Add 033205 015201 015202 015297 for Yves Rochon
+**
+** VERSION 029.079 December 2017 Nedka Pentcheva
+** Update to Version 29
+** Add 001125 001126 001127 001128 002008 002161 002162 011113 013109 025148 025149 
+** Add 033066 040038 
+** Add 015231 015232 015233 as requested by Jose Garcia
+**
+** VERSION 028.078 June 2017 Nedka Pentcheva
+** Update to Version 28
+** Add 002088 003027 008037 008038 008092 008093 010071 011110 011111 011112 012008
+** Add 015063 015064 015065 015066 015067 015068 015069 015070 015071 015072 027079
+**
+** VERSION 027.078 March 2017 Nedka Pentcheva
+** Update to Version 27
+** Add 001114 001150 001151 001152 001153 002987 003001 003003 003004 003005 003006 003007
+** Add 003008 003009 003020 003021 003022 003023 003024 003025 003026 005032 005071 005072
+** Add 005073 005074 005075 006032 008088 010038 010039 011007 011008 011104 015028 020129
+** Add 025185 025186 025188 025189 029014 040039 040040 040041 040042 041001 041002 041003
+** Add 041005 042001 042002 042003 042004 042005 042006 042007 042008 042009 042010 
+** Add 002234 for Jose Garcia
+**
+** VERSION 026.077 December 20 2016 Nedka Pentcheva
+** Update to Version 26
+** Add 001104 001105 001106 003016 003017 003018 003019 005068 005069 005070 007071 012128
+** Add 012129 013116 020138 022102 022103 022104 022105 022106 022107 022108 022186 022187
+** Add 025187 040029 040030 040031 040032 040033 040034 040035 040036 040037
+**
 ** VERSION 025.077 December 14 2015 Mark McCrady
 ** Update to Version 25
 ** Add 005063 005064 005066 005067 008034 (Valid-ops) 008091 021004 021028 (Valid-ops) 021029
@@ -813,6 +855,7 @@
 001041  ABSOL. PLATFORM VELOCITY, FIRST COMPONENT   M/S          5-1073741824    31
 001042  ABSOL. PLATFORM VELOCITY, SECOND COMPONENT  M/S          5-1073741824    31
 001043  ABSOL. PLATFORM VELOCITY, THIRD COMPONENT   M/S          5-1073741824    31
+001044  STANDARD GENERATING APPLICATION             CODE TABLE   0          0     8
 001050  PLATFORM TRANSMITTER ID NUMBER              NUMERIC      0          0    17
 001051  PLATFORM TRANSMITTER ID NUMBER              CCITT IA5    0          0    96
 001052  PLATFORM TRANSMITTER ID                     CODE TABLE   0          0     3
@@ -842,19 +885,32 @@
 001101  STATE IDENTIFIER                            CODE TABLE   0          0    10
 001102  NATIONAL STATION NUMBER                     NUMERIC      0          0    30
 001103  IMO NUMBER UNIQUE LLOYDS REGISTRY           NUMERIC      0          0    24
+001104  STATE/FEDERAL STATE IDENTIFIER              CCITT IA5    0          0    32
+001105  HIGHWAY DESINATOR                           CCITT IA5    0          0    40
+001106  LOCATION HIGHWAY AS INDIC.BY POSI. MARKERS  M           -2          0    14
 001110  AIRCRAFT TAIL NUMBER                        CCITT IA5    0          0    48
 001111  ORIGINATION AIRPORT                         CCITT IA5    0          0    24
 001112  DESTINATION AIRPORT                         CCITT IA5    0          0    24
 001113  TEMPLATE VER NUM (ORIGINATING CNTR DEFINED) NUMERIC      1          0     9
+001114  ENCRYPTED SHIP OR MOBIL LAND STN IDENTIFIER CCITT IA5    0          0   352
 001115  CRUISE/MISSION IDENT WHERE DATA COLLECTED   CCITT IA5    0          0   160
 001124  GRID POINT IDENTIFIER                       NUMERIC      0          0    24
+001125  WIGOS IDENTIFIER SERIES                     NUMERIC      0          0     4
+001126  WIGOS ISSUER OF IDENTIFIER                  NUMERIC      0          0    16
+001127  WIGOS ISSUE NUMBER                          NUMERIC      0          0    16
+001128  WIGOS LOCAL IDENTIFIRE (CHARACTER)          CCITT IA5    0          0   128
 001144  SNAPSHOT IDENTIFIER                         NUMERIC      0          0    31
+001150  COORDINATE REFERENCE SYSTEM                 CODE TABLE   0          0    16
+001151  FIXED MEAN SEA LEVEL REFERENCE DATUM        CODE TABLE   0          0    12
+001152  SEMI-MAJOR AXIS OF ROTATION ELLIPSOID       M            2          0    31
+001153  SEMI-MINOR AXIS OF ROTATION ELLIPSOID       M            2          0    31
 002001  TYPE OF STATION                             CODE TABLE   0          0     2
 002002  TYPE OF INSTR. FOR WIND MEASUREMENT       * FLAG TABLE   0          0     4
 002003  TYPE OF MEASURING INSTRUMENT USED           CODE TABLE   0          0     4
 002004  TYPE OF INSTR./CROP USED FOR EVAPOR. REPT   CODE TABLE   0          0     4
 002005  PRECISION OF TEMPERATURE OBSERVATION        K            2          0     7
 002007  WATER LVL MEASURING INSTRUMENT SENSOR TYPE  CODE TABLE   0          0     6
+002008  TYPE OF OFFSHORE PLATFORM                   CODE TABLE   0          0     4
 002011  RADIOSONDE TYPE                             CODE TABLE   0          0     8
 002012  RADIOSONDE COMPUTATIONAL METHOD             CODE TABLE   0          0     4
 002013  SOLAR AND INFRARED RADIATION CORRECTION     CODE TABLE   0          0     4
@@ -920,6 +976,8 @@
 002084  TYPE OF GAS USED IN BALLOON                 CODE TABLE   0          0     4
 002085  AMOUNT OF GAS USED IN BALLOON               KG           3          0    13
 002086  BALLOON FLIGHT TRAIN LENGTH                 M            1          0    10
+002087  PARACHUT SURFACE AREA                       M**2         4          0    15
+002088  VOLUME OF GAS USED IN BALLOON               M**3         3          0    13
 002091  ENTRY SENSOR 4/20 mA                        A            4          0    10
 002095  TYPE OF PRESSURE SENSOR                     CODE TABLE   0          0     5
 002096  TYPE OF TEMPERATURE SENSOR                  CODE TABLE   0          0     5
@@ -986,6 +1044,8 @@
 002158  RA-2 INSTRUMENT                           * FLAG TABLE   0          0     9
 002159  MWR INSTRUMENT                            * FLAG TABLE   0          0     8
 002160  WAVE LENGTH OF THE RADAR                    CODE TABLE   0          0     4
+002161  WIND PROCESSING METHOD                      FLAG TABLE   0          0    16
+002162  EXTENDED HEIGHT ASSIGNMENT METHOD           CODE TABLE   0          0     6
 002163  HEIGHT ASSIGNMENT METHOD                    CODE TABLE   0          0     4
 002164  TRACER CORRELATION METHOD                   CODE TABLE   0          0     3
 002165  RADIANCE TYPE FLAGS                       * FLAG TABLE   0          0    15
@@ -1015,9 +1075,30 @@
 002189  CAPABILITY TO DISCRIMINATE LGTNG STRIKES    FLAG TABLE   0          0    12
 002190  LAGRANGIAN DRIFTER SUBMERGENCE: % TIME SUBM %            0          0     7
 002191  GEOPOTENTIAL HEIGHT CALCULATION             CODE TABLE   0          0     4
+003001  SURFACE STATION TYPE                        CODE TABLE   0          0     5
+003003  THERMOMETER/HYGROMETER HOUSING              CODE TABLE   0          0     4
+003004  TYPE OF SCREEN/SHELTER/RADIATION SHIELD     CODE TABLE   0          0     4
+003005  HORIZONTAL WIDTH OF SCREEN OR SHIELD (X)    M            3          0    16
+003006  HORIZONTAL DEPTH OF SCREEN OR SHIELD (Y)    M            3          0    16
+003007  VERTICAL HEIGHT OF SCREEN OR SHIELD (Z)     M            3          0    16
+003008  ARTIFICIALLY VENTILATED SCREEN OR SHIELD    CODE TABLE   0          0     3
+003009  AMOUNT FORCED VENTILATION TIME OF READING   M/S          1          0     9
 003010  METHOD OF SEA/WATER CURRENT MEASUREMENT     CODE TABLE   0          0     4
 003011  METHOD OF DEPTH CALCULATION                 CODE TABLE   0          0     2
 003012  INSTRUMENT/SENSOR FOR DISSOLVED O2 MEASURE  CODE TABLE   0          0     4
+003016  POSITION OF ROAD SENSORS                    CODE TABLE   0          0     4
+003017  EXTENDED TYPE OF STATION                    FLAG TABLE   0          0     6
+003018  TYPE OF ROAD                                CODE TABLE   0          0     5
+003019  TYPE OF CONSTRUCTION                        CODE TABLE   0          0     4
+003020  MATERIAL THERMOMETER/HYDROMETER HOUSING     CODE TABLE   0          0     3
+003021  HYGROMETER HEATING                          CODE TABLE   0          0     2
+003022  INSTRUMENT OWNER                            CODE TABLE   0          0     3
+003023  CONFIG LOUVERS THERMOM/HYGROMETER SCREEN    CODE TABLE   0          0     3
+003024  PSYCHROMETRIC COEFFICIENT                   1/K          6          0    10
+003025  CROSS-TRACK ESTIMATION AREA SIZE            M            0       5000    16
+003026  ALONG-TRACK ESTIMATION AREA SIZE            M            0       5000    16
+003027  TYPE OF FLIGHT RIG                          CODE TABLE   0          0     4
+003028  METHOD OF SNOW WATER EQUI. MEASUREMENT      CODE TABLE   0          0     6
 004001  YEAR                                        YEAR         0          0    12
 004002  MONTH                                       MONTH        0          0     4
 004003  DAY                                         DAY          0          0     6
@@ -1064,6 +1145,7 @@
 005023  SUN TO SATELLITE AZIMUTH DIFFERENCE         DEGREE       1      -1800    12
 005030  DIRECTION (SPECTRAL)                        DEGREE       0          0    12
 005031  ROW NUMBER                                  NUMERIC      0          0    12
+005032  Y OFFSET                                    M            2-1073741824    31
 005033  PIXEL SIZE ON HORIZONTAL, MINUS ONE         M           -1          0    16
 005034  ALONG TRACK ROW NUMBER                      NUMERIC      0          0    11
 005035  MAXIMUM SIZE OF X-DIMENSION                 NUMERIC      0          0    12
@@ -1082,6 +1164,14 @@
 005064  SPACECRAFT PITCH                            DEGREE       2          0    16
 005066  SPACECRAFT YAW                              DEGREE       2          0    16
 005067  NUMBER OF SCAN LINES                        NUMERIC      0          0     8
+005068  PROFILE NUMBER                              NUMERIC      0          0    16
+005069  RECEIVER CHANNEL                            CODE TABLE   0          0     2
+005070  OBSERVATION IDENTIFIER                      NUMERIC      0          0    30
+005071  STRIPMAP IDENTIFIER                         NUMERIC      0          0    16
+005072  NUMBER OF SPECTRA IN RANGE DIRECTION        NUMERIC      0          0     8
+005073  NUMBER OF SPECTRA IN AZIMUTHAL DIRECTION    NUMERIC      0          0     8
+005074  INDEX IN RANGE DIRECTION                    NUMERIC      0          0     8
+005075  INDEX IN AZIMUTHAL DIRECTION                NUMERIC      0          0     8
 006001  LONGITUDE (HIGH ACCURACY)                   DEGREE       5  -18000000    26
 006002  LONGITUDE (COARSE ACCURACY)                 DEGREE       2     -18000    16
 006011  LONGITUDE INCREMENT (HIGH ACCURACY)         DEGREE       5  -18000000    26
@@ -1092,6 +1182,7 @@
 006029  WAVE NUMBER                                 M-1          1          0    22
 006030  WAVENUMBER (SPECTRAL)                       RADS/M       5          0    13
 006031  COLUMN NUMBER                               NUMERIC      0          0    12
+006032  X OFFSET                                    M            2-1073741824    31
 006033  PIXEL SIZE ON HORIZONTAL-2                  M           -1          0    16
 006034  CROSS TRACK CELL NUMBER                     NUMERIC      0          0     7
 006035  MAXIMUM SIZE OF Y-DIMENSION                 NUMERIC      0          0    12
@@ -1125,6 +1216,7 @@
 007064  HEIGHT ABOVE STATION                        M            0          0     4
 007065  WATER PRESSURE                              PA          -3          0    17
 007070  DROGUE DEPTH                                M            0          0    10
+007071  HEIGHT (HEIGHT RESOLUTION)                  M            3  -10000000    26
 008001  VERTICAL SOUNDING SIGNIFICANCE            * FLAG TABLE   0          0     7
 008002  VERT. SIGNIFICANCE (SFC OBSERVATIONS)       CODE TABLE   0          0     6
 008003  VERT. SIGNIFICANCE (SAT OBSERVATIONS)       CODE TABLE   0          0     6
@@ -1156,9 +1248,11 @@
 008031  DATA CATEGORY CREX TABLE A                  NUMERIC      0          0     8
 008032  STATUS OF OPERATION                         CODE TABLE   0          0     4
 008033  METHOD OF DERIVATION OF PERCENT CONFIDENCE  CODE TABLE   0          0     7
-008034  TEMPERATURE/SALINITY MEASUREMENT QUALIFIER  CODE TABLE   0          0     4  
+008034  TEMPERATURE/SALINITY MEASUREMENT QUALIFIER  CODE TABLE   0          0     4
 008035  TYPE OF MONITORING EXERCISE                 CODE TABLE   0          0     3
 008036  TYPE OF CENTRE/STATION PERFORMING MONITORG  CODE TABLE   0          0     3
+008037  BASELINE CHECK SIGNIFICANCE                 CODE TABLE   0          0     5
+008038  INSTRUMENT DATA SIGNIFICANCE                CODE TABLE   0          0     8
 008039  TIME SIGNIFICANCE (AVIATION FORECAST)       CODE TABLE   0          0     6
 008040  FLIGHT LEVEL SIGNIFICANCE                   CODE TABLE   0          0     6
 008041  DATA SIGNIFICANCE                           CODE TABLE   0          0     5
@@ -1175,7 +1269,7 @@
 008060  SAMPLE SCANNING MODE SIGNIFICANCE           CODE TABLE   0          0     4
 008065  SUN-GLINT INDICATOR                         CODE TABLE   0          0     2
 008066  SEMI-TRANSPARENCY INDICATOR                 CODE TABLE   0          0     2
-008070  TOVS/ATOVS PRODUCT QUALIFIER                CODE TABLE   0          0     4
+008070  VERTICAL SOUNDING PRODUCT QUALIFIER         CODE TABLE   0          0     4
 008072  PIXEL(S) TYPE                               CODE TABLE   0          0     3
 008074  ALTIMETER ECHO TYPE                         CODE TABLE   0          0     2
 008075  ASCENDING/ DESCENDING ORBIT QUALIFIER       CODE TABLE   0          0     2
@@ -1189,8 +1283,11 @@
 008085  BEAM IDENTIFIER                             CODE TABLE   0          0     3
 008086  VERTICAL SIGNIFICANCE FOR NWP             * FLAG TABLE   0          0    12
 008087  CORNER POSITION OF OBSERVATION              CODE TABLE   0          0     3
+008088  MAP SIGNIFICANCE                            CODE TABLE   0          0     6
 008090  DECIMAL SCALE OF FOLLOWING VALUES           NUMERIC      0       -127     8
 008091  COORDINATES SIGNIFICANCE                    CODE TABLE   0          0     8
+008092  MEASUREMENT UNCERTANITY EXPRESSION          CODE TABLE   0          0     5
+008093  MEASUREMENT UNCERTANITY SIGNIFICANCE        CODE TABLE   0          0     5
 010001  HEIGHT OF LAND SURFACE                      M            0       -400    15
 010002  HEIGHT                                      M           -1        -40    16
 010003  GEOPOTENTIAL                                M**2/S**2   -1       -400    17
@@ -1206,6 +1303,8 @@
 010034  EARTH RADIUS                                M            1          0    27
 010035  EARTH'S LOCAL RADIUS OF CORVATURE           M            1   62000000    22
 010036  GEOID UNDULATION                            M            2     -15000    15
+010038  MAX HEIGHT DECK CARGO ABOV SUMMER LOAD LINE M            0          0     6
+010039  DEPARTURE OF REFER LVL FROM ACTUAL SEA LVL  M            0        -32     6
 010040  NUMBER OF RETRIEVED LAYERS                  NUMERIC      0          0    10
 010050  STD DEVIATION ALTITUDE                      M            2          0    16
 010051  PRESSURE REDUCED TO MEAN SEA LEVEL          PA          -1          0    14
@@ -1217,6 +1316,7 @@
 010063  CHARACTERISTIC OF PRESSURE TENDENCY         CODE TABLE   0          0     4
 010064  SIGMET CRUISING LEVEL                       CODE TABLE   0          0     3
 010070  INDICATED AIRCRAFT ALTITUDE                 M            0       -400    16
+010071  VERTICAL RESOLUTION                         M            0          0    14
 010079  OFF NADIRANGLE OF SATELLITE FRM PLTFRM DATA DEGREE       4          0    16
 010080  VIEWING ZENITH ANGLE                        DEGREE       2      -9000    15
 010081  ALTITUDE OF COG ABOVE REFERENCE ELLIPSOID   M            3          0    31
@@ -1240,12 +1340,15 @@
 010100  NON EQUILIBRIUM LONG PERIOD TIDE HEIGHT     M            4      -2000    12
 010101  SQUARED-OFF SAT NADIR ANGLE FRM WVFORM DATA DEGREE**2    2     -32768    16
 010102  SEA SURFACE HEIGHT ANOMOLY                  M            3     -32768    16
+010103  MEAN DYNAMIC TOPOGRAPHY ACCURACY            M            3    -131072    18
 011001  WIND DIRECTION                              DEG TRUE     0          0     9
 011002  WIND SPEED                                  M/S          1          0    12
 011003  U-COMPONENT                                 M/S          1      -4096    13
 011004  V-COMPONENT                                 M/S          1      -4096    13
 011005  W-COMPONENT                                 PA/S         1       -512    10
 011006  W-COMPONENT                                 M/S          2      -4096    13
+011007  RELATIVE WIND DIRECTION                     DEGREE       0          0     9
+011008  RELATIVE WIND SPEED                         M/S          1          0    12
 011010  WIND DIRECTION ASSOCTD WITH NEXT WIND SPEED DEG TRUE     0          0     9
 011011  WIND DIRECTION AT 10M                       DEG TRUE     0          0     9
 011012  WIND SPEED AT 10M                           M/S          1          0    12
@@ -1306,12 +1409,16 @@
 011101  AIRCRAFT VELOCITY U COMPONENT               M/S          1      -4096    13
 011102  AIRCRAFT VELOCITY V COMPONENT               M/S          1      -4096    13
 011103  AIRCRAFT VELOCITY W COMPONENT               M/S          1       -512    10
-011104  AIRCRAFT TRUE HEADING                       DEGREE TRUE  0          0     9
+011104  TRUE HEADING(AIRCRAFT/SHIP/MOBILE PLATFORM) DEGREE TRUE  0          0     9
 011105  EDR ALGORITH VERSION                        NUMERIC      0          0     6
 011106  RUNNING MINIMUM CONFIDENCE                  NUMERIC      1          0     4
 011107  MAXIMUM NUMBER BAD INPUTS                   NUMERIC      0          0     5
 011108  PEAK LOACATION                              NUMERIC      1          0     4
 011109  NUMBER OF GOOD EDR                          NUMERIC      0          0     4
+011110  UNCERTANITY IN U-COMPONENT                  M/S          1      -4096    13
+011111  UNCERTANITY IN V-COMPONENT                  M/S          1      -4096    13
+011112  UNCERTANITY IN W-COMPONENT                  M/S          2      -4096    13
+011113  TRACKING CORRELATION OF VECTOR              NUMERIC      3      -1000    12
 012001  TEMPERATURE/DRY BULB TEMPERATURE            K            1          0    12
 012002  WET BULB TEMPERATURE                        K            1          0    12
 012003  DEW POINT TEMPERATURE                       K            1          0    12
@@ -1319,6 +1426,7 @@
 012005  WET BULB TEMPERATURE AT 2M                  K            1          0    12
 012006  DEW POINT TEMPERATURE AT 2M                 K            1          0    12
 012007  VIRTUAL TEMPERATURE                         K            1          0    12
+012008  UNCERTENITY IN VIRTUAL TEMPERATURE          K            1          0    12
 012011  MAXIMUM TEMPERATURE                         K            1          0    12
 012012  MINIMUM TEMPERATURE                         K            1          0    12
 012013  GROUND MINIMUM TEMPERATURE PAST 12 HRS      K            1          0    12
@@ -1369,6 +1477,8 @@
 012120  GROUND TEMPERATURE                          K            2          0    16
 012121  GROUND MINIMUM TEMPERATURE                  K            2          0    16
 012122  GROUND MINIMUM TEMPERATURE PRECEDING NIGHT  K            2          0    16
+012128  ROAD SURFACE TEMPERATURE                    K            2          0    16
+012129  ROAD SUB-SURFACE TEMPERATURE                K            2          0    16
 012130  SOIL TEMPERATURE                            K            2          0    16
 012131  SNOW TEMPERATURE                            K            2          0    16
 012132  ICE SURFACE TEMPERATURE                     K            2          0    16
@@ -1458,15 +1568,20 @@
 013099  INTEGRATED CLOUD PARTICLE DENSITY (LG10)    LOG(1/M**2)  1          0     7
 013100  INTEGRATED CLOUD PARTICLE AREA (LG10)       LOG(M2/M2)   1        -70     7
 013101  INTEGRATED CLOUD PARTICLE VOLUME (LG10)     LOG(M3/M2)   1       -140     7
+013109  ICE/LIQUID WATER PATH                       KG/M**2      3          0    10
 013110  MASS MIXING RATIO                           %            0          0     7
 013111  SOIL MOISTURE(VOLUMETRIC/WATER POTENTIAL)   G/KG         0          0    10
 013112  OBJECT WETNESS DURATION                     S            0          0    17
 013114  RATE OF ICE ACCRETION                       KG/M2/H      1          0    11
 013115  ICE THICKNESS                               M            2          0    19
+013116  WATER FILM THICKNESS                        M            4          0    10
 013117  SNOW DENSITY (LIQUID WATER CONTENT)         KG/M**3      0          0    10
 013118  DEPTH OF FRESH SNOW (HIGH ACCURACY)         M            3         -2    14
 013155  INTENSITY OF PRECIP (HIGH ACCURACY)         KG/M2/S      5         -1    16
 013160  RADIOMETER LIQUID CONTENT                   KG/M**2      2       -350    10
+013162  CLOUD LIQUID WATER                          KG/M**2      2          0     8
+013163  SNOW WATER EQUIVALENT                       KG/M**2      0          0    16
+013164  SEA ICE FREEBOARD                           M            3    -131072    18
 014001  LONGWAVE RAD. INTEGRATED OVER 24 HOURS      J/M**2      -3     -65536    17
 014002  LONGWAVE RAD. INTEGRATED OVER SPEC. PERIOD  J/M**2      -3     -65536    17
 014003  SHORTWAVE RAD. INTEGRATED OVER 24 HOURS     J/M**2      -3     -65536    17
@@ -1527,6 +1642,7 @@
 015025  TYPE OF POLLUTANT                           CODE TABLE   0          0     4
 015026  POLLUTANT CONCENTRATION                     MOL/MOL      9          0     9
 015027  CONCENTRATION OF POLLUTANT                  KG/M**3      9          0    10
+015028  MOL FRAC ATMOS CONSTITUENT/POLLUT DRY AIR   PER-MILLE    5          0    16
 015029  EXTINCTION COEFFICIENT                      1/M          9          0    30
 015030  AEROSOL CONTAMINATION INDEX                 NUMERIC      2      -1000    12
 015031  ATMOS. PATH DELAY IN SATELLITE SIGNAL       M            4      10000    15
@@ -1547,6 +1663,16 @@
 015054  LG10 NUM DENSITY-AERO PARTCL(DIA0.25-2.5UM) LOG(1/M**3)  2        550     9
 015055  NON VOLATILE AEROSOL RATIO                  NUMERIC      2          0     7
 015062  AEROSOL OPTICAL THICKNESS                   NUMERIC      3      -1000    14
+015063  ATTENUATED BACKSCATTER                      1/M*SR       8          0    20
+015064  UNCERTAINTY IN ATTENUATED BACKSCATTER       1/M*SR       8          0    20
+015065  PARTICLE BACKSCATTER COEFFICIENT            1/M*SR       8          0    20
+015066  UNCERTAINTY PARTICLE BACKSCATTER COEFFIC    1/M*SR       8          0    20
+015067  PARTICLE EXTINCTION COEFFICIENT             1/M          8          0    20
+015068  UNCERTAINTY PARTICLE EXTINCTION COEFFIC     1/M          8          0    20
+015069  PARTICLE LIDAR RATIO                        SR           2          0    14
+015070  UNCERTAINTY IN LIDAR RATIO                  SR           2          0    14
+015071  PARTICLE DEPOLARIZATION RATIO               %            2          0    14
+015072  UNCERTANITY IN DEPOLARIZATION RATIO         %            2          0    14
 019001  TYPE OF SYNOPTIC FEATURE                    CODE TABLE   0          0     6
 019002  EFFECTIVE RADIUS OF FEATURE                 M           -2          0    12
 019003  WIND SPEED THRESHOLD                        M/S          0          0     8
@@ -1678,6 +1804,7 @@
 020126  LIGHTNING RATES OF DISCHARGE                1/H          0          0    23
 020127  LIGHTNING-DISTANCE FROM STATION             M           -3          0     8
 020128  LIGHTNING-DIRECTION FROM STATION            DEG TRUE     1          0    12
+020129  LIGHTNING DENSITY (STROKE/FLASH/EVENT)      1/M**2       6          0    10
 020130  CLOUD HYDROMETEOR CONCENTRATION             NUMERIC      0          0    10
 020131  EFFECTIVE RADIUS OF HYDROMETEORS            M            5          0     6
 020132  CLOUD LIQUID WATER CONTENT                  KG/M**3      5          0    11
@@ -1685,6 +1812,7 @@
 020135  ICE MASS ON A ROD                           KG/M         1          0    10
 020136  SUPPLEMENTARY CLOUD TYPE                    CODE TABLE   0          0     9
 020137  EVOLUTION OF CLOUDS                         CODE TABLE   0          0     4
+020138  ROAD SFC CONDITION                          CODE TABLE   0          0     4
 021001  HORIZONTAL REFLECTIVITY                     DB           0        -64     7
 021002  VERTICAL REFLECTIVITY                       DB           0        -64     7
 021003  DIFFERENTIAL REFLECTIVITY                   DB           1         -5     7
@@ -1893,6 +2021,13 @@
 022099  MEAN DIR. AT LOW WV NUMBERS, WVL > 731 M    DEG TRUE     0          0     9
 022100  DIR. SPREAD AT LOW WV NUMBERS, WV > 731 M   DEGREE       0          0     9
 022101  TOTAL ENERGY AT LOW WV NUMBERS, WV > 731 M  NUMERIC      0          0    31
+022102  MAX NON-DIR SPECT WAVE DENSI BY FREQUENCY   M**2S        0          0    14
+022103  MAX NON-DIR SPECT WAVE DENSI BY WAVENUMBER  M**3         0          0    14
+022104  NON-DIR SPECTR WAVE DENSITY BY FREQUENCY    M**2S        0          0    14
+022105  NON-DIR SPECTR WAVE DENSITY BY WAVE NUMBER  M**3         0          0    14
+022106  DIRECT SPECTR WAVE DENSITY BY FREQUENCY     M**2S/RAD    0          0    14
+022107  DIRECT SPECTR WAVE DENSITY BY WAVE NUMBER   M**4         0          0    14
+022108  SPECTRAL WAVE DENSITY RATIO                 %            0          0     7
 022120  TIDE STATION AUTOMATED WATER LEVEL CHECK    CODE TABLE   0          0     5
 022121  TIDE STATION MANUAL WATER LEVEL CHECK       CODE TABLE   0          0     5
 022122  TIDE STATION AUTOMATED METEOR. DATA CHECK   CODE TABLE   0          0     5
@@ -1942,6 +2077,8 @@
 022182  WATER COLUMN HEIGHT                         M            3          0    23
 022184  WATER COLUMN HGT DEVIATION FROM REF VALUE   M            3      -2000    12
 022185  BPR TRANSMISSION COUNT                      NUMERIC      0          0    10
+022186  DIRECTION FROM WHICH WAVES ARE COMING       DEG TRUE     0          0     9
+022187  DIRECTIONAL SPREAD OF WAVE                  DEGREE       0          0     9
 022188  DISSOLVED OXYGEN                            UMOL/KG      3          0    19
 022189  SPECIFIC BAND OCEAN RANGE                   M            3          0    31
 022190  SPECIFIC BAND SIG WAVE HEIGHT               M            3          0    16
@@ -2105,6 +2242,8 @@
 025141  END CHANNEL                                 NUMERIC      0          0    14
 025142  CHANNEL SCALE FACTOR                        NUMERIC      0          0     6
 025143  LINEAR COEFFICIENT                          NUMERIC      6   -5000000    24
+025148  COEFFICIENT OF VARIATION                    NUMERIC      2     -10000    15
+025149  OPTIMAL ESTIMATION COST                     NUMERIC      0          0     8
 025150  METHOD TROP. CYCL. INTENS. ANAL. SAT. DATA  CODE TABLE   0          0     4
 025160  KU BAND NET INSTRUMENTAL CORRECTION         M            4    -120000    18
 025161  C BAND NET INSTRUMENTAL CORRECTION          M            4    -120000    18
@@ -2123,9 +2262,16 @@
 025181  L2 PROCESSING FLAG                          CODE TABLE   0          0     2
 025182  L1 PROCESSING FLAG                          CODE TABLE   0          0     2
 025183  L1 PROCESSING QUALITY                       %            2          0    14
-025184  PRODUCT STATUS                              CODE TABLE   0          0     2
+025184  L2 PRODUCT STATUS                           CODE TABLE   0          0     2
+025185  ENCRYPTION METHOD                           CODE TABLE   0          0     8
+025186  ENCRYPTION KEY VERSION                      CCITT IA5    0          0    96
+025187  CONFIDENCE FLAG                             CODE TABLE   0          0     4
+025188  METHOD FOR REDUCING PRESSURE TO SEA LVL     CODE TABLE   0          0     5
+025189  RANGE CUT-OFF WAVELENGHT                    M            0          1     9
+025190  ALTIMETER ECHO PROCESSING MODE              CODE TABLE   0          0     8       
+025191  ALTIMETER TRACKING MODE                     CODE TABLE   0          0     8
 026001  PRINC. TIME DAILY READING IN UTC MAX TEMP.  HEURE        1          0    12
-026002  PRINC. TIME DAILY READING IN UTC MIN TEMP.  HEURE        1          0    12
+026002  PRINC. TIME DAILY READING IN UTC MIN TEMP   HEURE        1          0    12
 026003  TIME DIFFERENCE                             MINUTES      0      -1440    12
 026010  HOURS INCLUDED                            * FLAG TABLE   0          0    26
 026020  DURATION OF PRECIPITATION                   MINUTE       0          0    11
@@ -2141,6 +2287,7 @@
 027020  SATELLITE LOCATION COUNTER                  NUMERIC      0          0    16
 027021  SATELLITE SUBLOCATION DIMENSION             NUMERIC      0          0    16
 027031  IN DIR. 0 DEG. LONG, DIST FM EARTH'S CNTR   M            2-1073741824    31
+027079  HORIZONTAL WIDTH OF SAMPLED VOLUME          M            0          0    18
 027080  VIEWING AZIMUTH ANGLE                       DEG TRUE     2          0    16
 028001  LONGITUDE (HIGH ACCURACY)                   DEGREE       5  -18000000    26
 028002  LONGITUDE (COARSE ACCURACY)                 DEGREE       2     -18000    16
@@ -2150,6 +2297,7 @@
 028031  IN DIR. 90 DEG EAST, DIST FM EARTH'S CNTR   M            2-1073741824    31
 029001  PROJECTION TYPE                             CODE TABLE   0          0     3
 029002  CO-ORDINATE GRID TYPE                       CODE TABLE   0          0     3
+029014  OPTIONAL LIST PARAM MAP PROJECTION LIBRARY  CCITT IA5    0          0   504
 030001  PIXEL VALUE  ( 4 BITS)                      NUMERIC      0          0     4
 030002  PIXEL VALUE  ( 8 BITS)                      NUMERIC      0          0     8
 030004  PIXEL VALUE  (16 BITS)                      NUMERIC      0          0    16
@@ -2212,6 +2360,7 @@
 033063  INDIC INSTR NOISE PERF (RADIO CALIBRATION)  %            0          0     7
 033064  INDIC INSTR NOISE PERFORMANCE (SPEC CALIB)  %            0          0     7
 033065  OUTPUT OF SYSTEM TEC QUALITY FUNCTION       NUMERIC      0          0    24
+033066  AMV QUALITY FLAG                          * FLAG TABLE   0          0    24
 033070  TOTAL OZONE QUALITY                         CODE TABLE   0          0     4
 033071  PROFILE OZONE QUALITY                       CODE TABLE   0          0     4
 033072  OZONE ERROR                                 CODE TABLE   0          0     5
@@ -2232,6 +2381,7 @@
 033089  QUALITY INDICATORS-WRM TARGET CALLIB(NEDT)  K            2          0    12
 033090  QUALITY INDICATORS-COLD TARGET CALLIB(NEDT) K            2          0    12
 033091  QUALITY INDICATORS-OVERALL CALLIB(NEDT)     K            2          0    12
+033092  BAND SPECIFIC OCEAN QUALITY FLAG            FLAG TABLE   0          0     9
 035000  FM AND REGIONAL CODE NUMBER                 CODE TABLE   0          0    10
 035001  TIME FRAME FOR MONITORING                   CODE TABLE   0          0     3
 035011  NUMBER OF REPORTS ACTUALLY RECEIVED         NUMERIC      0          0    14
@@ -2273,6 +2423,65 @@
 040026  SCORE QUANTIZATION FACTOR                   NUMERIC      2          0    16
 040027  SUN GLINT ANGLE                             DEGREE       0          0     7
 040028  QUALITY FLAG                                CODE TABLE   0          0     4
+040029  HORIZONTAL OBS INTEGRATION LENGTH           M            0          0    26
+040030  HORIZONTAL LINE OF SIGHT WINDS              M/S          2     -32767    16
+040031  ERR ESTIMATE OF HORIZ LINE OF SIGHT WIND    M/S          2          0    15
+040032  DERIVATIVE WIND TO PRESSURE                 M/S*PA       3    -100000    18
+040033  DERIVATIVE WIND TO TEMPERATURE              M/S*K        3    -100000    18
+040034  DERIVATIVE WIND TO BACKSCATTER RATIO        M/S          3    -200000    19
+040035  SATELLITE RANGE                             M            0     380000    18
+040036  LIDAR L2B CLASSIFICATION TYPE               CODE TABLE   0          0     4
+040037  BACKSCATTER RATIO                           NUMERIC      3        500    20
+040038  CLOUD PARTICLE SIZE                         M            7          0    28
+040039  SINGLE LOOK COMPLEX IMAGE INTENSITY         NUMERIC      0        -25     5
+040040  SINGLE LOOK COMPLEX IMAGE SKEWNESS          NUMERIC      2          1    13
+040041  SINGLE LOOK COMPLEX IMAGE KURTOSIS          NUMERIC      2          1    13
+040042  SINGLE LOOK COMPLEX IMAGE VARIANCE          NUMERIC      2          1    13
+040043  SATELLITE MANOEUVRE INDICATOR               CODE TABLE   0          0     3 
+040044  DUST INDEX                                  NUMERIC      1          0     8
+040045  CLOUD FORMATION AND HEIGHT ASSIGNMENT       FLAG TABLE   0          0     5
+040046  CLOUDINESS SUMMARY                          CODE TABLE   0          0     3
+040047  VALID. FLAG FOR IASI OR IASI-NG LEVEL 1     CODE TABLE   0          0     3
+040048  VALIDATION FLAG OF AMSU-A LEVEL 1 DATA FLOW CODE TABLE   0          0     3  
+040049  CLOUD TESTS EXECUTED AND RESULTS            FLAG TABLE   0          0    16  
+040050  RETRIEVAL INITIALISATION                    FLAG TABLE   0          0     8
+040051  CONVERGENCE OF THE ITERATIVE RETRIEVAL      CODE TABLE   0          0     3
+040052  INDIC OF SUP-ADIABATIC AND  SUP-SATURATION  FLAG TABLE   0          0     8
+040053  NUMBER OF ITERATIONS USED FOR RETRIEVAL     NUMERIC      0          0     8 
+040054  POTENTIAL PROCESSING AND INPUTS ERRORS      FLAG TABLE   0          0    13 
+040055  DIAGNOSTICS ON THE RETRIEVAL                FLAG TABLE   0          0    21
+040056  GENERAL RETRIEVAL QUALITY                   CODE TABLE   0          0     3     
+040057  IASI LEVEL 2 RETRIEVAL FLAGS                FLAG         0          0    31
+040058  NUMB OF VECT DESCRIBING THE CHARAC MATRICES NUMERIC      0          0     8
+040059  NUMBER OF LAYERS ACTUALLY RETRIEVED         NUMERIC      0          0     8   
+040060  NUMBER OF PROFILES RETRIEVED IN SCANLINE    NUMERIC      0          0     8
+040061  AIR PARTIAL COLUMNS ON EACH RETRIEVED LAYER MOL/CM**2    3          0    16
+040062  A-PRIORI PART COL ON EACH RETRIEVED LAYER   MOL/CM**2   10          0    16
+040063  SCALING VEC MULT THE A PRIORI CO VECT       NUMERIC      5          0    26
+040064  MAIN EIGENVALUES OF THE SENSITIVITY MATRIX  NUMERIC      5          0    26 
+040065  MAIN EIGENVECTORS OF THE SENSITIVITY MATRIX NUMERIC      6-1000000000    31
+040066  QUALITY INDIC. FOR ATMO WATER VAPOUR        NUMERIC      1          0     8
+040067  QUALITY INDICATOR FOR ATMOSP TEMPERATURE    NUMERIC      1          0     8
+040068  GENERAL RETRIEVAL QUALITY FLAG FOR SO2      CODE TABLE   0          0     4
+040069  PWLR ESTIMATED  ERROR FOR SFC. AIR TEMP.    K            4   -1000000    21
+040070  PWLR ESTIMATED RETRRIV ERROR OF SFC DEW P * K            4   -1000000    21
+040071  RETRIEVAL ERROR COVARIANCE MATRIX FOR OZONE NUMERIC      4   -1000000    21
+040072  PWLR ESTIMATED QUALITY INDIC OF ATMOS OZONE NUMERIC      1          0     8
+040073  PWLR ESTIMATED ERROR OF SURFACE SKIN TEMP   NUMERIC      1          0     8 
+041001  PCO2                                        PA           3          0    18
+041002  FLUORESCENCE                                KG/L        12          0    16
+041003  DISSOLVED NITRATES                          UMOL/KG      3          0    17
+041005  TURBIDITY                                   NTU          2          0    12
+042001  DOMIN SWELL WAVE DIRECTION OF SPECTR PARTI  DEGREE       0          0     9
+042002  SIG SWELL WAVE HEIGHT OF SPECTR PARTITION   M            1          0     9
+042003  DOMIN SWELL WAVELENGTH OF SPECTR PARTITION  M            2        100    17
+042004  CONFID INVERS FOR PART OF SWELL WAVE SPECT  CODE TABLE   0          0     4
+042005  AMBIG REMOVAL FACTOR SWELL WAVE PARTITION   NUMERIC      5    -100000    18
+042006  WAVE AGE                                    NUMERIC      2          1     8
+042007  SHORTEST OCEAN WAVELENGTH ON SPECTR RESOL   M            2          0    16
+042008  NONLINEAR INVERSE SPECTRAL WIDTH            M            2          0    16
+042009  BIN PARTITION REFERENCE                     NUMERIC      0          0     8
+042010  PARTITION NUMBER                            NUMERIC      0          1     4
 049001  RECORD ID                                   NUMERIC      0          0    10
 049002  SEQUENCE NR                                 NUMERIC      0          0     8
 049003  SUBSAT. LAT.                                DEGREES      2      -9000    15
@@ -2708,6 +2917,7 @@
 002217  AWOS SENSOR TOTAL NUBMER EVENTS, UNDET. PD  NUMERIC      0          0     6
 002232  FILLER ENTRY FOR GOES SATWINDS              NUMERIC      0          0     3
 002233  INSTRUMENT USED FOR NAVOCEANO               CODE TABLE   0          0     8
+002234  SATELLITE INSTRUMENT HORN IDENTIFIER        CODE TABLE   0          0     5
 004192  PERIOD, QTY OF PCPN ASSOCIATED TO 013011    MINUTES      0          0    11
 004193  TIME (HH) OF MAX WIND (PEAK), 24H (SA)      HHMM         0          0    12
 004194  ELAPSED TIME SINCE 00Z, MAX WIND, SYN S5G3  HOUR         0          0     5
@@ -2851,6 +3061,7 @@
 013227  TOTAL PRECIPITATION (HIGH PRECISION)        MM           3          0    21
 013228  WATER EQUIVALENT TO ACCUMULATED SNOW        KG/M**2      2         -2    16
 013229  DISCHARGE                                   M**3/S       2   -8450000    25
+013230  MIXING RATIO                                KG/KG       10          0    30
 014192  NET POSINTEGRATED OVER SPECIFIED PERIOD     J/M**2      -4     -16384    15 M
 014193  GLOBAL SOLAR RAD. INTEGR. OVR SPECIFIED PD  J/M**2      -4          0    15 M
 014194  DIFFUSE SOLAR RAD. INTEG. OVR SPECIFIED PD  J/M**2      -4          0    15 M
@@ -2902,10 +3113,16 @@
 015198  TOTAL OR PARTIAL COLUMN                     DOBSON       0          0    10
 015199  PARTIAL PRESSURE                            PA           4          0     9
 015200  INTEGRATED SPECIFIC MASS (COLUMN)           KG/M**2      8          0    21
+015201  INTEGRATED NUMBER DENSITY                   1/M**2       0          0    17
+015202  INTEGRATED MOLAR DENSITY                    MOL/M**2     0          0    17
+015207  NUMBER DENSITY                              1/M**3       0          0    17
 015208  VOLUMETRIC MIXING RATIO                     M**3/M**3    2          0    31
 015223  MASS DENSITY                                KG/M**3     11          0    31
 015225  MOLECULAR MASS                              U.A.M.U.     2          0    15
 015230  NUMBER DENSITY                              MOL/M**3   -15          0    25
+015231  BENDING ANGLE X DISPLACEMENT                RAD          8    -100000    23
+015232  BENDING ANGLE Y DISPLACEMENT                RAD          8    -100000    23
+015233  BENDING ANGLE Z DISPLACEMENT                RAD          8    -100000    23
 020192  TEMPERATURE, TOP OF CLOUDS                  K            1          0     9
 020193  OPACITY OF CLOUD LAYER (SA)                 TENTH        0          0     4 M
 020194  TOTAL OPACITY (SA)                          TENTH        0          0     4
@@ -2998,6 +3215,7 @@
 033202  HWOS OVERRIDE QUALITY TABLE                 FLAG TABLE   0          0    31
 033203  HARDWARE QUALITY TABLE                      FLAG TABLE   0          0    31
 033204  SURFACE POLLUTANTS QUALITY                  CODE TABLE   0          0     5
+033205  CORRELATION COEFFICIENT                     NUMERIC      2       -100     8
 048192  O3: SFC SIGMA/ETA=1 (PPB)                   1E-9         2          0    15
 048193  O3: MAX LWR LVLS LAST 3H (PPB)              1E-9         2          0    15
 048194  O3: MAX LWR LVLS LAST 6H (PPB)              1E-9         2          0    15
