@@ -12,11 +12,6 @@ COMPONENTS        := rpnpy
 COMPONENTS_UC     := $(foreach item,$(COMPONENTS),$(call rdeuc,$(item)))
 COMPONENTS_VFILES := $(foreach item,$(COMPONENTS_UC),$($(item)_VFILES))
 
-#MODULES_DOCTESTS := $(ROOT)/lib/Fstdc.py $(ROOT)/lib/rpnstd.py $(ROOT)/lib/rpnpy/rpndate.py $(ROOT)/lib/rpnpy/librmn/base.py $(ROOT)/lib/rpnpy/librmn/fstd98.py  $(ROOT)/lib/rpnpy/librmn/interp.py $(ROOT)/lib/rpnpy/librmn/grids.py
-MODULES_DOCTESTS := $(wildcard $(ROOT)/lib/*.py) $(wildcard $(ROOT)/lib/rpnpy/*.py) $(wildcard $(ROOT)/lib/rpnpy/[a-z]*/*.py)
-MODULES_TESTS    := $(wildcard $(ROOT)/share/tests/test_*.py)
-MODULES_TESTSKSH := $(wildcard $(ROOT)/share/tests/test_*.ksh)
-
 #------------------------------------
 
 MYSSMINCLUDEMK = $(wildcard $(RDE_INCLUDE0)/Makefile.ssm.mk $(rpnpy)/include/Makefile.ssm.mk)
@@ -66,46 +61,11 @@ COMPONENTS_UNINSTALL_ALL := $(foreach item,$(COMPONENTS_UC),$($(item)_UNINSTALL)
 components_install: $(COMPONENTS_INSTALL_ALL)
 components_uninstall: $(COMPONENTS_UNINSTALL_ALL)
 
+.PHONY: components_tests
+COMPONENTS_TESTS  := $(foreach item,$(COMPONENTS_UC),$($(item)_TESTS))
+components_tests: $(COMPONENTS_TESTS)
+
 #------------------------------------
-.PHONY: doctests unittests alltests alldoc
-PYTHONVERSION=py$(shell echo `python -V 2>&1 | sed 's/python//i'`)
-TESTLOGDIR := $(ROOT)/_testlog_$(PYTHONVERSION)_v$(RPNPY_VERSION)
-doctests:
-	if [[ "x$(TESTLOGDIR)" != "x" ]] ; then mkdir -p $(TESTLOGDIR) > /dev/null 2>&1 || true ; fi ; \
-	cd $(TMPDIR) ; mkdir tmp 2>/dev/null || true ; \
-	TestLogDir=$(TESTLOGDIR) ; \
-	echo -e "\n======= PY-DocTest List ========\n" ; \
-	for i in $(MODULES_DOCTESTS); do \
-	logname=`echo $${i} | sed "s|$(ROOT)||" | sed "s|/|_|g"` ; \
-	if [[ x$${i##*/} != xall.py && x$${i##*/} != xproto.py  && x$${i##*/} != xproto_burp.py ]] ; then \
-	echo -e "\n==== PY-DocTest: " $$i "==== " $(PYTHONVERSION) " ====\n"; python $$i > $${TestLogDir:-.}/$${logname}.log 2> $${TestLogDir:-.}/$${logname}.err ;\
-	grep failures $${TestLogDir:-.}/$${logname}.log ;\
-	fi ; \
-	done
-
-unittests: 
-	if [[ x$(TESTLOGDIR) != x ]] ; then mkdir -p $(TESTLOGDIR) > /dev/null 2>&1 || true ; fi ; \
-	cd $(TMPDIR) ; mkdir tmp 2>/dev/null || true ; \
-	TestLogDir=$(TESTLOGDIR) ; \
-	echo -e "\n======= PY-UnitTest List ========\n" ; \
-	for i in $(MODULES_TESTS); do \
-	logname=`echo $${i} | sed "s|$(ROOT)||" | sed "s|/|_|g"` ; \
-	echo -e "\n==== PY-UnitTest: " $$i "==== " $(PYTHONVERSION) " ====\n"; python $$i > $${TestLogDir:-.}/$${logname}.log 2> $${TestLogDir:-.}/$${logname}.err ;\
-	cat  $${TestLogDir:-.}/$${logname}.err ;\
-	done
-	echo -e "\n======= KSH-UnitTest List ========\n" ; \
-	for i in $(MODULES_TESTSKSH); do \
-	logname=`echo $${i} | sed "s|$(ROOT)||" | sed "s|/|_|g"` ; \
-	echo -e "\n==== KSH-UnitTest: " $$i "==== " $(PYTHONVERSION) " ====\n"; $$i > $${TestLogDir:-.}/$${logname}.log 2> $${TestLogDir:-.}/$${logname}.err ;\
-	cat  $${TestLogDir:-.}/$${logname}.err ;\
-	done
-
-alltests: doctests unittests
-
-alldoc:
-	cd $(ROOT) ;\
-	mkdir doc 2>/dev/null ;\
-	./bin/pydoc2wiki.py
 
 ifneq (,$(DEBUGMAKE))
 $(info ## ==== $$rpnpy/Makefile.user.mk [END] ================================)
