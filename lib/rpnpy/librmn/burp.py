@@ -157,9 +157,11 @@ def isBURP(filename):
                         .format(type(filename)))
     if filename.strip() == '':
         raise ValueError("isBURP: must provide a valid filename")
-    return _rb.wkoffit(filename) in \
-        (_rc.WKOFFIT_TYPE_LIST['BURP'], )
-    #TODO: should we also accept 'BUFR', 'BLOK'... ?
+    return _rb.wkoffit(filename) in (
+        _rc.WKOFFIT_TYPE_LIST['BURP'],
+        _rc.WKOFFIT_TYPE_LIST['BUFR'],
+        ## _rc.WKOFFIT_TYPE_LIST['BLOK'], #TODO: accept 'BLOK'... ?
+        )
 
 
 def burp_open(filename, filemode=_rbc.BURP_MODE_READ):
@@ -171,7 +173,7 @@ def burp_open(filename, filemode=_rbc.BURP_MODE_READ):
     iunit = burp_open(filename, FST_RO)
 
     Args:
-        paths    : path/name of the file to open
+        filename : path/name of the file to open
                    if paths is a list, open+link all files
                    if path is a dir, open+link all fst files in dir
         filemode : a string with the desired filemode (see librmn doc)
@@ -1927,14 +1929,20 @@ def mrbcvt_decode(cmcids, tblval=None, datyp=_rbc.BURP_DATYP_LIST['float']):
         cmcids : List of element names in the report in numeric BUFR codes.
                  See the code desc in the FM 94 BUFR man
         tblval : BUFR code values (array of int or float)
+                 Note: tblval is modified by mrbcvt_decode for negative values
+                       where(tblval < 0) tblval += 1
         datyp' : (optional) Data type as obtained from mrbprm (int)
                  See rpnpy.librmn.burp_const BURP_DATYP_LIST
                                          and BURP_DATYP2NUMPY_LIST
                  Default: 6 (float)
-        blkdata : (dict) Block data as returned by mrbxtr,
+        blkdata: (dict) Block data as returned by mrbxtr,
                            must contains 2 keys: 'cmcids', 'tblval'
+                 Note: tblval is modified by mrbcvt_decode for negative values
+                       where(tblval < 0) tblval += 1
     Returns
-        array, dtype depends on datyp
+        array, dtype depends on datyp, converted tblval to rval
+               missing values will be set to mrfopt("MISSING")
+               not convertable values will be copied from tblval to rval
     Raises:
         KeyError   on missing blkdata keys
         TypeError  on wrong input arg types
@@ -1957,6 +1965,7 @@ def mrbcvt_decode(cmcids, tblval=None, datyp=_rbc.BURP_DATYP_LIST['float']):
 
     See Also:
         mrbcvt_encode
+        mrfopt
         mrfloc
         mrfget
         mrbhdr
@@ -2028,6 +2037,7 @@ def mrbcvt_decode(cmcids, tblval=None, datyp=_rbc.BURP_DATYP_LIST['float']):
     ## *       DANS LE TABLEAU RVAL LA VALEUR -1.1E30 CE QUI INDIQUE A L'USAGER
     ## *       QU'IL DOIT CONSULTER LE TABLEAU TBLVAL POUR OBTENIR CET ELEMEMT
 
+
     if not datyp in _rbc.BURP_DATYP_NAMES.keys():
         raise ValueError('Out of range datyp={0}'.format(datyp))
 
@@ -2054,12 +2064,13 @@ def mrbcvt_decode(cmcids, tblval=None, datyp=_rbc.BURP_DATYP_LIST['float']):
     ##                     .format(datyp, _rbc.BURP_DATYP_NAMES[datyp]))
 
     dtype = _np.float32 ##_rbc.BURP_DATYP2NUMPY_LIST[datyp]
-    try:
-        rval_missing = _rbc.BURP_RVAL_MISSING[datyp]
-    except KeyError:
-        rval_missing = _rbc.BURP_RVAL_MISSING0  ##TODO: check: _rbc.BURP_TBLVAL_MISSING
     rval = tblval.astype(dtype)
-    rval[:, :, :] = rval_missing
+
+    ## try:
+    ##     rval_missing = _rbc.BURP_RVAL_MISSING[datyp]
+    ## except KeyError:
+    ##     rval_missing = _rbc.BURP_RVAL_MISSING0  ##TODO: check: _rbc.BURP_TBLVAL_MISSING
+    ## rval[:, :, :] = rval_missing
     istat = _rp.c_mrbcvt(cmcids, tblval, rval, nele, nval, nt,
                          _rbc.MRBCVT_DECODE)
     if istat != 0:
@@ -2069,7 +2080,6 @@ def mrbcvt_decode(cmcids, tblval=None, datyp=_rbc.BURP_DATYP_LIST['float']):
     ## except:
     ##     rval_missing = _rbc.BURP_RVAL_MISSING0  ##TODO: check: _rbc.BURP_TBLVAL_MISSING
     ## rval[tblval == _rbc.BURP_TBLVAL_MISSING] = rval_missing
-    #TODO: if e_cvt == 0: put tblval
 
     return rval
 
@@ -2156,10 +2166,15 @@ def mrbcvt_encode(cmcids, rval):
         cmcids : List of element names in the report in numeric BUFR codes.
                  See the code desc in the FM 94 BUFR man
         rval   : Real-valued table data
+                 nint(rval) is used as tblval for mrbcvt_encode for not
+                 converted values
         blkdata : (dict) Block data as returned by mrbxtr,
                            must contains 2 keys: 'cmcids', 'rval'
     Returns
-        array, integer table data
+        array, integer table data, converted rval to tblval
+               missing values equielent to mrfopt("MISSING") will
+               be properly encoded
+               not convertable values will be copied from rval to tblval
     Raises:
         TypeError  on wrong input arg types
         BurpError  on any other error
@@ -2184,6 +2199,7 @@ def mrbcvt_encode(cmcids, rval):
 
     See Also:
         mrbcvt_decode
+        mrfopt
         mrfloc
         mrfget
         mrbhdr
@@ -2223,34 +2239,29 @@ def mrbcvt_encode(cmcids, rval):
     else:
         raise TypeError('cmcids should be a ndarray of rank 1 (nele)')
 
-    ## rval = _np.ravel(rval, order='F') #TODO: any reason to do this, tablval would then be rank 1...
     tblval = _np.round(rval).astype(_np.int32)
-    ## tblval = rval.copy()
-
-    # rval[_np.isnan(rval)] = 1.00000002e+30  #TODO: may be needed
 
     istat = _rp.c_mrbcvt(cmcids, tblval, rval, nele, nval, nt,
                          _rbc.MRBCVT_ENCODE)
-    ## tblval = _np.round(tblval).astype(_np.int32)
 
     if istat != 0:
         raise BurpError('c_mrbcvt', istat)
 
-    try:
-        datyp = None
-        for k in _rbc.BURP_DATYP2NUMPY_LIST.keys():
-            ## print _rbc.BURP_DATYP2NUMPY_LIST[k] == rval.dtype, repr(_rbc.BURP_DATYP2NUMPY_LIST[k]), repr(rval.dtype)
-            if _rbc.BURP_DATYP2NUMPY_LIST[k] == rval.dtype:
-                datyp = k
-                break
-        if datyp is None:
-            rval_missing = _rbc.BURP_RVAL_MISSING0
-        else:
-            rval_missing = _rbc.BURP_RVAL_MISSING[datyp]
-    except:
-        rval_missing = _rbc.BURP_RVAL_MISSING0  ##TODO: check: _rbc.BURP_TBLVAL_MISSING
+    ## try:
+    ##     datyp = None
+    ##     for k in _rbc.BURP_DATYP2NUMPY_LIST.keys():
+    ##         ## print _rbc.BURP_DATYP2NUMPY_LIST[k] == rval.dtype, repr(_rbc.BURP_DATYP2NUMPY_LIST[k]), repr(rval.dtype)
+    ##         if _rbc.BURP_DATYP2NUMPY_LIST[k] == rval.dtype:
+    ##             datyp = k
+    ##             break
+    ##     if datyp is None:
+    ##         rval_missing = _rbc.BURP_RVAL_MISSING0
+    ##     else:
+    ##         rval_missing = _rbc.BURP_RVAL_MISSING[datyp]
+    ## except:
+    ##     rval_missing = _rbc.BURP_RVAL_MISSING0  ##TODO: check: _rbc.BURP_TBLVAL_MISSING
     ## rval_missing = _rbc.BURP_RVAL_MISSING0  #TODO: if rval is actually int or char that may not be the proper missing val
-    tblval[rval == rval_missing] = _rbc.BURP_TBLVAL_MISSING
+    #### tblval[rval == rval_missing] = _rbc.BURP_TBLVAL_MISSING
     ## print (rval == rval_missing).ravel()
     ## print rval.ravel(), rval_missing, rval.dtype
     ## print tblval.ravel(), _rbc.BURP_TBLVAL_MISSING, tblval.dtype
