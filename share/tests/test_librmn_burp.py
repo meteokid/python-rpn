@@ -508,6 +508,10 @@ class RpnPyLibrmnBurp(unittest.TestCase):
             for iblk in range(params['nblk']):
                 blkparams = rmn.mrbprm(buf, iblk+1)
                 blkdata   = rmn.mrbxtr(buf, iblk+1)
+                blkdatatbl0= _np.array(blkdata['tblval'], copy=True)
+                #Note: need to take a copy of blkdata['tblval'] for comparison
+                #      after re-encoding since mrbcvt modify it for
+                #      negative values
                 rval      = rmn.mrbcvt_decode(blkdata['cmcids'],
                                               blkdata['tblval'],
                                               blkparams['datyp'])
@@ -516,7 +520,7 @@ class RpnPyLibrmnBurp(unittest.TestCase):
                     e_cmcids = blkdata['cmcids'][iele]
                     e_cmcids = rmn.mrbcvt_dict_bufr(e_cmcids, raise_error=False)['e_bufrid']
                     e_rval = rval[iele,:,:]
-                    e_tblval0 = blkdata['tblval'][iele,:,:]
+                    e_tblval0 = blkdatatbl0[iele,:,:]
                     e_tblval1 = tblval[iele,:,:]
                     if not _np.all(e_tblval0 == e_tblval1):
                         ## print 'b1',repr(blkparams)
@@ -527,7 +531,6 @@ class RpnPyLibrmnBurp(unittest.TestCase):
                         print('rv',repr(_np.round(e_rval).astype(_np.int32).ravel()), blkparams['datyp'])
                         print('t0',repr(e_tblval0.ravel()))
                         print('t1',repr(e_tblval1.ravel()))
-                    #TODO: problem w/ values < 0: decode int as is... but encode shift values by -1
                     self.assertTrue(_np.all(e_tblval0 == e_tblval1),
                                     "{}, {}: id={}, \nrval:{}, \nexp:{}, \ngot:{}"
                                     .format(iblk, iele, e_cmcids, 
