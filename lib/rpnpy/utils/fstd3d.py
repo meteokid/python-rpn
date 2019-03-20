@@ -332,7 +332,7 @@ def fst_read_3d(fileId, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
         print("(fst_read_3d) Using Thermo level list")
 
     if verbose or len(ip1keys) == 0:
-        print("(fst_read_3d) Found {0} records for {1} ip2={2} ip3={3} datev={4} typvar={5} etiket={6}"\
+        print("(fst_read_3d) Found {0} records for {1} ip2={2} ip3={3} datev={4} typvar={5} etiket={6}"
               .format(len(ip1keys), nomvar, ip2, ip3, datev, typvar, etiket))
 
     if len(ip1keys) == 0:
