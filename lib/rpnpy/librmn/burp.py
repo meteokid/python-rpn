@@ -160,7 +160,7 @@ def isBURP(filename):
     return _rb.wkoffit(filename) in (
         _rc.WKOFFIT_TYPE_LIST['BURP'],
         _rc.WKOFFIT_TYPE_LIST['BUFR'],
-        ## _rc.WKOFFIT_TYPE_LIST['BLOK'], #TODO: accept 'BLOK'... ?
+        ## _rc.WKOFFIT_TYPE_LIST['BLOK'], #TODO?: accept 'BLOK'... ?
         )
 
 
@@ -687,9 +687,8 @@ def mrfget(handle, rpt=None, funit=None):
     if rpt is None or isinstance(rpt, _integer_types):
         nrpt = rpt
         if rpt is None:
-            nrpt = mrfmxl(funit)
-            #TODO: nrpt = max(64, rmn.mrfmxl(funit))+10
-        nrpt *= 2  #TODO: should we remove this?
+            nrpt = mrfmxl(funit) #TODO?: nrpt = max(64, rmn.mrfmxl(funit))+10
+        nrpt *= 2  #TODO?: should we remove this?
         rpt = _np.empty((nrpt,), dtype=_np.int32)
         rpt[0] = nrpt
     elif not isinstance(rpt, _np.ndarray):
@@ -699,8 +698,8 @@ def mrfget(handle, rpt=None, funit=None):
         raise BurpError('c_mrfget', istat)
     return rpt
 
-#TODO: review
-def mrfput(funit, handle, rpt):
+
+def mrfput(funit, handle, rpt): #TODO: review
     """
     Write a report.
 
@@ -1060,10 +1059,10 @@ def mrbprm(rpt, blkno):
     if blkno <= 0:
         raise ValueError('Provided blkno must be > 0')
     try:
-        maxblkno  = mrbhdr(rpt)['nblk']  #TODO: should we do this?
+        maxblkno  = mrbhdr(rpt)['nblk']  #TODO?: should we do this?
     except:
         maxblkno = -1
-    if maxblkno > 0 and blkno > maxblkno:
+    if 0 < maxblkno < blkno:
         raise ValueError('Provided blkno must be < nb of block in report')
     nele = _ct.c_int()
     nval = _ct.c_int()
@@ -1242,7 +1241,7 @@ def mrbtyp_encode_bknat(bknat_multi, bknat_kind):
 
     Examples:
     >>> import rpnpy.librmn.all as rmn
-    >>> #TODO
+    >>> #TODO Examples
 
     See Also:
         mrbtyp_decode
@@ -1250,7 +1249,7 @@ def mrbtyp_encode_bknat(bknat_multi, bknat_kind):
         mrbtyp_encode_bktyp
         rpnpy.librmn.burp_const
     """
-    #TODO: check bit order
+    #TODO: check bit order in mrbtyp_encode_bknat
     return int(_rbc.BURP2BIN(bknat_multi, 2)+_rbc.BURP2BIN(bknat_kind, 2), 2)
 
 
@@ -1319,14 +1318,14 @@ def mrbtyp_encode_bktyp(bktyp_alt, bktyp_kind):
 
     Examples:
     >>> import rpnpy.librmn.all as rmn
-    >>> #TODO
+    >>> #TODO Examples
 
     See Also:
         mrbtyp_decode
         mrbtyp_encode_bknat
         rpnpy.librmn.burp_const
     """
-    #TODO: check bit order
+    #TODO: check bit order in mrbtyp_encode_bktyp
     return int(_rbc.BURP2BIN(bktyp_alt, 1) + _rbc.BURP2BIN(bktyp_kind, 6), 2)
 
 
@@ -1354,14 +1353,14 @@ def mrbtyp_encode(bknat, bktyp=None, bkstp=None):
 
     Examples:
     >>> import rpnpy.librmn.all as rmn
-    >>> #TODO
+    >>> #TODO Examples
 
     See Also:
         mrbtyp_decode
         mrbtyp_encode_bknat
         mrbtyp_encode_bktyp
         rpnpy.librmn.burp_const
-        #TODO:
+        #TODO Full list of see also
     """
     if isinstance(bknat, dict):
         try:
@@ -1383,7 +1382,7 @@ def mrbtyp_encode(bknat, bktyp=None, bkstp=None):
     ## if istat <= 0:
     ##     raise BurpError('c_mrbtyp', istat)
     ## return istat
-    #TODO: check bit order
+    #TODO: check bit order in mrbtyp_encode
     return int("{0:04b}{1:07b}{2:04b}".format(bknat, bktyp, bkstp), 2)
 
 
@@ -1449,7 +1448,7 @@ def mrbxtr(rpt, blkno, cmcids=None, tblval=None, dtype=_np.int32):
     if blkno <= 0:
         raise ValueError('Provided blkno must be > 0')
     try:
-        maxblkno = mrbhdr(rpt)['nblk']  ##TODO should we do this?
+        maxblkno = mrbhdr(rpt)['nblk']  ##TODO?: should we do this?
     except:
         maxblkno = -1
     if maxblkno > 0 and blkno > maxblkno:
@@ -2191,9 +2190,10 @@ def mrbcvt_encode(cmcids, rval):
     >>> params = rmn.mrbhdr(rpt)
     >>> for iblk in range(params['nblk']):
     ...     blkdata  = rmn.mrbxtr(rpt, iblk+1)
+    ...     tblval0  = blkdata['tblval'].copy()
     ...     rval     = rmn.mrbcvt_decode(blkdata)
     ...     tblval   = rmn.mrbcvt_encode(blkdata['cmcids'], rval)
-    ...     if not np.all(tblval == blkdata['tblval']):
+    ...     if not np.all(tblval == tblval0):
     ...        print("Problem encoding rval to tblval")
     >>> rmn.burp_close(funit)
 
@@ -2270,7 +2270,7 @@ def mrbcvt_encode(cmcids, rval):
     return tblval
 
 
-#TODO: review
+#TODO: review mrbini
 def mrbini(funit, rpt, time, flgs, stnid, idtp, lat, lon, dx, dy, elev, drnd,
            date, oars, runn, sup, nsup, xaux, nxaux):
     """
@@ -2300,7 +2300,7 @@ def mrbini(funit, rpt, time, flgs, stnid, idtp, lat, lon, dx, dy, elev, drnd,
     return istat
 
 
-#TODO: review
+#TODO: review mrbadd
 #TODO: should accept a dict as input for all args
 def mrbadd(rpt, blkno, nele, nval, nt, bfam, bdesc, btyp, nbit, bit0, datyp,
            cmcids, tblval): #TODO change cmcids for consistency (more explict name)
@@ -2343,8 +2343,7 @@ def mrbadd(rpt, blkno, nele, nval, nt, bfam, bdesc, btyp, nbit, bit0, datyp,
     return rpt
 
 
-#TODO: review
-def mrbdel(rpt, blkno):
+def mrbdel(rpt, blkno): #TODO: review
     """
     Delete a particular block of the report.
 
@@ -2373,8 +2372,7 @@ def mrbdel(rpt, blkno):
     return rpt
 
 
-#TODO: review
-def mrfdel(handle):
+def mrfdel(handle): #TODO: review
     """
     Delete a particular report from a burp file.
 

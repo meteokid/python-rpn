@@ -281,8 +281,8 @@ def crc32(crc, buf):
     Compute the Cyclic Redundancy Check (CRC)
 
     Args:
-       crc0 : initial crc value (int)
-       buf  : list of number to compute updated crc (numpy.ndarray of uint32)
+       crc : initial crc value (int)
+       buf : list of number to compute updated crc (numpy.ndarray of uint32)
     Returns:
        crc : computed crc value (int)
     Raises:

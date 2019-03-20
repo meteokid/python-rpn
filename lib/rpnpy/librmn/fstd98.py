@@ -278,7 +278,7 @@ def fstopenall(paths, filemode=_rc.FST_RO, verbose=None):
                                   .format(os.path.join(mypath, myfile)))
                         filelist.append(os.path.join(mypath, myfile))
                     elif verbose:
-                        print("(fstopenall) Ignoring non FST file: {0}"\
+                        print("(fstopenall) Ignoring non FST file: {0}"
                               .format(os.path.join(mypath, myfile)))
                 break
     if filemode != _rc.FST_RO and len(paths) > 1:
@@ -728,7 +728,7 @@ def fst_edit_dir(key, datev=-1, dateo=-1, deet=-1, npas=-1, ni=-1, nj=-1, nk=-1,
             npas1 = recparams['npas'] if npas == -1 else npas
             try:
                 datev = _rb.incdatr(recparams['dateo'], deet1*npas1/3600.)
-            except:
+            except Exception as e:
                 raise FSTDError('fst_edit_dir: error computing datev to keep_dateo ({0})'.format(repr(e)))
     istat = _rp.c_fst_edit_dir(key, datev, deet, npas, ni, nj, nk,
                  ip1, ip2, ip3,

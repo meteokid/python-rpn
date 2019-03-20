@@ -181,8 +181,9 @@ class RPNDate(object):
 
     def __isub__(self, nhours):
         nhours2 = -nhours
-        self += nhours2
-        return self
+        ## self += nhours2
+        ## return self
+        return self.__iadd__(self, nhours2)
 
 
     def __iadd__(self, nhours):
