@@ -6,8 +6,6 @@
 # Copyright: LGPL 2.1
 
 #TODO: add ax, ax optional arg to dE, dL, U
-#TODO: add fucntions to convert between Z, # and Y grids
-#TODO: add fucntions to define YE grids
 
 """
 Librmn Fstd grid helper functions
@@ -1209,14 +1207,16 @@ def defGrid_ZEr(ni, nj=None, rlat0=None, rlon0=None, dlat=None, dlon=None,
                             '{0}, expecting float, Got ({1})'.format(k, type(v)))
         params[k] = v
 
-    params['ax'] = _np.empty((params['ni'], 1), dtype=_np.float32,
-                             order='FORTRAN')
-    params['ay'] = _np.empty((1, params['nj']), dtype=_np.float32,
-                             order='FORTRAN')
-    for i in range(params['ni']):
-        params['ax'][i, 0] = params['rlon0'] + float(i)*params['dlon']
-    for j in range(params['nj']):
-        params['ay'][0, j] = params['rlat0'] + float(j)*params['dlat']
+    params['ax'] = _np.reshape(
+        _np.fromiter((params['rlon0'] + float(x)*params['dlon']
+                     for x in range(params['ni'])),
+                     _np.float32, params['ni']),
+        (params['ni'], 1), order='F')
+    params['ay'] = _np.reshape(
+        _np.fromiter((params['rlat0'] + float(x)*params['dlat']
+                     for x in range(params['nj'])),
+                     _np.float32, params['nj']),
+        (1, params['nj']), order='F')
 
     params0 = params.copy()
     params = defGrid_ZEraxes(params, setGridId=setGridId)
@@ -1639,14 +1639,16 @@ def defGrid_ZL(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
                             '{0}, expecting float, Got ({1})'.format(k, type(v)))
         params[k] = v
     #TODO: adjust lat0,lon0 to avoid out or range?
-    params['ax'] = _np.empty((params['ni'], 1), dtype=_np.float32,
-                             order='FORTRAN')
-    params['ay'] = _np.empty((1, params['nj']), dtype=_np.float32,
-                             order='FORTRAN')
-    for i in range(params['ni']):
-        params['ax'][i, 0] = params['lon0'] + float(i)*params['dlon']
-    for j in range(params['nj']):
-        params['ay'][0, j] = params['lat0'] + float(j)*params['dlat']
+    params['ax'] = _np.reshape(
+        _np.fromiter((params['lon0'] + float(x)*params['dlon']
+                     for x in range(params['ni'])),
+                     _np.float32, params['ni']),
+        (params['ni'], 1), order='F')
+    params['ay'] = _np.reshape(
+        _np.fromiter((params['lat0'] + float(x)*params['dlat']
+                     for x in range(params['nj'])),
+                     _np.float32, params['nj']),
+        (1, params['nj']), order='F')
     ## if params['ax'][:, 0].max() > 360.:
     ##     params['ax'][:, 0] -= 360.
 
@@ -2390,30 +2392,15 @@ def yyg_yangrot_py(yinlat1, yinlon1, yinlat2, yinlon2):
         encodeGrid
     """
     rot = egrid_rot_matrix(yinlat1, yinlon1, yinlat2, yinlon2)
-    #Get transpose of rotation
     invrot = rot.T
-    #Find the centre of Yang grid through Yin by setting
-    #And set the rotation for Yang grid with respect to Yin
     (xlat1, xlon1, xlat2, xlon2) = (0., 0., 90, 0.)
-    #Obtain the cartesian coordinates
     xyz1 = _ll.llacar_py(xlon1, xlat1)
     xyz2 = _ll.llacar_py(xlon2, xlat2)
-    xyz3 = [0., 0., 0.]
-    xyz4 = [0., 0., 0.]
-    for i in range(3):
-        xyz3[i] = 0.
-        xyz4[i] = 0.
-        for j in range(3):
-            xyz3[i] = xyz3[i] + invrot[i, j]*xyz1[j]
-            xyz4[i] = xyz4[i] + invrot[i, j]*xyz2[j]
-    #Obtain the real geographic coordinates
+    xyz3 = _np.dot(invrot, xyz1)
+    xyz4 = _np.dot(invrot, xyz2)
     (xlon1, xlat1) = _ll.cartall_py(xyz3)
     (xlon2, xlat2) = _ll.cartall_py(xyz4)
-    if xlon1 >= 360.:
-        xlon1 -= 360.
-    if xlon2 >= 360.:
-        xlon2 -= 360.
-    return (xlat1, xlon1, xlat2, xlon2)
+    return (xlat1, xlon1 % 360., xlat2, xlon2 % 360.)
 
 
 def yyg_pos_rec(yinlat1, yinlon1, yinlat2, yinlon2, ax, ay):
@@ -2504,6 +2491,7 @@ def yyg_pos_rec(yinlat1, yinlon1, yinlat2, yinlon2, ax, ay):
     axy[sindx+10+ni:sindx+10+ni+nj] = ay[0, 0:nj]
     return axy
 
+
 #TODO: write in C (modelutils's C): llacar, cartall, yyg_yangrot, yyg_pos_rec
 def egrid_rot_matrix(xlat1, xlon1, xlat2, xlon2):
     """
@@ -2590,26 +2578,53 @@ def egrid_rll2ll(xlat1, xlon1, xlat2, xlon2, rlat, rlon):
     >>> (lat, lon)   = egrid_rll2ll(xlat1, xlon1, xlat2, xlon2, rlat, rlon)
 
     See Also:
+        egrid_rll2ll_rot
         egrid_ll2rll
+        egrid_ll2rll_rot
         defGrid_YY
         decodeGrid
         encodeGrid
     """
     rot = egrid_rot_matrix(xlat1, xlon1, xlat2, xlon2)
-    #Get transpose of rotation
+    return egrid_rll2ll_rot(rot, rlat, rlon)
+
+
+def egrid_rll2ll_rot(rot, rlat, rlon):
+    """
+    Compute lat-lon from rotated lat-lon
+    of a rotated cylindrical equidistent (E) grid
+
+    (lat, lon) = egrid_rll2ll_rot(rot, rlat, rlon)
+
+    Args:
+        rot        : rotation matrix
+                     rot = egrid_rot_matrix(xlat1, xlon1, xlat2, xlon2)
+        rlat, rlon : lat and lon on the rotated grid referencial
+    Returns:
+        (lat, lon)
+    Raises:
+        TypeError  on wrong input arg types
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> (xlat1, xlon1, xlat2, xlon2)    = (0., 180., 0., 270.)
+    >>> (rlat, rlon) = (45., 271.)
+    >>> rot = egrid_rot_matrix(xlat1, xlon1, xlat2, xlon2)
+    >>> (lat, lon) = egrid_rll2ll_rot(rot, rlat, rlon)
+
+    See Also:
+        egrid_rll2ll
+        egrid_ll2rll
+        egrid_ll2rllrot
+        defGrid_YY
+        decodeGrid
+        encodeGrid
+    """
     invrot = rot.T
-    #Obtain the cartesian coordinates
     xyz1 = _ll.llacar_py(rlon, rlat)
-    xyz3 = [0., 0., 0.]
-    for i in range(3):
-        xyz3[i] = 0.
-        for j in range(3):
-            xyz3[i] = xyz3[i] + invrot[i, j]*xyz1[j]
-    #Obtain the real geographic coordinates
+    xyz3 = _np.dot(invrot, xyz1)
     (lon, lat) = _ll.cartall_py(xyz3)
-    if lon >= 360.:
-        lon -= 360.
-    return (lat, lon)
+    return (lat, lon % 360.)
 
 
 def egrid_ll2rll(xlat1, xlon1, xlat2, xlon2, lat, lon):
@@ -2642,24 +2657,58 @@ def egrid_ll2rll(xlat1, xlon1, xlat2, xlon2, lat, lon):
     >>> (rlat, rlon) = egrid_ll2rll(xlat1, xlon1, xlat2, xlon2, lat, lon)
 
     See Also:
+        egrid_ll2rll_rot
         egrid_rll2ll
+        egrid_rll2ll_rot
         defGrid_YY
         decodeGrid
         encodeGrid
     """
     rot = egrid_rot_matrix(xlat1, xlon1, xlat2, xlon2)
-    #Obtain the cartesian coordinates
+    return egrid_ll2rll_rot(rot, lat, lon)
+
+
+def egrid_ll2rll_rot(rot, lat, lon):
+    """
+    Compute rotated lat-lon from non rotated lat-lon
+    of a rotated cylindrical equidistent (E) grid
+
+    (rlat, rlon) = egrid_ll2rll(xlat1, xlon1, xlat2, xlon2, lat, lon)
+
+    Args:
+        xlat1, xlon1 : lat, lon of the grid center [deg] (float)
+                       This defines, in rotated coor., (rlat, rlon) = (0., 180.)
+                       on the rotated equator
+                       The grid is defined, in rotated coor on
+                       rlat: -90. to +90. degrees
+                       rlon:   0. to 360. degrees
+        xlat2, xlon2 : lat, lon of a 2nd ref. point [deg] (float)
+                       This point is considered to be on the rotated equator,
+                       east of xlat1, xlon1 (it thus defines the rotation)
+        lat, lon     : lat and lon on the not rotated grid referencial
+    Returns:
+        (rlat, rlon)
+    Raises:
+        TypeError  on wrong input arg types
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> (xlat1, xlon1, xlat2, xlon2)    = (0., 180., 0., 270.)
+    >>> (lat, lon)   = (45., 271.)
+    >>> (rlat, rlon) = egrid_ll2rll(xlat1, xlon1, xlat2, xlon2, lat, lon)
+
+    See Also:
+        egrid_ll2rll
+        egrid_rll2ll
+        egrid_rll2ll_rot
+        defGrid_YY
+        decodeGrid
+        encodeGrid
+    """
     xyz1 = _ll.llacar_py(lon, lat)
-    xyz3 = [0., 0., 0.]
-    for i in range(3):
-        xyz3[i] = 0.
-        for j in range(3):
-            xyz3[i] = xyz3[i] + rot[i, j]*xyz1[j]
-    #Obtain the real geographic coordinates
+    xyz3 = _np.dot(rot, xyz1)
     (lon, lat) = _ll.cartall_py(xyz3)
-    if lon >= 360.:
-        lon -= 360.
-    return (lat, lon)
+    return (lat, lon % 360.)
 
 # =========================================================================
 

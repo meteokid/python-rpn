@@ -179,7 +179,7 @@ def ezsetopt(option, value):
         return None
     raise EzscintError()
 
-#TODO: should we merge ezqkdef et ezgdef_fmem?
+
 def ezqkdef(ni, nj=None, grtyp=None, ig1=None, ig2=None, ig3=None, ig4=None,
             iunit=0):
     """
@@ -1412,7 +1412,7 @@ def gdgetmask(gdid, mask=None):
 
 #---- Interpolation Functions
 
-#TODO: ezsint, when given dict for grids, return dict then?
+#TODO: ezsint, when given dict for grids, return dict then (would need new fn)?
 def ezsint(gdidout, gdidin, zin, zout=None):
     """
     Scalar horizontal interpolation
@@ -1487,7 +1487,7 @@ def ezsint(gdidout, gdidin, zin, zout=None):
     raise EzscintError()
 
 
-#TODO: ezuvint, when given dict for grids, return dict then?
+#TODO: ezuvint, when given dict for grids, return dict then (would need new fn)?
 def ezuvint(gdidout, gdidin, uuin, vvin, uuout=None, vvout=None):
     """
     Vectorial horizontal interpolation
