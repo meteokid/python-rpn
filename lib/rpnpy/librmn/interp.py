@@ -756,6 +756,12 @@ def ezgprm(gdid, doSubGrid=False):
             'ig3'   : third grid descriptor
             'ig4'   : fourth grid descriptor
         }
+        if doSubGrid, add these
+        {
+            'nsubgrids' : Number of subgrids
+            'subgridid' : list of subgrids id
+            'subgrid'   : list of subgrids details {'id', 'shape', ...}
+        }
     Raises:
         TypeError    on wrong input arg types
         EzscintError on any other error
@@ -805,12 +811,12 @@ def ezgprm(gdid, doSubGrid=False):
     if doSubGrid:
         params['nsubgrids'] = ezget_nsubgrids(gdid)
         params['subgridid'] = ezget_subgridids(gdid)
-        params['subgrid'] = [gdid]
-        if params['nsubgrids'] > 1:
-            params['subgrid'] = []
+        params['subgrid'] = []
+        if params['nsubgrids'] > 0:
             for gid2 in params['subgridid']:
                 params['subgrid'].append(ezgprm(gid2))
     return params
+
 
 #TODO: merge ezgprm et ezgxprm et gdgaxes (conditional axes)?
 def ezgxprm(gdid, doSubGrid=False):
@@ -842,6 +848,12 @@ def ezgxprm(gdid, doSubGrid=False):
             'ig4ref' : fourth grid descriptor of grid ref
         }
         For grtyp not in ('Z', '#', 'Y', 'U'), grref=' ', ig1..4ref=0
+        if doSubGrid, add these
+        {
+            'nsubgrids' : Number of subgrids
+            'subgridid' : list of subgrids id
+            'subgrid'   : list of subgrids details {'id', 'shape', ...}
+        }
     Raises:
         TypeError    on wrong input arg types
         EzscintError on any other error
@@ -925,23 +937,24 @@ def ezgxprm(gdid, doSubGrid=False):
     if doSubGrid:
         params['nsubgrids'] = ezget_nsubgrids(gdid)
         params['subgridid'] = ezget_subgridids(gdid)
-        params['subgrid'] = [gdid]
-        if params['nsubgrids'] > 1:
-            params['subgrid'] = []
+        params['subgrid'] = []
+        if params['nsubgrids'] > 0:
             for gid2 in params['subgridid']:
                 params['subgrid'].append(ezgxprm(gid2))
     return params
 
 
-def ezgfstp(gdid):
+def ezgfstp(gdid, doSubGrid=False):
     """
     Get the standard file attributes of the positional records
 
     recParams = ezgfstp(gdid)
+    recParams = ezgfstp(gdid, doSubGrid=True)
 
     Args:
         gdid : grid id (int or dict)
                Dict with key 'id' is accepted from version 2.0.rc1
+        doSubGrid : recurse on subgrids if True
     Returns:
         {
             'id'    : grid id, same as input arg
@@ -958,6 +971,12 @@ def ezgfstp(gdid):
             'deet'   : length of a time step in seconds
             'npas'   : time step number
             'nbits' : number of bits kept for the elements of the field
+        }
+        if doSubGrid, add these
+        {
+            'nsubgrids' : Number of subgrids
+            'subgridid' : list of subgrids id
+            'subgrid'   : list of subgrids details {'id', 'typvarx', ...}
         }
     Raises:
         TypeError    on wrong input arg types
@@ -1005,8 +1024,9 @@ def ezgfstp(gdid):
     istat = _rp.c_ezgfstp(gdid, cnomvarx, ctypvarx, cetikx, cnomvary,
                           ctypvary, cetiky, cip1, cip2, cip3, cdateo,
                           cdeet, cnpas, cnbits)
-    if istat >= 0:
-        return {
+    if istat < 0:
+        raise EzscintError()
+    params = {
             'id'    : gdid,
             'typvarx': _C_CHAR2WCHAR(ctypvarx.value),
             'nomvarx': _C_CHAR2WCHAR(cnomvarx.value),
@@ -1022,12 +1042,19 @@ def ezgfstp(gdid):
             'npas'  : cnpas.value,
             'nbits' : cnbits.value
             }
-    raise EzscintError()
+    if doSubGrid:
+        params['nsubgrids'] = ezget_nsubgrids(gdid)
+        params['subgridid'] = ezget_subgridids(gdid)
+        params['subgrid'] = []
+        if params['nsubgrids'] > 0:
+            for gid2 in params['subgridid']:
+                params['subgrid'].append(ezgfstp(gid2))
+    return params
 
 
 def gdgaxes(gdid, ax=None, ay=None):
     """
-    Gets the deformation axes of the Z, Y, # grids
+    Gets the deformation axes of the Z, Y, #, U grids
 
     gridAxes = gdgaxes(gdid)
     gridAxes = gdgaxes(gdid, ax, ay)
@@ -1046,7 +1073,12 @@ def gdgaxes(gdid, ax=None, ay=None):
         {
             'id' : grid id, same as input arg
             'ax' : x grid axe data (numpy.ndarray)
+                   same as gridAxes['subgrid'][0]['ax']
             'ay' : y grid axe data (numpy.ndarray)
+                   same as gridAxes['subgrid'][0]['ay']
+            'nsubgrids' : Number of subgrids
+            'subgridid' : list of subgrids id
+            'subgrid'   : list of subgrids details {'id', 'ax', 'ay'}
         }
     Raises:
         TypeError    on wrong input arg types
@@ -1091,9 +1123,21 @@ def gdgaxes(gdid, ax=None, ay=None):
     gdid = _getCheckArg(int, gdid, gdid, 'id')
     nsubgrids = ezget_nsubgrids(gdid)
     if nsubgrids > 1:
-        raise EzscintError("gdgaxes: supergrids not supported yet, " +
-                           " loop through individual grids instead")
-        #TODO: automate the process (loop) for super grids
+        axes = []
+        subgridid = ezget_subgridids(gdid)
+        for id in subgridid:
+            axes.append(gdgaxes(id, ax, ay))
+            ax, ay = None, None
+        if not len(axes):
+            raise EzscintError()
+        return {
+                'id' : gdid,
+                'ax' : axes[0]['ax'],
+                'ay' : axes[0]['ay'],
+                'nsubgrids' : nsubgrids,
+                'subgridid' : subgridid,
+                'subgrid'   : axes
+                }
     gridParams = ezgxprm(gdid)
     axshape = None
     ayshape = None
@@ -1103,7 +1147,6 @@ def gdgaxes(gdid, ax=None, ay=None):
     elif gridParams['grtyp'].lower() in ('z', '#'):
         axshape = (gridParams['shape'][0], 1)
         ayshape = (1, gridParams['shape'][1])
-    #elif gridParams['grtyp'].lower() == 'u': #TODO add support of U/F-grids
     else:
         raise EzscintError("gdgaxes: grtyp/grref = {grtyp}/{grref} not supported".format(**gridParams))
     ax = _ftnOrEmpty(ax, axshape, _np.float32)
@@ -1118,7 +1161,14 @@ def gdgaxes(gdid, ax=None, ay=None):
         return {
             'id' : gdid,
             'ax' : ax,
-            'ay' : ay
+            'ay' : ay,
+            'nsubgrids' : 0,
+            'subgridid' : [gdid],
+            'subgrid'   : [{
+                'id' : gdid,
+                'ax' : ax,
+                'ay' : ay
+                }]
             }
     raise EzscintError()
 
@@ -1144,7 +1194,12 @@ def gdll(gdid, lat=None, lon=None):
         {
             'id'  : grid id, same as input arg
             'lat' : latitude  data (numpy.ndarray)
+                    same as gridLatLon['subgrid'][0]['lat']
             'lon' : longitude data (numpy.ndarray)
+                    same as gridLatLon['subgrid'][0]['lon']
+            'nsubgrids' : Number of subgrids
+            'subgridid' : list of subgrids id
+            'subgrid'   : list of subgrids {'id', 'lat', 'lon'}
         }
     Raises:
         TypeError    on wrong input arg types
@@ -1171,9 +1226,21 @@ def gdll(gdid, lat=None, lon=None):
     gdid = _getCheckArg(int, gdid, gdid, 'id')
     nsubgrids = ezget_nsubgrids(gdid)
     if nsubgrids > 1:
-        raise EzscintError("gdll: supergrids not supported yet, " +
-                           "loop through individual grids instead")
-        #TODO: automate the process (loop) for super grids
+        latlon = []
+        subgridid = ezget_subgridids(gdid)
+        for id in subgridid:
+            latlon.append(gdll(id, lat, lon))
+            lat, lon = None, None
+        if not len(latlon):
+            raise EzscintError()
+        return {
+                'id' : gdid,
+                'lat' : latlon[0]['lat'],
+                'lon' : latlon[0]['lon'],
+                'nsubgrids' : nsubgrids,
+                'subgridid' : subgridid,
+                'subgrid'   : latlon
+                }
     gridParams = ezgxprm(gdid)
     lat = _ftnOrEmpty(lat, gridParams['shape'], _np.float32)
     lon = _ftnOrEmpty(lon, gridParams['shape'], _np.float32)
@@ -1187,7 +1254,14 @@ def gdll(gdid, lat=None, lon=None):
         return {
             'id'  : gdid,
             'lat' : lat,
-            'lon' : lon
+            'lon' : lon,
+            'nsubgrids' : 0,
+            'subgridid' : [gdid],
+            'subgrid'   : [{
+                'id'  : gdid,
+                'lat' : lat,
+                'lon' : lon,
+                }]
             }
     raise EzscintError()
 
@@ -1238,6 +1312,7 @@ def gdxyfll(gdid, lat=None, lon=None):
         gdll
         rpnpy.librmn.grids
     """
+    #TODO: what about multi-grids? multi values of x,y for each lat,lon pair?
     lat = _getCheckArg(None, lat, gdid, 'lat')
     lon = _getCheckArg(None, lon, gdid, 'lon')
     lat = _getCheckArg(None, lat, lat, 'lat')
@@ -1311,6 +1386,7 @@ def gdllfxy(gdid, xpts=None, ypts=None):
         gdxyfll
         rpnpy.librmn.grids
     """
+    #TODO: what about multi-grids? multi values of lat,lon for each x,y pair?
     xpts = _getCheckArg(None, xpts, gdid, 'xpts')
     ypts = _getCheckArg(None, ypts, gdid, 'ypts')
     xpts = _getCheckArg(None, xpts, xpts, 'xpts')
