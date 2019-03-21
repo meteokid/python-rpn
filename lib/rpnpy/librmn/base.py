@@ -834,7 +834,7 @@ def newdate(imode, idate1, idate2=0):
     else:
         istat = _rp.f_newdate(_ct.byref(cidate1), _ct.byref(cidate2),
                               _ct.byref(cidate3), _ct.byref(cimode))
-    if istat == 1: #TODO: check this, should it be (istat < 0)
+    if istat == 1:
         raise RMNBaseError()
     if imode == 1:
         return (cidate1.value, cidate3.value)
