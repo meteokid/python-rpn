@@ -1118,8 +1118,8 @@ def gdgaxes(gdid, ax=None, ay=None):
     """
     ax = _getCheckArg(None, ax, gdid, 'ax')
     ay = _getCheckArg(None, ay, gdid, 'ay')
-    ax = _getCheckArg(None, ax, ax, 'ax')
     ay = _getCheckArg(None, ay, ax, 'ay')
+    ax = _getCheckArg(None, ax, ax, 'ax')
     gdid = _getCheckArg(int, gdid, gdid, 'id')
     nsubgrids = ezget_nsubgrids(gdid)
     if nsubgrids > 1:
@@ -1221,8 +1221,8 @@ def gdll(gdid, lat=None, lon=None):
     """
     lat = _getCheckArg(None, lat, gdid, 'lat')
     lon = _getCheckArg(None, lon, gdid, 'lon')
-    lat = _getCheckArg(None, lat, lat, 'lat')
     lon = _getCheckArg(None, lon, lat, 'lon')
+    lat = _getCheckArg(None, lat, lat, 'lat')
     gdid = _getCheckArg(int, gdid, gdid, 'id')
     nsubgrids = ezget_nsubgrids(gdid)
     if nsubgrids > 1:
@@ -1315,8 +1315,8 @@ def gdxyfll(gdid, lat=None, lon=None):
     #TODO: what about multi-grids? multi values of x,y for each lat,lon pair?
     lat = _getCheckArg(None, lat, gdid, 'lat')
     lon = _getCheckArg(None, lon, gdid, 'lon')
-    lat = _getCheckArg(None, lat, lat, 'lat')
     lon = _getCheckArg(None, lon, lat, 'lon')
+    lat = _getCheckArg(None, lat, lat, 'lat')
     gdid = _getCheckArg(int, gdid, gdid, 'id')
     clat = _list2ftnf32(lat)
     clon = _list2ftnf32(lon)
@@ -1389,8 +1389,8 @@ def gdllfxy(gdid, xpts=None, ypts=None):
     #TODO: what about multi-grids? multi values of lat,lon for each x,y pair?
     xpts = _getCheckArg(None, xpts, gdid, 'xpts')
     ypts = _getCheckArg(None, ypts, gdid, 'ypts')
-    xpts = _getCheckArg(None, xpts, xpts, 'xpts')
     ypts = _getCheckArg(None, ypts, xpts, 'ypts')
+    xpts = _getCheckArg(None, xpts, xpts, 'xpts')
     gdid = _getCheckArg(int, gdid, gdid, 'id')
     cx = _list2ftnf32(xpts)
     cy = _list2ftnf32(ypts)
