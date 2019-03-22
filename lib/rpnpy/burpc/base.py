@@ -593,7 +593,7 @@ def brp_allocrpt(rpt, size):
     Args:
         rpt  : report pointer to allocate memory into [ctypes.POINTER(BURP_BLK)]
                as obtained from brp_newrpt()
-        size : size to be allocated (TODO: units?) [int]
+        size : size to be allocated (Bytes) [int]
     Returns:
         Allocated rpt provided as input [ctypes.POINTER(BURP_RPT)]
     Raises:
@@ -628,7 +628,7 @@ def brp_resizerpt(rpt, size):
     Args:
         rpt  : report pointer to resize memory into [ctypes.POINTER(BURP_BLK)]
                as obtained from brp_newrpt()
-        size : size to be allocated (TODO: units?) [int]
+        size : size to be allocated (Bytes) [int]
     Returns:
         Resized rpt provided as input [ctypes.POINTER(BURP_RPT)]
     Raises:
@@ -1139,7 +1139,7 @@ def brp_safe_convertblk(blk, mode=_bc.BRP_MKSA_to_BUFR):
 
 ##---- find report and block before reading -----------------------------
 
-def brp_findrpt(funit, rpt=None): #TODO: rpt are search keys, change name
+def brp_findrpt(funit, rpt=None):
     """
     Find, in a burp file, a report matching criterions set in rpt
 
@@ -1191,7 +1191,7 @@ def brp_findrpt(funit, rpt=None): #TODO: rpt are search keys, change name
     return None
 
 
-def brp_findblk(blk, rpt): #TODO: blk are search keys, change name
+def brp_findblk(blk, rpt):
     """
     Find, in burp report rpt, a block matching criterions set in blk
 
@@ -1669,14 +1669,6 @@ def brp_initrpthdr(funit, rpt):
         TypeError on not supported types or args
         BurpcError on any other error
 
-    Examples:
-    >>> import os
-    >>> import rpnpy.burpc.all as brp
-    >>> TMPDIR = os.getenv('TMPDIR').strip()
-    >>> filename = os.path.join(TMPDIR, 'testfile.brp')
-    >>> funit = brp.brp_open(filename, brp.BRP_FILE_WRITE)
-    >>> #TODO
-
     See Also:
         brp_open
         brp_newrpt
@@ -2134,10 +2126,6 @@ def brp_delrpt(rpt):
         TypeError on not supported types or args
         BurpcError on any other error
 
-    Examples:
-    >>> import rpnpy.burpc.all as brp
-    >>> #TODO
-
     See Also:
         brp_open
         brp_newblk
@@ -2166,10 +2154,6 @@ def brp_delblk(rpt, blk):
     Raises:
         TypeError on not supported types or args
         BurpcError on any other error
-
-    Examples:
-    >>> import rpnpy.burpc.all as brp
-    >>> #TODO
 
     See Also:
         brp_open

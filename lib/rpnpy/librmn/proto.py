@@ -539,7 +539,7 @@ Details:
             int, number of validrecords of the file associated with unit
 
     c_fstopc(option, value, getmode)
-        Prout or set a fstd or xdf global variable option.
+        Prout or set a fstd or xdf global variable char option.
         Proto:
             int c_fstopc(char *option, char *value, int getmode)
         Args:
@@ -550,9 +550,20 @@ Details:
             int, zero successful, non-zero otherwise
 
     c_fstopi(option, value, getmode)
-        Prout or set a fstd or xdf global variable option.
+        Prout or set a fstd or xdf global variable int option.
         Proto:
             int c_fstopi(char *option, int value, int getmode)
+        Args:
+            IN     option   (str) option name to be set/printed
+            IN     value    (int) option value
+            IN     getmode  (int) logical (1: get option, 0: set option)
+        Returns:
+            int, zero successful, non-zero otherwise
+
+    c_fstopl(option, value, getmode)
+        Prout or set a fstd or xdf global variable bool option.
+        Proto:
+            int c_fstopl(char *option, int value, int getmode)
         Args:
             IN     option   (str) option name to be set/printed
             IN     value    (int) option value
@@ -1691,6 +1702,10 @@ c_fstopc = librmn.c_fstopc
 librmn.c_fstopi.argtypes = (_ct.c_char_p, _ct.c_int, _ct.c_int)
 librmn.c_fstopi.restype  = _ct.c_int
 c_fstopi = librmn.c_fstopi
+
+librmn.c_fstopl.argtypes = (_ct.c_char_p, _ct.c_int, _ct.c_int)
+librmn.c_fstopl.restype  = _ct.c_int
+c_fstopl = librmn.c_fstopl
 
 
 librmn.c_fstouv.argtypes = (_ct.c_int, _ct.c_char_p)
