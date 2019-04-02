@@ -469,7 +469,7 @@ class RpnPyLibrmnBurp(unittest.TestCase):
         self.assertEqual(bufridlist[0], 12120)
 
     def testmrbcvtdecodeKnownValues(self):
-        """mrbprm should give known result with known input"""
+        """mrbcvt should give known result with known input"""
         for mypath, itype, iunit in self.knownValues:
             rmn.mrfopt(rmn.FSTOP_MSGLVL, rmn.BURPOP_MSG_FATAL)
             funit  = rmn.burp_open(self.getFN(mypath))
@@ -492,8 +492,28 @@ class RpnPyLibrmnBurp(unittest.TestCase):
                 #TODO: check results
             rmn.burp_close(funit)
 
+    def _fnmrbcvtencodeDecodeSanity(self, id):
+        bufrid = _np.asfortranarray(id, dtype=_np.int32)
+        cmcid0  = rmn.mrbcol(bufrid)
+        values0 = [20., 10., 2., 1., 0., -1., -2., -10., -20.]
+        cmcid = _np.asfortranarray(cmcid0, dtype=_np.int32)
+        values = _np.reshape(_np.asfortranarray(
+            values0, dtype=_np.float32),
+            (1,len(values0),1), order='F')
+        tblvals = rmn.mrbcvt_encode(cmcid, values.copy(order='F'))
+        values1 = rmn.mrbcvt_decode(cmcid, tblvals.copy(order='F'))
+        tblval1 = rmn.mrbcvt_encode(cmcid, values1.copy(order='F'))
+        self.assertTrue(_np.all(tblval1 == tblvals))
+        self.assertTrue(_np.all(values1 == values))
+
+    def testmrbcvtencodeDecodeSanity(self):
+        """mrbcvt encode/decode sycle should give back same result"""
+        self._fnmrbcvtencodeDecodeSanity(2005)
+        ## self._fnmrbcvtencodeDecodeSanity(7004)  # Not enough precision for number < 10.
+        self._fnmrbcvtencodeDecodeSanity(8001)
+
     def testmrbcvtencodeKnownValues(self):
-        """mrbprm should give known result with known input"""
+        """mrbcvt should give known result with known input"""
         for mypath, itype, iunit in self.knownValues:
             rmn.mrfopt(rmn.FSTOP_MSGLVL, rmn.BURPOP_MSG_FATAL)
             funit  = rmn.burp_open(self.getFN(mypath))
