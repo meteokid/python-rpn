@@ -1222,7 +1222,8 @@ class RpnPyBurpc(unittest.TestCase):
                 'e_bufrid_Y': 4,
                 'e_bufrid_X': 10,
                 'nt': 1,
-                'e_tblval': None,
+                'e_ival': None,
+                'e_tblval': np.array([[ 10.]], dtype=np.int32),
                 'e_scale': -1,
                 'ptrkey': 'e_rval',
                 'nval': 1,
@@ -1287,9 +1288,9 @@ class RpnPyBurpc(unittest.TestCase):
     def test_BurpcEle_init_dict(self):
         e = brp.BurpcEle({'e_bufrid' : 7004, 'e_tblval' : [10]})
         self.assertEqual(e.e_bufrid, 7004)
-        self.assertEqual(e.store_type, None)
+        self.assertEqual(e.store_type, 'I')
         self.assertEqual(e.e_tblval[0], 10)
-        self.assertEqual(e.ptrkey, 'e_tblval')
+        self.assertEqual(e.ptrkey, 'e_ival')
 
     def test_BurpcEle_init_dict2(self):
         e = brp.BurpcEle({'e_bufrid' : 7004,
@@ -1305,9 +1306,26 @@ class RpnPyBurpc(unittest.TestCase):
 
     def test_BurpcEle_init_dict3(self):
         e = brp.BurpcEle({'e_bufrid' : 7004,
-                          'shape' : (1,2),
                           'e_tblval' : [10, 2]})
+        e.reshape((1,2))
         self.assertEqual(e.e_bufrid, 7004)
+        self.assertEqual(e.store_type, 'I')
+        self.assertEqual(e.e_ival[0, 0], 100)
+        self.assertEqual(e.e_ival[0, 1],  20)
+        self.assertEqual(e.e_tblval[0, 0], 10)
+        self.assertEqual(e.e_tblval[0, 1],  2)
+        self.assertEqual(e.shape, (1, 2))
+        self.assertEqual(e.nval, 1)
+        self.assertEqual(e.nt, 2)
+
+    def test_BurpcEle_init_dict4(self):
+        e = brp.BurpcEle({'e_bufrid' : 7004,
+                          'e_ival' : [100, 20]})
+        e.reshape((1,2))
+        self.assertEqual(e.e_bufrid, 7004)
+        self.assertEqual(e.store_type, 'I')
+        self.assertEqual(e.e_ival[0, 0], 100)
+        self.assertEqual(e.e_ival[0, 1],  20)
         self.assertEqual(e.e_tblval[0, 0], 10)
         self.assertEqual(e.e_tblval[0, 1],  2)
         self.assertEqual(e.shape, (1, 2))
@@ -1322,6 +1340,14 @@ class RpnPyBurpc(unittest.TestCase):
         self.assertEqual(e.store_type, 'F')
         self.assertEqual(e.ptrkey, 'e_rval')
 
+    def test_BurpcEle_init_derived2(self):
+        e = brp.BurpcEle({'e_cmcid' : 1796, 'e_drval' : [10.]})
+        self.assertEqual(e.e_bufrid, 7004)
+        ## self.assertEqual(e.e_tblval[0], 10)
+        self.assertEqual(e.e_drval[0], 10.)
+        self.assertEqual(e.store_type, 'D')
+        self.assertEqual(e.ptrkey, 'e_drval')
+
     def test_BurpcEle_init_copy(self):
         e  = brp.BurpcEle({'e_bufrid' : 7004, 'e_tblval' : [10]})
         e2 = brp.BurpcEle(e)
@@ -1335,6 +1361,10 @@ class RpnPyBurpc(unittest.TestCase):
         e2.e_tblval[0] = 9876
         self.assertNotEqual(e2.e_bufrid, e.e_bufrid)
         self.assertNotEqual(e2.e_tblval[0], e.e_tblval[0])
+
+
+    #TODO: test report copy & _inegrity
+    #TODO: test block copy & _inegrity
 
     def test_BurpcEle_init_err(self):
         try:
@@ -1381,6 +1411,8 @@ class RpnPyBurpc(unittest.TestCase):
         e = brp.BurpcEle(7004, [10])
         self.assertEqual(e.e_bufrid, 7004)
         self.assertEqual(e.e_tblval[0], 10)
+        self.assertEqual(e.e_ival[0], 100)
+        self.assertEqual(e.store_type, 'I')
 
     def test_BurpcEle_get_derived(self):
         e = brp.BurpcEle(7004, [10])
@@ -1424,24 +1456,280 @@ class RpnPyBurpc(unittest.TestCase):
     ## def test_BurpcEle_set_error_type(self):
     ##     pass
 
-    def test_BurpcBlk_add_BurpcEle(self):
-        blk = brp.BurpcBlk({
-            'btyp'  : 8,
-            'datyp' : 1
-            })
-        self.assertEqual(blk.btyp, 8)
-        self.assertEqual(blk.datyp, 1)
+    def test_BurpcBlk_add_BurpcEle_r(self):
+        bknat_multi = rmn.BURP_BKNAT_MULTI_IDX['uni']
+        bknat_kind  = rmn.BURP_BKNAT_KIND_IDX['data']
+        bknat       = rmn.mrbtyp_encode_bknat(bknat_multi, bknat_kind)
+        bktyp_alt   = rmn.BURP_BKTYP_ALT_IDX['surf']
+        bktyp_kind  = 4  ## See BURP_BKTYP_KIND_DESC, 'derived data, entry to the OA at surface, global model',
+        bktyp       = rmn.mrbtyp_encode_bktyp(bktyp_alt, bktyp_kind)
+        bkstp       = 0  ## See BURP_BKSTP_DESC
+        btyp        = rmn. mrbtyp_encode(bknat, bktyp, bkstp)
 
-        blk = brp.BurpcBlk()
-        ## blk.store_type  = brp.BRP_STORE_FLOAT
-        ## blk.bfam  = 0
-        ## blk.bdesc = 0
-        ## blk.btyp  = 64
-        ## brp.brp_resizeblk(blk, blk.max_nele+2, blk.max_nval, blk.max_nt)
-        brp.brp_resizeblk(blk, blk.max_nele+1)
-        ## for k,v in blk.todict().items():
-        ##     print k,':',repr(v)
-        #TODO
+        blk = brp.BurpcBlk({
+            'store_type' : brp.BRP_STORE_FLOAT,
+            'bfam'   : 0,
+            'bdesc'  : 0,
+            'btyp'   : btyp,  ## 64
+            })
+
+        ele1 = brp.BurpcEle({
+            'e_bufrid' : 7004,
+            'e_rval'   : [10.]
+            })
+        blk.append(ele1)
+        ele2 = brp.BurpcEle({
+            'e_bufrid' : 11001,
+            'e_rval'   : [20.]
+            })
+        blk.append(ele2)
+        ele1b = blk[0]
+        ele2b = blk[1]
+
+        self.assertEqual(blk.btyp, 64)
+        self.assertEqual(blk.datyp, brp.BRP_DATYP_INTEGER)
+        self.assertEqual(blk.store_type, brp.BRP_STORE_FLOAT)
+        self.assertEqual(blk.nele, 2)
+        self.assertEqual(blk.nval, 1)
+        self.assertEqual(blk.nt, 1)
+
+        self.assertEqual(ele1b.e_bufrid, 7004)
+        self.assertEqual(ele1b.e_rval[0,0], 10.)
+        self.assertEqual(ele1b.e_tblval[0,0], 1)
+        self.assertEqual(ele2b.e_bufrid, 11001)
+        self.assertEqual(ele2b.e_rval[0,0], 20.)
+        self.assertEqual(ele2b.e_tblval[0,0], 20)
+
+        self.assertEqual(blk.dlstele[0], 7004)
+        self.assertEqual(blk.tblval[0,0,0], 1)
+        self.assertEqual(blk.rval[0,0,0], 10.)
+        self.assertEqual(blk.dlstele[1], 11001)
+        self.assertEqual(blk.tblval[1,0,0], 20)
+        self.assertEqual(blk.rval[1,0,0], 20.)
+
+    #TODO: segFault with double
+    def NeedFixing_test_BurpcBlk_add_BurpcEle_d(self):
+        bknat_multi = rmn.BURP_BKNAT_MULTI_IDX['uni']
+        bknat_kind  = rmn.BURP_BKNAT_KIND_IDX['data']
+        bknat       = rmn.mrbtyp_encode_bknat(bknat_multi, bknat_kind)
+        bktyp_alt   = rmn.BURP_BKTYP_ALT_IDX['surf']
+        bktyp_kind  = 4  ## See BURP_BKTYP_KIND_DESC, 'derived data, entry to the OA at surface, global model',
+        bktyp       = rmn.mrbtyp_encode_bktyp(bktyp_alt, bktyp_kind)
+        bkstp       = 0  ## See BURP_BKSTP_DESC
+        btyp        = rmn. mrbtyp_encode(bknat, bktyp, bkstp)
+
+        blk = brp.BurpcBlk({
+            'store_type' : brp.BRP_STORE_DOUBLE,
+            'bfam'   : 0,
+            'bdesc'  : 0,
+            'btyp'   : btyp,  ## 64
+            })
+
+        ele1 = brp.BurpcEle({
+            'e_bufrid' : 7004,
+            'e_drval'   : [10.]
+            })
+        blk.append(ele1)
+        ele2 = brp.BurpcEle({
+            'e_bufrid' : 11001,
+            'e_drval'   : [20.]
+            })
+        blk.append(ele2)
+        ele1b = blk[0]
+        ele2b = blk[1]
+
+        self.assertEqual(blk.btyp, 64)
+        self.assertEqual(blk.datyp, brp.BRP_DATYP_INTEGER)
+        self.assertEqual(blk.store_type, brp.BRP_STORE_DOUBLE)
+        self.assertEqual(blk.nele, 2)
+        self.assertEqual(blk.nval, 1)
+        self.assertEqual(blk.nt, 1)
+
+        self.assertEqual(ele1b.e_bufrid, 7004)
+        self.assertEqual(ele1b.e_drval[0,0], 10.)
+        self.assertEqual(ele1b.e_tblval[0,0], 1)
+        self.assertEqual(ele2b.e_bufrid, 11001)
+        self.assertEqual(ele2b.e_drval[0,0], 20.)
+        self.assertEqual(ele2b.e_tblval[0,0], 20)
+
+        self.assertEqual(blk.dlstele[0], 7004)
+        self.assertEqual(blk.tblval[0,0,0], 1)
+        self.assertEqual(blk.drval[0,0,0], 10.)
+        self.assertEqual(blk.dlstele[1], 11001)
+        self.assertEqual(blk.tblval[1,0,0], 20)
+        self.assertEqual(blk.drval[1,0,0], 20.)
+
+
+    def test_BurpcBlk_add_BurpcEle_i(self):
+        bknat_multi = rmn.BURP_BKNAT_MULTI_IDX['uni']
+        bknat_kind  = rmn.BURP_BKNAT_KIND_IDX['data']
+        bknat       = rmn.mrbtyp_encode_bknat(bknat_multi, bknat_kind)
+        bktyp_alt   = rmn.BURP_BKTYP_ALT_IDX['surf']
+        bktyp_kind  = 4  ## See BURP_BKTYP_KIND_DESC, 'derived data, entry to the OA at surface, global model',
+        bktyp       = rmn.mrbtyp_encode_bktyp(bktyp_alt, bktyp_kind)
+        bkstp       = 0  ## See BURP_BKSTP_DESC
+        btyp        = rmn. mrbtyp_encode(bknat, bktyp, bkstp)
+
+        blk = brp.BurpcBlk({
+            'store_type' : brp.BRP_STORE_INTEGER,
+            'bfam'   : 0,
+            'bdesc'  : 0,
+            'btyp'   : btyp,  ## 64
+            })
+
+        ele1 = brp.BurpcEle({
+            'e_bufrid' : 7004,
+            'e_ival'   : [10]
+            })
+        blk.append(ele1)
+        ele2 = brp.BurpcEle({
+            'e_bufrid' : 11001,
+            'e_tblval'   : [20]
+            })
+        blk.append(ele2)
+        ele1b = blk[0]
+        ele2b = blk[1]
+
+        self.assertEqual(blk.btyp, 64)
+        self.assertEqual(blk.datyp, brp.BRP_DATYP_INTEGER)
+        self.assertEqual(blk.store_type, brp.BRP_STORE_INTEGER)
+        self.assertEqual(blk.nele, 2)
+        self.assertEqual(blk.nval, 1)
+        self.assertEqual(blk.nt, 1)
+
+        self.assertEqual(ele1b.e_bufrid, 7004)
+        self.assertEqual(ele1b.e_ival[0,0], 10)
+        self.assertEqual(ele1b.e_tblval[0,0], 1)
+        self.assertEqual(ele2b.e_bufrid, 11001)
+        self.assertEqual(ele2b.e_ival[0,0], 20)
+        self.assertEqual(ele2b.e_tblval[0,0], 20)
+
+        self.assertEqual(blk.dlstele[0], 7004)
+        self.assertEqual(blk.tblval[0,0,0], 1)
+        self.assertEqual(blk.ival[0,0,0], 10)
+        self.assertEqual(blk.dlstele[1], 11001)
+        self.assertEqual(blk.tblval[1,0,0], 20)
+        self.assertEqual(blk.ival[1,0,0], 20)
+
+    def test_BurpcBlk_add_BurpcEle_missing(self):
+        bknat_multi = rmn.BURP_BKNAT_MULTI_IDX['uni']
+        bknat_kind  = rmn.BURP_BKNAT_KIND_IDX['data']
+        bknat       = rmn.mrbtyp_encode_bknat(bknat_multi, bknat_kind)
+        bktyp_alt   = rmn.BURP_BKTYP_ALT_IDX['surf']
+        bktyp_kind  = 4  ## See BURP_BKTYP_KIND_DESC, 'derived data, entry to the OA at surface, global model',
+        bktyp       = rmn.mrbtyp_encode_bktyp(bktyp_alt, bktyp_kind)
+        bkstp       = 0  ## See BURP_BKSTP_DESC
+        btyp        = rmn. mrbtyp_encode(bknat, bktyp, bkstp)
+
+        blk = brp.BurpcBlk({
+            'bfam'   : 0,
+            'bdesc'  : 0,
+            'btyp'   : btyp,  ## 64
+            })
+
+        ele1 = brp.BurpcEle({
+            'store_type' : brp.BRP_STORE_FLOAT,
+            'e_bufrid' : 7004,
+            'e_tblval'   : [1, rmn.BURP_TBLVAL_MISSING]
+            })
+        blk.append(ele1)
+        ele2 = brp.BurpcEle({
+            'store_type' : brp.BRP_STORE_FLOAT,
+            'e_bufrid' : 11001,
+            'e_tblval'   : [20, 0.]
+            })
+        blk.append(ele2)
+        ele1b = blk[0]
+        ele2b = blk[1]
+
+        missVal = brp.brp_opt(rmn.BURPOP_MISSING)
+
+        self.assertEqual(blk.btyp, 64)
+        self.assertEqual(blk.datyp, brp.BRP_DATYP_INTEGER)
+        self.assertEqual(blk.store_type, brp.BRP_STORE_FLOAT)
+        self.assertEqual(blk.nele, 2)
+        self.assertEqual(blk.nval, 2)
+        self.assertEqual(blk.nt, 1)
+
+        self.assertEqual(ele1b.e_bufrid, 7004)
+        self.assertEqual(ele1b.e_rval[0,0], 10.)
+        self.assertEqual(ele1b.e_tblval[0,0], 1)
+        self.assertEqual(ele1b.e_rval[1,0], missVal)
+        self.assertEqual(ele1b.e_tblval[1,0], rmn.BURP_TBLVAL_MISSING)
+
+        self.assertEqual(ele2b.e_bufrid, 11001)
+        self.assertEqual(ele2b.e_rval[0,0], 20.)
+        self.assertEqual(ele2b.e_tblval[0,0], 20)
+        self.assertEqual(ele2b.e_rval[1,0], 0.)
+        self.assertEqual(ele2b.e_tblval[1,0], 0)
+
+        self.assertEqual(blk.dlstele[0], 7004)
+        self.assertEqual(blk.tblval[0,0,0], 1)
+        self.assertEqual(blk.rval[0,0,0], 10.)
+        self.assertEqual(blk.tblval[0,1,0], rmn.BURP_TBLVAL_MISSING)
+        self.assertEqual(blk.rval[0,1,0], missVal)
+
+        self.assertEqual(blk.dlstele[1], 11001)
+        self.assertEqual(blk.tblval[1,0,0], 20)
+        self.assertEqual(blk.rval[1,0,0], 20.)
+        self.assertEqual(blk.tblval[1,1,0], 0)
+        self.assertEqual(blk.rval[1,1,0], 0.)
+
+    def test_BurpcBlk_add_BurpcEle_r_neg(self):
+        bknat_multi = rmn.BURP_BKNAT_MULTI_IDX['uni']
+        bknat_kind  = rmn.BURP_BKNAT_KIND_IDX['data']
+        bknat       = rmn.mrbtyp_encode_bknat(bknat_multi, bknat_kind)
+        bktyp_alt   = rmn.BURP_BKTYP_ALT_IDX['surf']
+        bktyp_kind  = 4  ## See BURP_BKTYP_KIND_DESC, 'derived data, entry to the OA at surface, global model',
+        bktyp       = rmn.mrbtyp_encode_bktyp(bktyp_alt, bktyp_kind)
+        bkstp       = 0  ## See BURP_BKSTP_DESC
+        btyp        = rmn. mrbtyp_encode(bknat, bktyp, bkstp)
+
+        blk = brp.BurpcBlk({
+            'store_type' : brp.BRP_STORE_FLOAT,
+            'bfam'   : 0,
+            'bdesc'  : 0,
+            'btyp'   : btyp,  ## 64
+            })
+
+        ele1 = brp.BurpcEle({
+            'e_bufrid' : 7004,
+            'e_rval'   : [-10.]
+            })
+        blk.append(ele1)
+        ele2 = brp.BurpcEle({
+            'e_bufrid' : 11001,
+            'e_rval'   : [-20.]
+            })
+        blk.append(ele2)
+        ele1b = blk[0]
+        ele2b = blk[1]
+
+        self.assertEqual(blk.btyp, 64)
+        self.assertEqual(blk.datyp, brp.BRP_DATYP_INTEGER)
+        self.assertEqual(blk.store_type, brp.BRP_STORE_FLOAT)
+        self.assertEqual(blk.nele, 2)
+        self.assertEqual(blk.nval, 1)
+        self.assertEqual(blk.nt, 1)
+
+        self.assertEqual(ele1b.e_bufrid, 7004)
+        self.assertEqual(ele1b.e_rval[0,0], -10.)
+        self.assertEqual(ele1b.e_tblval[0,0], -2)
+        self.assertEqual(ele2b.e_bufrid, 11001)
+        self.assertEqual(ele2b.e_rval[0,0], -20.)
+        self.assertEqual(ele2b.e_tblval[0,0], -21)
+
+        self.assertEqual(blk.dlstele[0], 7004)
+        self.assertEqual(blk.tblval[0,0,0], -2)
+        self.assertEqual(blk.rval[0,0,0], -10.)
+        self.assertEqual(blk.dlstele[1], 11001)
+        self.assertEqual(blk.tblval[1,0,0], -21)
+        self.assertEqual(blk.rval[1,0,0], -20.)
+
+   #TODO: test mrbcvt_encode/decode with +/- values with id cvt=yes/no cycle for ival, tblval, rval..
+
+
+   #TODO: test BurpcRPT add BurpcBlk
 
     def test_BurpcBlk_add_BurpcEle_err_shape(self):
         pass
