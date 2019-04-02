@@ -85,7 +85,7 @@ class RpnPyBurpcTests(unittest.TestCase):
         if logfid != sys.stdout: logfid.close()
 
 
-    def sub_test_ex1_read1_py(self, logfile="tmp/test_ex1_read1_py.log"):
+    def sub_test_ex1_read1_py(self, logfile="test_ex1_read1_py.log"):
         """burplib_c iweb doc example 1"""
         import os, sys
         import rpnpy.librmn.all as rmn
@@ -119,7 +119,7 @@ class RpnPyBurpcTests(unittest.TestCase):
     #==== Example 2 =============================================
 
     def sub_test_ex2_readburp(self, infile=None,
-                          logfile="tmp/test_ex2_readburp.log"):
+                          logfile="test_ex2_readburp.log"):
         """burplib_c iweb doc example 2"""
         import os, sys
         import rpnpy.burpc.all as brp
@@ -181,7 +181,7 @@ bdesc  ={:6d}  btyp   ={:6d}  nbit   ={:6d}  datyp  ={:6d}  bfam   ={:6d}\n
 
 
     def sub_test_ex2_readburp_py(self, infile=None,
-                             logfile="tmp/test_ex2_readburp.log"):
+                             logfile="test_ex2_readburp.log"):
         """burplib_c iweb doc example 2"""
         import os, sys
         import numpy as np
@@ -258,7 +258,7 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
 
     #==== Example 3 =============================================
 
-    def sub_test_ex3_obs(self, logfile="tmp/test_ex3_obs.log"):
+    def sub_test_ex3_obs(self, logfile="test_ex3_obs.log"):
         """burplib_c iweb doc example 3"""
         import os, sys
         import rpnpy.burpc.all as brp
@@ -310,7 +310,7 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
         if logfid != sys.stdout: logfid.close()
 
 
-    def sub_test_ex3_obs_py(self, logfile="tmp/test_ex3_obs_py.log"):
+    def sub_test_ex3_obs_py(self, logfile="test_ex3_obs_py.log"):
         """burplib_c iweb doc example 3"""
         import os, sys
         import rpnpy.librmn.all as rmn
@@ -366,7 +366,7 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
 
     #==== Example 4 =============================================
 
-    def sub_test_ex4_elements(self, logfile="tmp/test_ex4_elements.log"):
+    def sub_test_ex4_elements(self, logfile="test_ex4_elements.log"):
         """burplib_c iweb doc example 4"""
         import os, sys
         import rpnpy.librmn.all as rmn
@@ -398,7 +398,7 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
             logfid.write("{} {}\n".format(v, repr(rmn.mrbcvt_dict(v, False))))
         if logfid != sys.stdout: logfid.close()
 
-    def sub_test_ex4_elements_py(self, logfile="tmp/test_ex4_elements_py.log"):
+    def sub_test_ex4_elements_py(self, logfile="test_ex4_elements_py.log"):
         """burplib_c iweb doc example 4"""
         import os, sys
         import rpnpy.librmn.all as rmn
@@ -441,13 +441,14 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
 
     #==== Example 5 =============================================
 
-    def sub_test_ex5_write1(self, logfile="tmp/test_ex5_write1.log"):
+    def sub_test_ex5_write1(self, logfile="test_ex5_write1.log"):
         """burplib_c iweb doc example 5"""
         import os, sys
         import rpnpy.burpc.all as brp
         infile = os.path.join(os.getenv('ATM_MODEL_DFILES').strip(),
                               'bcmk_burp/2007021900.brp')
-        outfile = "tmp/test_ex5_write1.brp"
+        TMPDIR = os.getenv('TMPDIR', '/tmp')
+        outfile = os.path.join(TMPDIR, "test_ex5_write1.brp")
         iunit, ounit = 999, 998
         istat = brp.c_brp_SetOptChar(_C_WCHAR2CHAR("MSGLVL"),
                                      _C_WCHAR2CHAR("FATAL"))
@@ -471,14 +472,15 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
         self.sub_test_ex2_readburp(infile=outfile, logfile=logfile)
 
 
-    def sub_test_ex5_write1_py(self, logfile="tmp/test_ex5_write1_py.log"):
+    def sub_test_ex5_write1_py(self, logfile="test_ex5_write1_py.log"):
         """burplib_c iweb doc example 5"""
         import os, sys
         import rpnpy.librmn.all as rmn
         import rpnpy.burpc.all as brp
         infile = os.path.join(os.getenv('ATM_MODEL_DFILES').strip(),
                               'bcmk_burp/2007021900.brp')
-        outfile = "tmp/test_ex5_write1_py.brp"
+        TMPDIR = os.getenv('TMPDIR', '/tmp')
+        outfile = os.path.join(TMPDIR, "test_ex5_write1_py.brp")
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
         idtyp = rmn.BURP_IDTYP_IDX['PILOT']  ## 32
         bfilei = brp.BurpcFile(infile)
@@ -511,11 +513,12 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
 
     #==== Example 6 =============================================
 
-    def sub_test_ex6_write2(self, logfile="tmp/test_ex6_write2_py.log"):
+    def sub_test_ex6_write2(self, logfile="test_ex6_write2_py.log"):
         """burplib_c iweb doc example 6"""
         import os, sys
         import rpnpy.burpc.all as brp
-        outfile = 'tmp/test_ex6_write2.brp'
+        TMPDIR = os.getenv('TMPDIR', '/tmp')
+        outfile = os.path.join(TMPDIR, "test_ex6_write2.brp")
         ounit = 20
         istat = brp.c_brp_SetOptChar(_C_WCHAR2CHAR("MSGLVL"),
                                      _C_WCHAR2CHAR("FATAL"))
@@ -548,6 +551,8 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
         brp.c_brp_clrrpt(rr)
 
         # ici c'est preparer l'ecriture de l'enrgistrement dans le fichier
+        # NOTE: c_brp_putrpthdr() doit absolument etre appele AVANT
+        #       le premier appel a c_brp_putblk()
         brp.c_brp_putrpthdr(ounit, rr)
 
         # Section ajout de blocs dans l'enregistrement
@@ -594,14 +599,14 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
         if brp.c_brp_putblk(rr, br2) < 0:
             sys.exit(1)
 
-        # on peut redimensionner le bloc br pour contenir 5 elements,
-        # 10 valeurs par element et aussi 2 tuiles de 5 X 10
-        # comme ici c'est une expansion du bloc donc on retrouvera les
-        # elements et leurs valeures (precedentes aux memes indices)
-        brp.c_brp_resizeblk(br, 5, 10, 2)
+        ## # on peut redimensionner le bloc br pour contenir 5 elements,
+        ## # 10 valeurs par element et aussi 2 tuiles de 5 X 10
+        ## # comme ici c'est une expansion du bloc donc on retrouvera les
+        ## # elements et leurs valeures (precedentes aux memes indices)
+        ## brp.c_brp_resizeblk(br, 5, 10, 2)
 
-        # on ajoute ce bloc a l'enregistrement
-        brp.c_brp_putblk(rr, br)
+        ## # on ajoute ce bloc a l'enregistrement
+        ## brp.c_brp_putblk(rr, br)
 
         # ici on fait une copie de br, tmp est une copie de br
         brp.c_brp_copyblk(tmp, br)
@@ -639,12 +644,13 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
         self.sub_test_ex2_readburp_py(infile=outfile, logfile=logfile)
 
 
-    def sub_test_ex6_write2_py(self, logfile="tmp/test_ex6_write2_py.log"):
+    def sub_test_ex6_write2_py(self, logfile="test_ex6_write2_py.log"):
         """burplib_c iweb doc example 6"""
         import os, sys
         import rpnpy.librmn.all as rmn
         import rpnpy.burpc.all as brp
-        outfile = 'test_ex6_write2_py.brp'
+        TMPDIR = os.getenv('TMPDIR', '/tmp')
+        outfile = os.path.join(TMPDIR, "test_ex6_write2_py.brp")
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
 
         rpt = brp.BurpcRpt({
@@ -658,7 +664,7 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
             'dy'     : rmn.BRP_RDY2IDY(0.),  ## 0
             'elev'   : 0,  #todo: rmn.BRP_RELEV2IELEV(0.)
             'drnd'   : 0,
-            'date'   : 20050317,
+            'date'   : rmn.BRP_YMD2IDATE(2005,3,17),
             'oars'   : 0,
             })
 
@@ -671,120 +677,61 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
         bkstp       = 0  ## See BURP_BKSTP_DESC
         btyp        = rmn. mrbtyp_encode(bknat, bktyp, bkstp)
 
-        ## blk = brp.BurpcBlk({
-        ##     'store_type' : brp.BRP_STORE_FLOAT,
-        ##     'bfam'   : 0,
-        ##     'bdesc'  : 0,
-        ##     'btyp'   : btyp,  ## 64
-        ##     ## 'bknat'  : bknat,
-        ##     ## 'bktyp'  : bktyp,
-        ##     ## 'bkstp'  : bkstp,
-        ##     ## 'datyp'  : rmn.BURP_DATYP_LIST['float'], #TODO: link to BRP_STORE_FLOAT
-        ##     })
+        blk = brp.BurpcBlk({
+            'store_type' : brp.BRP_STORE_FLOAT,
+            'bfam'   : 0,
+            'bdesc'  : 0,
+            'btyp'   : btyp,  ## 64
+            })
 
-        ## print(repr(brp.BurpcEle({
-        ##     'e_bufrid' : 7004,
-        ##     'e_rval'   : [10.]
-        ##     })))
+        ele1 = brp.BurpcEle({
+            'e_bufrid' : 7004,
+            'e_rval'   : [10.]
+            })
+        blk.append(ele1)
+        ele2 = brp.BurpcEle({
+            'e_bufrid' : 11001,
+            'e_rval'   : [20.]
+            })
+        blk.append(ele2)
+        rpt.append(blk)
 
-        ## blk.append(brp.BurpcEle({
-        ##     'e_bufrid' : 7004,
-        ##     'e_rval'   : [10.]
-        ##     }))
-        ## blk.append(brp.BurpcEle({
-        ##     'e_bufrid' : 11001,
-        ##     'e_rval'   : [20.]
-        ##     }))
-        ## sys.exit(0)
+        # on peut faire une copie du bloc blk (tous les attributs)
+        # et l'ajouter au rapport
+        rpt.append(brp.BurpcBlk(blk))
 
-        ## rpt.append(blk)
+        # Nouveau bloc a partir des elements de blk (ele1, ele2) avec
+        # changement de type, "re-dimention" et
+        # ajout d'un element supplementaire
+        tmp = brp.BurpcBlk({
+            'store_type' : brp.BRP_STORE_INTEGER,
+            'bfam'   : 0,
+            'bdesc'  : 0,
+            'btyp'   : btyp,  ## 64
+            })
+        missingVal = rmn.mrfopt(rmn.BURPOP_MISSING)
+        tmp.append(brp.BurpcEle({
+            'store_type' : brp.BRP_STORE_INTEGER,
+            'e_bufrid' : ele1.e_bufrid,
+            'e_tblval' : [ele1.e_tblval[0,0], rmn.BURP_TBLVAL_MISSING]
+            }))
+        tmp.append(brp.BurpcEle({
+            'store_type' : brp.BRP_STORE_INTEGER,
+            'e_bufrid' : ele2.e_bufrid,
+            'e_tblval' : [ele2.e_tblval[0,0], rmn.BURP_TBLVAL_MISSING]
+            }))
+        tmp.append(brp.BurpcEle({
+            'store_type' : brp.BRP_STORE_INTEGER,
+            'e_bufrid' : 11003,
+            'e_tblval' : [15, 30]
+            }))
 
-        ## with brp.BurpcFile(outfile, rmn.BURP_MODE_APPEND) as bfileo:
-        ##     bfileo.append(rpt)
-        ##     bfileo.append(rpt.copy())
+        rpt.append(tmp)
 
+        with brp.BurpcFile(outfile, rmn.BURP_MODE_CREATE) as bfileo:
+            bfileo.append(rpt)
 
-        ## # allouer espace pour l'enregistremen pour ajouter des blocs
-        ## brp.c_brp_allocrpt(rr, 10000)
-        ## brp.c_brp_resizerpt(rr, 20000) # on peut reallouer + espace
-        ## print("rr apres resize: "+ str(brp.RPT_NSIZE(rr)))
-
-        ## # on peut mettre le contenu du rapport a 0, cela n'affecte pas le header
-        ## brp.c_brp_clrrpt(rr)
-
-        ## # ici c'est preparer l'ecriture de l'enrgistrement dans le fichier
-        ## brp.c_brp_putrpthdr(ounit, rr)
-
-        ## # allouer espace pour remplir le bloc
-        ## # ici pour 2 elements et 1 valeur par element et 1 groupe nelem X nval
-        ## brp.c_brp_allocblk(br, 2, 1, 1)
-
-        ## # Les indices en C commencent par 0,
-        ## # on remplit les elements: 7004 et 11001
-        ## brp.BLK_SetDLSTELE(br, 0, 7004)
-        ## brp.BLK_SetDLSTELE(br, 1, 11001)
-
-        ## # Compacter les elements
-        ## brp.c_brp_encodeblk(br)
-
-        ## # remplir les valeures pour chacun des elements
-        ## brp.BLK_SetRVAL(br, 0, 0, 0, 10.0)  # pour 7004
-        ## brp.BLK_SetRVAL(br, 1, 0, 0, 20.0)  # pour 11001
-
-        ## # on a rempli les valeurs reelles alors les convertir selon la
-        ## # table burp en entiers qui seront enregistres dans le fichier burp
-        ## ## if brp.c_brp_convertblk(br) < 0:
-        ## if brp.c_brp_convertblk(br, brp.BRP_MKSA_to_BUFR) < 0:
-        ##     sys.exit(1)
-
-        ## # on met le bloc br dans l'enrgistrement rr
-        ## if brp.c_brp_putblk(rr, br) < 0:
-        ##     sys.exit(1)
-
-        ## # on peut faire une copie du bloc br, br2 est une copie de br
-        ## # tous les attributs de br le seront pour br2
-        ## brp.c_brp_copyblk(br2, br)
-
-        ## # on met le bloc br2 dans l'enrgistrement rr
-        ## if brp.c_brp_putblk(rr, br2) < 0:
-        ##     sys.exit(1)
-
-        ## # on peut redimensionner le bloc br pour contenir 5 elements,
-        ## # 10 valeurs par element et aussi 2 tuiles de 5 X 10
-        ## # comme ici c'est une expansion du bloc donc on retrouvera les
-        ## # elements et leurs valeures (precedentes aux memes indices)
-        ## brp.c_brp_resizeblk(br, 5, 10, 2)
-
-        ## # on ajoute ce bloc a l'enregistrement
-        ## brp.c_brp_putblk(rr, br)
-
-        ## # ici on fait une copie de br, tmp est une copie de br
-        ## brp.c_brp_copyblk(tmp, br)
-
-        ## # redimensionner le bloc tmp, ici il s'agit d'une reduction
-        ## # 3 elements, 2 valeures par element et 1 tuile de 3 x 2
-        ## brp.c_brp_resizeblk(tmp, 3, 2, 1)
-
-        ## # Ici on indique que l'on desire remplir, le bloc br de val entieres
-        ## brp.BLK_SetSTORE_TYPE(tmp, brp.BRP_STORE_INTEGER)
-
-        ## # setter l'element 3 a 11003
-        ## brp.BLK_SetDLSTELE(tmp, 2, 11003)
-        ## # et ses valeures entieres
-        ## brp.BLK_SetTBLVAL(tmp, 2, 0, 0, 15)
-        ## brp.BLK_SetTBLVAL(tmp, 2, 1, 0, 30)
-
-        ## # compacter les elements du bloc
-        ## brp.c_brp_encodeblk(tmp)
-
-        ## # ajouter le bloc tmp a l'enrgistrement rr
-        ## brp.c_brp_putblk(rr, tmp)
-
-        ## # ajouter l'enrgistrement dans le fichier
-        ## if brp.c_brp_writerpt(ounit, rr, brp.BRP_END_BURP_FILE) < 0:
-        ##     sys.exit(1)
-
-        ## self.sub_test_ex2_readburp_py(infile=outfile, logfile=logfile)
+        self.sub_test_ex2_readburp_py(infile=outfile, logfile=logfile)
 
 
     def test_ex6_write2_cmp(self):

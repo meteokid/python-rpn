@@ -2352,10 +2352,16 @@ def mrbcvt_encode(cmcids, rval):
         if dtype != cmcids.dtype:
             raise TypeError('Expecting cmcids of type {0}, got: {1}'
                             .format(repr(dtype), repr(cmcids.dtype)))
-        if len(cmcids.shape) != 1 or cmcids.size != nele:
-            raise TypeError('cmcids should be a ndarray of rank 1 (nele)')
+        if len(cmcids.shape) != 1:
+            raise TypeError('cmcids should be a ndarray of rank 1, ' +
+                            'got: shape= {}'.format(cmcids.shape))
+        if cmcids.size != nele:
+            raise TypeError('cmcids should be the size of ' +
+                            'nele={}, got: size={}'
+                            .format(nele, cmcids.size))
     else:
-        raise TypeError('cmcids should be a ndarray of rank 1 (nele)')
+        raise TypeError('cmcids should be a ndarray of rank 1 (nele), got: {}'
+                        .format(type(cmcids)))
 
     tblval = _np.round(rval).astype(_np.int32)
 
