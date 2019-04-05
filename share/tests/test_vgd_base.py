@@ -486,6 +486,25 @@ class VGDBaseTests(unittest.TestCase):
         self.assertEqual(len(prof.shape),1)
         self.assertEqual(prof.dtype,np.float32)
 
+    def testLevels_prof_pressure(self):
+        vgd0ptr = self._newReadBcmk(vcode_name="pressure")
+        prof = vgd.vgd_levels2(vgd0ptr, ip1list='VIPW', in_log=0)
+        prof_ctrl = [1013.25, 9119.25, 35666.3984375, 81060.]
+        for i in range(len(prof)):
+            self.assertAlmostEqual(prof[i], prof_ctrl[i], 5)
+        self.assertEqual(len(prof.shape),1)
+        self.assertEqual(prof.dtype,np.float32)
+
+    def testLevels_prof_4001(self):
+        vgd0ptr = self._newReadBcmk(vcode_name="4001")
+        prof = vgd.vgd_levels2(vgd0ptr, ip1list='VIPW')
+        prof_ctrl = [1842.78442383, 7987.36328125, 16765.00390625,
+                     30968.12304688]
+        for i in range(len(prof)):
+            self.assertAlmostEqual(prof[i], prof_ctrl[i], 5)
+        self.assertEqual(len(prof.shape),1)
+        self.assertEqual(prof.dtype,np.float32)
+
     ## def testLevels_3d(self):
     def testDiag_withref_3d(self):
         ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
