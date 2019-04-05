@@ -1505,30 +1505,26 @@ def vgd_levels2(vgd_ptr, rfld=None, rfls=None, ip1list='VIPM',
     rfls_nomvar = vgd_get(vgd_ptr, 'RFLS', defaultOnFail=True)
 
     rank0 = False
-    if isinstance(rfld, float):
-        rfld = _np.array([rfld], dtype=_np.float32, order='FORTRAN')
-        rank0 = True
-    elif isinstance(rfld, (list, tuple)):
-        rfld = _np.array(rfld, dtype=_np.float32, order='FORTRAN')
-    elif isinstance(rfld, _integer_types):
-        if rfld_nomvar is None:
-            rfld = _np.array([float(fileId)], dtype=_np.float32,
-                             order='FORTRAN')
+    if rfld_nomvar:
+        if isinstance(rfld, float):
+            rfld = _np.array([rfld], dtype=_np.float32, order='FORTRAN')
             rank0 = True
-        else:
+        elif isinstance(rfld, (list, tuple)):
+            rfld = _np.array(rfld, dtype=_np.float32, order='FORTRAN')
+        elif isinstance(rfld, _integer_types):
             fileId = rfld
             rfld = _rmn.fstlir(fileId, nomvar=rfld_nomvar.strip())['d']
             if rfld_nomvar.upper() in _vc.VGD_RFLD_CONV_KEYS:
                 rfld = _vc.VGD_RFLD_CONV[rfld_nomvar.upper()](rfld)
-    elif rfld is None:
-        if rfld_nomvar is none:
-            raise TypeError('RFLD needs to be provided for vcode={0}'.format(vcode))
-        else:
-            rfld = _np.array([1000.], dtype=_np.float32, order='FORTRAN')
-            rank0 = True
-    elif not isinstance(rfld, _np.ndarray):
-        raise TypeError('rfld should be ndarray, list or float: {0}'.
-                        format(str(type(ip1list))))
+        elif rfld is None:
+            if rfld_nomvar is None:
+                raise TypeError('RFLD needs to be provided for vcode={0}'.format(vcode))
+            else:
+                rfld = _np.array([1000.], dtype=_np.float32, order='FORTRAN')
+                rank0 = True
+        elif not isinstance(rfld, _np.ndarray):
+            raise TypeError('rfld should be ndarray, list or float: {0}'.
+                            format(str(type(ip1list))))
 
     if rfls_nomvar:
         if isinstance(rfls, float):
@@ -1537,15 +1533,10 @@ def vgd_levels2(vgd_ptr, rfld=None, rfls=None, ip1list='VIPM',
         elif isinstance(rfls, (list, tuple)):
             rfls = _np.array(rfls, dtype=_np.float32, order='FORTRAN')
         elif isinstance(rfls, _integer_types):
-            if rfls_nomvar:
-                fileId = rfls
-                rfls = _rmn.fstlir(fileId, nomvar=rfls_nomvar.strip())['d']
-                if rfls_nomvar.upper() in _vc.VGD_RFLD_CONV_KEYS:
-                    rfls = _vc.VGD_RFLD_CONV[rfls_nomvar.upper()](rfls)
-            else:
-                rfls = _np.array([float(fileId)], dtype=_np.float32,
-                                 order='FORTRAN')
-                rank0 = True
+            fileId = rfls
+            rfls = _rmn.fstlir(fileId, nomvar=rfls_nomvar.strip())['d']
+            if rfls_nomvar.upper() in _vc.VGD_RFLD_CONV_KEYS:
+                rfls = _vc.VGD_RFLD_CONV[rfls_nomvar.upper()](rfls)
         elif rfls is None:
             if rfls_nomvar:
                 raise TypeError('RFLS needs to be provided for vcode={0}'.
@@ -1568,33 +1559,33 @@ def vgd_levels2(vgd_ptr, rfld=None, rfls=None, ip1list='VIPM',
         dtype = _np.float32
         rfld8 = rfld
         rfls8 = rfls
-    shape = list(rfld.shape) + [nip1]
+    if rfld is None:
+        shape = [nip1]
+        rfld8 =  _np.array([-1.],dtype=_np.float32)
+    else:
+        shape = list(rfld.shape) + [nip1]
+
     levels8 = _np.empty(shape, dtype=dtype, order='FORTRAN')
 
     ok = _vc.VGD_OK
-    if rfld_nomvar is None:  # Workaround for pressure levels
-        for k in range(nip1):
-            value = _rmn.convertIp(_rmn.CONVIP_DECODE, int(ip1list1[k]))[0]
-            levels8[:, :, k] = value * _MB2PA
-    else:
-        if double_precision:
-            if rfls_nomvar is None:
-                ok = _vp.c_vgd_diag_withref_8(vgd_ptr, rfld8.size, 1, nip1,
-                                              ip1list, levels8, rfld8, in_log,
-                                              dpidpis)
-            else:
-                ok = _vp.c_vgd_diag_withref_2ref_8(vgd_ptr, rfld8.size, 1, nip1,
-                                                   ip1list, levels8, rfld8,
-                                                   rfls8, in_log, dpidpis)
+    if double_precision:
+        if rfls_nomvar is None:
+            ok = _vp.c_vgd_diag_withref_8(vgd_ptr, rfld8.size, 1, nip1,
+                                          ip1list, levels8, rfld8, in_log,
+                                          dpidpis)
         else:
-            if rfls_nomvar is None:
-                ok = _vp.c_vgd_diag_withref(vgd_ptr, rfld8.size, 1, nip1,
-                                            ip1list, levels8, rfld8, in_log,
-                                            dpidpis)
-            else:
-                ok = _vp.c_vgd_diag_withref_2ref(vgd_ptr, rfld8.size, 1, nip1,
-                                                 ip1list, levels8, rfld8, rfls8,
-                                                 in_log, dpidpis)
+            ok = _vp.c_vgd_diag_withref_2ref_8(vgd_ptr, rfld8.size, 1, nip1,
+                                               ip1list, levels8, rfld8,
+                                               rfls8, in_log, dpidpis)
+    else:
+        if rfls_nomvar is None:
+            ok = _vp.c_vgd_diag_withref(vgd_ptr, rfld8.size, 1, nip1,
+                                        ip1list, levels8, rfld8, in_log,
+                                        dpidpis)
+        else:
+            ok = _vp.c_vgd_diag_withref_2ref(vgd_ptr, rfld8.size, 1, nip1,
+                                        ip1list, levels8, rfld8, rfls8,
+                                        in_log, dpidpis)
     if ok != _vc.VGD_OK:
         raise VGDError('Problem computing levels.')
     if rank0:
