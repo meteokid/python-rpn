@@ -1486,15 +1486,10 @@ def vgd_levels2(vgd_ptr, rfld=None, rfls=None, ip1list='VIPM',
         elif isinstance(rfld, (list, tuple)):
             rfld = _np.array(rfld, dtype=_np.float32, order='FORTRAN')
         elif isinstance(rfld, _integer_types):
-            if rfld_nomvar is None:
-                rfld = _np.array([float(fileId)], dtype=_np.float32,
-                                 order='FORTRAN')
-                rank0 = True
-            else:
-                fileId = rfld
-                rfld = _rmn.fstlir(fileId, nomvar=rfld_nomvar.strip())['d']
-                if rfld_nomvar.upper() in _vc.VGD_RFLD_CONV_KEYS:
-                    rfld = _vc.VGD_RFLD_CONV[rfld_nomvar.upper()](rfld)
+            fileId = rfld
+            rfld = _rmn.fstlir(fileId, nomvar=rfld_nomvar.strip())['d']
+            if rfld_nomvar.upper() in _vc.VGD_RFLD_CONV_KEYS:
+                rfld = _vc.VGD_RFLD_CONV[rfld_nomvar.upper()](rfld)
         elif rfld is None:
             if rfld_nomvar is None:
                 raise TypeError('RFLD needs to be provided for vcode={0}'.format(vcode))
@@ -1512,15 +1507,10 @@ def vgd_levels2(vgd_ptr, rfld=None, rfls=None, ip1list='VIPM',
         elif isinstance(rfls, (list, tuple)):
             rfls = _np.array(rfls, dtype=_np.float32, order='FORTRAN')
         elif isinstance(rfls, _integer_types):
-            if rfls_nomvar:
-                fileId = rfls
-                rfls = _rmn.fstlir(fileId, nomvar=rfls_nomvar.strip())['d']
-                if rfls_nomvar.upper() in _vc.VGD_RFLD_CONV_KEYS:
-                    rfls = _vc.VGD_RFLD_CONV[rfls_nomvar.upper()](rfls)
-            else:
-                rfls = _np.array([float(fileId)], dtype=_np.float32,
-                                 order='FORTRAN')
-                rank0 = True
+            fileId = rfls
+            rfls = _rmn.fstlir(fileId, nomvar=rfls_nomvar.strip())['d']
+            if rfls_nomvar.upper() in _vc.VGD_RFLD_CONV_KEYS:
+                rfls = _vc.VGD_RFLD_CONV[rfls_nomvar.upper()](rfls)
         elif rfls is None:
             if rfls_nomvar:
                 raise TypeError('RFLS needs to be provided for vcode={0}'.
