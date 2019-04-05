@@ -14,7 +14,9 @@ import unittest
 import ctypes as _ct
 import numpy as _np
 
-if sys.version_info > (3, ):
+if sys.version_info < (3, ):
+    range = xrange
+else:
     long = int
 
 #--- primitives -----------------------------------------------------

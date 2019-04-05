@@ -31,6 +31,7 @@ from rpnpy import C_CHAR2WCHAR as _C_CHAR2WCHAR
 from rpnpy import C_MKSTR as _C_MKSTR
 
 from rpnpy import integer_types as _integer_types
+from rpnpy import range as _range
 
 # Block shape (nele, nval, nt), Fortran order
 _BLKIDX = lambda blk, e, v, t: e + blk[0].nele * (v + blk[0].nval * t)
@@ -309,7 +310,7 @@ class BurpcFile(_BurpcObjBase):
                 key1 = BurpcRpt()
                 if i0 > 0:
                     key1.handle = self.__handles[-1]
-                for i in range(i0, key+1):
+                for i in _range(i0, key+1):
                     if _bp.c_brp_findrpt(self.funit, key1.getptr()) >= 0:
                         self.__handles.append(key1.handle)
                     else:

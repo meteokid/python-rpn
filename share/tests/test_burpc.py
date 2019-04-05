@@ -11,6 +11,7 @@ import os
 import sys
 import rpnpy.librmn.all as rmn
 import rpnpy.burpc.all as brp
+from rpnpy import range as _range
 import unittest
 import ctypes as ct
 import numpy as np
@@ -343,7 +344,7 @@ class RpnPyBurpc(unittest.TestCase):
         mypath, itype, iunit = self.knownValues[0]
         mypath = self.getFN(mypath)
         with brp.BurpcFile(mypath) as bfile:
-            for i in range(len(bfile)):
+            for i in _range(len(bfile)):
                 rpt = bfile[i]
                 i += 1
             self.assertEqual(len(bfile), i)
@@ -1005,7 +1006,7 @@ class RpnPyBurpc(unittest.TestCase):
         mypath = self.getFN(mypath)
         with brp.BurpcFile(mypath) as bfile:
             rpt = bfile.get()
-            for i in range(rpt.nblk):
+            for i in _range(rpt.nblk):
                 blk = rpt[i]
                 self.assertEqual(blk.bkno, i+1)
                 self.assertTrue(i <= rpt.nblk)

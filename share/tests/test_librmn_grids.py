@@ -4,6 +4,7 @@
 
 import os, os.path
 import rpnpy.librmn.all as rmn
+from rpnpy import range as _range
 import unittest
 ## import ctypes as ct
 import numpy as np
@@ -355,8 +356,8 @@ class Librmn_grids_Test(unittest.TestCase):
         epsilon = self.epsilon
         (xlat1, xlon1, xlat2, xlon2) = (0.,180.,0.,270.)
         ok = True
-        for j in range(178):
-            for i in range(358):
+        for j in _range(178):
+            for i in _range(358):
                 (lat0,lon0) = (float(j+1-90), float(i+1))
                 (rlat, rlon) = rmn.egrid_ll2rll(xlat1, xlon1, xlat2, xlon2, lat0, lon0)
                 (lat1, lon1) = rmn.egrid_rll2ll(xlat1, xlon1, xlat2, xlon2, rlat, rlon)
@@ -377,8 +378,8 @@ class Librmn_grids_Test(unittest.TestCase):
         epsilon = self.epsilon
         (xlat1, xlon1, xlat2, xlon2) = (35.,230.,0.,320.)
         ok = True
-        for j in range(178):
-            for i in range(358):
+        for j in _range(178):
+            for i in _range(358):
                 (lat0,lon0) = (float(j+1-90), float(i+1))
                 (rlat, rlon) = rmn.egrid_ll2rll(xlat1, xlon1, xlat2, xlon2, lat0, lon0)
                 (lat1, lon1) = rmn.egrid_rll2ll(xlat1, xlon1, xlat2, xlon2, rlat, rlon)
@@ -399,8 +400,8 @@ class Librmn_grids_Test(unittest.TestCase):
         epsilon = 0.05#self.epsilon
         (xlat1, xlon1, xlat2, xlon2) = (0.,180.,1.,270.)
         ok = True
-        for j in range(178):
-            for i in range(358):
+        for j in _range(178):
+            for i in _range(358):
                 (lat0,lon0) = (float(j+1-90), float(i+1))
                 (rlat, rlon) = rmn.egrid_ll2rll(xlat1, xlon1, xlat2, xlon2, lat0, lon0)
                 (lat1, lon1) = rmn.egrid_rll2ll(xlat1, xlon1, xlat2, xlon2, rlat, rlon)
