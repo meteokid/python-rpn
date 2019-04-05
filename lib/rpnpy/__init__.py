@@ -3,7 +3,7 @@ import ctypes as _ct
 
 if sys.version_info < (3,):
     integer_types = (int, long,)
-    # range = xrange
+    range = xrange
 else:
     integer_types = (int,)
     long = int
