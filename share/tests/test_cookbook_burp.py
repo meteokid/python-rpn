@@ -43,7 +43,9 @@ from rpnpy import C_WCHAR2CHAR as _C_WCHAR2CHAR
 from rpnpy import C_CHAR2WCHAR as _C_CHAR2WCHAR
 from rpnpy import C_MKSTR as _C_MKSTR
 
-if sys.version_info > (3, ):
+if sys.version_info < (3, ):
+    range = xrange
+else:
     long = int
 
 RPNPY_NOLONGTEST = os.getenv('RPNPY_NOLONGTEST', None)

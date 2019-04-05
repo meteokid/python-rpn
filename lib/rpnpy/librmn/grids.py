@@ -31,6 +31,7 @@ from rpnpy.librmn import interp as _ri
 from rpnpy.utils  import llacar as _ll
 from rpnpy.librmn import RMNError
 from rpnpy import integer_types as _integer_types
+from rpnpy import range as _range
 
 _list2ftnf32 = lambda x: x if isinstance(x, _np.ndarray) \
                            else _np.asfortranarray(x, dtype=_np.float32)
@@ -1209,12 +1210,12 @@ def defGrid_ZEr(ni, nj=None, rlat0=None, rlon0=None, dlat=None, dlon=None,
 
     params['ax'] = _np.reshape(
         _np.fromiter((params['rlon0'] + float(x)*params['dlon']
-                     for x in range(params['ni'])),
+                     for x in _range(params['ni'])),
                      _np.float32, params['ni']),
         (params['ni'], 1), order='F')
     params['ay'] = _np.reshape(
         _np.fromiter((params['rlat0'] + float(x)*params['dlat']
-                     for x in range(params['nj'])),
+                     for x in _range(params['nj'])),
                      _np.float32, params['nj']),
         (1, params['nj']), order='F')
 
@@ -1641,12 +1642,12 @@ def defGrid_ZL(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
     #TODO: adjust lat0,lon0 to avoid out or range?
     params['ax'] = _np.reshape(
         _np.fromiter((params['lon0'] + float(x)*params['dlon']
-                     for x in range(params['ni'])),
+                     for x in _range(params['ni'])),
                      _np.float32, params['ni']),
         (params['ni'], 1), order='F')
     params['ay'] = _np.reshape(
         _np.fromiter((params['lat0'] + float(x)*params['dlat']
-                     for x in range(params['nj'])),
+                     for x in _range(params['nj'])),
                      _np.float32, params['nj']),
         (1, params['nj']), order='F')
     ## if params['ax'][:, 0].max() > 360.:

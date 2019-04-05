@@ -4,6 +4,7 @@
 
 import os
 import rpnpy.librmn.all as rmn
+from rpnpy import range as _range
 import unittest
 ## import ctypes as ct
 import numpy as np
@@ -75,9 +76,9 @@ class Librmn_interp_Test(unittest.TestCase):
             }
         gp['ax'] = np.empty((ni,1),dtype=np.float32,order='FORTRAN')
         gp['ay'] = np.empty((1,nj),dtype=np.float32,order='FORTRAN')
-        for i in range(ni):
+        for i in _range(ni):
             gp['ax'][i,0] = gp['lon0']+float(i)*gp['dlon']
-        for j in range(nj):
+        for j in _range(nj):
             gp['ay'][0,j] = gp['lat0']+float(j)*gp['dlat']
         return self.setIG_ZE(gp)
 
@@ -105,9 +106,9 @@ class Librmn_interp_Test(unittest.TestCase):
             }
         gp['ax'] = np.empty((ni,1),dtype=np.float32,order='FORTRAN')
         gp['ay'] = np.empty((1,nj),dtype=np.float32,order='FORTRAN')
-        for i in range(ni):
+        for i in _range(ni):
             gp['ax'][i,0] = gp['lon0']+float(i)*gp['dlon']
-        for j in range(nj):
+        for j in _range(nj):
             gp['ay'][0,j] = gp['lat0']+float(j)*gp['dlat']
         return self.setIG_ZE(gp)
 
@@ -231,9 +232,9 @@ class Librmn_interp_Test(unittest.TestCase):
         axes = rmn.gdgaxes(gid1)
         self.assertEqual(axes['ax'].shape,gp['ax'].shape)
         self.assertEqual(axes['ay'].shape,gp['ay'].shape)
-        for i in range(gp['ni']):
+        for i in _range(gp['ni']):
             self.assertTrue(abs(axes['ax'][i,0]-gp['ax'][i,0])<self.epsilon)
-        for j in range(gp['nj']):
+        for j in _range(gp['nj']):
             self.assertTrue(abs(axes['ay'][0,j]-gp['ay'][0,j])<self.epsilon)
         rmn.gdrls(gid1)
 
@@ -268,12 +269,12 @@ class Librmn_interp_Test(unittest.TestCase):
         setid = rmn.ezdefset(gid2, gid1)
         self.assertTrue(setid>=0)
         zin = np.empty(gp1['shape'],dtype=np.float32,order='FORTRAN')
-        for x in range(gp1['ni']):
+        for x in _range(gp1['ni']):
             zin[:,x] = x
         zout = rmn.ezsint(gid2,gid1,zin)
         self.assertEqual(gp2['shape'],zout.shape)
-        for j in range(gp2['nj']):
-            for i in range(gp2['ni']):
+        for j in _range(gp2['nj']):
+            for i in _range(gp2['ni']):
                 self.assertTrue(abs((zin[i,j]+zin[i+1,j])/2.-zout[i,j]) < self.epsilon)
         #rmn.gdrls([gid1,gid2]) #TODO: Makes the test crash
 
@@ -288,14 +289,14 @@ class Librmn_interp_Test(unittest.TestCase):
         self.assertTrue(setid>=0)
         uuin = np.empty(gp1['shape'],dtype=np.float32,order='FORTRAN')
         vvin = np.empty(gp1['shape'],dtype=np.float32,order='FORTRAN')
-        for x in range(gp1['ni']):
+        for x in _range(gp1['ni']):
             uuin[:,x] = x
         vvin = uuin*3.
         (uuout,vvout) = rmn.ezuvint(gid2,gid1,uuin,vvin)
         self.assertEqual(gp2['shape'],uuout.shape)
         self.assertEqual(gp2['shape'],vvout.shape)
-        for j in range(gp2['nj']):
-            for i in range(gp2['ni']):
+        for j in _range(gp2['nj']):
+            for i in _range(gp2['ni']):
                 self.assertTrue(abs((uuin[i,j]+uuin[i+1,j])/2.-uuout[i,j]) < self.epsilon,'uvint, u: abs(%f-%f)=%f' % (((uuin[i,j]+uuin[i+1,j])/2),uuout[i,j],(uuin[i,j]+uuin[i+1,j])/2.-uuout[i,j]))
 
                 self.assertTrue(abs((vvin[i,j]+vvin[i+1,j])/2.-vvout[i,j]) < self.epsilon,'uvint, v: abs(%f-%f)=%f' % (((vvin[i,j]+vvin[i+1,j])/2),vvout[i,j],(vvin[i,j]+vvin[i+1,j])/2.-vvout[i,j]))
@@ -345,7 +346,7 @@ class Librmn_interp_Test(unittest.TestCase):
         gid1 = rmn.ezqkdef(gp1)
         self.assertTrue(gid1>=0)
         zin = np.empty(gp1['shape'],dtype=np.float32,order='FORTRAN')
-        for x in range(gp1['ni']):
+        for x in _range(gp1['ni']):
             zin[:,x] = x
         lat = np.array([gp1['lat0']+gp1['dlat']/2.],dtype=np.float32,order='FORTRAN')
         lon = np.array([(gp1['lon0']+gp1['dlon'])/2.],dtype=np.float32,order='FORTRAN')
@@ -359,7 +360,7 @@ class Librmn_interp_Test(unittest.TestCase):
         gid1 = rmn.ezqkdef(gp1)
         self.assertTrue(gid1>=0)
         zin = np.empty(gp1['shape'],dtype=np.float32,order='FORTRAN')
-        for x in range(gp1['ni']):
+        for x in _range(gp1['ni']):
             zin[:,x] = x
         xx = np.array([1.5],dtype=np.float32,order='FORTRAN')
         yy = np.array([1.5],dtype=np.float32,order='FORTRAN')
@@ -375,7 +376,7 @@ class Librmn_interp_Test(unittest.TestCase):
         self.assertTrue(gid1>=0)
         zin  = np.empty(gp1['shape'],dtype=np.float32,order='FORTRAN')
         zin2 = np.empty(gp1['shape'],dtype=np.float32,order='FORTRAN')
-        for x in range(gp1['ni']):
+        for x in _range(gp1['ni']):
             zin[:,x] = x
             zin2[:,x] = x+1
         lat = np.array([gp1['lat0']+gp1['dlat']/2.],dtype=np.float32,order='FORTRAN')
@@ -394,7 +395,7 @@ class Librmn_interp_Test(unittest.TestCase):
         self.assertTrue(gid1>=0)
         zin  = np.empty(gp1['shape'],dtype=np.float32,order='FORTRAN')
         zin2 = np.empty(gp1['shape'],dtype=np.float32,order='FORTRAN')
-        for x in range(gp1['ni']):
+        for x in _range(gp1['ni']):
             zin[:,x] = x
             zin2[:,x] = x+1
         xx = np.array([1.5],dtype=np.float32,order='FORTRAN')
@@ -411,15 +412,15 @@ class Librmn_interp_Test(unittest.TestCase):
     ##     self.assertTrue(gid1>=0)
     ##     mask = np.empty(gp1['shape'],dtype=np.intc,order='FORTRAN')
     ##     mask[:,:] = 0
-    ##     for i in range(min(gp1['ni'],gp1['nj'])):
+    ##     for i in _range(min(gp1['ni'],gp1['nj'])):
     ##         mask[i,i] = 1
     ##     rmn.gdsetmask(gid1,mask)
     ##     mask2 = rmn.gdgetmask(gid1)
-    ##     print [mask[i,i] for i in range(min(gp1['ni'],gp1['nj']))]
-    ##     print [mask2[i,i] for i in range(min(gp1['ni'],gp1['nj']))]
+    ##     print [mask[i,i] for i in _range(min(gp1['ni'],gp1['nj']))]
+    ##     print [mask2[i,i] for i in _range(min(gp1['ni'],gp1['nj']))]
     ##     self.assertEqual(mask.shape,mask2.shape)
-    ##     for j in range(gp1['nj']):
-    ##         for i in range(gp1['ni']):
+    ##     for j in _range(gp1['nj']):
+    ##         for i in _range(gp1['ni']):
     ##             self.assertEqual(mask[i,j],mask2[i,j])
     ##     rmn.gdrls(gid1)
 
