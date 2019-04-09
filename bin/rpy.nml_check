@@ -1,0 +1,91 @@
+#!/usr/bin/env python
+#!/usr/bin/env python2
+# -*- coding: utf-8 -*-
+# Author: Stephane Chamberland <stephane.chamberland@canada.ca>
+# Copyright: LGPL 2.1
+"""
+rpy.nml_check -r REF_NAMELIST -f USER_NAMELIST
+"""
+import os.path
+import sys
+import optparse
+from rpnpy.ftnnml import *
+
+def guessType(mystr):
+    """ """
+    try:
+        i = int(mystr)
+        return 'i'
+    except:
+        pass
+    if str(mystr).lower() in ('t','f','true','false','.t.','.f.','.true.','.false.'):
+        return 'b'
+    else:
+        return 's'
+    #TODO: check for list?
+
+
+def cmpNml(ref_nml_file, user_nml_file, verbose):
+    """ """
+    status = 0
+    cfgref = FtnNmlFile(ref_nml_file)
+    cfgusr = FtnNmlFile(user_nml_file)
+    for nml in cfgref.keys():
+        if nml in cfgusr.keys():
+            nmlref = cfgref.get(nml)
+            nmlusr = cfgusr.get(nml)
+            for k in nmlusr.keys():
+                try:
+                    vr = nmlref.get(k).get('v')
+                    vu = nmlusr.get(k).get('v')
+                except:
+                    status = 1
+                    if (verbose):
+                        sys.stderr.write('ERROR: Extra nml key: %s / %s\n'
+                                         % (nml, k))
+                    continue
+                if guessType(vr) != guessType(vu):
+                    status = 1
+                    if (verbose):
+                        sys.stderr.write('ERROR: Different type nml key: '+
+                                         '%s / %s = %s ==> %s\n'
+                                         % (nml, k, vr, vu))
+                        
+    return status
+
+if __name__ == "__main__":
+    
+    # Command line arguments
+    #usage = "usage: \n\t%prog [options] key1 [key2] ...\n\t%prog [options] nml1/key1 [nml2/key2] ..."
+    parser = optparse.OptionParser()#usage=usage)
+    
+    parser.add_option("-r","--ref", dest="ref_nml_file",
+                      default="gem_settings.nml.ref",
+                      help="Name of FILE containing namelist [default 'gem_settings.nml']",
+                      metavar="REF_NML_FILENAME")
+
+    parser.add_option("-f","--file", dest="user_nml_file",
+                      default="./gem_settings.nml",
+                      help="Name of FILE containing namelist [default 'gem_settings.nml']",
+                      metavar="USER_NML_FILENAME")
+    
+    parser.add_option("-v","--verbose",dest="verbose", action="store_true",
+                      help="Print not conforming entries compared to ref",
+                      metavar="FILE")
+
+    #TODO: list of nml to check
+    #TODO: check option type, values, ...
+
+    (options,args) = parser.parse_args()
+
+    if not os.path.isfile(options.ref_nml_file):
+        sys.stderr.write('ERROR: Not such file, ref_nml_file %s\n'
+                         % options.ref_nml_file)
+        sys.exit(1)
+    if not os.path.isfile(options.user_nml_file):
+        sys.stderr.write('ERROR: Not such file, user_nml_file %s\n'
+                         % options.user_nml_file)
+        sys.exit(1)
+
+    stat = cmpNml(options.ref_nml_file, options.user_nml_file, options.verbose)
+    sys.exit(stat)
