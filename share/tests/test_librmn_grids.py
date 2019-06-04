@@ -374,6 +374,7 @@ class Librmn_grids_Test(unittest.TestCase):
 
                     
     def test_ll2rll_rot(self):
+        from math import cos, radians
         epsilon = self.epsilon
         (xlat1, xlon1, xlat2, xlon2) = (35.,230.,0.,320.)
         ok = True
@@ -387,8 +388,8 @@ class Librmn_grids_Test(unittest.TestCase):
                 if dlon > 180.: dlon =- 360.
                 drlon = abs(rlon1-rlon)
                 if drlon > 180.: drlon =- 360.
-                if False in (abs(lat1-lat0)<epsilon, dlon<epsilon,
-                             abs(rlat1-rlat)<epsilon, drlon<epsilon):
+                if False in (abs(lat1-lat0)<epsilon, dlon*cos(radians(lat0))<epsilon,
+                             abs(rlat1-rlat)<epsilon, drlon*cos(radians(rlat))<epsilon):
                     print('r',i,j,abs(lat1-lat0), dlon, \
                         abs(rlat1-rlat), drlon)
                     ok = False
@@ -396,6 +397,7 @@ class Librmn_grids_Test(unittest.TestCase):
 
                     
     def test_ll2rll_rot2(self):
+        from math import cos, radians
         epsilon = 0.05#self.epsilon
         (xlat1, xlon1, xlat2, xlon2) = (0.,180.,1.,270.)
         ok = True
@@ -409,8 +411,8 @@ class Librmn_grids_Test(unittest.TestCase):
                 if dlon > 180.: dlon =- 360.
                 drlon = abs(rlon1-rlon)
                 if drlon > 180.: drlon =- 360.
-                if False in (abs(lat1-lat0)<epsilon, dlon<epsilon,
-                             abs(rlat1-rlat)<epsilon, drlon<epsilon):
+                if False in (abs(lat1-lat0)<epsilon, dlon*cos(radians(lat0))<epsilon,
+                             abs(rlat1-rlat)<epsilon, drlon*cos(radians(rlat))<epsilon):
                     print('r2',i,j,abs(lat1-lat0), dlon, \
                         abs(rlat1-rlat), drlon)
                     ok = False
