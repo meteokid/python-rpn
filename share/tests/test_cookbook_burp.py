@@ -511,7 +511,7 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
 
     #==== Example 6 =============================================
 
-    def sub_test_ex6_write2(self, logfile="tmp/test_ex6_write2_py.log"):
+    def sub_test_ex6_write2(self, logfile="tmp/test_ex6_write2.log"):
         """burplib_c iweb doc example 6"""
         import os, sys
         import rpnpy.burpc.all as brp
@@ -787,6 +787,7 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
         ## self.sub_test_ex2_readburp_py(infile=outfile, logfile=logfile)
 
 
+    @unittest.skip("sub_test_ex6_write2_py not completed.")
     def test_ex6_write2_cmp(self):
         """burplib_c iweb doc example 6, compare results from 2 itf"""
         import os, filecmp
