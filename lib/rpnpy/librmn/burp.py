@@ -314,7 +314,6 @@ def mrfopt(name, value=None):
         if istat != 0:
             raise BurpError('c_mrfopc:{}={}'.format(name, value), istat)
     elif isinstance(value, float):
-        #TODO: check c_mrfopr, not working, set value to 0. apparently
         istat = _rp.c_mrfopr(_C_WCHAR2CHAR(name), value)
         if istat != 0:
             raise BurpError('c_mrfopr:{}={}'.format(name, value), istat)
