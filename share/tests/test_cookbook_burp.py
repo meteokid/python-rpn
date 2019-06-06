@@ -441,13 +441,13 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
 
     #==== Example 5 =============================================
 
-    def sub_test_ex5_write1(self, logfile="tmp/test_ex5_write1.log"):
+    def sub_test_ex5_write1(self, logfile="tmp/test_ex5_write1.log",
+                                  outfile="tmp/test_ex5_write1.brp"):
         """burplib_c iweb doc example 5"""
         import os, sys
         import rpnpy.burpc.all as brp
         infile = os.path.join(os.getenv('ATM_MODEL_DFILES').strip(),
                               'bcmk_burp/2007021900.brp')
-        outfile = "tmp/test_ex5_write1.brp"
         iunit, ounit = 999, 998
         istat = brp.c_brp_SetOptChar(_C_WCHAR2CHAR("MSGLVL"),
                                      _C_WCHAR2CHAR("FATAL"))
@@ -471,14 +471,14 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
         self.sub_test_ex2_readburp(infile=outfile, logfile=logfile)
 
 
-    def sub_test_ex5_write1_py(self, logfile="tmp/test_ex5_write1_py.log"):
+    def sub_test_ex5_write1_py(self, logfile="tmp/test_ex5_write1_py.log",
+                                     outfile="tmp/test_ex5_write1_py.brp"):
         """burplib_c iweb doc example 5"""
         import os, sys
         import rpnpy.librmn.all as rmn
         import rpnpy.burpc.all as brp
         infile = os.path.join(os.getenv('ATM_MODEL_DFILES').strip(),
                               'bcmk_burp/2007021900.brp')
-        outfile = "tmp/test_ex5_write1_py.brp"
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
         idtyp = rmn.BURP_IDTYP_IDX['PILOT']  ## 32
         bfilei = brp.BurpcFile(infile)
@@ -504,18 +504,20 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
             return
         TMPDIR = os.getenv('TMPDIR', '/tmp')
         logfile1 = os.path.join(TMPDIR, "test_ex5_write1.log")
+        outfile1 = os.path.join(TMPDIR, "test_ex5_write1.brp")
         logfile2 = os.path.join(TMPDIR, "test_ex5_write1_py.log")
-        self.sub_test_ex5_write1(logfile=logfile1)
-        self.sub_test_ex5_write1_py(logfile=logfile2)
+        outfile2 = os.path.join(TMPDIR, "test_ex5_write1_py.brp")
+        self.sub_test_ex5_write1(logfile=logfile1,outfile=outfile1)
+        self.sub_test_ex5_write1_py(logfile=logfile2,outfile=outfile2)
         self.assertTrue(filecmp.cmp(logfile1, logfile2, shallow=False))
 
     #==== Example 6 =============================================
 
-    def sub_test_ex6_write2(self, logfile="tmp/test_ex6_write2.log"):
+    def sub_test_ex6_write2(self, logfile="tmp/test_ex6_write2.log",
+                                  outfile="tmp/test_ex6_write2.brp"):
         """burplib_c iweb doc example 6"""
         import os, sys
         import rpnpy.burpc.all as brp
-        outfile = 'tmp/test_ex6_write2.brp'
         ounit = 20
         istat = brp.c_brp_SetOptChar(_C_WCHAR2CHAR("MSGLVL"),
                                      _C_WCHAR2CHAR("FATAL"))
@@ -639,12 +641,12 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
         self.sub_test_ex2_readburp_py(infile=outfile, logfile=logfile)
 
 
-    def sub_test_ex6_write2_py(self, logfile="tmp/test_ex6_write2_py.log"):
+    def sub_test_ex6_write2_py(self, logfile="tmp/test_ex6_write2_py.log",
+                                     outfile="tmp/test_ex6_write2_py.brp"):
         """burplib_c iweb doc example 6"""
         import os, sys
         import rpnpy.librmn.all as rmn
         import rpnpy.burpc.all as brp
-        outfile = 'test_ex6_write2_py.brp'
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
 
         rpt = brp.BurpcRpt({
@@ -795,9 +797,11 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
             return
         TMPDIR = os.getenv('TMPDIR', '/tmp')
         logfile1 = os.path.join(TMPDIR, "test_ex6_write2.log")
+        outfile1 = os.path.join(TMPDIR, "test_ex6_write2.brp")
         logfile2 = os.path.join(TMPDIR, "test_ex6_write2_py.log")
-        self.sub_test_ex6_write2(logfile=logfile1)
-        self.sub_test_ex6_write2_py(logfile=logfile2)
+        outfile2 = os.path.join(TMPDIR, "test_ex6_write2_py.brp")
+        self.sub_test_ex6_write2(logfile=logfile1,outfile=outfile1)
+        self.sub_test_ex6_write2_py(logfile=logfile2,outfile=outfile2)
         self.assertTrue(filecmp.cmp(logfile1, logfile2, shallow=False))
 
     #==== Example 7 =============================================
