@@ -34,6 +34,7 @@ class VGDBaseTests(unittest.TestCase):
         vgd.vgd_put_opt('ALLOW_SIGMA', vgd.VGD_ALLOW_SIGMA)
         v2 = vgd.vgd_get_opt('ALLOW_SIGMA')
         self.assertEqual(v2,vgd.VGD_ALLOW_SIGMA)
+        vgd.vgd_put_opt('ALLOW_SIGMA',vgd.VGD_DISALLOW_SIGMA)
 
     def testNewRead(self):
         vgd0ptr = self._newReadBcmk()
@@ -196,6 +197,7 @@ class VGDBaseTests(unittest.TestCase):
     MB2PA = 100.
 
     def testNewSigm(self):
+        vgd.vgd_put_opt('ALLOW_SIGMA', vgd.VGD_ALLOW_SIGMA)
         sigma = (0.011000, 0.027000, 0.051000, 0.075000, 0.101000, 0.127000,
                  0.155000, 0.185000, 0.219000, 0.258000, 0.302000, 0.351000,
                  0.405000, 0.460000, 0.516000, 0.574000, 0.631000, 0.688000,
@@ -205,6 +207,7 @@ class VGDBaseTests(unittest.TestCase):
         vkind = vgd.vgd_get(vgd0ptr, 'KIND')
         vvers = vgd.vgd_get(vgd0ptr, 'VERS')
         self.assertEqual((vkind,vvers), vgd.VGD_KIND_VER['sigm'])
+        vgd.vgd_put_opt('ALLOW_SIGMA', vgd.VGD_DISALLOW_SIGMA)
 
     def testNewPres(self):
         # pres = [x*self.MB2PA for x in (500.,850.,1000.)]
