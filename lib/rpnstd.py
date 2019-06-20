@@ -83,7 +83,7 @@ class RPNFile:
         self.options = mode
         self.iun = None
         self.iun = Fstdc.fstouv(0, self.filename, self.options)
-        if self.iun == None:
+        if self.iun is None:
             raise IOError(-1, 'failed to open standard file', self.filename)
 
     def voir(self, options='NEWSTYLE'):
@@ -126,7 +126,7 @@ class RPNFile:
            None if rec not found
         """
         params = self.info(key)         # 1 - get handle
-        if params == None:              # oops !! not found
+        if params is None:              # oops !! not found
             return None
         target = params.handle
         array = Fstdc.fstluk(target)   # 2 - get data
@@ -375,7 +375,7 @@ class RPNFile:
         @exception TypeError if params.handle is not valid when erasing (value=None)
         @exception ValueError if not able to find a rec corresponding to metaparams when erasing (value=None)
         """
-        if value == None:
+        if value is None:
             self.erase(index)
         elif isinstance(index, RPNMeta) and type(value) == numpy.ndarray:
             self.lastwrite = 0
@@ -456,7 +456,7 @@ class RPNFile:
         """
         meta2 = meta
         data2 = data
-        if meta == None and isinstance(data, RPNRec):
+        if meta is None and isinstance(data, RPNRec):
             meta2 = data
             data2 = data.d
         elif not(isinstance(meta, RPNMeta) and type(data) == numpy.ndarray):
@@ -709,7 +709,7 @@ class RPNMeta(RPNKeys, RPNDesc):
         xaxisrec = self.fileref[searchkeys]
         searchkeys.nom = '^^'
         yaxisrec = self.fileref[searchkeys]
-        if xaxisrec == None or yaxisrec == None: # csubich -- variable name typo
+        if xaxisrec is None or yaxisrec is None: # csubich -- variable name typo
             raise ValueError('RPNMeta.getaxis: ERROR - axis grid descriptors (>>, ^^) not found')
         if type(axis) == type(' '):
             if axis.upper() == 'X':
@@ -1556,7 +1556,7 @@ class RPNRec(RPNMeta):
 
     def __init__(self, data=None, meta=None):
         RPNMeta.__init__(self)
-        if data == None:
+        if data is None:
             self.d = numpy.array([])
         elif type(data) == numpy.ndarray:
             self.d = data

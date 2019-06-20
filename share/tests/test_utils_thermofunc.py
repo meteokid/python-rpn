@@ -9,6 +9,7 @@ class RpnPyUtilsThermofunc(unittest.TestCase):
     #---- Horizontal Interpolation
 
 
+    @unittest.skip('Need some thermofunc tests')
     def test_thermofunc(self):
         """
         """
