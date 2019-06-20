@@ -2536,7 +2536,7 @@ def egrid_rot_matrix(xlat1, xlon1, xlat2, xlon2):
     d = _sqrt( ( ( (a*xyz1[0]) - xyz2[0] ) / b )**2 + \
               ( ( (a*xyz1[1]) - xyz2[1] ) / b )**2 + \
               ( ( (a*xyz1[2]) - xyz2[2] ) / b )**2  )
-    rot = _np.empty((3, 3), dtype=_np.float32)
+    rot = _np.empty((3, 3), dtype=_np.float64)
     rot[0, 0] = -xyz1[0]/c
     rot[0, 1] = -xyz1[1]/c
     rot[0, 2] = -xyz1[2]/c
