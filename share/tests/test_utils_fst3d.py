@@ -15,6 +15,7 @@ class RpnPyUtilsFstd3D(unittest.TestCase):
         import os, sys, datetime
         import rpnpy.librmn.all as rmn
         import rpnpy.utils.fstd3d as fstd3d
+        import rpnpy.vgd.all as vgd
         fdate       = datetime.date.today().strftime('%Y%m%d') + '00_048'
         CMCGRIDF    = os.getenv('CMCGRIDF').strip()
         fileNameIn  = os.path.join(CMCGRIDF, 'prog', 'regeta', fdate)
@@ -29,7 +30,9 @@ class RpnPyUtilsFstd3D(unittest.TestCase):
             sys.exit(1)
 
         try:
+            vgd.vgd_put_opt('ALLOW_SIGMA', vgd.VGD_ALLOW_SIGMA)
             rec3d = fstd3d.fst_read_3d(fileId, nomvar='TT', getPress=True, verbose=True)
+            vgd.vgd_put_opt('ALLOW_SIGMA', vgd.VGD_DISALLOW_SIGMA)
         except:
             raise
         finally:

@@ -46,6 +46,7 @@ class VGDProtoTests(unittest.TestCase):
         ok = vgd.c_vgd_getopt_int(_C_WCHAR2CHAR('ALLOW_SIGMA'), ct.byref(v1), quiet)
         self.assertEqual(ok,vgd.VGD_OK)
         self.assertEqual(v1.value,vgd.VGD_ALLOW_SIGMA)
+        ok = vgd.c_vgd_putopt_int(_C_WCHAR2CHAR('ALLOW_SIGMA'), vgd.VGD_DISALLOW_SIGMA)
 
     ## def testConstruct(self):
     ##     vgd0ptr = vgd.c_vgd_construct()
