@@ -661,7 +661,8 @@ librmn.c_mrfopc.argtypes = (_ct.c_char_p, _ct.c_char_p)
 librmn.c_mrfopc.restype  = _ct.c_int
 c_mrfopc = librmn.c_mrfopc
 
-librmn.c_mrfopr.argtypes = (_ct.c_char_p, _ct.c_float)
+librmn.c_mrfopr.argtypes = (_ct.c_char_p, _ct.c_double)
+                                              # WHY??????
 librmn.c_mrfopr.restype  = _ct.c_int
 c_mrfopr = librmn.c_mrfopr
 
