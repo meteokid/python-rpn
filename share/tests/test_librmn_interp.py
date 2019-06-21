@@ -270,12 +270,39 @@ class Librmn_interp_Test(unittest.TestCase):
         self.assertTrue(setid>=0)
         zin = np.empty(gp1['shape'],dtype=np.float32,order='FORTRAN')
         for x in _range(gp1['ni']):
-            zin[:,x] = x
+            zin[x,:] = x
         zout = rmn.ezsint(gid2,gid1,zin)
         self.assertEqual(gp2['shape'],zout.shape)
         for j in _range(gp2['nj']):
             for i in _range(gp2['ni']):
                 self.assertTrue(abs((zin[i,j]+zin[i+1,j])/2.-zout[i,j]) < self.epsilon)
+        #rmn.gdrls([gid1,gid2]) #TODO: Makes the test crash
+
+    def test_ezsint_extrap(self):
+        extrap_val = 99.
+        gp = self.getGridParams_ZE()
+        gid1 = rmn.ezgdef_fmem(gp['ni'],gp['nj'],gp['grtyp'],gp['grref'],
+                               gp['ig1ref'],gp['ig2ref'],gp['ig3ref'],gp['ig4ref'],
+                               gp['ax'],gp['ay'])
+        self.assertTrue(gid1>=0)
+        gp2 = self.getGridParams_L(0.25)
+        gid2 = rmn.ezqkdef(gp2)
+        self.assertTrue(gid2>=0)
+        setid = rmn.ezdefset(gid2, gid1)
+        self.assertTrue(setid>=0)
+        zin = np.empty(gp['shape'], dtype=np.float32, order='FORTRAN')
+        for x in _range(gp['ni']):
+            zin[x,:] = x
+        rmn.ezsetopt(rmn.EZ_OPT_EXTRAP_VALUE, extrap_val)
+        rmn.ezsetopt(rmn.EZ_OPT_EXTRAP_DEGREE.lower(),
+                     rmn.EZ_EXTRAP_VALUE.lower())
+        zout = rmn.ezsint(gid2, gid1, zin)
+        self.assertEqual(gp2['shape'], zout.shape)
+        self.assertEqual(extrap_val, np.max(zout))
+        ## print('test_ezsint_extrap', np.min(zin), np.max(zin))
+        ## print('test_ezsint_extrap', np.min(zout), np.max(zout))
+        ## for j in _range(gp2['nj']):
+        ##     print('test_ezsint_extrap', j, zout[:,j])
         #rmn.gdrls([gid1,gid2]) #TODO: Makes the test crash
 
     def test_ezuvint(self):
@@ -290,7 +317,7 @@ class Librmn_interp_Test(unittest.TestCase):
         uuin = np.empty(gp1['shape'],dtype=np.float32,order='FORTRAN')
         vvin = np.empty(gp1['shape'],dtype=np.float32,order='FORTRAN')
         for x in _range(gp1['ni']):
-            uuin[:,x] = x
+            uuin[x,:] = x
         vvin = uuin*3.
         (uuout,vvout) = rmn.ezuvint(gid2,gid1,uuin,vvin)
         self.assertEqual(gp2['shape'],uuout.shape)
