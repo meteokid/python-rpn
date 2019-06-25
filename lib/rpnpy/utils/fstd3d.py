@@ -14,9 +14,8 @@ import numpy  as _np
 
 import rpnpy.librmn.all as _rmn
 import rpnpy.vgd.all as _vgd
-import rpnpy.utils.thermoconsts as _cst
+import rpnpy.utils.tdpack_consts as _cst
 
-#TODO: fst_read_3d for arbitrary levels (no vgrid)
 #TODO: fst_read_3d_sample points
 #TODO: fst_write_3d
 #TODO: fst_new_3d
@@ -280,23 +279,33 @@ def fst_read_3d(fileId, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
     >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
     >>> import rpnpy.utils.fstd3d as fstd3d
+
     >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
     >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk')
     >>>
     >>> # Open existing file in Rear Only mode
+    >>> rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)
     >>> fileId = rmn.fstopenall(filename, rmn.FST_RO)
-    >>>
-    >>> # Find and read p0 meta and data, then print its min,max,mean values
+
+    >>> # Find and read J1 meta and data, then print its min,max,mean values
+    >>> j1 = fstd3d.fst_read_3d(fileId, nomvar='J1')
+    >>> print("# J1 min={:4.1f} max={:3.1f} avg={:4.1f}"
+    ...       .format(j1['d'].min(), j1['d'].max(), j1['d'].mean()))
+    # J1 min= 0.0 max=92.0 avg=18.8
+
+    >>> # Find and read specific levels J1 meta and data, then print its min,max,mean values
+    >>> ip1s = (1199, 1198, 1197, 1196, 1195)
+    >>> j2 = fstd3d.fst_read_3d(fileId, nomvar='J2', ip1=ip1s)
+    >>> print("# J2 min={:4.1f} max={:3.1f} avg={:4.1f}"
+    ...       .format(j2['d'].min(), j2['d'].max(), j2['d'].mean()))
+    # J2 min= 0.0 max=94.4 avg= 8.8
+
+    >>> # Find and read TT meta and data, then print its min,max,mean values
     >>> tt3d = fstd3d.fst_read_3d(fileId, nomvar='TT')
-    Read TT   ip1=97642568 ip2=0 ip3=0 typv=P  etk=G133K80P
-    Read the horizontal grid descriptors for TT
-    Read TT   ip1=97738568 ip2=0 ip3=0 typv=P  etk=G133K80P
-    Read TT   ip1=97899568 ip2=0 ip3=0 typv=P  etk=G133K80P
-    Read TT   ip1=98152568 ip2=0 ip3=0 typv=P  etk=G133K80P
-    # ...
     >>> print("# TT ip2={0} min={1:4.1f} max={2:3.1f} avg={3:4.1f}"
     ...       .format(tt3d['ip2'], tt3d['d'].min(), tt3d['d'].max(), tt3d['d'].mean()))
     # TT ip2=0 min=-88.4 max=40.3 avg=-36.3
+
     >>> rmn.fstcloseall(fileId)
 
     See Also:
@@ -313,7 +322,6 @@ def fst_read_3d(fileId, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
         rpnpy.vgd.base.vgd_levels
     """
     # Get the list of ip1 on thermo, momentum levels in this file
-    #TODO: if ip1 is provided get the keys for these ip1
     vGrid = None
     tlevels = get_levels_keys(fileId, nomvar, datev, ip2, ip3, typvar, etiket,
                               vGrid=vGrid, thermoMom='VIPT', verbose=verbose)
@@ -323,17 +331,42 @@ def fst_read_3d(fileId, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
                               tlevels['typvar'], tlevels['etiket'],
                               vGrid=vGrid, thermoMom='VIPM', verbose=verbose)
 
-    ip1keys = tlevels['ip1keys']
-    if len(mlevels['ip1keys']) > len(tlevels['ip1keys']):
-        if verbose:
-            print("(fst_read_3d) Using Momentum level list")
-        ip1keys = mlevels['ip1keys']
-    elif verbose:
-        print("(fst_read_3d) Using Thermo level list")
+    ip1keys = None
+    if ip1 in (-1, None) and len(tlevels['ip1keys']) and len(mlevels['ip1keys']):
+        ip1keys = tlevels['ip1keys']
+        if len(mlevels['ip1keys']) > len(tlevels['ip1keys']):
+            if verbose:
+                print("(fst_read_3d) Using Momentum level list")
+                ip1keys = mlevels['ip1keys']
+        elif verbose:
+            print("(fst_read_3d) Using Thermo level list")
 
-    if verbose or len(ip1keys) == 0:
-        print("(fst_read_3d) Found {0} records for {1} ip2={2} ip3={3} datev={4} typvar={5} etiket={6}"
-              .format(len(ip1keys), nomvar, ip2, ip3, datev, typvar, etiket))
+    if ip1 == -1 and (ip1keys is None or len(ip1keys) == 0):
+        keys = _rmn.fstinl(fileId, datev, etiket, ip1, ip2, ip3, typvar, nomvar)
+        ip1keys = [(_rmn.fstprm(k)['ip1'], k) for k in keys]
+        vGrid = None
+        if verbose:
+            print("(fst_read_3d) Using Arbitrary list of levels: {}".format([i for i,k in ip1keys]))
+    elif isinstance(ip1, (list, tuple)):
+        if not len(ip1):
+            return None
+        tip1list = [i for i,k in tlevels['ip1keys']]
+        mip1list = [i for i,k in mlevels['ip1keys']]
+        if all([i in tip1list for i in ip1]):
+            ip1keys = [(i,k) for i,k in tlevels['ip1keys'] if i in ip1]
+        elif all([i in mip1list for i in ip1]):
+            ip1keys = [(i,k) for i,k in mlevels['ip1keys'] if i in ip1]
+        else:
+            if any([a < 0 for a in ip1]):
+                _rmn.RMNError("Cannot Provide CatchAll (-1) in ip1 list")
+            vGrid = None
+            ip1keys = [(i,None) for i in ip1]
+    elif ip1 not in (-1, None):
+        raise TypeError('Provided ip1 should be a list or an int')
+
+    if verbose or ip1keys is None or len(ip1keys) == 0:
+        print("(fst_read_3d) Found {0} records for {1} ip1={2} ip2={3} ip3={4} datev={5} typvar={6} etiket={7}"
+              .format(len(ip1keys), nomvar, ip1, ip2, ip3, datev, typvar, etiket))
 
     if len(ip1keys) == 0:
         return None
@@ -343,8 +376,16 @@ def fst_read_3d(fileId, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
     r2d = {'d' : None}
     k = 0
     for ip1, key in ip1keys:
-        r2d = _rmn.fstluk(key, dataArray=r2d['d'])
-        print("Read {nomvar} ip1={ip1} ip2={ip2} ip3={ip3} typv={typvar} etk={etiket}".format(**r2d))
+        if key is None:
+            r2d = _rmn.fstlir(fileId, datev, etiket, ip1, ip2, ip3, typvar,
+                              nomvar, dtype, rank, dataArray=r2d['d'])
+            if r2d is None:
+                raise _rmn.RMNError("No record matching {} ip1={} ip2={} ip3={} datev={} typvar={} etiket={}"
+              .format(nomvar, ip1, ip2, ip3, datev, typvar, etiket))
+        else:
+            r2d = _rmn.fstluk(key, dataArray=r2d['d'])
+        if verbose:
+            print("Read {nomvar} ip1={ip1} ip2={ip2} ip3={ip3} typv={typvar} etk={etiket}".format(**r2d))
         if r3d is None:
             r3d = r2d.copy()
             rshape = list(r2d['d'].shape[0:2]) + [len(ip1keys)]
@@ -356,7 +397,8 @@ def fst_read_3d(fileId, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
                 else:
                     raise TypeError('Provided dataArray is not the right type or shape')
             r3d['hgrid'] = _rmn.readGrid(fileId, r2d)
-            print("Read the horizontal grid descriptors for {nomvar}".format(**r2d))
+            if verbose:
+                print("Read the horizontal grid descriptors for {nomvar}".format(**r2d))
         if r2d['d'].shape[0:2] != r3d['d'].shape[0:2]:
             raise _rmn.RMNError("Wrong shape for input data.")
         r3d['d'][:, :, k] = r2d['d'][:, :]
@@ -375,7 +417,7 @@ def fst_read_3d(fileId, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
          })
 
     # Read RFLD and compute pressure on levels
-    if getPress:
+    if getPress and vGrid:
         press = get_levels_press(fileId, vGrid, r3d['d'].shape[0:2], ip1list,
                                  tlevels['datev'], tlevels['ip2'],
                                  tlevels['ip3'], tlevels['typvar'], tlevels['etiket'],
