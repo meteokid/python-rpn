@@ -79,6 +79,69 @@ class RpnPyUtilsFstd3D(unittest.TestCase):
         self.assertAlmostEqual(j2['d'].mean(), 8.8374939, places=6,
                                msg=None, delta=None)
 
+    def test_fstdnew3d(self):
+        """
+        """
+        import os, sys, datetime
+        import numpy  as np
+        import rpnpy.librmn.all as rmn
+        import rpnpy.utils.fstd3d as fstd3d
+        import rpnpy.vgd.all as vgd
+        ## fdate       = datetime.date.today().strftime('%Y%m%d') + '00_048'
+        ## CMCGRIDF    = os.getenv('CMCGRIDF').strip()
+        ## fileNameIn  = os.path.join(CMCGRIDF, 'prog', 'regeta', fdate)
+        ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+        fileNameIn = os.path.join(ATM_MODEL_DFILES, 'bcmk')
+
+        # Restrict to the minimum the number of messages printed by librmn
+        rmn.fstopt(rmn.FSTOP_MSGLVL, rmn.FSTOPI_MSG_CATAST)
+
+        try:
+            fileId = rmn.fstopenall(fileNameIn)
+        except:
+            sys.stderr.write("Problem opening the files: %s, %s\n" % (fileNameIn, fileNameOut))
+            sys.exit(1)
+
+        try:
+            vgd.vgd_put_opt('ALLOW_SIGMA', vgd.VGD_ALLOW_SIGMA)
+            rec3d = fstd3d.fst_read_3d(fileId, nomvar='TT', getPress=True, verbose=True)
+            vgd.vgd_put_opt('ALLOW_SIGMA', vgd.VGD_DISALLOW_SIGMA)
+        except:
+            raise
+        finally:
+            # Properly close files even if an error occured above
+            # This is important when editing to avoid corrupted files
+            rmn.fstcloseall(fileId)
+
+        r2 = {}
+        for k in ('nomvar', 'dateo', 'deet', 'npas', 'ip2', 'ip3', 'etiket', 'datyp', 'typvar', 'rfld', 'phPa'):
+            r2[k] = rec3d[k]
+        r2 = fstd3d.fst_new_3d(r2, hgrid=rec3d['hgrid'], ip1s=rec3d['ip1s'],
+                               vgrid=rec3d['vgrid'], dataArray=rec3d['d'])
+
+        kskip = ('xtra1', 'nbits', 'key', 'lng','datev', 'swa')
+        for k in rec3d.keys():
+            if k in kskip:
+                continue
+            if k not in r2.keys():
+                self.assertTrue(False, 'missing: ' + k)
+
+            self.assertEqual(type(r2[k]), type(rec3d[k]))
+
+            if isinstance(rec3d[k], np.ndarray):
+                self.assertTrue(np.all(r2[k] == rec3d[k]))
+            elif isinstance(rec3d[k], (list, tuple)):
+                self.assertTrue(np.all(r2[k] == rec3d[k]))
+            elif isinstance(rec3d[k], dict):
+                print('skip: ' + k)
+                # print(r2[k], rec3d[k])
+            elif isinstance(rec3d[k], str):
+                self.assertEqual(r2[k].strip().lower(), rec3d[k].strip().lower())
+            elif isinstance(rec3d[k], type(vgd.c_vgd_construct())):
+                self.assertTrue(vgd.vgd_cmp(r2[k], rec3d[k]))
+            else:
+                self.assertEqual(r2[k], rec3d[k])
+
 
 if __name__ == "__main__":
     unittest.main()

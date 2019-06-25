@@ -437,43 +437,172 @@ def fst_read_3d(fileId, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
 ##     #TODO: mom or thermo?
 ##     pass
 
+#TODO: example should provide 'rfld' to completely define the vgrid
+def fst_new_3d(params, hgrid, ip1s=None, vgrid=None,
+               dtype=None, dataArray=None, verbose=False):
+    """
+    Create an RPNStd 3D record with provided data and param,
+    along with horizontal and vertical grid info
 
-## def fst_new_3d(params=None, hgrid=None, vgrid=None, ip1list=None,
-##                dtype=None, dataArray=None, verbose=False):
-##     """
-##     #TODO: doc
-##     """
-##     r3d = _rmn.FST_RDE_META_DEFAULT.copy()
-##     r3d.update(params)
-##     r3d.update({
-##         #TODO
-##          })
-##     (ni, nj) = (hgrid['ni'], hgrid['nj'])
-##     if isinstance(ip1list, str):
-##         if ip1list.upper() == 'VIPM':
-##             ip1list = _vgd._vgd.vgd_get(vgrid,'VIPM')
-##         elif ip1list.upper() == 'VIPT':
-##             ip1list = _vgd._vgd.vgd_get(vgrid,'VIPT')
-##         else:
-##             raise
-##     elif not isinstance(ip1list, (list, tuple)):
-##         raise
-##     nk = len(ip1list)
+    field3d = fst_new_3d(params, hgrid, ip1s, vgrid, dataArray=dataArray)
+    field3d = fst_new_3d(params, hgrid, ip1s, dataArray=dataArray)
+    field3d = fst_new_3d(params, hgrid, ip1s, vgrid, dtype=dtype)
+    field3d = fst_new_3d(params, hgrid, ip1s, dtype=dtype)
 
-##     dtype = _rmn.dtype_fst2numpy(params['datyp'], params['nbits'])
-##     if dataArray is None:
-##        r3d['d'] = _np.zero((ni,nj,nk), dtype=dtype, order='FORTRAN')
+    Args:
+        params    : Field metadata would normally include these keys
+                    'nomvar', 'dateo', 'deet', 'npas', 'ip2', 'etiket' [dict]
+        hgrid     : horizontal grid description [dict]
+                    result of rmn.encodeGrid()
+        ip1s      : List of ip1 defining fields levels (list) or 
+                    if vgrid is provided one can provided "VIPM" or "VIPT" (str)
+        vgrid     : (optional) vgrid descriptor created with any
+                    vgrid descriptor generating functions.
+        dtype     : (optional) numpy.dtype for array creation
+                    (if params[''datyp'] nor dataArray are provided)
+        dataArray : (optional) allocated array [numpy.ndarray]
+        verbose   : (optional) Print some info when true
+    Returns:
+        {
+            'd'    : data,       # 3d field data (numpy.ndarray), Fortran order
+            'hgrid': hGridInfo,  # horizontal grid info as returned by readGrid
+            'vgrid': vGridInfo,  # vertical grid info as returned by vgd_read
+            'ip1s' : ip1List     # List of ip1 of each level (tuple of int)
+            ...                  # same params list as fstprm (less ip1)
+         }
+    Raises:
+        TypeError  on wrong input arg types
+        ValueError on invalid input arg value
 
-##     r3d.update({
-##         'shape' : r3d['d'].shape,
-##         'ni'    : r3d['d'].shape[0],
-##         'nj'    : r3d['d'].shape[1],
-##         'nk'    : r3d['d'].shape[2],
-##         'ip1'   : -1,
-##         'ip1s'  : ip1list,
-##         'hgrid' : hgrid,
-##         'vgrid' : _vgd.vgd_copy(vgrid)
-##          })
+    Examples:
+    >>> import os, os.path
+    >>> import numpy  as np
+    >>> import rpnpy.librmn.all as rmn
+    >>> import rpnpy.utils.fstd3d as fstd3d
+    >>> import rpnpy.vgd.all as vgd
+    >>> from rpnpy.rpndate import RPNDate
+
+    >>> params0 = {
+    ...     'grtyp' : 'Z',
+    ...     'grref' : 'E',
+    ...     'ni'    : 90,
+    ...     'nj'    : 45,
+    ...     'lat0'  : 10.,
+    ...     'lon0'  : 11.,
+    ...     'dlat'  : 1.,
+    ...     'dlon'  : 0.5,
+    ...     'xlat1' : 0.,
+    ...     'xlon1' : 180.,
+    ...     'xlat2' : 1.,
+    ...     'xlon2' : 270.
+    ...     }
+    >>> hgrid = rmn.encodeGrid(params0)
+
+    >>> lvls  = (0.013,   0.027,    0.051,    0.075,
+    ...          0.101,   0.127,    0.155,    0.185,    0.219,
+    ...          0.258,   0.302,    0.351,    0.405,    0.460,
+    ...          0.516,   0.574,    0.631,    0.688,    0.744,
+    ...          0.796,   0.842,    0.884,    0.922,    0.955,
+    ...          0.980,   0.995)
+    >>> rcoef1 = 0.
+    >>> rcoef2 = 1.
+    >>> pref   = 100000.
+    >>> dhm    = 10.
+    >>> dht    = 2.
+    >>> try:
+    ...     vgrid = vgd.vgd_new_hybmd(lvls, rcoef1, rcoef2, pref, dhm, dht)
+    ... except vgd.VGDError:
+    ...     sys.stderr.write("There was a problem creating the VGridDescriptor")
+
+    >>> params = rmn.FST_RDE_META_DEFAULT.copy()
+    >>> params['nomvar'] = 'tt'
+    >>> params['dateo'] = RPNDate(20190625, 0).stamp
+    >>> params['deet'] = 1800
+    >>> params['npas'] = 6
+    >>> params['etiket'] = 'myetk'
+
+    >>> # Create new 3d field for TT on vgrid Thermo levels
+    >>> field3d = fstd3d.fst_new_3d(params, hgrid, ip1s='VIPT',vgrid=vgrid)
+
+    >>> field3d['d'] = 0.
+
+    See Also:
+        fst_read_3d
+        fst_write_3d
+        rpnpy.librmn.fstd98.const
+        rpnpy.librmn.fstd98.fstprm
+        rpnpy.librmn.grids.encodeGrid
+        rpnpy.vgd.base.vgd_new_hybmd
+        rpnpy.rpndate
+    """
+    r3d = _rmn.FST_RDE_META_DEFAULT.copy()
+    datyp = None
+    if 'datyp' in params.keys():
+        datyp = params['datyp']
+        if dtype is None:
+            dtype = _rmn.dtype_fst2numpy(datyp)
+        elif dtype != _rmn.dtype_fst2numpy(datyp):
+            raise ValueError("fst_new_3d: inconsistent dtype and datyp")
+    r3d.update(params)
+    if datyp is not None:
+        r3d['datyp'] = datyp
+    for k in r3d.keys():
+        if k in hgrid.keys():
+            r3d[k] = hgrid[k]
+    (ni, nj) = (hgrid['ni'], hgrid['nj'])
+    #TODO: check if vgrid is None or vgridtype
+    if isinstance(ip1s, str):
+        if vgrid is None:
+            raise ValueError("fst_new_3d: with ip1s='{}'".format(ip1s) +
+                             ", vgrid should be provided")
+        if ip1s.upper() == 'VIPM':
+            ip1s = _vgd.vgd_get(vgrid,'VIPM')
+        elif ip1s.upper() == 'VIPT':
+            ip1s = _vgd.vgd_get(vgrid,'VIPT')
+        else:
+            raise ValueError("fst_new_3d: ip1s unkown value '{}'"
+                             .format(ip1s))
+    elif isinstance(ip1s, (int, long)):
+        ip1s = [ip1s]
+    elif not isinstance(ip1s, (list, tuple)):
+        raise TypeError("fst_new_3d: ip1s should by of type str, int, or list")
+    nk = len(ip1s)
+
+    if dataArray is None:
+        if dtype is None:
+            dtype = _rmn.dtype_fst2numpy(params['datyp'], params['nbits'])
+        dataArray = _np.zeros((ni,nj,nk), dtype=dtype, order='FORTRAN')
+    if not isinstance(dataArray, _np.ndarray):
+        raise TypeError("fst_new_3d: Expecting dataArray of type {}, Got {}"\
+                        .format('numpy.ndarray', type(dataArray)))
+    elif not dataArray.flags['F_CONTIGUOUS']:
+        raise TypeError("fst_new_3d: Expecting dataArray type " +
+                        "numpy.ndarray with FORTRAN order")
+    if dtype is not None and dataArray.dtype != dtype:
+        raise TypeError("fst_new_3d: Inconsistency in provided dtype and dataArray")
+    if dataArray.shape != (ni,nj,nk):
+        raise ValueError("fst_new_3d: Inconsistency shape between vgrid/hgrid and dataArray")
+
+    #TODO: allow providing datyp in params
+    #TODO: should we compute datev if not provided or check consistency with dateo+npas*deet; or should we accept dateve instead of dateo?
+
+    if datyp is None:
+        datyp = _rmn.dtype_numpy2fst(dataArray.dtype)
+    r3d.update({
+        'd' : dataArray,
+        'datyp' : datyp,
+        'shape' : dataArray.shape,
+        'ni'    : dataArray.shape[0],
+        'nj'    : dataArray.shape[1],
+        'nk'    : dataArray.shape[2],
+        'ip1'   : -1,
+        'ip1s'  : ip1s,
+        'hgrid' : hgrid,
+        'vgrid' : None
+         })
+    if vgrid:
+        r3d['vgrid'] = _vgd.vgd_copy(vgrid)
+    return r3d
 
 
 if __name__ == "__main__":
