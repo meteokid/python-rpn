@@ -1181,7 +1181,7 @@ def vgd_get(vgd_ptr, key, quiet=1, defaultOnFail=False, defaultValue=None):
     Args:
         vgd_ptr (VGridDescriptor ref):
                         Reference/Pointer to the VGridDescriptor
-        key   (int)   : Parameter name
+        key   (str)   : Parameter name
                         Possible values: see VGD_KEYS, VGD_OPR_KEYS
         quiet (int)   : Quite mode on off
                         1 for quiet; 0 for verbose
