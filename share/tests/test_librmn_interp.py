@@ -4,6 +4,7 @@
 
 import os
 import rpnpy.librmn.all as rmn
+from rpnpy import range as _range
 import unittest
 ## import ctypes as ct
 import numpy as np
@@ -11,7 +12,7 @@ import numpy as np
 class Librmn_interp_Test(unittest.TestCase):
 
     epsilon = 0.0005
-    
+
     def setIG_L(self,gp):
         ig1234 = rmn.cxgaig(gp['grtyp'],gp['lat0'],gp['lon0'],
                             gp['dlat'],gp['dlon'])
@@ -20,7 +21,7 @@ class Librmn_interp_Test(unittest.TestCase):
         gp['ig3'] = ig1234[2]
         gp['ig4'] = ig1234[3]
         return gp
-    
+
     def setIG_ZE(self,gp,offx=0):
         ig1234 = rmn.cxgaig(gp['grref'],gp['xlat1'],gp['xlon1'],
                             gp['xlat2'],gp['xlon2'])
@@ -38,7 +39,7 @@ class Librmn_interp_Test(unittest.TestCase):
         ## gp['ig3'] = 312+offx
         ## gp['ig4'] = 0
         return gp
-        
+
     def getGridParams_L(self,offx=0):
         (ni,nj) = (90,180)
         if offx:
@@ -55,7 +56,7 @@ class Librmn_interp_Test(unittest.TestCase):
             'lon0' : 273.+offx
             }
         return self.setIG_L(gp)
-        
+
     def getGridParams_ZE(self):
         (ni,nj) = (50,30)
         gp = {
@@ -75,12 +76,12 @@ class Librmn_interp_Test(unittest.TestCase):
             }
         gp['ax'] = np.empty((ni,1),dtype=np.float32,order='FORTRAN')
         gp['ay'] = np.empty((1,nj),dtype=np.float32,order='FORTRAN')
-        for i in xrange(ni):
+        for i in _range(ni):
             gp['ax'][i,0] = gp['lon0']+float(i)*gp['dlon']
-        for j in xrange(nj):
+        for j in _range(nj):
             gp['ay'][0,j] = gp['lat0']+float(j)*gp['dlat']
         return self.setIG_ZE(gp)
-        
+
     def getGridParams_ZEYY(self,YY=0):
         nj = 31
         ni = (nj-1)*3 + 1
@@ -105,9 +106,9 @@ class Librmn_interp_Test(unittest.TestCase):
             }
         gp['ax'] = np.empty((ni,1),dtype=np.float32,order='FORTRAN')
         gp['ay'] = np.empty((1,nj),dtype=np.float32,order='FORTRAN')
-        for i in xrange(ni):
+        for i in _range(ni):
             gp['ax'][i,0] = gp['lon0']+float(i)*gp['dlon']
-        for j in xrange(nj):
+        for j in _range(nj):
             gp['ay'][0,j] = gp['lat0']+float(j)*gp['dlat']
         return self.setIG_ZE(gp)
 
@@ -122,7 +123,7 @@ class Librmn_interp_Test(unittest.TestCase):
             rmn.ezsetopt(o,v)
             v1 = rmn.ezgetopt(o,vtype=type(v))
             self.assertEqual(v1,v)
-    
+
     def test_ezqkdef_ezgprm(self):
         gp = self.getGridParams_L()
         gid1 = rmn.ezqkdef(gp)
@@ -168,6 +169,30 @@ class Librmn_interp_Test(unittest.TestCase):
         self.assertEqual(a['nomvary'].strip(),'^^')
         rmn.gdrls(gid1)
 
+    def test_ezqkdef_file_error(self):
+        funit = -1
+        (ni,nj) = (201,100)
+        gp = {
+            'shape' : (ni,nj),
+            'ni' : ni,
+            'nj' : nj,
+            'grtyp' : 'Z',
+            'ig1'   : 2002,
+            'ig2'   : 1000,
+            'ig3'   : 0,
+            'ig4'   : 0,
+            'grref' : 'E',
+            'ig1ref' : 900,
+            'ig2ref' : 0,
+            'ig3ref' : 43200,
+            'ig4ref' : 43200,
+            'iunit'  : funit
+            }
+        try:
+            gid1 = rmn.ezqkdef(gp)
+            self.assertTrue(False, 'ezqkdef should raise a error with ref grid and invalid file unit')
+        except rmn.EzscintError:
+            pass
 
     def test_ezqkdef_ezgxprm(self):
         gp = self.getGridParams_L()
@@ -184,7 +209,7 @@ class Librmn_interp_Test(unittest.TestCase):
         for k in gprm.keys():
             self.assertEqual(gp[k],gprm[k])
         rmn.gdrls(gid1)
-    
+
     def test_ezgkdef_fmem_ezgxprm(self):
         gp = self.getGridParams_ZE()
         gid1 = rmn.ezgdef_fmem(gp['ni'],gp['nj'],gp['grtyp'],gp['grref'],
@@ -207,9 +232,9 @@ class Librmn_interp_Test(unittest.TestCase):
         axes = rmn.gdgaxes(gid1)
         self.assertEqual(axes['ax'].shape,gp['ax'].shape)
         self.assertEqual(axes['ay'].shape,gp['ay'].shape)
-        for i in xrange(gp['ni']):
+        for i in _range(gp['ni']):
             self.assertTrue(abs(axes['ax'][i,0]-gp['ax'][i,0])<self.epsilon)
-        for j in xrange(gp['nj']):
+        for j in _range(gp['nj']):
             self.assertTrue(abs(axes['ay'][0,j]-gp['ay'][0,j])<self.epsilon)
         rmn.gdrls(gid1)
 
@@ -244,13 +269,40 @@ class Librmn_interp_Test(unittest.TestCase):
         setid = rmn.ezdefset(gid2, gid1)
         self.assertTrue(setid>=0)
         zin = np.empty(gp1['shape'],dtype=np.float32,order='FORTRAN')
-        for x in xrange(gp1['ni']):
-            zin[:,x] = x
+        for x in _range(gp1['ni']):
+            zin[x,:] = x
         zout = rmn.ezsint(gid2,gid1,zin)
         self.assertEqual(gp2['shape'],zout.shape)
-        for j in xrange(gp2['nj']):
-            for i in xrange(gp2['ni']):
+        for j in _range(gp2['nj']):
+            for i in _range(gp2['ni']):
                 self.assertTrue(abs((zin[i,j]+zin[i+1,j])/2.-zout[i,j]) < self.epsilon)
+        #rmn.gdrls([gid1,gid2]) #TODO: Makes the test crash
+
+    def test_ezsint_extrap(self):
+        extrap_val = 99.
+        gp = self.getGridParams_ZE()
+        gid1 = rmn.ezgdef_fmem(gp['ni'],gp['nj'],gp['grtyp'],gp['grref'],
+                               gp['ig1ref'],gp['ig2ref'],gp['ig3ref'],gp['ig4ref'],
+                               gp['ax'],gp['ay'])
+        self.assertTrue(gid1>=0)
+        gp2 = self.getGridParams_L(0.25)
+        gid2 = rmn.ezqkdef(gp2)
+        self.assertTrue(gid2>=0)
+        setid = rmn.ezdefset(gid2, gid1)
+        self.assertTrue(setid>=0)
+        zin = np.empty(gp['shape'], dtype=np.float32, order='FORTRAN')
+        for x in _range(gp['ni']):
+            zin[x,:] = x
+        rmn.ezsetopt(rmn.EZ_OPT_EXTRAP_VALUE, extrap_val)
+        rmn.ezsetopt(rmn.EZ_OPT_EXTRAP_DEGREE.lower(),
+                     rmn.EZ_EXTRAP_VALUE.lower())
+        zout = rmn.ezsint(gid2, gid1, zin)
+        self.assertEqual(gp2['shape'], zout.shape)
+        self.assertEqual(extrap_val, np.max(zout))
+        ## print('test_ezsint_extrap', np.min(zin), np.max(zin))
+        ## print('test_ezsint_extrap', np.min(zout), np.max(zout))
+        ## for j in _range(gp2['nj']):
+        ##     print('test_ezsint_extrap', j, zout[:,j])
         #rmn.gdrls([gid1,gid2]) #TODO: Makes the test crash
 
     def test_ezuvint(self):
@@ -264,14 +316,14 @@ class Librmn_interp_Test(unittest.TestCase):
         self.assertTrue(setid>=0)
         uuin = np.empty(gp1['shape'],dtype=np.float32,order='FORTRAN')
         vvin = np.empty(gp1['shape'],dtype=np.float32,order='FORTRAN')
-        for x in xrange(gp1['ni']):
-            uuin[:,x] = x
+        for x in _range(gp1['ni']):
+            uuin[x,:] = x
         vvin = uuin*3.
         (uuout,vvout) = rmn.ezuvint(gid2,gid1,uuin,vvin)
         self.assertEqual(gp2['shape'],uuout.shape)
         self.assertEqual(gp2['shape'],vvout.shape)
-        for j in xrange(gp2['nj']):
-            for i in xrange(gp2['ni']):
+        for j in _range(gp2['nj']):
+            for i in _range(gp2['ni']):
                 self.assertTrue(abs((uuin[i,j]+uuin[i+1,j])/2.-uuout[i,j]) < self.epsilon,'uvint, u: abs(%f-%f)=%f' % (((uuin[i,j]+uuin[i+1,j])/2),uuout[i,j],(uuin[i,j]+uuin[i+1,j])/2.-uuout[i,j]))
 
                 self.assertTrue(abs((vvin[i,j]+vvin[i+1,j])/2.-vvout[i,j]) < self.epsilon,'uvint, v: abs(%f-%f)=%f' % (((vvin[i,j]+vvin[i+1,j])/2),vvout[i,j],(vvin[i,j]+vvin[i+1,j])/2.-vvout[i,j]))
@@ -321,7 +373,7 @@ class Librmn_interp_Test(unittest.TestCase):
         gid1 = rmn.ezqkdef(gp1)
         self.assertTrue(gid1>=0)
         zin = np.empty(gp1['shape'],dtype=np.float32,order='FORTRAN')
-        for x in xrange(gp1['ni']):
+        for x in _range(gp1['ni']):
             zin[:,x] = x
         lat = np.array([gp1['lat0']+gp1['dlat']/2.],dtype=np.float32,order='FORTRAN')
         lon = np.array([(gp1['lon0']+gp1['dlon'])/2.],dtype=np.float32,order='FORTRAN')
@@ -335,7 +387,7 @@ class Librmn_interp_Test(unittest.TestCase):
         gid1 = rmn.ezqkdef(gp1)
         self.assertTrue(gid1>=0)
         zin = np.empty(gp1['shape'],dtype=np.float32,order='FORTRAN')
-        for x in xrange(gp1['ni']):
+        for x in _range(gp1['ni']):
             zin[:,x] = x
         xx = np.array([1.5],dtype=np.float32,order='FORTRAN')
         yy = np.array([1.5],dtype=np.float32,order='FORTRAN')
@@ -351,7 +403,7 @@ class Librmn_interp_Test(unittest.TestCase):
         self.assertTrue(gid1>=0)
         zin  = np.empty(gp1['shape'],dtype=np.float32,order='FORTRAN')
         zin2 = np.empty(gp1['shape'],dtype=np.float32,order='FORTRAN')
-        for x in xrange(gp1['ni']):
+        for x in _range(gp1['ni']):
             zin[:,x] = x
             zin2[:,x] = x+1
         lat = np.array([gp1['lat0']+gp1['dlat']/2.],dtype=np.float32,order='FORTRAN')
@@ -370,7 +422,7 @@ class Librmn_interp_Test(unittest.TestCase):
         self.assertTrue(gid1>=0)
         zin  = np.empty(gp1['shape'],dtype=np.float32,order='FORTRAN')
         zin2 = np.empty(gp1['shape'],dtype=np.float32,order='FORTRAN')
-        for x in xrange(gp1['ni']):
+        for x in _range(gp1['ni']):
             zin[:,x] = x
             zin2[:,x] = x+1
         xx = np.array([1.5],dtype=np.float32,order='FORTRAN')
@@ -387,15 +439,15 @@ class Librmn_interp_Test(unittest.TestCase):
     ##     self.assertTrue(gid1>=0)
     ##     mask = np.empty(gp1['shape'],dtype=np.intc,order='FORTRAN')
     ##     mask[:,:] = 0
-    ##     for i in xrange(min(gp1['ni'],gp1['nj'])):
+    ##     for i in _range(min(gp1['ni'],gp1['nj'])):
     ##         mask[i,i] = 1
     ##     rmn.gdsetmask(gid1,mask)
     ##     mask2 = rmn.gdgetmask(gid1)
-    ##     print [mask[i,i] for i in xrange(min(gp1['ni'],gp1['nj']))]
-    ##     print [mask2[i,i] for i in xrange(min(gp1['ni'],gp1['nj']))]
+    ##     print [mask[i,i] for i in _range(min(gp1['ni'],gp1['nj']))]
+    ##     print [mask2[i,i] for i in _range(min(gp1['ni'],gp1['nj']))]
     ##     self.assertEqual(mask.shape,mask2.shape)
-    ##     for j in xrange(gp1['nj']):
-    ##         for i in xrange(gp1['ni']):
+    ##     for j in _range(gp1['nj']):
+    ##         for i in _range(gp1['ni']):
     ##             self.assertEqual(mask[i,j],mask2[i,j])
     ##     rmn.gdrls(gid1)
 
@@ -405,7 +457,7 @@ class Librmn_interp_Test(unittest.TestCase):
         gp2 = self.getGridParams_ZEYY(1)
         gid1 = rmn.ezgdef_fmem(gp1['ni'],gp1['nj'],gp1['grtyp'],gp1['grref'],
                                gp1['ig1ref'],gp1['ig2ref'],gp1['ig3ref'],gp1['ig4ref'],
-                               gp1['ax'],gp1['ay'])        
+                               gp1['ax'],gp1['ay'])
         gid2 = rmn.ezgdef_fmem(gp2['ni'],gp2['nj'],gp2['grtyp'],gp2['grref'],
                                gp2['ig1ref'],gp2['ig2ref'],gp2['ig3ref'],gp2['ig4ref'],
                                gp2['ax'],gp2['ay'])
