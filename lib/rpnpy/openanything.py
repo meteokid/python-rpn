@@ -14,10 +14,20 @@ __date__ = '$Date: 2004/04/16 21:16:24 $'
 __copyright__ = 'Copyright (c) 2004 Mark Pilgrim'
 __license__ = 'Python'
 
-import urllib2, urlparse, gzip
-from StringIO import StringIO
+import sys
+import gzip
 
-USER_AGENT = 'OpenAnything/%s +http://diveintopython.org/http_web_services/' % __version__
+if sys.version_info[0] < 3:
+    from StringIO import StringIO
+    import urlparse
+    import urllib2
+else:
+    from io import StringIO
+    import urllib.request as urllib2
+    import urllib.parse as urlparse
+
+
+USER_AGENT = 'OpenAnything/{0} +http://diveintopython.org/http_web_services/'.format(__version__)
 
 class SmartRedirectHandler(urllib2.HTTPRedirectHandler):
     def http_error_301(self, req, fp, code, msg, headers):
@@ -75,9 +85,10 @@ def openAnything(source, etag=None, lastmodified=None, agent=USER_AGENT):
         if etag:
             request.add_header('If-None-Match', etag)
         request.add_header('Accept-encoding', 'gzip')
-        opener = urllib2.build_opener(SmartRedirectHandler(), DefaultErrorHandler())
+        opener = urllib2.build_opener(SmartRedirectHandler(),
+                                      DefaultErrorHandler())
         return opener.open(request)
-    
+
     # try to open with native open function (if source is a filename)
     try:
         return open(source)
@@ -107,4 +118,12 @@ def fetch(source, etag=None, lastmodified=None, agent=USER_AGENT):
         result['status'] = f.status
     f.close()
     return result
-    
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
+
+
+# -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
+# vim: set expandtab ts=4 sw=4:
+# kate: space-indent on; indent-mode cstyle; indent-width 4; mixedindent off;

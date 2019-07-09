@@ -1,0 +1,192 @@
+#!/usr/bin/env python
+#!/usr/bin/env python2
+# -*- coding: utf-8 -*-
+# Author: Stephane Chamberland <stephane.chamberland@canada.ca>
+# Copyright: LGPL 2.1
+"""
+"""
+
+import os.path
+import sys
+import shutil
+import argparse
+import logging
+import numpy  as np
+import rpnpy.librmn.all as rmn
+
+
+def gridTags(d1, d2, params):
+    a = d1.ravel().tolist()
+    if d2 is not None:
+        a.extend(d2.ravel().tolist())
+    a = [int(x*1000.) for x in a]
+    a.extend([params['ig1'], params['ig2'], params['ig3'], params['ig4']])
+    aa = np.array(a, dtype=np.uint32)
+    crc = rmn.crc32(0, aa)
+    return (
+        int(32768 + (crc       & 0xffff)),
+        int(32768 + (crc >> 16 & 0xffff))
+            )
+
+
+def gridReTag(inputFile, skipList):
+    """
+    """
+    logging.info('==== ReTagging grids in: {}.\n'.format(inputFile))
+    try:
+        inFileId = rmn.fstopenall(inputFile, rmn.FST_RW_OLD)
+    except:
+        logging.error('Problem opening the file: {0}\n'\
+                      .format(str(inputFile)))
+        raise
+
+    try:
+        myZDYlist2 = [rmn.fstluk(key) for key in rmn.fstinl(inFileId, nomvar='^^')]
+        myZYdict2 = dict(((rec['ip1'], rec['ip2'], rec['ip3']), rec) for rec in myZDYlist2)
+        myZDdict2 = dict(((rec['ip1'], rec['ip2']), rec) for rec in myZDYlist2)
+
+        myZDYlist  = [rmn.fstluk(key) for key in rmn.fstinl(inFileId, nomvar='>>')]
+        myZYdict   = dict(((rec['ip1'], rec['ip2'], rec['ip3']), rec) for rec in myZDYlist)
+        myDdict    = dict(((rec['ip1'], rec['ip2']), rec) for rec in myZDYlist)
+        for key in myZYdict.keys():
+            myZYdict[key]['ip1'], myZYdict[key]['ip2'] = \
+                gridTags(myZYdict[key]['d'], myZYdict2[key]['d'], myZYdict[key])
+        for key in myDdict.keys():
+            myDdict[key]['ip1'], myDdict[key]['ip2'] = \
+                gridTags(myDdict[key]['d'], myDdict2[key]['d'], myDdict[key])
+
+        myUlist  = [rmn.fstluk(key) for key in rmn.fstinl(inFileId, nomvar='^>')]
+        myUdict  = dict(((rec['ip1'], rec['ip2']), rec) for rec in myUlist)
+        for key in myUdict.keys():
+            myUdict[key]['ip1'], myUdict[key]['ip2'] = \
+                gridTags(myUdict[key]['d'], None, myUdict[key])
+
+        mykeylist = rmn.fstinl(inFileId)
+        for key in mykeylist:
+            gridTag = None
+            upMeta  = None
+            recMeta = rmn.fstprm(key)
+            if recMeta['nomvar'].strip().lower() in skipList:
+                pass
+            elif recMeta['nomvar'].strip() in ('>>', '^^'):
+                gridTag = (recMeta['ip1'], recMeta['ip2'], recMeta['ip3'])
+                upMeta = {
+                    'ip1' : myZYdict[gridTag]['ip1'],
+                    'ip2' : myZYdict[gridTag]['ip2'],
+                    'ip3' : myZYdict[gridTag]['ip3']
+                    }
+                rmn.fst_edit_dir(key, ip1=upMeta['ip1'], ip2=upMeta['ip2'], ip3=upMeta['ip3'])
+            elif recMeta['nomvar'].strip() == '^>':
+                gridTag = (recMeta['ip1'], recMeta['ip2'])
+                upMeta = {
+                    'ip1' : myUdict[gridTag]['ip1'],
+                    'ip2' : myUdict[gridTag]['ip2']
+                    }
+                rmn.fst_edit_dir(key, ip1=upMeta['ip1'], ip2=upMeta['ip2'])
+            elif recMeta['grtyp'].strip() in ('Z', 'Y'):
+                gridTag = (recMeta['ig1'], recMeta['ig2'], recMeta['ig3'])
+                upMeta = {
+                    'ig1' : myZYdict[gridTag]['ip1'],
+                    'ig2' : myZYdict[gridTag]['ip2'],
+                    'ig3' : myZYdict[gridTag]['ip3']
+                    }
+                rmn.fst_edit_dir(key, ig1=upMeta['ig1'], ig2=upMeta['ig2'], ig3=upMeta['ig3'])
+            elif recMeta['grtyp'].strip() == '#':
+                gridTag = (recMeta['ig1'], recMeta['ig2'])
+                upMeta = {
+                    'ig1' : myDdict[gridTag]['ip1'],
+                    'ig2' : myDdict[gridTag]['ip2']
+                    }
+                rmn.fst_edit_dir(key, ig1=upMeta['ig1'], ig2=upMeta['ig2'])
+            elif recMeta['grtyp'].strip() == 'U':
+                gridTag = (recMeta['ig1'], recMeta['ig2'])
+                upMeta = {
+                    'ig1' : myUdict[gridTag]['ip1'],
+                    'ig2' : myUdict[gridTag]['ip2']
+                    }
+                rmn.fst_edit_dir(key, ig1=upMeta['ig1'], ig2=upMeta['ig2'])
+            if upMeta:
+                upMeta['key'] = key
+                try:
+                    if len(upMeta.keys()) == 3:
+                        logging.info('{nomvar} [{grtyp}] updating ip1-2 from ({ip1}, {ip2})'.format(**recMeta) + ' to ({ip1}, {ip2}) [{key}].'.format(**upMeta))
+                    else:
+                        logging.info('{nomvar} [{grtyp}] updating ip1-3 from ({ip1}, {ip2}, {ip3})'.format(**recMeta) + ' to ({ip1}, {ip2}, {ip3}) [{key}].'.format(**upMeta))
+                except:
+                   if len(upMeta.keys()) == 3:
+                        logging.info('{nomvar} [{grtyp}] updating ig1-2 from ({ig1}, {ig2})'.format(**recMeta) + ' to ({ig1}, {ig2}) [{key}].'.format(**upMeta))
+                   else:
+                        logging.info(repr(upMeta))
+                        logging.info('{nomvar} [{grtyp}] updating ig1-3 from ({ig1}, {ig2}, {ig3})'.format(**recMeta) + ' to ({ig1}, {ig2}, {ig3}) [{key}].'.format(**upMeta))
+                ## rmn.fst_edit_dir(upMeta)
+            else:
+                logging.info('{nomvar} - Skipping'.format(**recMeta))
+    except:
+        logging.error('Unknown problem updating grid info.\n')
+        raise
+    finally:
+        rmn.fstcloseall(inFileId)
+
+
+if __name__ == "__main__":
+    ## logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
+    ## logging.basicConfig(format='%(message)s', level=logging.INFO)
+    logging.basicConfig(format='%(message)s', level=logging.INFO)
+
+    # Command line arguments
+    desc="Change the horizontal reference grid tags for all fields in a RPN Std file."
+    usage = """
+    %(prog)s -i FILENAME"""
+    epilog="""
+    This program will use a similar method as the GEM outputs to produce new tags
+    from the actual grid info, insuring their uniqueness.
+    Files are updated "in place".
+    """
+
+    parser = argparse.ArgumentParser(
+        description=desc, usage=usage, epilog=epilog,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("-i", "--input", dest="inputFile",
+                        nargs='*', type=str, default=[],
+                        help="Input RPN Std File name")
+    parser.add_argument("-b", "--backup", dest="backup",
+                        action="store_true",
+                        help="Create a backup (.bkp) of the input FILE")
+    parser.add_argument("-s", "--skip", dest="skipList",
+                        nargs='*', type=str, default=['!!'], metavar='NOMVAR',
+                        help="List of field names to skip updating igs tags (default='!!')")
+
+    args = parser.parse_args()
+
+    if len(args.inputFile) == 0:
+        logging.error("You need to provide at least one file name [-i FILENAME]\n\n")
+        sys.exit(1)
+
+    skipList = [a.strip().lower() for a in args.skipList]
+
+    rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)
+    try:
+        for inFile in args.inputFile:
+            if not os.path.isfile(inFile):
+                logging.warning('Skipping - Not a file: {}'.format(inFile))
+            else:
+                if args.backup:
+                    bkpfile = inFile.strip()+'.bkp'
+                    if os.path.isfile(bkpfile):
+                        logging.error('Aborting because requested backup already exists: {}'.format(bkpfile))
+                        sys.exit(1)
+                    try:
+                        shutil.copy(inFile, bkpfile)
+                    except IOError:
+                        logging.error('Aborting because requested backup cannot be created for file: {}'.format(bkpfile))
+                        sys.exit(1)
+                gridReTag(inFile, skipList)
+    except:
+        logging.warning('{}\n'.format(str(sys.exc_info()[1])))
+        raise  #TODO: remove from final version
+        sys.exit(1)
+
+
+# -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
+# vim: set expandtab ts=4 sw=4:
+# kate: space-indent on; indent-mode cstyle; indent-width 4; mixedindent off;
