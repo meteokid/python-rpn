@@ -49,6 +49,12 @@ RPNPY_MOD_FILES  = $(foreach item,$(FORTRAN_MODULES_rpnpy),$(item).[Mm][Oo][Dd])
 RPNPY_ABS        = extlibdotfile
 RPNPY_ABS_FILES  = $(rpnpy)/.setenv.__extlib__.${ORDENV_PLAT}.dot
 
+
+RPNPY_DOC_TESTS_FILES = $(wildcard $(rpnpy)/lib/*.py) $(wildcard $(rpnpy)/lib/rpnpy/*.py) $(wildcard $(rpnpy)/lib/rpnpy/[a-z]*/*.py)
+RPNPY_UNIT_TESTS_FILES = $(wildcard $(rpnpy)/share/tests/test_*.py)
+RPNPY_KSH_TESTS_FILES  = $(wildcard $(rpnpy)/share/tests/test_*.ksh)
+RPNPY_TESTS = rpnpy_doctests rpnpy_unittests rpnpy_kshtests
+
 ## Base Libpath and libs with placeholders for abs specific libs
 ##MODEL1_LIBAPPL = $(RPNPY_LIBS_V)
 
@@ -102,6 +108,67 @@ allbincheck_rpnpy:
 		if [[ ! -x $${item} ]] ; then exit 1 ; fi ;\
 	done ;\
 	exit 0
+
+#---- Tests targets ---------------------------------------------------
+.PHONY: rpnpy_tests rpnpy_doctests rpnpy_unittests rpnpy_kshtests
+
+ifeq (,$(PYTHON))
+   PYTHON = python
+endif
+PYTHONVERSION=py$(shell echo `$(PYTHON) -V 2>&1 | sed 's/python//i'`)
+RPNPY_TESTLOGDIR := $(ROOT)/_testlog_/rpnpy/$(PYTHONVERSION)_v$(RPNPY_VERSION)
+# export RPNPY_NOLONGTEST=1
+
+rpnpy_tests: $(RPNPY_TESTS)
+
+rpnpy_doctests:
+	if [[ "x$(RPNPY_TESTLOGDIR)" != "x" ]] ; then \
+		mkdir -p $(RPNPY_TESTLOGDIR) > /dev/null 2>&1 || true ; \
+	fi ; \
+	cd $(TMPDIR) ; \
+	mkdir tmp 2>/dev/null || true ; \
+	TestLogDir=$(RPNPY_TESTLOGDIR) ; \
+	echo -e "\n======= PY-DocTest List ========\n" ; \
+	for i in $(RPNPY_DOC_TESTS_FILES); do \
+		logname=`echo $${i} | sed "s|$(rpnpy)||" | sed "s|/|_|g"` ; \
+		if [[ x$${i##*/} != xall.py && x$${i##*/} != xproto.py  && x$${i##*/} != xproto_burp.py ]] ; then \
+			echo -e "\n==== PY-DocTest: " $$i "==== " $(PYTHONVERSION) " ====\n"; \
+			$(PYTHON) $$i > $${TestLogDir:-.}/$${logname}.log 2> $${TestLogDir:-.}/$${logname}.err ;\
+			grep failures $${TestLogDir:-.}/$${logname}.log ;\
+		fi ; \
+	done
+
+rpnpy_unittests:
+	if [[ "x$(RPNPY_TESTLOGDIR)" != "x" ]] ; then \
+		mkdir -p $(RPNPY_TESTLOGDIR) > /dev/null 2>&1 || true ; \
+	fi ; \
+	cd $(TMPDIR) ; \
+	mkdir tmp 2>/dev/null || true ; \
+	TestLogDir=$(RPNPY_TESTLOGDIR) ; \
+	echo -e "\n======= PY-UnitTest List ========\n" ; \
+	for i in $(RPNPY_UNIT_TESTS_FILES); do \
+		logname=`echo $${i} | sed "s|$(ROOT)||" | sed "s|/|_|g"` ; \
+		echo -e "\n==== PY-UnitTest: " $$i "==== " $(PYTHONVERSION) " ====\n"; \
+		$(PYTHON) $$i > $${TestLogDir:-.}/$${logname}.log 2> $${TestLogDir:-.}/$${logname}.err ;\
+		cat  $${TestLogDir:-.}/$${logname}.err ;\
+	done
+
+#TODO: find a way to force $(PYTHON) to be used by script
+rpnpy_kshtests:
+	if [[ "x$(RPNPY_TESTLOGDIR)" != "x" ]] ; then \
+		mkdir -p $(RPNPY_TESTLOGDIR) > /dev/null 2>&1 || true ; \
+	fi ; \
+	cd $(TMPDIR) ; \
+	mkdir tmp 2>/dev/null || true ; \
+	TestLogDir=$(RPNPY_TESTLOGDIR) ; \
+	echo -e "\n======= KSH-UnitTest List ========\n" ; \
+	for i in $(RPNPY_KSH_TESTS_FILES); do \
+		logname=`echo $${i} | sed "s|$(ROOT)||" | sed "s|/|_|g"` ; \
+		echo -e "\n==== KSH-UnitTest: " $$i "==== " $(PYTHONVERSION) " ====\n"; \
+		$$i > $${TestLogDir:-.}/$${logname}.log 2> $${TestLogDir:-.}/$${logname}.err ;\
+		cat  $${TestLogDir:-.}/$${logname}.err ;\
+	done
+
 
 #---- Lib target - automated ------------------------------------------
 rpnpy_LIB_template1 = \
