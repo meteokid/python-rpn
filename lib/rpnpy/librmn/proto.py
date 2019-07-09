@@ -7,11 +7,11 @@
 
 """
 Module librmn is a ctypes import of librmnshared.so
- 
+
 The librmn.proto python module includes ctypes prototypes for many
 librmn C functions
 
- Warning:
+Warning:
     Please use with caution.
     The functions in this module are actual C funtions and
     must thus be called as such with appropriate argument typing and
@@ -23,15 +23,28 @@ librmn C functions
     * rpnpy.librmn.interp
     * rpnpy.librmn.grids
 
- See Also:
+Notes:
+    The functions described below are a very close ''port'' from the original
+    [[librmn]]'s [[Librmn/FSTDfunctions|FSTD]] package.<br>
+    You may want to refer to the [[Librmn/FSTDfunctions|FSTD]]
+    documentation for more details.
+
+See Also:
     rpnpy.librmn.base
     rpnpy.librmn.fstd98
     rpnpy.librmn.interp
     rpnpy.librmn.grids
     rpnpy.librmn.const
 
- === EXTERNAL FUNCTIONS in primitive ===
+Details:
+    See Source Code
 
+##DETAILS_START
+== Ecternal C Functions ==
+
+=== EXTERNAL FUNCTIONS in primitive ===
+
+<source lang="python">
     c_fclos(iun):
         Close file associated with unit iun.
         Proto:
@@ -57,29 +70,18 @@ librmn C functions
     c_wkoffit(nom, l1):
         Return a code for the file type
         Proto:
-           wordint c_wkoffit(char *nom, int l1) 
+           wordint c_wkoffit(char *nom, int l1)
         Args:
            nom  (str) : (I) file path/name
            l1   (int) : (I) length of nom
         Returns:
            int, file type code
-
-    c_crc32():
-        Compute the Cyclic Redundancy Check (CRC)
-        Proto:
-           unsigned int crc32(unsigned int crc, const unsigned char *buf,
-                              unsigned int lbuf)
-        Args:
-           crc  (int) : (I) initial crc
-           buf        : (I) list of params to compute updated crc
-                            (numpy.ndarray of type uint32)
-           lbuf (int) : (I) length of buf*4
-        Returns:
-           int, Cyclic Redundancy Check number
+</source>
 
 
- === EXTERNAL FUNCTIONS in base ===
+=== EXTERNAL FUNCTIONS in base ===
 
+<source lang="python">
     f_cigaxg(cgtyp, xg1, xg2, xg3, xg4, ig1, ig2, ig3, ig4)
         Encode real grid descriptors into ig1, ig2, ig3, ig4
         Proto:
@@ -301,8 +303,20 @@ librmn C functions
                 out - dat3 - time of the printable date (hhmmsshh)
                  in - mode - set to -7
 
- === EXTERNAL FUNCTIONS in fstd98 ===
+            Old Style Date Array is composed of 14 elements:
+                0 : Day of the week (1=Sunday, ..., 7=Saturday
+                1 : Month (1=Jan, ..., 12=Dec)
+                2 : Day of the Month
+                3 : Year
+                4 : Hour of the Day
+                5 : Minutes  * 60 * 100
+                ...
+                13: CMC Date-Time Stamp
 
+
+=== EXTERNAL FUNCTIONS in fstd98 ===
+
+<source lang="python">
     c_fstecr(field_in, work, npak, iun, date, deet, npas,
              ni, nj, nk, ip1, ip2, ip3,
              in_typvar, in_nomvar, in_etiket,
@@ -401,7 +415,7 @@ librmn C functions
              liste, infon, nmax)
         Locates all the records that matches the research keys
         Proto:
-            int c_fstinl(int iun, int *ni, int *nj, int *nk, int datev, 
+            int c_fstinl(int iun, int *ni, int *nj, int *nk, int datev,
                          char *etiket, int ip1, int ip2, int ip3,
                          char *typvar, char *nomvar,
                          word *liste, int *infon, int nmax)
@@ -476,7 +490,7 @@ librmn C functions
             n     : (I) size of liste (int)
         Returns:
             int, zero successful, non-zero otherwise
-    
+
     c_fstluk(field, handle, ni, nj, nk)
         Read the record at position given by handle.
         Proto:
@@ -525,7 +539,7 @@ librmn C functions
             int, number of validrecords of the file associated with unit
 
     c_fstopc(option, value, getmode)
-        Prout or set a fstd or xdf global variable option.
+        Prout or set a fstd or xdf global variable char option.
         Proto:
             int c_fstopc(char *option, char *value, int getmode)
         Args:
@@ -536,9 +550,20 @@ librmn C functions
             int, zero successful, non-zero otherwise
 
     c_fstopi(option, value, getmode)
-        Prout or set a fstd or xdf global variable option.
+        Prout or set a fstd or xdf global variable int option.
         Proto:
             int c_fstopi(char *option, int value, int getmode)
+        Args:
+            IN     option   (str) option name to be set/printed
+            IN     value    (int) option value
+            IN     getmode  (int) logical (1: get option, 0: set option)
+        Returns:
+            int, zero successful, non-zero otherwise
+
+    c_fstopl(option, value, getmode)
+        Prout or set a fstd or xdf global variable bool option.
+        Proto:
+            int c_fstopl(char *option, int value, int getmode)
         Args:
             IN     option   (str) option name to be set/printed
             IN     value    (int) option value
@@ -557,7 +582,7 @@ librmn C functions
            int, zero successful, non-zero otherwise
 
     c_fstprm(handle, dateo, deet, npas, ni, nj, nk, nbits, datyp,
-             ip1, ip2, ip3, typvar, nomvar, etiket, 
+             ip1, ip2, ip3, typvar, nomvar, etiket,
              grtyp, ig1, ig2, ig3, ig4,
              swa, lng, dltf, ubc, extra1, extra2, extra3)
         Get all the description informations of the record.
@@ -613,7 +638,7 @@ librmn C functions
             IN  kind           level kind as defined in convip
         Returns:
             int, ip1new on success, -1 on error
-            
+
     c_ip2_all(level, kind)
         Generates all possible coded ip2 values for a given level
         Proto:
@@ -640,7 +665,7 @@ librmn C functions
             int c_ip1_val(float level, int kind)
         Args:
             IN  level          ip level (float value)
-            IN  kind           level kind as defined in convip   
+            IN  kind           level kind as defined in convip
         Returns:
             int, ip1new on success, -1 on error
 
@@ -650,7 +675,7 @@ librmn C functions
             int c_ip2_val(float level, int kind)
         Args:
             IN  level          ip level (float value)
-            IN  kind           level kind as defined in convip   
+            IN  kind           level kind as defined in convip
         Returns:
             int, ip2new on success, -1 on error
 
@@ -660,7 +685,7 @@ librmn C functions
             int c_ip3_val(float level, int kind)
         Args:
             IN  level          ip level (float value)
-            IN  kind           level kind as defined in convip   
+            IN  kind           level kind as defined in convip
         Returns:
             int, ip3new on success, -1 on error
 
@@ -676,9 +701,11 @@ librmn C functions
                        representing ip1, ip2 or ip3 comparaisons
         Returns:
             int, ... TODO ...
-        
- === EXTERNAL FUNCTIONS in fstd98/convip_plus and fstd98/convert_ip123 ===
+</source>
 
+=== EXTERNAL FUNCTIONS in fstd98/convip_plus and fstd98/convert_ip123 ===
+
+<source lang="python">
     c_ConvertIp(ip, p, kind, mode)
         Codage/Decodage P, kind <-> IP pour IP1, IP2, IP3
         Args:
@@ -696,7 +723,7 @@ librmn C functions
                 5, p est en coordonnee hybride          (0.0 -> 1.0)
                 6, p est en coordonnee theta            (1 -> 200, 000)
                 10, p represente le temps en heure      (0.0 -> 1.0e10)
-                15, reserve (entiers)                                   
+                15, reserve (entiers)
                 17, p indice x de la matrice de conversion
                                                         (1.0 -> 1.0e10)
                     (partage avec kind=1 a cause du range exclusif
@@ -725,7 +752,7 @@ librmn C functions
             rp2, kind2  : result of ip2v decoding
             rp3, kind3  : result of ip3v decoding
         Returns:
-            int, 0 if ok, >0 on guessed the value, 32 on warning, 64 on error 
+            int, 0 if ok, >0 on guessed the value, 32 on warning, 64 on error
 
     c_ConvertPKtoIP(IP1, IP2, IP3, P1, kkind1, P2, kkind2, P3, kkind3)
         Convert/encode kind + real value into ip1, ip2, ip3
@@ -744,7 +771,7 @@ librmn C functions
             ip1, ip2, ip3 : will contain the encoded values in case of success,
                           and are undefined otherwise
         Returns:
-            int, 0 if ok, >0 on guessed the value, 32 on warning, 64 on error 
+            int, 0 if ok, >0 on guessed the value, 32 on warning, 64 on error
 
     c_EncodeIp(ip1, ip2, ip3, rp1, rp2, rp3)
         Produce a valid (ip1, ip2, ip3) triplet from (real value, kind) pairs
@@ -793,8 +820,9 @@ librmn C functions
             s1 (str): (O) first char
             s2 (str): (O) second char
 
- === EXTERNAL FUNCTIONS in fstd98/xdf98 ===
+=== EXTERNAL FUNCTIONS in fstd98/xdf98 ===
 
+<source lang="python">
     c_xdflnk(liste, n)
         Links the list of random files together for record search purpose
         Proto:
@@ -806,16 +834,18 @@ librmn C functions
             int, 0 on success, -1 on error
         Note:
             Use the first unit id in the list to refer to the linked files list
+</source>
 
- === EXTERNAL FUNCTIONS in interp (ezscint) ===
+=== EXTERNAL FUNCTIONS in interp (ezscint) ===
 
+<source lang="python">
     c_ezdefset(gdidout, gdidin)
         Defines a set of grids for interpolation
         gdid = c_ezdefset(gdidout, gdidin)
         Proto:
         wordint c_ezdefset(wordint gdout, wordint gdin)
         Args:
-        
+
         Returns:
         int, gdid on success, -1 on error
 
@@ -886,7 +916,7 @@ librmn C functions
         Proto:
             ... TODO ...
         Args:
-            ... TODO ...   
+            ... TODO ...
         Returns:
            int, 0 on success, -1 on error
 
@@ -897,7 +927,7 @@ librmn C functions
            wordint c_gdxyfll_s(wordint gdid, ftnfloat *x, ftnfloat *y,
                                ftnfloat *lat, ftnfloat *lon, wordint n)
         Args:
-           ... TODO ...   
+           ... TODO ...
         Returns:
            int, 0 on success, -1 on error
 
@@ -909,7 +939,7 @@ librmn C functions
            wordint c_gdllfxy(wordint gdid, ftnfloat *lat, ftnfloat *lon,
                              ftnfloat *x, ftnfloat *y, wordint n)
         Args:
-           ... TODO ...  
+           ... TODO ...
         Returns:
            int, 0 on success, -1 on error
 
@@ -933,7 +963,7 @@ librmn C functions
            ... TODO ...
         Returns:
            int, 0 on success, -1 on error
-   
+
     c_gdllsval(gdid, zout, zin, lat, lon, n)
         Scalar interpolation of points located at lat-lon coordinates.
         ier = c_gdllsval(gdid, zout, zin, lat, lon, n)
@@ -941,7 +971,7 @@ librmn C functions
             wordint c_gdllsval(wordint gdid, ftnfloat *zout, ftnfloat *zin,
                                ftnfloat *lat, ftnfloat *lon, wordint n)
         Args:
-            ... TODO ...  
+            ... TODO ...
         Returns:
            int, 0 on success, -1 on error
 
@@ -952,7 +982,7 @@ librmn C functions
            wordint c_gdxysval(wordint gdin, ftnfloat *zout, ftnfloat *zin,
                               ftnfloat *x, ftnfloat *y, wordint n)
         Args:
-           ... TODO ...  
+           ... TODO ...
         Returns:
            int, 0 on success, -1 on error
 
@@ -962,10 +992,10 @@ librmn C functions
         ier = c_gdllvval(gdid, uuout, vvout, uuin, vvin, lat, lon, n)
         Proto:
            wordint c_gdllvval(wordint gdid, ftnfloat *uuout, ftnfloat *vvout,
-                       ftnfloat *uuin, ftnfloat *vvin, 
+                       ftnfloat *uuin, ftnfloat *vvin,
                        ftnfloat *lat, ftnfloat *lon, wordint n)
         Args:
-           ... TODO ...  
+           ... TODO ...
         Returns:
            int, 0 on success, -1 on error
 
@@ -978,7 +1008,7 @@ librmn C functions
                        ftnfloat *uuin, ftnfloat *vvin,
                        ftnfloat *x, ftnfloat *y, wordint n)
         Args:
-           ... TODO ...  
+           ... TODO ...
         Returns:
            int, 0 on success, -1 on error
 
@@ -988,10 +1018,10 @@ librmn C functions
         ier = c_gdllwdval(gdid, spdout, wdout, uuin, vvin, lat, lon, n)
         Proto:
            wordint c_gdllwdval(wordint gdid, ftnfloat *uuout, ftnfloat *vvout,
-                       ftnfloat *uuin, ftnfloat *vvin, 
+                       ftnfloat *uuin, ftnfloat *vvin,
                        ftnfloat *lat, ftnfloat *lon, wordint n)
         Args:
-           ... TODO ...  
+           ... TODO ...
         Returns:
            int, 0 on success, -1 on error
 
@@ -1004,7 +1034,7 @@ librmn C functions
                                 ftnfloat *uuin, ftnfloat *vvin,
                                 ftnfloat *x, ftnfloat *y, wordint n)
         Args:
-           ... TODO ...  
+           ... TODO ...
         Returns:
            int, 0 on success, -1 on error
 
@@ -1018,7 +1048,7 @@ librmn C functions
                                ftnfloat *uullin, ftnfloat *vvllin,
                                ftnfloat *latin, ftnfloat *lonin, wordint npts)
         Args:
-           ... TODO ...  
+           ... TODO ...
         Returns:
            int, 0 on success, -1 on error
 
@@ -1027,10 +1057,10 @@ librmn C functions
         ier = c_gdwdfuv(gdid, spdout, wdout, uuin, vvin, lat, lon, n)
         Proto:
             wordint c_gdwdfuv(wordint gdid, ftnfloat *spd_out, ftnfloat *wd_out,
-                              ftnfloat *uuin, ftnfloat *vvin, 
+                              ftnfloat *uuin, ftnfloat *vvin,
                               ftnfloat *latin, ftnfloat *lonin, wordint npts)
         Args:
-           ... TODO ...  
+           ... TODO ...
         Returns:
            int, 0 on success, -1 on error
 
@@ -1040,9 +1070,9 @@ librmn C functions
         Proto:
             int c_gdsetmask(int gdid, int *mask)
         Args:
-           ... TODO ...  
+           ... TODO ...
         Returns:
-           int, 0 on success, -1 on error   
+           int, 0 on success, -1 on error
 
     c_gdgetmask(gdid, mask)
         Returns the mask associated with grid 'gdid'
@@ -1050,9 +1080,9 @@ librmn C functions
         Proto:
             int c_gdgetmask(int gdid, int *mask)
         Args:
-           ... TODO ...  
+           ... TODO ...
         Returns:
-           int, 0 on success, -1 on error   
+           int, 0 on success, -1 on error
 
     c_ezsint_mdm(zout, mask_out, zin, mask_in)
         Scalar interpolation, using the source field and an associated mask.
@@ -1062,7 +1092,7 @@ librmn C functions
             int c_ezsint_mdm(float *zout, int *mask_out, float *zin,
                              int *mask_in)
         Args:
-           ... TODO ...  
+           ... TODO ...
         Returns:
            int, 0 on success, -1 on error
 
@@ -1074,7 +1104,7 @@ librmn C functions
             int c_ezuvint_mdm(float *uuout, float *vvout, int *mask_out,
                               float *uuin, float *vvin, int *mask_in)
         Args:
-           ... TODO ...  
+           ... TODO ...
         Returns:
            int, 0 on success, -1 on error
 
@@ -1085,7 +1115,7 @@ librmn C functions
         Proto:
             int c_ezsint_mask(int *mask_out, int *mask_in)
         Args:
-           ... TODO ...  
+           ... TODO ...
         Returns:
            int, 0 on success, -1 on error
 
@@ -1097,7 +1127,7 @@ librmn C functions
                  wordint ig1, wordint ig2, wordint ig3, wordint ig4,
                  wordint iunit)
         Args:
-           ... TODO ... 
+           ... TODO ...
         Returns:
            int, gdid on success, <0 on error
 
@@ -1154,14 +1184,14 @@ librmn C functions
         Returns:
            int, 0 on success, -1 on error
 
-    c_ezgxprm(gdid, ni, nj, grtyp, ig1, ig2, ig3, ig4, grref, 
+    c_ezgxprm(gdid, ni, nj, grtyp, ig1, ig2, ig3, ig4, grref,
               ig1ref, ig2ref, ig3ref, ig4ref)
         Get extended grid parameters
         ier = c_ezgxprm(gdid, ni, nj, grtyp, ig1, ig2, ig3, ig4, grref,
                         ig1ref, ig2ref, ig3ref, ig4ref)
         Proto:
-           wordint c_ezgxprm(wordint gdid, wordint *ni, wordint *nj, 
-                char *grtyp, wordint *ig1, wordint *ig2, 
+           wordint c_ezgxprm(wordint gdid, wordint *ni, wordint *nj,
+                char *grtyp, wordint *ig1, wordint *ig2,
                 wordint *ig3, wordint *ig4,
                 char *grref, wordint *ig1ref, wordint *ig2ref,
                 wordint *ig3ref, wordint *ig4ref);
@@ -1240,7 +1270,7 @@ librmn C functions
            value  (str) :
         Returns:
         int, 0 on success, -1 on error
-    
+
     c_ezsetval(option, value)
         Sets a floating point numerical option for the package
         ier = c_ezsetval('option', value)
@@ -1251,18 +1281,112 @@ librmn C functions
            value  (float) :
         Returns:
            int, 0 on success, -1 on error
-    
+
     c_gdrls(gdid)
         Frees a previously allocated grid
         ier = c_gdrls(gdid)
         Proto:
-        wordint c_gdrls(wordint gdin)
+            wordint c_gdrls(wordint gdin)
         Args:
-        gid (int) : grid id to be released
+            gid (int) : grid id to be released
         Returns:
-        int, 0 on success, -1 on error
+            int, 0 on success, -1 on error
 
-   ... TODO ...
+    c_ez_calcdist(distance, lat1, lon1, lat2, lon2)
+        This function computes the distance between 2 latlon points on the sphere.
+        Source of the formula : http://mathworld.wolfram.com/GreatCircle.html
+        c_ez_calcdist(distance, lat1, lon1, lat2, lon2)
+        Proto:
+            void c_ez_calcdist(float *distance, float lat1, float lon1,
+                               float lat2, float lon2)
+        Args:
+            distance (float*) : distance on the sphere between the 
+                                2 specified points [m] (output)
+            lat1     (float)  : latitude of the first point [deg]
+            lon1     (float)  : longitude of the first point [deg]
+            lat2     (float)  : latitude of the second point [deg]
+            lon2     (float)  : longitude of the second point [deg]
+        Returns:
+           None
+
+    c_ez_calcdist2(distance, lat1, lon1, lat2, lon2)
+        This function computes the distance between 2 latlon points
+        on the sphere (double precision).
+        Source of the formula : http://mathworld.wolfram.com/GreatCircle.html
+        c_ez_calcdist(distance, lat1, lon1, lat2, lon2)
+        Proto:
+            void c_ez_calcdist2(double *distance, float lat1, float lon1,
+                                float lat2, float lon2)
+        Args:
+            distance (double*) : distance on the sphere between the
+                                 2 specified points [m] (output)
+            lat1     (float)   : latitude of the first point [deg]
+            lon1     (float)   : longitude of the first point [deg]
+            lat2     (float)   : latitude of the second point [deg]
+            lon2     (float)   : longitude of the second point [deg]
+        Returns:
+           None
+
+
+    c_ez_calcarea_rect(area, lat1, lon1, lat2, lon2)
+         This function computes the area of the solid rectangle formed by
+         2 latlon points on the sphere.
+         Source of the formula :
+             http://mathworld.wolfram.com/GreatCircle.html
+             http://mathworld.wolfram.com/SphericalTrigonometry.html
+             http://mathworld.wolfram.com/SphericalTriangle.html
+         The computation is done by splitting the solid rectangle formed
+         by the latlon points into 2 triangles, compute the area of each
+         triangle and add the two areas
+        Proto:
+            void c_ez_calcarea_rect(float *area, float lat1, float lon1,
+                                    float lat2, float lon2)
+        Args:
+            area (float*) : "rectagle" area between 2 corners
+                            on the sphere [m^2] (output)
+            lat1 (float)  : latitude of the lower-left-corner [deg]
+            lon1 (float)  : longitude of the lower-left-corner [deg]
+            lat2 (float)  : latitude of the upper-right-corner [deg]
+            lon2 (float)  : longitude of the upper-right-corner [deg]
+        Returns:
+           None
+
+    c_ez_calcarea(area, lats, lons)
+         This function computes the area of the solid polygon formed by
+         4 latlon points on the sphere.
+         Source of the formula :
+             http://mathworld.wolfram.com/GreatCircle.html
+             http://mathworld.wolfram.com/SphericalTrigonometry.html
+             http://mathworld.wolfram.com/SphericalTriangle.html
+        Proto:
+            void c_ez_calcarea(float *area, float lats[], float lons[])
+        Args:
+            area (float*) : "polygon" area between 4 latlon points
+                             on the sphere [m^2] (output)
+            lats (float*) : latitudes of the 4 points [deg] (size 4)
+            lons (float*) : longitudes of the 4 points [deg] (size 4)
+        Returns:
+           None
+
+    c_ez_calcarea2(area, lats, lons)
+         This function computes the area of the solid polygon formed by
+         4 latlon points on the sphere (double precision).
+         Source of the formula :
+             http://mathworld.wolfram.com/GreatCircle.html
+             http://mathworld.wolfram.com/SphericalTrigonometry.html
+             http://mathworld.wolfram.com/SphericalTriangle.html
+        Proto:
+            void c_ez_calcarea2(double *area, float lats[], float lons[])
+        Args:
+            area (double*) : "polygon" area between 4 latlon points
+                              on the sphere [m^2] (output)
+            lats (float*)  : latitudes of the 4 points [deg] (size 4)
+            lons (float*)  : longitudes of the 4 points [deg] (size 4)
+        Returns:
+           None
+
+</source>
+##DETAILS_END
 
 """
 
@@ -1290,7 +1414,7 @@ class FLOAT_IP(_ct.Structure):
        v1  : (float) 1st value of the IP
        v2  : (float) 2nd value of the IP
        kind: (int)   IP kind
-    
+
     Examples:
     >>> p  = FLOAT_IP(100., 100., rpnpy.librmn.const.LEVEL_KIND_PMB)
     >>> dp = FLOAT_IP(100., 200., rpnpy.librmn.const.LEVEL_KIND_PMB)
@@ -1308,14 +1432,14 @@ class FLOAT_IP(_ct.Structure):
                 ("kind", _ct.c_int)]
 
     def __str__(self):
-        return "FLOAT_IP(%f, %f, %d)" % (self.v1, self.v2, self.kind)
+        return "FLOAT_IP({0}, {1}, {2})".format(self.v1, self.v2, self.kind)
     def __repr__(self):
-        return "FLOAT_IP(%f, %f, %d)" % (self.v1, self.v2, self.kind)
+        return "FLOAT_IP({0}, {1}, {2})".format(self.v1, self.v2, self.kind)
 
     def toList(self):
         """
         Returns a tuple with FLOAT_IP's 3 attributes: v1, v2, kind
-        
+
         Returns:
            (v1,v2,kind)
         """
@@ -1337,18 +1461,6 @@ librmn.c_wkoffit.argtypes = (_ct.c_char_p, _ct.c_int)
 librmn.c_wkoffit.restype  = _ct.c_int
 c_wkoffit = librmn.c_wkoffit
 
-librmn.crc32.argtypes = (
-    _ct.c_uint,
-    _npc.ndpointer(dtype=_np.uint32),
-    _ct.c_uint
-    )
-## librmn.crc32.argtypes = (
-##     _ct.c_int,
-##     _npc.ndpointer(dtype=_np.uint32),
-##     _ct.c_int
-##     )
-librmn.crc32.restype  = _ct.c_uint
-c_crc32 = librmn.crc32
 
 #--- base -----------------------------------------------------------
 
@@ -1416,8 +1528,32 @@ librmn.newdate_.argtypes = (_ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int),
                             _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int))
 librmn.newdate_.restype  = _ct.c_int
 ## f_newdate = f77name(librmn.newdate)
-f_newdate = librmn.newdate_
-
+## f_newdate = librmn.newdate_
+def f_newdate(dat1, dat2, dat3, mode):
+    arraymode = False
+    if isinstance(mode, _ct.c_int):
+        arraymode = (mode.value in (4, -4))
+    elif isinstance(mode, int):
+        arraymode = (mode in (4, -4))
+    #else: #TODO: mode is a byref()... need to be dereferenced...
+    if arraymode:
+        if not isinstance(dat2, _np.ndarray):
+            raise TypeError('f_newdate: with mode==4, dat2 must be a numpy.ndarray, got {}'.format(type(dat2)))
+        if dat2.size != 14:
+            raise TypeError('f_newdate: with mode==4, dat2 must be of size 14, got {}'.format(dat2.size))
+        librmn.newdate_.argtypes = (_ct.POINTER(_ct.c_int),
+                                    _npc.ndpointer(dtype=_np.int32),
+                                    _ct.POINTER(_ct.c_int),
+                                    _ct.POINTER(_ct.c_int))
+    else:
+        librmn.newdate_.argtypes = (_ct.POINTER(_ct.c_int),
+                                    _ct.POINTER(_ct.c_int),
+                                    _ct.POINTER(_ct.c_int),
+                                    _ct.POINTER(_ct.c_int))
+    if isinstance(mode, _ct.c_int):
+        return librmn.newdate_(dat1, dat2, dat3, _ct.byref(mode))
+    else:
+        return librmn.newdate_(dat1, dat2, dat3, mode)
 
 #--- fstd98/fstd98 --------------------------------------------------
 
@@ -1566,6 +1702,10 @@ c_fstopc = librmn.c_fstopc
 librmn.c_fstopi.argtypes = (_ct.c_char_p, _ct.c_int, _ct.c_int)
 librmn.c_fstopi.restype  = _ct.c_int
 c_fstopi = librmn.c_fstopi
+
+librmn.c_fstopl.argtypes = (_ct.c_char_p, _ct.c_int, _ct.c_int)
+librmn.c_fstopl.restype  = _ct.c_int
+c_fstopl = librmn.c_fstopl
 
 
 librmn.c_fstouv.argtypes = (_ct.c_int, _ct.c_char_p)
@@ -2074,6 +2214,40 @@ librmn.c_gdgxpndaxes.restype  = _ct.c_int
 c_gdgxpndaxes = librmn.c_gdgxpndaxes
 
 
+## void c_ez_calcdist(float *distance, float lat1, float lon1, float lat2, float lon2)
+librmn.c_ez_calcdist.argtypes = (_ct.POINTER(_ct.c_float),
+                                 _ct.c_float, _ct.c_float,
+                                 _ct.c_float, _ct.c_float,)
+c_ez_calcdist = librmn.c_ez_calcdist
+
+
+## void c_ez_calcdist2(double *distance, float lat1, float lon1, float lat2, float lon2)
+librmn.c_ez_calcdist2.argtypes = (_ct.POINTER(_ct.c_double),
+                                  _ct.c_float, _ct.c_float,
+                                  _ct.c_float, _ct.c_float,)
+c_ez_calcdist2 = librmn.c_ez_calcdist2
+
+
+## void c_ez_calcarea_rect(float *area, float lat1, float lon1, float lat2, float lon2)
+librmn.c_ez_calcarea_rect.argtypes = (_ct.POINTER(_ct.c_float),
+                                      _ct.c_float, _ct.c_float,
+                                      _ct.c_float, _ct.c_float,)
+c_ez_calcarea_rect = librmn.c_ez_calcarea_rect
+
+
+## void c_ez_calcarea(float *area, float lats[], float lons[])
+librmn.c_ez_calcarea.argtypes = (_ct.POINTER(_ct.c_float),
+                                 _npc.ndpointer(dtype=_np.float32),
+                                 _npc.ndpointer(dtype=_np.float32))
+c_ez_calcarea = librmn.c_ez_calcarea
+
+## void c_ez_calcarea2(double *area, float lats[], float lons[])
+librmn.c_ez_calcarea2.argtypes = (_ct.POINTER(_ct.c_double),
+                                  _npc.ndpointer(dtype=_np.float32),
+                                  _npc.ndpointer(dtype=_np.float32))
+c_ez_calcarea2 = librmn.c_ez_calcarea2
+
+
 #Note: Not in librmn at the moment
 ## librmn.c_gdxpngd.argtypes = (_ct.c_int,
 ##                     _ct.POINTER(_ct.c_float), _ct.POINTER(_ct.c_float))
@@ -2100,7 +2274,7 @@ c_gdgxpndaxes = librmn.c_gdgxpndaxes
 ##    int, 0 on success, -1 on error
 ## """
 
- 
+
 ## librmn..argtypes = ()
 ## librmn..restype  = _ct.c_int
 ##  = librmn.
@@ -2150,7 +2324,7 @@ c_gdgxpndaxes = librmn.c_gdgxpndaxes
 ##    int, 0 on success, -1 on error
 ## """
 
- 
+
 ## librmn..argtypes = ()
 ## librmn..restype  = _ct.c_int
 ##  = librmn.
@@ -2323,7 +2497,7 @@ c_gdgxpndaxes = librmn.c_gdgxpndaxes
 ## int c_wb_free(WhiteBoard *WB) {
 
 ## /*
-##   get the data associated with a whiteboard entry 
+##   get the data associated with a whiteboard entry
 ##   name   : pointer to character string containing name of key
 ##            (length MUST be supplied in Lname)
 ##   Type   : character value R/I/L/C , key type  real/inetger/logical/character
@@ -2418,8 +2592,9 @@ c_gdgxpndaxes = librmn.c_gdgxpndaxes
 # =========================================================================
 
 if __name__ == "__main__":
-    print c_fst_version()
-    
+    print(str(c_fst_version()))
+
 # -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
 # vim: set expandtab ts=4 sw=4:
 # kate: space-indent on; indent-mode cstyle; indent-width 4; mixedindent off;
+

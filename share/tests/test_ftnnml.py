@@ -16,19 +16,19 @@ def not_a_test():
     # Read the namelist file
     cfg = FtnNmlFile('gem_settings.nml')
     # Print list of present namelists name
-    print cfg.keys()
+    print(cfg.keys())
     # Get the gem_cfgs FtnNmlSection object
     gemcfgs = cfg.get('gem_cfgs')
     # Print list of present vars name in gem_cfgs
-    print gemcfgs.keys()
+    print(gemcfgs.keys())
     # Print all present vars name in gem_cfgs with values
     for vname in gemcfgs.keys():
-        print vname,gemcfgs.get(vname).get('v')
+        print(vname,gemcfgs.get(vname).get('v'))
     # Check if a var is set
     try:
         gemcfgs.get('hyb')
     except KeyError:
-        print "Key %s is not found in namelist %s of file %s" % ('hyb', 'gem_cfgs','gem_settings.nml')
+        print("Key %s is not found in namelist %s of file %s" % ('hyb', 'gem_cfgs','gem_settings.nml'))
     # Delete a var in a namlist
     gemcfgs.rm('hyb')
     # Delete a namelist from the file
