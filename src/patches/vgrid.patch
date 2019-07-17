@@ -1,0 +1,56 @@
+diff --git a/src/Makefile b/src/Makefile
+index dbfd826..1ee8326 100644
+--- a/src/Makefile
++++ b/src/Makefile
+@@ -1,14 +1,4 @@
+ 
+-ifeq ($(BASE_ARCH),$(EC_ARCH))
+-   $(info ERROR: please setup the compilation environment by typing the folowing:)
+-   $(info . setup.dot or . setup_gpsc.dot)
+-   $(error )
+-endif
+-
+-ifeq ($(USE_EFENCE),1)
+-   LEFENCE=-lefence
+-endif
+-
+ include version.dot
+ 
+ default: libdescrip.a
+@@ -17,12 +7,8 @@ dependencies.mk: *.c *.F90 *.h *.hc
+ 	ls *.hc *.c *.F90 | ./s.dependencies.pl > dependencies.mk ;\
+ 
+ include dependencies.mk
+-
+-%.o: %.F90
+-	s.f90 -c -openmp $(MY_FFLAGS) $(FFLAGS) $(LEFENCE) $<
+-
+-%.o: %.c
+-	s.cc -c -openmp $(MY_CFLAGS) $(CFLAGS) $(LEFENCE) $<
++.SUFFIXES : .c .F90 .o
++include $(PROJECT_ROOT)/include/makefile_suffix_rules.inc
+ 
+ libdescrip.a: $(OBJECTS) dependencies.mk vgrid_version
+ 	rm -f libdescrip.a && ar scru libdescrip.a *.o ;\
+diff --git a/src/vgrid_descriptors.F90 b/src/vgrid_descriptors.F90
+index fe6620b..a446b7b 100644
+--- a/src/vgrid_descriptors.F90
++++ b/src/vgrid_descriptors.F90
+@@ -2527,7 +2527,7 @@ contains
+  integer function vgd_stda76_pres_from_hgts_list(pres, hgts, nb) result(status)
+    implicit none
+    integer :: nb
+-   real, dimension(nb) :: pres, hgts   
++   real, dimension(nb), target :: pres, hgts   
+    ! Local variables
+    type (c_ptr) :: pres_CP, hgts_CP
+ 
+@@ -2545,7 +2545,7 @@ contains
+  integer function vgd_stda76_hgts_from_pres_list(hgts, pres, nb) result(status)
+    implicit none
+    integer :: nb
+-   real, dimension(nb) :: hgts, pres   
++   real, dimension(nb), target :: hgts, pres   
+    ! Local variables
+    type (c_ptr) :: hgts_CP, pres_CP
+ 

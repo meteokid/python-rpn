@@ -1,0 +1,24 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.5	//
+BUILDER	Makefile	/^BUILDER  = r.build -O 3 -obj$/;"	m
+COMPILER	Makefile	/^COMPILER = r.compile -src$/;"	m
+DESCRIPTION	Makefile	/^DESCRIPTION=Librairies c pour utilitaires utilisant BURP$/;"	m
+DIRLIB	Makefile	/^DIRLIB=\/software\/cmc\/burplib_c-1.0$/;"	m
+DIRLIB	Makefile	/^DIRLIB=\/users\/dor\/afsd\/hmd\/projects\/burplib_c\/$(ARCH)\/burplib_c-1.0$/;"	m
+OBJECTS	Makefile	/^OBJECTS =  burp_api.o bufr_blk.o  wkoffit.o $/;"	m
+OPTIMIZE	Makefile	/^OPTIMIZE = -O 3$/;"	m
+PKG	Makefile	/^PKG=\/users\/dor\/afsd\/hmd\/$(ARCH)\/burplib_c-1.0$/;"	m
+PKG	Makefile	/^PKG=\/users\/dor\/afsd\/hmd\/projects\/burplib_c\/$(ARCH)\/burplib_c-1.0$/;"	m
+SHELL	Makefile	/^SHELL    = \/bin\/sh$/;"	m
+ToString	elements.cpp	/^std::string ToString(int value)$/;"	f
+main	elements.cpp	/^int main ( int argc, char * argv[] )$/;"	f
+main	liburp.cpp	/^int main ( int argc, char * argv[] ) $/;"	f
+main	obs.cpp	/^int main ( int argc, char * argv[] ) $/;"	f
+main	read1.c	/^int main ( int argc, char **argv ) $/;"	f
+main	test.cpp	/^int main ( int argc, char *argv[] ) {$/;"	f
+main	write.cpp	/^int main ( int argc, char * argv[] ) $/;"	f
+main	write2.cpp	/^int main ( int argc, char * argv[] ) $/;"	f

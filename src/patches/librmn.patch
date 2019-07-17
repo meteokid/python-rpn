@@ -1,0 +1,833 @@
+diff --git a/Makefile b/Makefile
+index fb4d0fb..8abd4db 100644
+--- a/Makefile
++++ b/Makefile
+@@ -2,6 +2,9 @@ SHELL = /bin/bash
+ 
+ include rmnlib_version.inc
+ 
++export RPN_TEMPLATE_LIBS = $(PROJECT_ROOT)
++export EC_ARCH =
++
+ LIBNAME = librmn_$(RMNLIB_VERSION)
+ 
+ WORKDIR = ./WorkDir
+@@ -24,7 +27,7 @@ genlib:
+ 	./merge_rmnlib_packages $(WORKDIR) $(LIBDIR) $(LIBNAME)_d ; \
+ 	else \
+ 	./make_locallib_packages ; \
+-	rm -f $(LIBDIR)/$(EC_ARCH)/$(LIBNAME).a ; \
++	rm -f $(LIBDIR)/$(EC_ARCH)/$(LIBNAME)*.a ; \
+ 	./merge_rmnlib_packages $(WORKDIR) $(LIBDIR) $(LIBNAME) ; \
+ 	fi
+ 
+diff --git a/base/Makefile b/base/Makefile
+index bb26828..68ea9a7 100644
+--- a/base/Makefile
++++ b/base/Makefile
+@@ -105,7 +105,7 @@ grgg.o:		grgg.F 	kases.cdk 	pi.cdk
+ idxes.o:	idxes.F 	kases.cdk 
+ llfxy.o:	llfxy.F 	pi.cdk 
+ mxma.o:         mxma.F
+-	s.compile -O 1 -defines "=$(DEFINE)" -optf "=$(FFLAGS)" $(SUPP_OPT) $(FTN_SUPP_OPT) -src $<
++mxma.o: OPTIMIZ = 1
+ 
+ mzonxst.o:	mzonxst.F 
+ npspin.o:       npspin.F 	kases.cdk 	pi.cdk 
+diff --git a/cmc_log/cmcrlog.c b/cmc_log/cmcrlog.c
+index 6443857..8046568 100644
+--- a/cmc_log/cmcrlog.c
++++ b/cmc_log/cmcrlog.c
+@@ -34,7 +34,7 @@ int i;
+ 
+ nullstr[0] = '\0';
+ 
+-#ifndef __CYGWIN__
++#ifndef WIN32
+ lockf(fileno(fp),F_LOCK,0L);
+ #endif
+ fscanf(fp,"%ld\n",&frptr);
+@@ -46,7 +46,7 @@ fscanf(fp,"%ld\n",&flptr);
+ if ( fwptr == frptr)
+ 	{
+          fseek(fp,0L,SEEK_SET);
+-#ifndef __CYGWIN__
++#ifndef WIN32
+          lockf(fileno(fp),F_ULOCK,0L);
+ #endif
+ 	 return(nullstr);
+@@ -64,7 +64,7 @@ if ((frptr <= fwptr)&& (update)) {
+ }
+ 
+ fseek(fp,0L,SEEK_SET);
+-#ifndef __CYGWIN__
++#ifndef WIN32
+ lockf(fileno(fp),F_ULOCK,0L);
+ #endif
+ 
+diff --git a/cmc_log/cmcwlog.c b/cmc_log/cmcwlog.c
+index 14be10d..814ce9e 100644
+--- a/cmc_log/cmcwlog.c
++++ b/cmc_log/cmcwlog.c
+@@ -92,7 +92,7 @@ fp=fdopen(fd,"r+");
+ /* 
+  Lock the log file since more than one process may be writing to it
+ */
+-#ifndef __CYGWIN__
++#ifndef WIN32
+ lockf(fileno(fp),F_LOCK,0L); 
+ #endif
+ 
+@@ -102,7 +102,7 @@ lockf(fileno(fp),F_LOCK,0L);
+ */
+ if( setfp(fp) == -1){
+   fprintf(stderr,"log file %s is full\n",filen);
+-#ifndef __CYGWIN__
++#ifndef WIN32
+   lockf(fileno(fp),F_ULOCK,0L);
+ #endif
+   fclose(fp);
+@@ -147,7 +147,7 @@ fprintf(fp,"%s%04i%s%s%s\n",msgcl,msgno,msgid,tstamp,msgtxt);
+ /*
+   clean up
+ */
+-#ifndef __CYGWIN__
++#ifndef WIN32
+ lockf(fileno(fp),F_ULOCK,0L);
+ #endif
+ fclose(fp);
+diff --git a/compresseur/armn_compress_32.c b/compresseur/armn_compress_32.c
+index b2958b5..fe66213 100644
+--- a/compresseur/armn_compress_32.c
++++ b/compresseur/armn_compress_32.c
+@@ -4,7 +4,7 @@
+ #include <rpnmacros.h>
+ #include <unistd.h>
+ #include <zfstlib.h>
+-#include <malloc.h>
++#include <stdlib.h>
+ #include <string.h>
+ 
+ int  c_armn_compress32(unsigned char *, float *, int, int, int, int);
+diff --git a/fstd98/FC_string.c b/fstd98/FC_string.c
+index 76d3f4c..9aa06a2 100644
+--- a/fstd98/FC_string.c
++++ b/fstd98/FC_string.c
+@@ -1,6 +1,6 @@
+ #include <rpnmacros.h>
+ #include <stdio.h>
+-#include <malloc.h>
++#include <stdlib.h>
+ 
+ char **allocate_string_array(int ns)
+ {
+diff --git a/fstd98/fst_missing.c b/fstd98/fst_missing.c
+index 047b2b7..cf882c2 100644
+--- a/fstd98/fst_missing.c
++++ b/fstd98/fst_missing.c
+@@ -180,9 +180,15 @@
+ #include <stdlib.h>
+ #include <stdio.h>
+ 
++#ifndef WIN32
+ #include <dlfcn.h>
+ void *DlOpen(const char *filename, int flag);
+ void *DlSym(void *handle, const char *symbol);
++#else
++const int RTLD_NOW = 0;
++void *DlOpen(const char *filename, int flag) { return NULL; }
++void *DlSym(void *handle, const char *symbol) { return NULL; }
++#endif
+ 
+ int msg_level;
+ 
+diff --git a/fstd98/fstd98.c b/fstd98/fstd98.c
+index ec832d6..ba79d97 100644
+--- a/fstd98/fstd98.c
++++ b/fstd98/fstd98.c
+@@ -21,7 +21,7 @@
+ #include <stdio.h>
+ #ifdef WIN32    /*CHC/NRC*/
+ #include <string.h>
+-#include <malloc.h>
++#include <stdlib.h>
+ #else
+ #include <unistd.h>
+ #include <alloca.h>
+@@ -34,7 +34,9 @@
+ #include <string.h>
+ #include <math.h>
+ #include <sys/types.h>
++#ifndef WIN32
+ #include <regex.h>
++#endif
+ 
+ #define Max_Ipvals 50
+ 
+@@ -589,7 +591,7 @@ int c_fstecr(word *field_in, void * work, int npak,
+   nw = W64TOWD(nw);
+   
+   keys_len = W64TOWD((f->primary_len + f->info_len));
+-  buffer = (buffer_interface_ptr) alloca((10+keys_len+nw+128)*sizeof(word));
++  buffer = (buffer_interface_ptr) malloc((10+keys_len+nw+128)*sizeof(word));
+   if (buffer) 
+     memset(buffer,0,(10+keys_len+nw+128)*sizeof(word));
+   else {
+@@ -946,7 +948,7 @@ fprintf(stderr,"NEW PACK CODE======================================\n");
+     sprintf(string,"Write(%d)",iun);
+     print_std_parms(stdf_entry,string,prnt_options,0);
+   }
+-/*  free(buffer);        remplaced by alloca */
++  free(buffer);
+   xdf_double = 0;
+   xdf_short = 0;
+   xdf_byte = 0;
+@@ -1813,7 +1815,7 @@ int c_fstluk(word *field, int handle, int *ni, int *nj, int *nk)
+     
+ /*  printf("Debug+ fstluk lng2 = %d\n",lng2); */
+   /* allocate 8 more bytes in case of realingment for 64 bit data */
+-  if ((work_field = alloca(8+(lng2+10)*sizeof(word))) == NULL) {
++  if ((work_field = malloc(8+(lng2+10)*sizeof(word))) == NULL) {
+     sprintf(errmsg,"memory is full, was trying to allocate %ld bytes",
+             lng*sizeof(word));
+     return(error_msg("c_fstluk",ERR_MEM_FULL,ERRFATAL));
+@@ -2049,7 +2051,7 @@ fprintf(stderr,"NEW UNPACK CODE ======================================\n");
+     DecodeMissingValue( field , (*ni)*(*nj)*(*nk) , xdf_datatyp&0x3F,xdf_byte,xdf_short,xdf_double ); /* */
+   }
+   free(stdf_entry);
+-/* free(work_field);        replaced by alloca */
++  free(work_field);
+   xdf_double = 0;
+   xdf_short = 0;
+   xdf_byte = 0;
+diff --git a/fstd98/if_fstd98.c b/fstd98/if_fstd98.c
+index 5ff34a5..8d75630 100644
+--- a/fstd98/if_fstd98.c
++++ b/fstd98/if_fstd98.c
+@@ -1698,6 +1698,8 @@ ftnword f77name(ip3_val)(ftnfloat *f_level, ftnword *f_kind)
+   return((ftnword) ip3);
+ }
+ 
++#ifndef WIN32
++
+ 
+ /*splitpoint fst_can_translate_name */
+ static char exception_vars[256]="~^[<>!^]";  /* by default ignore names starting with >!^ */
+@@ -1749,6 +1751,19 @@ int FstCanTranslateName(char *varname)  /* is this name NOT FOUND in do no trans
+   }
+   return result;
+ }
++#else
++int FstCanTranslateName(char *varname) {
++  switch (varname[0]) {
++    case '>':
++    case '^':
++    case '!':
++      return 0;
++  }
++  return 1;
++}
++
++#endif
++
+ /*splitpoint print_std_parms */
+ /***************************************************************************** 
+  *                      P R I N T _ S T D _ P A R M S                        *
+diff --git a/interp/Makefile b/interp/Makefile
+index 893c1df..f4d854f 100644
+--- a/interp/Makefile
++++ b/interp/Makefile
+@@ -1,6 +1,6 @@
+ .SUFFIXES :
+ 
+-.SUFFIXES : .ftn90 .c .o .a
++.SUFFIXES : .ftn90 .c .o .a .f90
+ 
+ SHELL = /bin/bash
+ 
+diff --git a/lamineur/write_slab2000.c b/lamineur/write_slab2000.c
+index dabe8cd..4f4f5b3 100644
+--- a/lamineur/write_slab2000.c
++++ b/lamineur/write_slab2000.c
+@@ -39,6 +39,9 @@
+ #include<stdlib.h>
+ #include <unistd.h>
+ #include <errno.h>
++#ifdef WIN32
++#include <winsock2.h>
++#endif
+ #include "slab.h"
+ 
+ 
+diff --git a/make_locallib_packages b/make_locallib_packages
+index 271ed66..9aad400 100755
+--- a/make_locallib_packages
++++ b/make_locallib_packages
+@@ -1,12 +1,13 @@
+ #!/bin/bash
+ # set -x
++set -e
+ mmake=make
+ which gmake >/dev/null  && mmake=gmake
+ echo mmake = $mmake
+ #workdir=`pwd`
+ if [[  ${CRAYOS_VERSION} == "" ]]; then
+ echo "================== Normal mode ======="
+-for package in base burp98_f cmc_log compresseur fstd98 interp interpv lamineur packers primitives readlx bmf spectral twinbuffer template_utils/gmm template_utils/whiteboard
++for package in base burp98_f cmc_log compresseur fstd98 interp interpv lamineur packers primitives readlx bmf spectral twinbuffer
+ do 
+   pushd ${package}
+   $mmake locallib
+diff --git a/merge_rmnlib_packages b/merge_rmnlib_packages
+index 424b8b6..6efbdc6 100755
+--- a/merge_rmnlib_packages
++++ b/merge_rmnlib_packages
+@@ -1,12 +1,14 @@
+-# set -x
++#!/bin/bash
++set -e
+ srcd=`pwd`
+ workdir=$1
+ libdir=$2
+ libname=$3
+ cd ${workdir}
+-for package in ${srcd}/base ${srcd}/burp98_f ${srcd}/cmc_log ${srcd}/compresseur ${srcd}/fstd98 ${srcd}/interp ${srcd}/interpv ${srcd}/lamineur ${srcd}/packers ${srcd}/primitives ${srcd}/readlx ${srcd}/bmf ${srcd}/spectral ${srcd}/twinbuffer ${srcd}/template_utils/gmm ${srcd}/template_utils/whiteboard
++for package in ${srcd}/base ${srcd}/burp98_f ${srcd}/cmc_log ${srcd}/compresseur ${srcd}/fstd98 ${srcd}/interp ${srcd}/interpv ${srcd}/lamineur ${srcd}/packers ${srcd}/primitives ${srcd}/readlx ${srcd}/bmf ${srcd}/spectral ${srcd}/twinbuffer
+ do 
+   ar x ${package}/${EC_ARCH}/lib_local.a
+-  ar rcv ${libdir}/${EC_ARCH}/${libname}.a *.o
++  ar rcv ${libdir}/${EC_ARCH}/${libname}_tmp.a *.o
+   rm *.o
+ done
++mv ${libdir}/${EC_ARCH}/${libname}_tmp.a ${libdir}/${EC_ARCH}/${libname}.a
+diff --git a/primitives/DlInterface.c b/primitives/DlInterface.c
+index 35caacb..324eb55 100644
+--- a/primitives/DlInterface.c
++++ b/primitives/DlInterface.c
+@@ -1,3 +1,4 @@
++#ifndef WIN32
+ #include <DlInterface.h>
+ #include <stdlib.h>
+ #include <dlfcn.h>
+@@ -59,3 +60,7 @@ void DlRegister(void *open, void *sym, void *error, void *close)
+   P_DlError = (char *(*)(void)) error;
+   P_DlClose = (int (*)(void *)) close;
+ }
++#else
++int DlClose(void *handle) { return -1; }
++char *DlError(void) { return "Not available on Windows."; }
++#endif
+diff --git a/primitives/Makefile b/primitives/Makefile
+index 67815f3..a172ac4 100644
+--- a/primitives/Makefile
++++ b/primitives/Makefile
+@@ -39,7 +39,7 @@ TARRLS = beta
+ default: obj
+ 
+ rmnlib_v:
+-	-rm rmnlib_version.f
++	-rm -f rmnlib_version.f
+ 	./rmnlib_version $(RMNLIB_VERSION)
+ 
+ rmnlib_version.f: rmnlib_v
+@@ -64,7 +64,7 @@ include $(RPN_TEMPLATE_LIBS)/include/makefile_suffix_rules.inc
+ FTNDECKS= \
+          ieeepak.F \
+          second.F      stkmem.F       tracebck.F\
+-         ccard.F       sx_timing_stubs.F              f_baseio.F \
++                       sx_timing_stubs.F              f_baseio.F \
+          vpow_ibm.F    ftn2c_helper_f.F90             ftn_prog_args.f90\
+          dlfcn.f90       msg.F90      
+ 
+@@ -104,7 +104,7 @@ OBJECTS= \
+          second.o          set_run_dir.o    stkmem.o \
+          sx_timing_stubs.o tracebck.o       up2low.o          vmm.o \
+          wkoffit.o         f_baseio.o       qqqcall.o         qqqr8sz.o\
+-         ccard.o           qvmcks.o         rah2char.o        fmain2cmain.o\
++                           qvmcks.o         rah2char.o        fmain2cmain.o\
+ 	 calc_crc.o        ibm32_ieee.o     second2.o         status_file.o\
+          stkmem2.o         prog_filename.o  rename_c.o        micro_sleep.o\
+          remove_c.o        gossip_sock.o    gossip_timeout.o  gnthread.o\
+@@ -138,7 +138,6 @@ rmtcall.o: 	rmtcall.c
+ second.o: 	second.F 
+ stkmem.o: 	stkmem.F 
+ tracebck.o: 	tracebck.F 
+-ccard.o:        ccard.F
+ sx_timing_stubs.o:sx_timing_stubs.F
+ 
+ tarball: $(FICHIERS) rmnlib_v
+@@ -161,7 +160,7 @@ locallib: gen_ec_arch_dir \
+          $(TEMPLIB)(second.o)          $(TEMPLIB)(set_run_dir.o)    $(TEMPLIB)(stkmem.o) \
+          $(TEMPLIB)(sx_timing_stubs.o) $(TEMPLIB)(tracebck.o)       $(TEMPLIB)(up2low.o)          $(TEMPLIB)(vmm.o) \
+          $(TEMPLIB)(wkoffit.o)         $(TEMPLIB)(f_baseio.o)       $(TEMPLIB)(qqqcall.o)         $(TEMPLIB)(qqqr8sz.o)\
+-         $(TEMPLIB)(ccard.o)           $(TEMPLIB)(qvmcks.o)         $(TEMPLIB)(rah2char.o)        $(TEMPLIB)(fmain2cmain.o)\
++                                       $(TEMPLIB)(qvmcks.o)         $(TEMPLIB)(rah2char.o)        $(TEMPLIB)(fmain2cmain.o)\
+          $(TEMPLIB)(calc_crc.o)        $(TEMPLIB)(ibm32_ieee.o)     $(TEMPLIB)(second2.o)         $(TEMPLIB)(status_file.o)\
+          $(TEMPLIB)(stkmem2.o)         $(TEMPLIB)(prog_filename.o)  $(TEMPLIB)(rename_c.o)        $(TEMPLIB)(micro_sleep.o)\
+          $(TEMPLIB)(remove_c.o)        $(TEMPLIB)(gossip_sock.o)    $(TEMPLIB)(gossip_timeout.o)  $(TEMPLIB)(gnthread.o)\
+diff --git a/primitives/array_file.c b/primitives/array_file.c
+index cd85f08..99d8016 100644
+--- a/primitives/array_file.c
++++ b/primitives/array_file.c
+@@ -4,7 +4,7 @@
+ #include <sys/types.h>
+ #include <sys/stat.h>
+ #include <fcntl.h>
+-#include <malloc.h>
++#include <stdlib.h>
+ /*
+  contents of test file test_array_file.f90 follow
+ 
+diff --git a/primitives/c_baseio.c b/primitives/c_baseio.c
+index 657504e..0854afe 100644
+--- a/primitives/c_baseio.c
++++ b/primitives/c_baseio.c
+@@ -31,7 +31,7 @@
+ #ifdef WIN32    /*CHC/NRC*/
+ #include <stdio.h>
+ #include <sys/stat.h>
+-#include <Winsock2.h>
++#include <winsock2.h>
+ #define L_SET SEEK_SET
+ #define L_INCR SEEK_CUR
+ #define L_XTND SEEK_END
+@@ -73,7 +73,7 @@
+ #define tell64(fd) lseek64(fd,0,1)
+ #endif
+ 
+-#ifdef __CYGWIN__
++#if defined(__CYGWIN__) || defined(__MACH__)
+ #define lseek64 lseek
+ #define open64 open
+ #define off64_t off_t
+diff --git a/primitives/c_env_var_cracker.c b/primitives/c_env_var_cracker.c
+index 322cc51..de72ac3 100644
+--- a/primitives/c_env_var_cracker.c
++++ b/primitives/c_env_var_cracker.c
+@@ -1,7 +1,7 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+-#include <pwd.h>
++//#include <pwd.h>
+ #include <rpnmacros.h>
+ 
+ #define null 0
+diff --git a/primitives/clib_interface.c b/primitives/clib_interface.c
+index e003c79..a8beb67 100644
+--- a/primitives/clib_interface.c
++++ b/primitives/clib_interface.c
+@@ -133,9 +133,11 @@
+ #include <sys/stat.h>
+ #include <sys/types.h> /* for mkdir & stat */
+ #include <libgen.h>
++#ifndef WIN32
+ #include <glob.h>
+-#include <sys/param.h> /* for MAXPATHLEN = PATH_MAX */
+ #include <alloca.h>
++#endif
++#include <sys/param.h> /* for MAXPATHLEN = PATH_MAX */
+ #include <string.h>
+ #include <ctype.h>
+ #include <errno.h>
+@@ -211,6 +213,7 @@ F77_INTEGER CLIB_F77NAME(clib_putenv)(F77_CHARACTER *name_value
+   return(status);
+ }
+ 
++#ifndef WIN32
+ /* ================================================================
+  * The realpath() function derives, from the pathname pointed 
+  * to by file_name, an absolute pathname that names the same file, 
+@@ -279,6 +282,7 @@ F77_INTEGER CLIB_F77NAME(clib_readlink)(F77_CHARACTER *fnamein,
+   }
+   return(status);
+ }
++#endif
+ 
+ /* ================================================================
+  * If path does not name a directory, remove(path) is equivalent to unlink(path).*
+@@ -453,6 +457,7 @@ F77_INTEGER CLIB_F77NAME(clib_getcwd)(F77_CHARACTER *path HIDDENLEN(path) ) {
+   return(status);
+ }
+ 
++#ifndef WIN32
+ /* ================================================================
+  * Get uid
+  * Return CLIB_OK if success, CLIB_ERROR if not
+@@ -463,6 +468,7 @@ F77_INTEGER CLIB_F77NAME(clib_getuid)(F77_INTEGER *uid ) {
+   *uid = getuid();
+   return(status);
+ }
++#endif
+ 
+ /* ================================================================
+  * removes a directory whose name is given by path. 
+@@ -487,6 +493,7 @@ F77_INTEGER CLIB_F77NAME(clib_rmdir)(F77_CHARACTER *path HIDDENLEN(path) ) {
+   return(status);
+ }
+ 
++#ifndef WIN32
+ /* ================================================================
+  * Creates a symbolic link. Its name is the pathname pointed to 
+  * by path2, which must be a pathname that does not name an existing
+@@ -515,6 +522,7 @@ F77_INTEGER CLIB_F77NAME(clib_symlink)(F77_CHARACTER *pathold,
+   }
+   return(status);
+ }
++#endif
+ 
+ /* ================================================================
+  * Removes a link to a file. If path names a symbolic link, unlink() 
+@@ -558,7 +566,11 @@ F77_INTEGER CLIB_F77NAME(clib_mkdir)(F77_CHARACTER *path HIDDENLEN(path) ) {
+   }
+ 
+   /* Call C function */
++#ifndef WIN32
+   if (mkdir(path_c,(mode_t)0755)) {
++#else
++  if (mkdir(path_c)) {
++#endif
+     status = CLIB_ERROR;
+   } else {
+     status = CLIB_OK;
+@@ -601,6 +613,7 @@ F77_INTEGER CLIB_F77NAME(clib_isdir)(F77_CHARACTER *path HIDDENLEN(path) ) {
+  *
+  * Return CLIB_OK if path is a link, CLIB_ERROR if not
+  * ================================================================*/
++#ifndef WIN32
+ F77_INTEGER CLIB_F77NAME(clib_islink)(F77_CHARACTER *path HIDDENLEN(path) ) {
+   char path_c[MAXPATHLEN];
+   struct stat buf1;
+@@ -618,6 +631,7 @@ F77_INTEGER CLIB_F77NAME(clib_islink)(F77_CHARACTER *path HIDDENLEN(path) ) {
+   if (!lstat(path_c,buf) && S_ISLNK(buf->st_mode)) status = CLIB_OK;
+   return(status);
+ }
++#endif
+ 
+ /* ================================================================
+  *
+@@ -734,8 +748,13 @@ F77_INTEGER CLIB_F77NAME(clib_stat)(F77_CHARACTER *path, INT_64 *table HIDDENLEN
+   table[5]=buf->st_gid;   /* gid of file owner */
+   table[6]=buf->st_rdev;
+   table[7]=buf->st_size;  /* file size */
++#ifndef WIN32
+   table[8]=buf->st_blksize;
+   table[9]=buf->st_blocks;
++#else
++  table[8]=-1;
++  table[9]=-1;
++#endif
+   table[10]=buf->st_atime;  /* time of last access */
+   table[11]=buf->st_mtime;  /* time of last modification */
+   table[12]=buf->st_ctime;  /* time of last status modification */
+@@ -805,6 +824,7 @@ F77_INTEGER CLIB_F77NAME(clib_dirname)(F77_CHARACTER *path,
+  * Get the list of files in PWD that match a pattern)
+  * Return CLIB_OK if success, CLIB_ERROR if not
+  * ================================================================*/
++#ifndef WIN32
+ F77_INTEGER CLIB_F77NAME(clib_glob)(F77_CHARACTER *filelist,
+                                     F77_INTEGER *nfiles,
+                                     F77_CHARACTER *pattern,
+@@ -834,6 +854,7 @@ F77_INTEGER CLIB_F77NAME(clib_glob)(F77_CHARACTER *filelist,
+   globfree(&globbuf);
+   return(status);
+ }
++#endif
+ 
+ /* ================================================================
+  * Convert Char array to lowercase/uppercase
+@@ -917,7 +938,11 @@ int mkpath(char *s, mode_t mode){
+         if ((mkpath(up, mode) == -1) && (errno != EEXIST))
+                 goto out;
+ 
++#ifndef WIN32
+         if ((mkdir(path, mode) == -1) && (errno != EEXIST))
++#else
++        if ((mkdir(path) == -1) && (errno != EEXIST))
++#endif
+                 rv = -1;
+         else
+                 rv = 0;
+diff --git a/primitives/dmms.c b/primitives/dmms.c
+index 483b7a8..2b1f30f 100644
+--- a/primitives/dmms.c
++++ b/primitives/dmms.c
+@@ -25,7 +25,7 @@
+ #include <stdio.h>
+ #include <sys/types.h>
+ #include <stdlib.h>
+-#include <malloc.h>
++#include <stdlib.h>
+ #if defined (NEC)
+ #include <sys/time.h>
+ #include <sys/resource.h>
+diff --git a/primitives/f_gettimeofday.c b/primitives/f_gettimeofday.c
+index 5e14140..d126d66 100644
+--- a/primitives/f_gettimeofday.c
++++ b/primitives/f_gettimeofday.c
+@@ -12,12 +12,6 @@
+   #define DELTA_EPOCH_IN_MICROSECS  11644473600000000ULL
+ #endif
+  
+-struct timezone 
+-{
+-  int  tz_minuteswest; /* minutes W of Greenwich */
+-  int  tz_dsttime;     /* type of dst correction */
+-};
+- 
+ int gettimeofday(struct timeval *tv, struct timezone *tz)
+ {
+   FILETIME ft;
+diff --git a/primitives/get_max_rss.c b/primitives/get_max_rss.c
+index c16570f..4e4277a 100644
+--- a/primitives/get_max_rss.c
++++ b/primitives/get_max_rss.c
+@@ -1,3 +1,4 @@
++#ifndef WIN32
+ #include <sys/time.h>
+ #include <sys/resource.h>
+ #include <unistd.h>
+@@ -13,3 +14,4 @@ getrusage(RUSAGE_SELF,&mydata);
+ /* printf("maxrss=%d\n",mydata.ru_maxrss);  */
+ return (mydata.ru_maxrss);
+ }
++#endif
+diff --git a/primitives/gossip_sock.c b/primitives/gossip_sock.c
+index e1bf484..1eb09fb 100644
+--- a/primitives/gossip_sock.c
++++ b/primitives/gossip_sock.c
+@@ -25,6 +25,7 @@
+ #include <unistd.h>
+ #include <sys/types.h>
+ #include <sys/time.h> 
++#ifndef WIN32
+ #include <sys/wait.h>
+ #include <fcntl.h>
+ #include <sys/socket.h>
+@@ -34,6 +35,12 @@
+ /******* to disable Nagle algorithm ***/
+ 
+ #include <netdb.h>
++#else
++#include <winsock2.h>
++#include <ws2tcpip.h>
++#define SIGPIPE 13
++#define index strchr
++#endif
+ #include <time.h>
+ #include <signal.h>
+ #include <errno.h>
+@@ -674,6 +681,7 @@ int set_host_and_port(char *channel_file, char *host_and_port)  /*   %ENTRY%   *
+    addr.sin_addr.s_addr = inet_addr(ipaddress); 
+ 
+    /* Set non-blocking  */
++#ifndef WIN32
+    if( (arg = fcntl(soc, F_GETFL, NULL)) < 0) 
+      { 
+        fprintf(stderr, "Error fcntl(..., F_GETFL) (%s)\n", strerror(errno)); 
+@@ -688,6 +696,7 @@ int set_host_and_port(char *channel_file, char *host_and_port)  /*   %ENTRY%   *
+        close(soc); 
+        return(-1); 
+      } 
++#endif
+    /* Trying to connect with timeout  */
+    res = connect(soc, (struct sockaddr *)&addr, sizeof(addr));
+ 
+@@ -745,6 +754,7 @@ int set_host_and_port(char *channel_file, char *host_and_port)  /*   %ENTRY%   *
+ 	 } 
+      } 
+    /* Set to blocking mode again...  */
++#ifndef WIN32
+    if( (arg = fcntl(soc, F_GETFL, NULL)) < 0) 
+      { 
+        fprintf(stderr, "Error fcntl(..., F_GETFL) (%s)\n", strerror(errno)); 
+@@ -759,6 +769,7 @@ int set_host_and_port(char *channel_file, char *host_and_port)  /*   %ENTRY%   *
+        close(soc); 
+        return(-1); 
+      } 
++#endif
+    /* I hope that is all  */
+    if(soc > 0)
+      {
+@@ -771,6 +782,7 @@ int set_host_and_port(char *channel_file, char *host_and_port)  /*   %ENTRY%   *
+  /* get working IP address of link found in aliases */
+  int get_server_alias(char *path, const char *filename, int maxlen)
+  {
++#ifndef WIN32
+    char fpath[1024 + 1];
+    int nchars;
+    char *temp;
+@@ -813,6 +825,7 @@ int set_host_and_port(char *channel_file, char *host_and_port)  /*   %ENTRY%   *
+ 	   return(0); 
+ 	 }
+      }
++#endif
+    return(-1) ; /* everything failed */
+  }
+  /********************************************************/
+@@ -1250,7 +1263,11 @@ else return (0);
+ 	}
+       fprintf(stderr,"SSH Digest: %x\n", buffer);
+ 
++#ifndef WIN32
+       snprintf(buf, 1023, "%s %d %d %u:%s:%s", "LOGIN", getuid(), getpid(), Bauth_token, host_name, msg);
++#else
++      snprintf(buf, 1023, "%s %d %d %u:%s:%s", "LOGIN", 0, getpid(), Bauth_token, host_name, msg);
++#endif
+ 
+       if(send_command_to_server(fserver, buf)) 
+ 	{
+diff --git a/primitives/gossip_thread.c b/primitives/gossip_thread.c
+index a324155..c50be59 100644
+--- a/primitives/gossip_thread.c
++++ b/primitives/gossip_thread.c
+@@ -26,9 +26,11 @@
+ #include <unistd.h>
+ #include <sys/types.h>
+ #include <fcntl.h>
++#ifndef WIN32
+ #include <sys/socket.h>
+ #include <netinet/in.h>
+ #include <netdb.h>
++#endif
+ #include <time.h>
+ #include <rpnmacros.h>
+ 
+diff --git a/primitives/logical_smt_cpus.c b/primitives/logical_smt_cpus.c
+index a1805dd..ae328f8 100644
+--- a/primitives/logical_smt_cpus.c
++++ b/primitives/logical_smt_cpus.c
+@@ -1,4 +1,7 @@
+ #include <rpnmacros.h>
++#ifdef WIN32
++#include <winsock2.h>
++#endif
+ int c_logical_smt_cpus()
+ {
+   char my_host_name[128];
+diff --git a/primitives/mgilib2.c b/primitives/mgilib2.c
+index 14b599e..b13d7c2 100644
+--- a/primitives/mgilib2.c
++++ b/primitives/mgilib2.c
+@@ -80,7 +80,7 @@
+ #include "mgi.h"
+ #include <gossip.h>
+ //JMB
+-#include <sys/resource.h>
++//#include <sys/resource.h>
+ 
+ /* error codes header file */
+ #include "cgossip.h"
+@@ -693,7 +693,7 @@ ftnword f77name (mgi_read) (ftnword *f_chan, void *buffer, ftnword *f_nelem, cha
+     { /* float */
+ 
+       //JMB      
+-      struct rusage mydata;
++      //struct rusage mydata;
+ 
+       //      getrusage(RUSAGE_SELF,&mydata);
+       //      printf(" MGI_READ: before read_record 'R', maxrss=%d\n",mydata.ru_maxrss);
+diff --git a/primitives/micro_sleep.c b/primitives/micro_sleep.c
+index c6b738d..0882576 100644
+--- a/primitives/micro_sleep.c
++++ b/primitives/micro_sleep.c
+@@ -22,7 +22,7 @@
+ #include <rpnmacros.h>
+ 
+ #ifdef WIN32	/*CHC/NRC*/
+-#include <Windows.h>
++#include <windows.h>
+ void f77name(micro_sleep) (double *secs)
+ {
+ 	DWORD dwMilliseconds = 1000 * (*secs);
+diff --git a/primitives/new_second.c b/primitives/new_second.c
+index e0f0c69..13a4a95 100644
+--- a/primitives/new_second.c
++++ b/primitives/new_second.c
+@@ -1,7 +1,7 @@
++#if !defined(WIN32)
+ #include <sys/time.h>
+ #include <sys/resource.h>
+ 
+-#if !defined(WIN32)
+ float second()
+ {
+ struct rusage mydata;
+@@ -22,4 +22,4 @@ float second__()
+ {
+ return (second());
+ }
+-#endif
+\ No newline at end of file
++#endif
+diff --git a/primitives/plugin_code.c b/primitives/plugin_code.c
+index c097314..be3e855 100644
+--- a/primitives/plugin_code.c
++++ b/primitives/plugin_code.c
+@@ -1,3 +1,4 @@
++#ifndef WIN32
+ #include <stdlib.h>
+ #include <stdio.h>
+ #include <string.h>
+@@ -199,3 +200,4 @@ void *plugin_function(const plugin *p, const char *name){
+   if( (faddr=dlsym(p->handle,name)) ) return(faddr); // try for unadvertised name in plugin
+   return(NULL);                         // name not found
+ }
++#endif
+diff --git a/primitives/register_dl_routines.c b/primitives/register_dl_routines.c
+index 0f50b37..6c9dc6f 100644
+--- a/primitives/register_dl_routines.c
++++ b/primitives/register_dl_routines.c
+@@ -1,3 +1,4 @@
++#if !defined(WIN32) && !defined(__MACH__)
+ #include <dlfcn.h>
+ 
+ void DlRegister(void *open, void *sym, void *error, void *close);
+@@ -10,3 +11,8 @@ void register_dl_routines()
+ {
+  DlRegister(dlopen,dlsym,dlerror,dlclose);
+ }
++#else
++void register_dl_routines_() { return; }
++void register_dl_routines__() { return; }
++void register_dl_routines() { return; }
++#endif
+diff --git a/primitives/stkmem2.c b/primitives/stkmem2.c
+index af5daef..b9eb3d3 100644
+--- a/primitives/stkmem2.c
++++ b/primitives/stkmem2.c
+@@ -20,7 +20,7 @@
+ 
+ #include <rpnmacros.h>
+ #if !defined (NEC)
+-#include <malloc.h>
++#include <stdlib.h>
+ 
+ #ifdef WIN32    /*CHC/NRC*/
+ void f77name(stkmem2)(_int64 *f_nbytes,void **ptr)
+diff --git a/primitives/vmm.c b/primitives/vmm.c
+index 9e3ffbc..6be979d 100644
+--- a/primitives/vmm.c
++++ b/primitives/vmm.c
+@@ -34,7 +34,7 @@
+ #define S_IWGRP _S_IWRITE
+ #define S_IROTH _S_IREAD
+ #define S_IWOTH _S_IWRITE
+-typedef long int pid_t;
++//typedef long int pid_t;
+ #else
+ #include <unistd.h>
+ #include <sys/types.h>
+diff --git a/template_utils/whiteboard/WhiteBoard.c b/template_utils/whiteboard/WhiteBoard.c
+index eafb9e8..4f40448 100644
+--- a/template_utils/whiteboard/WhiteBoard.c
++++ b/template_utils/whiteboard/WhiteBoard.c
+@@ -18,7 +18,7 @@
+  */
+ #include <stdlib.h>
+ #include <unistd.h>
+-#include <malloc.h>
++#include <stdlib.h>
+ #include <stdio.h>
+ #include <ctype.h>
+ #include <string.h>

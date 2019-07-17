@@ -75,19 +75,24 @@ def loadRMNlib(rmn_version=None):
     ## import numpy  as np
     ## import numpy.ctypeslib as npct
 
+    # For windows, need to change the current directory to see the .dll files.
+    curdir = os.path.realpath(os.getcwd())
+    os.chdir(os.path.join(os.path.dirname(__file__),os.pardir,'_sharedlibs'))
+
     if rmn_version is None:
         RMN_VERSION = os.getenv('RPNPY_RMN_VERSION',
                                 RMN_VERSION_DEFAULT).strip()
     else:
         RMN_VERSION = rmn_version
-    rmn_libfile = 'librmnshared' + RMN_VERSION.strip() + '.so'
+    rmn_libfile = 'librmnshared' + RMN_VERSION.strip() + '.*'
 
+    localpath   = [os.path.realpath(os.getcwd())]
     pylibpath   = os.getenv('PYTHONPATH','').split(':')
     ldlibpath   = os.getenv('LD_LIBRARY_PATH','').split(':')
     eclibpath   = os.getenv('EC_LD_LIBRARY_PATH','').split()
     RMN_LIBPATH = checkRMNlibPath(rmn_libfile)
     if not RMN_LIBPATH:
-        for path in pylibpath + ldlibpath + eclibpath:
+        for path in localpath + pylibpath + ldlibpath + eclibpath:
             RMN_LIBPATH = checkRMNlibPath(os.path.join(path.strip(), rmn_libfile))
             if RMN_LIBPATH:
                 break
@@ -95,6 +100,7 @@ def loadRMNlib(rmn_version=None):
     if not RMN_LIBPATH:
         raise IOError(-1, 'Failed to find librmn.so: ', rmn_libfile)
 
+    RMN_LIBPATH = os.path.abspath(RMN_LIBPATH)
     librmn = None
     try:
         librmn = ct.cdll.LoadLibrary(RMN_LIBPATH)
@@ -102,6 +108,7 @@ def loadRMNlib(rmn_version=None):
     except IOError as e:
         raise IOError('ERROR: cannot load librmn shared version: ' +
                       RMN_VERSION, e)
+    os.chdir(curdir)
     return (RMN_VERSION, RMN_LIBPATH, librmn)
 
 (RMN_VERSION, RMN_LIBPATH, librmn) = loadRMNlib()

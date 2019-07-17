@@ -85,22 +85,29 @@ def load_burpc_lib(burpc_version=None):
     """
     import os
     import ctypes as ct
+    # Load librmn shared library here, to resolve symbols when running on MacOSX.
+    from rpnpy import librmn
     ## import numpy  as np
     ## import numpy.ctypeslib as npct
+
+    # For windows, need to change the current directory to see the .dll files.
+    curdir = os.path.realpath(os.getcwd())
+    os.chdir(os.path.join(os.path.dirname(__file__),os.pardir,'_sharedlibs'))
 
     if burpc_version is None:
         BURPC_VERSION = os.getenv('RPNPY_BURPC_VERSION',
                                   BURPC_VERSION_DEFAULT).strip()
     else:
         BURPC_VERSION = burpc_version
-    burpc_libfile = 'libburp_c_shared' + BURPC_VERSION.strip() + '.so'
+    burpc_libfile = 'libburp_c_shared' + BURPC_VERSION.strip() + '.*'
 
+    localpath   = [os.path.realpath(os.getcwd())]
     pylibpath = os.getenv('PYTHONPATH', '').split(':')
     ldlibpath = os.getenv('LD_LIBRARY_PATH', '').split(':')
     eclibpath = os.getenv('EC_LD_LIBRARY_PATH', '').split()
     BURPC_LIBPATH = check_burpc_libpath(burpc_libfile)
     if not BURPC_LIBPATH:
-        for path in pylibpath + ldlibpath + eclibpath:
+        for path in localpath + pylibpath + ldlibpath + eclibpath:
             BURPC_LIBPATH = check_burpc_libpath(os.path.join(path.strip(),
                                                            burpc_libfile))
             if BURPC_LIBPATH:
@@ -117,6 +124,7 @@ def load_burpc_lib(burpc_version=None):
     except IOError:
         raise IOError('ERROR: cannot load libburp_c shared version: ' +
                       BURPC_VERSION)
+    os.chdir(curdir)
     return (BURPC_VERSION, BURPC_LIBPATH, libburpc)
 
 (BURPC_VERSION, BURPC_LIBPATH, libburpc) = load_burpc_lib()

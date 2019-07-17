@@ -75,22 +75,29 @@ def loadVGDlib(vgd_version=None):
     """
     import os
     import ctypes as ct
+    # Load librmn shared library here, to resolve symbols when running on MacOSX.
+    from rpnpy import librmn
     ## import numpy  as np
     ## import numpy.ctypeslib as npct
+
+    # For windows, need to change the current directory to see the .dll files.
+    curdir = os.path.realpath(os.getcwd())
+    os.chdir(os.path.join(os.path.dirname(__file__),os.pardir,'_sharedlibs'))
 
     if vgd_version is None:
         VGD_VERSION = os.getenv('RPNPY_VGD_VERSION',
                                 VGD_VERSION_DEFAULT).strip()
     else:
         VGD_VERSION = vgd_version
-    vgd_libfile = 'libdescripshared' + VGD_VERSION.strip() + '.so'
+    vgd_libfile = 'libdescripshared' + VGD_VERSION.strip() + '.*'
 
+    localpath   = [os.path.realpath(os.getcwd())]
     pylibpath   = os.getenv('PYTHONPATH','').split(':')
     ldlibpath   = os.getenv('LD_LIBRARY_PATH','').split(':')
     eclibpath   = os.getenv('EC_LD_LIBRARY_PATH','').split()
     VGD_LIBPATH = checkVGDlibPath(vgd_libfile)
     if not VGD_LIBPATH:
-        for path in pylibpath + ldlibpath + eclibpath:
+        for path in localpath + pylibpath + ldlibpath + eclibpath:
             VGD_LIBPATH = checkVGDlibPath(os.path.join(path.strip(), vgd_libfile))
             if VGD_LIBPATH:
                 break
@@ -106,6 +113,8 @@ def loadVGDlib(vgd_version=None):
     except IOError:
         raise IOError('ERROR: cannot load libdescrip shared version: ' +
                       VGD_VERSION)
+
+    os.chdir(curdir)
     return (VGD_VERSION, VGD_LIBPATH, libvgd)
 
 (VGD_VERSION, VGD_LIBPATH, libvgd) = loadVGDlib()

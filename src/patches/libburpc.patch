@@ -1,0 +1,25 @@
+diff --git a/src/burp_api.c b/src/burp_api.c
+index d337859..e086449 100755
+--- a/src/burp_api.c
++++ b/src/burp_api.c
+@@ -46,7 +46,7 @@
+ #include <string.h>
+ #include <time.h>
+ #include <sys/time.h>
+-#include <syslog.h>
++//#include <syslog.h>
+ #include <errno.h>
+ #include <rmnlib.h>
+ #include "burp_api.h"
+diff --git a/src/makefile b/src/makefile
+index 6eeb1ac..cb5fba4 100644
+--- a/src/makefile
++++ b/src/makefile
+@@ -1,2 +1,5 @@
+-all:
+-	./make.sh
++.SUFFIXES : .c .F90 .o
++include $(PROJECT_ROOT)/include/makefile_suffix_rules.inc
++
++all: burp_api.a
++

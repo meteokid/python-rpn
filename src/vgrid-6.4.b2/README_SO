@@ -1,0 +1,10 @@
+Pour produire les libraries shared a partir de ta librarie vgrid intel13sp1 ca devrait ressembler a ca:
+
+  . s.ssmuse.dot /ssm/net/hpcs/201311/00-test/base /ssm/net/hpcs/201311/00-test/intel13sp1 /ssm/net/rpn/libs/201309/01
+
+  ar x libdescrip_4.4.0-a1.a
+  s.f90 -shared -o libdescripshared_4.4.0-a1.so *.o \
+	-Wl,-rpath,/ssm/net/hpcs/201311/master/intelcomp_2013sp1_multi/composer_xe_2013_sp1.0.080/mkl/lib/intel64 \
+	-Wl,-rpath,/ssm/net/hpcs/201311/master/intelcomp_2013sp1_multi/composer_xe_2013_sp1.0.080/compiler/lib/intel64
+
+

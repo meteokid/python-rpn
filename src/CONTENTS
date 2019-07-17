@@ -1,0 +1,16 @@
+This directory contains additional source code for the following libraries:
+
+librmn-016.2:
+	The source code for the "librmn" shared library.
+	Original source is available at https://github.com/armnlib/librmn.
+
+vgrid-6.4.b2:
+	The source code for the "libdescrip" ("vgrid") shared library.
+	Original source is available at https://gitlab.com/ECCC_CMDN/vgrid.
+
+libburpc-1.9:
+	The source code for the "libburpc" shared library.
+	Original source is available at https://github.com/josecmc/libburp.
+
+All source code is licensed under LGPL-2.1.
+

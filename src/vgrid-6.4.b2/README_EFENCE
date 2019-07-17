@@ -1,0 +1,4 @@
+To run with efence add
+-lefence
+If efence not on system, get a copy of the libefence.a and use  -libpath, e.g.:
+-lefence -libpath /users/dor/afsg/apm/ords/cmdn/vgrid_6/tests
