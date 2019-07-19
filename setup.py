@@ -13,9 +13,12 @@ check_call(['make','-f','include/Makefile.local.rpnpy.mk','rpnpy_version.py'], e
 
 # Pre-build vgrid dependencies.mk to avoid build-time dependency on a Perl
 # module.
-vgridsrc = glob(os.path.join('src','vgrid-*','src'))[0]
-check_call(['make','dependencies.mk'],cwd=vgridsrc,env={'BASE_ARCH':'dummy'})
-
+vgridsrc = os.path.join('src','vgrid','src')
+if os.path.exists(vgridsrc):
+  check_call(['make','dependencies.mk'],cwd=vgridsrc,env={'BASE_ARCH':'dummy'})
+  build_shared_libs = True
+else:
+  build_shared_libs = False
 
 # Add './lib' to the search path, so we can access the version info.
 sys.path.append('lib')
@@ -38,7 +41,6 @@ class BuildSharedLibs(build):
     import os
     from subprocess import check_call
     import platform
-    from glob import glob
 
     build.run(self)
     builddir = os.path.abspath(self.build_temp)
@@ -46,8 +48,8 @@ class BuildSharedLibs(build):
     sharedlib_dir = os.path.abspath(sharedlib_dir)
     self.copy_tree('src',builddir,preserve_symlinks=1)
     # Apply patches needed for compilation.
-    for libname in ['librmn','vgrid','libburpc']:
-      libsrc = glob(os.path.join(builddir,libname)+'-*')[0]
+    for libname in ['librmn','vgrid','libburp']:
+      libsrc = os.path.join(builddir,libname)
       patchname = os.path.join(builddir,'patches',libname+'.patch')
       with open(patchname,'r') as patch:
         check_call(['patch', '-p1'], stdin=patch, cwd=libsrc)
@@ -81,6 +83,6 @@ setup (
   package_data = {
     'rpnpy._sharedlibs': ['*.so','*.so.*','*.dll','*.dylib'],
   },
-  distclass=BinaryDistribution,
-  cmdclass={'build': BuildSharedLibs},
+  distclass = BinaryDistribution if build_shared_libs else None,
+  cmdclass={'build': BuildSharedLibs} if build_shared_libs else {},
 )

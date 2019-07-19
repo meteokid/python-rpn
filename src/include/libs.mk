@@ -1,18 +1,28 @@
-include include/versions.mk
 include include/compiler.mk
+
+RPNPY_VERSION = 2.1.b3c
+# Wheel files use slightly different version syntax.
+RPNPY_VERSION_WHEEL = 2.1.b3c
+RPNPY_COMMIT = 141c04
+
+LIBRMN_VERSION = 016.2
+VGRID_VERSION = 6.4.b2
+LIBBURPC_VERSION = 1.9
+# commit id for libburpc version 1.9 with LGPL license
+LIBBURPC_COMMIT = 3a2d4f
 
 # Set default shared library extension.
 SHAREDLIB_SUFFIX ?= so
 
 # Locations to build static / shared libraries.
-LIBRMN_BUILDDIR = $(BUILDDIR)/librmn-$(LIBRMN_VERSION)
+LIBRMN_BUILDDIR = $(BUILDDIR)/librmn
 LIBRMN_STATIC = $(LIBRMN_BUILDDIR)/librmn_$(LIBRMN_VERSION).a
 LIBRMN_SHARED_NAME = rmnshared_$(LIBRMN_VERSION)-rpnpy
 LIBRMN_SHARED = $(SHAREDLIB_DIR)/lib$(LIBRMN_SHARED_NAME).$(SHAREDLIB_SUFFIX)
-LIBDESCRIP_BUILDDIR = $(BUILDDIR)/vgrid-$(VGRID_VERSION)
+LIBDESCRIP_BUILDDIR = $(BUILDDIR)/vgrid
 LIBDESCRIP_STATIC = $(LIBDESCRIP_BUILDDIR)/src/libdescrip.a
 LIBDESCRIP_SHARED = $(SHAREDLIB_DIR)/libdescripshared_$(VGRID_VERSION).$(SHAREDLIB_SUFFIX)
-LIBBURPC_BUILDDIR = $(BUILDDIR)/libburpc-$(LIBBURPC_VERSION)
+LIBBURPC_BUILDDIR = $(BUILDDIR)/libburp
 LIBBURPC_STATIC = $(LIBBURPC_BUILDDIR)/src/burp_api.a
 LIBBURPC_SHARED = $(SHAREDLIB_DIR)/libburp_c_shared_$(LIBBURPC_VERSION).$(SHAREDLIB_SUFFIX)
 

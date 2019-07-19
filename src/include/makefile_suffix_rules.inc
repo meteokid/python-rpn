@@ -1,8 +1,7 @@
-include $(PROJECT_ROOT)/include/versions.mk
 include $(PROJECT_ROOT)/include/compiler.mk
 
 INC = -I. -I$(PROJECT_ROOT)/include \
-      -I$(PROJECT_ROOT)/librmn-$(LIBRMN_VERSION)/PUBLIC_INCLUDES
+      -I$(PROJECT_ROOT)/librmn/PUBLIC_INCLUDES
 
 .c.o:
 	$(CC) -fPIC -O$(OPTIMIZ) $(CFLAGS) $(INC) -c $<
