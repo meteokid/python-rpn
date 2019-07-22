@@ -7,9 +7,11 @@ import os
 # Build version file.
 from subprocess import check_call
 versionfile = os.path.join('lib','rpnpy','version.py')
-if os.path.exists(versionfile):
-  os.remove(versionfile)
-check_call(['make','-f','include/Makefile.local.rpnpy.mk','rpnpy_version.py'], env={'rpnpy':'.'})
+makefile = os.path.join('include','Makefile.local.rpnpy.mk')
+if os.path.exists(makefile):
+  if os.path.exists(versionfile):
+    os.remove(versionfile)
+  check_call(['make','-f','include/Makefile.local.rpnpy.mk','rpnpy_version.py'], env={'rpnpy':'.'})
 
 # Pre-build vgrid dependencies.mk to avoid build-time dependency on a Perl
 # module.

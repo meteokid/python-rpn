@@ -1,5 +1,4 @@
-include LICENSE VERSION DESCRIPTION
-include include/Makefile.local.rpnpy.mk
+include LICENSE VERSION DESCRIPTION KnownIssues
 recursive-include src *
 prune src/vgrid/tests
 prune src/libburp/tests
