@@ -3,3 +3,9 @@ include include/Makefile.local.rpnpy.mk
 recursive-include src *
 prune src/vgrid/tests
 prune src/libburp/tests
+exclude src/librmn/.git
+exclude src/vgrid/.git
+exclude src/libburp/.git
+exclude src/librmn/.gitignore
+exclude src/vgrid/.gitignore
+exclude src/libburp/.gitignore
