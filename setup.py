@@ -13,11 +13,9 @@ if os.path.exists(makefile):
     os.remove(versionfile)
   check_call(['make','-f','include/Makefile.local.rpnpy.mk','rpnpy_version.py'], env={'rpnpy':'.'})
 
-# Pre-build vgrid dependencies.mk to avoid build-time dependency on a Perl
-# module.
-vgridsrc = os.path.join('src','vgrid','src')
-if os.path.exists(vgridsrc):
-  check_call(['make','dependencies.mk'],cwd=vgridsrc,env={'BASE_ARCH':'dummy'})
+# If the shared library source is available (for librmn, etc.)
+# then build the shared libraries and bundle them here.
+if os.path.exists(os.path.join('src','librmn','Makefile')):
   build_shared_libs = True
 else:
   build_shared_libs = False

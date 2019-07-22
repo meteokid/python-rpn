@@ -32,6 +32,43 @@ index dbfd826..1ee8326 100644
  
  libdescrip.a: $(OBJECTS) dependencies.mk vgrid_version
  	rm -f libdescrip.a && ar scru libdescrip.a *.o ;\
+diff --git a/src/dependencies.mk b/src/dependencies.mk
+new file mode 100644
+index 0000000..0e8c430
+--- /dev/null
++++ b/src/dependencies.mk
+@@ -0,0 +1,31 @@
++F90DECKS=
++HDECKS= \
++	armnlib.h  vgrid.h  
++HFDECKS= \
++	vgrid_descriptors.hf  
++CDECKS= \
++	vgrid.c  
++FHDECKS=
++INCDECKS=
++PTN90DECKS=
++FDECKS=
++CDKDECKS=
++FTNDECKS=
++TMPL90DECKS=
++CHDECKS=
++CDK90DECKS=
++HCDECKS= \
++	BODY_C_compute_heights_0001.hc  BODY_C_compute_heights_21001.hc  BODY_C_compute_heights_4001.hc  BODY_C_compute_pressure_1001_1002.hc  BODY_C_compute_pressure_1003_5001.hc   \
++	BODY_C_compute_pressure_2001.hc  BODY_C_compute_pressure_5002_5003_5004_5005.hc  BODY_C_compute_pressure_5100.hc  BODY_Cvgd_diag_withref_2ref.hc  
++FTN90DECKS=
++PTNDECKS=
++OBJECTS= \
++	vgrid.o  vgrid_descriptors.o  vgrid_utils.o  
++vgrid.o:	vgrid.c \
++	vgrid.h  BODY_C_compute_pressure_5002_5003_5004_5005.hc  armnlib.h  BODY_C_compute_heights_4001.hc  BODY_C_compute_pressure_1001_1002.hc   \
++	BODY_C_compute_pressure_1003_5001.hc  BODY_C_compute_pressure_5100.hc  BODY_C_compute_heights_0001.hc  BODY_C_compute_heights_21001.hc  BODY_C_compute_pressure_2001.hc   \
++	BODY_Cvgd_diag_withref_2ref.hc  
++vgrid_descriptors.o:	vgrid_descriptors.F90 \
++	vgrid_utils.o  vgrid_descriptors.hf  
++vgrid_utils.o:	vgrid_utils.F90 \
++	vgrid_descriptors.hf  
 diff --git a/src/vgrid_descriptors.F90 b/src/vgrid_descriptors.F90
 index fe6620b..a446b7b 100644
 --- a/src/vgrid_descriptors.F90
