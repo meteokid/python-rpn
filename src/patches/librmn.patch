@@ -122,7 +122,7 @@ index 76d3f4c..9aa06a2 100644
  char **allocate_string_array(int ns)
  {
 diff --git a/fstd98/fst_missing.c b/fstd98/fst_missing.c
-index 047b2b7..cf882c2 100644
+index c907a7f..80f84ce 100644
 --- a/fstd98/fst_missing.c
 +++ b/fstd98/fst_missing.c
 @@ -180,9 +180,15 @@
@@ -142,10 +142,10 @@ index 047b2b7..cf882c2 100644
  int msg_level;
  
 diff --git a/fstd98/fstd98.c b/fstd98/fstd98.c
-index ec832d6..ba79d97 100644
+index 0153fe6..95c3cbe 100644
 --- a/fstd98/fstd98.c
 +++ b/fstd98/fstd98.c
-@@ -21,7 +21,7 @@
+@@ -23,7 +23,7 @@
  #include <stdio.h>
  #ifdef WIN32    /*CHC/NRC*/
  #include <string.h>
@@ -154,7 +154,7 @@ index ec832d6..ba79d97 100644
  #else
  #include <unistd.h>
  #include <alloca.h>
-@@ -34,7 +34,9 @@
+@@ -36,7 +36,9 @@
  #include <string.h>
  #include <math.h>
  #include <sys/types.h>
@@ -164,7 +164,7 @@ index ec832d6..ba79d97 100644
  
  #define Max_Ipvals 50
  
-@@ -589,7 +591,7 @@ int c_fstecr(word *field_in, void * work, int npak,
+@@ -591,7 +593,7 @@ int c_fstecr(word *field_in, void * work, int npak,
    nw = W64TOWD(nw);
    
    keys_len = W64TOWD((f->primary_len + f->info_len));
@@ -173,7 +173,7 @@ index ec832d6..ba79d97 100644
    if (buffer) 
      memset(buffer,0,(10+keys_len+nw+128)*sizeof(word));
    else {
-@@ -946,7 +948,7 @@ fprintf(stderr,"NEW PACK CODE======================================\n");
+@@ -948,7 +950,7 @@ int c_fstecr(word *field_in, void * work, int npak,
      sprintf(string,"Write(%d)",iun);
      print_std_parms(stdf_entry,string,prnt_options,0);
    }
@@ -182,7 +182,7 @@ index ec832d6..ba79d97 100644
    xdf_double = 0;
    xdf_short = 0;
    xdf_byte = 0;
-@@ -1813,7 +1815,7 @@ int c_fstluk(word *field, int handle, int *ni, int *nj, int *nk)
+@@ -1815,7 +1817,7 @@ int c_fstluk(word *field, int handle, int *ni, int *nj, int *nk)
      
  /*  printf("Debug+ fstluk lng2 = %d\n",lng2); */
    /* allocate 8 more bytes in case of realingment for 64 bit data */
@@ -191,7 +191,7 @@ index ec832d6..ba79d97 100644
      sprintf(errmsg,"memory is full, was trying to allocate %ld bytes",
              lng*sizeof(word));
      return(error_msg("c_fstluk",ERR_MEM_FULL,ERRFATAL));
-@@ -2049,7 +2051,7 @@ fprintf(stderr,"NEW UNPACK CODE ======================================\n");
+@@ -2051,7 +2053,7 @@ int c_fstluk(word *field, int handle, int *ni, int *nj, int *nk)
      DecodeMissingValue( field , (*ni)*(*nj)*(*nk) , xdf_datatyp&0x3F,xdf_byte,xdf_short,xdf_double ); /* */
    }
    free(stdf_entry);
@@ -201,7 +201,7 @@ index ec832d6..ba79d97 100644
    xdf_short = 0;
    xdf_byte = 0;
 diff --git a/fstd98/if_fstd98.c b/fstd98/if_fstd98.c
-index 5ff34a5..8d75630 100644
+index 2204c0d..3ba1098 100644
 --- a/fstd98/if_fstd98.c
 +++ b/fstd98/if_fstd98.c
 @@ -1698,6 +1698,8 @@ ftnword f77name(ip3_val)(ftnfloat *f_level, ftnword *f_kind)
@@ -233,18 +233,6 @@ index 5ff34a5..8d75630 100644
  /*splitpoint print_std_parms */
  /***************************************************************************** 
   *                      P R I N T _ S T D _ P A R M S                        *
-diff --git a/interp/Makefile b/interp/Makefile
-index 893c1df..f4d854f 100644
---- a/interp/Makefile
-+++ b/interp/Makefile
-@@ -1,6 +1,6 @@
- .SUFFIXES :
- 
--.SUFFIXES : .ftn90 .c .o .a
-+.SUFFIXES : .ftn90 .c .o .a .f90
- 
- SHELL = /bin/bash
- 
 diff --git a/lamineur/write_slab2000.c b/lamineur/write_slab2000.c
 index dabe8cd..4f4f5b3 100644
 --- a/lamineur/write_slab2000.c
@@ -260,10 +248,10 @@ index dabe8cd..4f4f5b3 100644
  
  
 diff --git a/make_locallib_packages b/make_locallib_packages
-index 271ed66..9aad400 100755
+index 2a0f19e..5d05ef5 100755
 --- a/make_locallib_packages
 +++ b/make_locallib_packages
-@@ -1,12 +1,13 @@
+@@ -1,11 +1,12 @@
  #!/bin/bash
  # set -x
 +set -e
@@ -271,8 +259,7 @@ index 271ed66..9aad400 100755
  which gmake >/dev/null  && mmake=gmake
  echo mmake = $mmake
  #workdir=`pwd`
- if [[  ${CRAYOS_VERSION} == "" ]]; then
- echo "================== Normal mode ======="
+ 
 -for package in base burp98_f cmc_log compresseur fstd98 interp interpv lamineur packers primitives readlx bmf spectral twinbuffer template_utils/gmm template_utils/whiteboard
 +for package in base burp98_f cmc_log compresseur fstd98 interp interpv lamineur packers primitives readlx bmf spectral twinbuffer
  do 
@@ -318,7 +305,7 @@ index 35caacb..324eb55 100644
 +char *DlError(void) { return "Not available on Windows."; }
 +#endif
 diff --git a/primitives/Makefile b/primitives/Makefile
-index 67815f3..a172ac4 100644
+index eb2e9a8..1f82eb8 100644
 --- a/primitives/Makefile
 +++ b/primitives/Makefile
 @@ -39,7 +39,7 @@ TARRLS = beta
@@ -366,15 +353,14 @@ index 67815f3..a172ac4 100644
           $(TEMPLIB)(stkmem2.o)         $(TEMPLIB)(prog_filename.o)  $(TEMPLIB)(rename_c.o)        $(TEMPLIB)(micro_sleep.o)\
           $(TEMPLIB)(remove_c.o)        $(TEMPLIB)(gossip_sock.o)    $(TEMPLIB)(gossip_timeout.o)  $(TEMPLIB)(gnthread.o)\
 diff --git a/primitives/array_file.c b/primitives/array_file.c
-index cd85f08..99d8016 100644
+index 5431954..516bc3a 100644
 --- a/primitives/array_file.c
 +++ b/primitives/array_file.c
-@@ -4,7 +4,7 @@
+@@ -5,7 +5,6 @@
  #include <sys/types.h>
  #include <sys/stat.h>
  #include <fcntl.h>
 -#include <malloc.h>
-+#include <stdlib.h>
  /*
   contents of test file test_array_file.f90 follow
  
@@ -414,16 +400,15 @@ index 322cc51..de72ac3 100644
  
  #define null 0
 diff --git a/primitives/clib_interface.c b/primitives/clib_interface.c
-index e003c79..a8beb67 100644
+index 22d07ca..8b6531d 100644
 --- a/primitives/clib_interface.c
 +++ b/primitives/clib_interface.c
-@@ -133,9 +133,11 @@
- #include <sys/stat.h>
+@@ -134,8 +134,10 @@
  #include <sys/types.h> /* for mkdir & stat */
  #include <libgen.h>
-+#ifndef WIN32
- #include <glob.h>
+ // #include <glob.h>
 -#include <sys/param.h> /* for MAXPATHLEN = PATH_MAX */
++#ifndef WIN32
  #include <alloca.h>
 +#endif
 +#include <sys/param.h> /* for MAXPATHLEN = PATH_MAX */
@@ -528,15 +513,16 @@ index e003c79..a8beb67 100644
  F77_INTEGER CLIB_F77NAME(clib_glob)(F77_CHARACTER *filelist,
                                      F77_INTEGER *nfiles,
                                      F77_CHARACTER *pattern,
-@@ -834,6 +854,7 @@ F77_INTEGER CLIB_F77NAME(clib_glob)(F77_CHARACTER *filelist,
-   globfree(&globbuf);
+@@ -835,6 +855,8 @@ F77_INTEGER CLIB_F77NAME(clib_glob)(F77_CHARACTER *filelist,
    return(status);
  }
+ #endif
 +#endif
- 
++
  /* ================================================================
   * Convert Char array to lowercase/uppercase
-@@ -917,7 +938,11 @@ int mkpath(char *s, mode_t mode){
+  * ================================================================*/
+@@ -917,7 +939,11 @@ int mkpath(char *s, mode_t mode){
          if ((mkpath(up, mode) == -1) && (errno != EEXIST))
                  goto out;
  
@@ -548,6 +534,24 @@ index e003c79..a8beb67 100644
                  rv = -1;
          else
                  rv = 0;
+diff --git a/primitives/clib_interface2.c b/primitives/clib_interface2.c
+index 6cc5740..9f6589b 100644
+--- a/primitives/clib_interface2.c
++++ b/primitives/clib_interface2.c
+@@ -40,6 +40,7 @@
+ !    replace 0777 by 0755 for clib_mkdir and clib_mkdir_r function calls
+ !-------------------------------------------------------------------
+ !===================================================================*/
++#ifndef WIN32
+ #include <stdlib.h>
+ #include <limits.h>
+ #include <glob.h>
+@@ -84,4 +85,4 @@ F77_INTEGER CLIB_F77NAME(clib_glob)(F77_CHARACTER *filelist,
+   globfree(&globbuf);
+   return(status);
+ }
+-
++#endif
 diff --git a/primitives/dmms.c b/primitives/dmms.c
 index 483b7a8..2b1f30f 100644
 --- a/primitives/dmms.c
@@ -593,7 +597,7 @@ index c16570f..4e4277a 100644
  }
 +#endif
 diff --git a/primitives/gossip_sock.c b/primitives/gossip_sock.c
-index e1bf484..1eb09fb 100644
+index b72562f..3d57498 100644
 --- a/primitives/gossip_sock.c
 +++ b/primitives/gossip_sock.c
 @@ -25,6 +25,7 @@
@@ -617,7 +621,7 @@ index e1bf484..1eb09fb 100644
  #include <time.h>
  #include <signal.h>
  #include <errno.h>
-@@ -674,6 +681,7 @@ int set_host_and_port(char *channel_file, char *host_and_port)  /*   %ENTRY%   *
+@@ -675,6 +682,7 @@ int set_host_and_port(char *channel_file, char *host_and_port)  /*   %ENTRY%   *
     addr.sin_addr.s_addr = inet_addr(ipaddress); 
  
     /* Set non-blocking  */
@@ -625,7 +629,7 @@ index e1bf484..1eb09fb 100644
     if( (arg = fcntl(soc, F_GETFL, NULL)) < 0) 
       { 
         fprintf(stderr, "Error fcntl(..., F_GETFL) (%s)\n", strerror(errno)); 
-@@ -688,6 +696,7 @@ int set_host_and_port(char *channel_file, char *host_and_port)  /*   %ENTRY%   *
+@@ -689,6 +697,7 @@ int set_host_and_port(char *channel_file, char *host_and_port)  /*   %ENTRY%   *
         close(soc); 
         return(-1); 
       } 
@@ -633,7 +637,7 @@ index e1bf484..1eb09fb 100644
     /* Trying to connect with timeout  */
     res = connect(soc, (struct sockaddr *)&addr, sizeof(addr));
  
-@@ -745,6 +754,7 @@ int set_host_and_port(char *channel_file, char *host_and_port)  /*   %ENTRY%   *
+@@ -746,6 +755,7 @@ int set_host_and_port(char *channel_file, char *host_and_port)  /*   %ENTRY%   *
  	 } 
       } 
     /* Set to blocking mode again...  */
@@ -641,7 +645,7 @@ index e1bf484..1eb09fb 100644
     if( (arg = fcntl(soc, F_GETFL, NULL)) < 0) 
       { 
         fprintf(stderr, "Error fcntl(..., F_GETFL) (%s)\n", strerror(errno)); 
-@@ -759,6 +769,7 @@ int set_host_and_port(char *channel_file, char *host_and_port)  /*   %ENTRY%   *
+@@ -760,6 +770,7 @@ int set_host_and_port(char *channel_file, char *host_and_port)  /*   %ENTRY%   *
         close(soc); 
         return(-1); 
       } 
@@ -649,7 +653,39 @@ index e1bf484..1eb09fb 100644
     /* I hope that is all  */
     if(soc > 0)
       {
-@@ -771,6 +782,7 @@ int set_host_and_port(char *channel_file, char *host_and_port)  /*   %ENTRY%   *
+@@ -795,6 +806,7 @@ int set_host_and_port(char *channel_file, char *host_and_port)  /*   %ENTRY%   *
+    addr.sin_addr.s_addr = INADDR_ANY;
+ 
+    /* Set non-blocking  */
++#ifndef WIN32
+    if( (arg = fcntl(soc, F_GETFL, NULL)) < 0) 
+      { 
+        fprintf(stderr, "Error fcntl(..., F_GETFL) (%s)\n", strerror(errno)); 
+@@ -809,6 +821,7 @@ int set_host_and_port(char *channel_file, char *host_and_port)  /*   %ENTRY%   *
+        close(soc); 
+        return(-1); 
+      } 
++#endif
+    /* Trying to connect with timeout  */
+    res = connect(soc, (struct sockaddr *)&addr, sizeof(addr));
+ 
+@@ -873,6 +886,7 @@ int set_host_and_port(char *channel_file, char *host_and_port)  /*   %ENTRY%   *
+ 	 } 
+      } 
+    /* Set to blocking mode again...  */
++#ifndef WIN32
+    if( (arg = fcntl(soc, F_GETFL, NULL)) < 0) 
+      { 
+        fprintf(stderr, "Error fcntl(..., F_GETFL) (%s)\n", strerror(errno)); 
+@@ -887,6 +901,7 @@ int set_host_and_port(char *channel_file, char *host_and_port)  /*   %ENTRY%   *
+        close(soc); 
+        return(-1); 
+      } 
++#endif
+    /* I hope that is all  */
+    if(soc > 0)
+      {
+@@ -899,6 +914,7 @@ int set_host_and_port(char *channel_file, char *host_and_port)  /*   %ENTRY%   *
   /* get working IP address of link found in aliases */
   int get_server_alias(char *path, const char *filename, int maxlen)
   {
@@ -657,7 +693,7 @@ index e1bf484..1eb09fb 100644
     char fpath[1024 + 1];
     int nchars;
     char *temp;
-@@ -813,6 +825,7 @@ int set_host_and_port(char *channel_file, char *host_and_port)  /*   %ENTRY%   *
+@@ -941,6 +957,7 @@ int set_host_and_port(char *channel_file, char *host_and_port)  /*   %ENTRY%   *
  	   return(0); 
  	 }
       }
@@ -665,7 +701,7 @@ index e1bf484..1eb09fb 100644
     return(-1) ; /* everything failed */
   }
   /********************************************************/
-@@ -1250,7 +1263,11 @@ else return (0);
+@@ -1378,7 +1395,11 @@ else return (0);
  	}
        fprintf(stderr,"SSH Digest: %x\n", buffer);
  
