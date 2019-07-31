@@ -1,5 +1,6 @@
 from setuptools import setup, Distribution, find_packages
 from distutils.command.build import build
+from wheel.bdist_wheel import bdist_wheel
 import sys
 from glob import glob
 import os
@@ -65,6 +66,11 @@ class BuildSharedLibs(build):
 
     check_call(['make', 'BUILDDIR='+builddir, 'SHAREDLIB_DIR='+sharedlib_dir, 'SHAREDLIB_SUFFIX='+sharedlib_suffix], cwd=builddir)
 
+# Force the impl and abi tags.
+class ForcedTag(bdist_wheel):
+  def get_tag(self):
+    plat_name = self.plat_name
+    return ('py2.py3','none',plat_name)
 
 setup (
   name = 'eccc_rpnpy',
@@ -84,5 +90,5 @@ setup (
     'rpnpy._sharedlibs': ['*.so','*.so.*','*.dll','*.dylib'],
   },
   distclass = BinaryDistribution if build_shared_libs else None,
-  cmdclass={'build': BuildSharedLibs} if build_shared_libs else {},
+  cmdclass={'build': BuildSharedLibs, 'bdist_wheel': ForcedTag} if build_shared_libs else {},
 )
