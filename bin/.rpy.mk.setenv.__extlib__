@@ -1,0 +1,35 @@
+#!/bin/ksh
+
+if [[ "x$1" == "x" ]] ; then
+   echo "ERROR: you must provided a file name" 1>&2
+   exit 1
+fi
+
+librmnpath=$(rdefind ${EC_LD_LIBRARY_PATH}  --maxdepth 0 --name librmnshared_*.so | head -1)
+if [[ x${librmnpath##*/} == x ]] ; then
+   librmnpath=$(rdefind ${EC_LD_LIBRARY_PATH}  --maxdepth 0 --name librmnshared*.so | head -1)
+fi
+librmnname=$(echo ${librmnpath##*/} | cut -c13-)
+libvgdpath=$(rdefind ${EC_LD_LIBRARY_PATH}  --maxdepth 0 --name libdescripshared_*.so | head -1)
+if [[ x${libvgdpath##*/} == x ]] ; then
+   libvgdpath=$(rdefind ${EC_LD_LIBRARY_PATH}  --maxdepth 0 --name libdescripshared*.so | head -1)
+fi
+libvgdname=$(echo ${libvgdpath##*/} | cut -c17-)
+libburpcpath=$(rdefind ${EC_LD_LIBRARY_PATH}  --maxdepth 0 --name libburp_c_shared_*.so | head -1)
+if [[ x${libburpcpath##*/} == x ]] ; then
+   libburpcpath=$(rdefind ${EC_LD_LIBRARY_PATH}  --maxdepth 0 --name libburp_c_shared*.so | head -1)
+fi
+libburpcname=*
+cat > $1 <<EOF
+export RPNPY_RMN_LIBPATH=\${RPNPY_RMN_LIBPATH_FORCED:-\${RPNPY_RMN_LIBPATH:-${librmnpath%/*}}}
+export RPNPY_RMN_VERSION=\${RPNPY_RMN_VERSION_FORCED:-\${RPNPY_RMN_VERSION:-${librmnname%.so}}}
+export RPNPY_VGD_LIBPATH=\${RPNPY_VGD_LIBPATH_FORCED:-\${RPNPY_VGD_LIBPATH:-${libvgdpath%/*}}}
+export RPNPY_VGD_VERSION=\${RPNPY_VGD_VERSION_FORCED:-\${RPNPY_VGD_VERSION:-${libvgdname%.so}}}
+export RPNPY_BURPC_LIBPATH=\${RPNPY_BURPC_LIBPATH_FORCED:-\${RPNPY_BURPC_LIBPATH:-${libburpcpath%/*}}}
+export RPNPY_BURPC_VERSION=\${RPNPY_BURPC_VERSION_FORCED:-\${RPNPY_BURPC_VERSION:-${libburpcname%.so}}}
+export LD_LIBRARY_PATH=\${RPNPY_RMN_LIBPATH}:\${LD_LIBRARY_PATH}
+export LIBPATH=\${RPNPY_RMN_LIBPATH}:\${LIBPATH}
+export AFSISIO=\${AFSISIO:-${AFSISIO}}
+export CMCGRIDF=\${CMCGRIDF:-${CMCGRIDF}}
+export ATM_MODEL_DFILES=\${ATM_MODEL_DFILES:-${ATM_MODEL_DFILES}}
+EOF

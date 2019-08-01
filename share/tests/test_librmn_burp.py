@@ -14,7 +14,9 @@ import unittest
 import ctypes as _ct
 import numpy as _np
 
-if sys.version_info > (3, ):
+if sys.version_info < (3, ):
+    range = xrange
+else:
     long = int
 
 #--- primitives -----------------------------------------------------
@@ -469,7 +471,7 @@ class RpnPyLibrmnBurp(unittest.TestCase):
         self.assertEqual(bufridlist[0], 12120)
 
     def testmrbcvtdecodeKnownValues(self):
-        """mrbprm should give known result with known input"""
+        """mrbcvt should give known result with known input"""
         for mypath, itype, iunit in self.knownValues:
             rmn.mrfopt(rmn.FSTOP_MSGLVL, rmn.BURPOP_MSG_FATAL)
             funit  = rmn.burp_open(self.getFN(mypath))
@@ -492,8 +494,28 @@ class RpnPyLibrmnBurp(unittest.TestCase):
                 #TODO: check results
             rmn.burp_close(funit)
 
+    def _fnmrbcvtencodeDecodeSanity(self, id):
+        bufrid = _np.asfortranarray(id, dtype=_np.int32)
+        cmcid0  = rmn.mrbcol(bufrid)
+        values0 = [20., 10., 2., 1., 0., -1., -2., -10., -20.]
+        cmcid = _np.asfortranarray(cmcid0, dtype=_np.int32)
+        values = _np.reshape(_np.asfortranarray(
+            values0, dtype=_np.float32),
+            (1,len(values0),1), order='F')
+        tblvals = rmn.mrbcvt_encode(cmcid, values.copy(order='F'))
+        values1 = rmn.mrbcvt_decode(cmcid, tblvals.copy(order='F'))
+        tblval1 = rmn.mrbcvt_encode(cmcid, values1.copy(order='F'))
+        self.assertTrue(_np.all(tblval1 == tblvals))
+        self.assertTrue(_np.all(values1 == values))
+
+    def testmrbcvtencodeDecodeSanity(self):
+        """mrbcvt encode/decode sycle should give back same result"""
+        self._fnmrbcvtencodeDecodeSanity(2005)
+        ## self._fnmrbcvtencodeDecodeSanity(7004)  # Not enough precision for number < 10.
+        self._fnmrbcvtencodeDecodeSanity(8001)
+
     def testmrbcvtencodeKnownValues(self):
-        """mrbprm should give known result with known input"""
+        """mrbcvt should give known result with known input"""
         for mypath, itype, iunit in self.knownValues:
             rmn.mrfopt(rmn.FSTOP_MSGLVL, rmn.BURPOP_MSG_FATAL)
             funit  = rmn.burp_open(self.getFN(mypath))
@@ -508,6 +530,10 @@ class RpnPyLibrmnBurp(unittest.TestCase):
             for iblk in range(params['nblk']):
                 blkparams = rmn.mrbprm(buf, iblk+1)
                 blkdata   = rmn.mrbxtr(buf, iblk+1)
+                blkdatatbl0= _np.array(blkdata['tblval'], copy=True)
+                #Note: need to take a copy of blkdata['tblval'] for comparison
+                #      after re-encoding since mrbcvt modify it for
+                #      negative values
                 rval      = rmn.mrbcvt_decode(blkdata['cmcids'],
                                               blkdata['tblval'],
                                               blkparams['datyp'])
@@ -516,7 +542,7 @@ class RpnPyLibrmnBurp(unittest.TestCase):
                     e_cmcids = blkdata['cmcids'][iele]
                     e_cmcids = rmn.mrbcvt_dict_bufr(e_cmcids, raise_error=False)['e_bufrid']
                     e_rval = rval[iele,:,:]
-                    e_tblval0 = blkdata['tblval'][iele,:,:]
+                    e_tblval0 = blkdatatbl0[iele,:,:]
                     e_tblval1 = tblval[iele,:,:]
                     if not _np.all(e_tblval0 == e_tblval1):
                         ## print 'b1',repr(blkparams)
@@ -527,7 +553,6 @@ class RpnPyLibrmnBurp(unittest.TestCase):
                         print('rv',repr(_np.round(e_rval).astype(_np.int32).ravel()), blkparams['datyp'])
                         print('t0',repr(e_tblval0.ravel()))
                         print('t1',repr(e_tblval1.ravel()))
-                    #TODO: problem w/ values < 0: decode int as is... but encode shift values by -1
                     self.assertTrue(_np.all(e_tblval0 == e_tblval1),
                                     "{}, {}: id={}, \nrval:{}, \nexp:{}, \ngot:{}"
                                     .format(iblk, iele, e_cmcids, 
@@ -572,6 +597,87 @@ class RpnPyLibrmnBurp(unittest.TestCase):
                 blkdata = rmn.mrb_prm_xtr_dcl_cvt(buf, iblk+1)
                 #TODO: check results
             rmn.burp_close(funit)
+
+
+    def testmrbcvtdictsetKnownValues(self):
+        """mrbcvt_dict_path_set should give known result with known input"""
+        rpnpypath = os.getenv('rpnpy', None)
+        mypath = os.path.join(rpnpypath, 'share', 'table_b_bufr_f')
+        rmn.mrbcvt_dict_path_set(mypath)
+        d  = rmn.mrbcvt_dict(297)
+        rmn.mrbcvt_dict_path_set()  # Reset
+        d0 = {
+            'e_error'   : 0,
+            'e_cmcid'   : 297,
+            'e_bufrid'  : 1041,
+            'e_bufrid_F': 0,
+            'e_bufrid_X': 1,
+            'e_bufrid_Y': 41,
+            'e_cvt'     : 1,
+            'e_desc'    : 'VITESSE ABS. PLATEFORME, 1ERE COMPOSANTE',
+            'e_units'   : 'M/S',
+            'e_scale'   : 5,
+            'e_bias'    : -1073741824,
+            'e_nbits'   : 31,
+            'e_multi'   : 0
+            }
+        ## print 'mrbcvt_dict',d
+        for k in d.keys():
+            self.assertEqual(d0[k], d[k],
+                             'For {0}, expected {1}, got {2}'
+                             .format(k, d0[k], d[k]))
+
+
+    def testmrbcvtdictseterror(self):
+        """mrbcvt_dict_path_set should rais an error on non existing file"""
+        hasError = True
+        try:
+            rmn.mrbcvt_dict_path_set('__no_such_file__')
+            hasError = False
+        except IOError:
+            pass
+        rmn.mrbcvt_dict_path_set()  # Reset
+        self.assertEqual(hasError, True)
+
+
+    def testmrbcvtdictraiseerror(self):
+        rpnpypath = os.getenv('rpnpy', None)
+        mypath = os.path.join(rpnpypath, 'share', 'table_b_bufr_e_err')
+        rmn.mrbcvt_dict_path_set(mypath, raiseError=False)
+        d  = rmn.mrbcvt_dict(297)
+        d0 = {
+            'e_error'   : 0,
+            'e_cmcid'   : 297,
+            'e_bufrid'  : 1041,
+            'e_bufrid_F': 0,
+            'e_bufrid_X': 1,
+            'e_bufrid_Y': 41,
+            'e_cvt'     : 1,
+            'e_desc'    : 'ABSOL. PLATFORM VELOCITY, FIRST COMPONENT',
+            'e_units'   : 'M/S',
+            'e_scale'   : 5,
+            'e_bias'    : -1073741824,
+            'e_nbits'   : 31,
+            'e_multi'   : 0
+            }
+        ## print 'mrbcvt_dict',d
+        for k in d.keys():
+            self.assertEqual(d0[k], d[k],
+                             'For {0}, expected {1}, got {2}'
+                             .format(k, d0[k], d[k]))
+        rmn.mrbcvt_dict_path_set(mypath, raiseError=True)
+        hasError = True
+        try:
+            d  = rmn.mrbcvt_dict(297)
+            hasError = False
+        except:
+            pass
+        rmn.mrbcvt_dict_path_set()  # Reset
+        self.assertEqual(hasError, True)
+
+
+    def testmrbcvtdictget(self):
+        cvt = rmn.mrbcvt_dict_get()
 
 
     ## def testmrbxtrcvtKnownValues(self):

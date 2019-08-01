@@ -31,6 +31,10 @@ from rpnpy import C_CHAR2WCHAR as _C_CHAR2WCHAR
 from rpnpy import C_MKSTR as _C_MKSTR
 
 from rpnpy import integer_types as _integer_types
+from rpnpy import range as _range
+
+# Block shape (nele, nval, nt), Fortran order
+_BLKIDX = lambda blk, e, v, t: e + blk[0].nele * (v + blk[0].nval * t)
 
 class _BurpcObjBase(object):
     """
@@ -213,12 +217,13 @@ class BurpcFile(_BurpcObjBase):
                 self.funit = filename['funit']
         self.__iteridx   = BurpcRpt() #0
         self.__handles   = []
-        self.__rpt       = BurpcRpt()
+        self.__rpt       = None
         fstmode, brpmode, brpcmode = _bp.brp_filemode(self.filemode)
         self.funit       = _rmn.get_funit(self.filename, fstmode, self.funit)
         self.nrep        = _bp.c_brp_open(self.funit,
                                           _C_WCHAR2CHAR(self.filename),
                                           _C_WCHAR2CHAR(brpcmode))
+        self.__brpmode = brpmode
         if self.nrep < 0:
             raise BurpcError('Problem opening with mode {} the file: {}'
                              .format(repr(brpcmode), repr(self.filename)))
@@ -247,6 +252,7 @@ class BurpcFile(_BurpcObjBase):
         Do not call explictly, this will be used in 'for loops' and other iterators.
         """
         if _bp.c_brp_findrpt(self.funit, self.__iteridx.getptr()) >= 0:
+            self.__rpt = BurpcRpt()
             if _bp.c_brp_getrpt(self.funit, self.__iteridx.handle,
                                 self.__rpt.getptr()) >= 0:
                 return self.__rpt
@@ -304,7 +310,7 @@ class BurpcFile(_BurpcObjBase):
                 key1 = BurpcRpt()
                 if i0 > 0:
                     key1.handle = self.__handles[-1]
-                for i in range(i0, key+1):
+                for i in _range(i0, key+1):
                     if _bp.c_brp_findrpt(self.funit, key1.getptr()) >= 0:
                         self.__handles.append(key1.handle)
                     else:
@@ -339,6 +345,10 @@ class BurpcFile(_BurpcObjBase):
         if not isinstance(rpt, BurpcRpt):
             raise TypeError("rpt should be of type BurpcRpt, got: {}, ".
                             format(str(type(rpt))))
+        if self.__brpmode not in (_rmn.BURP_MODE_CREATE,
+                                   _rmn.BURP_MODE_APPEND):
+            raise BurpcError('BurpcFile.put(): file must be opened with '+
+                             'write flag, got: {}'.format(self.__brpcmode))
         append = where is None
         if append:
             where = _bc.BRP_END_BURP_FILE
@@ -348,12 +358,11 @@ class BurpcFile(_BurpcObjBase):
             raise TypeError("For where: {}, Not Supported Type: {}".
                             format(repr(where), str(type(where))))
 
-        self.__handles = [] #TODO: is it the best place to invalidate the cache?
+        self.__handles = []  #TODO: ?best place to invalidate the cache?
+        rpt.append_flush(self.funit)
         prpt = rpt.getptr() if isinstance(rpt, BurpcRpt) else rpt
-        #TODO: conditional _bb.brp_updrpthdr?
-        _bp.c_brp_updrpthdr(self.funit, prpt)
         if _bp.c_brp_writerpt(self.funit, prpt, where) < 0:
-            raise BurpcError('Problem in brp_writerpt')
+            raise BurpcError('BurpcFile.put(): Problem in brp_writerpt')
         if append:
             self.nrep += 1
 
@@ -413,7 +422,12 @@ class BurpcRpt(_BurpcObjBase):
         date   : Report valid date (YYYYMMDD)
         oars   : Reserved for the Objective Analysis. (0-->65535)
         runn   : Operational pass identification.
-        nblk   : number of blocks
+        dblk   : "deffered append" blocks
+                 Due to BURP API, blocks cannot be added to a report before
+                 its header is written to a file. Hence they are kept separetely
+                 as a list in "dblk" until the report is added to a file.
+        nblk   : number of blocks w/ "deffered append" blocks
+        nblk0  : number of blocks w/o "deffered append" blocks
         lngr   : 
         time   : Observation time/hour (HHMM)
         timehh : Observation time hour part (HH)
@@ -505,11 +519,11 @@ class BurpcRpt(_BurpcObjBase):
     """
     __attrlist = ("handle", "nsize", "temps", "flgs", "stnid",
                   "idtype", "lati", "longi", "dx", "dy", "elev",
-                  "drnd", "date", "oars", "runn", "nblk", "lngr")
+                  "drnd", "date", "oars", "runn", "lngr")
     __attrlist2 = ('time', 'timehh', 'timemm', 'flgsl', 'flgsd',
                    'idtyp', 'idtypd', 'ilat', 'lat', 'ilon', 'lon',
                    'idx', 'rdx', 'idy', 'rdy', 'ielev', 'relev',
-                   'dateyy', 'datemm', 'datedd',
+                   'dateyy', 'datemm', 'datedd', 'dblk', 'nblk', 'nblk0',
                    'sup', 'nsup', 'xaux', 'nxaux')
     __attrlist2names = {
         'rdx'   : 'dx',
@@ -519,15 +533,17 @@ class BurpcRpt(_BurpcObjBase):
 
     def __init__(self, rpt=None):
         self.__bkno = 0
-        self.__blk  = BurpcBlk()
+        self.__blk  = None
+        self.__dblk = []
         self.__derived = None
         self.__attrlist2names_keys = self.__attrlist2names.keys()
+        self.__ptr = None
         if rpt is None:
             ## print 'NEW:',self.__class__.__name__
             self.__ptr = _bp.c_brp_newrpt()
         elif isinstance(rpt, _ct.POINTER(_bp.BURP_RPT)):
             ## print 'NEW:',self.__class__.__name__,'ptr'
-            self.__ptr = rpt
+            self.__ptr = rpt  #TODO: copy?
         else:
             ## print 'NEW:',self.__class__.__name__,'update'
             self.__ptr = _bp.c_brp_newrpt()
@@ -556,10 +572,6 @@ class BurpcRpt(_BurpcObjBase):
             self.__bkno = 0
             raise StopIteration
         self.__blk = self.get(self.__bkno, self.__blk)
-        if _bp.c_brp_getblk(self.__bkno+1, self.__blk.getptr(),
-                            self.getptr()) < 0:
-            self.__bkno = 0
-            raise BurpcError('Problem in c_brp_getblk')
         self.__bkno += 1
         return self.__blk
 
@@ -610,11 +622,16 @@ class BurpcRpt(_BurpcObjBase):
                 raise IndexError('Index out of range: [0:{}['.format(self.nblk))
             #TODO: review blk recycling
             ## blk = blk if isinstance(blk, BurpcBlk) else BurpcBlk(blk)
-            blk = BurpcBlk()
-            if _bp.c_brp_getblk(key, blk.getptr(), self.getptr()) < 0:
-                raise BurpcError('Problem in c_brp_getblk')
-            return blk
+            if key <= self.nblk0:
+                blk = BurpcBlk()
+                if _bp.c_brp_getblk(key, blk.getptr(), self.getptr()) < 0:
+                    raise BurpcError('Problem in c_brp_getblk: {}/{}'
+                                     .format(key, self.nblk0))
+                return blk
+            else:
+                 return self.__dblk[key-self.nblk0-1]
         elif key is None or isinstance(key, (BurpcBlk, dict)):
+            #TODO: implement search in "deffered append blk"
             search = key if isinstance(key, BurpcBlk) else BurpcBlk(key)
             if _bp.c_brp_findblk(search.getptr(), self.getptr()) >= 0:
                 #TODO: review blk recycling
@@ -635,15 +652,9 @@ class BurpcRpt(_BurpcObjBase):
         Add a block to the report or set attribute value
 
         rpt.put(attr_name, value)
-        rpt.put(bkno, blk)
-        rpt.put(blk0, blk)
-        rpt.put(blkdict, blk)
 
         Args:
-            key   : Attribute name or Search criterions
-                    if str, set the attribute value
-                    if int, set the ith ([0, nblk[) block in report
-                    if dict or BurpcBlk, replace block matching given params
+            key   : Attribute name
             value : Value to set or blk object to set
         Return:
             None
@@ -657,6 +668,15 @@ class BurpcRpt(_BurpcObjBase):
             use "rpt.attr_name = value"
             instead of "rpt.put('attr_name', value)"
         """
+        ## rpt.put(bkno, blk)
+        ## rpt.put(blk0, blk)
+        ## rpt.put(blkdict, blk)
+        ##
+        ## Args:
+        ##     key   : Attribute name or Search criterions
+        ##             if str, set the attribute value
+        ##             if int, set the ith ([0, nblk[) block in report
+        ##             if dict or BurpcBlk, replace block matching given params
         if key == 'stnid':
             self.__derived = None
             _bp.c_brp_setstnid(self.__ptr, _C_WCHAR2CHAR(value))
@@ -669,11 +689,65 @@ class BurpcRpt(_BurpcObjBase):
             raise AttributeError(self.__class__.__name__+
                                  " object cannot set derived attribute '"+
                                  key+"'")
-        ## elif isinstance(key, _integer_types): #TODO:
-        ## elif key is None or isinstance(key, (BurpcBlk, dict)): #TODO:
+        elif isinstance(key, _integer_types): #TODO:
+            raise BurpcError('BurpcRpt.put(index, blk): not yet implemented with specific index, try the BurpcRpt.append(blk) method')
+        ## elif isinstance(key, (BurpcBlk, dict)): #TODO:
+        elif key is None:
+            if not isinstance(value, BurpcBlk):
+                try:
+                    value = BurpcBlk(value)
+                except:
+                    raise TypeError('Provided value should be of type BurpcBlk')
+            self.__dblk.append(value)
+            self.__derived = None
         else:
             return super(self.__class__, self).__setattr__(key, value)
             ## raise AttributeError(self.__class__.__name__+" object has not attribute '"+key+"'")
+
+    def append_flush(self, iunit):
+        """
+        Add report to file and flush the deffered blocks into it.
+
+        rpt.append_flush(iunit)
+
+        Args:
+            iunit : Burp file unit number, opened with BURP_MODE_CREATE
+        Return:
+            None
+        Raises:
+            KeyError   on not not found key
+            TypeError  on not supported types or args
+            BurpcError on any other error
+
+        Notes:
+            This method is to be called from the BurpcFile class, NOT directly
+        """
+        if len(self.__dblk) == 0:
+            if self.nsize > 0 and self.nblk0 > 0:
+                _bp.c_brp_updrpthdr(iunit, self.__ptr)
+            else:
+                _bp.c_brp_putrpthdr(iunit, self.__ptr)
+            return
+        blksize0 = 0
+        for blk in self.__dblk:
+            blksize0 += _rmn.LBLK(blk.nele, blk.nval, blk.nt, blk.nbit)
+        blksize  = int(_rmn.LRPT(blksize0) * 1.5)  # minimum size * 1.5 (ad hoc)
+        if self.__ptr[0].nsize <= 0:
+            _bp.c_brp_allocrpt(self.__ptr, blksize)
+            _bp.c_brp_clrrpt(self.__ptr)
+        else:
+            blksize2 = self.__ptr[0].nsize + blksize
+            _bp.c_brp_resizerpt(self.__ptr, blksize2)
+        ## print self.nsize,self.nblk0
+        if self.nsize > 0 and self.nblk0 > 0:
+            _bp.c_brp_updrpthdr(iunit, self.__ptr)
+        else:
+            _bp.c_brp_putrpthdr(iunit, self.__ptr)
+        for blk in self.__dblk:
+            if _bp.c_brp_putblk(self.__ptr, blk.getptr()) < 0:
+                raise BurpcError('BurpcRpt.append_flush(): problem in c_brp_putblk()')
+        self.__derived = None
+        self.__dblk = []
 
     def append(self, blk):
         """
@@ -697,6 +771,7 @@ class BurpcRpt(_BurpcObjBase):
             self.__derived = self.__derived_attr()
         return self.__derived.copy()
 
+
     def __derived_attr(self):
         """Return dict with derived attributs"""
         itime = getattr(self.__ptr[0], 'temps')
@@ -709,6 +784,7 @@ class BurpcRpt(_BurpcObjBase):
         idy   = getattr(self.__ptr[0], 'dy')
         ialt  = getattr(self.__ptr[0], 'elev')
         idate = getattr(self.__ptr[0], 'date')
+        nblk  = getattr(self.__ptr[0], 'nblk')
         try:
             idtyp_desc = _rmn.BURP_IDTYP_DESC[str(idtyp)]
         except KeyError:
@@ -740,7 +816,9 @@ class BurpcRpt(_BurpcObjBase):
             'datedd': (idate % 10000) % 100,
             'oars'  : getattr(self.__ptr[0], 'oars'),
             'runn'  : getattr(self.__ptr[0], 'runn'),
-            'nblk'  : getattr(self.__ptr[0], 'nblk'),
+            'dblk'  : self.__dblk,
+            'nblk'  : nblk + len(self.__dblk),
+            'nblk0' : nblk, #Actual nb blocks w/o defered append blk
             'sup'   : None,
             'nsup'  : 0,
             'xaux'  : None,
@@ -808,12 +886,20 @@ class BurpcBlk(_BurpcObjBase):
         max_nt : 
         max_len : 
         lstele  : list of coded elements (CMCID)
+                  shape: (nele, )
         dlstele : list of decoded elements (BUFRID)
+                  shape: (nele, )
         tblval  : table of coded values
                   or table of decoded int values (BRP_STORE_INTEGER)
+                  shape: (nele, nval, nt), Fortran order
+        ival    : table of decoded values of type int (BRP_STORE_INTEGER)
+                  shape: (nele, nval, nt), Fortran order
         rval    : table of decoded values of type real/float (BRP_STORE_FLOAT)
+                  shape: (nele, nval, nt), Fortran order
         drval   : table of decoded values of type real/float double (BRP_STORE_DOUBLE)
+                  shape: (nele, nval, nt), Fortran order
         charval : table of decoded values of type char (BRP_STORE_CHAR)
+                  shape: (nele, nval, nt), Fortran order
         bknat : block type, kind component
         bknat_multi : block type, kind component, uni/multi bit
                                   0=uni, 1=multi
@@ -859,13 +945,15 @@ class BurpcBlk(_BurpcObjBase):
     >>>
     >>> # get the first element in blk
     >>> ele = blk[0]
-    >>> print("# {}: {}, (units={}), shape=[{}, {}] : value={}".format(ele.e_bufrid, ele.e_desc, ele.e_units, ele.nval, ele.nt, ele.e_rval[0,0]))
+    >>> print("# {}: {}, (units={}), shape=[{}, {}] : value={}"
+    ...       .format(ele.e_bufrid, ele.e_desc, ele.e_units, ele.nval, ele.nt, ele.e_rval[0,0]))
     # 10004: PRESSURE, (units=PA), shape=[1, 1] : value=100.0
     >>>
     >>> # Loop over all elements in block and print info for last one
     >>> for ele in blk:
     ...     pass  # Do something with the element
-    >>> print("# {}: {}, (units={}), shape=[{}, {}] : value={:7.2e}".format(ele.e_bufrid, ele.e_desc, ele.e_units, ele.nval, ele.nt, ele.e_rval[0,0]))
+    >>> print("# {}: {}, (units={}), shape=[{}, {}] : value={:7.2e}"
+    ...       .format(ele.e_bufrid, ele.e_desc, ele.e_units, ele.nval, ele.nt, ele.e_rval[0,0]))
     # 13220: NATURAL LOG SFC SPEC HUMIDITY (2M), (units=LN(KG/KG)), shape=[1, 1] : value=1.00e+30
     >>>
     >>> # New empty block
@@ -890,31 +978,41 @@ class BurpcBlk(_BurpcObjBase):
     __attrlist = ("bkno", "nele", "nval", "nt", "bfam", "bdesc", "btyp",
                   "bknat", "bktyp", "bkstp", "nbit", "bit0", "datyp",
                   "store_type",
-                  ## "lstele", "dlstele", "tblval", "rval","drval", "charval",
+                  ## "lstele", "dlstele", "tblval", "rval", "drval", "charval",
                   "max_nval", "max_nele", "max_nt", "max_len")
     __attrlist_np_1d = ("lstele", "dlstele")
-    __attrlist_np_3d = ("tblval", "rval", "drval", "charval")
+    __attrlist_np_3d = ("tblval", "ival", "rval", "drval", "charval")
     __attrlist2 = ('bkno', 'nele', 'nval', 'nt', 'bfam', 'bdesc', 'btyp',
                    'bknat', 'bknat_multi', 'bknat_kind', 'bknat_kindd',
                    'bktyp', 'bktyp_alt', 'bktyp_kind', 'bktyp_kindd',
                    'bkstp', 'bkstpd', 'nbit', 'bit0', 'datyp', 'datypd')
+    __PTRKEY2NUMPY = {
+        'tblval'  : _np.int32,
+        'ival'    : _np.int32,
+        'rval'    : _np.float32,
+        'drval'   : _np.float64,
+        'charval' : _np.uint8
+        }
 
     def __init__(self, blk=None):
         self.__eleno = 0
         self.__derived = None
-        to_update = False
+        self.__ptr = None
         if blk is None:
-            ## print 'NEW:',self.__class__.__name__
             self.__ptr = _bp.c_brp_newblk()
         elif isinstance(blk, _ct.POINTER(_bp.BURP_BLK)):
-            ## print 'NEW:',self.__class__.__name__,'ptr'
-            self.__ptr = blk
-        else:
-            ## print 'NEW:',self.__class__.__name__,'update'
+            self.__ptr = blk  #TODO: copy?
+        elif isinstance(blk, dict):
             self.__ptr = _bp.c_brp_newblk()
-            to_update = True
-        if to_update:
             self.update(blk)
+        elif isinstance(blk, self.__class__):
+            self.__ptr = _bp.c_brp_newblk()
+            for ele in blk:
+                self.append(ele)
+            self.update(blk)
+        else:
+            raise TypeError('BurpcBlk: cannot init with blk of type:{}'
+                            .format(type(blk)))
         self.reset_arrays()
 
 
@@ -981,9 +1079,22 @@ class BurpcBlk(_BurpcObjBase):
             return self.__arr[key]
         elif key in self.__class__.__attrlist_np_3d:
             if self.__arr[key] is None:
-                v = getattr(self.__ptr[0], key)
-                self.__arr[key] = _np.ctypeslib.as_array(v,
+                key2 = 'tblval'
+                if self.__arr[key2] is None:
+                    v = getattr(self.__ptr[0], key2)
+                    self.__arr[key2] = _np.ctypeslib.as_array(v,
                                         (self.nt, self.nval, self.nele)).T
+                if key != key2:
+                    dtype = self.__PTRKEY2NUMPY[key]
+                    cmcids = _np.asfortranarray(
+                        _np.ctypeslib.as_array(self.__ptr[0].lstele,
+                                               (self.nele, )),
+                        dtype=_np.int32)
+                    shape = (self.nele, self.nval, self.nt)
+                    self.__arr[key] = _np.reshape(_np.asfortranarray(
+                        _rmn.mrbcvt_decode(cmcids,
+                                           self.__arr[key2].copy(order='F')),
+                        dtype=dtype), shape, order='F')
             return self.__arr[key]
         elif key in self.__class__.__attrlist:
             return getattr(self.__ptr[0], key)  #TODO: use proto fn?
@@ -1040,7 +1151,8 @@ class BurpcBlk(_BurpcObjBase):
                                  key+"'")
         elif key is None or isinstance(key, _integer_types):
             self._putelem(key, value)
-        ## elif isinstance(key, (BurpcEle, dict)): #TODO
+        ## elif isinstance(key, (BurpcEle, dict)):
+        ##     raise BurpcError('BurpcBlk.put(index, BurpcEle) - Not yet implemented')  #TODO
         ##     #Find element index/idx matching BurpcEle or dict
         ##     #self._putelem(idx, value)
         ## elif key is None and isinstance(value, BurpcEle): #TODO
@@ -1068,6 +1180,7 @@ class BurpcBlk(_BurpcObjBase):
             BurpcError on any other error
         """
         self.put(None, ele)
+
     #TODO: add list type operators: count?, extend?, index?, insert?, pop?, remove?, reverse?, sort?... see help([]) for other __?__ operators
 
     def reset_arrays(self):
@@ -1082,12 +1195,12 @@ class BurpcBlk(_BurpcObjBase):
             None
         Raises:
             None
-       """
-        ## print "reset array"
+        """
         self.__arr = {
             "lstele"  : None,
             "dlstele" : None,
             "tblval"  : None,
+            "ival"    : None,
             "rval"    : None,
             "drval"   : None,
             "charval" : None
@@ -1139,74 +1252,70 @@ class BurpcBlk(_BurpcObjBase):
     def _getelem(self, index):
         """indexing from 0 to nele-1"""
         if index < 0 or index >= self.nele:
-            raise IndexError
+            raise IndexError('Index out of range [0, {}[, got: {}'
+                             .format(self.nele, index))
         params = {'e_cmcid' : self.lstele[index]}
-        has_value = False
-        try:
-            params['e_rval'] = self.rval[index, :, :]
-            has_value = True
-        except:
-            pass
-        try:
-            params['e_drval'] = self.drval[index, :, :]
-            has_value = True
-        except:
-            pass
-        try:
-            params['e_charval'] = self.charval[index, :]
-            has_value = True
-        except:
-            pass
-        if not has_value: #TODO: also provide tblval?
-            params['e_tblval'] = self.tblval[index, :, :]
+        params['e_tblval'] = self.tblval[index, :, :]
+        params['store_type'] = self.store_type
         return BurpcEle(params)
 
     def _putelem(self, index, values):
         """indexing from 0 to nele-1"""
-        if not(index is None or isinstance(index, _integer_types)):
+        if index is None:
+            index = max(0, self.nele)
+        if not isinstance(index, _integer_types):
             raise TypeError('Provided index should be of type int')
-        if (isinstance(index, _integer_types) and
-            index < 0 or index >= self.nele):
-            raise IndexError
-        else:
-            pass #TODO increase size, adjust nele?
-            # index = max(0, self.nele)
+        if index < 0 or index > max(0, self.nele):
+            raise IndexError('Index out of range [0, {}[, got: {}'
+                             .format(self.nele, index))
         if not isinstance(values, BurpcEle):
             try:
                 values = BurpcEle(values)
             except:
                 raise TypeError('Provided value should be of type BurpcEle')
-        if self.nele > 0 and self.__ptr[0].strore_type != values.store_type:
-                raise TypeError('Provided value should be of type: {}, got: {}'
-                                .format(self.__ptr[0].strore_type,
-                                        values.store_type))
-        raise BurpcError('BurpcRpt.put(index, BurpcEle) - Not yet implemented') #TODO
+        if self.nele > 0 and self.__ptr[0].store_type != values.store_type:
+            raise TypeError('Provided value should be of type: {}, got: {}'
+                            .format(self.__ptr[0].store_type,
+                                    values.store_type))
+
         shape = (max(index+1, self.nele), max(values.nval, self.nval), max(values.nt, self.nt))
         if shape != (self.nele, self.nval, self.nt):
             if self.nele <= 0:
                 _bp.c_brp_allocblk(self.__ptr, shape[0], shape[1], shape[2])
-                self.__ptr[0].strore_type = values.store_type
+                self.__ptr[0].store_type = values.store_type
             else:
+                #TODO: should restrict resizing to avoid loosing values
                 _bp.c_brp_resizeblk(self.__ptr, shape[0], shape[1], shape[2])
-        #print repr(values)
-        self.__ptr[0].lstele[index]  = values.e_bufrid #TODO: check
-        self.__ptr[0].dlstele[index] = values.e_cmcid
-        self.__ptr[0].tblval[index, 0:values.nval, 0:values.nt] = \
-            values.e_tblval[0:values.nval, 0:values.nt]
-        #TODO: check type
-        #TODO: set rval, drval, charval according to type
+        self.__derived = None
+        self.reset_arrays()
+
+        self.__ptr[0].lstele[index]  = values.e_cmcid
+        self.__ptr[0].dlstele[index] = values.e_bufrid
+
+        ## self.__ptr[0].tblval[index, 0:values.nval, 0:values.nt] = \
+        ##     values.e_tblval[0:values.nval, 0:values.nt]
+
+        ## i0 = _BLKIDX(values.nval, values.nt, index, 0, 0)
+        ## i1 = _BLKIDX(values.nval, values.nt, index, values.nval, values.nt)
+        ## self.__ptr[0].tblval[i0:i1] = \
+        ##     values.e_tblval[0:values.nval, 0:values.nt]
+
+        #TODO: recode to avoid for loops
+        _BLKIDX1 = lambda shape, e, v, t: e + shape[0] * (v + shape[1] * t)
+        ## for it in range(values.nt):
+        ##     for iv in range(values.nval):
+        for iv,it in _np.ndindex((values.nval,values.nt)):
+            self.__ptr[0].tblval[_BLKIDX1(shape, index, iv, it)] = \
+                values.e_tblval[iv, it]
+ 
         #TODO: check with charval... dims may be different
-        #TODO: check if type match
-        #TODO: check if dims match
-        #TODO: brp_resizeblk to add elem if need be
-        #TODO: copy e_cmcid into dlstele + brp_encodeblk
-        #TODO: copy e_rval into rval + brp_convertblk(br, brp.BRP_MKSA_to_BUFR) (or copy tblval and convert inverse)?
 
 
 #TODO: class BurpcElePlus(BurpcEle): BurpcEle + BurpcBlk + BurpcRpt attributes
 ## class BurpcRptBlkEle(BurpcBlk):
 ##     """
 ##     """
+
 
 class BurpcEle(_BurpcObjBase):
     """
@@ -1243,9 +1352,13 @@ class BurpcEle(_BurpcObjBase):
         ptrkey     : name of table used to store values depending on store_type,
                      one of: 'e_tblval', 'e_rval', 'e_drval', 'e_charval'
         e_tblval   : table of decoded int values (BRP_STORE_INTEGER)
+                     shape: (nval, nt)
         e_rval     : table of decoded values of type real/float (BRP_STORE_FLOAT)
+                     shape: (nval, nt)
         e_drval    : table of decoded values of type real/float double (BRP_STORE_DOUBLE)
+                     shape: (nval, nt)
         e_charval  : table of decoded values of type char (BRP_STORE_CHAR)
+                     shape: (nval, nt)
 
     Examples:
     >>> import os, os.path
@@ -1266,21 +1379,25 @@ class BurpcEle(_BurpcObjBase):
     >>>
     >>> # get the first element in blk
     >>> ele = blk[0]
-    >>> print("# {}: {}, (units={}), shape=[{}, {}] : value={}".format(ele.e_bufrid, ele.e_desc, ele.e_units, ele.nval, ele.nt, ele.e_rval[0,0]))
+    >>> print("# {}: {}, (units={}), shape=[{}, {}] : value={}"
+    ...       .format(ele.e_bufrid, ele.e_desc, ele.e_units, ele.nval, ele.nt, ele.e_rval[0,0]))
     # 10004: PRESSURE, (units=PA), shape=[1, 1] : value=100.0
     >>>
     >>> # Copy an Element
     >>> ele1 = brp.BurpcEle(ele)
     >>> ele1.e_bufrid = 13220
-    >>> print("# {}: {}, (units={}), shape=[{}, {}] : value={}".format(ele.e_bufrid, ele.e_desc, ele.e_units, ele.nval, ele.nt, ele.e_rval[0,0]))
+    >>> print("# {}: {}, (units={}), shape=[{}, {}] : value={}"
+    ...       .format(ele.e_bufrid, ele.e_desc, ele.e_units, ele.nval, ele.nt, ele.e_rval[0,0]))
     # 10004: PRESSURE, (units=PA), shape=[1, 1] : value=100.0
-    >>> print("# {}: {}, (units={}), shape=[{}, {}] : value={}".format(ele1.e_bufrid, ele1.e_desc, ele1.e_units, ele1.nval, ele1.nt, ele1.e_rval[0,0]))
+    >>> print("# {}: {}, (units={}), shape=[{}, {}] : value={}"
+    ...       .format(ele1.e_bufrid, ele1.e_desc, ele1.e_units, ele1.nval, ele1.nt, ele1.e_rval[0,0]))
     # 13220: NATURAL LOG SFC SPEC HUMIDITY (2M), (units=LN(KG/KG)), shape=[1, 1] : value=100.0
     >>>
     >>> # Loop over all elements in block and print info for last one
     >>> for ele in blk:
     ...     pass  # Do something with the element
-    >>> print("# {}: {}, (units={}), shape=[{}, {}] : value={:7.2e}".format(ele.e_bufrid, ele.e_desc, ele.e_units, ele.nval, ele.nt, ele.e_rval[0,0]))
+    >>> print("# {}: {}, (units={}), shape=[{}, {}] : value={:7.2e}"
+    ...       .format(ele.e_bufrid, ele.e_desc, ele.e_units, ele.nval, ele.nt, ele.e_rval[0,0]))
     # 13220: NATURAL LOG SFC SPEC HUMIDITY (2M), (units=LN(KG/KG)), shape=[1, 1] : value=1.00e+30
     >>>
     >>> # New Element
@@ -1290,7 +1407,8 @@ class BurpcEle(_BurpcObjBase):
     >>>
     >>> # New Element from dicy
     >>> ele = brp.BurpcEle({'e_bufrid' : 10004, 'e_rval' : [10000., 10010.]})
-    >>> print("# {}: {}, (units={}), shape=[{}, {}], value={}".format(ele.e_bufrid, ele.e_desc, ele.e_units, ele.nval, ele.nt, ele.e_rval.ravel()))
+    >>> print("# {}: {}, (units={}), shape=[{}, {}], value={}"
+    ...       .format(ele.e_bufrid, ele.e_desc, ele.e_units, ele.nval, ele.nt, ele.e_rval.ravel()))
     # 10004: PRESSURE, (units=PA), shape=[2, 1], value=[ 10000.  10010.]
 
     See Also:
@@ -1301,24 +1419,31 @@ class BurpcEle(_BurpcObjBase):
         rpnpy.burpc.const
     """
     __attrlist = ('e_bufrid', 'e_cmcid', 'store_type', 'shape', 'ptrkey',
-                  'e_tblval', 'e_rval', 'e_drval', 'e_charval')
+                  'e_ival', 'e_rval', 'e_drval', 'e_charval', 'e_tblval', )
     __attrlist2 = ('e_error', 'e_cmcid', 'e_bufrid', 'e_bufrid_F',
                    'e_bufrid_X', 'e_bufrid_Y', 'e_cvt', 'e_desc',
                    'e_units', 'e_scale', 'e_bias', 'e_nbits', 'e_multi',
                    'nval', 'nt', 'shape')
     __PTRKEY2NUMPY = {
         'e_tblval'  : _np.int32,
+        'e_ival'    : _np.int32,
         'e_rval'    : _np.float32,
         'e_drval'   : _np.float64,
         'e_charval' : _np.uint8
         }
     __PTRKEY2STORE_TYPE = {
         'e_tblval'  : _bc.BRP_STORE_INTEGER,
+        'e_ival'    : _bc.BRP_STORE_INTEGER,
         'e_rval'    : _bc.BRP_STORE_FLOAT,
         'e_drval'   : _bc.BRP_STORE_DOUBLE,
         'e_charval' : _bc.BRP_STORE_CHAR
         }
-
+    __PTRKEY2STORE_TYPE_INV = {
+        _bc.BRP_STORE_INTEGER : 'e_ival',
+        _bc.BRP_STORE_FLOAT   : 'e_rval',
+        _bc.BRP_STORE_DOUBLE  : 'e_drval',
+        _bc.BRP_STORE_CHAR    : 'e_charval'
+        }
     def __init__(self, bufrid, tblval=None): #TODO:, shape=None):
         if isinstance(bufrid, _integer_types):
             bufrid = {
@@ -1330,11 +1455,12 @@ class BurpcEle(_BurpcObjBase):
         self.__derived = None
         self.__ptr     = dict([(k, None) for k in self.__attrlist])
         self.update(bufrid) #TODO: update should check type
+        ptrkey = self.__ptr['ptrkey']
         if (self.__ptr['e_bufrid'] is None or
-            self.__ptr['ptrkey'] is None or
-            self.__ptr[self.__ptr['ptrkey']] is None):
+            ptrkey is None or
+            self.__ptr[ptrkey] is None):
             raise BurpcError('{} {}: incomplete initialization'
-                             .format(self.__class__.__name__, repr([self.__ptr['e_bufrid'], self.__ptr['ptrkey'], self.e_tblval, self.e_rval, self.e_drval, self.e_charval])))
+                             .format(self.__class__.__name__, repr([self.__ptr['e_bufrid'], ptrkey, self.e_tblval, self.e_rval, self.e_drval, self.e_charval])))
 
     def __setattr__(self, name, value): #TODO: move to super class
         return self.put(name, value)
@@ -1364,11 +1490,6 @@ class BurpcEle(_BurpcObjBase):
             use "ele.attr_name"
             instead of "ele.get('attr_name')"
         """
-        ## if key == 'e_tblval' : #TODO: special case if ptrkey!=e_tblval
-        ## elif key == 'e_rval' :
-        ## elif key == 'e_drval' :
-        ## elif key == 'e_charval':
-        #TODO: allow e_val: automatic type selection
         if key in self.__class__.__attrlist:
             return self.__ptr[key]
         elif key in self.__class__.__attrlist2:
@@ -1396,7 +1517,9 @@ class BurpcEle(_BurpcObjBase):
             TypeError  on not supported types or args
             BurpcError on any other error
         """
+        self.__derived = None  # Reset nval, nt, shape
         if shape is None:
+            #TODO: shouldn't we nullify the actual table then
             self.__ptr['shape'] = None
             return
         if isinstance(shape, _integer_types):
@@ -1416,6 +1539,11 @@ class BurpcEle(_BurpcObjBase):
                                          repr(self.__ptr[self.__ptr['ptrkey']].shape)))
             self.__ptr[self.__ptr['ptrkey']] = \
                 _np.reshape(self.__ptr[self.__ptr['ptrkey']],
+                            shape, order='F')
+        if self.__ptr['ptrkey'] != 'e_tblval' and \
+            self.__ptr['e_tblval'] is not None:
+            self.__ptr['e_tblval'] = \
+                _np.reshape(self.__ptr['e_tblval'],
                             shape, order='F')
         self.__ptr['shape'] = shape
 
@@ -1455,55 +1583,29 @@ class BurpcEle(_BurpcObjBase):
             self.__ptr[key] = value
             self.__ptr['e_bufrid'] = _rmn.mrbdcl(value)
         elif key == 'store_type':
-            if value is None:
-                return
             if value in _bc.BRP_STORE_TYPE2NUMPY.keys():
-                if (self.__ptr[key] is None or
-                    ## self.__ptr[key] == _bc.BRP_STORE_INTEGER or
-                    self.__ptr[key] == value):
+                if self.__ptr[key] is None:
                     self.__ptr[key] = value
-                else:
+                elif self.__ptr[key] != value:
                     raise BurpcError('{}: Cannot change: {}'
                                      .format(self.__class__.__name__,
                                              repr(key)))
-            else:
+            elif value is not None:
                 raise ValueError('Store type ({}) can only be one of: {}'
                                  .format(repr(value),
                                          repr(_bc.BRP_STORE_TYPE2NUMPY.keys())))
         elif key == 'shape':
-            if value is None:
-                self.__ptr['shape'] = None
-            else:
-                self.reshape(value)
-        elif key in ('e_tblval', 'e_rval', 'e_drval', 'e_charval'):
-            #TODO: use e_ival for int instead of e_tblval (alias)
-            #TODO: allow e_val: automatic type selection
-            self.__derived = None
+            self.reshape(value)
+        elif key in ('e_tblval', 'e_ival', 'e_rval', 'e_drval', 'e_charval'):
             if value is None:
                 return
-            if not (self.__ptr['ptrkey'] is None or self.__ptr['ptrkey'] == key):
-                raise BurpcError('{}: Cannot change store type'
-                                 .format(self.__class__.__name__))
-            self.__ptr['ptrkey'] = key
-            if key != 'e_tblval':
-                self.__ptr['store_type'] = self.__PTRKEY2STORE_TYPE[key]
-            dtype = self.__PTRKEY2NUMPY[key]
-            self.__ptr[key] = _np.array(value, order='F', dtype=dtype)
-            if len(self.__ptr[key].shape) == 1:
-                self.__ptr[key] = _np.reshape(self.__ptr[key],
-                            (self.__ptr[key].shape[0], 1), order='F')
-            elif len(self.__ptr[key].shape) > 2:
-                raise BurpcError('{}: Array shape must be 2d: {}'
-                                 .format(self.__class__.__name__,
-                                         repr(self.__ptr[key].shape)))
-            if self.__ptr['shape'] != self.__ptr[key].shape:
-                self.reshape(self.__ptr['shape'])
-            self.__ptr['shape'] = self.__ptr[key].shape
-            #TODO: encode to tblval... may want to strictly use burpc fn (create fake BurpcBlk, put id+rval, brp.c_brp_convertblk(br, brp.BRP_MKSA_to_BUFR), extract tblval
-            ## if name != 'e_tblval':
-            ##     tblval = _rmn.mrbcvt_encode(self.__ptr['e_cmcid'],
-            ##                                 self.__ptr[name])
-            ##     self.put('e_tblval', tblval)
+            self.__derived = None
+            #TODO: when updating from another BuprcEle, both e_tablval and e_?val are passed... avoid double definition
+            if key == 'e_tblval':
+                self._put_tblval(value)
+            else:
+                #TODO: allow e_val: automatic type selection
+                self._put_irdcval(key, value)
         elif key in self.__class__.__attrlist:
             self.__derived = None
             #TODO: check type
@@ -1511,12 +1613,72 @@ class BurpcEle(_BurpcObjBase):
             ## return setattr(self.__ptr, key, value) #TODO: use proto fn?
         else:
             return super(self.__class__, self).__setattr__(key, value)
-        ## else:
-        ##     raise KeyError #TODO
 
     ## def delete(self, key):
     ##     raise BurpcError('{}: Cannot delete: {}'
     ##                      .format(self.__class__.__name__, repr(key)))
+
+    def _tblval2eval(self):
+        #TODO: decode to tblval... may want to strictly use burpc fn (create fake BurpcBlk, put id+rval, brp.c_brp_convertblk(br, brp.BRP_MKSA_to_BUFR), extract tblval
+        key = 'e_tblval'
+        dtype = self.__PTRKEY2NUMPY[key]
+        try:
+            ptrkey = self.__PTRKEY2STORE_TYPE_INV[self.__ptr['store_type']]
+            self.__ptr['ptrkey'] = ptrkey
+        except KeyError:
+            ptrkey = None
+        if ptrkey:
+            e_cmcid = _np.asfortranarray(self.__ptr['e_cmcid'], dtype=_np.int32)
+            shape = [1] + list(self.__ptr[key].shape)
+            e_tblval = _np.reshape(_np.asfortranarray(self.__ptr[key],
+                                                      dtype=dtype),
+                                   shape, order='F').copy(order='F')
+            val3d = _rmn.mrbcvt_decode(e_cmcid, e_tblval)
+            dtype = self.__PTRKEY2NUMPY[ptrkey]
+            self.__ptr[ptrkey] = _np.reshape(_np.asfortranarray(val3d,
+                                                                dtype=dtype),
+                                             shape[1:3], order='F')
+
+    def _eval2tblval(self, key):
+        #TODO: encode to tblval... may want to strictly use burpc fn (create fake BurpcBlk, put id+rval, brp.c_brp_convertblk(br, brp.BRP_MKSA_to_BUFR), extract tblval
+        dtype = _np.float32  # Always float32, expected by mrbcvt_encode
+        ptrkey = 'e_tblval'
+        e_cmcid = _np.asfortranarray(self.__ptr['e_cmcid'], dtype=_np.int32)
+        shape = [1] + list(self.__ptr[key].shape)
+        val3d = _np.reshape(_np.asfortranarray(self.__ptr[key], dtype=dtype),
+                            shape, order='F').copy(order='F')
+        self.__ptr[ptrkey] = _np.reshape(_rmn.mrbcvt_encode(e_cmcid, val3d),
+                                         shape[1:3], order='F')
+
+    #TODO: when setting e_tblval values, recompute e_?val and viceversa
+
+    def _put_tblval(self, value):
+        key = 'e_tblval'
+        if self.__ptr['ptrkey'] is None:
+            self.__ptr['ptrkey'] = key
+        if self.__ptr['store_type'] is None:
+            self.__ptr['store_type'] = self.__PTRKEY2STORE_TYPE[key]
+        dtype = self.__PTRKEY2NUMPY[key]
+        if isinstance(value, _np.ndarray):
+            value = value.copy()
+        self.__ptr[key] = _np.asfortranarray(value, dtype=dtype)
+        self.reshape(self.__ptr[key].shape)
+        if (self.__ptr['e_ival'] == self.__ptr['e_rval'] ==
+            self.__ptr['e_drval'] == self.__ptr['e_charval'] == None):
+            self._tblval2eval()
+
+    def _put_irdcval(self, key, value):
+        if not (self.__ptr['ptrkey'] is None or self.__ptr['ptrkey'] == key):
+            raise BurpcError('{}: Cannot change store type'
+                            .format(self.__class__.__name__))
+        self.__ptr['ptrkey'] = key
+        self.__ptr['store_type'] = self.__PTRKEY2STORE_TYPE[key]
+        dtype = self.__PTRKEY2NUMPY[key]
+        if isinstance(value, _np.ndarray):
+            value = value.copy()
+        self.__ptr[key] = _np.asfortranarray(value, dtype=dtype)
+        self.reshape(self.__ptr[key].shape)
+        self._eval2tblval(key)
 
     def _derived_attr(self):
         """Return dict with derived attributs (Cached version)"""
@@ -1526,7 +1688,6 @@ class BurpcEle(_BurpcObjBase):
 
     def __derived_attr(self):
         """Return dict with derived attributs"""
-        #TODO: rval, drval, charval...
         params = _rmn.mrbcvt_dict_bufr(self.__ptr['e_bufrid'], False)
         nval, nt = 0, 0
         if self.__ptr['ptrkey'] is not None:

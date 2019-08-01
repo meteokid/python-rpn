@@ -30,6 +30,7 @@ def ftnNmlDtype2List(cfg, dtypename, dtypeattr, dtypeattrval):
                 ii2= 0
                 if not m.group('index') is None:
                     ii = int(m.group('index'))
+                ii2 = dtypeattr.index(m.group('attr').lower())
                 try:
                     ii2 = dtypeattr.index(m.group('attr').lower())
                 except:
@@ -159,8 +160,8 @@ if __name__ == "__main__":
             dtypename = dtypename.strip().lower()
             dtypeattr = []
             dtypeattrval = []
-            for myattr in dtypeattrstr.split(', '):
-                x = myattr.split('=')
+            for myattr in dtypeattrstr.split(','):
+                x = myattr.strip().split('=')
                 dtypeattr.append(x[0].strip().lower())
                 try:
                     dtypeattrval.append(x[1].strip())

@@ -348,8 +348,13 @@ class FtnNmlFile(FtnNmlObj):
         rawdata = ""
         try:
             fd = open(filename, "rb")
-            try:     rawdata = "".join([x.decode(sys.stdin.encoding) for x in fd.readlines()])
-            finally: fd.close()
+            try:
+                if sys.stdin.encoding:
+                        rawdata = "".join([x.decode(sys.stdin.encoding) for x in fd.readlines()])
+                else:
+                        rawdata = "".join(fd.readlines())
+            finally:
+                fd.close()
         except IOError:
             raise IOError(" Oops! File does not exist or is not readable: {0}".
                           format(filename))

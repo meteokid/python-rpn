@@ -34,6 +34,11 @@ See Also:
 """
 
 import unittest
+import sys
+if sys.version_info < (3, ):
+    range = xrange
+else:
+    long = int
 
 class rpnpyCookbook(unittest.TestCase):
     

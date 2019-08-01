@@ -278,7 +278,7 @@ def fstopenall(paths, filemode=_rc.FST_RO, verbose=None):
                                   .format(os.path.join(mypath, myfile)))
                         filelist.append(os.path.join(mypath, myfile))
                     elif verbose:
-                        print("(fstopenall) Ignoring non FST file: {0}"\
+                        print("(fstopenall) Ignoring non FST file: {0}"
                               .format(os.path.join(mypath, myfile)))
                 break
     if filemode != _rc.FST_RO and len(paths) > 1:
@@ -696,6 +696,8 @@ def fst_edit_dir(key, datev=-1, dateo=-1, deet=-1, npas=-1, ni=-1, nj=-1, nk=-1,
     if isinstance(key, dict):
         key = key['key']
 
+    #TODO: should accept all args as a dict in the key arg
+
     if isinstance(key, (list, tuple)):
         for key2 in key:
             fst_edit_dir(key2, datev, dateo, deet, npas, ni, nj, nk,
@@ -726,7 +728,7 @@ def fst_edit_dir(key, datev=-1, dateo=-1, deet=-1, npas=-1, ni=-1, nj=-1, nk=-1,
             npas1 = recparams['npas'] if npas == -1 else npas
             try:
                 datev = _rb.incdatr(recparams['dateo'], deet1*npas1/3600.)
-            except:
+            except Exception as e:
                 raise FSTDError('fst_edit_dir: error computing datev to keep_dateo ({0})'.format(repr(e)))
     istat = _rp.c_fst_edit_dir(key, datev, deet, npas, ni, nj, nk,
                  ip1, ip2, ip3,
@@ -1619,6 +1621,7 @@ def fstopt(optName, optValue, setOget=_rc.FSTOP_SET):
         optName  : name of option to be set or printed
                    or one of these constants:
                    FSTOP_MSGLVL, FSTOP_TOLRNC, FSTOP_PRINTOPT, FSTOP_TURBOCOMP
+                   FSTOP_FASTIO, FSTOP_IMAGE, FSTOP_REDUCTION32
         optValue : value to be set (int or string)
                    or one of these constants:
                    for optName=FSTOP_MSGLVL:
@@ -1630,6 +1633,8 @@ def fstopt(optName, optValue, setOget=_rc.FSTOP_SET):
                       FSTOPI_TOL_WARNING, FSTOPI_TOL_ERROR, FSTOPI_TOL_FATAL
                    for optName=FSTOP_TURBOCOMP:
                       FSTOPS_TURBO_FAST, FSTOPS_TURBO_BEST
+                   for optName=FSTOP_FASTIO, FSTOP_IMAGE, FSTOP_REDUCTION32:
+                      FSTOPL_TRUE, FSTOPL_FALSE
         setOget  : define mode, set or print/get
                    one of these constants: FSTOP_SET, FSTOP_GET
                    default: set mode
@@ -1653,6 +1658,9 @@ def fstopt(optName, optValue, setOget=_rc.FSTOP_SET):
                              setOget)
     elif isinstance(optValue, _integer_types):
         istat = _rp.c_fstopi(_C_WCHAR2CHAR(optName), optValue, setOget)
+    elif isinstance(optValue, bool) or \
+        optName in (_rc.FSTOP_FASTIO, _rc.FSTOP_IMAGE, _rc.FSTOP_REDUCTION32):
+        istat = _rp.c_fstopl(_C_WCHAR2CHAR(optName), optValue, setOget)
     else:
         raise TypeError("fstopt: cannot set optValue of type: {0} {1}"\
                         .format(type(optValue), repr(optValue)))

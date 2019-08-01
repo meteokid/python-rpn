@@ -3,11 +3,11 @@ import ctypes as _ct
 
 if sys.version_info < (3,):
     integer_types = (int, long,)
-    # range = xrange
+    range = xrange
 else:
     integer_types = (int,)
     long = int
-    # xrange = range
+    range = range
 
 C_WCHAR2CHAR = lambda x: bytes(str(x).encode('ascii'))
 C_WCHAR2CHAR.__doc__ = 'Convert str to bytes'

@@ -1,0 +1,8 @@
+**                            BURP/BUFR TABLE "B"
+* Test table with a formating error on code 000003
+000001  TABLE A: ENTRY                              CCITT IA5    0          0    24
+000002  TABLE A: DATA CATEGORY DESCRIPT., LINE 1    CCITT IA5    0          0   256
+000003  TABLE A: DATA CATEGORY DESCRIPT., LINE 2    CCITT IA5    10         0   256
+000004  BUFR/CREX MASTER TABLE                      CCITT IA5    0          0    16
+000005  BUFR EDITION NUMBER                         CCITT IA5    0          0    24
+001041  ABSOL. PLATFORM VELOCITY, FIRST COMPONENT   M/S          5-1073741824    31

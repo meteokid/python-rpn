@@ -17,10 +17,10 @@ See Also:
 """
 import ctypes as _ct
 import numpy  as _np
-#import numpy.ctypeslib as _npc
+# import numpy.ctypeslib as _npc
 from rpnpy.vgd import proto as _vp
-from rpnpy.vgd  import const as _vc
-from rpnpy.vgd  import VGDError
+from rpnpy.vgd import const as _vc
+from rpnpy.vgd import VGDError
 import rpnpy.librmn.all as _rmn
 
 from rpnpy import integer_types as _integer_types
@@ -31,7 +31,7 @@ from rpnpy import C_MKSTR as _C_MKSTR
 _MB2PA = 100.
 
 ## VGD_TYPE_CODE(kind, version): Compute VGD type code from kind and version.
-VGD_TYPE_CODE = lambda k,v: int(k)*1000 + int(v)
+VGD_TYPE_CODE = lambda k, v: int(k) * 1000 + int(v)
 
 
 def vgd_new_sigm(hyb, ip1=-1, ip2=-1):
@@ -66,6 +66,8 @@ def vgd_new_sigm(hyb, ip1=-1, ip2=-1):
     vgd_put_opt('ALLOW_SIGMA', _vc.VGD_ALLOW_SIGMA)
     (kind, version) = _vc.VGD_KIND_VER['sigm']
     return vgd_new(kind, version, hyb, ip1=ip1, ip2=ip2)
+
+
 vgd_new_1001 = vgd_new_sigm
 
 
@@ -100,6 +102,8 @@ def vgd_new_pres(pres, ip1=-1, ip2=-1):
     """
     (kind, version) = _vc.VGD_KIND_VER['pres']
     return vgd_new(kind, version, hyb=pres, ip1=ip1, ip2=ip2)
+
+
 vgd_new_2001 = vgd_new_pres
 
 
@@ -141,6 +145,8 @@ def vgd_new_eta(hyb, ptop, ip1=-1, ip2=-1):
     """
     (kind, version) = _vc.VGD_KIND_VER['eta']
     return vgd_new(kind, version, hyb=hyb, ptop=ptop, ip1=ip1, ip2=ip2)
+
+
 vgd_new_1002 = vgd_new_eta
 
 
@@ -196,6 +202,8 @@ def vgd_new_hyb(hyb, rcoef1, ptop, pref, ip1=-1, ip2=-1):
     (kind, version) = _vc.VGD_KIND_VER['hyb']
     return vgd_new(kind, version, hyb=hyb,
                    rcoef1=rcoef1, ptop=ptop, pref=pref, ip1=ip1, ip2=ip2)
+
+
 vgd_new_5001 = vgd_new_hyb
 
 
@@ -206,7 +214,7 @@ def vgd_new_hybs(hyb, rcoef1, rcoef2, ptop, pref, ip1=-1, ip2=-1):
     Args:
         hyb      (list) : list of hybrid level values
         rcoef1   (float): 1st Coordinate recification R-coefficient
-        rcoef1   (float): 2nd Coordinate recification R-coefficient
+        rcoef2   (float): 2nd Coordinate recification R-coefficient
         ptop     (float): Top level pressure [Pa]
         pref     (float): Reference level pressure [Pa]
         ip1      (int)  : Ip1 of the vgrid record
@@ -245,6 +253,8 @@ def vgd_new_hybs(hyb, rcoef1, rcoef2, ptop, pref, ip1=-1, ip2=-1):
     return vgd_new(kind, version, hyb=hyb,
                    rcoef1=rcoef1, rcoef2=rcoef2, ptop=ptop, pref=pref,
                    ip1=ip1, ip2=ip2)
+
+
 vgd_new_5002 = vgd_new_hybs
 
 
@@ -257,7 +267,7 @@ def vgd_new_hybt(hyb, rcoef1, rcoef2, ptop, pref, ip1=-1, ip2=-1):
     Args:
         hyb      (list) : list of hybrid level values
         rcoef1   (float): 1st Coordinate recification R-coefficient
-        rcoef1   (float): 2nd Coordinate recification R-coefficient
+        rcoef2   (float): 2nd Coordinate recification R-coefficient
         ptop     (float): Top level pressure [Pa]
         pref     (float): Reference level pressure [Pa]
         ip1      (int)  : Ip1 of the vgrid record
@@ -296,6 +306,8 @@ def vgd_new_hybt(hyb, rcoef1, rcoef2, ptop, pref, ip1=-1, ip2=-1):
     return vgd_new(kind, version, hyb=hyb,
                    rcoef1=rcoef1, rcoef2=rcoef2, ptop=ptop, pref=pref,
                    ip1=ip1, ip2=ip2)
+
+
 vgd_new_5003 = vgd_new_hybt
 
 
@@ -308,7 +320,7 @@ def vgd_new_hybm(hyb, rcoef1, rcoef2, ptop, pref, ip1=-1, ip2=-1):
     Args:
         hyb      (list) : list of hybrid level values
         rcoef1   (float): 1st Coordinate recification R-coefficient
-        rcoef1   (float): 2nd Coordinate recification R-coefficient
+        rcoef2   (float): 2nd Coordinate recification R-coefficient
         ptop     (float): Top level pressure [Pa]
                           Possible values -1, -2 or any pressure value.
                           Recommended value is -2 which gives a flat
@@ -350,6 +362,8 @@ def vgd_new_hybm(hyb, rcoef1, rcoef2, ptop, pref, ip1=-1, ip2=-1):
     return vgd_new(kind, version, hyb=hyb,
                    rcoef1=rcoef1, rcoef2=rcoef2, ptop=ptop, pref=pref,
                    ip1=ip1, ip2=ip2)
+
+
 vgd_new_5004 = vgd_new_hybm
 
 
@@ -405,6 +419,8 @@ def vgd_new_hybmd(hyb, rcoef1, rcoef2, pref, dhm, dht,
     return vgd_new(kind, version, hyb=hyb,
                    rcoef1=rcoef1, rcoef2=rcoef2, pref=pref,
                    dhm=dhm, dht=dht, ip1=ip1, ip2=ip2)
+
+
 vgd_new_5005 = vgd_new_hybmd
 
 
@@ -463,6 +479,8 @@ def vgd_new_hybps(hyb, rcoef1, rcoef2, rcoef3, rcoef4, pref, dhm, dht,
     return vgd_new(kind, version, hyb=hyb,
                    rcoef1=rcoef1, rcoef2=rcoef2, rcoef3=rcoef3, rcoef4=rcoef4,
                    pref=pref, dhm=dhm, dht=dht, ip1=ip1, ip2=ip2)
+
+
 vgd_new_5100 = vgd_new_hybps
 
 
@@ -509,6 +527,8 @@ def vgd_new_hybh(hyb, rcoef1, rcoef2, dhm, dht, ip1=-1, ip2=-1):
     return vgd_new(kind, version, hyb=hyb,
                    rcoef1=rcoef1, rcoef2=rcoef2, dhm=dhm, dht=dht, ip1=ip1,
                    ip2=ip2)
+
+
 vgd_new_21001 = vgd_new_hybh
 
 
@@ -561,6 +581,8 @@ def vgd_new_hybhs(hyb, rcoef1, rcoef2, rcoef3, rcoef4, dhm, dht, ip1=-1,
     return vgd_new(kind, version, hyb=hyb,
                    rcoef1=rcoef1, rcoef2=rcoef2, rcoef3=rcoef3, rcoef4=rcoef4,
                    dhm=dhm, dht=dht, ip1=ip1, ip2=ip2)
+
+
 vgd_new_21001_SLEVE = vgd_new_hybhs
 
 
@@ -610,11 +632,13 @@ def vgd_new_hybhl(hyb, rcoef1, rcoef2, dhm, dht, dhw, ip1=-1, ip2=-1):
     return vgd_new(kind, version, hyb=hyb,
                    rcoef1=rcoef1, rcoef2=rcoef2, dhm=dhm, dht=dht, dhw=dhw,
                    ip1=ip1, ip2=ip2)
+
+
 vgd_new_21002 = vgd_new_hybhl
 
 
 def vgd_new_hybhls(hyb, rcoef1, rcoef2, rcoef3, rcoef4, dhm, dht, dhw, ip1=-1,
-                  ip2=-1):
+                   ip2=-1):
     """
     Build an Hybrid Lorenz Staggered SLEVE (21001) VGridDescriptor initialized
     with provided info.
@@ -665,6 +689,8 @@ def vgd_new_hybhls(hyb, rcoef1, rcoef2, rcoef3, rcoef4, dhm, dht, dhw, ip1=-1,
     return vgd_new(kind, version, hyb=hyb,
                    rcoef1=rcoef1, rcoef2=rcoef2, rcoef3=rcoef3, rcoef4=rcoef4,
                    dhm=dhm, dht=dht, dhw=dhw, ip1=ip1, ip2=ip2)
+
+
 vgd_new_21002_SLEVE = vgd_new_hybhls
 
 
@@ -849,8 +875,8 @@ def vgd_read(fileId, ip1=-1, ip2=-1, kind=-1, version=-1):
     ok = _vp.c_vgd_new_read(vgd_ptr, fileId, ip1, ip2, kind, version)
     if ok != _vc.VGD_OK:
         raise VGDError('Problem getting vgd from file ' +
-                        '(id={0}, ip1={1}, ip2={2}, kind={3}, version={4})'.
-                        format(fileId, ip1, ip2, kind, version))
+                       '(id={0}, ip1={1}, ip2={2}, kind={3}, version={4})'.
+                       format(fileId, ip1, ip2, kind, version))
     return vgd_ptr
 
 
@@ -1144,7 +1170,7 @@ def vgd_put_opt(key, value):
     ok = _vp.c_vgd_putopt_int(_C_WCHAR2CHAR(key2), value)
     if ok != _vc.VGD_OK:
         raise VGDError('Problem setting opt (key={0}, value={1})'.
-                        format(key, repr(value)))
+                       format(key, repr(value)))
     return
 
 
@@ -1155,7 +1181,7 @@ def vgd_get(vgd_ptr, key, quiet=1, defaultOnFail=False, defaultValue=None):
     Args:
         vgd_ptr (VGridDescriptor ref):
                         Reference/Pointer to the VGridDescriptor
-        key   (int)   : Parameter name
+        key   (str)   : Parameter name
                         Possible values: see VGD_KEYS, VGD_OPR_KEYS
         quiet (int)   : Quite mode on off
                         1 for quiet; 0 for verbose
@@ -1213,8 +1239,8 @@ def vgd_get(vgd_ptr, key, quiet=1, defaultOnFail=False, defaultValue=None):
     v1 = None
     key2 = key.upper()[0:4]
     key2b = _C_WCHAR2CHAR(key2)
-    if   key2 in _vc.VGD_OPR_KEYS['get_char']:
-        v1 = _C_MKSTR(' '*_vc.VGD_MAXSTR_ETIKET)
+    if key2 in _vc.VGD_OPR_KEYS['get_char']:
+        v1 = _C_MKSTR(' ' * _vc.VGD_MAXSTR_ETIKET)
         ok = _vp.c_vgd_get_char(vgd_ptr, key2b, v1, quiet)
         if ok == _vc.VGD_OK:
             v1 = _C_CHAR2WCHAR(v1.value).strip()
@@ -1264,7 +1290,7 @@ def vgd_get(vgd_ptr, key, quiet=1, defaultOnFail=False, defaultValue=None):
                                      _ct.byref(nk), quiet)
         if ok == _vc.VGD_OK:
             nv = ni.value * nj.value * nk.value
-            #v1 = [v for v in v1[0:nv]]
+            # v1 = [v for v in v1[0:nv]]
             v1 = _np.asarray(v1[0:nv], dtype=_np.float64, order='F')
             v1 = _np.reshape(v1, (ni.value, nj.value, nk.value), order='F')
 
@@ -1320,7 +1346,7 @@ def vgd_put(vgd_ptr, key, value):
     """
     key2 = key.upper()[0:4]
     key2b = _C_WCHAR2CHAR(key2)
-    if   key2 in _vc.VGD_OPR_KEYS['put_char']:
+    if key2 in _vc.VGD_OPR_KEYS['put_char']:
         v1 = _C_MKSTR(str(value))
         ok = _vp.c_vgd_put_char(vgd_ptr, key2b, v1)
     elif key2 in _vc.VGD_OPR_KEYS['put_int']:
@@ -1329,11 +1355,11 @@ def vgd_put(vgd_ptr, key, value):
     ##     ok = _vp.c_vgd_put_double(vgd_ptr, key2b, value)
     else:
         raise KeyError('Problem setting val, invalid key (key={0})'.
-                        format(key))
+                       format(key))
 
     if ok != _vc.VGD_OK:
         raise VGDError('Problem setting val (key={0}, value={1})'.
-                        format(key, repr(value)))
+                       format(key, repr(value)))
     return
 
 
@@ -1469,7 +1495,7 @@ def vgd_levels2(vgd_ptr, rfld=None, rfls=None, ip1list='VIPM',
     else:
         raise TypeError('ip1list should be string, list or int: {0}'.
                         format(str(type(ip1list))))
-    nip1    = ip1list1.size
+    nip1 = ip1list1.size
     ip1list = ip1list1.ctypes.data_as(_ct.POINTER(_ct.c_int))
 
     vkind = vgd_get(vgd_ptr, 'KIND')
@@ -1479,30 +1505,26 @@ def vgd_levels2(vgd_ptr, rfld=None, rfls=None, ip1list='VIPM',
     rfls_nomvar = vgd_get(vgd_ptr, 'RFLS', defaultOnFail=True)
 
     rank0 = False
-    if isinstance(rfld, float):
-        rfld = _np.array([rfld], dtype=_np.float32, order='FORTRAN')
-        rank0 = True
-    elif isinstance(rfld, (list, tuple)):
-        rfld = _np.array(rfld, dtype=_np.float32, order='FORTRAN')
-    elif isinstance(rfld, _integer_types):
-        if rfld_nomvar is None:
-            rfld = _np.array([float(fileId)], dtype=_np.float32,
-                             order='FORTRAN')
+    if rfld_nomvar:
+        if isinstance(rfld, float):
+            rfld = _np.array([rfld], dtype=_np.float32, order='FORTRAN')
             rank0 = True
-        else:
+        elif isinstance(rfld, (list, tuple)):
+            rfld = _np.array(rfld, dtype=_np.float32, order='FORTRAN')
+        elif isinstance(rfld, _integer_types):
             fileId = rfld
             rfld = _rmn.fstlir(fileId, nomvar=rfld_nomvar.strip())['d']
             if rfld_nomvar.upper() in _vc.VGD_RFLD_CONV_KEYS:
                 rfld = _vc.VGD_RFLD_CONV[rfld_nomvar.upper()](rfld)
-    elif rfld is None:
-        if rfld_nomvar is none:
-            raise TypeError('RFLD needs to be provided for vcode={0}'.format(vcode))
-        else:
-            rfld = _np.array([1000.], dtype=_np.float32, order='FORTRAN')
-            rank0 = True
-    elif not isinstance(rfld, _np.ndarray):
-        raise TypeError('rfld should be ndarray, list or float: {0}'.
-                        format(str(type(ip1list))))
+        elif rfld is None:
+            if rfld_nomvar is None:
+                raise TypeError('RFLD needs to be provided for vcode={0}'.format(vcode))
+            else:
+                rfld = _np.array([1000.], dtype=_np.float32, order='FORTRAN')
+                rank0 = True
+        elif not isinstance(rfld, _np.ndarray):
+            raise TypeError('rfld should be ndarray, list or float: {0}'.
+                            format(str(type(ip1list))))
 
     if rfls_nomvar:
         if isinstance(rfls, float):
@@ -1511,15 +1533,10 @@ def vgd_levels2(vgd_ptr, rfld=None, rfls=None, ip1list='VIPM',
         elif isinstance(rfls, (list, tuple)):
             rfls = _np.array(rfls, dtype=_np.float32, order='FORTRAN')
         elif isinstance(rfls, _integer_types):
-            if rfls_nomvar:
-                fileId = rfls
-                rfls = _rmn.fstlir(fileId, nomvar=rfls_nomvar.strip())['d']
-                if rfls_nomvar.upper() in _vc.VGD_RFLD_CONV_KEYS:
-                    rfls = _vc.VGD_RFLD_CONV[rfls_nomvar.upper()](rfls)
-            else:
-                rfls = _np.array([float(fileId)], dtype=_np.float32,
-                                 order='FORTRAN')
-                rank0 = True
+            fileId = rfls
+            rfls = _rmn.fstlir(fileId, nomvar=rfls_nomvar.strip())['d']
+            if rfls_nomvar.upper() in _vc.VGD_RFLD_CONV_KEYS:
+                rfls = _vc.VGD_RFLD_CONV[rfls_nomvar.upper()](rfls)
         elif rfls is None:
             if rfls_nomvar:
                 raise TypeError('RFLS needs to be provided for vcode={0}'.
@@ -1542,33 +1559,33 @@ def vgd_levels2(vgd_ptr, rfld=None, rfls=None, ip1list='VIPM',
         dtype = _np.float32
         rfld8 = rfld
         rfls8 = rfls
-    shape = list(rfld.shape) + [nip1]
+    if rfld is None:
+        shape = [nip1]
+        rfld8 =  _np.array([-1.],dtype=_np.float32)
+    else:
+        shape = list(rfld.shape) + [nip1]
+
     levels8 = _np.empty(shape, dtype=dtype, order='FORTRAN')
 
     ok = _vc.VGD_OK
-    if rfld_nomvar is None:  # Workaround for pressure levels
-        for k in range(nip1):
-            value = _rmn.convertIp(_rmn.CONVIP_DECODE, int(ip1list1[k]))[0]
-            levels8[:, :, k] = value * _MB2PA
-    else:
-        if double_precision:
-            if rfls_nomvar is None:
-                ok = _vp.c_vgd_diag_withref_8(vgd_ptr, rfld8.size, 1, nip1,
-                                              ip1list, levels8, rfld8, in_log,
-                                              dpidpis)
-            else:
-                ok = _vp.c_vgd_diag_withref_2ref_8(vgd_ptr, rfld8.size, 1, nip1,
-                                                   ip1list, levels8, rfld8,
-                                                   rfls8, in_log, dpidpis)
+    if double_precision:
+        if rfls_nomvar is None:
+            ok = _vp.c_vgd_diag_withref_8(vgd_ptr, rfld8.size, 1, nip1,
+                                          ip1list, levels8, rfld8, in_log,
+                                          dpidpis)
         else:
-            if rfls_nomvar is None:
-                ok = _vp.c_vgd_diag_withref(vgd_ptr, rfld8.size, 1, nip1,
-                                            ip1list, levels8, rfld8, in_log,
-                                            dpidpis)
-            else:
-                ok = _vp.c_vgd_diag_withref_2ref(vgd_ptr, rfld8.size, 1, nip1,
-                                            ip1list, levels8, rfld8, rfls8,
-                                            in_log, dpidpis)
+            ok = _vp.c_vgd_diag_withref_2ref_8(vgd_ptr, rfld8.size, 1, nip1,
+                                               ip1list, levels8, rfld8,
+                                               rfls8, in_log, dpidpis)
+    else:
+        if rfls_nomvar is None:
+            ok = _vp.c_vgd_diag_withref(vgd_ptr, rfld8.size, 1, nip1,
+                                        ip1list, levels8, rfld8, in_log,
+                                        dpidpis)
+        else:
+            ok = _vp.c_vgd_diag_withref_2ref(vgd_ptr, rfld8.size, 1, nip1,
+                                        ip1list, levels8, rfld8, rfls8,
+                                        in_log, dpidpis)
     if ok != _vc.VGD_OK:
         raise VGDError('Problem computing levels.')
     if rank0:
@@ -1632,13 +1649,13 @@ def vgd_stda76_temp(vgd_ptr, ip1list='VIPM'):
     else:
         raise TypeError('ip1list should be string, list or int: {0}'.
                         format(str(type(ip1list))))
-    nip1    = ip1list1.size
+    nip1 = ip1list1.size
     ip1list = ip1list1.ctypes.data_as(_ct.POINTER(_ct.c_int))
     temp = _np.empty(nip1, dtype=_np.float32, order='FORTRAN')
     ok = _vp.c_vgd_stda76_temp(vgd_ptr, ip1list, nip1, temp)
     if ok != _vc.VGD_OK:
         raise VGDError('Problem getting stda 1976 temperature.')
-    return(temp)
+    return temp
 
 
 def vgd_stda76_pres(vgd_ptr, ip1list='VIPM', sfc_temp=None, sfc_pres=None):
@@ -1706,16 +1723,16 @@ def vgd_stda76_pres(vgd_ptr, ip1list='VIPM', sfc_temp=None, sfc_pres=None):
         raise TypeError('ip1list should be string, list or int: {0}'.
                         format(str(type(ip1list))))
     if not sfc_temp is None:
-       sfc_temp  = _ct.POINTER(_ct.c_float)(_ct.c_float(sfc_temp))
+        sfc_temp = _ct.POINTER(_ct.c_float)(_ct.c_float(sfc_temp))
     if not sfc_pres is None:
-       sfc_pres  = _ct.POINTER(_ct.c_float)(_ct.c_float(sfc_pres))
-    nip1    = ip1list1.size
+        sfc_pres = _ct.POINTER(_ct.c_float)(_ct.c_float(sfc_pres))
+    nip1 = ip1list1.size
     ip1list = ip1list1.ctypes.data_as(_ct.POINTER(_ct.c_int))
     pres = _np.empty(nip1, dtype=_np.float32, order='FORTRAN')
     ok = _vp.c_vgd_stda76_pres(vgd_ptr, ip1list, nip1, pres, sfc_temp, sfc_pres)
     if ok != _vc.VGD_OK:
         raise VGDError('Problem getting stda 1976 pressure.')
-    return(pres)
+    return pres
 
 
 def vgd_stda76_hgts_from_pres_list(pres=None):
@@ -1804,7 +1821,7 @@ def vgd_stda76_pres_from_hgts_list(hgts=None):
     else:
         raise TypeError('hgts should be list or ndarray: {0}'.
                         format(str(type(hgts))))
-    pres =  _np.empty(hgts.shape, dtype=_np.float32)
+    pres = _np.empty(hgts.shape, dtype=_np.float32)
     ok = _vp.c_vgd_stda76_pres_from_hgts_list(pres, hgts, hgts.size)
     if ok != _vc.VGD_OK:
         raise VGDError('Problem computing stda 1976 pressure from height list.')
@@ -1813,7 +1830,7 @@ def vgd_stda76_pres_from_hgts_list(hgts=None):
     return pres
 
 
-def vgd_print_desc(vgd0ptr, convip=-1):
+def vgd_print_desc(vgd_ptr, convip=-1):
     """
     Print vgrid descriptor parameters to standard output, a debugging tool.
 
@@ -1826,13 +1843,13 @@ def vgd_print_desc(vgd0ptr, convip=-1):
         TypeError
         VGDError
     """
-    _vp.c_vgd_print_desc(vgd0ptr, -1, convip)
+    _vp.c_vgd_print_desc(vgd_ptr, -1, convip)
 
 
 if __name__ == "__main__":
     import doctest
-    doctest.testmod()
 
+    doctest.testmod()
 
 # -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
 # vim: set expandtab ts=4 sw=4:
