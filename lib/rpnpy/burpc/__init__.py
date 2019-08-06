@@ -89,17 +89,21 @@ def load_burpc_lib(burpc_version=None):
     from rpnpy import librmn
     ## import numpy  as np
     ## import numpy.ctypeslib as npct
-
-    # For windows, need to change the current directory to see the .dll files.
     curdir = os.path.realpath(os.getcwd())
-    os.chdir(os.path.join(os.path.dirname(__file__),os.pardir,'_sharedlibs'))
+    # Determine shared library suffix
+    try:
+      from rpnpy._sharedlibs import sharedlib_suffix as suffix
+      # For windows, need to change the current directory to see the .dll files.
+      os.chdir(os.path.join(os.path.dirname(__file__),os.pardir,'_sharedlibs'))
+    except ImportError:
+      suffix = 'so'
 
     if burpc_version is None:
         BURPC_VERSION = os.getenv('RPNPY_BURPC_VERSION',
                                   BURPC_VERSION_DEFAULT).strip()
     else:
         BURPC_VERSION = burpc_version
-    burpc_libfile = 'libburp_c_shared' + BURPC_VERSION.strip() + '.*'
+    burpc_libfile = 'libburp_c_shared' + BURPC_VERSION.strip() + '.' + suffix
 
     localpath   = [os.path.realpath(os.getcwd())]
     pylibpath = os.getenv('PYTHONPATH', '').split(':')

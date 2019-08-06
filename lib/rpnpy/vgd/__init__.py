@@ -79,17 +79,21 @@ def loadVGDlib(vgd_version=None):
     from rpnpy import librmn
     ## import numpy  as np
     ## import numpy.ctypeslib as npct
-
-    # For windows, need to change the current directory to see the .dll files.
     curdir = os.path.realpath(os.getcwd())
-    os.chdir(os.path.join(os.path.dirname(__file__),os.pardir,'_sharedlibs'))
+    # Determine shared library suffix
+    try:
+      from rpnpy._sharedlibs import sharedlib_suffix as suffix
+      # For windows, need to change the current directory to see the .dll files.
+      os.chdir(os.path.join(os.path.dirname(__file__),os.pardir,'_sharedlibs'))
+    except ImportError:
+      suffix = 'so'
 
     if vgd_version is None:
         VGD_VERSION = os.getenv('RPNPY_VGD_VERSION',
                                 VGD_VERSION_DEFAULT).strip()
     else:
         VGD_VERSION = vgd_version
-    vgd_libfile = 'libdescripshared' + VGD_VERSION.strip() + '.*'
+    vgd_libfile = 'libdescripshared' + VGD_VERSION.strip() + '.' + suffix
 
     localpath   = [os.path.realpath(os.getcwd())]
     pylibpath   = os.getenv('PYTHONPATH','').split(':')

@@ -74,17 +74,21 @@ def loadRMNlib(rmn_version=None):
     import ctypes as ct
     ## import numpy  as np
     ## import numpy.ctypeslib as npct
-
-    # For windows, need to change the current directory to see the .dll files.
     curdir = os.path.realpath(os.getcwd())
-    os.chdir(os.path.join(os.path.dirname(__file__),os.pardir,'_sharedlibs'))
+    # Determine shared library suffix
+    try:
+      from rpnpy._sharedlibs import sharedlib_suffix as suffix
+      # For windows, need to change the current directory to see the .dll files.
+      os.chdir(os.path.join(os.path.dirname(__file__),os.pardir,'_sharedlibs'))
+    except ImportError:
+      suffix = 'so'
 
     if rmn_version is None:
         RMN_VERSION = os.getenv('RPNPY_RMN_VERSION',
                                 RMN_VERSION_DEFAULT).strip()
     else:
         RMN_VERSION = rmn_version
-    rmn_libfile = 'librmnshared' + RMN_VERSION.strip() + '.*'
+    rmn_libfile = 'librmnshared' + RMN_VERSION.strip() + '.' + suffix
 
     localpath   = [os.path.realpath(os.getcwd())]
     pylibpath   = os.getenv('PYTHONPATH','').split(':')
