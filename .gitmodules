@@ -1,9 +1,3 @@
-[submodule "src/librmn"]
-	path = src/librmn
-	url = https://github.com/armnlib/librmn.git
-[submodule "src/vgrid"]
-	path = src/vgrid
-	url = https://gitlab.com/ECCC_CMDN/vgrid.git
-[submodule "src/libburp"]
-	path = src/libburp
-	url = https://github.com/josecmc/libburp.git
+[submodule "lib/rpnpy/_sharedlibs"]
+	path = lib/rpnpy/_sharedlibs
+	url = https://github.com/neishm/python-rpn-libsrc.git

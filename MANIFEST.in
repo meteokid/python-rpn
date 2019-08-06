@@ -1,10 +1,9 @@
 include LICENSE VERSION DESCRIPTION KnownIssues
-recursive-include src *
-prune src/vgrid/tests
-prune src/libburp/tests
-exclude src/librmn/.git
-exclude src/vgrid/.git
-exclude src/libburp/.git
-exclude src/librmn/.gitignore
-exclude src/vgrid/.gitignore
-exclude src/libburp/.gitignore
+recursive-include lib/rpnpy/_sharedlibs *
+prune lib/rpnpy/_sharedlibs/vgrid/tests
+prune lib/rpnpy/_sharedlibs/libburp/tests
+exclude lib/rpnpy/_sharedlibs/.git*
+exclude lib/rpnpy/_sharedlibs/*.pyc
+exclude lib/rpnpy/_sharedlibs/librmn/.git*
+exclude lib/rpnpy/_sharedlibs/vgrid/.git*
+exclude lib/rpnpy/_sharedlibs/libburp/.git*
