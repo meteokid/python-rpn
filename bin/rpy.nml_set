@@ -87,7 +87,11 @@ if __name__ == "__main__":
         try:
             (nml2, key2) = re.split('/',key)
         except ValueError:
-            (nml2, key2) = (namelist, key)
+            if namelist.strip():
+                (nml2, key2) = (namelist, key)
+            else:
+                logging.warning('Key/value pairs must be written as key=value or nml/key=value... skipping {}\n'.format(entry))
+                continue
         (nml2, key2) = (cleanName(nml2), cleanName(key2))
         if not nml2 in cfg.keys():
             cfg.add(FtnNmlSection(nml2))
