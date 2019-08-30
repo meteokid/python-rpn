@@ -1527,6 +1527,10 @@ def fstnbr(iunit):
         ValueError on invalid input arg value
         FSTDError  on any other error
 
+    Notes:
+        c_fstnbr on linked files returns only nrec on the first file
+        fstnbr interface add results for all linked files
+
     Examples:
     >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
@@ -1554,7 +1558,13 @@ def fstnbr(iunit):
                         .format(type(iunit)))
     if iunit < 0:
         raise ValueError("fstnbr: must provide a valid iunit: {0}".format(iunit))
-    nrec = _rp.c_fstnbr(iunit)
+    try:
+        iunitlist = _linkedUnits[str(iunit)]
+    except KeyError:
+        iunitlist = (iunit,)
+    nrec = 0
+    for iunit1 in iunitlist:
+        nrec += _rp.c_fstnbr(iunit1)
     if nrec < 0:
         raise FSTDError()
     return nrec
@@ -1575,6 +1585,10 @@ def fstnbrv(iunit):
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         FSTDError  on any other error
+
+    Notes:
+        c_fstnbrv on linked files returns only nrec on the first file
+        fstnbrv interface add results for all linked files
 
     Examples:
     >>> import os, os.path
@@ -1604,7 +1618,16 @@ def fstnbrv(iunit):
                         .format(type(iunit)))
     if iunit < 0:
         raise ValueError("fstnbrv: must provide a valid iunit: {0}".format(iunit))
-    nrec = _rp.c_fstnbrv(iunit)
+    try:
+        iunitlist = _linkedUnits[str(iunit)]
+    except KeyError:
+        iunitlist = (iunit,)
+    nrec = 0
+    for iunit1 in iunitlist:
+        nrec += _rp.c_fstnbrv(iunit1)
+    if nrec < 0:
+        raise FSTDError()
+    return nrec
     if nrec < 0:
         raise FSTDError()
     return nrec
