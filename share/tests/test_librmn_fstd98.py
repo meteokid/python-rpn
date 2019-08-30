@@ -163,10 +163,19 @@ class Librmn_fstd98_Test(unittest.TestCase):
         reclist = rmn.fstinl(funit,nomvar='VF')
         self.assertEqual(len(reclist),26,' fstinl of VF found %d/26 rec ' % len(reclist))
 
-        #Note: fstnbr does not work on linked files...
-        ## nrec = rmn.fstnbrv(funit)
-        ## self.assertEqual(nrec,9999,' fstnbrv found %d/???? rec ' % nrec)
-       
+        reclist2 = rmn.fstinl(funit)
+        self.assertEqual(len(reclist2),2788,' fstinl found %d/2788 rec ' % len(reclist))
+        
+        #Note: c_fstnbrv on linked files returns only nrec on the first file
+        #      python's fstnbrv interface add results for all linked files
+        nrec = rmn.fstnbrv(funit)
+        self.assertEqual(nrec,2788,' fstnbrv found %d/2788 rec ' % nrec)
+
+        #Note: c_fstnbr on linked files returns only nrec on the first file
+        #      python's fstnbr interface add results for all linked files
+        nrec = rmn.fstnbr(funit)
+        self.assertEqual(nrec,2788,' fstnbr found %d/2788 rec ' % nrec)
+
         rmn.fstcloseall(funit)
 
 
