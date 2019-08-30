@@ -35,6 +35,8 @@ from rpnpy.librmn import RMNError
 from rpnpy import integer_types as _integer_types
 from rpnpy import C_WCHAR2CHAR as _C_WCHAR2CHAR
 from rpnpy import C_CHAR2WCHAR as _C_CHAR2WCHAR
+from rpnpy import C_WCHAR2CHARL as _C_WCHAR2CHARL
+from rpnpy import C_CHAR2WCHARL as _C_CHAR2WCHARL
 from rpnpy import C_MKSTR as _C_MKSTR
 
 #---- helpers -------------------------------------------------------
@@ -576,8 +578,10 @@ def fstecr(iunit, data, meta=None, rewrite=True):
                 meta2['dateo'], meta2['deet'], meta2['npas'],
                 meta2['ni'], meta2['nj'], meta2['nk'],
                 meta2['ip1'], meta2['ip2'], meta2['ip3'],
-                _C_WCHAR2CHAR(meta2['typvar']), _C_WCHAR2CHAR(meta2['nomvar']),
-                _C_WCHAR2CHAR(meta2['etiket']), _C_WCHAR2CHAR(meta2['grtyp']),
+                _C_WCHAR2CHARL(meta2['typvar'], _rc.FST_TYPVAR_LEN),
+                _C_WCHAR2CHARL(meta2['nomvar'], _rc.FST_NOMVAR_LEN),
+                _C_WCHAR2CHARL(meta2['etiket'], _rc.FST_ETIKET_LEN),
+                _C_WCHAR2CHARL(meta2['grtyp'], _rc.FST_GRTYP_LEN),
                 meta2['ig1'], meta2['ig2'], meta2['ig3'], meta2['ig4'],
                 datyp, irewrite)
     if istat >= 0:
@@ -732,8 +736,10 @@ def fst_edit_dir(key, datev=-1, dateo=-1, deet=-1, npas=-1, ni=-1, nj=-1, nk=-1,
                 raise FSTDError('fst_edit_dir: error computing datev to keep_dateo ({0})'.format(repr(e)))
     istat = _rp.c_fst_edit_dir(key, datev, deet, npas, ni, nj, nk,
                  ip1, ip2, ip3,
-                 _C_WCHAR2CHAR(typvar), _C_WCHAR2CHAR(nomvar),
-                 _C_WCHAR2CHAR(etiket), _C_WCHAR2CHAR(grtyp),
+                 _C_WCHAR2CHARL(typvar, _rc.FST_TYPVAR_LEN),
+                 _C_WCHAR2CHARL(nomvar, _rc.FST_NOMVAR_LEN),
+                 _C_WCHAR2CHARL(etiket, _rc.FST_ETIKET_LEN),
+                 _C_WCHAR2CHARL(grtyp, _rc.FST_GRTYP_LEN),
                  ig1, ig2, ig3, ig4, datyp)
     if istat >= 0:
         return
@@ -1001,9 +1007,11 @@ def fstinfx(key, iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
                         .format(type(key)))
     (cni, cnj, cnk) = (_ct.c_int(), _ct.c_int(), _ct.c_int())
     key2 = _rp.c_fstinfx(key, iunit, _ct.byref(cni), _ct.byref(cnj),
-                         _ct.byref(cnk), datev, _C_WCHAR2CHAR(etiket),
+                         _ct.byref(cnk), datev,
+                         _C_WCHAR2CHARL(etiket, _rc.FST_ETIKET_LEN),
                          ip1, ip2, ip3,
-                         _C_WCHAR2CHAR(typvar), _C_WCHAR2CHAR(nomvar))
+                         _C_WCHAR2CHARL(typvar, _rc.FST_TYPVAR_LEN),
+                         _C_WCHAR2CHARL(nomvar, _rc.FST_NOMVAR_LEN))
     ## key2 = _C_TOINT(key2)
     if key2 < 0:
         return None
@@ -1086,8 +1094,11 @@ def fstinl(iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
     (cni, cnj, cnk) = (_ct.c_int(), _ct.c_int(), _ct.c_int())
     cnfound         = _ct.c_int()
     istat = _rp.c_fstinl(iunit, _ct.byref(cni), _ct.byref(cnj), _ct.byref(cnk),
-                         datev, _C_WCHAR2CHAR(etiket), ip1, ip2, ip3,
-                         _C_WCHAR2CHAR(typvar), _C_WCHAR2CHAR(nomvar),
+                         datev,
+                         _C_WCHAR2CHARL(etiket, _rc.FST_ETIKET_LEN),
+                         ip1, ip2, ip3,
+                         _C_WCHAR2CHARL(typvar, _rc.FST_TYPVAR_LEN),
+                         _C_WCHAR2CHARL(nomvar, _rc.FST_NOMVAR_LEN),
                          creclist, cnfound, nrecmax)
     ## if istat < 0:
     ##     raise FSTDError('fstinl: Problem searching record list')
