@@ -1,5 +1,1 @@
-
-ubuntu-14.04-amd64-64:/ssm/net/cmda/libs/16.2/intel-2016.1.156
-ubuntu-18.04-amd64-64:/fs/ssm/eccc/cmd/cmda/libs/16.2-6/intel-2016.1.156
-
-/fs/ssm/eccc/cmo/cmoi/base/20180117
+DEPENDENCIES.external.cmc.bndl-u18
