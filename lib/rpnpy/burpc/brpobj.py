@@ -26,8 +26,8 @@ from rpnpy.burpc import proto as _bp
 from rpnpy.burpc import const as _bc
 from rpnpy.burpc import BurpcError
 import rpnpy.librmn.all as _rmn
-from rpnpy import C_WCHAR2CHAR as _C_WCHAR2CHAR
-from rpnpy import C_CHAR2WCHAR as _C_CHAR2WCHAR
+from rpnpy import C_WCHAR2CHAR_COND as _C_WCHAR2CHAR_COND
+from rpnpy import C_CHAR2WCHAR_COND as _C_CHAR2WCHAR_COND
 from rpnpy import C_MKSTR as _C_MKSTR
 
 from rpnpy import integer_types as _integer_types
@@ -56,10 +56,12 @@ class _BurpcObjBase(object):
         return self.next()
 
     def _getattr0(self, name):
+        name = _C_CHAR2WCHAR_COND(name)
         return getattr(self, '_'+self.__class__.__name__+name)
 
     def __getattr__(self, name):
         try:
+            name = _C_CHAR2WCHAR_COND(name)
             return self.get(name)
         except KeyError as e:
             raise AttributeError(e)
@@ -67,9 +69,11 @@ class _BurpcObjBase(object):
             ## return super(_BurpcObjBase, self).__getattr__(name)
 
     def __getitem__(self, name):
+        name = _C_CHAR2WCHAR_COND(name)
         return self.get(name)
 
     def __delitem__(self, name):
+        name = _C_CHAR2WCHAR_COND(name)
         return self.delete(name)
         ## try:
         ##     return self.delete(name)
@@ -83,6 +87,8 @@ class _BurpcObjBase(object):
     ##         return super(_BurpcObjBase, self).__setattr__(name, value)
 
     def __setitem__(self, name, value):
+        name = _C_CHAR2WCHAR_COND(name)
+        value = _C_CHAR2WCHAR_COND(value)
         return self.put(name, value)
 
     #TODO: def __delattr__(self, name):
@@ -205,14 +211,14 @@ class BurpcFile(_BurpcObjBase):
     __attrlist2 = ()
 
     def __init__(self, filename, filemode='r', funit=0):
-        self.filename = filename
-        self.filemode = filemode
+        self.filename = _C_CHAR2WCHAR_COND(filename)
+        self.filemode = _C_CHAR2WCHAR_COND(filemode)
         self.funit    = funit
         if isinstance(filename, dict):
             if 'filename' in filename.keys():
-                self.filename = filename['filename']
+                self.filename = _C_CHAR2WCHAR_COND(filename['filename'])
             if 'filemode' in filename.keys():
-                self.filemode = filename['filemode']
+                self.filemode = _C_CHAR2WCHAR_COND(filename['filemode'])
             if 'funit' in filename.keys():
                 self.funit = filename['funit']
         self.__iteridx   = BurpcRpt() #0
@@ -221,8 +227,8 @@ class BurpcFile(_BurpcObjBase):
         fstmode, brpmode, brpcmode = _bp.brp_filemode(self.filemode)
         self.funit       = _rmn.get_funit(self.filename, fstmode, self.funit)
         self.nrep        = _bp.c_brp_open(self.funit,
-                                          _C_WCHAR2CHAR(self.filename),
-                                          _C_WCHAR2CHAR(brpcmode))
+                                          _C_WCHAR2CHAR_COND(self.filename),
+                                          _C_WCHAR2CHAR_COND(brpcmode))
         self.__brpmode = brpmode
         if self.nrep < 0:
             raise BurpcError('Problem opening with mode {} the file: {}'
@@ -605,11 +611,10 @@ class BurpcRpt(_BurpcObjBase):
             use "rpt.attr_name"
             instead of "rpt.get('attr_name')"
         """
+        key = _C_CHAR2WCHAR_COND(key)
         if key in self.__class__.__attrlist:
             v = getattr(self.__ptr[0], key)  #TODO: use proto fn?
-            if isinstance(v, bytes):
-                v = _C_CHAR2WCHAR(v)
-            return v
+            return _C_CHAR2WCHAR_COND(v)
         elif key in self.__class__.__attrlist2:
             try:
                 key2 = self.__attrlist2names[key]
@@ -629,7 +634,7 @@ class BurpcRpt(_BurpcObjBase):
                                      .format(key, self.nblk0))
                 return blk
             else:
-                 return self.__dblk[key-self.nblk0-1]
+                return self.__dblk[key-self.nblk0-1]
         elif key is None or isinstance(key, (BurpcBlk, dict)):
             #TODO: implement search in "deffered append blk"
             search = key if isinstance(key, BurpcBlk) else BurpcBlk(key)
@@ -677,9 +682,10 @@ class BurpcRpt(_BurpcObjBase):
         ##             if str, set the attribute value
         ##             if int, set the ith ([0, nblk[) block in report
         ##             if dict or BurpcBlk, replace block matching given params
+        key = _C_CHAR2WCHAR_COND(key)
         if key == 'stnid':
             self.__derived = None
-            _bp.c_brp_setstnid(self.__ptr, _C_WCHAR2CHAR(value))
+            _bp.c_brp_setstnid(self.__ptr, _C_WCHAR2CHAR_COND(value))
         elif key in self.__class__.__attrlist:
             self.__derived = None
             setattr(self.__ptr[0], key, value)  #TODO: use proto fn?
@@ -796,7 +802,7 @@ class BurpcRpt(_BurpcObjBase):
             'flgs'  : flgs_dict['flgs'],
             'flgsl' : flgs_dict['flgsl'],
             'flgsd' : flgs_dict['flgsd'],
-            'stnid' : _C_CHAR2WCHAR(getattr(self.__ptr[0], 'stnid')),
+            'stnid' : _C_CHAR2WCHAR_COND(getattr(self.__ptr[0], 'stnid')),
             'idtyp' : idtyp,
             'idtypd': idtyp_desc,
             'ilat'  : ilat,
@@ -1072,6 +1078,7 @@ class BurpcBlk(_BurpcObjBase):
             instead of "blk.get('attr_name')"
        """
         ## print 'getattr:', key
+        key = _C_CHAR2WCHAR_COND(key)
         if key in self.__class__.__attrlist_np_1d:
             if self.__arr[key] is None:
                 v = getattr(self.__ptr[0], key)
@@ -1141,6 +1148,7 @@ class BurpcBlk(_BurpcObjBase):
             instead of "blk.put('attr_name', value)"
          """
         ## print 'setattr:', key
+        key = _C_CHAR2WCHAR_COND(key)
         if key in self.__class__.__attrlist:
             self.__derived = None
             return setattr(self.__ptr[0], key, value) #TODO: use proto fn?
@@ -1490,6 +1498,7 @@ class BurpcEle(_BurpcObjBase):
             use "ele.attr_name"
             instead of "ele.get('attr_name')"
         """
+        key = _C_CHAR2WCHAR_COND(key)
         if key in self.__class__.__attrlist:
             return self.__ptr[key]
         elif key in self.__class__.__attrlist2:
@@ -1570,6 +1579,7 @@ class BurpcEle(_BurpcObjBase):
             use "ele.attr_name = value"
             instead of "ele.put('attr_name', value)"
         """
+        key = _C_CHAR2WCHAR_COND(key)
         if key == 'ptrkey':
             raise KeyError('{}: Cannot set: {}'
                              .format(self.__class__.__name__,
@@ -1583,10 +1593,11 @@ class BurpcEle(_BurpcObjBase):
             self.__ptr[key] = value
             self.__ptr['e_bufrid'] = _rmn.mrbdcl(value)
         elif key == 'store_type':
+            value = _C_CHAR2WCHAR_COND(value)
             if value in _bc.BRP_STORE_TYPE2NUMPY.keys():
                 if self.__ptr[key] is None:
                     self.__ptr[key] = value
-                elif self.__ptr[key] != value:
+                elif _C_CHAR2WCHAR_COND(self.__ptr[key]) != value:
                     raise BurpcError('{}: Cannot change: {}'
                                      .format(self.__class__.__name__,
                                              repr(key)))
