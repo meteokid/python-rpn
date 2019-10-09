@@ -28,7 +28,7 @@ def smooth_my_data(mydata, grid_space, edge_value):
     #          (dtype=np.float32)
     #          while the default numpy array is C double
     #          (dtype=np.float64)
-    mydata_smooth = np.zeros(mydata.shape, dtype=mydata.dtype, order='FORTRAN')
+    mydata_smooth = np.zeros(mydata.shape, dtype=mydata.dtype, order='F')
     spyfilt.uniform_filter(mydata, output=mydata_smooth,
                            size=size_grid, mode='constant')
     mydata[:,:] = edge_value

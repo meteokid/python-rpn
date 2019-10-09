@@ -62,7 +62,7 @@ class _BurpcObjBase(object):
     def __getattr__(self, name):
         try:
             name = _C_CHAR2WCHAR_COND(name)
-            return self.get(name)
+            return _C_CHAR2WCHAR_COND(self.get(name))
         except KeyError as e:
             raise AttributeError(e)
             ## return super(self.__class__, self).__getattr__(name)
@@ -88,7 +88,7 @@ class _BurpcObjBase(object):
 
     def __setitem__(self, name, value):
         name = _C_CHAR2WCHAR_COND(name)
-        value = _C_CHAR2WCHAR_COND(value)
+        value = _C_WCHAR2CHAR_COND(value)
         return self.put(name, value)
 
     #TODO: def __delattr__(self, name):
@@ -620,7 +620,7 @@ class BurpcRpt(_BurpcObjBase):
                 key2 = self.__attrlist2names[key]
             except KeyError:
                 key2 = key
-            return self._derived_attr()[key2]
+            return _C_CHAR2WCHAR_COND(self._derived_attr()[key2])
         elif isinstance(key, _integer_types):
             key += 1
             if key < 1 or key > self.nblk:
@@ -683,12 +683,14 @@ class BurpcRpt(_BurpcObjBase):
         ##             if int, set the ith ([0, nblk[) block in report
         ##             if dict or BurpcBlk, replace block matching given params
         key = _C_CHAR2WCHAR_COND(key)
+        bvalue = _C_WCHAR2CHAR_COND(value)
+        value = _C_CHAR2WCHAR_COND(value)
         if key == 'stnid':
             self.__derived = None
-            _bp.c_brp_setstnid(self.__ptr, _C_WCHAR2CHAR_COND(value))
+            _bp.c_brp_setstnid(self.__ptr, bvalue)
         elif key in self.__class__.__attrlist:
             self.__derived = None
-            setattr(self.__ptr[0], key, value)  #TODO: use proto fn?
+            setattr(self.__ptr[0], key, bvalue)  #TODO: use proto fn?
             return
         elif key in self.__class__.__attrlist2:
             #TODO: encode other items on the fly
@@ -837,7 +839,7 @@ class BurpcRpt(_BurpcObjBase):
 ##     """
 ##     """
 
- 
+
 class BurpcBlk(_BurpcObjBase):
     """
     Python Class equivalent of the burp_c's BURP_BLK C structure to hold
@@ -1081,14 +1083,14 @@ class BurpcBlk(_BurpcObjBase):
         key = _C_CHAR2WCHAR_COND(key)
         if key in self.__class__.__attrlist_np_1d:
             if self.__arr[key] is None:
-                v = getattr(self.__ptr[0], key)
+                v = _C_CHAR2WCHAR_COND(getattr(self.__ptr[0], key))
                 self.__arr[key] = _np.ctypeslib.as_array(v, (self.nele,))
             return self.__arr[key]
         elif key in self.__class__.__attrlist_np_3d:
             if self.__arr[key] is None:
                 key2 = 'tblval'
                 if self.__arr[key2] is None:
-                    v = getattr(self.__ptr[0], key2)
+                    v = _C_CHAR2WCHAR_COND(getattr(self.__ptr[0], key2))
                     self.__arr[key2] = _np.ctypeslib.as_array(v,
                                         (self.nt, self.nval, self.nele)).T
                 if key != key2:
@@ -1104,7 +1106,7 @@ class BurpcBlk(_BurpcObjBase):
                         dtype=dtype), shape, order='F')
             return self.__arr[key]
         elif key in self.__class__.__attrlist:
-            return getattr(self.__ptr[0], key)  #TODO: use proto fn?
+            return _C_CHAR2WCHAR_COND(getattr(self.__ptr[0], key))  #TODO: use proto fn?
         elif key in self.__class__.__attrlist2:
             if not self.__derived:
                 self.__derived = self._derived_attr()
@@ -1149,9 +1151,11 @@ class BurpcBlk(_BurpcObjBase):
          """
         ## print 'setattr:', key
         key = _C_CHAR2WCHAR_COND(key)
+        bvalue = _C_WCHAR2CHAR_COND(value)
+        value = _C_CHAR2WCHAR_COND(value)
         if key in self.__class__.__attrlist:
             self.__derived = None
-            return setattr(self.__ptr[0], key, value) #TODO: use proto fn?
+            return setattr(self.__ptr[0], key, bvalue) #TODO: use proto fn?
         elif key in self.__class__.__attrlist2:
             #TODO: encode other items on the fly
             raise AttributeError(self.__class__.__name__+
@@ -1234,7 +1238,7 @@ class BurpcBlk(_BurpcObjBase):
             'nval'  : getattr(self.__ptr[0], 'nval'),
             'nt'    : getattr(self.__ptr[0], 'nt'),
             'bfam'  : getattr(self.__ptr[0], 'bfam'),  #TODO: provide decoded bfam?
-            'bdesc' : getattr(self.__ptr[0], 'bdesc'),
+            'bdesc' : _C_CHAR2WCHAR_COND(getattr(self.__ptr[0], 'bdesc')),
             'btyp'  : btyp,
             'nbit'  : getattr(self.__ptr[0], 'nbit'),
             'bit0'  : getattr(self.__ptr[0], 'bit0'),
@@ -1264,7 +1268,7 @@ class BurpcBlk(_BurpcObjBase):
                              .format(self.nele, index))
         params = {'e_cmcid' : self.lstele[index]}
         params['e_tblval'] = self.tblval[index, :, :]
-        params['store_type'] = self.store_type
+        params['store_type'] = _C_CHAR2WCHAR_COND(self.store_type)
         return BurpcEle(params)
 
     def _putelem(self, index, values):
@@ -1281,16 +1285,17 @@ class BurpcBlk(_BurpcObjBase):
                 values = BurpcEle(values)
             except:
                 raise TypeError('Provided value should be of type BurpcEle')
-        if self.nele > 0 and self.__ptr[0].store_type != values.store_type:
+        store_type = _C_WCHAR2CHAR_COND(values.store_type)
+        if self.nele > 0 and self.__ptr[0].store_type != store_type:
             raise TypeError('Provided value should be of type: {}, got: {}'
                             .format(self.__ptr[0].store_type,
-                                    values.store_type))
+                                    store_type))
 
         shape = (max(index+1, self.nele), max(values.nval, self.nval), max(values.nt, self.nt))
         if shape != (self.nele, self.nval, self.nt):
             if self.nele <= 0:
                 _bp.c_brp_allocblk(self.__ptr, shape[0], shape[1], shape[2])
-                self.__ptr[0].store_type = values.store_type
+                self.__ptr[0].store_type = store_type
             else:
                 #TODO: should restrict resizing to avoid loosing values
                 _bp.c_brp_resizeblk(self.__ptr, shape[0], shape[1], shape[2])
@@ -1463,7 +1468,7 @@ class BurpcEle(_BurpcObjBase):
         self.__derived = None
         self.__ptr     = dict([(k, None) for k in self.__attrlist])
         self.update(bufrid) #TODO: update should check type
-        ptrkey = self.__ptr['ptrkey']
+        ptrkey = _C_CHAR2WCHAR_COND(self.__ptr['ptrkey'])
         if (self.__ptr['e_bufrid'] is None or
             ptrkey is None or
             self.__ptr[ptrkey] is None):
@@ -1500,9 +1505,9 @@ class BurpcEle(_BurpcObjBase):
         """
         key = _C_CHAR2WCHAR_COND(key)
         if key in self.__class__.__attrlist:
-            return self.__ptr[key]
+            return _C_CHAR2WCHAR_COND(self.__ptr[key])
         elif key in self.__class__.__attrlist2:
-            return self._derived_attr()[key]
+            return _C_CHAR2WCHAR_COND(self._derived_attr()[key])
         ## elif isinstance(key, _integer_types): #TODO:
         raise KeyError("{} object has no such key: {}"
                        .format(self.__class__.__name__, repr(key)))
@@ -1541,15 +1546,15 @@ class BurpcEle(_BurpcObjBase):
             raise BurpcError('{}: Array shape must be 2d: {}'
                              .format(self.__class__.__name__,
                                      repr(shape)))
-        if self.__ptr['ptrkey'] is not None:
-            if self.__ptr[self.__ptr['ptrkey']].size != shape[0] * shape[1]:
+        ptrkey = _C_CHAR2WCHAR_COND(self.__ptr['ptrkey'])
+        if ptrkey is not None:
+            if self.__ptr[ptrkey].size != shape[0] * shape[1]:
                 raise BurpcError('{}: array size and provided shape does not match: {}'
                                  .format(self.__class__.__name__,
-                                         repr(self.__ptr[self.__ptr['ptrkey']].shape)))
-            self.__ptr[self.__ptr['ptrkey']] = \
-                _np.reshape(self.__ptr[self.__ptr['ptrkey']],
-                            shape, order='F')
-        if self.__ptr['ptrkey'] != 'e_tblval' and \
+                                         repr(self.__ptr[ptrkey].shape)))
+            self.__ptr[ptrkey] = \
+                _np.reshape(self.__ptr[ptrkey], shape, order='F')
+        if ptrkey != 'e_tblval' and \
             self.__ptr['e_tblval'] is not None:
             self.__ptr['e_tblval'] = \
                 _np.reshape(self.__ptr['e_tblval'],
@@ -1593,10 +1598,11 @@ class BurpcEle(_BurpcObjBase):
             self.__ptr[key] = value
             self.__ptr['e_bufrid'] = _rmn.mrbdcl(value)
         elif key == 'store_type':
+            bvalue = _C_WCHAR2CHAR_COND(value)
             value = _C_CHAR2WCHAR_COND(value)
             if value in _bc.BRP_STORE_TYPE2NUMPY.keys():
                 if self.__ptr[key] is None:
-                    self.__ptr[key] = value
+                    self.__ptr[key] = bvalue
                 elif _C_CHAR2WCHAR_COND(self.__ptr[key]) != value:
                     raise BurpcError('{}: Cannot change: {}'
                                      .format(self.__class__.__name__,
@@ -1620,7 +1626,7 @@ class BurpcEle(_BurpcObjBase):
         elif key in self.__class__.__attrlist:
             self.__derived = None
             #TODO: check type
-            self.__ptr[key] = value
+            self.__ptr[key] = _C_WCHAR2CHAR_COND(value)
             ## return setattr(self.__ptr, key, value) #TODO: use proto fn?
         else:
             return super(self.__class__, self).__setattr__(key, value)
@@ -1634,8 +1640,9 @@ class BurpcEle(_BurpcObjBase):
         key = 'e_tblval'
         dtype = self.__PTRKEY2NUMPY[key]
         try:
-            ptrkey = self.__PTRKEY2STORE_TYPE_INV[self.__ptr['store_type']]
-            self.__ptr['ptrkey'] = ptrkey
+            ptrkeytype = _C_CHAR2WCHAR_COND(self.__ptr['store_type'])
+            ptrkey = self.__PTRKEY2STORE_TYPE_INV[ptrkeytype]
+            self.__ptr['ptrkey'] = _C_WCHAR2CHAR_COND(ptrkey)
         except KeyError:
             ptrkey = None
         if ptrkey:
@@ -1652,6 +1659,7 @@ class BurpcEle(_BurpcObjBase):
 
     def _eval2tblval(self, key):
         #TODO: encode to tblval... may want to strictly use burpc fn (create fake BurpcBlk, put id+rval, brp.c_brp_convertblk(br, brp.BRP_MKSA_to_BUFR), extract tblval
+        key = _C_CHAR2WCHAR_COND(key)
         dtype = _np.float32  # Always float32, expected by mrbcvt_encode
         ptrkey = 'e_tblval'
         e_cmcid = _np.asfortranarray(self.__ptr['e_cmcid'], dtype=_np.int32)
@@ -1668,7 +1676,8 @@ class BurpcEle(_BurpcObjBase):
         if self.__ptr['ptrkey'] is None:
             self.__ptr['ptrkey'] = key
         if self.__ptr['store_type'] is None:
-            self.__ptr['store_type'] = self.__PTRKEY2STORE_TYPE[key]
+            self.__ptr['store_type'] = \
+                _C_WCHAR2CHAR_COND(self.__PTRKEY2STORE_TYPE[key])
         dtype = self.__PTRKEY2NUMPY[key]
         if isinstance(value, _np.ndarray):
             value = value.copy()
@@ -1679,11 +1688,14 @@ class BurpcEle(_BurpcObjBase):
             self._tblval2eval()
 
     def _put_irdcval(self, key, value):
-        if not (self.__ptr['ptrkey'] is None or self.__ptr['ptrkey'] == key):
+        key = _C_CHAR2WCHAR_COND(key)
+        ptrkey = _C_CHAR2WCHAR_COND(self.__ptr['ptrkey'])
+        if not (ptrkey is None or ptrkey == key):
             raise BurpcError('{}: Cannot change store type'
                             .format(self.__class__.__name__))
-        self.__ptr['ptrkey'] = key
-        self.__ptr['store_type'] = self.__PTRKEY2STORE_TYPE[key]
+        self.__ptr['ptrkey'] = _C_WCHAR2CHAR_COND(key)
+        self.__ptr['store_type'] = \
+            _C_WCHAR2CHAR_COND(self.__PTRKEY2STORE_TYPE[key])
         dtype = self.__PTRKEY2NUMPY[key]
         if isinstance(value, _np.ndarray):
             value = value.copy()
@@ -1701,10 +1713,11 @@ class BurpcEle(_BurpcObjBase):
         """Return dict with derived attributs"""
         params = _rmn.mrbcvt_dict_bufr(self.__ptr['e_bufrid'], False)
         nval, nt = 0, 0
-        if self.__ptr['ptrkey'] is not None:
-            nval = self.__ptr[self.__ptr['ptrkey']].shape[0]
+        ptrkey = _C_CHAR2WCHAR_COND(self.__ptr['ptrkey'])
+        if ptrkey is not None:
+            nval = self.__ptr[ptrkey].shape[0]
             try:
-                nt = self.__ptr[self.__ptr['ptrkey']].shape[1]
+                nt = self.__ptr[ptrkey].shape[1]
             except IndexError:
                 nt = 1
         params.update({

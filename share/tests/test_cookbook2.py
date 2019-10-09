@@ -187,7 +187,7 @@ class rpnpyCookbook2(unittest.TestCase):
                     print("CB51: Read TT at ip1=%d, ip2=%d" % (ip1, hour))
                     if r3d is None:
                         r3d = r2d.copy()
-                        r3d['d'] = np.empty(rshape, dtype=r2d['d'].dtype, order='FORTRAN')
+                        r3d['d'] = np.empty(rshape, dtype=r2d['d'].dtype, order='F')
                     r3d['d'][:,:,k] = r2d['d'][:,:]
                     k += 1
                     if gIn is None:
