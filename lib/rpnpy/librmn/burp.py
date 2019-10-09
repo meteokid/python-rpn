@@ -1528,7 +1528,7 @@ def mrbxtr(rpt, blkno, cmcids=None, tblval=None, dtype=_np.int32):
         if tblval.shape != (nele, nval, nt):
             raise TypeError('tblval has wrong shape')
     elif tblval is None:
-        tblval = _np.empty((nele, nval, nt), dtype=dtype, order='FORTRAN')
+        tblval = _np.empty((nele, nval, nt), dtype=dtype, order='F')
     else:
         raise TypeError('tblval should be a ndarray of rank 3')
     dtype0 = _np.int32
@@ -1541,7 +1541,7 @@ def mrbxtr(rpt, blkno, cmcids=None, tblval=None, dtype=_np.int32):
         if len(cmcids.shape) != 1 or cmcids.size != nele:
             raise TypeError('cmcids should be a ndarray of rank 1 (nele)')
     elif cmcids is None:
-        cmcids = _np.empty(nele, dtype=dtype0, order='FORTRAN')
+        cmcids = _np.empty(nele, dtype=dtype0, order='F')
     else:
         raise TypeError('cmcids should be a ndarray of rank 1 (nele)')
     istat = _rp.c_mrbxtr(rpt, blkno, cmcids, tblval)
@@ -1612,7 +1612,7 @@ def mrbdcl(cmcids):
         cmcids = _np.array([cmcids], dtype=dtype)
     else:
         raise TypeError('cmcids should be a ndarray of rank 1')
-    bufrids = _np.empty(cmcids.size, dtype=dtype, order='FORTRAN')
+    bufrids = _np.empty(cmcids.size, dtype=dtype, order='F')
     istat = _rp.c_mrbdcl(cmcids, bufrids, cmcids.size)
     if istat != 0:
         raise BurpError('c_mrbdcl', istat)
@@ -1670,7 +1670,7 @@ def mrbcol(bufrids):
         bufrids = _np.array([bufrids], dtype=dtype)
     else:
         raise TypeError('bufrids should be a ndarray of rank 1')
-    cmcids = _np.empty(bufrids.size, dtype=dtype, order='FORTRAN')
+    cmcids = _np.empty(bufrids.size, dtype=dtype, order='F')
     istat = _rp.c_mrbcol(bufrids, cmcids, bufrids.size)
     if istat != 0:
         raise BurpError('c_mrbcol', istat)

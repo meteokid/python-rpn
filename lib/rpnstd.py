@@ -1518,7 +1518,7 @@ class RPNRec(RPNMeta):
     >>> r = RPNRec([1, 2, 3, 4])
     >>> r.d
     array([1, 2, 3, 4])
-    >>> a = numpy.array([1, 2, 3, 4], order='FORTRAN', dtype='float32')
+    >>> a = numpy.array([1, 2, 3, 4], order='F', dtype='float32')
     >>> r = RPNRec(a)
     >>> r.d
     array([ 1.,  2.,  3.,  4.], dtype=float32)
