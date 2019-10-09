@@ -2286,6 +2286,71 @@ def defGrid_PS(ni, nj=None, north=True, pi=None, pj=None, d60=None,
     return params
 
 
+def defGrid_PSstd(north=True, dgrw=0.):
+    """
+    Define a Standardized Polar stereographic grid
+    for the northern or southern hemisphere with specifed DGRW
+
+    The Standardized grid is a 10x10 1km resolution with
+    Pole located at the Lower-Left corner.
+
+    gridParams = defGrid_PSstd(north, dgrw)
+    gridParams = defGrid_PSstd(dgrw)
+    gridParams = defGrid_PSstd()
+
+    Args:
+        north     : True for northern hemisphere,
+                    False for Southern
+        dgrw      : angle (between 0 and 360, +ve counterclockwise)
+                    between the Greenwich meridian and the horizontal
+                    axis of the grid. (float)
+    Returns:
+        {
+            'shape' : (ni, nj) # dimensions of the grid
+            'ni'    : grid dim along the x-axis (int)
+            'nj'    : grid dim along the y-axis (int)
+            'grtyp' : grid type (str)
+            'pi'    : Horizontal position of the pole, (float
+                      in grid points, from bottom left corner (1, 1).
+                      (Fotran convention, first point start at index 1)
+            'pj'    : Vertical position of the pole, (float
+                      in grid points, from bottom left corner (1, 1).
+                      (Fotran convention, first point start at index 1)
+            'd60'   : grid length, in meters, at 60deg. of latitude. (float)
+            'dgrw'  : angle (between 0 and 360, +ve counterclockwise)
+                      between the Greenwich meridian and the horizontal
+                      axis of the grid. (float)
+            'north' : True for northern hemisphere,
+                      False for Southern
+            'ig1'   : grid parameters, encoded (int)
+            'ig2'   : grid parameters, encoded (int)
+            'ig3'   : grid parameters, encoded (int)
+            'ig4'   : grid parameters, encoded (int)
+            'id'    : ezscint grid-id if setGridId==True, -1 otherwise (int)
+        }
+    Raises:
+        TypeError  on wrong input arg types
+        ValueError on invalid input arg value
+        RMNError   on any other error
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> params = rmn.defGrid_PSstd(dgrw=15.)
+
+    See Also:
+        defGrid_PS
+        defGrid_ZPS
+        defGrid_ZPSaxes
+        defGrid_ZPSfLL
+        decodeGrid
+        encodeGrid
+    """
+    d60 = 1000.
+    ni1, nj1 = 10, 10 
+    return defGrid_PS(ni1, nj1, north=True, pi=0., pj=0., d60=d60,
+                      dgrw=dgrw, setGridId=True)
+
+
 def defGrid_ZPSfLL(ni, nj=None, lat0=None, lon0=None, dxy=None, north=True,
                 dgrw=0., setGridId=True):
     """
@@ -2415,14 +2480,11 @@ def defGrid_ZPSfLL(ni, nj=None, lat0=None, lon0=None, dxy=None, north=True,
             raise TypeError('defGrid_ZPSfLL: wrong input data type for ' +
                             '{0}, expecting float, Got ({1})'.format(k, type(v)))
         params[k] = v
-    d60 = 1000.
-    ni1, nj1 = 10, 10 
-    g1 = defGrid_PS(ni, nj, north=True, pi=0., pj=0., d60=d60,
-                    dgrw=params['dgrw'], setGridId=True)
+    g1 = defGrid_PSstd(north=params['north'], dgrw=params['dgrw'])
     xy = _ri.gdxyfll(g1['id'], lat=(params['lat0'],), lon=(params['lon0'],))
     params.update({
-        'x0'    : xy['x'][0] * d60,
-        'y0'    : xy['y'][0] * d60
+        'x0'    : xy['x'][0] * g1['d60'],
+        'y0'    : xy['y'][0] * g1['d60']
         })
     return defGrid_ZPS(params, setGridId=setGridId)
 
