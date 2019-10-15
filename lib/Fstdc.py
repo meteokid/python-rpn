@@ -705,8 +705,8 @@ def ezgetlalo(nij, grtyp, refparam, xyAxis, hasAxis, ij0, doCorners):
     xc1  = xyc['x']
     yc1  = xyc['y']
     nij2 = (4, gridLaLo['lat'].shape[0], gridLaLo['lat'].shape[1])
-    xc4  = _np.empty(nij2, dtype=_np.float32, order='FORTRAN')
-    yc4  = _np.empty(nij2, dtype=_np.float32, order='FORTRAN')
+    xc4  = _np.empty(nij2, dtype=_np.float32, order='F')
+    yc4  = _np.empty(nij2, dtype=_np.float32, order='F')
     ## x = _np.arange(float(nij2[1]))
     ## y = _np.arange(float(nij2[2]))
     ## fx = interpolate.interp2d(x, y, xc1, kind='linear', copy=False)

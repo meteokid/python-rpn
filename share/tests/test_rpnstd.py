@@ -319,12 +319,12 @@ class RPNFileTests(unittest.TestCase):
         [[-89.5, -89. , -88.5],
         [-89.5, -89. , -88.5],
         [-89.5, -89. , -88.5]]
-        ,dtype=numpy.dtype('float32'),order='FORTRAN')
+        ,dtype=numpy.dtype('float32'),order='F')
     lod = numpy.array(
         [[ 180. ,  180. ,  180. ],
         [ 180.5,  180.5,  180.5],
         [ 181. ,  181. ,  181. ]]
-        ,dtype=numpy.dtype('float32'),order='FORTRAN')
+        ,dtype=numpy.dtype('float32'),order='F')
     grtyp='L'
     xg14 = (-89.5,180.0,0.5,0.5)
     fname = '__rpnstd__testfile__.fst'

@@ -74,8 +74,8 @@ class Librmn_interp_Test(unittest.TestCase):
             'lat0' : 45.,
             'lon0' : 273.
             }
-        gp['ax'] = np.empty((ni,1),dtype=np.float32,order='FORTRAN')
-        gp['ay'] = np.empty((1,nj),dtype=np.float32,order='FORTRAN')
+        gp['ax'] = np.empty((ni,1),dtype=np.float32,order='F')
+        gp['ay'] = np.empty((1,nj),dtype=np.float32,order='F')
         for i in _range(ni):
             gp['ax'][i,0] = gp['lon0']+float(i)*gp['dlon']
         for j in _range(nj):
@@ -104,8 +104,8 @@ class Librmn_interp_Test(unittest.TestCase):
             'lat0' : -45.,
             'lon0' : 45.
             }
-        gp['ax'] = np.empty((ni,1),dtype=np.float32,order='FORTRAN')
-        gp['ay'] = np.empty((1,nj),dtype=np.float32,order='FORTRAN')
+        gp['ax'] = np.empty((ni,1),dtype=np.float32,order='F')
+        gp['ay'] = np.empty((1,nj),dtype=np.float32,order='F')
         for i in _range(ni):
             gp['ax'][i,0] = gp['lon0']+float(i)*gp['dlon']
         for j in _range(nj):
@@ -255,8 +255,10 @@ class Librmn_interp_Test(unittest.TestCase):
         gll = rmn.gdll(gid1)
         self.assertEqual(gp['shape'],gll['lat'].shape)
         self.assertEqual(gp['shape'],gll['lon'].shape)
-        self.assertEqual(gp['lat0'],gll['lat'][0,0])
-        self.assertEqual(gp['lon0'],gll['lon'][0,0])
+        self.assertEqual(int(round(gp['lat0']*1000.)),
+                         int(round(gll['lat'][0,0]*1000.)))
+        self.assertEqual(int(round(gp['lon0']*1000.)),
+                         int(round(gll['lon'][0,0]*1000.)))
         rmn.gdrls(gid1)
 
     def test_ezsint(self):
@@ -268,7 +270,7 @@ class Librmn_interp_Test(unittest.TestCase):
         self.assertTrue(gid2>=0)
         setid = rmn.ezdefset(gid2, gid1)
         self.assertTrue(setid>=0)
-        zin = np.empty(gp1['shape'],dtype=np.float32,order='FORTRAN')
+        zin = np.empty(gp1['shape'],dtype=np.float32,order='F')
         for x in _range(gp1['ni']):
             zin[x,:] = x
         zout = rmn.ezsint(gid2,gid1,zin)
@@ -290,7 +292,7 @@ class Librmn_interp_Test(unittest.TestCase):
         self.assertTrue(gid2>=0)
         setid = rmn.ezdefset(gid2, gid1)
         self.assertTrue(setid>=0)
-        zin = np.empty(gp['shape'], dtype=np.float32, order='FORTRAN')
+        zin = np.empty(gp['shape'], dtype=np.float32, order='F')
         for x in _range(gp['ni']):
             zin[x,:] = x
         rmn.ezsetopt(rmn.EZ_OPT_EXTRAP_VALUE, extrap_val)
@@ -314,8 +316,8 @@ class Librmn_interp_Test(unittest.TestCase):
         self.assertTrue(gid2>=0)
         setid = rmn.ezdefset(gid2, gid1)
         self.assertTrue(setid>=0)
-        uuin = np.empty(gp1['shape'],dtype=np.float32,order='FORTRAN')
-        vvin = np.empty(gp1['shape'],dtype=np.float32,order='FORTRAN')
+        uuin = np.empty(gp1['shape'],dtype=np.float32,order='F')
+        vvin = np.empty(gp1['shape'],dtype=np.float32,order='F')
         for x in _range(gp1['ni']):
             uuin[x,:] = x
         vvin = uuin*3.
@@ -338,8 +340,8 @@ class Librmn_interp_Test(unittest.TestCase):
                                gp['ig1ref'],gp['ig2ref'],gp['ig3ref'],gp['ig4ref'],
                                gp['ax'],gp['ay'])
         self.assertTrue(gid1>=0)
-        lat = np.array([gp['ay'][0,0],gp['ay'][0,1]],dtype=np.float32,order='FORTRAN')
-        lon = np.array([gp['ax'][0,0],gp['ax'][1,0]],dtype=np.float32,order='FORTRAN')
+        lat = np.array([gp['ay'][0,0],gp['ay'][0,1]],dtype=np.float32,order='F')
+        lon = np.array([gp['ax'][0,0],gp['ax'][1,0]],dtype=np.float32,order='F')
         xypts = rmn.gdxyfll(gid1, lat, lon)
         self.assertEqual(xypts['x'].shape,lat.shape)
         self.assertEqual(xypts['y'].shape,lat.shape)
@@ -356,8 +358,8 @@ class Librmn_interp_Test(unittest.TestCase):
                                gp['ig1ref'],gp['ig2ref'],gp['ig3ref'],gp['ig4ref'],
                                gp['ax'],gp['ay'])
         self.assertTrue(gid1>=0)
-        xx = np.array([1.,2.],dtype=np.float32,order='FORTRAN')
-        yy = np.array([1.,3.],dtype=np.float32,order='FORTRAN')
+        xx = np.array([1.,2.],dtype=np.float32,order='F')
+        yy = np.array([1.,3.],dtype=np.float32,order='F')
         llpts = rmn.gdllfxy(gid1, xx, yy)
         self.assertEqual(llpts['x'].shape,xx.shape)
         self.assertEqual(llpts['y'].shape,xx.shape)
@@ -372,11 +374,11 @@ class Librmn_interp_Test(unittest.TestCase):
         gp1 = self.getGridParams_L()
         gid1 = rmn.ezqkdef(gp1)
         self.assertTrue(gid1>=0)
-        zin = np.empty(gp1['shape'],dtype=np.float32,order='FORTRAN')
+        zin = np.empty(gp1['shape'],dtype=np.float32,order='F')
         for x in _range(gp1['ni']):
             zin[:,x] = x
-        lat = np.array([gp1['lat0']+gp1['dlat']/2.],dtype=np.float32,order='FORTRAN')
-        lon = np.array([(gp1['lon0']+gp1['dlon'])/2.],dtype=np.float32,order='FORTRAN')
+        lat = np.array([gp1['lat0']+gp1['dlat']/2.],dtype=np.float32,order='F')
+        lon = np.array([(gp1['lon0']+gp1['dlon'])/2.],dtype=np.float32,order='F')
         zout = rmn.gdllsval(gid1,lat,lon,zin)
         self.assertEqual(lat.shape,zout.shape)
         self.assertTrue(abs((zin[0,0]+zin[1,1])/2. - zout[0]) < self.epsilon)
@@ -386,11 +388,11 @@ class Librmn_interp_Test(unittest.TestCase):
         gp1 = self.getGridParams_L()
         gid1 = rmn.ezqkdef(gp1)
         self.assertTrue(gid1>=0)
-        zin = np.empty(gp1['shape'],dtype=np.float32,order='FORTRAN')
+        zin = np.empty(gp1['shape'],dtype=np.float32,order='F')
         for x in _range(gp1['ni']):
             zin[:,x] = x
-        xx = np.array([1.5],dtype=np.float32,order='FORTRAN')
-        yy = np.array([1.5],dtype=np.float32,order='FORTRAN')
+        xx = np.array([1.5],dtype=np.float32,order='F')
+        yy = np.array([1.5],dtype=np.float32,order='F')
         zout = rmn.gdxysval(gid1,xx,yy,zin)
         self.assertEqual(xx.shape,zout.shape)
         self.assertTrue(abs((zin[0,0]+zin[1,1])/2. - zout[0]) < self.epsilon)
@@ -401,13 +403,13 @@ class Librmn_interp_Test(unittest.TestCase):
         gp1 = self.getGridParams_L()
         gid1 = rmn.ezqkdef(gp1)
         self.assertTrue(gid1>=0)
-        zin  = np.empty(gp1['shape'],dtype=np.float32,order='FORTRAN')
-        zin2 = np.empty(gp1['shape'],dtype=np.float32,order='FORTRAN')
+        zin  = np.empty(gp1['shape'],dtype=np.float32,order='F')
+        zin2 = np.empty(gp1['shape'],dtype=np.float32,order='F')
         for x in _range(gp1['ni']):
             zin[:,x] = x
             zin2[:,x] = x+1
-        lat = np.array([gp1['lat0']+gp1['dlat']/2.],dtype=np.float32,order='FORTRAN')
-        lon = np.array([(gp1['lon0']+gp1['dlon'])/2.],dtype=np.float32,order='FORTRAN')
+        lat = np.array([gp1['lat0']+gp1['dlat']/2.],dtype=np.float32,order='F')
+        lon = np.array([(gp1['lon0']+gp1['dlon'])/2.],dtype=np.float32,order='F')
         (zout,zout2) = rmn.gdllvval(gid1,lat,lon,zin,zin2)
         self.assertEqual(lat.shape,zout.shape)
         self.assertEqual(lat.shape,zout2.shape)
@@ -420,13 +422,13 @@ class Librmn_interp_Test(unittest.TestCase):
         gp1 = self.getGridParams_L()
         gid1 = rmn.ezqkdef(gp1)
         self.assertTrue(gid1>=0)
-        zin  = np.empty(gp1['shape'],dtype=np.float32,order='FORTRAN')
-        zin2 = np.empty(gp1['shape'],dtype=np.float32,order='FORTRAN')
+        zin  = np.empty(gp1['shape'],dtype=np.float32,order='F')
+        zin2 = np.empty(gp1['shape'],dtype=np.float32,order='F')
         for x in _range(gp1['ni']):
             zin[:,x] = x
             zin2[:,x] = x+1
-        xx = np.array([1.5],dtype=np.float32,order='FORTRAN')
-        yy = np.array([1.5],dtype=np.float32,order='FORTRAN')
+        xx = np.array([1.5],dtype=np.float32,order='F')
+        yy = np.array([1.5],dtype=np.float32,order='F')
         (zout,zout2) = rmn.gdxyvval(gid1,xx,yy,zin,zin2)
         self.assertEqual(xx.shape,zout.shape)
         self.assertTrue(abs((zin[0,0]+zin[1,1])/2. - zout[0]) < self.epsilon)
@@ -437,7 +439,7 @@ class Librmn_interp_Test(unittest.TestCase):
     ##     gp1 = self.getGridParams_L()
     ##     gid1 = rmn.ezqkdef(gp1)
     ##     self.assertTrue(gid1>=0)
-    ##     mask = np.empty(gp1['shape'],dtype=np.intc,order='FORTRAN')
+    ##     mask = np.empty(gp1['shape'],dtype=np.intc,order='F')
     ##     mask[:,:] = 0
     ##     for i in _range(min(gp1['ni'],gp1['nj'])):
     ##         mask[i,i] = 1

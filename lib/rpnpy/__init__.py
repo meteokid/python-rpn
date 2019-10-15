@@ -22,5 +22,10 @@ C_CHAR2WCHAR.__doc__ = 'Convert bytes to str'
 C_CHAR2WCHARL = lambda x,l: C_STRSETLEN(str(x.decode('ascii')),l)
 C_CHAR2WCHARL.__doc__ = 'Convert bytes to str'
 
+C_WCHAR2CHAR_COND = lambda x: C_WCHAR2CHAR(x) if isinstance(x, str) else x
+C_WCHAR2CHAR_COND.__doc__ = 'Conditionnal Convert str to bytes'
+C_CHAR2WCHAR_COND = lambda x: C_CHAR2WCHAR(x) if isinstance(x, bytes) else x
+C_CHAR2WCHAR_COND.__doc__ = 'Conditionnal Convert bytes to str'
+
 C_MKSTR = lambda x: _ct.create_string_buffer(C_WCHAR2CHAR(x))
 C_MKSTR.__doc__ = 'alias to ctypes.create_string_buffer, make sure bytes are provided'
