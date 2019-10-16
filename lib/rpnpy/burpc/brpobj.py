@@ -62,7 +62,11 @@ class _BurpcObjBase(object):
     def __getattr__(self, name):
         try:
             name = _C_CHAR2WCHAR_COND(name)
-            return _C_CHAR2WCHAR_COND(self.get(name))
+            try:
+                return _C_CHAR2WCHAR_COND(self.get(name))
+            except:
+                print(name,repr(self.get(name)))
+                raise
         except KeyError as e:
             raise AttributeError(e)
             ## return super(self.__class__, self).__getattr__(name)
