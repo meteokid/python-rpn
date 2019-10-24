@@ -780,10 +780,10 @@ def vgd_new2(kind, version, hyb,
         vgd_free
     """
     if isinstance(hyb, (list, tuple)):
-        hyb = _np.array(hyb, copy=True, dtype=_np.float32, order='FORTRAN')
+        hyb = _np.array(hyb, copy=True, dtype=_np.float32, order='F')
     elif isinstance(hyb, _np.ndarray):
         hyb = _np.array(hyb.flatten(), copy=True, dtype=_np.float32,
-                        order='FORTRAN')
+                        order='F')
     else:
         raise TypeError('hyb should be list or ndarray: {0}'.
                         format(str(type(hyb))))
@@ -1485,13 +1485,13 @@ def vgd_levels2(vgd_ptr, rfld=None, rfls=None, ip1list='VIPM',
     """
     if isinstance(ip1list, str):
         ip1list0 = vgd_get(vgd_ptr, ip1list)
-        ip1list1 = _np.array(ip1list0, dtype=_np.int32, order='FORTRAN')
+        ip1list1 = _np.array(ip1list0, dtype=_np.int32, order='F')
     elif isinstance(ip1list, _integer_types):
-        ip1list1 = _np.array([ip1list], dtype=_np.int32, order='FORTRAN')
+        ip1list1 = _np.array([ip1list], dtype=_np.int32, order='F')
     elif isinstance(ip1list, (list, tuple)):
-        ip1list1 = _np.array(ip1list, dtype=_np.int32, order='FORTRAN')
+        ip1list1 = _np.array(ip1list, dtype=_np.int32, order='F')
     elif isinstance(ip1list, _np.ndarray):
-        ip1list1 = _np.array(ip1list.flatten(), dtype=_np.int32, order='FORTRAN')
+        ip1list1 = _np.array(ip1list.flatten(), dtype=_np.int32, order='F')
     else:
         raise TypeError('ip1list should be string, list or int: {0}'.
                         format(str(type(ip1list))))
@@ -1507,10 +1507,10 @@ def vgd_levels2(vgd_ptr, rfld=None, rfls=None, ip1list='VIPM',
     rank0 = False
     if rfld_nomvar:
         if isinstance(rfld, float):
-            rfld = _np.array([rfld], dtype=_np.float32, order='FORTRAN')
+            rfld = _np.array([rfld], dtype=_np.float32, order='F')
             rank0 = True
         elif isinstance(rfld, (list, tuple)):
-            rfld = _np.array(rfld, dtype=_np.float32, order='FORTRAN')
+            rfld = _np.array(rfld, dtype=_np.float32, order='F')
         elif isinstance(rfld, _integer_types):
             fileId = rfld
             rfld = _rmn.fstlir(fileId, nomvar=rfld_nomvar.strip())['d']
@@ -1520,7 +1520,7 @@ def vgd_levels2(vgd_ptr, rfld=None, rfls=None, ip1list='VIPM',
             if rfld_nomvar is None:
                 raise TypeError('RFLD needs to be provided for vcode={0}'.format(vcode))
             else:
-                rfld = _np.array([1000.], dtype=_np.float32, order='FORTRAN')
+                rfld = _np.array([1000.], dtype=_np.float32, order='F')
                 rank0 = True
         elif not isinstance(rfld, _np.ndarray):
             raise TypeError('rfld should be ndarray, list or float: {0}'.
@@ -1528,10 +1528,10 @@ def vgd_levels2(vgd_ptr, rfld=None, rfls=None, ip1list='VIPM',
 
     if rfls_nomvar:
         if isinstance(rfls, float):
-            rfls = _np.array([rfls], dtype=_np.float32, order='FORTRAN')
+            rfls = _np.array([rfls], dtype=_np.float32, order='F')
             rank0 = True
         elif isinstance(rfls, (list, tuple)):
-            rfls = _np.array(rfls, dtype=_np.float32, order='FORTRAN')
+            rfls = _np.array(rfls, dtype=_np.float32, order='F')
         elif isinstance(rfls, _integer_types):
             fileId = rfls
             rfls = _rmn.fstlir(fileId, nomvar=rfls_nomvar.strip())['d']
@@ -1542,7 +1542,7 @@ def vgd_levels2(vgd_ptr, rfld=None, rfls=None, ip1list='VIPM',
                 raise TypeError('RFLS needs to be provided for vcode={0}'.
                                 format(vcode))
             else:
-                rfls = _np.array([1000.], dtype=_np.float32, order='FORTRAN')
+                rfls = _np.array([1000.], dtype=_np.float32, order='F')
                 rank0 = True
         elif not isinstance(rfls, _np.ndarray):
             raise TypeError('rfls should be ndarray, list or float: {0}'.
@@ -1552,9 +1552,9 @@ def vgd_levels2(vgd_ptr, rfld=None, rfls=None, ip1list='VIPM',
 
     if double_precision:
         dtype = _np.float64
-        rfld8 = _np.array(rfld, copy=True, dtype=dtype, order='FORTRAN')
+        rfld8 = _np.array(rfld, copy=True, dtype=dtype, order='F')
         if rfls_nomvar:
-            rfls8 = _np.array(rfls, copy=True, dtype=dtype, order='FORTRAN')
+            rfls8 = _np.array(rfls, copy=True, dtype=dtype, order='F')
     else:
         dtype = _np.float32
         rfld8 = rfld
@@ -1565,7 +1565,7 @@ def vgd_levels2(vgd_ptr, rfld=None, rfls=None, ip1list='VIPM',
     else:
         shape = list(rfld.shape) + [nip1]
 
-    levels8 = _np.empty(shape, dtype=dtype, order='FORTRAN')
+    levels8 = _np.empty(shape, dtype=dtype, order='F')
 
     ok = _vc.VGD_OK
     if double_precision:
@@ -1639,19 +1639,19 @@ def vgd_stda76_temp(vgd_ptr, ip1list='VIPM'):
     """
     if isinstance(ip1list, str):
         ip1list0 = vgd_get(vgd_ptr, ip1list)
-        ip1list1 = _np.array(ip1list0, dtype=_np.int32, order='FORTRAN')
+        ip1list1 = _np.array(ip1list0, dtype=_np.int32, order='F')
     elif isinstance(ip1list, _integer_types):
-        ip1list1 = _np.array([ip1list], dtype=_np.int32, order='FORTRAN')
+        ip1list1 = _np.array([ip1list], dtype=_np.int32, order='F')
     elif isinstance(ip1list, (list, tuple)):
-        ip1list1 = _np.array(ip1list, dtype=_np.int32, order='FORTRAN')
+        ip1list1 = _np.array(ip1list, dtype=_np.int32, order='F')
     elif isinstance(ip1list, _np.ndarray):
-        ip1list1 = _np.array(ip1list.flatten(), dtype=_np.int32, order='FORTRAN')
+        ip1list1 = _np.array(ip1list.flatten(), dtype=_np.int32, order='F')
     else:
         raise TypeError('ip1list should be string, list or int: {0}'.
                         format(str(type(ip1list))))
     nip1 = ip1list1.size
     ip1list = ip1list1.ctypes.data_as(_ct.POINTER(_ct.c_int))
-    temp = _np.empty(nip1, dtype=_np.float32, order='FORTRAN')
+    temp = _np.empty(nip1, dtype=_np.float32, order='F')
     ok = _vp.c_vgd_stda76_temp(vgd_ptr, ip1list, nip1, temp)
     if ok != _vc.VGD_OK:
         raise VGDError('Problem getting stda 1976 temperature.')
@@ -1712,13 +1712,13 @@ def vgd_stda76_pres(vgd_ptr, ip1list='VIPM', sfc_temp=None, sfc_pres=None):
     """
     if isinstance(ip1list, str):
         ip1list0 = vgd_get(vgd_ptr, ip1list)
-        ip1list1 = _np.array(ip1list0, dtype=_np.int32, order='FORTRAN')
+        ip1list1 = _np.array(ip1list0, dtype=_np.int32, order='F')
     elif isinstance(ip1list, _integer_types):
-        ip1list1 = _np.array([ip1list], dtype=_np.int32, order='FORTRAN')
+        ip1list1 = _np.array([ip1list], dtype=_np.int32, order='F')
     elif isinstance(ip1list, (list, tuple)):
-        ip1list1 = _np.array(ip1list, dtype=_np.int32, order='FORTRAN')
+        ip1list1 = _np.array(ip1list, dtype=_np.int32, order='F')
     elif isinstance(ip1list, _np.ndarray):
-        ip1list1 = _np.array(ip1list.flatten(), dtype=_np.int32, order='FORTRAN')
+        ip1list1 = _np.array(ip1list.flatten(), dtype=_np.int32, order='F')
     else:
         raise TypeError('ip1list should be string, list or int: {0}'.
                         format(str(type(ip1list))))
@@ -1728,7 +1728,7 @@ def vgd_stda76_pres(vgd_ptr, ip1list='VIPM', sfc_temp=None, sfc_pres=None):
         sfc_pres = _ct.POINTER(_ct.c_float)(_ct.c_float(sfc_pres))
     nip1 = ip1list1.size
     ip1list = ip1list1.ctypes.data_as(_ct.POINTER(_ct.c_int))
-    pres = _np.empty(nip1, dtype=_np.float32, order='FORTRAN')
+    pres = _np.empty(nip1, dtype=_np.float32, order='F')
     ok = _vp.c_vgd_stda76_pres(vgd_ptr, ip1list, nip1, pres, sfc_temp, sfc_pres)
     if ok != _vc.VGD_OK:
         raise VGDError('Problem getting stda 1976 pressure.')
