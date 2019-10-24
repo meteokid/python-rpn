@@ -458,7 +458,7 @@ class rpnpyCookbook(unittest.TestCase):
                     r2d = rmn.fstluk(key, dataArray=r2d['d'])
                     if r3d is None:
                         r3d = r2d.copy()
-                        r3d['d'] = np.empty(rshape, dtype=r2d['d'].dtype, order='FORTRAN')
+                        r3d['d'] = np.empty(rshape, dtype=r2d['d'].dtype, order='F')
                     r3d['d'][:,:,k] = r2d['d'][:,:]
                     k += 1
                 except:
@@ -507,7 +507,7 @@ class rpnpyCookbook(unittest.TestCase):
             r2d = rmn.fstluk(key, dataArray=r2d['d'])
             if r3d is None:
                 r3d = r2d.copy()
-                r3d['d'] = np.empty(rshape, dtype=r2d['d'].dtype, order='FORTRAN')
+                r3d['d'] = np.empty(rshape, dtype=r2d['d'].dtype, order='F')
             r3d['d'][:,:,k] = r2d['d'][:,:]
         rmn.fstcloseall(fileId)
         r3d.update({'vgd':v, 'ip1list':[x[0] for x in tlvlkeys], 'shape':rshape, 'nk':rshape[2]})
@@ -729,7 +729,7 @@ class rpnpyCookbook(unittest.TestCase):
                 # Create / re-use memory space for computation results
                 uv = uu.copy()
                 if uvarray is None:
-                    uvarray = np.empty(uu['d'].shape, dtype=uu['d'].dtype, order='FORTRAN')
+                    uvarray = np.empty(uu['d'].shape, dtype=uu['d'].dtype, order='F')
                 uv['d'] = uvarray
                 uv['d'][:,:] = np.sqrt(uu['d']**2. + vv['d']**2.)
                 uv['d'] *= KNOT2MS  # Convert from knot to m/s
@@ -774,7 +774,7 @@ class rpnpyCookbook(unittest.TestCase):
             vv = rmn.fstlir(fileIdIn, nomvar='VV', ip1=uu['ip1'], ip2=uu['ip2'],
                             datev=uu['datev'],dataArray=vv['d'])
             if uvarray is None:
-                uvarray = np.empty(uu['d'].shape, dtype=uu['d'].dtype, order='FORTRAN')
+                uvarray = np.empty(uu['d'].shape, dtype=uu['d'].dtype, order='F')
             uv = uu.copy()
             uv.update({'d':uvarray, 'nomvar': 'WSPD'})
             uv['d'][:,:] = np.sqrt(uu['d']**2. + vv['d']**2.) * KNOT2MS
@@ -866,7 +866,7 @@ class rpnpyCookbook(unittest.TestCase):
             'etiket': 'my_etk',
             'nbits' : 32,    # Keep full 32 bits precision for that field
             'datyp' : datyp, # datyp (above) float_IEEE_compressed
-            'd'     : np.empty(rshape, dtype=npdtype, order='FORTRAN')
+            'd'     : np.empty(rshape, dtype=npdtype, order='F')
             })
         print("CB24: Defined a new record of shape=%d, %d" % (r['ni'], r['nj']))
 
@@ -924,7 +924,7 @@ class rpnpyCookbook(unittest.TestCase):
             'dateo' : rmn.newdate(rmn.NEWDATE_PRINT2STAMP, 20160302, 1800000),
             'ip2'   : 6,        'deet'  : 3600, 'npas'  : 6,
             'etiket': 'my_etk', 'datyp' : datyp,
-            'd'     : np.empty(rshape, dtype=npdtype, order='FORTRAN')
+            'd'     : np.empty(rshape, dtype=npdtype, order='F')
             })
         r['d'][:,:,:] = 0.
         r['d'][10:-11,5:-6,:] = 1.

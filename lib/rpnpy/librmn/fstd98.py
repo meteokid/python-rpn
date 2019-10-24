@@ -1261,9 +1261,12 @@ def fstlirx(key, iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
     >>> # then print its min,max,mean values
     >>> key1  = rmn.fstinf(funit, nomvar='P0')
     >>> p0rec = rmn.fstlirx(key1, funit, nomvar='P0')
-    >>> print("# P0 ip2={0} min={1:7.3f} max={2:7.2f} avg={3:8.4f}"\
-              .format(p0rec['ip2'], float(p0rec['d'].min()), float(p0rec['d'].max()), float(p0rec['d'].mean())))
-    # P0 ip2=12 min=530.958 max=1037.96 avg=966.3721
+    >>> print("# P0 ip2={0} min={1:4.0f} max={2:4.0f} avg={3:4.0f}"
+    ...       .format(p0rec['ip2'],
+    ...               round(float(p0rec['d'].min())),
+    ...               round(float(p0rec['d'].max())),
+    ...               round(float(p0rec['d'].mean()))))
+    # P0 ip2=12 min= 531 max=1038 avg= 966
     >>> rmn.fstcloseall(funit)
 
     See Also:
@@ -1321,9 +1324,12 @@ def fstlis(iunit, dtype=None, rank=None, dataArray=None):
     >>> # then print its min,max,mean values
     >>> key1  = rmn.fstinf(funit, nomvar='P0')
     >>> p0rec = rmn.fstlis(funit)
-    >>> print("# P0 ip2={0} min={1:7.3f} max={2:7.2f} avg={3:8.4f}"\
-              .format(p0rec['ip2'], float(p0rec['d'].min()), float(p0rec['d'].max()), float(p0rec['d'].mean())))
-    # P0 ip2=12 min=530.958 max=1037.96 avg=966.3721
+    >>> print("# P0 ip2={0} min={1:4.0f} max={2:4.0f} avg={3:4.0f}"
+    ...       .format(p0rec['ip2'],
+    ...               round(float(p0rec['d'].min())),
+    ...               round(float(p0rec['d'].max())),
+    ...               round(float(p0rec['d'].mean()))))
+    # P0 ip2=12 min= 531 max=1038 avg= 966
     >>>
     >>> rmn.fstcloseall(funit)
 
@@ -1455,9 +1461,12 @@ def fstluk(key, dtype=None, rank=None, dataArray=None):
     >>> # then print its min,max,mean values
     >>> key   = rmn.fstinf(funit, nomvar='P0')
     >>> p0rec = rmn.fstluk(key)
-    >>> print("# P0 ip2={0} min={1:8.4f} max={2:7.2f} avg={3:8.4f}"\
-              .format(p0rec['ip2'], p0rec['d'].min(), p0rec['d'].max(), p0rec['d'].mean()))
-    # P0 ip2=0 min=530.6414 max=1039.64 avg=966.4942
+    >>> print("# P0 ip2={0} min={1:4.0f} max={2:4.0f} avg={3:4.0f}"
+    ...       .format(p0rec['ip2'],
+    ...               round(float(p0rec['d'].min())),
+    ...               round(float(p0rec['d'].max())),
+    ...               round(float(p0rec['d'].mean()))))
+    # P0 ip2=0 min= 531 max=1040 avg= 966
     >>> rmn.fstcloseall(funit)
 
     See Also:
@@ -1494,7 +1503,7 @@ def fstluk(key, dtype=None, rank=None, dataArray=None):
     myshape[0:maxrank] = params['shape'][0:maxrank]
     params['shape'] = myshape
     if dataArray is None:
-        data = _np.empty(params['shape'], dtype=dtype, order='FORTRAN')
+        data = _np.empty(params['shape'], dtype=dtype, order='F')
     elif isinstance(dataArray, _np.ndarray):
         if not dataArray.flags['F_CONTIGUOUS']:
             raise TypeError('Provided dataArray should be F_CONTIGUOUS')
