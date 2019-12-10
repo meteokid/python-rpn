@@ -149,6 +149,8 @@ class BURP_RPT(_ct.Structure):
         ("lngr",   _ct.c_int),
         ("init_hdr", _ct.c_int)  ## for internal use only
         ]
+    
+    _ftypes = None
 
     ## def __str__(self):
     ##    return self.__class__.__name__ + str([x[0] + '=' + str(self.__getattribute__(x[0])) for x in self._fields_])
@@ -165,6 +167,11 @@ class BURP_RPT(_ct.Structure):
         return self.__class__.__name__ + '(' + repr(dict(
                [(x[0], self.__getattribute__(x[0])) for x in self._fields_]
                )) + ')'
+    
+    def getType(self, name):
+        if self._ftypes is None:
+            self._ftypes = dict(self._fields_)
+        return self._ftypes[name]
 
 
 class BURP_BLK(_ct.Structure):
@@ -235,6 +242,8 @@ class BURP_BLK(_ct.Structure):
         ("max_len", _ct.c_int),
         ]
 
+    _ftypes = None
+
     ## def __str__(self):
     ##    return self.__class__.__name__ + str([x[0] + '=' + str(self.__getattribute__(x[0])) for x in self._fields_])
     ##    ## s = self.__class__.__name__ + '('
@@ -251,6 +260,10 @@ class BURP_BLK(_ct.Structure):
                [(x[0], self.__getattribute__(x[0])) for x in self._fields_]
                )) + ')'
 
+    def getType(self, name):
+        if self._ftypes is None:
+            self._ftypes = dict(self._fields_)
+        return self._ftypes[name]
 
 ## /* for internal use only */
 ## extern  void       brp_setstnid( BURP_RPT *rpt, const char *stnid );
