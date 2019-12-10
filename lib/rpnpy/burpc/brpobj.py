@@ -92,7 +92,7 @@ class _BurpcObjBase(object):
 
     def __setitem__(self, name, value):
         name = _C_CHAR2WCHAR_COND(name)
-        value = _C_WCHAR2CHAR_COND(value)
+        value = _C_CHAR2WCHAR_COND(value)
         return self.put(name, value)
 
     #TODO: def __delattr__(self, name):
@@ -694,6 +694,8 @@ class BurpcRpt(_BurpcObjBase):
             _bp.c_brp_setstnid(self.__ptr, bvalue)
         elif key in self.__class__.__attrlist:
             self.__derived = None
+            if self.__ptr[0].getType(key) == _ct.c_int:
+                bvalue = int(float(bvalue))            
             setattr(self.__ptr[0], key, bvalue)  #TODO: use proto fn?
             return
         elif key in self.__class__.__attrlist2:
@@ -1159,6 +1161,8 @@ class BurpcBlk(_BurpcObjBase):
         value = _C_CHAR2WCHAR_COND(value)
         if key in self.__class__.__attrlist:
             self.__derived = None
+            if self.__ptr[0].getType(key) == _ct.c_int:
+                bvalue = int(float(bvalue))
             return setattr(self.__ptr[0], key, bvalue) #TODO: use proto fn?
         elif key in self.__class__.__attrlist2:
             #TODO: encode other items on the fly
