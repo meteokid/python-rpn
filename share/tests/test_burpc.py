@@ -860,6 +860,21 @@ class RpnPyBurpc(unittest.TestCase):
         self.assertEqual(blk.datyp, 2)
         self.assertEqual(blk.btyp, 15456)
 
+    def test_brp_find_get_blk2(self):
+        """brp_find_blk search keys"""
+        brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
+        mypath, itype, iunit = self.knownValues[0]
+        mypath = self.getFN(mypath)
+        bfile = brp.BurpcFile(mypath)
+        rpt = bfile.get(0)
+        blk = rpt.get({'bkno':0, 'btyp':15456})
+        ## blk = brp.BurpcBlk({'bkno':0, 'btyp':15456})
+        ## blk = brp.brp_findblk(blk, rpt)
+        ## blk = brp.brp_getblk(blk.bkno, blk, rpt)
+        self.assertEqual(blk.bkno, 6)
+        self.assertEqual(blk.datyp, 2)
+        self.assertEqual(blk.btyp, 15456)
+
     def test_brp_find_get_blk1safe(self):
         """brp_find_blk search keys"""
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
