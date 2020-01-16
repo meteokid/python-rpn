@@ -2393,6 +2393,7 @@ def mrbcvt_encode(cmcids, rval):
     return tblval
 
 
+#TODO?: remove sup, nsup, xaux, nxaux from itf since not supported
 def mrbini(funit, rpt, time=None, flgs=None, stnid=None, idtyp=None, ilat=None,
            ilon=None, idx=None, idy=None, ielev=None, drnd=None, date=None,
            oars=None, runn=None, sup=None, nsup=0, xaux=None, nxaux=0):
@@ -2501,6 +2502,7 @@ def mrbini(funit, rpt, time=None, flgs=None, stnid=None, idtyp=None, ilat=None,
     ## nxaux = _getCheckArg(int, nxaux, rpt, 'nxaux')
     rpt = _getCheckArg(None, rpt, rpt, 'rpt')
 
+    sup, nsup, xaux, nxaux = (None, 0 , None, 0)
     if sup is None:
         sup = _np.empty((1, ), dtype=_np.int32)
     if xaux is None:
@@ -2538,9 +2540,9 @@ def mrbadd(rpt, nele, nval=None, nt=None, bfam=None, bdesc=None,
 
     Similar to inverse mrbxtr/mrbprm operation.
 
-    rpt = mrbadd(rpt, blkno, nele, nval, nt, bfam, bdesc, btyp, nbit, bit0,
-                 datyp, cmcids, tblval)
-    rpt = mrbadd(rpt, blkno, blkdata)
+    blkno = mrbadd(rpt, nele, nval, nt, bfam, bdesc, btyp, nbit,
+                   datyp, cmcids, tblval)
+    blkno = mrbadd(rpt, blkdata)
 
     Args:
         rpt    (array) : vector to contain the report to update
