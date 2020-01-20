@@ -1528,7 +1528,7 @@ def mrbxtr(rpt, blkno, cmcids=None, tblval=None, dtype=_np.int32):
         if tblval.shape != (nele, nval, nt):
             raise TypeError('tblval has wrong shape')
     elif tblval is None:
-        tblval = _np.empty((nele, nval, nt), dtype=dtype, order='FORTRAN')
+        tblval = _np.empty((nele, nval, nt), dtype=dtype, order='F')
     else:
         raise TypeError('tblval should be a ndarray of rank 3')
     dtype0 = _np.int32
@@ -1541,7 +1541,7 @@ def mrbxtr(rpt, blkno, cmcids=None, tblval=None, dtype=_np.int32):
         if len(cmcids.shape) != 1 or cmcids.size != nele:
             raise TypeError('cmcids should be a ndarray of rank 1 (nele)')
     elif cmcids is None:
-        cmcids = _np.empty(nele, dtype=dtype0, order='FORTRAN')
+        cmcids = _np.empty(nele, dtype=dtype0, order='F')
     else:
         raise TypeError('cmcids should be a ndarray of rank 1 (nele)')
     istat = _rp.c_mrbxtr(rpt, blkno, cmcids, tblval)
@@ -1612,7 +1612,7 @@ def mrbdcl(cmcids):
         cmcids = _np.array([cmcids], dtype=dtype)
     else:
         raise TypeError('cmcids should be a ndarray of rank 1')
-    bufrids = _np.empty(cmcids.size, dtype=dtype, order='FORTRAN')
+    bufrids = _np.empty(cmcids.size, dtype=dtype, order='F')
     istat = _rp.c_mrbdcl(cmcids, bufrids, cmcids.size)
     if istat != 0:
         raise BurpError('c_mrbdcl', istat)
@@ -1670,7 +1670,7 @@ def mrbcol(bufrids):
         bufrids = _np.array([bufrids], dtype=dtype)
     else:
         raise TypeError('bufrids should be a ndarray of rank 1')
-    cmcids = _np.empty(bufrids.size, dtype=dtype, order='FORTRAN')
+    cmcids = _np.empty(bufrids.size, dtype=dtype, order='F')
     istat = _rp.c_mrbcol(bufrids, cmcids, bufrids.size)
     if istat != 0:
         raise BurpError('c_mrbcol', istat)
@@ -2393,6 +2393,7 @@ def mrbcvt_encode(cmcids, rval):
     return tblval
 
 
+#TODO?: remove sup, nsup, xaux, nxaux from itf since not supported
 def mrbini(funit, rpt, time=None, flgs=None, stnid=None, idtyp=None, ilat=None,
            ilon=None, idx=None, idy=None, ielev=None, drnd=None, date=None,
            oars=None, runn=None, sup=None, nsup=0, xaux=None, nxaux=0):
@@ -2501,6 +2502,7 @@ def mrbini(funit, rpt, time=None, flgs=None, stnid=None, idtyp=None, ilat=None,
     ## nxaux = _getCheckArg(int, nxaux, rpt, 'nxaux')
     rpt = _getCheckArg(None, rpt, rpt, 'rpt')
 
+    sup, nsup, xaux, nxaux = (None, 0 , None, 0)
     if sup is None:
         sup = _np.empty((1, ), dtype=_np.int32)
     if xaux is None:
@@ -2538,9 +2540,9 @@ def mrbadd(rpt, nele, nval=None, nt=None, bfam=None, bdesc=None,
 
     Similar to inverse mrbxtr/mrbprm operation.
 
-    rpt = mrbadd(rpt, blkno, nele, nval, nt, bfam, bdesc, btyp, nbit, bit0,
-                 datyp, cmcids, tblval)
-    rpt = mrbadd(rpt, blkno, blkdata)
+    blkno = mrbadd(rpt, nele, nval, nt, bfam, bdesc, btyp, nbit,
+                   datyp, cmcids, tblval)
+    blkno = mrbadd(rpt, blkdata)
 
     Args:
         rpt    (array) : vector to contain the report to update

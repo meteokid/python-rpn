@@ -394,8 +394,9 @@ class BurpFile:
                         warn = False
 
                 # add block to report
-                _brp.mrbadd(buf, _ct.pointer(_ct.c_int(iblk+1)), nele, nlev, nt, self.bfam[irep][iblk], self.bdesc[irep][iblk],
-                            self.btyp[irep][iblk], self.nbit[irep][iblk], _ct.pointer(_ct.c_int(self.bit0[irep][iblk])),
+                _brp.mrbadd(buf, nele, nlev, nt, self.bfam[irep][iblk],
+                            self.bdesc[irep][iblk],
+                            self.btyp[irep][iblk], self.nbit[irep][iblk],
                             self.datyp[irep][iblk], cmcids, tblval)
 
 
