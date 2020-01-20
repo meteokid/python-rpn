@@ -1,5 +1,4 @@
 
-Linux_x86-64:eccc/cmd/cmda/libs/16.2-6/intel-2016.1.156/
-sles-11-broadwell-64-xc40:eccc/cmd/cmda/libs/16.2-6/PrgEnv-intel-5.2.82
+ubuntu-18.04-skylake-64:eccc/cmd/cmda/libs/19.5/intel-19.0.3.199
 
-eccc/cmo/cmoi/base/20170928
+eccc/cmo/cmoi/base/20190712

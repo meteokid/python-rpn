@@ -8,15 +8,15 @@
 #                /ssm/net/cmdn/tests/vgrid/6.0.0-a3/intel13sp1u2
 
 """
- Module vgd is a ctypes import of vgrid's library (libdescrip.so)
+ Module vgd is a ctypes import of vgrid's library (libvgrid.so)
  
- The libdescrip.so library is provided with the VGrid Descriptor package
+ The libvgrid.so library is provided with the VGrid Descriptor package
  developed at CMC/RPN by R.McTaggartCowan and A.Plante
  
  The vgd python module includes
- - python wrapper to main libdescrip's C functions
+ - python wrapper to main libvgrid's C functions
  - helper functions
- - prototypes for many libdescrip's C functions
+ - prototypes for many libvgrid's C functions
  - pre-defined constants
  - along with comprenhensive inline documentation
 
@@ -57,10 +57,10 @@ def checkVGDlibPath(libfile):
 
 def loadVGDlib(vgd_version=None):
     """
-    Import libdescrip.so using ctypes
+    Import libvgrid.so using ctypes
 
     Args:
-       vgd_version (str): libdescrip version number to load
+       vgd_version (str): libvgrid version number to load
                           Default: RPNPY_VGD_VERSION Env.Var.
                                    VGD_VERSION_DEFAULT if not RPNPY_VGD_VERSION
     Returns:
@@ -83,7 +83,7 @@ def loadVGDlib(vgd_version=None):
                                 VGD_VERSION_DEFAULT).strip()
     else:
         VGD_VERSION = vgd_version
-    vgd_libfile = 'libdescripshared' + VGD_VERSION.strip() + '.so'
+    vgd_libfile = 'libvgridshared' + VGD_VERSION.strip() + '.so'
 
     pylibpath   = os.getenv('PYTHONPATH','').split(':')
     ldlibpath   = os.getenv('LD_LIBRARY_PATH','').split(':')
@@ -96,7 +96,7 @@ def loadVGDlib(vgd_version=None):
                 break
 
     if not VGD_LIBPATH:
-        raise IOError(-1, 'Failed to find libdescrip.so: ', vgd_libfile)
+        raise IOError(-1, 'Failed to find libvgrid.so: ', vgd_libfile)
 
     VGD_LIBPATH = os.path.abspath(VGD_LIBPATH)
     libvgd = None
@@ -104,12 +104,12 @@ def loadVGDlib(vgd_version=None):
         libvgd = ct.cdll.LoadLibrary(VGD_LIBPATH)
         #libvgd = np.ctypeslib.load_library(vgd_libfile, VGD_LIBPATH)
     except IOError:
-        raise IOError('ERROR: cannot load libdescrip shared version: ' +
+        raise IOError('ERROR: cannot load libvgrid shared version: ' +
                       VGD_VERSION)
     return (VGD_VERSION, VGD_LIBPATH, libvgd)
 
 (VGD_VERSION, VGD_LIBPATH, libvgd) = loadVGDlib()
-    
+
 if __name__ == "__main__":
     import doctest
     doctest.testmod()

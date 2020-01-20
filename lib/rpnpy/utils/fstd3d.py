@@ -13,6 +13,7 @@ import numpy  as _np
 import rpnpy.librmn.all as _rmn
 import rpnpy.vgd.all as _vgd
 import rpnpy.utils.tdpack_consts as _cst
+from rpnpy import integer_types as _integer_types
 
 #TODO: fst_read_3d_sample points
 
@@ -40,10 +41,11 @@ def sort_ip1(ip1s):
         rpnpy.librmn.fstd98.convertIp
     """
     if isinstance(ip1s, (list, tuple)):
-        if not all([(isinstance(i, (int, long)) and i >= 0) for i in ip1s]):
-            raise ValueError('All ip1s should be int >= 0')
+        if not all([(isinstance(i, _integer_types) and i >= 0) for i in ip1s]):
+            raise ValueError('All ip1s should be int >= 0, got {}'.format(repr(ip1s)))
     else:
-        raise TypeError('ip1s should be a list of int')
+        raise TypeError('ip1s should be a list of int, got {} {}'
+                        .format(repr(ip1s), type(ip1s)))
 
     if len(ip1s) < 2:
         return ip1s
@@ -338,10 +340,10 @@ def vgrid_new(ip1s, vptr=None, rfld=None, rlfs=None, rfldError=True):
     >>> print("# nblevels={}".format(len(vgrid['ip1s'])))
     # nblevels=28
     """
-    if isinstance(ip1s, (int, long)):
+    if isinstance(ip1s, _integer_types):
         ip1s = [ip1s]
     if isinstance(ip1s, (list, tuple)):
-        if not all([(isinstance(i, (int, long)) and i >= 0) for i in ip1s]):
+        if not all([(isinstance(i, _integer_types) and i >= 0) for i in ip1s]):
             raise ValueError('All ip1s should be int >= 0')
     elif isinstance(ip1s, str):
         if ip1s.strip().upper() in ('VIPM', 'VIPT') and vptr is None:
@@ -562,7 +564,8 @@ def vgrid_read(fileId, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
     if ip1 == -1 and (ip1keys is None or len(ip1keys) == 0):
         keys = _rmn.fstinl(fileId, datev, etiket, ip1, ip2, ip3, typvar, nomvar)
         ip1keysdict = dict([(_rmn.fstprm(k)['ip1'], k) for k in keys])
-        ip1keys = [(i, ip1keysdict[i]) for i in sort_ip1(ip1keysdict.keys())]
+        ip1keys = [(i, ip1keysdict[i]) for i in
+                   sort_ip1(list(ip1keysdict.keys()))]
         vptr = None
         if verbose:
             print("(fst_read_3d) Using Arbitrary list of levels: {}".format([i for i,k in ip1keys]))
@@ -720,7 +723,7 @@ def fst_read_3d(fileId, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
     if vGrid is None:
         return None
 
-    ip1keys = zip(vGrid['ip1s'], vGrid['keys'])
+    ip1keys = list(zip(vGrid['ip1s'], vGrid['keys']))
 
     # Read all 2d records and copy to 3d array
     r3d = None
@@ -741,7 +744,7 @@ def fst_read_3d(fileId, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
             r3d = r2d.copy()
             rshape = list(r2d['d'].shape[0:2]) + [len(ip1keys)]
             if dataArray is None:
-                r3d['d'] = _np.empty(rshape, dtype=r2d['d'].dtype, order='FORTRAN')
+                r3d['d'] = _np.empty(rshape, dtype=r2d['d'].dtype, order='F')
             else:
                 if isinstance(dataArray,_np.ndarray) and dataArray.shape == rshape:
                     r3d['d'] = dataArray
@@ -1021,7 +1024,7 @@ def fst_new_3d(params, hgrid, vgrid,
     if dataArray is None:
         if dtype is None:
             dtype = _rmn.dtype_fst2numpy(params['datyp'], params['nbits'])
-        dataArray = _np.zeros((ni,nj,nk), dtype=dtype, order='FORTRAN')
+        dataArray = _np.zeros((ni,nj,nk), dtype=dtype, order='F')
     if not isinstance(dataArray, _np.ndarray):
         raise TypeError("fst_new_3d: Expecting dataArray of type {}, Got {}"\
                         .format('numpy.ndarray', type(dataArray)))
