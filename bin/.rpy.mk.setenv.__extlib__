@@ -10,16 +10,19 @@ if [[ x${librmnpath##*/} == x ]] ; then
    librmnpath=$(rdefind ${EC_LD_LIBRARY_PATH}  --maxdepth 0 --name librmnshared*.so | head -1)
 fi
 librmnname=$(echo ${librmnpath##*/} | cut -c13-)
-libvgdpath=$(rdefind ${EC_LD_LIBRARY_PATH}  --maxdepth 0 --name libdescripshared_*.so | head -1)
+
+libvgdpath=$(rdefind ${EC_LD_LIBRARY_PATH}  --maxdepth 0 --name libvgridshared_*.so | head -1)
 if [[ x${libvgdpath##*/} == x ]] ; then
-   libvgdpath=$(rdefind ${EC_LD_LIBRARY_PATH}  --maxdepth 0 --name libdescripshared*.so | head -1)
+   libvgdpath=$(rdefind ${EC_LD_LIBRARY_PATH}  --maxdepth 0 --name libvgridshared*.so | head -1)
 fi
-libvgdname=$(echo ${libvgdpath##*/} | cut -c17-)
+libvgdname=$(echo ${libvgdpath##*/} | cut -c15-)
+
 libburpcpath=$(rdefind ${EC_LD_LIBRARY_PATH}  --maxdepth 0 --name libburp_c_shared_*.so | head -1)
 if [[ x${libburpcpath##*/} == x ]] ; then
    libburpcpath=$(rdefind ${EC_LD_LIBRARY_PATH}  --maxdepth 0 --name libburp_c_shared*.so | head -1)
 fi
 libburpcname=*
+
 cat > $1 <<EOF
 export RPNPY_RMN_LIBPATH=\${RPNPY_RMN_LIBPATH_FORCED:-\${RPNPY_RMN_LIBPATH:-${librmnpath%/*}}}
 export RPNPY_RMN_VERSION=\${RPNPY_RMN_VERSION_FORCED:-\${RPNPY_RMN_VERSION:-${librmnname%.so}}}

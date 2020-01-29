@@ -144,7 +144,7 @@ class RpnPyUtilsFstd3D(unittest.TestCase):
             # This is important when editing to avoid corrupted files
             rmn.fstcloseall(fileId)
 
-        self.assertAlmostEqual(rec3d['d'].mean(), -36.287384, places=6,
+        self.assertAlmostEqual(rec3d['d'].mean(), -36.287384, places=2,
                                msg=None, delta=None)
 
 
@@ -179,9 +179,9 @@ class RpnPyUtilsFstd3D(unittest.TestCase):
             # This is important when editing to avoid corrupted files
             rmn.fstcloseall(fileId)
 
-        self.assertAlmostEqual(j1['d'].mean(), 18.77356, places=6,
+        self.assertAlmostEqual(j1['d'].mean(), 18.77356, places=3,
                                msg=None, delta=None)
-        self.assertAlmostEqual(j2['d'].mean(), 8.8374939, places=6,
+        self.assertAlmostEqual(j2['d'].mean(), 8.8374939, places=3,
                                msg=None, delta=None)
 
 
