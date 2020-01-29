@@ -50,7 +50,7 @@ _ftn   = lambda x, t: x if _isftnf32(x) else _np.asfortranarray(x, dtype=t)
 _isftnf32 = lambda x: _isftn(x, _np.float32)
 _ftnf32   = lambda x: _ftn(x, _np.float32)
 _ftnOrEmpty = lambda x, s, t: \
-    _np.empty(s, dtype=t, order='FORTRAN') if x is None else _ftn(x, t)
+    _np.empty(s, dtype=t, order='F') if x is None else _ftn(x, t)
 _list2ftnf32 = lambda x: \
     x if isinstance(x, _np.ndarray) \
       else _np.asfortranarray(x, dtype=_np.float32)
@@ -289,8 +289,8 @@ def ezgdef_fmem(ni, nj=None, grtyp=None, grref=None, ig1=None, ig2=None,
     ...     }
     >>> ig1234 = rmn.cxgaig(gp['grref'], gp['xlat1'], gp['xlon1'],
     ...                     gp['xlat2'], gp['xlon2'])
-    >>> gp['ax'] = np.empty((ni,1), dtype=np.float32, order='FORTRAN')
-    >>> gp['ay'] = np.empty((1,nj), dtype=np.float32, order='FORTRAN')
+    >>> gp['ax'] = np.empty((ni,1), dtype=np.float32, order='F')
+    >>> gp['ay'] = np.empty((1,nj), dtype=np.float32, order='F')
     >>> for i in range(ni): gp['ax'][i,0] = gp['lon0']+float(i)*gp['dlon']
     >>> for j in range(nj): gp['ay'][0,j] = gp['lat0']+float(j)*gp['dlat']
     >>> gid = rmn.ezgdef_fmem(ni, nj, gp['grtyp'], gp['grref'],
@@ -728,7 +728,7 @@ def ezget_subgridids(super_gdid):
     """
     super_gdid = _getCheckArg(int, super_gdid, super_gdid, 'id')
     nsubgrids  = ezget_nsubgrids(super_gdid)
-    cgridlist  = _np.empty(nsubgrids, dtype=_np.intc, order='FORTRAN')
+    cgridlist  = _np.empty(nsubgrids, dtype=_np.intc, order='F')
     istat = _rp.c_ezget_subgridids(super_gdid, cgridlist)
     if istat >= 0:
         return cgridlist.tolist()
@@ -883,8 +883,8 @@ def ezgxprm(gdid, doSubGrid=False):
     ...     }
     >>> ig1234 = rmn.cxgaig(gp['grref'], gp['xlat1'], gp['xlon1'],
     ...                     gp['xlat2'], gp['xlon2'])
-    >>> gp['ax'] = np.empty((ni,1), dtype=np.float32, order='FORTRAN')
-    >>> gp['ay'] = np.empty((1,nj), dtype=np.float32, order='FORTRAN')
+    >>> gp['ax'] = np.empty((ni,1), dtype=np.float32, order='F')
+    >>> gp['ay'] = np.empty((1,nj), dtype=np.float32, order='F')
     >>> for i in range(ni): gp['ax'][i,0] = gp['lon0']+float(i)*gp['dlon']
     >>> for j in range(nj): gp['ay'][0,j] = gp['lat0']+float(j)*gp['dlat']
     >>> gid = rmn.ezgdef_fmem(ni, nj, gp['grtyp'], gp['grref'],
@@ -1331,8 +1331,8 @@ def gdxyfll(gdid, lat=None, lon=None):
                         format(type(clat), type(clon)))
     if clat.size != clon.size:
         raise TypeError("gdxyfll: provided lat, lon should have the same size")
-    cx = _np.empty(clat.shape, dtype=_np.float32, order='FORTRAN')
-    cy = _np.empty(clat.shape, dtype=_np.float32, order='FORTRAN')
+    cx = _np.empty(clat.shape, dtype=_np.float32, order='F')
+    cy = _np.empty(clat.shape, dtype=_np.float32, order='F')
     istat = _rp.c_gdxyfll(gdid, cx, cy, clat, clon, clat.size)
     if istat >= 0:
         return {
@@ -1406,8 +1406,8 @@ def gdllfxy(gdid, xpts=None, ypts=None):
     if cx.size != cy.size:
         raise TypeError(
             "gdllfxy: provided xpts, ypts should have the same size")
-    clat = _np.empty(cx.shape, dtype=_np.float32, order='FORTRAN')
-    clon = _np.empty(cx.shape, dtype=_np.float32, order='FORTRAN')
+    clat = _np.empty(cx.shape, dtype=_np.float32, order='F')
+    clon = _np.empty(cx.shape, dtype=_np.float32, order='F')
     istat = _rp.c_gdllfxy(gdid, clat, clon, cx, cy, cx.size)
     if istat >= 0:
         return {
@@ -2269,8 +2269,9 @@ def gdllwdval(gdid, lat, lon, uuin, vvin, wsout=None, wdout=None):
     >>> lo = [x[1] for x in destPoints]
     >>> (ws, wd) = rmn.gdllwdval(inGrid['id'], la, lo, uuRec['d'], vvRec['d'])
     >>> print("# (ws,wd) pt1:({}, {}) pt2:({}, {})"
-    ...       .format(ws[0], wd[0], ws[1], wd[1]))
-    # (ws,wd) pt1:(8.06922626495, 118.798522949) pt2:(11.764919281, 125.295166016)
+    ...       .format(int(round(ws[0])), int(round(wd[0])),
+    ...               int(round(ws[1])), int(round(wd[1]))))
+    # (ws,wd) pt1:(8, 119) pt2:(12, 125)
 
     See Also:
         gdllsval
@@ -2373,8 +2374,9 @@ def gdxywdval(gdid, xpts, ypts, uuin, vvin, wsout=None, wdout=None):
     >>> xy = rmn.gdxyfll(inGrid['id'], la, lo)
     >>> (ws, wd) = rmn.gdxywdval(inGrid['id'], xy['x'], xy['y'], uuRec['d'], vvRec['d'])
     >>> print("# (ws,wd) pt1:({}, {}) pt2:({}, {})"
-    ...       .format(ws[0], wd[0], ws[1], wd[1]))
-    # (ws,wd) pt1:(8.06922626495, 118.798522949) pt2:(11.764919281, 125.295166016)
+    ...       .format(int(round(ws[0])), int(round(wd[0])),
+    ...               int(round(ws[1])), int(round(wd[1]))))
+    # (ws,wd) pt1:(8, 119) pt2:(12, 125)
 
     See Also:
         gdllsval

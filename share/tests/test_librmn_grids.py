@@ -110,10 +110,16 @@ class Librmn_grids_Test(unittest.TestCase):
         params = rmn.defGrid_L(90,45,0.,180.,1.,0.5)
         params2 = rmn.decodeGrid(params['id'])
         for k in params.keys():
-            self.assertEqual(params[k],params2[k])
+            if isinstance(params[k], float):
+                self.assertEqual(int((params[k]-params2[k])*1000.), 0, '{}: {} != {}'.format(k,params[k],params2[k]))
+            elif k != 'id':
+                self.assertEqual(params[k],params2[k], '{}: {} != {}'.format(k,params[k],params2[k]))
         params3 = rmn.decodeGrid(params)
         for k in params.keys():
-            self.assertEqual(params[k],params3[k])
+            if isinstance(params[k], float):
+                self.assertEqual(int((params[k]-params3[k])*1000.), 0, '{}: {} != {}'.format(k,params[k],params3[k]))
+            elif k != 'id':
+                self.assertEqual(params[k],params3[k], '{}: {} != {}'.format(k,params[k],params3[k]))
                     
     def test_defGrid_E(self):
         params = rmn.defGrid_E(90,45,0.,180.,1.,270.)
@@ -262,10 +268,12 @@ class Librmn_grids_Test(unittest.TestCase):
             if isinstance(params[k],np.ndarray):
                 ok = np.any(np.abs(params[k]-params2[k]) > self.epsilon)
                 ## print k,not ok,np.max(np.abs(params[k]-params2[k])),np.max(params[k])
-                self.assertFalse(ok)
-            else:
-                ## print k,params[k] == params2[k],params[k],params2[k]
-                self.assertEqual(params[k],params2[k])
+                self.assertFalse(ok, k)
+            elif isinstance(params[k], float):
+                ok = abs(params[k]-params2[k]) > self.epsilon
+                self.assertFalse(ok, k)
+            elif k != 'id':
+                self.assertEqual(params[k],params2[k], k)
 
                 
     def test_defGrid_YL2(self):
@@ -279,10 +287,12 @@ class Librmn_grids_Test(unittest.TestCase):
             if isinstance(params[k],np.ndarray):
                 ok = np.any(np.abs(params[k]-params2[k]) > self.epsilon)
                 ## print k,not ok,np.max(np.abs(params[k]-params2[k])),np.max(params[k])
-                self.assertFalse(ok)
-            else:
-                ## print k,params[k] == params2[k],params[k],params2[k]
-                self.assertEqual(params[k],params2[k])
+                self.assertFalse(ok, k)
+            elif isinstance(params[k], float):
+                ok = abs(params[k]-params2[k]) > self.epsilon
+                self.assertFalse(ok, k)
+            elif k != 'id':
+                self.assertEqual(params[k],params2[k],k)
 
     def test_defGrid_G_glb(self):
         params = rmn.defGrid_G(90,45,glb=True,north=True,inverted=False)

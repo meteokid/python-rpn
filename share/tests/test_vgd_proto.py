@@ -476,10 +476,10 @@ class VGDProtoTests(unittest.TestCase):
 
         MB2PA = 100.
         p0_stn_mb = 1013.
-        p0_stn = np.empty((1,), dtype=np.float32, order='FORTRAN')
+        p0_stn = np.empty((1,), dtype=np.float32, order='F')
         p0_stn[0] = p0_stn_mb * MB2PA
 
-        prof = np.empty((nip1.value,), dtype=np.float32, order='FORTRAN')
+        prof = np.empty((nip1.value,), dtype=np.float32, order='F')
 
         ni = 1 ; nj = 1 ; in_log = 0
         ok = vgd.c_vgd_levels(vgd0ptr, ni, nj, nip1, ip1list, prof, p0_stn, in_log);
@@ -505,10 +505,10 @@ class VGDProtoTests(unittest.TestCase):
 
         MB2PA = 100.
         p0_stn_mb = 1013.
-        p0_stn = np.empty((1,), dtype=np.float64, order='FORTRAN')
+        p0_stn = np.empty((1,), dtype=np.float64, order='F')
         p0_stn[0] = p0_stn_mb * MB2PA
 
-        prof8 = np.empty((nip1.value,), dtype=np.float64, order='FORTRAN')
+        prof8 = np.empty((nip1.value,), dtype=np.float64, order='F')
 
         ni = 1 ; nj = 1 ; in_log = 0
         ok = vgd.c_vgd_levels_8(vgd0ptr, ni, nj, nip1, ip1list, prof8, p0_stn, in_log);
@@ -541,7 +541,7 @@ class VGDProtoTests(unittest.TestCase):
         ok = vgd.c_vgd_get_int_1d(vgd0ptr, _C_WCHAR2CHAR('VIPM'), ct.byref(ip1list), ct.byref(nip1), quiet)
 
         (ni, nj, in_log) = (rfld.shape[0], rfld.shape[1], 0)
-        levels = np.empty((ni, nj, nip1.value), dtype=np.float32, order='FORTRAN')
+        levels = np.empty((ni, nj, nip1.value), dtype=np.float32, order='F')
         ok = vgd.c_vgd_levels(vgd0ptr, ni, nj, nip1, ip1list, levels, rfld, in_log);
         self.assertEqual(ok,vgd.VGD_OK)
         self.assertEqual([int(x) for x in levels[ni//2,nj//2,0:5]*10000.],
@@ -572,8 +572,8 @@ class VGDProtoTests(unittest.TestCase):
         ok = vgd.c_vgd_get_int_1d(vgd0ptr, _C_WCHAR2CHAR('VIPM'), ct.byref(ip1list), ct.byref(nip1), quiet)
 
         ni = rfld.shape[0] ; nj = rfld.shape[1] ; in_log = 0
-        levels8 = np.empty((ni, nj, nip1.value), dtype=np.float64, order='FORTRAN')
-        rfld8 = np.empty((ni, nj), dtype=np.float64, order='FORTRAN')
+        levels8 = np.empty((ni, nj, nip1.value), dtype=np.float64, order='F')
+        rfld8 = np.empty((ni, nj), dtype=np.float64, order='F')
         rfld8[:,:] = rfld[:,:]
         ok = vgd.c_vgd_levels_8(vgd0ptr, ni, nj, nip1, ip1list, levels8, rfld8, in_log);
         self.assertEqual(ok,vgd.VGD_OK)
@@ -605,7 +605,7 @@ class VGDProtoTests(unittest.TestCase):
         ok = vgd.c_vgd_get_int_1d(vgd0ptr, _C_WCHAR2CHAR('VIPM'), ct.byref(ip1list), ct.byref(nip1), quiet)
 
         (ni,nj) = rfld.shape[0:2] ; in_log = 0
-        levels = np.empty((ni, nj, nip1.value), dtype=np.float32, order='FORTRAN')
+        levels = np.empty((ni, nj, nip1.value), dtype=np.float32, order='F')
         ok = vgd.c_vgd_diag_withref(vgd0ptr, ni, nj, nip1, ip1list, levels, rfld, in_log, vgd.VGD_DIAG_DPIS);
         self.assertEqual(ok,vgd.VGD_OK)
         self.assertEqual([int(x) for x in levels[ni//2,nj//2,0:5]*10000.],
@@ -636,8 +636,8 @@ class VGDProtoTests(unittest.TestCase):
         ok = vgd.c_vgd_get_int_1d(vgd0ptr, _C_WCHAR2CHAR('VIPM'), ct.byref(ip1list), ct.byref(nip1), quiet)
 
         ni = rfld.shape[0] ; nj = rfld.shape[1] ; in_log = 0
-        levels8 = np.empty((ni, nj, nip1.value), dtype=np.float64, order='FORTRAN')
-        rfld8 = np.empty((ni, nj), dtype=np.float64, order='FORTRAN')
+        levels8 = np.empty((ni, nj, nip1.value), dtype=np.float64, order='F')
+        rfld8 = np.empty((ni, nj), dtype=np.float64, order='F')
         rfld8[:,:] = rfld[:,:]
         ok = vgd.c_vgd_diag_withref_8(vgd0ptr, ni, nj, nip1, ip1list, levels8, rfld8, in_log, vgd.VGD_DIAG_DPIS)
         self.assertEqual(ok,vgd.VGD_OK)
@@ -651,7 +651,7 @@ class VGDProtoTests(unittest.TestCase):
         quiet = ct.c_int(0)
         ok = vgd.c_vgd_get_int_1d(vgd0ptr, _C_WCHAR2CHAR('VIPM'),
                                   ct.byref(ip1list), ct.byref(nip1), quiet)
-        temp = np.empty(nip1.value, dtype=np.float32, order='FORTRAN')
+        temp = np.empty(nip1.value, dtype=np.float32, order='F')
         ok = vgd.c_vgd_stda76_temp(vgd0ptr, ip1list, nip1, temp)
         self.assertEqual(ok,vgd.VGD_OK)
         #TODO: assert temp values
@@ -663,7 +663,7 @@ class VGDProtoTests(unittest.TestCase):
         quiet = ct.c_int(0)
         ok = vgd.c_vgd_get_int_1d(vgd0ptr, _C_WCHAR2CHAR('VIPM'),
                                   ct.byref(ip1list), ct.byref(nip1), quiet)
-        pres = np.empty(nip1.value, dtype=np.float32, order='FORTRAN')
+        pres = np.empty(nip1.value, dtype=np.float32, order='F')
         (p_sfc_temp, p_sfc_pres) = (None, None)
         ok = vgd.c_vgd_stda76_pres(vgd0ptr, ip1list, nip1, pres, p_sfc_temp,
                                    p_sfc_pres)
