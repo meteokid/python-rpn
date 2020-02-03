@@ -65,7 +65,7 @@ class RPNBaseDict(dict):
         if name[0] != '_':
             if not name in self._defaultKeyVal.keys():
                 raise ValueError, 'Cannot set new RPNData item: '+repr(name)
-            if value != None and self._defaultKeyVal[name][RPNBaseDict.KTYPE] != None and not isinstance(value, self._defaultKeyVal[name][RPNBaseDict.KTYPE]):
+            if value is not None and self._defaultKeyVal[name][RPNBaseDict.KTYPE] is not None and not isinstance(value, self._defaultKeyVal[name][RPNBaseDict.KTYPE]):
                 raise TypeError, 'RPNData['+repr(name)+'] must be of type '+repr(self._defaultKeyVal[name][RPNBaseDict.KTYPE])+' (provided: '+repr(type(value))+')'
             if not self._checkSetItem(name, value):
                 raise  TypeError, 'Cannot set RPNData['+repr(name)+'] = '+repr(value)
@@ -117,7 +117,7 @@ class RPNBaseDict(dict):
         """
         if isinstance(other, type({})):
             for key in other.keys():
-                if not (cond and other[key] == self._defaultKeyVal[key][RPNBaseDict.KWILD] and other[key] != None):
+                if not (cond and other[key] == self._defaultKeyVal[key][RPNBaseDict.KWILD] and other[key] is not None):
                     self[key] = other[key]    #TODO:try deepcopy
         elif isinstance(other, type([])) or isinstance(other, type((1, ))):
             for item in other:
@@ -126,7 +126,7 @@ class RPNBaseDict(dict):
                           'RPNData.update(object), object must be of type '+ \
                           self.__class__.__name__+ \
                           ', list or tuple of tuples ((name1, value1), ...)'
-                if not (cond and item[1] == self._defaultKeyVal[item[0]][RPNBaseDict.KWILD] and item[1] != None):
+                if not (cond and item[1] == self._defaultKeyVal[item[0]][RPNBaseDict.KWILD] and item[1] is not None):
                     self[item[0]] = item[1]   #TODO:try deepcopy
         else:
             raise TypeError, 'RPNData.update(object), object must be of type '+self.__class__.__name__+', list or tuple'

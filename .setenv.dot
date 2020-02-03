@@ -108,7 +108,7 @@ for __item in /home/ordenv/ssm-domains9/log /home/sgem000/log ; do
       export RPNPY_LOGDIR=${RPNPY_LOGDIR:-${__item}}
    fi
 done
-. $(pwd)/bin/.env_setup.dot rpnpy ${rpnpy_version:-${rpnpy_version0}} all ${__scriptpath} ${__scriptpath}
+. $(pwd)/bin/.env_setup.dot rpnpy ${rpnpy_version:-${rpnpy_version0#*/}} all ${__scriptpath} ${__scriptpath}
 # export rpnpy=${__scriptpath}
 
 #=== Simulate installed bndl post loading of .setenv.__extlib__.${ORDENV_PLAT}.dot

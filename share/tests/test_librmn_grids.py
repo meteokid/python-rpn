@@ -4,6 +4,7 @@
 
 import os, os.path
 import rpnpy.librmn.all as rmn
+from rpnpy import range as _range
 import unittest
 ## import ctypes as ct
 import numpy as np
@@ -109,10 +110,16 @@ class Librmn_grids_Test(unittest.TestCase):
         params = rmn.defGrid_L(90,45,0.,180.,1.,0.5)
         params2 = rmn.decodeGrid(params['id'])
         for k in params.keys():
-            self.assertEqual(params[k],params2[k])
+            if isinstance(params[k], float):
+                self.assertEqual(int((params[k]-params2[k])*1000.), 0, '{}: {} != {}'.format(k,params[k],params2[k]))
+            elif k != 'id':
+                self.assertEqual(params[k],params2[k], '{}: {} != {}'.format(k,params[k],params2[k]))
         params3 = rmn.decodeGrid(params)
         for k in params.keys():
-            self.assertEqual(params[k],params3[k])
+            if isinstance(params[k], float):
+                self.assertEqual(int((params[k]-params3[k])*1000.), 0, '{}: {} != {}'.format(k,params[k],params3[k]))
+            elif k != 'id':
+                self.assertEqual(params[k],params3[k], '{}: {} != {}'.format(k,params[k],params3[k]))
                     
     def test_defGrid_E(self):
         params = rmn.defGrid_E(90,45,0.,180.,1.,270.)
@@ -250,6 +257,43 @@ class Librmn_grids_Test(unittest.TestCase):
     ##         else:
     ##             self.assertEqual(params[k],params2[k],'p[%s] : %s != %s' % (k,str(params[k]),str(params2[k])))
 
+    def test_defGrid_YL(self):
+        params0 = { \
+            'ax'    : ( 45.,  46.5),\
+            'ay'    : (273., 273. )\
+            }
+        params = rmn.defGrid_YL(params0)
+        params2 = rmn.decodeGrid(params['id'])
+        for k in params.keys():
+            if isinstance(params[k],np.ndarray):
+                ok = np.any(np.abs(params[k]-params2[k]) > self.epsilon)
+                ## print k,not ok,np.max(np.abs(params[k]-params2[k])),np.max(params[k])
+                self.assertFalse(ok, k)
+            elif isinstance(params[k], float):
+                ok = abs(params[k]-params2[k]) > self.epsilon
+                self.assertFalse(ok, k)
+            elif k != 'id':
+                self.assertEqual(params[k],params2[k], k)
+
+                
+    def test_defGrid_YL2(self):
+        params0 = { \
+            'ax'    : ( 45.,  46.5),\
+            'ay'    : (273., 273. )\
+            }
+        params = rmn.defGrid_YL(params0)
+        params2 = rmn.decodeGrid(params)
+        for k in params.keys():
+            if isinstance(params[k],np.ndarray):
+                ok = np.any(np.abs(params[k]-params2[k]) > self.epsilon)
+                ## print k,not ok,np.max(np.abs(params[k]-params2[k])),np.max(params[k])
+                self.assertFalse(ok, k)
+            elif isinstance(params[k], float):
+                ok = abs(params[k]-params2[k]) > self.epsilon
+                self.assertFalse(ok, k)
+            elif k != 'id':
+                self.assertEqual(params[k],params2[k],k)
+
     def test_defGrid_G_glb(self):
         params = rmn.defGrid_G(90,45,glb=True,north=True,inverted=False)
         params2 = rmn.decodeGrid(params['id'])
@@ -319,11 +363,10 @@ class Librmn_grids_Test(unittest.TestCase):
         self.assertEqual((xlat1,xlon1,xlat2,xlon2),(xlat1c,xlon1c,xlat2c,xlon2c))
 
     def test_ll2rll_norot(self):
-        epsilon = self.epsilon
         (xlat1, xlon1, xlat2, xlon2) = (0.,180.,0.,270.)
         ok = True
-        for j in range(178):
-            for i in range(358):
+        for j in _range(178):
+            for i in _range(358):
                 (lat0,lon0) = (float(j+1-90), float(i+1))
                 (rlat, rlon) = rmn.egrid_ll2rll(xlat1, xlon1, xlat2, xlon2, lat0, lon0)
                 (lat1, lon1) = rmn.egrid_rll2ll(xlat1, xlon1, xlat2, xlon2, rlat, rlon)
@@ -332,20 +375,20 @@ class Librmn_grids_Test(unittest.TestCase):
                 if dlon > 180.: dlon =- 360.
                 drlon = abs(rlon1-rlon)
                 if drlon > 180.: drlon =- 360.
-                if False in (abs(lat1-lat0)<epsilon, dlon<epsilon,
-                             abs(rlat1-rlat)<epsilon, drlon<epsilon):
-                    print 'n',i,j,abs(lat1-lat0), dlon, \
-                        abs(rlat1-rlat), drlon
+                if False in (abs(lat1-lat0)<self.epsilon, dlon<self.epsilon,
+                             abs(rlat1-rlat)<self.epsilon, drlon<self.epsilon):
+                    print('n',i,j,abs(lat1-lat0), dlon, \
+                        abs(rlat1-rlat), drlon)
                     ok = False
         self.assertTrue(ok)
 
                     
     def test_ll2rll_rot(self):
-        epsilon = self.epsilon
+        from math import cos, radians
         (xlat1, xlon1, xlat2, xlon2) = (35.,230.,0.,320.)
         ok = True
-        for j in range(178):
-            for i in range(358):
+        for j in _range(178):
+            for i in _range(358):
                 (lat0,lon0) = (float(j+1-90), float(i+1))
                 (rlat, rlon) = rmn.egrid_ll2rll(xlat1, xlon1, xlat2, xlon2, lat0, lon0)
                 (lat1, lon1) = rmn.egrid_rll2ll(xlat1, xlon1, xlat2, xlon2, rlat, rlon)
@@ -354,20 +397,20 @@ class Librmn_grids_Test(unittest.TestCase):
                 if dlon > 180.: dlon =- 360.
                 drlon = abs(rlon1-rlon)
                 if drlon > 180.: drlon =- 360.
-                if False in (abs(lat1-lat0)<epsilon, dlon<epsilon,
-                             abs(rlat1-rlat)<epsilon, drlon<epsilon):
-                    print 'r',i,j,abs(lat1-lat0), dlon, \
-                        abs(rlat1-rlat), drlon
+                if False in (abs(lat1-lat0)<self.epsilon, dlon*cos(radians(lat0))<self.epsilon,
+                             abs(rlat1-rlat)<self.epsilon, drlon*cos(radians(rlat))<self.epsilon):
+                    print('r',i,j,abs(lat1-lat0), dlon, \
+                        abs(rlat1-rlat), drlon)
                     ok = False
         self.assertTrue(ok)
 
                     
     def test_ll2rll_rot2(self):
-        epsilon = 0.05#self.epsilon
+        from math import cos, radians
         (xlat1, xlon1, xlat2, xlon2) = (0.,180.,1.,270.)
         ok = True
-        for j in range(178):
-            for i in range(358):
+        for j in _range(178):
+            for i in _range(358):
                 (lat0,lon0) = (float(j+1-90), float(i+1))
                 (rlat, rlon) = rmn.egrid_ll2rll(xlat1, xlon1, xlat2, xlon2, lat0, lon0)
                 (lat1, lon1) = rmn.egrid_rll2ll(xlat1, xlon1, xlat2, xlon2, rlat, rlon)
@@ -376,10 +419,10 @@ class Librmn_grids_Test(unittest.TestCase):
                 if dlon > 180.: dlon =- 360.
                 drlon = abs(rlon1-rlon)
                 if drlon > 180.: drlon =- 360.
-                if False in (abs(lat1-lat0)<epsilon, dlon<epsilon,
-                             abs(rlat1-rlat)<epsilon, drlon<epsilon):
-                    print 'r2',i,j,abs(lat1-lat0), dlon, \
-                        abs(rlat1-rlat), drlon
+                if False in (abs(lat1-lat0)<self.epsilon, dlon*cos(radians(lat0))<self.epsilon,
+                             abs(rlat1-rlat)<self.epsilon, drlon*cos(radians(rlat))<self.epsilon):
+                    print('r2',i,j,abs(lat1-lat0), dlon, \
+                        abs(rlat1-rlat), drlon)
                     ok = False
         self.assertTrue(ok)
 

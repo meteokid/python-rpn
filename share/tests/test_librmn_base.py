@@ -2,12 +2,20 @@
 # . s.ssmuse.dot /ssm/net/hpcs/201402/02/base /ssm/net/hpcs/201402/02/intel13sp1u2 /ssm/net/rpn/libs/15.2
 """Unit tests for librmn.base"""
 
+import sys
 import os, os.path
 import rpnpy.librmn.all as rmn
 import unittest
 import ctypes as ct
 import numpy as np
 
+from rpnpy import integer_types as _integer_types
+from rpnpy import C_WCHAR2CHAR as _C_WCHAR2CHAR
+from rpnpy import C_CHAR2WCHAR as _C_CHAR2WCHAR
+from rpnpy import C_MKSTR as _C_MKSTR
+
+if sys.version_info > (3,):
+    long = int
 
 ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
 
@@ -37,7 +45,7 @@ class LibrmnFilesKnownValues(unittest.TestCase):
     def testcrc32(self):
         a = np.array([3,7,5],dtype=np.uint32)
         crc = rmn.crc32(0,a)
-        self.assertEqual(827387316L,crc)
+        self.assertEqual(long(827387316),crc)
         
 #--- base/cxgaix ----------------------------------------------------
 
@@ -64,7 +72,7 @@ class LibrmnCigaxgKnownValues(unittest.TestCase):
         for name,proj,dims,xg,ig in self.knownValues:
             (cxg1,cxg2,cxg3,cxg4) = (ct.c_float(0.),ct.c_float(0.),ct.c_float(0.),ct.c_float(0.))
             (cig1,cig2,cig3,cig4) = (ct.c_int(ig[0]),ct.c_int(ig[1]),ct.c_int(ig[2]),ct.c_int(ig[3]))            
-            istat = rmn.f_cigaxg(proj,
+            istat = rmn.f_cigaxg(_C_WCHAR2CHAR(proj),
                                  ct.byref(cxg1),ct.byref(cxg2),
                                  ct.byref(cxg3),ct.byref(cxg4),
                                  ct.byref(cig1),ct.byref(cig2),
@@ -80,7 +88,7 @@ class LibrmnCigaxgKnownValues(unittest.TestCase):
         for name,proj,dims,xg,ig in self.knownValues:
             (cxg1,cxg2,cxg3,cxg4) = (ct.c_float(xg[0]),ct.c_float(xg[1]),ct.c_float(xg[2]),ct.c_float(xg[3]))
             (cig1,cig2,cig3,cig4) = (ct.c_int(0),ct.c_int(0),ct.c_int(0),ct.c_int(0))            
-            istat = rmn.f_cxgaig(proj,
+            istat = rmn.f_cxgaig(_C_WCHAR2CHAR(proj),
                                  ct.byref(cig1),ct.byref(cig2),
                                  ct.byref(cig3),ct.byref(cig4),
                                  ct.byref(cxg1),ct.byref(cxg2),
@@ -93,12 +101,12 @@ class LibrmnCigaxgKnownValues(unittest.TestCase):
         for name,proj,dims,xg,ig in self.knownValues:
             (cxg1,cxg2,cxg3,cxg4) = (ct.c_float(0.),ct.c_float(0.),ct.c_float(0.),ct.c_float(0.))
             (cig1,cig2,cig3,cig4) = (ct.c_int(ig[0]),ct.c_int(ig[1]),ct.c_int(ig[2]),ct.c_int(ig[3]))            
-            istat = rmn.f_cigaxg(proj,
+            istat = rmn.f_cigaxg(_C_WCHAR2CHAR(proj),
                                  ct.byref(cxg1),ct.byref(cxg2),
                                  ct.byref(cxg3),ct.byref(cxg4),
                                  ct.byref(cig1),ct.byref(cig2),
                                  ct.byref(cig3),ct.byref(cig4))
-            istat = rmn.f_cxgaig(proj,
+            istat = rmn.f_cxgaig(_C_WCHAR2CHAR(proj),
                                  ct.byref(cig1),ct.byref(cig2),
                                  ct.byref(cig3),ct.byref(cig4),
                                  ct.byref(cxg1),ct.byref(cxg2),
@@ -132,6 +140,43 @@ class LibrmnCigaxgKnownValues(unittest.TestCase):
 #--- base/*date -----------------------------------------------------
 
 class LibrmnNewdateOptKnownValues(unittest.TestCase):
+
+    def testnewdatestampKnownValues(self):
+        """newdate with stamp should give knwon results with known values"""
+        yyyymmdd = 20120628
+        hhmmsshh = 11121000 #Precision is not to seconds cannot test full sshh
+        
+        idate1 = rmn.newdate(rmn.NEWDATE_PRINT2STAMP, yyyymmdd, hhmmsshh)
+        (yyyymmdd2,hhmmsshh2) = rmn.newdate(rmn.NEWDATE_STAMP2PRINT, idate1)
+        self.assertEqual(yyyymmdd, yyyymmdd2)
+        self.assertEqual(hhmmsshh, hhmmsshh2)
+
+
+    def testnewdateArrayKnownValues(self):
+        """newdate mode 4 and -4 should give knwon results with known values"""
+        yyyymmdd = 20160728
+        hhmmsshh = 11121000 #Precision is not to seconds cannot test full sshh
+        datearray0 = [5,    # ??? 5th day of the week (Thu) ???
+                      7,    # month
+                      28,   # day of the month
+                      2016, # year
+                      11,   # hour
+                      73000,# minutes * 60 * 100
+                      1430803488,
+                      1280657952,
+                      540553760,
+                      909193266,
+                      1513173280,
+                      825897521,
+                      808463920,
+                      411742882] #STAMP
+        
+        idate1 = rmn.newdate(rmn.NEWDATE_PRINT2STAMP, yyyymmdd, hhmmsshh)
+        datearray = rmn.newdate(rmn.NEWDATE_STAMP2ARRAY, idate1)
+        self.assertEqual(datearray, datearray0)
+
+        idate2 = rmn.newdate(rmn.NEWDATE_ARRAY2STAMP, datearray)
+        self.assertEqual(idate2, idate2)
 
     def testLeapYearKnownValues(self):
         """ignore_leapyear option should give known result with known input"""

@@ -1,0 +1,133 @@
+#!/usr/bin/python
+#!/usr/bin/env python2
+# -*- coding: utf-8 -*-
+# Author: Stephane Chamberland <stephane.chamberland@canada.ca>
+# Copyright: LGPL 2.1
+# Author: Andre Plante Jan 2018
+"""
+Simple TimeSeries Profile plot for GEM time series.
+
+Example:
+   rpy.gem_series_time
+"""
+
+import os, os.path, sys
+import numpy as np
+import matplotlib.pyplot as plt
+import argparse
+
+import rpnpy.librmn.all as rmn
+import rpnpy.rpndate as rpndate
+
+# Parse program argument
+desc="Plot GEM/RPNPhy time-series 'time-serie'"
+usage = """
+    %(prog)s filename [options]
+"""
+epilog = """Examples:
+
+# Plot the surface TS variable for station 20, add units on y axis
+%(prog)s --station_no 20 --nomvar TS --units_y K -- ${ATM_MODEL_DFILES}/rpnpy/timeseries.fst
+
+# Plot the 3D variable TT for level 10, for station 10, add units K and produce the figure my_series.png
+%(prog)s --station_no 10 --nomvar TT --units_y K --lev 10 -o my_series -- ${ATM_MODEL_DFILES}/rpnpy/timeseries.fst
+"""
+
+parser = argparse.ArgumentParser(
+        description=desc, usage=usage, epilog=epilog,
+        prefix_chars='-+', formatter_class=argparse.RawDescriptionHelpFormatter)
+
+parser.add_argument("fst_file",
+                    help="Standard RPN fst file containing the time series")
+parser.add_argument("-o", "--out", default="",
+                    help="Output file name without the .png extention, default no figure")
+parser.add_argument("-v", "--verbose", dest="verbose", action="store_true",
+                    help="Verbose mode")
+
+parser.add_argument("-n", "--nomvar", default="TT",
+                    help="Nomvar to plot")
+parser.add_argument("--station_no", type=int, default=1,
+                    help="Station number (ip3) to plot")
+parser.add_argument("--lev", type=int, default=1,
+                    help="Level to plot")
+parser.add_argument("--plot_width", type=int, default=12,
+                    help="Plot width")
+parser.add_argument("--plot_height", type=int, default=7,
+                    help="Plot height")
+parser.add_argument("--plot_dpi", type=int, default=90,
+                    help="Plot dpi")
+parser.add_argument("--units_y", default="", help="Plot dpi")
+parser.add_argument("--symbols", action="store_true",
+                    help="Plot symbols")
+args = parser.parse_args()
+stn_no = args.station_no - 1
+lev_no = args.lev - 1
+
+if not args.verbose:
+    rmn.fstopt(rmn.FSTOP_MSGLVL, rmn.FSTOPI_MSG_CATAST)
+
+def read_var(nomvar, ip3=-1):
+    try:
+        key = rmn.fstinf(fileId, nomvar=nomvar, ip3=ip3)
+    except:
+        sys.stderr.write("Problem: nomvar %s not present in time serie file %s\n" % (nomvar, args.fst_file))
+        if ip3 != -1:
+            sys.stderr.write("         for ip3 = %d \n" % ip3)
+        sys.exit(1)
+    try:
+        return rmn.fstluk(key)
+    except:
+        sys.stderr.write("Problem with fstluk on nomvar %s \n" % nomvar)
+        if ip3 != -1:
+            sys.stderr.write("        and ip3 = %d \n" % ip3)
+        sys.exit(1)
+
+# Open fst file
+try:
+    fileId = rmn.fstopenall(args.fst_file, rmn.FST_RO, verbose=args.verbose)
+except:
+    sys.stderr.write("Problem opening the file: %s\n" % args.fst_file)
+    sys.exit(1)
+
+# Read from fst file
+# nomvar
+ff = read_var(args.nomvar, args.station_no)
+if args.verbose:
+    print(ff['d'][lev_no, :])
+
+# Read and convert station names
+stns = read_var('STNS')
+# Convert ascii code to string for station name and strip trailing spaces
+stn_name = str("".join([chr(c) for c in stns['d'][:, stn_no]])).strip()
+
+# Read and set dates
+hh = read_var('HH')['d']
+#print(hh)
+
+# Read lat lon
+lon = read_var('>>')['d']
+lat = read_var('^^')['d']
+
+# Plot data
+plt.figure(facecolor="white", figsize=(args.plot_width, args.plot_height), dpi=args.plot_dpi)
+plt.ticklabel_format(useOffset=False)
+
+shape = ff['d'].shape
+if shape[0] == 1:
+    lev_info=''
+else:
+    lev_info=', lev no ' + str(args.lev)
+
+if args.symbols:
+    plt.plot(hh, ff['d'][lev_no, :], '-o')
+else:
+    plt.plot(hh, ff['d'][lev_no, :])
+
+plt.title('Nomvar ' + args.nomvar + ', Etiket ' + ff['etiket'].strip() + lev_info +
+          '\nStation ' + str(args.station_no) + ' ' + stn_name + ', lat ' + str(lat[stn_no]) + ', lon ' + str(lon[stn_no]) +
+          ', Dateo ' + str(rpndate.RPNDate(ff['dateo']).toDateTime()) )
+plt.xlabel('Forecast Hour')
+plt.ylabel(args.nomvar + ' ' + args.units_y)
+if args.out != "":
+    plt.savefig(args.out)
+plt.show()
