@@ -55,7 +55,7 @@ def get_levels_keys(fileId, nomvar, datev=-1, ip2=-1, ip3=-1,
     if verbose:
         vkind    = vgd.vgd_get(vGrid, 'KIND')
         vver     = vgd.vgd_get(vGrid, 'VERS')
-        VGD_KIND_VER_INV = dict((val, key) for key, val in vgd.VGD_KIND_VER.iteritems())
+        VGD_KIND_VER_INV = dict((val, key) for key, val in vgd.VGD_KIND_VER.items())
         vtype = VGD_KIND_VER_INV[(vkind,vver)]
         print("Found %d %s levels of type %s" % (len(vip), thermoMom, vtype))
 
@@ -219,14 +219,14 @@ def plot_profile(varlist, title=None, axename=None, xzoom=None, yzoom=None, inLo
         d1,d2 = rmn.newdate(rmn.NEWDATE_STAMP2PRINT, datev)
         vdatev = "%8.8d.%4.4d" % (d1,d2/10000)
         #TODO: filter data by yzoom
-        for istat in xrange(len(xy)):
+        for istat in range(len(xy)):
             (i,j) = xy[istat]
             y = pmb[istat,:][::-1]
             x = d[istat,:][::-1]
             plt.plot(x, y, markers[imark],
                      label="%s xy:(%6.1f,%6.1f) datev=%s (%3dh) %12s" %
                      (varname,i,j, vdatev[0:12], ip2, etk))
-        for istat in xrange(len(ll)):
+        for istat in range(len(ll)):
             (i,j) = ll[istat]
             y = pmb[len(xy)+istat,:][::-1]
             x = d[len(xy)+istat,:][::-1]
@@ -273,7 +273,7 @@ def xy2list(xy):
     xy2 = []
     for xy1 in xy:
         xy2 += xy1.replace('(','').replace(')','').split(',')
-    return [(float(xy2[i*2]),float(xy2[i*2+1])) for i in xrange(len(xy2)//2)]
+    return [(float(xy2[i*2]),float(xy2[i*2+1])) for i in range(len(xy2)//2)]
 
 
 def varstr2dict(var):

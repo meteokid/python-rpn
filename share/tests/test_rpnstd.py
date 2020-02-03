@@ -233,10 +233,10 @@ class RPNGridTests(unittest.TestCase):
         (g2,la2,lo2) = self.gridL(0.25,8)
         la2c = g2.interpol(la1,g1)
         if numpy.any(numpy.abs(la2-la2c)>self.epsilon):
-                print 'g1:'+repr(g1)
-                print 'g2:'+repr(g2)
-                print 'la2:',la2
-                print 'la2c :',la2c
+                print('g1:'+repr(g1))
+                print('g2:'+repr(g2))
+                print('la2:',la2)
+                print('la2c :',la2c)
         self.assertFalse(numpy.any(numpy.abs(la2-la2c)>self.epsilon))
 
     def test_RPNGridInterp_Z_KnownValues(self):
@@ -245,10 +245,10 @@ class RPNGridTests(unittest.TestCase):
         (g2,la2,lo2) = self.gridZL(0.25,8)
         la2c = g2.interpol(la1,g1)
         if numpy.any(numpy.abs(la2-la2c)>self.epsilon):
-                print 'g1:'+repr(g1)
-                print 'g2:'+repr(g2)
-                print 'la2:',la2
-                print 'la2c :',la2c
+                print('g1:'+repr(g1))
+                print('g2:'+repr(g2))
+                print('la2:',la2)
+                print('la2c :',la2c)
         self.assertFalse(numpy.any(numpy.abs(la2-la2c)>self.epsilon))
 
     def test_RPNGridInterp_Z_KnownValues2(self):
@@ -257,10 +257,10 @@ class RPNGridTests(unittest.TestCase):
         (g2,la2,lo2) = self.gridL(0.25,8)
         la2c = g2.interpol(la1,g1)
         if numpy.any(numpy.abs(la2-la2c)>self.epsilon):
-                print 'g1:'+repr(g1)
-                print 'g2:'+repr(g2)
-                print 'la2:',la2
-                print 'la2c :',la2c
+                print('g1:'+repr(g1))
+                print('g2:'+repr(g2))
+                print('la2:',la2)
+                print('la2c :',la2c)
         self.assertFalse(numpy.any(numpy.abs(la2-la2c)>self.epsilon))
 
     def test_RPNGridInterp_Z_KnownValues3(self):
@@ -269,10 +269,10 @@ class RPNGridTests(unittest.TestCase):
         (g2,la2,lo2) = self.gridZL(0.25,8)
         la2c = g2.interpol(la1,g1)
         if numpy.any(numpy.abs(la2-la2c)>self.epsilon):
-                print 'g1:'+repr(g1)
-                print 'g2:'+repr(g2)
-                print 'la2:',la2
-                print 'la2c :',la2c
+                print('g1:'+repr(g1))
+                print('g2:'+repr(g2))
+                print('la2:',la2)
+                print('la2c :',la2c)
         self.assertFalse(numpy.any(numpy.abs(la2-la2c)>self.epsilon))
 
     def test_RPNGridInterp_Dieze_KnownValues(self):
@@ -281,10 +281,10 @@ class RPNGridTests(unittest.TestCase):
         (g2,la2,lo2) = self.gridDiezeL(0.25,8)
         la2c = g2.interpol(la1,g1)
         if numpy.any(numpy.abs(la2-la2c)>self.epsilon):
-                print 'g1:'+repr(g1)
-                print 'g2:'+repr(g2)
-                print 'la2:',la2
-                print 'la2c :',la2c
+                print('g1:'+repr(g1))
+                print('g2:'+repr(g2))
+                print('la2:',la2)
+                print('la2c :',la2c)
         self.assertFalse(numpy.any(numpy.abs(la2-la2c)>self.epsilon))
 
     def test_RPNGridInterp_Dieze_KnownValues2(self):
@@ -293,10 +293,10 @@ class RPNGridTests(unittest.TestCase):
         (g2,la2,lo2) = self.gridL(0.25,8)
         la2c = g2.interpol(la1,g1)
         if numpy.any(numpy.abs(la2-la2c)>self.epsilon):
-                print 'g1:'+repr(g1)
-                print 'g2:'+repr(g2)
-                print 'la2:',la2
-                print 'la2c :',la2c
+                print('g1:'+repr(g1))
+                print('g2:'+repr(g2))
+                print('la2:',la2)
+                print('la2c :',la2c)
         self.assertFalse(numpy.any(numpy.abs(la2-la2c)>self.epsilon))
 
     def test_RPNGridInterp_Dieze_KnownValues3(self):
@@ -305,10 +305,10 @@ class RPNGridTests(unittest.TestCase):
         (g2,la2,lo2) = self.gridDiezeL(0.25,8)
         la2c = g2.interpol(la1,g1)
         if numpy.any(numpy.abs(la2-la2c)>self.epsilon):
-                print 'g1:'+repr(g1)
-                print 'g2:'+repr(g2)
-                print 'la2:',la2
-                print 'la2c :',la2c
+                print('g1:'+repr(g1))
+                print('g2:'+repr(g2))
+                print('la2:',la2)
+                print('la2c :',la2c)
         self.assertFalse(numpy.any(numpy.abs(la2-la2c)>self.epsilon))
 
 #TODO: test vect interpol, other proj, # grids, scrip interp
@@ -319,12 +319,12 @@ class RPNFileTests(unittest.TestCase):
         [[-89.5, -89. , -88.5],
         [-89.5, -89. , -88.5],
         [-89.5, -89. , -88.5]]
-        ,dtype=numpy.dtype('float32'),order='FORTRAN')
+        ,dtype=numpy.dtype('float32'),order='F')
     lod = numpy.array(
         [[ 180. ,  180. ,  180. ],
         [ 180.5,  180.5,  180.5],
         [ 181. ,  181. ,  181. ]]
-        ,dtype=numpy.dtype('float32'),order='FORTRAN')
+        ,dtype=numpy.dtype('float32'),order='F')
     grtyp='L'
     xg14 = (-89.5,180.0,0.5,0.5)
     fname = '__rpnstd__testfile__.fst'
@@ -345,7 +345,7 @@ class RPNFileTests(unittest.TestCase):
 
     def create_basefile(self):
         """create a basic test file for RPNFile tests"""
-        #print "============ Create Base File ==============="
+        #print("============ Create Base File ===============")
         self.erase_testfile()
         f = rpnstd.RPNFile(self.fname)
         (ig1,ig2,ig3,ig4) =  rpnstd.cxgaig(self.grtyp,self.xg14)
@@ -364,7 +364,7 @@ class RPNFileTests(unittest.TestCase):
     def test_RPNFileRead_KnownValues(self):
         """RPNFile should give known result with known input"""
         (la,lo) = self.create_basefile() #wrote 2 recs in that order: la, lo
-        #print "============ Read Test ==============="
+        #print("============ Read Test ===============")
         f2 = rpnstd.RPNFile(self.fname)
         la2 = f2[rpnstd.FirstRecord]
         lo2 = f2[rpnstd.NextMatch]
@@ -378,12 +378,12 @@ class RPNFileTests(unittest.TestCase):
         self.assertEqual(lo2.nom,lo.nom)
         self.assertEqual(r2none,None)
         if numpy.any(la2.d!=la.d):
-                print 'la2:',la2.d
-                print 'la :',la.d
+                print('la2:',la2.d)
+                print('la :',la.d)
         self.assertFalse(numpy.any(la2.d!=la.d))
         if numpy.any(lo2.d!=lo.d):
-                print 'lo2:',lo2.d
-                print 'lo :',lo.d
+                print('lo2:',lo2.d)
+                print('lo :',lo.d)
         self.assertFalse(numpy.any(lo2.d!=lo.d))
 
         self.erase_testfile()
@@ -392,11 +392,11 @@ class RPNFileTests(unittest.TestCase):
     def test_RPNFileErase_KnownValues(self):
         """RPNFile.erase should give known result with known input"""
         (la,lo) = self.create_basefile() #wrote 2 recs in that order: la, lo
-        #print "============ Erase ==============="
+        #print("============ Erase ===============")
         f3 = rpnstd.RPNFile(self.fname)
         f3[la] = None #Erase la (1st rec) - 1st rec is now lo, no 2nd rec
         f3.close()
-        #print "============ Check Erase ==============="
+        #print("============ Check Erase ===============")
         f2 = rpnstd.RPNFile(self.fname)
         lo2 = f2[rpnstd.FirstRecord]
         r2none = None
@@ -412,12 +412,12 @@ class RPNFileTests(unittest.TestCase):
     def test_RPNFileRewrite_KnownValues(self):
         """RPNFile.rewrite should give known result with known input"""
         (la,lo) = self.create_basefile()
-        #print "============ ReWrite/Append ==============="
+        #print("============ ReWrite/Append ===============")
         f3 = rpnstd.RPNFile(self.fname)
         f3.rewrite(lo) #overwrite 2nd rec (lo)... no changes
         f3.append(la)  #append a 3rd rec (la), file now has 3 rec: la, lo, la
         f3.close()
-        #print "============ Check ReWrite/Append ==============="
+        #print("============ Check ReWrite/Append ===============")
         f2 = rpnstd.RPNFile(self.fname)
         la2 = f2[rpnstd.FirstRecord]
         lo2 = f2[rpnstd.NextMatch]

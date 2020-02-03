@@ -15,13 +15,13 @@ class Librmn_fstd98_Test(unittest.TestCase):
     ##     [-89.5, -89. , -88.5],
     ##     [-89.5, -89. , -88.5],
     ##     [-89.5, -89. , -88.5]]
-    ##     ,dtype=np.dtype('float32')).T #,order='FORTRAN')
+    ##     ,dtype=np.dtype('float32')).T #,order='F')
     ## lod = np.array(
     ##     [[ 180. ,  180. ,  180. ],
     ##     [ 180.5,  180.5,  180.5],
     ##     [ 181. ,  181. ,  181. ],
     ##     [ 181.5,  181.5,  181.5]]
-    ##     ,dtype=np.dtype('float32')).T #,order='FORTRAN')
+    ##     ,dtype=np.dtype('float32')).T #,order='F')
     lad = np.array(
         [
             [1.1, 2.1 , 3.1, 4.1, 5.1],
@@ -29,7 +29,7 @@ class Librmn_fstd98_Test(unittest.TestCase):
             [1.3, 2.3 , 3.3, 4.3, 5.3],
             [1.4, 2.4 , 3.4, 4.4, 5.4]
         ]
-        ,dtype=np.dtype('float32')).T #,order='FORTRAN')
+        ,dtype=np.dtype('float32')).T #,order='F')
     lod = np.array(
         [
             [-1.1, -2.1 , -3.1],
@@ -38,7 +38,7 @@ class Librmn_fstd98_Test(unittest.TestCase):
             [-1.4, -2.4 , -3.4],
             [-1.5, -2.5 , -3.5]
         ]
-        ,dtype=np.dtype('float32')).T #,order='FORTRAN')
+        ,dtype=np.dtype('float32')).T #,order='F')
     grtyp='L'
     xg14 = (-89.5,180.0,0.5,0.5)
     fname = '__rpnstd__testfile__.fst'
@@ -113,7 +113,16 @@ class Librmn_fstd98_Test(unittest.TestCase):
         mydir = os.path.join(ATM_MODEL_DFILES.strip(),'bcmk/')
         for i in range(1000):
             funit = rmn.fstopenall(mydir)
-            rmn.fstcloseall(funit)        
+            rmn.fstcloseall(funit)
+            
+    def test_openall_closeall_list(self):
+        """Test if close all on linked file actually close them all"""
+        ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES')
+        mydir1 = os.path.join(ATM_MODEL_DFILES.strip(),'bcmk/')
+        mydir2 = os.path.join(ATM_MODEL_DFILES.strip(),'bcmk_p/')
+        funit1 = rmn.fstopenall(mydir1)
+        funit2 = rmn.fstopenall(mydir2)
+        rmn.fstcloseall((funit1,funit2))        
 
     def test_isfst_openall_fstnbr(self):
         """isfst_openall_fstnbr should give known result with known input"""
@@ -154,10 +163,19 @@ class Librmn_fstd98_Test(unittest.TestCase):
         reclist = rmn.fstinl(funit,nomvar='VF')
         self.assertEqual(len(reclist),26,' fstinl of VF found %d/26 rec ' % len(reclist))
 
-        #Note: fstnbr does not work on linked files...
-        ## nrec = rmn.fstnbrv(funit)
-        ## self.assertEqual(nrec,9999,' fstnbrv found %d/???? rec ' % nrec)
-       
+        reclist2 = rmn.fstinl(funit)
+        self.assertEqual(len(reclist2),2788,' fstinl found %d/2788 rec ' % len(reclist))
+        
+        #Note: c_fstnbrv on linked files returns only nrec on the first file
+        #      python's fstnbrv interface add results for all linked files
+        nrec = rmn.fstnbrv(funit)
+        self.assertEqual(nrec,2788,' fstnbrv found %d/2788 rec ' % nrec)
+
+        #Note: c_fstnbr on linked files returns only nrec on the first file
+        #      python's fstnbr interface add results for all linked files
+        nrec = rmn.fstnbr(funit)
+        self.assertEqual(nrec,2788,' fstnbr found %d/2788 rec ' % nrec)
+
         rmn.fstcloseall(funit)
 
 
@@ -255,14 +273,14 @@ class Librmn_fstd98_Test(unittest.TestCase):
         self.assertEqual(lo2['d'].shape,lo['d'].shape)
 
         if np.any(np.fabs(la2['d'] - la['d']) > self.epsilon):
-                print 'la2:',la2['d']
-                print 'la :',la['d']
-                print np.fabs(la2['d'] - la['d'])
+                print('la2:',la2['d'])
+                print('la :',la['d'])
+                print(np.fabs(la2['d'] - la['d']))
         self.assertFalse(np.any(np.fabs(la2['d'] - la['d']) > self.epsilon))
         if np.any(np.fabs(lo2['d'] - lo['d']) > self.epsilon):
-                print 'lo2:',lo2['d']
-                print 'lo :',lo['d']
-                print np.fabs(lo2['d'] - lo['d'])
+                print('lo2:',lo2['d'])
+                print('lo :',lo['d'])
+                print(np.fabs(lo2['d'] - lo['d']))
         self.assertFalse(np.any(np.fabs(la2['d'] - la['d']) > self.epsilon))
 
 
@@ -292,11 +310,11 @@ class Librmn_fstd98_Test(unittest.TestCase):
             )
         lo = la.copy()
         lo['nomvar'] = 'LO'
-        #Note: For the order to be ok in the FSTD file, order='FORTRAN' is mandatory
-        la['d'] = np.empty((ni,nj),dtype=np.float32,order='FORTRAN')
-        lo['d'] = np.empty((ni,nj),dtype=np.float32,order='FORTRAN')
-        for j in xrange(nj):
-            for i in xrange(ni):
+        #Note: For the order to be ok in the FSTD file, order='F' is mandatory
+        la['d'] = np.empty((ni,nj),dtype=np.float32,order='F')
+        lo['d'] = np.empty((ni,nj),dtype=np.float32,order='F')
+        for j in range(nj):
+            for i in range(ni):
                 lo['d'][i,j] = 100.+float(i)        
                 la['d'][i,j] = float(j)
         rmn.fstecr(funit,la['d'],la)

@@ -104,12 +104,12 @@ class Fstdc_ezgetlaloKnownValues(unittest.TestCase):
         [[-89.5, -89. , -88.5],
         [-89.5, -89. , -88.5],
         [-89.5, -89. , -88.5]]
-        ,dtype=numpy.dtype('float32'),order='FORTRAN')
+        ,dtype=numpy.dtype('float32'),order='F')
     lo = numpy.array(
         [[ 180. ,  180. ,  180. ],
         [ 180.5,  180.5,  180.5],
         [ 181. ,  181. ,  181. ]]
-        ,dtype=numpy.dtype('float32'),order='FORTRAN')
+        ,dtype=numpy.dtype('float32'),order='F')
     cla = numpy.array(
         [[[-89.75, -89.25, -88.75],
         [-89.75, -89.25, -88.75],
@@ -123,7 +123,7 @@ class Fstdc_ezgetlaloKnownValues(unittest.TestCase):
         [[-89.75, -89.25, -88.75],
         [-89.75, -89.25, -88.75],
         [-89.75, -89.25, -88.75]]]
-        ,dtype=numpy.dtype('float32'),order='FORTRAN')
+        ,dtype=numpy.dtype('float32'),order='F')
     clo = numpy.array(
         [[[ 179.75,  179.75,  179.75],
         [ 180.25,  180.25,  180.25],
@@ -137,7 +137,7 @@ class Fstdc_ezgetlaloKnownValues(unittest.TestCase):
         [[ 180.25,  180.25,  180.25],
         [ 180.75,  180.75,  180.75],
         [ 181.25,  181.25,  181.25]]]
-        ,dtype=numpy.dtype('float32'),order='FORTRAN')
+        ,dtype=numpy.dtype('float32'),order='F')
 
 
     def test_Fstdc_ezgetlalo_KnownValues(self):

@@ -1,0 +1,10 @@
+Known Issues
+
+=== 2.1.b2 ===
+rpnpy.librmn.burp.mrbcvtencode:
+   decode/encode negative values leads to drift by -1
+rpnpy.burpc.brpobj.*:
+   write/put methodes not fully implemented
+share/tests/test_cookbook_burp.py:
+   example 6 incomplete, missing brpobj part
+   example 7 is missing
