@@ -576,9 +576,23 @@ class RpnPyLibrmnBurp(unittest.TestCase):
         if RPNPY_NOLONGTEST:
             return
         for mypath, itype, iunit in self.knownValues:
-            bfile = rutils.BurpFile(self.getFN(mypath),'r')
+            bfile = rutils.BurpFile(self.getFN(mypath), 'r')
             #TODO: check results
-
+            
+    ## def testburpfileReadWrite(self):
+    ##     """mrbprm should give known result with known input"""
+    ##     RPNPY_NOLONGTEST = os.getenv('RPNPY_NOLONGTEST', None)
+    ##     if RPNPY_NOLONGTEST:
+    ##         return
+    ##     for mypath, itype, iunit in self.knownValues:
+    ##         bfile0 = rutils.BurpFile(self.getFN(mypath), 'r')
+    ##         fnameo = '__rpnpy_burfile__testfile__.fst'
+    ##         bfile1 = rutils.BurpFile(fnameo, 'w')
+    ##         rutils.copy_burp(bfile0, bfile1)
+    ##         bfile1.write_burpfile()
+    ##         bfile2 = rutils.BurpFile(fnameo, 'r')
+    ##         #TODO: compare bfile0 and bfile2
+    ##         os.unlink(fnameo)
 
     def testmrbxtrdclcvtKnownValues(self):
         """mrbxtrdclcvt should give known result with known input"""
