@@ -1,7 +1,7 @@
 make --no-print-directory sanity
 rdechkclock -v -t 1|| exit 1
 No clock skew detected
-.rdeupdate_build_links.ksh  ;\
+.rdeupdate_build_links  ;\
 	cd /users/dor/armn/sch/_Code_Depot_/work/python-rpn-tmp/python-rpn/build-ubuntu-12.04-amd64-64/Linux_x86-64 ;\
    if [[ $? != 0 ]] ; then echo "ERROR: cannot move into build dir: /users/dor/armn/sch/_Code_Depot_/work/python-rpn-tmp/python-rpn/build-ubuntu-12.04-amd64-64/Linux_x86-64" ; exit 1 ; fi ;\
 	 make --no-print-directory alltests ROOT=/users/dor/armn/sch/_Code_Depot_/work/python-rpn-tmp/python-rpn RDE_BASE_ARCH=ubuntu-12.04-amd64-64 BINDIR=/users/dor/armn/sch/_Code_Depot_/work/python-rpn-tmp/python-rpn/build-ubuntu-12.04-amd64-64/bin/Linux_x86-64 MAKEFILE_CONST=/tmp/armnsch/18449/.rde.const.2829684826.ubuntu-12.04-amd64-64.1.0.rc5.mk
