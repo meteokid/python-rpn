@@ -1,4 +1,4 @@
-#!/bin/ksh
+#!/bin/bash
 set -x
 domainHome=$1
 packageHome=$2

@@ -1,4 +1,4 @@
-#!/bin/ksh
+#!/bin/bash
 
 myself=$0
 DESC='Open a new RDE experiment with pre-set SRCPATH'
@@ -38,7 +38,7 @@ done
 
 # if [[ x$rpnpy == x || ! -d $rpnpy/src ]] ; then
 if [[ x$rpnpy == x ]] ; then
-	 cat <<EOF
+    cat <<EOF
 ERROR: \$rpnpy not defined or src subdir does not exists
        rpnpy=$rpnpy
        Cannot setup the experiment diretory
@@ -46,7 +46,7 @@ ERROR: \$rpnpy not defined or src subdir does not exists
        Please make sure you loaded the full RPNpy development environment
 ---- ABORT ----
 EOF
-	 exit 1
+    exit 1
 fi
 
 # SRCLIST="${rpnpy}/include ${rpnpy}/src"
