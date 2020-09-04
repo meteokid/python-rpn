@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # Author: Stephane Chamberland <stephane.chamberland@canada.ca>
 # Copyright: LGPL 2.1
@@ -46,7 +45,7 @@ def cmpNml(ref_nml_file, user_nml_file, nmlNames, checkTypes):
         cfgref = FtnNmlFile(ref_nml_file)
         cfgusr = FtnNmlFile(user_nml_file)
     except:
-        logging.warning('{}\n'.format(str(sys.exc_info()[1])))
+        logging.warning('{0}\n'.format(str(sys.exc_info()[1])))
         sys.exit(1)
     if len(nmlNames) == 0:
         nmlNames = cfgref.keys()
@@ -54,7 +53,7 @@ def cmpNml(ref_nml_file, user_nml_file, nmlNames, checkTypes):
         if nml not in nmlNames:
             continue
         if not nml in cfgusr.keys():
-            logging.info('Namelist "{}" is not present in user namelist file'.format(nml))
+            logging.info('Namelist "{0}" is not present in user namelist file'.format(nml))
         else:
             nmlref = cfgref.get(nml)
             nmlusr = cfgusr.get(nml)
@@ -65,22 +64,22 @@ def cmpNml(ref_nml_file, user_nml_file, nmlNames, checkTypes):
                     vu = nmlusr.get(k).get('v')
                 except:
                     status = 1
-                    logging.error('Extra nml key: {} / {}\n'
+                    logging.error('Extra nml key: {0} / {1}\n'
                                   .format(nml, k))
                     continue
                 tr = guessType(vr)
                 tu = guessType(vu)
                 if tr[0] != tu[0]:
-                    msg = 'Different type nml key: {} / {} = {} ==> {} ([{}] ==> [{}]\n'\
+                    msg = 'Different type nml key: {0} / {1} = {2} ==> {3} ([{4}] ==> [{5}]\n'\
                         .format(nml, k, vr, vu, tr, tu)
                     if checkTypes:
                         status = 1
                         logging.error(msg)
-                    else:
-                        logging.warning(msg)
+                    ## else:
+                    ##     logging.warning(msg) #TODO: comment out since it is still buggy, taking 6*64 as a string instead of a list of int
             for k in nmlref.keys():
                 if not k in usrkeys:
-                    logging.info('Namelist / Key "{} / {}" is not present in user namelist file'.format(nml, k))
+                    logging.info('Namelist / Key "{0} / {1}" is not present in user namelist file'.format(nml, k))
 
     return status
 
