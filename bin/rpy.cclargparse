@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # Author: Stephane Chamberland <stephane.chamberland@canada.ca>
 # Copyright: LGPL 2.1
@@ -76,7 +76,7 @@ def parse_arg_desc():
     delimiter = ':'
     if sys.argv[0] == '-D':
         if len(sys.argv) < 5:
-           abort("Need to specify '-D Delimiter Name Description Epilog'")
+            abort("Need to specify '-D Delimiter Name Description Epilog'")
         else:
             sys.argv.pop(0)
             delimiter = sys.argv.pop(0)
