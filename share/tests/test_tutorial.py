@@ -552,7 +552,7 @@ class rpnpyTutorial(unittest.TestCase):
         Interpolating data to/from known FSTD grids is made easy with the Ezscint package.
         There are a few exceptions though
         * you can only interpolate to a Y grid, not from it.
-        * multi-parts grids (Yin-Yang, ...) have to be dealth with in a special way (see below)
+        * multi-parts grids (Yin-Yang, ...) have to be dealt with in a special way (see below)
         In this example we'll interpolate forecast data onto the analysis grid to make some computations
         
         See also:
@@ -597,8 +597,43 @@ class rpnpyTutorial(unittest.TestCase):
         
     def test_14(self):
         """
+        Write RPN Standard file with multi-part Yin-Yang grid with analytic data.
         """
-        pass
+        n_j = 8
+        fileName = 'yin_yang.fst'
+
+        # Write grid descriptors (^>) field to RPN Standard file
+        params_gd = rmn.defGrid_YY(n_j)
+        params_gd['iunit'] = rmn.fstopenall(fileName, rmn.FST_RW)
+        rmn.writeGrid(params_gd['iunit'], params_gd)
+
+        # Get grid-point coordinates
+        gid = rmn.ezqkdef(params_gd)
+        grid_lat_lon = rmn.gdll(gid)
+        nsubgrids = rmn.ezget_nsubgrids(gid)
+        lat = [None]*nsubgrids
+        lon = [None]*nsubgrids
+        for i in range(nsubgrids):
+            lat[i] = grid_lat_lon['subgrid'][i]['lat']
+            lon[i] = grid_lat_lon['subgrid'][i]['lon']
+
+        # Generate analytic dataset
+        data = [None]*len(lat)
+        for i, lat_i in enumerate(lat):
+            data[i] = np.sin(np.pi*lon[i]/180)*np.sin(np.pi*lat_i/90)
+        data_yy = np.concatenate((data[0], data[1]), axis=1)
+
+        # Write analytic dataset to RPN Standard file
+        params = rmn.FST_RDE_META_DEFAULT
+        params['nomvar'] = 'x'
+        params['ni'], params['nj'] = data_yy.shape
+        params['grtyp'] = 'U'
+        params['ig1'] = params_gd['ig1']
+        params['ig2'] = params_gd['ig2']
+
+        rmn.fstecr(params_gd['iunit'], data_yy, params)
+
+        rmn.fstcloseall(params_gd['iunit'])
 
     #TODO: vgd tutorial
     #TODO: burp tutorial
