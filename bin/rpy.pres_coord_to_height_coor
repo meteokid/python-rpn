@@ -1,0 +1,132 @@
+#!/usr/bin/python3
+
+import sys
+import argparse
+import numpy as np
+
+try:
+    import rpnpy.vgd.all as vgd
+except ImportError:
+    sys.exit("\n\nPlease load a rpnpy ssm package for"
+             + " python3, look for rpnpy on the wiki.\n You may try :\n"
+             + "ECCMC: . s.ssmuse.dot ENV/py/2.7/rpnpy/2.1.b3\n"
+             + "Science: . r.load.dot eccc/mrd/rpn/MIG/ENV/migdep/4.8-LTS.0 eccc/mrd/rpn/MIG/ENV/rpnpy/2.1.0\n")
+
+import rpnpy.librmn.all as rmn
+from show_levels_utils import utils as ut
+
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "-i", "--input",
+    default="",
+    help="Standard RPN fst containing the pressure !! to convert into heights")
+parser.add_argument(
+    "-o", "--out",
+    default="out.rpn",
+    help="Output file name")
+parser.add_argument(
+    "--version",
+    default="1",
+    help=("Output vgrid heights version, default is 1, choices 1 for Vcode "
+          + "21001 (heights on CP grid), 2 for Vcode 21002 (heights on Lorenz "
+          + "grid)"))
+parser.add_argument(
+    "--vcode",
+    default="21001",
+    help="Output Vcode, default to 21001, heights Gal-Chen")
+parser.add_argument(
+    "--rcoef1",
+    default="auto",
+    help="rcoef1, defaut to input input coordinate")
+parser.add_argument(
+    "--rcoef2",
+    default="auto",
+    help="rcoef2, defaut to input input coordinate")
+parser.add_argument(
+    "--rcoef3",
+    default="-1",
+    help="rcoef3, defaut to -1, set value > 0 to get SLEVE")
+parser.add_argument(
+    "--rcoef4",
+    default="-1",
+    help="rcoef4, defaut to -1, set value > 0 to get SLEVE")
+parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help='Outout more information')
+
+
+args = parser.parse_args()
+
+verti = ut.Vertical(args.input)
+
+vcodei = verti.VGD_get_vcode()
+if vcodei != 5005:
+    print("Vertical structure not supported, Vcode ", str(vcodei))
+    print("Suported Vcode is 5005")
+    sys.exit(1)
+
+# Get coordinate B parameter to see if option Hyb_flat was used. This
+# can be detacted by B = 0 for momentum levels below first level.
+bm=vgd.vgd_get(verti.vgd, "CB_M")
+count=0
+ind=0
+for val in bm:
+    if val == 0.0:
+        ind=count
+    count=count+1
+
+#Get pressure profile of input vgrid structure for stda76 surface pressure
+ip1s = vgd.vgd_get(verti.vgd, "VIPM")
+#print(ip1s[0:len(ip1s)-2])
+pres = vgd.vgd_levels(verti.vgd, ip1list=ip1s[0:len(ip1s)-2], rfld=101325.)
+print(pres)
+
+# Get stda76 heights for given pressure profile.
+hgts = vgd.vgd_stda76_hgts_from_pres_list(pres)
+
+print("Put this in the gem_settigs.nml")
+if(ind == 0):
+    hyb_flat=hgts[0]
+else:
+    hyb_flat=hgts[ind]
+    print("Hyb_flat =",hgts[ind])
+print("hyb_H =")
+for val in hgts:
+    print('   ' + str(val) + ',')
+
+if args.rcoef1 == "auto":
+    rcoef1 = vgd.vgd_get(verti.vgd, "RC_1")
+else:
+    rcoef1 = float(args.rcoef1)
+if args.rcoef2 == "auto":
+    rcoef2 = vgd.vgd_get(verti.vgd, "RC_2")
+else:
+    rcoef2 = float(args.rcoef2)
+rcoef3 = float(args.rcoef3)
+rcoef4 = float(args.rcoef4)
+
+version = int(args.version)
+if version == 1:
+    vgdo = vgd.vgd_new3(kind=21, version=version, hyb=hgts, rcoef1=rcoef1,
+                        rcoef2=rcoef2 ,rcoef3=rcoef3, rcoef4=rcoef4,
+                        dhm=10., dht=2.5, hyb_flat=hyb_flat)
+elif version == 2:
+    vgdo = vgd.vgd_new3(kind=21, version=version, hyb=hgts, rcoef1=rcoef1,
+                        rcoef2=rcoef2 ,rcoef3=rcoef3, rcoef4=rcoef4,
+                        dhm=10., dht=2.5, dhw=0., hyb_flat=hyb_flat)
+else:
+    sys.stderr.write("wrong version value " + version)
+    sys.exit(1)
+
+if args.verbose:
+    vgd.vgd_print_desc(vgdo)
+
+fileId = rmn.fstopenall(args.out, rmn.FST_RW)
+try:
+    vgd.vgd_write(vgdo, fileId)
+except:
+    sys.stderr.write("There was a problem writing the !! in file " + args.out)
+    sys.exit(1)
+finally:
+    rmn.fstcloseall(fileId)
