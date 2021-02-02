@@ -136,6 +136,45 @@ Details:
        c_vgd_construct
        c_vgd_free
 
+ c_vgd_new_gen3(self, kind, version, hyb, size_hyb, rcoef1, rcoef2, rcoef3,
+                rcoef4, ptop_8, pref_8, ptop_out_8, ip1, ip2, dhm, dht ,dhw,
+                avg, hyb_flat):
+    Build a VGridDescriptor instance initialized with provided info
+    Proto:
+       int Cvgd_new_gen3(vgrid_descriptor **self, int kind, int version,
+                         float *hyb, int size_hyb, float *rcoef1, float *rcoef2,
+                         float *rcoef3, float *rcoef4, double *ptop_8,
+                         double *pref_8, double *ptop_out_8, int ip1, int ip2,
+                         float *dhm, float *dht, float *dhw, int avg, float *hyb_flat);
+    Args:
+       self (POINTER(POINTER(VGridDescriptor))):
+               A VGridDescriptor obj to be filled provided vgrid values (I/O)
+               This is obtained with c_vgd_construct
+       kind     (int) : vgrid kind (I)
+       version  (int) : vgrid version (I)
+       hyb      (float array) :
+       size_hyb (int) :
+       rcoef1   (float ptr) :
+       rcoef2   (float ptr) :
+       rcoef3   (float ptr) :
+       rcoef4   (float ptr) :
+       ptop_8   (double ptr) :
+       pref_8   (double ptr) :
+       ptop_out_8 (double ptr) :
+       ip1      (int) :
+       ip2      (int) :
+       dhm      (float ptr) :
+       dht      (float ptr) :
+       dhw      (float ptr) :
+       avg      (int) :
+       hyb_flat (float ptr) :
+    Returns:
+       int : Status VGD_OK or VGD_ERROR
+    See Also:
+       c_vgd_new_gen
+       c_vgd_construct
+       c_vgd_free
+
  c_vgd_new_build_vert(self, kind, version, nk, ip1, ip2, ptop_8, pref_8,
                       rcoef1, rcoef2, a_m_8, b_m_8, a_t_8, b_t_8, ip1_m, ip1_t,
                       nl_m, nl_t):
@@ -696,6 +735,35 @@ libvgd.Cvgd_new_gen2.argtypes = (
     _ct.c_int) #int avg
 libvgd.Cvgd_new_gen2.restype = _ct.c_int
 c_vgd_new_gen2 = libvgd.Cvgd_new_gen2
+
+
+## int Cvgd_new_gen3(vgrid_descriptor **self, int kind, int version, float *hyb,
+##                   int size_hyb, float *rcoef1, float *rcoef2, float *rcoef3,
+##                   float *rcoef4, double *ptop_8, double *pref_8,
+##                   double *ptop_out_8, int ip1, int ip2, float *dhm, float *dht,
+##                   float *dhw, int avg, float *hyb_flat);
+libvgd.Cvgd_new_gen3.argtypes = (
+    _ct.POINTER(_ct.POINTER(VGridDescriptor)), # vgrid_descriptor **self
+    _ct.c_int, #int kind
+    _ct.c_int, #int version
+    _npc.ndpointer(dtype=_np.float32), #float *hyb
+    _ct.c_int, #int size_hyb,
+    _ct.POINTER(_ct.c_float), #float *rcoef1,
+    _ct.POINTER(_ct.c_float), #float *rcoef2,
+    _ct.POINTER(_ct.c_float), #float *rcoef3,
+    _ct.POINTER(_ct.c_float), #float *rcoef4,
+    _ct.POINTER(_ct.c_double), #double *ptop_8,
+    _ct.POINTER(_ct.c_double), #double *pref_8,
+    _ct.POINTER(_ct.c_double), #double *ptop_out_8
+    _ct.c_int, #int ip1
+    _ct.c_int, #int ip2
+    _ct.POINTER(_ct.c_float), #float *dhm
+    _ct.POINTER(_ct.c_float), #float *dht
+    _ct.POINTER(_ct.c_float), #float *dhw
+    _ct.c_int, #int avg
+    _ct.POINTER(_ct.c_float)) #float *hyb_flat
+libvgd.Cvgd_new_gen3.restype = _ct.c_int
+c_vgd_new_gen3 = libvgd.Cvgd_new_gen3
 
 
 ## int Cvgd_new_build_vert(vgrid_descriptor **self, int kind, int version,

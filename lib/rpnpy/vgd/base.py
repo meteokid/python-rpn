@@ -368,7 +368,7 @@ vgd_new_5004 = vgd_new_hybm
 
 
 def vgd_new_hybmd(hyb, rcoef1, rcoef2, pref, dhm, dht,
-                  ip1=-1, ip2=-1):
+                  ip1=-1, ip2=-1, hyb_flat=-1.):
     """
     Build an Hybrid Staggered (5005) VGridDescriptor initialized with provided info.
 
@@ -384,6 +384,7 @@ def vgd_new_hybmd(hyb, rcoef1, rcoef2, pref, dhm, dht,
         dht      (float): Height of the Diagnostic Thermodynamic level [m AGL]
         ip1      (int)  : Ip1 of the vgrid record
         ip2      (int)  : Ip2 of the vgrid record
+        hyb_flat (float): hyb value at or above which levels are flat
     Returns:
         VGridDescriptor ref
     Raises:
@@ -404,8 +405,9 @@ def vgd_new_hybmd(hyb, rcoef1, rcoef2, pref, dhm, dht,
     >>> pref   = 100000.
     >>> dhm    = 10.
     >>> dht    = 2.
+    >>> hyb_flat = 0.051
     >>> try:
-    ...     myvgd = vgd.vgd_new_hybmd(lvls, rcoef1, rcoef2, pref, dhm, dht)
+    ...     myvgd = vgd.vgd_new_hybmd(lvls, rcoef1, rcoef2, pref, dhm, dht, hyb_flat=hyb_flat)
     ... except vgd.VGDError:
     ...     sys.stderr.write("There was a problem creating the VGridDescriptor")
 
@@ -416,16 +418,16 @@ def vgd_new_hybmd(hyb, rcoef1, rcoef2, pref, dhm, dht,
         vgd_free
     """
     (kind, version) = _vc.VGD_KIND_VER['hybmd']
-    return vgd_new(kind, version, hyb=hyb,
+    return vgd_new3(kind, version, hyb=hyb,
                    rcoef1=rcoef1, rcoef2=rcoef2, pref=pref,
-                   dhm=dhm, dht=dht, ip1=ip1, ip2=ip2)
+                   dhm=dhm, dht=dht, ip1=ip1, ip2=ip2, hyb_flat=hyb_flat)
 
 
 vgd_new_5005 = vgd_new_hybmd
 
 
 def vgd_new_hybps(hyb, rcoef1, rcoef2, rcoef3, rcoef4, pref, dhm, dht,
-                  ip1=-1, ip2=-1):
+                  ip1=-1, ip2=-1, hyb_flat=-1.):
     """
     Build an Hybrid Presure Staggered SLEVE (5100) VGridDescriptor initialized
     with provided info.
@@ -441,6 +443,8 @@ def vgd_new_hybps(hyb, rcoef1, rcoef2, rcoef3, rcoef4, pref, dhm, dht,
         dht      (float): Height of the Diagnostic Thermodynamic level [m AGL]
         ip1      (int)  : Ip1 of the vgrid record
         ip2      (int)  : Ip2 of the vgrid record
+        hyb_flat (float): hyb value at or above which levels are flat
+
     Returns:
         VGridDescriptor ref
     Raises:
@@ -463,9 +467,10 @@ def vgd_new_hybps(hyb, rcoef1, rcoef2, rcoef3, rcoef4, pref, dhm, dht,
     >>> pref   = 100000.
     >>> dhm    = 10.
     >>> dht    = 2.
+    >>> hyb_float = 0.051
     >>> try:
     ...     myvgd = vgd.vgd_new_hybps(lvls, rcoef1, rcoef2, rcoef2, rcoef4,
-    ...                               pref, dhm, dht)
+    ...                               pref, dhm, dht, hyb_flat=hyb_flat)
     ... except vgd.VGDError:
     ...     sys.stderr.write("There was a problem creating the VGridDescriptor")
 
@@ -476,15 +481,15 @@ def vgd_new_hybps(hyb, rcoef1, rcoef2, rcoef3, rcoef4, pref, dhm, dht,
         vgd_free
     """
     (kind, version) = _vc.VGD_KIND_VER['hybps']
-    return vgd_new(kind, version, hyb=hyb,
+    return vgd_new3(kind, version, hyb=hyb,
                    rcoef1=rcoef1, rcoef2=rcoef2, rcoef3=rcoef3, rcoef4=rcoef4,
-                   pref=pref, dhm=dhm, dht=dht, ip1=ip1, ip2=ip2)
+                   pref=pref, dhm=dhm, dht=dht, ip1=ip1, ip2=ip2, hyb_flat=hyb_flat)
 
 
 vgd_new_5100 = vgd_new_hybps
 
 
-def vgd_new_hybh(hyb, rcoef1, rcoef2, dhm, dht, ip1=-1, ip2=-1):
+def vgd_new_hybh(hyb, rcoef1, rcoef2, dhm, dht, ip1=-1, ip2=-1, hyb_flat=-1.):
     """
     Build an Hybrid CP Staggered height (21001) VGridDescriptor initialized
     with provided info.
@@ -497,6 +502,8 @@ def vgd_new_hybh(hyb, rcoef1, rcoef2, dhm, dht, ip1=-1, ip2=-1):
         dht      (float): Height of the Diagnostic Thermodynamic level [m AGL]
         ip1      (int)  : Ip1 of the vgrid record
         ip2      (int)  : Ip2 of the vgrid record
+        hyb_flat (float): hyb value at or above which levels are flat
+
     Returns:
         VGridDescriptor ref
     Raises:
@@ -512,8 +519,9 @@ def vgd_new_hybh(hyb, rcoef1, rcoef2, dhm, dht, ip1=-1, ip2=-1):
     >>> rcoef2 = 5.
     >>> dhm    = 10.
     >>> dht    = 1.5
+    >>> hyb_flat = 20493.
     >>> try:
-    ...     myvgd = vgd.vgd_new_hybh(lvls, rcoef1, rcoef2, dhm, dht)
+    ...     myvgd = vgd.vgd_new_hybh(lvls, rcoef1, rcoef2, dhm, dht, hyb_flat=hyb_flat)
     ... except vgd.VGDError:
     ...     sys.stderr.write("There was a problem creating the VGridDescriptor")
 
@@ -524,16 +532,16 @@ def vgd_new_hybh(hyb, rcoef1, rcoef2, dhm, dht, ip1=-1, ip2=-1):
         vgd_free
     """
     (kind, version) = _vc.VGD_KIND_VER['hybh']
-    return vgd_new(kind, version, hyb=hyb,
+    return vgd_new3(kind, version, hyb=hyb,
                    rcoef1=rcoef1, rcoef2=rcoef2, dhm=dhm, dht=dht, ip1=ip1,
-                   ip2=ip2)
+                   ip2=ip2, hyb_flat=hyb_flat)
 
 
 vgd_new_21001 = vgd_new_hybh
 
 
 def vgd_new_hybhs(hyb, rcoef1, rcoef2, rcoef3, rcoef4, dhm, dht, ip1=-1,
-                  ip2=-1):
+                  ip2=-1, hyb_flat=-1):
     """
     Build an Hybrid CP Staggered height SLEVE (21001) VGridDescriptor
     initialized with provided info.
@@ -548,6 +556,8 @@ def vgd_new_hybhs(hyb, rcoef1, rcoef2, rcoef3, rcoef4, dhm, dht, ip1=-1,
         dht      (float): Height of the Diagnostic Thermodynamic level [m AGL]
         ip1      (int)  : Ip1 of the vgrid record
         ip2      (int)  : Ip2 of the vgrid record
+        hyb_flat (float): hyb value at or above which levels are flat
+
     Returns:
         VGridDescriptor ref
     Raises:
@@ -565,9 +575,10 @@ def vgd_new_hybhs(hyb, rcoef1, rcoef2, rcoef3, rcoef4, dhm, dht, ip1=-1,
     >>> rcoef4 = 100.
     >>> dhm    = 10.
     >>> dht    = 1.5
+    >>> hyb_flat = 20493.
     >>> try:
     ...     myvgd = vgd.vgd_new_hybhs(lvls, rcoef1, rcoef2, rcoef3, rcoef4,
-    ...                               dhm, dht)
+    ...                               dhm, dht, hyb_flat=hyb_flat)
     ... except vgd.VGDError:
     ...     sys.stderr.write("There was a problem creating the VGridDescriptor")
 
@@ -578,15 +589,15 @@ def vgd_new_hybhs(hyb, rcoef1, rcoef2, rcoef3, rcoef4, dhm, dht, ip1=-1,
         vgd_free
     """
     (kind, version) = _vc.VGD_KIND_VER['hybhs']
-    return vgd_new(kind, version, hyb=hyb,
+    return vgd_new3(kind, version, hyb=hyb,
                    rcoef1=rcoef1, rcoef2=rcoef2, rcoef3=rcoef3, rcoef4=rcoef4,
-                   dhm=dhm, dht=dht, ip1=ip1, ip2=ip2)
+                   dhm=dhm, dht=dht, ip1=ip1, ip2=ip2, hyb_flat=hyb_flat)
 
 
 vgd_new_21001_SLEVE = vgd_new_hybhs
 
 
-def vgd_new_hybhl(hyb, rcoef1, rcoef2, dhm, dht, dhw, ip1=-1, ip2=-1):
+def vgd_new_hybhl(hyb, rcoef1, rcoef2, dhm, dht, dhw, ip1=-1, ip2=-1, hyb_flat=-1):
     """
     Build an Hybrid Lorenz Staggered height (21002) VGridDescriptor
     initialized with provided info.
@@ -601,6 +612,8 @@ def vgd_new_hybhl(hyb, rcoef1, rcoef2, dhm, dht, dhw, ip1=-1, ip2=-1):
                           [m AGL]
         ip1      (int)  : Ip1 of the vgrid record
         ip2      (int)  : Ip2 of the vgrid record
+        hyb_flat (float): hyb value at or above which levels are flat
+
     Returns:
         VGridDescriptor ref
     Raises:
@@ -617,8 +630,9 @@ def vgd_new_hybhl(hyb, rcoef1, rcoef2, dhm, dht, dhw, ip1=-1, ip2=-1):
     >>> dhm    = 10.
     >>> dht    = 1.5
     >>> dhw    = 10.
+    >>> hyb_flat = 20493.
     >>> try:
-    ...     myvgd = vgd.vgd_new_hybhl(lvls, rcoef1, rcoef2, dhm, dht, dhw)
+    ...     myvgd = vgd.vgd_new_hybhl(lvls, rcoef1, rcoef2, dhm, dht, dhw, hyb_flat=hyb_flat)
     ... except vgd.VGDError:
     ...     sys.stderr.write("There was a problem creating the VGridDescriptor")
 
@@ -629,16 +643,16 @@ def vgd_new_hybhl(hyb, rcoef1, rcoef2, dhm, dht, dhw, ip1=-1, ip2=-1):
         vgd_free
     """
     (kind, version) = _vc.VGD_KIND_VER['hybhl']
-    return vgd_new(kind, version, hyb=hyb,
+    return vgd_new3(kind, version, hyb=hyb,
                    rcoef1=rcoef1, rcoef2=rcoef2, dhm=dhm, dht=dht, dhw=dhw,
-                   ip1=ip1, ip2=ip2)
+                   ip1=ip1, ip2=ip2, hyb_flat=hyb_flat)
 
 
 vgd_new_21002 = vgd_new_hybhl
 
 
 def vgd_new_hybhls(hyb, rcoef1, rcoef2, rcoef3, rcoef4, dhm, dht, dhw, ip1=-1,
-                   ip2=-1):
+                   ip2=-1, hyb_flat=-1.):
     """
     Build an Hybrid Lorenz Staggered SLEVE (21001) VGridDescriptor initialized
     with provided info.
@@ -655,6 +669,8 @@ def vgd_new_hybhls(hyb, rcoef1, rcoef2, rcoef3, rcoef4, dhm, dht, dhw, ip1=-1,
                           [m AGL]
         ip1      (int)  : Ip1 of the vgrid record
         ip2      (int)  : Ip2 of the vgrid record
+        hyb_flat (float): hyb value at or above which levels are flat
+
     Returns:
         VGridDescriptor ref
     Raises:
@@ -673,9 +689,10 @@ def vgd_new_hybhls(hyb, rcoef1, rcoef2, rcoef3, rcoef4, dhm, dht, dhw, ip1=-1,
     >>> dhm    = 10.
     >>> dht    = 1.5
     >>> dhw    = 10.
+    >>> hyb_flat = 20493.
     >>> try:
     ...     myvgd = vgd.vgd_new_hybhls(lvls, rcoef1, rcoef2, rcoef3, rcoef4,
-    ...                                dhm, dht, dhw)
+    ...                                dhm, dht, dhw, hyb_flat=hyb_flat)
     ... except vgd.VGDError:
     ...     sys.stderr.write("There was a problem creating the VGridDescriptor")
 
@@ -686,9 +703,9 @@ def vgd_new_hybhls(hyb, rcoef1, rcoef2, rcoef3, rcoef4, dhm, dht, dhw, ip1=-1,
         vgd_free
     """
     (kind, version) = _vc.VGD_KIND_VER['hybhls']
-    return vgd_new(kind, version, hyb=hyb,
+    return vgd_new3(kind, version, hyb=hyb,
                    rcoef1=rcoef1, rcoef2=rcoef2, rcoef3=rcoef3, rcoef4=rcoef4,
-                   dhm=dhm, dht=dht, dhw=dhw, ip1=ip1, ip2=ip2)
+                   dhm=dhm, dht=dht, dhw=dhw, ip1=ip1, ip2=ip2, hyb_flat=hyb_flat)
 
 
 vgd_new_21002_SLEVE = vgd_new_hybhls
@@ -716,6 +733,21 @@ def vgd_new2(kind, version, hyb,
     """
     General function to Build an VGridDescriptor initialized with provided info.
 
+    Deprecated; see vgd_new3 for arguments description.
+    Kept for backward compatibility of arguments order.
+
+    See Also:
+        vgd_new3
+    """
+    return vgd_new3(kind, version, hyb, rcoef1, rcoef2, rcoef3, rcoef4,
+                    ptop, pref, dhm, dht, dhw, ip1, ip2, avg, hyb_flat=None)
+
+def vgd_new3(kind, version, hyb,
+             rcoef1=None, rcoef2=None, rcoef3=None, rcoef4=None, ptop=None,
+             pref=None, dhm=None, dht=None, dhw=None, ip1=-1, ip2=-1, avg=0, hyb_flat=None):
+    """
+    General function to Build an VGridDescriptor initialized with provided info.
+
     Args:
         kind     (int)  : Kind of vertical coor
         version  (int)  : Version of vertical coor
@@ -733,6 +765,7 @@ def vgd_new2(kind, version, hyb,
         ip1      (int)  : Ip1 of the vgrid record
         ip2      (int)  : Ip2 of the vgrid record
         avg      (int)  : if avg=1 last thermo level is in middle 5100 only
+        hyb_flat (float): Hybrid value or height of first flat level
     Returns:
         VGridDescriptor ref
     Raises:
@@ -813,9 +846,11 @@ def vgd_new2(kind, version, hyb,
         else:
             ptop_out = 100.
             p_ptop_out = _ct.POINTER(_ct.c_double)(_ct.c_double(ptop_out))
-    ok = _vp.c_vgd_new_gen2(vgd_ptr, kind, version, hyb, hyb.size, rcoef1,
+    if not hyb_flat is None:
+        hyb_flat = _ct.POINTER(_ct.c_float)(_ct.c_float(hyb_flat))
+    ok = _vp.c_vgd_new_gen3(vgd_ptr, kind, version, hyb, hyb.size, rcoef1,
                             rcoef2, rcoef3, rcoef4, ptop, pref, p_ptop_out,
-                            ip1, ip2, dhm, dht, dhw, avg)
+                            ip1, ip2, dhm, dht, dhw, avg, hyb_flat)
     if ok != _vc.VGD_OK:
         raise VGDError('Problem building VGD (kind={0}, version={1}): Error={2})'.
                        format(kind, version, ok))

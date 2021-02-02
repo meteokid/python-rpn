@@ -317,6 +317,42 @@ class VGDProtoTests(unittest.TestCase):
         self.assertEqual(vkind.value,vgd.VGD_HYBHLS_KIND)
         self.assertEqual(vvers.value,vgd.VGD_HYBHLS_VER)
 
+    def testNewGen3(self):
+        hyb = (30968.,  24944., 20493., 16765., 13525., 10814.,  8026., 5477.,
+               3488., 1842., 880., 0.)
+        nhyb = len(hyb)
+        chyb = np.asarray(hyb, dtype=np.float32)
+        (rcoef1, rcoef2, rcoef3, rcoef4) = (ct.c_float(0.), ct.c_float(5.),
+                                            ct.c_float(0.), ct.c_float(100.))
+        p_ptop  = ct.POINTER(ct.c_double)()
+        p_pref  = ct.POINTER(ct.c_double)()
+        p_ptop_out = ct.POINTER(ct.c_double)()
+        (kind, version) = (vgd.VGD_HYBHLS_KIND, vgd.VGD_HYBHLS_VER)
+        (ip1, ip2, avg) = (0, 0, 0)
+        dhm = ct.c_float(10.)
+        dht = ct.c_float(2.)
+        dhw = ct.c_float(10.)
+        hyb_flat = ct.c_float(20493.)
+        vgd0ptr = vgd.c_vgd_construct()
+        ok = vgd.c_vgd_new_gen3(vgd0ptr,
+                                kind, version,
+                                chyb, nhyb,
+                                ct.byref(rcoef1), ct.byref(rcoef2),
+                                ct.byref(rcoef3), ct.byref(rcoef4),
+                                p_ptop, p_pref, p_ptop_out,
+                                ip1, ip2, ct.byref(dhm), ct.byref(dht),
+                                ct.byref(dhw), avg, hyb_flat)
+        self.assertEqual(ok,vgd.VGD_OK)
+
+        vkind = ct.c_int(0)
+        vvers = ct.c_int(0)
+        quiet = ct.c_int(0)
+        ok = vgd.c_vgd_get_int(vgd0ptr, _C_WCHAR2CHAR('KIND'), ct.byref(vkind), quiet)
+        ok = vgd.c_vgd_get_int(vgd0ptr, _C_WCHAR2CHAR('VERS'), ct.byref(vvers), quiet)
+        self.assertEqual(ok,vgd.VGD_OK)
+        self.assertEqual(vkind.value,vgd.VGD_HYBHLS_KIND)
+        self.assertEqual(vvers.value,vgd.VGD_HYBHLS_VER)
+        
     def testNewBuildVert(self):
         vgd0ptr = vgd.c_vgd_construct()
         (kind, version) = (vgd.VGD_HYBS_KIND, vgd.VGD_HYBS_VER)

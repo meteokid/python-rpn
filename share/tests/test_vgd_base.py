@@ -290,8 +290,9 @@ class VGDBaseTests(unittest.TestCase):
         pref = 1000. * self.MB2PA
         dhm = 10.
         dht = 2.
+        hyb_flat = self.hyblist[2]
         vgd0ptr = vgd.vgd_new_hybmd(self.hyblist, rcoef1, rcoef2, pref,
-                                dhm, dht)
+                                    dhm, dht, hyb_flat=hyb_flat)
         vkind = vgd.vgd_get(vgd0ptr, 'KIND')
         vvers = vgd.vgd_get(vgd0ptr, 'VERS')
         self.assertEqual((vkind,vvers), vgd.VGD_KIND_VER['hybmd'])
@@ -304,8 +305,10 @@ class VGDBaseTests(unittest.TestCase):
         pref = 100000.
         dhm = 10.
         dht = 1.5
+        hyb_flat = self.hyblist[2]
         vgd0ptr = vgd.vgd_new_hybps(self.hyblist, rcoef1, rcoef2,
-                                    rcoef3, rcoef4, pref, dhm, dht)
+                                    rcoef3, rcoef4, pref, dhm, dht,
+                                    hyb_flat=hyb_flat)
         vkind = vgd.vgd_get(vgd0ptr, 'KIND')
         vvers = vgd.vgd_get(vgd0ptr, 'VERS')
         self.assertEqual((vkind,vvers), vgd.VGD_KIND_VER['hybps'])
@@ -315,8 +318,9 @@ class VGDBaseTests(unittest.TestCase):
         rcoef2 = 5.
         dhm = 10.
         dht = 1.5
+        hyb_flat = self.hgtlist[2]
         vgd0ptr = vgd.vgd_new_hybh(self.hgtlist, rcoef1, rcoef2,
-                                   dhm, dht)
+                                   dhm, dht, hyb_flat=hyb_flat)
         vkind = vgd.vgd_get(vgd0ptr, 'KIND')
         vvers = vgd.vgd_get(vgd0ptr, 'VERS')
         self.assertEqual((vkind,vvers),vgd.VGD_KIND_VER['hybh'])
@@ -328,8 +332,9 @@ class VGDBaseTests(unittest.TestCase):
         rcoef4 = 100.
         dhm = 10.
         dht = 1.5
+        hyb_flat = self.hgtlist[2]
         vgd0ptr = vgd.vgd_new_hybhs(self.hgtlist, rcoef1, rcoef2, rcoef3,
-                                    rcoef4, dhm, dht)
+                                    rcoef4, dhm, dht, hyb_flat=hyb_flat)
         vkind = vgd.vgd_get(vgd0ptr, 'KIND')
         vvers = vgd.vgd_get(vgd0ptr, 'VERS')
         self.assertEqual((vkind,vvers), vgd.VGD_KIND_VER['hybh'])
@@ -340,8 +345,9 @@ class VGDBaseTests(unittest.TestCase):
         dhm = 10.
         dht = 1.5
         dhw = 10.
+        hyb_flat = self.hgtlist[2]
         vgd0ptr = vgd.vgd_new_hybhl(self.hgtlist, rcoef1, rcoef2,
-                                    dhm, dht, dhw)
+                                    dhm, dht, dhw, hyb_flat=hyb_flat)
         vkind = vgd.vgd_get(vgd0ptr, 'KIND')
         vvers = vgd.vgd_get(vgd0ptr, 'VERS')
         self.assertEqual((vkind,vvers), vgd.VGD_KIND_VER['hybhl'])
@@ -354,8 +360,9 @@ class VGDBaseTests(unittest.TestCase):
         dhm = 10.
         dht = 1.5
         dhw = 10.
+        hyb_flat = self.hgtlist[2]
         vgd0ptr = vgd.vgd_new_hybhls(self.hgtlist, rcoef1, rcoef2, rcoef3,
-                                     rcoef4, dhm, dht, dhw)
+                                     rcoef4, dhm, dht, dhw, hyb_flat=hyb_flat)
         vkind = vgd.vgd_get(vgd0ptr, 'KIND')
         vvers = vgd.vgd_get(vgd0ptr, 'VERS')
         self.assertEqual((vkind,vvers), vgd.VGD_KIND_VER['hybhls'])
