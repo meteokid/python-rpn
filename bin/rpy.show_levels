@@ -1,0 +1,113 @@
+#!/usr/bin/python3
+
+import sys
+import math
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib import gridspec
+
+try:
+    import rpnpy.vgd.all as vgd
+except ImportError:
+    sys.exit("\n\nPlease load a rpnpy ssm package for"
+             + " python3, look for rpnpy on the wiki.\n You may try :\n"
+             + "ECCMC: . s.ssmuse.dot ENV/py/2.7/rpnpy/2.1.b3\n"
+             + "Science: . r.load.dot eccc/mrd/rpn/MIG/ENV/migdep/4.8-LTS.0 eccc/mrd/rpn/MIG/ENV/rpnpy/2.1.0\n")
+from show_levels_utils import arguments as ar
+from show_levels_utils import utils as ut
+
+# Process command line arguments
+args = ar.show_levels_parse_args()
+
+# Number of files
+nfiles = len(args.input)
+
+# Set title
+titles = ut.set_title(args)
+
+# Set topography
+topo = ut.Topo(args.pbot_hill, args.ptop_hill, 250,
+               args.small_scale_topo_amp, args.small_scale_topo_cycles)
+#topo = ut.Topo(args.pbot_hill, args.ptop_hill, 5)
+
+# Set additional vgrid options
+if args.allow_sigma:
+    vgd.vgd_put_opt('ALLOW_SIGMA', vgd.VGD_ALLOW_SIGMA)
+
+# Instanciate Vertical objects and append in list
+vert_list = []
+
+for file in args.input:
+    try:
+        vert_list.append(ut.Vertical(file))
+    except ut.MyError as e:
+        raise
+        sys.exit("\nERROR with method vgd_new: " + e.message + "\n")
+
+ymin = 999999.
+xmin_delta = 999999.
+xmax_delta = 0.
+# Loop on vertical Instances,
+#    Construct vgrid descriptor
+#    Compute pressure levels
+#    Figure out ymin (min pressure)
+#    Figure out min and max delta if args.plot_delta
+for vert in vert_list:
+    try:
+        vert.VGD_get_levels(topo)
+        if args.plot_delta:
+            try:
+                vert.VGD_get_levels_delta()
+            except ut.MyError as e:
+                sys.exit(e.message + "\n")
+            xmin_delta = min(xmin_delta, np.min(vert.levels_delta))
+            xmax_delta = max(xmax_delta, np.max(vert.levels_delta))
+    except ut.MyError as e:
+        sys.exit("\nERROR with method vgd_levels: " + e.message + "\n")
+    ymin = min(ymin, np.min(vert.levels))
+
+# Addjust ymin and ymax to users request
+if args.ptop_graph:
+    ymin = math.log(args.ptop_graph)
+if args.pbot_graph:
+    ymax = math.log(args.pbot_graph)
+else:
+    # Note: we enlarge ymax so that the topo line is shown on the graphe
+    ymax = np.amax(np.log(topo.p0))
+    ymax = ymax + .001*(ymax - ymin)
+
+# Setup figure
+ngraph = nfiles
+if args.plot_delta:
+    ngraph = nfiles*2
+
+width = args.plot_width * ngraph
+fig = plt.figure(facecolor="white", figsize=(width, args.plot_height),
+                 dpi=args.plot_dpi)
+gs1 = gridspec.GridSpec(2, ngraph, height_ratios=[1, args.legend_fraction],
+                        wspace=0., hspace=0.)
+
+# Set plot parameters
+ppar = ut.PlotParameters(ymin, ymax)
+
+# Loop on plots
+j = 0
+for i in range(nfiles):
+    try:
+        ut.plot_it(args, i, plt, gs1[0, j], gs1[1, j], vert_list[i], topo, ppar,
+                   title=titles[i])
+    except:
+        raise
+    j = j + 1
+    if args.plot_delta:        
+        ut.plot_it_delta(args, plt, gs1[0, j], gs1[1, j], vert_list[i], topo,
+                         ppar, xmin_delta, xmax_delta)
+        j = j + 1
+
+fig.tight_layout()
+# Save figure to users request if any
+if args.out != "":
+    plt.savefig(args.out)
+
+# Render graph
+plt.show()
