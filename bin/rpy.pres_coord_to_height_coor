@@ -8,12 +8,10 @@ try:
     import rpnpy.vgd.all as vgd
 except ImportError:
     sys.exit("\n\nPlease load a rpnpy ssm package for"
-             + " python3, look for rpnpy on the wiki.\n You may try :\n"
-             + "ECCMC: . s.ssmuse.dot ENV/py/2.7/rpnpy/2.1.b3\n"
-             + "Science: . r.load.dot eccc/mrd/rpn/MIG/ENV/migdep/4.8-LTS.0 eccc/mrd/rpn/MIG/ENV/rpnpy/2.1.0\n")
+             + " python3, look for rpnpy on the wiki.\n")
 
 import rpnpy.librmn.all as rmn
-from show_levels_utils import utils as ut
+from rpnpy.show_levels_utils import utils as ut
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
